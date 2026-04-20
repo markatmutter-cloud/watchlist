@@ -8,7 +8,7 @@ const CURRENCY_SYM = { USD: "$", GBP: "£", EUR: "€" };
 const SIDEBAR_MIN = 160;
 const SIDEBAR_MAX = 380;
 const SIDEBAR_DEFAULT = 210;
-const SAVED_SEARCHES = ["Speedmaster", "Railmaster", "Datejust"];
+const SAVED_SEARCHES = ["Speedmaster", "Railmaster", "Jackie's DateJust"];
 
 function fmt(price, currency) {
   return (CURRENCY_SYM[currency] || "$") + price.toLocaleString();
@@ -162,7 +162,6 @@ export default function Dial() {
   const [maxPos, setMaxPos] = useState(100);
   const [minPriceText, setMinPriceText] = useState("");
   const [maxPriceText, setMaxPriceText] = useState("");
-  const [statusFilter, setStatusFilter] = useState("for_sale");
   const [newDays, setNewDays] = useState(0);
   const [page, setPage] = useState(1);
   const [watchlist, setWatchlist] = useState(loadWL);
@@ -226,7 +225,7 @@ export default function Dial() {
   const mobileMinPrice = minPriceText ? (parseInt(minPriceText.replace(/[^0-9]/g, "")) || 0) : 0;
   const mobileMaxPrice = maxPriceText ? (parseInt(maxPriceText.replace(/[^0-9]/g, "")) || GLOBAL_MAX) : GLOBAL_MAX;
 
-  useEffect(() => { setPage(1); }, [filterSources, filterBrands, search, sort, maxPos, statusFilter, newDays, minPriceText, maxPriceText]);
+  useEffect(() => { setPage(1); }, [filterSources, filterBrands, search, sort, maxPos, newDays, minPriceText, maxPriceText]);
 
   const handleWish = useCallback((item) => {
     setWatchlist(prev => {
@@ -252,7 +251,7 @@ export default function Dial() {
 
   const allFiltered = useMemo(() => {
     let its = [...items];
-    its = its.filter(i => statusFilter === "sold" ? i.sold : !i.sold);
+    its = its.filter(i => !i.sold);
     if (newDays > 0) its = its.filter(i => daysAgo(i.date) <= newDays);
     if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
     if (filterBrands.length > 0) its = its.filter(i => filterBrands.includes(i.brand));
@@ -271,7 +270,7 @@ export default function Dial() {
     else if (sort === "date-asc") its.sort((a, b) => (a.date < b.date ? -1 : 1));
     else its.sort((a, b) => (a.date < b.date ? 1 : -1));
     return its;
-  }, [items, filterSources, filterBrands, search, sort, priceMax, statusFilter, newDays, isMobile, mobileMinPrice, mobileMaxPrice]);
+  }, [items, filterSources, filterBrands, search, sort, priceMax, newDays, isMobile, mobileMinPrice, mobileMaxPrice]);
 
   const visible = useMemo(() => allFiltered.slice(0, page * PAGE_SIZE), [allFiltered, page]);
   const hasMore = visible.length < allFiltered.length;
@@ -292,8 +291,7 @@ export default function Dial() {
   }, [watchlist, wishSort]);
 
   const watchCount = Object.keys(watchlist).length;
-  const forSaleCount = items.filter(i => !i.sold).length;
-  const hasFilters = filterSources.length > 0 || filterBrands.length > 0 || search || maxPos < 100 || statusFilter !== "for_sale" || newDays > 0 || minPriceText || maxPriceText;
+  const hasFilters = filterSources.length > 0 || filterBrands.length > 0 || search || maxPos < 100 || newDays > 0 || minPriceText || maxPriceText;
 
   const savedSearchStats = useMemo(() => {
     const forSale = items.filter(i => !i.sold);
@@ -304,7 +302,7 @@ export default function Dial() {
       return { term, count: matches.length, newCount };
     });
   }, [items]);
-  const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setSearch(""); setMaxPos(100); setStatusFilter("for_sale"); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
+  const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setSearch(""); setMaxPos(100); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
 
   const visibleBrands = brandsExpanded ? BRANDS : BRANDS.slice(0, BRANDS_SHOW);
   const NEW_OPTS = [{ label: "Today", days: 1 }, { label: "3 days", days: 3 }, { label: "This week", days: 7 }];
@@ -338,31 +336,7 @@ export default function Dial() {
         </div>
       )}
       <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
-      <div style={{ padding: "12px 16px 8px" }}>
-        <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 6 }}>View</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          {[["for_sale", "For sale", forSaleCount], ["sold", "Sold", items.filter(i => i.sold).length]].map(([val, label, count]) => (
-            <button key={val} onClick={() => setStatusFilter(val)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 8px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, background: statusFilter === val ? "var(--surface)" : "transparent", color: statusFilter === val ? "var(--text1)" : "var(--text2)", fontWeight: statusFilter === val ? 500 : 400 }}>
-              <span>{label}</span><span style={{ fontSize: 11, color: "var(--text3)" }}>{count}</span>
-            </button>
-          ))}
-          <button onClick={() => setTab("watchlist")} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 8px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, background: tab === "watchlist" ? "var(--surface)" : "transparent", color: tab === "watchlist" ? "var(--text1)" : "var(--text2)", fontWeight: tab === "watchlist" ? 500 : 400 }}>
-            <span>Watchlist</span>
-            {watchCount > 0 && <span style={{ fontSize: 11, color: "var(--text3)" }}>{watchCount}</span>}
-          </button>
-        </div>
-      </div>
-      <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
-      <div style={{ padding: "12px 16px 8px" }}>
-        <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>New listings</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-          {NEW_OPTS.map(({ label, days }) => {
-            const count = newCounts[days];
-            if (!count) return null;
-            return <SidebarChip key={days} label={`${label} · ${count}`} active={newDays === days} onClick={() => setNewDays(newDays === days ? 0 : days)} />;
-          })}
-        </div>
-      </div>
+      
       <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
       <div style={{ padding: "12px 16px 8px" }}>
         <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Source</div>
@@ -379,12 +353,13 @@ export default function Dial() {
         </div>
       </div>
       <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
-      <div style={{ padding: "12px 16px 12px" }}>
-        <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Max price</div>
+      <div style={{ padding: "12px 16px 14px" }}>
+        <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Price</div>
         <input type="range" min={0} max={100} step={1} value={maxPos} onChange={e => setMaxPos(Number(e.target.value))} style={{ width: "100%", accentColor: "var(--text1)", marginBottom: 4 }} />
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text3)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text3)", marginBottom: 10 }}>
           <span>$500</span><span>{maxLabel}</span>
         </div>
+
       </div>
     </div>
   );
@@ -400,8 +375,8 @@ export default function Dial() {
           <button key={term} onClick={() => {
             setSearch(term);
             setSort("date");
-            setStatusFilter("for_sale");
             setTab("listings");
+            setPage(1);
           }} style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "14px 16px", borderRadius: 12,
@@ -476,16 +451,14 @@ export default function Dial() {
     return (
       <div style={baseStyle}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px 8px", borderBottom: "0.5px solid var(--border)" }}>
-          <div>
-            <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Dial</span>
-            <span style={{ fontSize: 10, color: "var(--text3)", marginLeft: 7 }}>{forSaleCount} for sale</span>
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Dial</span>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ fontSize: 11, color: "var(--text3)" }}>{allFiltered.length}</span>
             <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} style={{ width: 32, height: 32, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <FilterIcon />
             </button>
-            <button onClick={() => setDarkOverride(dark ? false : true)} style={{ width: 32, height: 32, borderRadius: "50%", border: "0.5px solid var(--border)", background: "var(--surface)", color: "var(--text2)", cursor: "pointer", fontSize: 13 }}>
-              {dark ? "☀" : "◑"}
+            <button onClick={() => setDarkOverride(dark ? false : true)} style={{ width: 32, height: 32, borderRadius: "50%", border: "0.5px solid var(--border)", background: "var(--surface)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
             </button>
           </div>
         </div>
@@ -569,7 +542,7 @@ export default function Dial() {
         </div>
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "env(safe-area-inset-bottom, 8px)" }}>
           {[["listings", "Feed"], ["saved", "Saved"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
-            <button key={key} onClick={() => setTab(key)} style={{ flex: 1, padding: "10px 0 12px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 12, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400 }}>
+            <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "10px 0 12px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400 }}>
               {tab === key && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5", margin: "0 auto 4px" }} />}
               {label}
             </button>
@@ -590,17 +563,7 @@ export default function Dial() {
               {/* Scrollable filter content */}
               <div style={{ flex: 1, overflowY: "auto", padding: "0 0 8px" }}>
 
-                <div style={{ padding: "8px 16px 10px" }}>
-                  <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>New listings</div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {NEW_OPTS.map(({ label, days }) => {
-                      const count = newCounts[days];
-                      if (!count) return null;
-                      return <Chip key={days} label={`${label} · ${count}`} active={newDays === days} onClick={() => setNewDays(newDays === days ? 0 : days)} />;
-                    })}
-                  </div>
-                </div>
-                <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
+
 
                 <div style={{ padding: "10px 16px 10px" }}>
                   <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Source</div>
@@ -664,16 +627,16 @@ export default function Dial() {
   return (
     <div style={{ ...baseStyle, display: "flex", height: "100vh", overflow: "hidden" }}>
       <div style={{ width: sidebarWidth, flexShrink: 0, borderRight: "0.5px solid var(--border)", overflowY: "auto", display: "flex", flexDirection: "column", position: "relative" }}>
-        <div style={{ padding: "16px 16px 10px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-          <div style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px", marginBottom: 2 }}>Dial</div>
-          <div style={{ fontSize: 10, color: "var(--text3)" }}>{forSaleCount} for sale · {SOURCES.length} sources</div>
+        <div style={{ padding: "16px 16px 12px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
+          <div style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Dial</div>
         </div>
         <div style={{ flex: 1, overflowY: "auto" }}>
           <SidebarFilterPanel />
         </div>
         <div style={{ padding: "10px 16px 14px", borderTop: "0.5px solid var(--border)", flexShrink: 0 }}>
-          <button onClick={() => setDarkOverride(dark ? false : true)} style={{ fontSize: 11, background: "none", border: "none", cursor: "pointer", color: "var(--text3)", fontFamily: "inherit" }}>
-            {dark ? "Light mode" : "Dark mode"}
+          <button onClick={() => setDarkOverride(dark ? false : true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text3)", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit", fontSize: 11 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            {dark ? "Light" : "Dark"}
           </button>
         </div>
         <div onMouseDown={onDragStart} style={{ position: "absolute", top: 0, right: -3, width: 6, height: "100%", cursor: "col-resize", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -687,12 +650,12 @@ export default function Dial() {
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit" }} />
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-            <span style={{ fontSize: 12, color: "var(--text3)" }}>{allFiltered.length} watches</span>
             {[["listings", "Feed"], ["saved", "Saved"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
               <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
                 {label}
               </button>
             ))}
+            <span style={{ fontSize: 12, color: "var(--text3)", paddingLeft: 4 }}>{allFiltered.length}</span>
           </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
