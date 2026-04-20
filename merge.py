@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-merge.py - combines all scraper CSVs into listings.json
-Run after all scrapers: python3 merge.py
-Output: public/listings.json
+merge.py - combines all scraper CSVs into public/listings.json
+Run after scrapers: python3 merge.py
 """
 
 import csv, json, re, os
@@ -14,6 +13,9 @@ BRANDS = ['Rolex','Omega','Patek Philippe','Tudor','Breitling','IWC','Cartier',
           'A. Lange','Aquastar','Ralph Lauren','Seiko','Universal Geneve',
           'Heuer','Longines','Movado','Czapek','Urwerk','Zenith','Breguet',
           'Blancpain','Tissot','Gallet','Mulco','Girard-Perregaux','Eberhard']
+
+# Approximate exchange rates to USD
+FX = {'GBP': 1.27, 'EUR': 1.08, 'JPY': 0.0067, 'CNY': 0.14, 'USD': 1.0}
 
 def detect_brand(name, existing=''):
     if existing and existing not in ['Other','Collectors Corner NY','Falco','Falco Watches','']:
@@ -32,7 +34,7 @@ def clean(s):
 def parse_bool(v):
     return str(v).lower() in ('true','1','yes')
 
-def load_csv(path, prefix, source_name):
+def load_csv(path, prefix, source_name, currency='USD'):
     items = []
     if not os.path.exists(path):
         print(f"  WARNING: {path} not found, skipping")
@@ -44,11 +46,15 @@ def load_csv(path, prefix, source_name):
             if price < 500: continue
             brand = detect_brand(r.get('title',''), r.get('brand',''))
             if brand == 'Universal Genève': brand = 'Universal Geneve'
+            rate = FX.get(currency, 1.0)
+            price_usd = round(price * rate)
             items.append({
                 'id': f'{prefix}-{i}',
                 'brand': brand,
                 'ref': clean(r.get('title','')),
                 'price': price,
+                'currency': currency,
+                'priceUSD': price_usd,
                 'source': source_name,
                 'url': r.get('url',''),
                 'img': r.get('img',''),
@@ -60,36 +66,28 @@ def load_csv(path, prefix, source_name):
 
 def main():
     sources = [
-        ('data/windvintage.csv',       'wv', 'Wind Vintage'),
-        ('data/tropicalwatch.csv',     'tw', 'Tropical Watch'),
-        ('data/menta.csv',             'me', 'Menta Watches'),
-        ('data/collectorscorner.csv',  'cc', 'Collectors Corner NY'),
-        ('data/falco.csv',             'fa', 'Falco Watches'),
+        ('data/windvintage.csv',      'wv', 'Wind Vintage',          'USD'),
+        ('data/tropicalwatch.csv',    'tw', 'Tropical Watch',        'USD'),
+        ('data/menta.csv',            'me', 'Menta Watches',         'USD'),
+        ('data/collectorscorner.csv', 'cc', 'Collectors Corner NY',  'USD'),
+        ('data/falco.csv',            'fa', 'Falco Watches',         'GBP'),
     ]
 
     all_items = []
-    for path, prefix, name in sources:
-        items = load_csv(path, prefix, name)
-        print(f"  {name}: {len(items)} listings")
+    for path, prefix, name, currency in sources:
+        items = load_csv(path, prefix, name, currency)
+        print(f"  {name}: {len(items)} listings ({currency})")
         all_items.extend(items)
 
     print(f"\nTotal: {len(all_items)} listings")
 
-    # Write output
     os.makedirs('public', exist_ok=True)
     output_path = 'public/listings.json'
     with open(output_path, 'w') as f:
         json.dump(all_items, f, separators=(',',':'))
 
-    print(f"Written to {output_path} ({os.path.getsize(output_path)//1024}kb)")
-
-    # Summary
-    for src in [s[2] for s in sources]:
-        si = [i for i in all_items if i['source']==src]
-        if not si: continue
-        prices = [i['price'] for i in si]
-        sold = sum(1 for i in si if i['sold'])
-        print(f"  {src}: {len(si)} | avg ${sum(prices)//len(prices):,} | {sold} on hold")
+    size_kb = os.path.getsize(output_path) // 1024
+    print(f"Written to {output_path} ({size_kb}kb)")
 
 if __name__ == '__main__':
     main()
