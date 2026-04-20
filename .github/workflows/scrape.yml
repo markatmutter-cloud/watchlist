@@ -1,0 +1,60 @@
+name: Scrape watch listings
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # 8am UK time (BST)
+    - cron: '0 21 * * *'  # 10pm UK time (BST)
+  workflow_dispatch:       # manual trigger from Actions tab
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Wind Vintage scraper
+        run: python windvintage_scraper.py
+
+      - name: Run Menta Watches scraper
+        run: python menta_scraper.py
+
+      - name: Run Collectors Corner NY scraper
+        run: python collectorscorner_scraper.py
+
+      - name: Run Falco Watches scraper
+        run: python falco_scraper.py
+
+      - name: Run Tropical Watch scraper (Browse AI)
+        env:
+          BROWSE_AI_API_KEY: ${{ secrets.BROWSE_AI_API_KEY }}
+        run: python tropicalwatch_scraper.py --latest
+
+      - name: Move CSVs to data folder
+        run: |
+          mkdir -p data
+          mv windvintage_listings.csv data/windvintage.csv 2>/dev/null || true
+          mv menta_listings.csv data/menta.csv 2>/dev/null || true
+          mv collectorscorner_listings.csv data/collectorscorner.csv 2>/dev/null || true
+          mv falco_listings.csv data/falco.csv 2>/dev/null || true
+          mv tropicalwatch_listings.csv data/tropicalwatch.csv 2>/dev/null || true
+
+      - name: Merge into listings.json
+        run: python merge.py
+
+      - name: Commit and push updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ public/
+          git diff --staged --quiet || git commit -m "Update listings $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push
