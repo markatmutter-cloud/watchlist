@@ -2,8 +2,8 @@ name: Scrape watch listings
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # 8am UK (BST)
-    - cron: '0 21 * * *'  # 10pm UK (BST)
+    - cron: '0 14 * * *'   # 7am PDT
+    - cron: '0 5 * * *'    # 10pm PDT
   workflow_dispatch:
 
 jobs:
@@ -39,14 +39,20 @@ jobs:
           BROWSE_AI_API_KEY: ${{ secrets.BROWSE_AI_API_KEY }}
         run: python tropicalwatch_scraper.py --latest
 
+      - name: Run Grey & Patina scraper (Browse AI)
+        env:
+          BROWSE_AI_API_KEY: ${{ secrets.BROWSE_AI_API_KEY }}
+        run: python greyandpatina_scraper.py --latest
+
       - name: Move CSVs to data folder
         run: |
           mkdir -p data
-          [ -f windvintage_listings.csv ]      && mv windvintage_listings.csv data/windvintage.csv      || echo "windvintage csv missing"
-          [ -f menta_listings.csv ]            && mv menta_listings.csv data/menta.csv                  || echo "menta csv missing"
-          [ -f collectorscorner_listings.csv ] && mv collectorscorner_listings.csv data/collectorscorner.csv || echo "ccny csv missing"
-          [ -f falco_listings.csv ]            && mv falco_listings.csv data/falco.csv                  || echo "falco csv missing"
-          [ -f tropicalwatch_listings.csv ]    && mv tropicalwatch_listings.csv data/tropicalwatch.csv  || echo "tropicalwatch csv missing"
+          [ -f windvintage_listings.csv ]      && mv windvintage_listings.csv data/windvintage.csv           || echo "windvintage missing"
+          [ -f menta_listings.csv ]            && mv menta_listings.csv data/menta.csv                       || echo "menta missing"
+          [ -f collectorscorner_listings.csv ] && mv collectorscorner_listings.csv data/collectorscorner.csv || echo "ccny missing"
+          [ -f falco_listings.csv ]            && mv falco_listings.csv data/falco.csv                       || echo "falco missing"
+          [ -f tropicalwatch_listings.csv ]    && mv tropicalwatch_listings.csv data/tropicalwatch.csv       || echo "tropicalwatch missing"
+          [ -f greyandpatina_listings.csv ]    && mv greyandpatina_listings.csv data/greyandpatina.csv       || echo "greyandpatina missing"
 
       - name: Merge into listings.json
         run: python merge.py
