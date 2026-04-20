@@ -2,9 +2,9 @@ name: Scrape watch listings
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # 8am UK time (BST)
-    - cron: '0 21 * * *'  # 10pm UK time (BST)
-  workflow_dispatch:       # manual trigger from Actions tab
+    - cron: '0 7 * * *'   # 8am UK (BST)
+    - cron: '0 21 * * *'  # 10pm UK (BST)
+  workflow_dispatch:
 
 jobs:
   scrape:
@@ -42,16 +42,16 @@ jobs:
       - name: Move CSVs to data folder
         run: |
           mkdir -p data
-          mv windvintage_listings.csv data/windvintage.csv 2>/dev/null || true
-          mv menta_listings.csv data/menta.csv 2>/dev/null || true
-          mv collectorscorner_listings.csv data/collectorscorner.csv 2>/dev/null || true
-          mv falco_listings.csv data/falco.csv 2>/dev/null || true
-          mv tropicalwatch_listings.csv data/tropicalwatch.csv 2>/dev/null || true
+          [ -f windvintage_listings.csv ]      && mv windvintage_listings.csv data/windvintage.csv      || echo "windvintage csv missing"
+          [ -f menta_listings.csv ]            && mv menta_listings.csv data/menta.csv                  || echo "menta csv missing"
+          [ -f collectorscorner_listings.csv ] && mv collectorscorner_listings.csv data/collectorscorner.csv || echo "ccny csv missing"
+          [ -f falco_listings.csv ]            && mv falco_listings.csv data/falco.csv                  || echo "falco csv missing"
+          [ -f tropicalwatch_listings.csv ]    && mv tropicalwatch_listings.csv data/tropicalwatch.csv  || echo "tropicalwatch csv missing"
 
       - name: Merge into listings.json
         run: python merge.py
 
-      - name: Commit and push updated data
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
