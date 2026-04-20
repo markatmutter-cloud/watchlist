@@ -1,165 +1,187 @@
 #!/usr/bin/env python3
 """
-Tropical Watch scraper - uses Playwright headless browser
+Tropical Watch scraper - uses Browse AI REST API
 Run: python3 tropicalwatch_scraper.py
-Requires: pip install playwright && playwright install chromium
+Requires: pip install requests
+Needs: BROWSE_AI_API_KEY environment variable
 Output: tropicalwatch_listings.csv
+
+Setup:
+  1. Get your API key: https://www.browse.ai/account/api-keys
+  2. export BROWSE_AI_API_KEY=your_key_here
+  3. python3 tropicalwatch_scraper.py
+
+Flags:
+  --latest   Use most recent successful run instead of triggering a new one
 """
 
-import csv
-import re
-import time
-import json
+import requests, csv, os, time, re, sys
 from datetime import date
 
+ROBOT_ID = "019da60c-551b-77d6-b9b3-7c4444586624"
+BASE_URL = "https://api.browse.ai/v2"
+POLL_INTERVAL = 10
+MAX_WAIT = 600
+
+BRANDS = [
+    'Rolex','Omega','Patek Philippe','Tudor','Breitling','IWC','Cartier',
+    'Jaeger-LeCoultre','Panerai','Audemars Piguet','Vacheron Constantin',
+    'A. Lange','Heuer','Zenith','Longines','Universal Geneve',
+    'Movado','Aquastar','Czapek','Urwerk','Breguet','Seiko','Blancpain'
+]
+
 def detect_brand(name):
-    brands = [
-        'Rolex', 'Omega', 'Patek Philippe', 'Tudor', 'Breitling', 'IWC',
-        'Cartier', 'Jaeger-LeCoultre', 'Panerai', 'Audemars Piguet',
-        'Vacheron Constantin', 'A. Lange', 'Heuer', 'Zenith', 'Longines',
-        'Universal Geneve', 'Movado', 'Aquastar', 'Czapek', 'Urwerk', 'Breguet',
-        'Seiko', 'Blancpain', 'Tissot', 'Tudor', 'Girard-Perregaux'
-    ]
-    for b in brands:
+    for b in BRANDS:
         if b.lower() in name.lower():
             return b
     return 'Other'
 
-def scrape():
-    from playwright.sync_api import sync_playwright
+def get_api_key():
+    key = os.environ.get('BROWSE_AI_API_KEY', '')
+    if not key:
+        print("ERROR: Set BROWSE_AI_API_KEY environment variable.")
+        print("Get your key: https://www.browse.ai/account/api-keys")
+        print("Then: export BROWSE_AI_API_KEY=your_key_here")
+        sys.exit(1)
+    return key
 
-    BASE = "https://tropicalwatch.com"
-    results = []
+def trigger_robot(api_key):
+    headers = {"Authorization": f"Bearer {api_key}"}
+    payload = {
+        "inputParameters": {
+            "originUrl": "https://tropicalwatch.com/watches",
+            "watches_limit": 500
+        }
+    }
+    print("Triggering Browse AI robot...")
+    r = requests.post(
+        f"{BASE_URL}/robots/{ROBOT_ID}/tasks",
+        headers=headers, json=payload, timeout=30
+    )
+    r.raise_for_status()
+    task_id = r.json()['result']['id']
+    print(f"Task started: {task_id}")
+    return task_id
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page(
-            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+def poll_task(api_key, task_id):
+    headers = {"Authorization": f"Bearer {api_key}"}
+    elapsed = 0
+    print(f"Waiting for completion (checking every {POLL_INTERVAL}s)...")
+    while elapsed < MAX_WAIT:
+        time.sleep(POLL_INTERVAL)
+        elapsed += POLL_INTERVAL
+        r = requests.get(
+            f"{BASE_URL}/robots/{ROBOT_ID}/tasks/{task_id}",
+            headers=headers, timeout=30
         )
+        r.raise_for_status()
+        task = r.json()['result']
+        status = task.get('status', 'in-progress')
+        print(f"  [{elapsed}s] {status}")
+        if status == 'successful':
+            return task
+        elif status == 'failed':
+            print(f"Failed: {task.get('userFriendlyError','Unknown error')}")
+            return None
+    print("Timed out.")
+    return None
 
-        print("Loading Tropical Watch listings page...")
-        page.goto(f"{BASE}/watches", wait_until="networkidle", timeout=30000)
+def get_latest_task(api_key):
+    headers = {"Authorization": f"Bearer {api_key}"}
+    r = requests.get(
+        f"{BASE_URL}/robots/{ROBOT_ID}/tasks",
+        headers=headers,
+        params={"status": "successful", "pageSize": 1, "sort": "-createdAt"},
+        timeout=30
+    )
+    r.raise_for_status()
+    items = r.json()['result']['robotTasks']['items']
+    if items:
+        print(f"Using latest task: {items[0]['id']}")
+        return items[0]
+    return None
 
-        # Scroll to load all listings
-        print("Scrolling to load all listings...")
-        prev_count = 0
-        scroll_attempts = 0
-        max_scrolls = 30
+def parse_results(task):
+    captured_lists = task.get('capturedLists', {})
+    watches_data = None
+    for key, data in captured_lists.items():
+        if isinstance(data, list) and len(data) > 0:
+            print(f"Found list '{key}' with {len(data)} items")
+            watches_data = (key, data)
+            break
 
-        while scroll_attempts < max_scrolls:
-            # Count current listings
-            cards = page.query_selector_all('a[href*="/watches/"]')
-            current_count = len(cards)
+    if not watches_data:
+        print("No list data found. Available keys:", list(captured_lists.keys()))
+        return []
 
-            if current_count == prev_count and scroll_attempts > 2:
-                # No new items after scrolling - we're at the bottom
-                print(f"  Loaded {current_count} listings, no more to load")
-                break
+    key, items = watches_data
+    results = []
+    for item in items:
+        title = (item.get('Watch Name') or item.get('name') or
+                 item.get('title') or item.get('watch_name') or '')
+        price_raw = (item.get('Price') or item.get('price') or '')
+        url = (item.get('Watch URL') or item.get('url') or item.get('link') or '')
+        img = (item.get('Image URL') or item.get('image') or item.get('img') or '')
 
-            prev_count = current_count
-            print(f"  {current_count} listings so far, scrolling...")
+        if not title:
+            continue
 
-            # Scroll to bottom
-            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            time.sleep(1.5)
-            scroll_attempts += 1
+        price = 0
+        try:
+            price = int(float(str(price_raw).replace('$','').replace(',','').strip()))
+        except:
+            m = re.search(r'[\d,]+', str(price_raw))
+            if m:
+                try: price = int(m.group(0).replace(',',''))
+                except: pass
+        if price == 0:
+            continue
 
-        # Extract all listing cards
-        print(f"\nExtracting data from {prev_count} listings...")
-        cards = page.query_selector_all('a[href*="/watches/"]')
-
-        seen_urls = set()
-        for card in cards:
-            try:
-                href = card.get_attribute('href') or ''
-                if not href or href in seen_urls:
-                    continue
-                if href == '/watches/' or href == '/watches':
-                    continue
-
-                url = href if href.startswith('http') else BASE + href
-                seen_urls.add(href)
-
-                # Title
-                title_el = card.query_selector('h2, h3, [class*="title"], [class*="name"]')
-                title = title_el.inner_text().strip() if title_el else ''
-
-                # Try alt text on image as fallback for title
-                if not title:
-                    img_el = card.query_selector('img')
-                    title = (img_el.get_attribute('alt') or '').strip() if img_el else ''
-
-                if not title:
-                    continue
-
-                # Price
-                price_el = card.query_selector('[class*="price"], [class*="Price"]')
-                price_text = price_el.inner_text().strip() if price_el else ''
-                price_match = re.search(r'\$([0-9][0-9,]+)', price_text)
-                price = int(price_match.group(1).replace(',', '')) if price_match else 0
-
-                if price == 0:
-                    continue
-
-                # Image
-                img_el = card.query_selector('img')
-                img = ''
-                if img_el:
-                    img = (img_el.get_attribute('src') or
-                           img_el.get_attribute('data-src') or
-                           img_el.get_attribute('data-lazy') or '')
-
-                results.append({
-                    'title': title,
-                    'brand': detect_brand(title),
-                    'price': price,
-                    'url': url,
-                    'img': img,
-                    'description': '',
-                    'source': 'Tropical Watch',
-                    'date': str(date.today()),
-                    'sold': False,
-                })
-                print(f"  ✓ {detect_brand(title)} — {title[:50]} — ${price:,}")
-
-            except Exception as e:
-                print(f"  Error on card: {e}")
-                continue
-
-        browser.close()
+        results.append({
+            'title': title, 'brand': detect_brand(title),
+            'price': price, 'url': url, 'img': img,
+            'description': '', 'source': 'Tropical Watch',
+            'date': str(date.today()), 'sold': False,
+        })
 
     return results
 
 def main():
-    print("Starting Tropical Watch scraper (headless browser)...")
-    print("This takes 30-60 seconds to scroll through all listings.\n")
+    api_key = get_api_key()
 
-    try:
-        results = scrape()
-    except ImportError:
-        print("\nPlaywright not installed. Run:")
-        print("  pip install playwright")
-        print("  playwright install chromium")
+    if '--latest' in sys.argv:
+        task = get_latest_task(api_key)
+    else:
+        task_id = trigger_robot(api_key)
+        task = poll_task(api_key, task_id)
+
+    if not task:
+        print("No task data.")
         return
 
+    print("\nParsing results...")
+    results = parse_results(task)
+
     if not results:
-        print("No listings found - the page structure may have changed.")
+        print("No listings parsed. Printing raw sample to help debug:")
+        for key, val in task.get('capturedLists', {}).items():
+            if isinstance(val, list) and val:
+                print(f"\nKey '{key}', first item:", val[0])
         return
 
     output = 'tropicalwatch_listings.csv'
     with open(output, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['title','brand','price','url','img','description','source','date','sold'])
+        writer = csv.DictWriter(f, fieldnames=[
+            'title','brand','price','url','img','description','source','date','sold'
+        ])
         writer.writeheader()
         writer.writerows(results)
 
     prices = [r['price'] for r in results]
-    print(f"\n✓ Saved {len(results)} listings to {output}")
+    print(f"\n✓ {len(results)} listings saved to {output}")
     print(f"  Min: ${min(prices):,} | Max: ${max(prices):,} | Avg: ${sum(prices)//len(prices):,}")
-
     from collections import Counter
-    brands = Counter(r['brand'] for r in results)
-    print("\nBy brand:")
-    for b, c in brands.most_common(8):
+    for b, c in Counter(r['brand'] for r in results).most_common(5):
         print(f"  {b}: {c}")
 
 if __name__ == "__main__":
