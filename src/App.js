@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 
-const LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/listings.json";
+const LISTINGS_URL = "/listings.json";
 const GLOBAL_MAX = 560000;
 const PAGE_SIZE = 48;
 const STORAGE_KEY = "dial_watchlist_v1";
