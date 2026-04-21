@@ -17,7 +17,7 @@ def parse_price(raw):
 
 def fetch_latest(api_key):
     url = f"https://api.browse.ai/v2/robots/{ROBOT_ID}/tasks?page=1"
-    r = requests.get(url, headers={"Authorization": f"Api-Key {api_key}"}, timeout=30)
+    r = requests.get(url, headers={"Authorization": f"Bearer {api_key}"}, timeout=30)
     r.raise_for_status()
     tasks = r.json().get("result", {}).get("robotTasks", {}).get("items", [])
     if not tasks:
@@ -26,7 +26,7 @@ def fetch_latest(api_key):
     task_id = tasks[0]["id"]
     print(f"  Using task: {task_id}")
     r2 = requests.get(f"https://api.browse.ai/v2/robots/{ROBOT_ID}/tasks/{task_id}",
-                      headers={"Authorization": f"Api-Key {api_key}"}, timeout=30)
+                      headers={"Authorization": f"Bearer {api_key}"}, timeout=30)
     r2.raise_for_status()
     captured = r2.json().get("result", {}).get("capturedLists", {})
     items = []
