@@ -2,8 +2,9 @@ name: Scrape watch listings
 
 on:
   schedule:
-    - cron: '0 14 * * *'   # 7am PDT
-    - cron: '0 5 * * *'    # 10pm PDT
+    - cron: '0 14 * * *'   # 7am PDT — single daily run (enough for sources
+                           # that list a handful of watches per day, and
+                           # halves Browse AI row usage vs twice daily)
   workflow_dispatch:
 
 jobs:

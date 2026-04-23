@@ -50,7 +50,11 @@ def trigger_robot(api_key):
     payload = {
         "inputParameters": {
             "originUrl": "https://tropicalwatch.com/watches",
-            "watches_limit": 500
+            # Tropical Watch carries ~100-130 listings at any time. 150 gives
+            # comfortable headroom without wasting Browse AI rows. If you
+            # change this, keep it >= actual inventory so listings don't
+            # incorrectly drop out of the scrape and get marked inactive.
+            "watches_limit": 150
         }
     }
     print("Triggering Browse AI robot...")

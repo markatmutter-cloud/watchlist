@@ -106,7 +106,8 @@ function Card({ item, wished, onWish, compact }) {
               </span>
             )}
           </div>
-          {showUSD && <div style={{ fontSize: 9, color: "var(--text3)" }}>~{fmtUSD(item.priceUSD)}</div>}
+          {/* Always render this line (even invisibly) so GBP cards stay the same height as USD cards — avoids the mixed-size grid on mobile. */}
+          <div style={{ fontSize: 9, color: "var(--text3)", minHeight: 12 }}>{showUSD ? `~${fmtUSD(item.priceUSD)}` : "\u00a0"}</div>
         </div>
       </a>
       <button onClick={e => { e.preventDefault(); e.stopPropagation(); onWish(item); }}
@@ -180,7 +181,7 @@ export default function Dial() {
   const [brandsExpanded, setBrandsExpanded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
-  const loaderRef = useRef(null);
+  const observerRef = useRef(null);
   const BRANDS_SHOW = 8;
 
   const onDragStart = useCallback((e) => {
@@ -286,12 +287,19 @@ export default function Dial() {
   const visible = useMemo(() => allFiltered.slice(0, page * PAGE_SIZE), [allFiltered, page]);
   const hasMore = visible.length < allFiltered.length;
 
-  useEffect(() => {
-    if (!loaderRef.current) return;
-    const obs = new IntersectionObserver(e => { if (e[0].isIntersecting && hasMore) setPage(p => p + 1); }, { threshold: 0.1 });
-    obs.observe(loaderRef.current);
-    return () => obs.disconnect();
-  }, [hasMore]);
+  // Callback ref: because ListingsGrid is defined inside this component, it
+  // unmounts/remounts on every render. A plain useRef + useEffect would stop
+  // firing after the first page bump. Reattaching the IntersectionObserver
+  // inside the ref callback guarantees it's always watching the live DOM node.
+  const loaderRef = useCallback((node) => {
+    if (observerRef.current) observerRef.current.disconnect();
+    if (!node) return;
+    const obs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) setPage(p => p + 1);
+    }, { threshold: 0.1 });
+    obs.observe(node);
+    observerRef.current = obs;
+  }, []);
 
   const watchItems = useMemo(() => {
     let its = Object.values(watchlist);
