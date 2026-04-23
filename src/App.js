@@ -18,6 +18,9 @@ function daysAgo(dateStr) {
   if (!dateStr) return 9999;
   return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
 }
+// Prefer firstSeen (from state.json) over the scrape-stamped date. Falls back
+// for listings that predate the state-tracking change.
+function freshDate(item) { return item.firstSeen || item.date; }
 function logToPrice(pos) {
   if (pos >= 100) return GLOBAL_MAX;
   const minL = Math.log(500), maxL = Math.log(GLOBAL_MAX);
@@ -76,9 +79,10 @@ function SearchIcon() {
 }
 
 function Card({ item, wished, onWish, compact }) {
-  const isNew = daysAgo(item.date) <= 7 && !item.sold;
+  const isNew = daysAgo(freshDate(item)) <= 7 && !item.sold;
   const displayPrice = fmt(item.price, item.currency || "USD");
   const showUSD = item.currency && item.currency !== "USD" && item.priceUSD;
+  const priceDropped = (item.priceChange || 0) < 0;
   return (
     <div style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative" }}>
       <a href={item.url} target="_blank" rel="noopener noreferrer"
@@ -94,7 +98,14 @@ function Card({ item, wished, onWish, compact }) {
         <div style={{ padding: compact ? "5px 7px 8px" : "7px 9px 10px" }}>
           <div style={{ fontSize: compact ? 8 : 9, color: "var(--text3)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.source}</div>
           <div style={{ fontSize: compact ? 10 : 12, fontWeight: 500, lineHeight: 1.3, marginBottom: 4, color: "var(--text1)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{item.ref}</div>
-          <div style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: item.sold ? "var(--text2)" : "var(--text1)" }}>{displayPrice}</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+            <div style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: item.sold ? "var(--text2)" : "var(--text1)" }}>{displayPrice}</div>
+            {priceDropped && (
+              <span title={`Was ${fmt(item.price - item.priceChange, item.currency || "USD")}`} style={{ fontSize: 9, color: "#1b8f3a", fontWeight: 600 }}>
+                ↓ {fmt(Math.abs(item.priceChange), item.currency || "USD")}
+              </span>
+            )}
+          </div>
           {showUSD && <div style={{ fontSize: 9, color: "var(--text3)" }}>~{fmtUSD(item.priceUSD)}</div>}
         </div>
       </a>
@@ -243,16 +254,16 @@ export default function Dial() {
   const newCounts = useMemo(() => {
     const fs = items.filter(i => !i.sold);
     return {
-      1: fs.filter(i => daysAgo(i.date) <= 1).length,
-      3: fs.filter(i => daysAgo(i.date) <= 3).length,
-      7: fs.filter(i => daysAgo(i.date) <= 7).length,
+      1: fs.filter(i => daysAgo(freshDate(i)) <= 1).length,
+      3: fs.filter(i => daysAgo(freshDate(i)) <= 3).length,
+      7: fs.filter(i => daysAgo(freshDate(i)) <= 7).length,
     };
   }, [items]);
 
   const allFiltered = useMemo(() => {
     let its = [...items];
     its = its.filter(i => !i.sold);
-    if (newDays > 0) its = its.filter(i => daysAgo(i.date) <= newDays);
+    if (newDays > 0) its = its.filter(i => daysAgo(freshDate(i)) <= newDays);
     if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
     if (filterBrands.length > 0) its = its.filter(i => filterBrands.includes(i.brand));
     if (search.trim()) {
@@ -267,8 +278,8 @@ export default function Dial() {
     }
     if (sort === "price-asc") its.sort((a, b) => (a.priceUSD || a.price) - (b.priceUSD || b.price));
     else if (sort === "price-desc") its.sort((a, b) => (b.priceUSD || b.price) - (a.priceUSD || a.price));
-    else if (sort === "date-asc") its.sort((a, b) => (a.date < b.date ? -1 : 1));
-    else its.sort((a, b) => (a.date < b.date ? 1 : -1));
+    else if (sort === "date-asc") its.sort((a, b) => (freshDate(a) < freshDate(b) ? -1 : 1));
+    else its.sort((a, b) => (freshDate(a) < freshDate(b) ? 1 : -1));
     return its;
   }, [items, filterSources, filterBrands, search, sort, priceMax, newDays, isMobile, mobileMinPrice, mobileMaxPrice]);
 
@@ -298,7 +309,7 @@ export default function Dial() {
     return SAVED_SEARCHES.map(term => {
       const q = term.toLowerCase();
       const matches = forSale.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q));
-      const newCount = matches.filter(i => daysAgo(i.date) <= 7).length;
+      const newCount = matches.filter(i => daysAgo(freshDate(i)) <= 7).length;
       return { term, count: matches.length, newCount };
     });
   }, [items]);
@@ -335,8 +346,6 @@ export default function Dial() {
           <button onClick={resetFilters} style={{ fontSize: 12, color: "#185FA5", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>Reset all filters</button>
         </div>
       )}
-      <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
-      
       <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
       <div style={{ padding: "12px 16px 8px" }}>
         <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Source</div>
