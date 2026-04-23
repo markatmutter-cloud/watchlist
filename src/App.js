@@ -85,7 +85,7 @@ function SearchIcon() {
 }
 
 function Card({ item, wished, onWish, compact }) {
-  const isNew = daysAgo(freshDate(item)) <= 7 && !item.sold;
+  const isNew = daysAgo(freshDate(item)) <= 1 && !item.sold;
   const displayPrice = fmt(item.price, item.currency || "USD");
   const showUSD = item.currency && item.currency !== "USD" && item.priceUSD;
   const priceDropped = (item.priceChange || 0) < 0;
