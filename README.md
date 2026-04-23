@@ -1,16 +1,16 @@
 # Dial
 
-A personal vintage watch listing aggregator. Dial pulls active inventory from a handful of independent dealers I trust, merges it into one browsable feed, and tracks listings across runs so new arrivals and price drops actually mean something.
+A personal vintage watch listing aggregator. Dial pulls active inventory from a handful of independent dealers I trust, merges it into one browsable feed, and tracks listings across runs so new arrivals and price changes are easily visible.
 
 **Live:** [watchdial.vercel.app](https://watchdial.vercel.app)
 
-Built without a traditional development background — architecture, scrapers, React front-end, and CI/CD all co-authored with [Claude](https://claude.com/claude-code).
+Built without a development background — architecture, scrapers, React front-end, and CI/CD all co-authored with [Claude](https://claude.com/claude-code).
 
 ---
 
 ## Why this exists
 
-I wanted a single place to see vintage watches from the specific dealers I follow, in one chronological feed, without the ads or the dealer-specific UIs. Chrono24 covers the universe but its interface buries things; dealer sites are all different. This is the minimum-viable version of what I actually look at every morning.
+I wanted a single place to see vintage watches from the specific dealers I follow, in one chronological feed, without the ads or the dealer-specific UIs. Chrono24 covers the universe but its interface buries things; dealer sites are all different.
 
 Not commercial. Not trying to be a marketplace. Just an aggregator for myself — and now open to anyone who wants to see how a non-technical person can ship something useful with an LLM as a pair-programmer.
 
