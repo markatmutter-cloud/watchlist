@@ -1,76 +1,159 @@
 #!/usr/bin/env python3
 """
-Grey & Patina scraper - uses Browse AI REST API
-Robot ID: 019dac75-6cd8-7901-ad6b-70476a8a1875
+Grey & Patina scraper - WooCommerce Store API (same pattern as Menta).
+Run: python3 greyandpatina_scraper.py
+Requires: pip install requests
+Output: greyandpatina_listings.csv
+
+Replaces the old Browse AI version. G&P runs WooCommerce and exposes the
+public Store API at /wp-json/wc/store/v1/products — no auth needed, returns
+full inventory with prices, availability, images, and dates.
 """
-import os, sys, json, csv, re, requests
-from datetime import date
+import requests
+import csv
+import re
+import time
 
-ROBOT_ID = "019dac75-6cd8-7901-ad6b-70476a8a1875"
-OUTPUT = "greyandpatina_listings.csv"
+BASE = "https://greyandpatina.com"
+API = f"{BASE}/wp-json/wc/store/v1/products"
+HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"}
 
-def parse_price(raw):
-    if not raw:
-        return 0
-    nums = re.findall(r'[\d]+', raw.replace(",", ""))
-    return int(nums[0]) if nums else 0
+# Small brand list just for early filtering; merge.py reassigns brand from title anyway.
+BRANDS = [
+    'Rolex', 'Omega', 'Patek Philippe', 'Tudor', 'Breitling', 'IWC', 'Cartier',
+    'Jaeger-LeCoultre', 'Panerai', 'Audemars Piguet', 'Vacheron Constantin',
+    'A. Lange', 'Heuer', 'Longines', 'Universal Geneve', 'Movado', 'Zenith',
+    'Breguet', 'Blancpain', 'Eberhard', 'Girard-Perregaux', 'Tissot',
+]
 
-def fetch_latest(api_key):
-    url = f"https://api.browse.ai/v2/robots/{ROBOT_ID}/tasks?page=1"
-    r = requests.get(url, headers={"Authorization": f"Bearer {api_key}"}, timeout=30)
-    r.raise_for_status()
-    tasks = r.json().get("result", {}).get("robotTasks", {}).get("items", [])
-    if not tasks:
-        print("No tasks found")
-        return []
-    task_id = tasks[0]["id"]
-    print(f"  Using task: {task_id}")
-    r2 = requests.get(f"https://api.browse.ai/v2/robots/{ROBOT_ID}/tasks/{task_id}",
-                      headers={"Authorization": f"Bearer {api_key}"}, timeout=30)
-    r2.raise_for_status()
-    captured = r2.json().get("result", {}).get("capturedLists", {})
-    items = []
-    for key, rows in captured.items():
-        if isinstance(rows, list):
-            items.extend(rows)
-    return items
+
+def detect_brand(name):
+    for b in BRANDS:
+        if b.lower() in name.lower():
+            return b
+    return 'Other'
+
+
+def strip_html(text):
+    if not text:
+        return ''
+    text = re.sub(r'<[^>]+>', ' ', text)
+    text = re.sub(r'&amp;', '&', text)
+    text = re.sub(r'&nbsp;', ' ', text)
+    text = re.sub(r'&#[0-9]+;', '', text)
+    return re.sub(r'\s+', ' ', text).strip()
+
+
+def get_all_listings():
+    all_items = []
+    page = 1
+    per_page = 100
+
+    while True:
+        print(f"Fetching page {page}...")
+        r = requests.get(API, headers=HEADERS, params={
+            'per_page': per_page,
+            'page': page,
+            'status': 'publish',
+        }, timeout=20)
+        r.raise_for_status()
+        items = r.json()
+
+        if not items:
+            break
+
+        all_items.extend(items)
+        print(f"  Got {len(items)} items (total so far: {len(all_items)})")
+
+        if len(items) < per_page:
+            break
+
+        page += 1
+        time.sleep(0.5)
+
+    return all_items
+
+
+def parse_item(item):
+    title = item.get('name', '')
+
+    # WooCommerce returns price as a string; currency_minor_unit tells us the
+    # decimal scale (0 = whole dollars, 2 = cents). G&P returns 0, Menta
+    # returns 2. Using the field makes this robust across configurations.
+    prices_obj = item.get('prices', {})
+    price_raw = prices_obj.get('price', '0')
+    minor = int(prices_obj.get('currency_minor_unit', 2) or 0)
+    try:
+        price = int(price_raw) // (10 ** minor) if minor else int(price_raw)
+    except (ValueError, TypeError):
+        price = 0
+
+    in_stock = item.get('is_in_stock', True)
+    sold = not in_stock
+
+    images = item.get('images', [])
+    img = images[0]['src'] if images else ''
+
+    url = item.get('permalink', '')
+
+    desc = strip_html(item.get('description', '') or item.get('short_description', ''))[:500]
+
+    brand = detect_brand(title)
+    # Also check categories for brand hints.
+    for cat in item.get('categories', []):
+        name = cat.get('name', '')
+        for b in BRANDS:
+            if b.lower() in name.lower():
+                brand = b
+
+    return {
+        'title': title,
+        'brand': brand,
+        'price': price,
+        'url': url,
+        'img': img,
+        'description': desc,
+        'source': 'Grey & Patina',
+        'sold': sold,
+    }
+
 
 def main():
-    api_key = os.environ.get("BROWSE_AI_API_KEY", "")
-    if not api_key:
-        print("BROWSE_AI_API_KEY not set")
-        sys.exit(1)
+    print("Fetching Grey & Patina inventory (WooCommerce Store API)...")
+    raw = get_all_listings()
+    print(f"\nTotal raw items: {len(raw)}")
 
-    use_latest = "--latest" in sys.argv
-    print(f"Starting Grey & Patina scraper (Browse AI)...")
-
-    raw_items = fetch_latest(api_key)
-    print(f"  Fetched {len(raw_items)} raw items")
-
-    listings = []
-    for item in raw_items:
-        title = item.get("Product Title", "").strip()
-        if not title:
+    results = []
+    skipped_sold = 0
+    skipped_no_price = 0
+    for item in raw:
+        parsed = parse_item(item)
+        if parsed['price'] == 0:
+            skipped_no_price += 1
             continue
-        price = parse_price(item.get("Price", ""))
-        if price < 500:
+        if parsed['sold']:
+            skipped_sold += 1
             continue
-        listings.append({
-            "title": title,
-            "price": price,
-            "url": item.get("Product URL", ""),
-            "img": item.get("Image URL", ""),
-            "sold": False,
-            "date": str(date.today()),
-            "description": "",
-        })
+        results.append(parsed)
+        print(f"  + {parsed['brand']} — {parsed['title'][:55]} — ${parsed['price']:,}")
 
-    with open(OUTPUT, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["title","price","url","img","sold","date","description"])
+    print(f"\nSkipped: {skipped_sold} sold, {skipped_no_price} no price")
+
+    output = 'greyandpatina_listings.csv'
+    with open(output, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=['title','brand','price','url','img','description','source','sold'])
         writer.writeheader()
-        writer.writerows(listings)
+        writer.writerows(results)
 
-    print(f"  Written {len(listings)} listings to {OUTPUT}")
+    if results:
+        prices = [r['price'] for r in results]
+        print(f"\nSaved {len(results)} listings to {output}")
+        print(f"  Min: ${min(prices):,} | Max: ${max(prices):,} | Avg: ${sum(prices)//len(prices):,}")
+
+        from collections import Counter
+        for b, c in Counter(r['brand'] for r in results).most_common():
+            print(f"  {b}: {c}")
+
 
 if __name__ == "__main__":
     main()

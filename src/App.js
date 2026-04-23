@@ -8,7 +8,13 @@ const CURRENCY_SYM = { USD: "$", GBP: "£", EUR: "€" };
 const SIDEBAR_MIN = 160;
 const SIDEBAR_MAX = 380;
 const SIDEBAR_DEFAULT = 210;
-const SAVED_SEARCHES = ["Speedmaster", "Railmaster", "Jackie's DateJust"];
+// Each saved search has a display label and the search query to run.
+// Decoupling lets "Jackie's DateJust" look for just "DateJust" in listings.
+const SAVED_SEARCHES = [
+  { label: "Speedmaster",        query: "Speedmaster" },
+  { label: "Railmaster",         query: "Railmaster" },
+  { label: "Jackie's DateJust",  query: "DateJust"    },
+];
 
 function fmt(price, currency) {
   return (CURRENCY_SYM[currency] || "$") + price.toLocaleString();
@@ -314,11 +320,11 @@ export default function Dial() {
 
   const savedSearchStats = useMemo(() => {
     const forSale = items.filter(i => !i.sold);
-    return SAVED_SEARCHES.map(term => {
-      const q = term.toLowerCase();
+    return SAVED_SEARCHES.map(({ label, query }) => {
+      const q = query.toLowerCase();
       const matches = forSale.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q));
       const newCount = matches.filter(i => daysAgo(freshDate(i)) <= 7).length;
-      return { term, count: matches.length, newCount };
+      return { label, query, count: matches.length, newCount };
     });
   }, [items]);
   const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setSearch(""); setMaxPos(100); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
@@ -388,9 +394,9 @@ export default function Dial() {
         Tap a search to filter the feed
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {savedSearchStats.map(({ term, count, newCount }) => (
-          <button key={term} onClick={() => {
-            setSearch(term);
+        {savedSearchStats.map(({ label, query, count, newCount }) => (
+          <button key={label} onClick={() => {
+            setSearch(query);
             setSort("date");
             setTab("listings");
             setPage(1);
@@ -403,7 +409,7 @@ export default function Dial() {
             width: "100%",
           }}>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 3 }}>{term}</div>
+              <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 3 }}>{label}</div>
               <div style={{ fontSize: 12, color: "var(--text2)" }}>{count} for sale</div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>

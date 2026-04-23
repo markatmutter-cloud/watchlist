@@ -187,12 +187,16 @@ def update_state(items, state):
 
 def main():
     sources = [
-        ('data/windvintage.csv',      'Wind Vintage',         'USD'),
-        ('data/tropicalwatch.csv',    'Tropical Watch',       'USD'),
-        ('data/menta.csv',            'Menta Watches',        'USD'),
-        ('data/collectorscorner.csv', 'Collectors Corner NY', 'USD'),
-        ('data/falco.csv',            'Falco Watches',        'GBP'),
-        ('data/greyandpatina.csv',    'Grey & Patina',        'USD'),
+        ('data/windvintage.csv',          'Wind Vintage',          'USD'),
+        ('data/tropicalwatch.csv',        'Tropical Watch',        'USD'),
+        ('data/menta.csv',                'Menta Watches',         'USD'),
+        ('data/collectorscorner.csv',     'Collectors Corner NY',  'USD'),
+        ('data/falco.csv',                'Falco Watches',         'GBP'),
+        ('data/greyandpatina.csv',        'Grey & Patina',         'USD'),
+        ('data/oliverandclarke.csv',      'Oliver & Clarke',       'USD'),
+        ('data/craftandtailored.csv',     'Craft & Tailored',      'USD'),
+        ('data/watchbrotherslondon.csv',  'Watch Brothers London', 'GBP'),
+        ('data/mvvwatches.csv',           'MVV Watches',           'USD'),
     ]
 
     state = load_state()
