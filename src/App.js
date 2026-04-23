@@ -6,8 +6,12 @@ const STORAGE_KEY = "dial_watchlist_v2";
 const GLOBAL_MAX = 600000;
 const CURRENCY_SYM = { USD: "$", GBP: "£", EUR: "€" };
 const SIDEBAR_MIN = 160;
-const SIDEBAR_MAX = 380;
-const SIDEBAR_DEFAULT = 210;
+const SIDEBAR_MAX = 520;
+const SIDEBAR_DEFAULT_FRACTION = 0.25;   // start at 25% of window width
+function initialSidebarWidth() {
+  if (typeof window === "undefined") return 280;
+  return Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(window.innerWidth * SIDEBAR_DEFAULT_FRACTION)));
+}
 // Each saved search has a display label and the search query to run.
 // Decoupling lets "Jackie's DateJust" look for just "DateJust" in listings.
 const SAVED_SEARCHES = [
@@ -162,7 +166,7 @@ export default function Dial() {
   const [darkOverride, setDarkOverride] = useState(null);
   const dark = darkOverride !== null ? darkOverride : sysDark;
 
-  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT);
+  const [sidebarWidth, setSidebarWidth] = useState(initialSidebarWidth);
   const isDragging = useRef(false);
   const dragStart = useRef(0);
   const widthStart = useRef(0);
@@ -177,6 +181,7 @@ export default function Dial() {
   const [filterBrands, setFilterBrands] = useState([]);
   const [sort, setSort] = useState("date");
   const [search, setSearch] = useState("");
+  const [minPos, setMinPos] = useState(0);
   const [maxPos, setMaxPos] = useState(100);
   const [minPriceText, setMinPriceText] = useState("");
   const [maxPriceText, setMaxPriceText] = useState("");
@@ -241,10 +246,12 @@ export default function Dial() {
 
   const priceMax = maxPos >= 100 ? GLOBAL_MAX : logToPrice(maxPos);
   const maxLabel = maxPos >= 100 ? "No limit" : fmtUSD(logToPrice(maxPos));
+  const priceMin = minPos <= 0 ? 0 : logToPrice(minPos);
+  const minLabel = minPos <= 0 ? "$500" : fmtUSD(logToPrice(minPos));
   const mobileMinPrice = minPriceText ? (parseInt(minPriceText.replace(/[^0-9]/g, "")) || 0) : 0;
   const mobileMaxPrice = maxPriceText ? (parseInt(maxPriceText.replace(/[^0-9]/g, "")) || GLOBAL_MAX) : GLOBAL_MAX;
 
-  useEffect(() => { setPage(1); }, [filterSources, filterBrands, search, sort, maxPos, newDays, minPriceText, maxPriceText]);
+  useEffect(() => { setPage(1); }, [filterSources, filterBrands, search, sort, minPos, maxPos, newDays, minPriceText, maxPriceText]);
 
   const handleWish = useCallback((item) => {
     setWatchlist(prev => {
@@ -282,7 +289,10 @@ export default function Dial() {
       if (mobileMinPrice > 0) its = its.filter(i => (i.priceUSD || i.price) >= mobileMinPrice);
       if (mobileMaxPrice < GLOBAL_MAX) its = its.filter(i => (i.priceUSD || i.price) <= mobileMaxPrice);
     } else {
-      its = its.filter(i => (i.priceUSD || i.price) <= priceMax);
+      its = its.filter(i => {
+        const p = i.priceUSD || i.price;
+        return p >= priceMin && p <= priceMax;
+      });
     }
     if (sort === "price-asc") its.sort((a, b) => (a.priceUSD || a.price) - (b.priceUSD || b.price));
     else if (sort === "price-desc") its.sort((a, b) => (b.priceUSD || b.price) - (a.priceUSD || a.price));
@@ -317,7 +327,7 @@ export default function Dial() {
   }, [watchlist, wishSort]);
 
   const watchCount = Object.keys(watchlist).length;
-  const hasFilters = filterSources.length > 0 || filterBrands.length > 0 || search || maxPos < 100 || newDays > 0 || minPriceText || maxPriceText;
+  const hasFilters = filterSources.length > 0 || filterBrands.length > 0 || search || minPos > 0 || maxPos < 100 || newDays > 0 || minPriceText || maxPriceText;
 
   const savedSearchStats = useMemo(() => {
     const forSale = items.filter(i => !i.sold);
@@ -328,7 +338,7 @@ export default function Dial() {
       return { label, query, count: matches.length, newCount };
     });
   }, [items]);
-  const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setSearch(""); setMaxPos(100); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
+  const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setSearch(""); setMinPos(0); setMaxPos(100); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
 
   const visibleBrands = brandsExpanded ? BRANDS : BRANDS.slice(0, BRANDS_SHOW);
   const NEW_OPTS = [{ label: "Today", days: 1 }, { label: "3 days", days: 3 }, { label: "This week", days: 7 }];
@@ -420,11 +430,22 @@ export default function Dial() {
       <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
       <div style={{ padding: "12px 16px 14px" }}>
         <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Price</div>
-        <input type="range" min={0} max={100} step={1} value={maxPos} onChange={e => setMaxPos(Number(e.target.value))} style={{ width: "100%", accentColor: "var(--text1)", marginBottom: 4 }} />
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text3)", marginBottom: 10 }}>
-          <span>$500</span><span>{maxLabel}</span>
+        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 8 }}>
+          <span style={{ color: "var(--text1)", fontWeight: 500 }}>{minLabel}</span>
+          <span style={{ margin: "0 6px", color: "var(--text3)" }}>–</span>
+          <span style={{ color: "var(--text1)", fontWeight: 500 }}>{maxLabel}</span>
         </div>
-
+        {/* Two independent range sliders; each clamps to stay on its side of
+            the other so min can never exceed max. */}
+        <input type="range" min={0} max={100} step={1} value={minPos}
+          onChange={e => setMinPos(Math.min(Number(e.target.value), maxPos))}
+          style={{ width: "100%", accentColor: "var(--text1)", marginBottom: 4 }} />
+        <input type="range" min={0} max={100} step={1} value={maxPos}
+          onChange={e => setMaxPos(Math.max(Number(e.target.value), minPos))}
+          style={{ width: "100%", accentColor: "var(--text1)", marginBottom: 6 }} />
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--text3)" }}>
+          <span>Min</span><span>Max</span>
+        </div>
       </div>
     </div>
   );

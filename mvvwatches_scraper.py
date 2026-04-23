@@ -74,7 +74,20 @@ def parse_item(i):
     url_id = i.get('urlId', '')
     full_url = i.get('fullUrl') or f"/{url_id}"
     url = BASE + full_url if full_url.startswith('/') else full_url
-    asset = i.get('assetUrl') or ''
+
+    # For newer Squarespace product items, the top-level `assetUrl` is a
+    # truncated directory path that only returns a 2KB placeholder. The real
+    # product photos live in the nested `items[]` media records, each of which
+    # has a proper `assetUrl` ending in .jpg. Fall back to the top-level one
+    # for older items that stored their image directly.
+    asset = ''
+    nested = i.get('items') or []
+    for m in nested:
+        if m.get('recordTypeLabel') == 'image' and m.get('assetUrl'):
+            asset = m['assetUrl']
+            break
+    if not asset:
+        asset = i.get('assetUrl') or ''
 
     sc = i.get('structuredContent', {})
     variants = sc.get('variants', [])

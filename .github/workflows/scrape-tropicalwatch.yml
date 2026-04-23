@@ -1,0 +1,50 @@
+name: Scrape Tropical Watch only
+
+# Manual-trigger-only workflow for refreshing just the Tropical Watch source
+# without touching the other nine. Useful when you've kicked off a fresh Browse
+# AI run on the TW robot and want to pull those specific results into Dial
+# before the next full daily cron.
+#
+# Everything else is left untouched: other CSVs in data/ are unchanged, state.json
+# is still updated (so disappeared TW items get marked inactive and new ones
+# picked up), and listings.json is regenerated from the complete set.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scrape-tw:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Tropical Watch scraper (Browse AI)
+        env:
+          BROWSE_AI_API_KEY: ${{ secrets.BROWSE_AI_API_KEY }}
+        run: python tropicalwatch_scraper.py --latest
+
+      - name: Move TW CSV to data folder
+        run: |
+          mkdir -p data
+          [ -f tropicalwatch_listings.csv ] && mv tropicalwatch_listings.csv data/tropicalwatch.csv || echo "tropicalwatch missing"
+
+      - name: Merge into listings.json
+        run: python merge.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/tropicalwatch.csv public/
+          git diff --staged --quiet || git commit -m "Update TW listings $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push

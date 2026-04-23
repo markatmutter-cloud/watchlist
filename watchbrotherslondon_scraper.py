@@ -77,7 +77,16 @@ def parse_item(i):
     full_url = i.get('fullUrl') or f"{PATH}/p/{url_id}"
     url = BASE + full_url if full_url.startswith('/') else full_url
 
-    asset = i.get('assetUrl') or ''
+    # See MVV scraper comment — Squarespace product items have a nested
+    # `items[]` media list that holds the real photo URLs. The top-level
+    # `assetUrl` on newer items is a truncated placeholder path.
+    asset = ''
+    for m in (i.get('items') or []):
+        if m.get('recordTypeLabel') == 'image' and m.get('assetUrl'):
+            asset = m['assetUrl']
+            break
+    if not asset:
+        asset = i.get('assetUrl') or ''
 
     sc = i.get('structuredContent', {})
     variants = sc.get('variants', [])
