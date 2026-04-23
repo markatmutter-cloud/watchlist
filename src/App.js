@@ -187,6 +187,7 @@ export default function Dial() {
   const [brandsExpanded, setBrandsExpanded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const observerRef = useRef(null);
   const BRANDS_SHOW = 8;
 
@@ -344,6 +345,47 @@ export default function Dial() {
   if (loading) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Loading listings...</div>;
   if (loadError) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Could not load listings. Try refreshing.</div>;
 
+  // ── ABOUT MODAL ───────────────────────────────────────────────────────────
+  const aboutModal = aboutOpen && (
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={() => setAboutOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} />
+      <div style={{ position: "relative", background: "var(--bg)", color: "var(--text1)", borderRadius: 16, maxWidth: 520, width: "100%", maxHeight: "86vh", overflowY: "auto", padding: "22px 22px 20px", boxShadow: "0 10px 40px rgba(0,0,0,0.3)" }}>
+        <button onClick={() => setAboutOpen(false)} aria-label="Close" style={{ position: "absolute", top: 10, right: 10, width: 32, height: 32, borderRadius: "50%", border: "none", background: "var(--surface)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+
+        <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.5px", marginBottom: 4 }}>Dial</div>
+        <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 18 }}>A personal vintage watch aggregator</div>
+
+        <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--text1)", marginBottom: 12 }}>
+          Dial pulls active inventory from a handful of independent dealers I follow and puts everything in one feed, sorted by when I first saw each listing. It's how I keep up to speed every morning without bouncing between ten dealer sites.
+        </p>
+
+        <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--text1)", marginBottom: 12 }}>
+          It's a passion project, not a marketplace. There are no ads, no commissions, no affiliate links. Every listing links straight back to the dealer — Dial never touches the transaction.
+        </p>
+
+        <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--text1)", marginBottom: 16 }}>
+          I wanted something more focused than Chrono24 and more consolidated than checking each dealer individually — a single feed, just the sellers I trust, in whatever order I choose. Built that for myself, left it public in case anyone else finds it useful.
+        </p>
+
+        <div style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Sources</div>
+        <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6, marginBottom: 18 }}>
+          Wind Vintage · Tropical Watch · Menta Watches · Collectors Corner NY · Falco Watches · Grey & Patina · Oliver & Clarke · Craft & Tailored · Watch Brothers London · MVV Watches
+        </div>
+
+        <div style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Built with</div>
+        <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6, marginBottom: 18 }}>
+          Python scrapers on GitHub Actions, a React frontend on Vercel, and <a href="https://claude.com/claude-code" target="_blank" rel="noopener noreferrer" style={{ color: "#185FA5" }}>Claude</a> as co-author throughout.
+        </div>
+
+        <a href="https://github.com/markatmutter-cloud/Dial" target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", fontSize: 13, color: "#185FA5", textDecoration: "none" }}>
+          View source on GitHub →
+        </a>
+      </div>
+    </div>
+  );
+
   // ── SIDEBAR FILTER PANEL (desktop only) ──────────────────────────────────
   const SidebarFilterPanel = () => (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -474,7 +516,7 @@ export default function Dial() {
     return (
       <div style={baseStyle}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px 8px", borderBottom: "0.5px solid var(--border)" }}>
-          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Dial</span>
+          <button onClick={() => setAboutOpen(true)} style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px", background: "none", border: "none", color: "inherit", fontFamily: "inherit", padding: 0, cursor: "pointer" }}>Dial</button>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span style={{ fontSize: 11, color: "var(--text3)" }}>{allFiltered.length}</span>
             <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} style={{ width: 32, height: 32, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -572,6 +614,8 @@ export default function Dial() {
           ))}
         </div>
 
+        {aboutModal}
+
         {/* Mobile drawer */}
         {drawerOpen && (
           <div style={{ position: "fixed", inset: 0, zIndex: 100 }}>
@@ -651,7 +695,7 @@ export default function Dial() {
     <div style={{ ...baseStyle, display: "flex", height: "100vh", overflow: "hidden" }}>
       <div style={{ width: sidebarWidth, flexShrink: 0, borderRight: "0.5px solid var(--border)", overflowY: "auto", display: "flex", flexDirection: "column", position: "relative" }}>
         <div style={{ padding: "16px 16px 12px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-          <div style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Dial</div>
+          <button onClick={() => setAboutOpen(true)} style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px", background: "none", border: "none", color: "inherit", fontFamily: "inherit", padding: 0, cursor: "pointer" }}>Dial</button>
         </div>
         <div style={{ flex: 1, overflowY: "auto" }}>
           <SidebarFilterPanel />
@@ -685,6 +729,7 @@ export default function Dial() {
           {tab === "listings" ? <ListingsGrid /> : tab === "saved" ? <SavedTab /> : <WatchlistGrid />}
         </div>
       </div>
+      {aboutModal}
     </div>
   );
 }
