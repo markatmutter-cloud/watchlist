@@ -12,13 +12,28 @@ function initialSidebarWidth() {
   if (typeof window === "undefined") return 280;
   return Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(window.innerWidth * SIDEBAR_DEFAULT_FRACTION)));
 }
-// Each saved search has a display label and the search query to run.
-// Decoupling lets "Jackie's DateJust" look for just "DateJust" in listings.
-const SAVED_SEARCHES = [
-  { label: "Speedmaster",        query: "Speedmaster" },
-  { label: "Railmaster",         query: "Railmaster" },
-  { label: "Jackie's DateJust",  query: "DateJust"    },
+// Saved searches are now user-editable and persisted to localStorage. The
+// defaults below are seeded only on a fresh install (or after a user clears
+// their list back to zero). Each entry has a stable id, a display label,
+// and the query string used for matching.
+const SEARCHES_STORAGE_KEY = "dial_searches_v1";
+const DEFAULT_SEARCHES = [
+  { id: "seed-speedmaster",  label: "Speedmaster",        query: "Speedmaster" },
+  { id: "seed-railmaster",   label: "Railmaster",         query: "Railmaster" },
+  { id: "seed-jackies",      label: "Jackie's DateJust",  query: "DateJust"    },
 ];
+function loadSearches() {
+  try {
+    const raw = localStorage.getItem(SEARCHES_STORAGE_KEY);
+    if (!raw) return DEFAULT_SEARCHES;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : DEFAULT_SEARCHES;
+  } catch { return DEFAULT_SEARCHES; }
+}
+function saveSearches(list) {
+  try { localStorage.setItem(SEARCHES_STORAGE_KEY, JSON.stringify(list)); } catch {}
+}
+function newSearchId() { return "s-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6); }
 
 function fmt(price, currency) {
   return (CURRENCY_SYM[currency] || "$") + price.toLocaleString();
@@ -181,8 +196,6 @@ export default function Dial() {
   const [filterBrands, setFilterBrands] = useState([]);
   const [sort, setSort] = useState("date");
   const [search, setSearch] = useState("");
-  const [minPos, setMinPos] = useState(0);
-  const [maxPos, setMaxPos] = useState(100);
   const [minPriceText, setMinPriceText] = useState("");
   const [maxPriceText, setMaxPriceText] = useState("");
   const [newDays, setNewDays] = useState(0);
@@ -193,6 +206,12 @@ export default function Dial() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  // Saved searches are lifted to Dial-level state so they persist across the
+  // constant remounts of the SavedTab sub-component. Null editor = not
+  // editing; otherwise { id, label, query } — id can be 'new' for additions.
+  const [searches, setSearches] = useState(loadSearches);
+  const [searchEditor, setSearchEditor] = useState(null);
+  useEffect(() => { saveSearches(searches); }, [searches]);
   const observerRef = useRef(null);
   const BRANDS_SHOW = 8;
 
@@ -244,14 +263,14 @@ export default function Dial() {
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([b]) => b);
   }, [items]);
 
-  const priceMax = maxPos >= 100 ? GLOBAL_MAX : logToPrice(maxPos);
-  const maxLabel = maxPos >= 100 ? "No limit" : fmtUSD(logToPrice(maxPos));
-  const priceMin = minPos <= 0 ? 0 : logToPrice(minPos);
-  const minLabel = minPos <= 0 ? "$500" : fmtUSD(logToPrice(minPos));
-  const mobileMinPrice = minPriceText ? (parseInt(minPriceText.replace(/[^0-9]/g, "")) || 0) : 0;
-  const mobileMaxPrice = maxPriceText ? (parseInt(maxPriceText.replace(/[^0-9]/g, "")) || GLOBAL_MAX) : GLOBAL_MAX;
+  // Desktop and mobile both use the same text-input model for price filtering
+  // now (sliders kept breaking mid-drag because SidebarFilterPanel remounts
+  // on every parent render — a refactor-to-top-level is the real fix and
+  // lives on the open-issues list).
+  const minPrice = minPriceText ? (parseInt(minPriceText.replace(/[^0-9]/g, "")) || 0) : 0;
+  const maxPrice = maxPriceText ? (parseInt(maxPriceText.replace(/[^0-9]/g, "")) || GLOBAL_MAX) : GLOBAL_MAX;
 
-  useEffect(() => { setPage(1); }, [filterSources, filterBrands, search, sort, minPos, maxPos, newDays, minPriceText, maxPriceText]);
+  useEffect(() => { setPage(1); }, [filterSources, filterBrands, search, sort, newDays, minPriceText, maxPriceText]);
 
   const handleWish = useCallback((item) => {
     setWatchlist(prev => {
@@ -285,21 +304,14 @@ export default function Dial() {
       const q = search.toLowerCase();
       its = its.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q));
     }
-    if (isMobile) {
-      if (mobileMinPrice > 0) its = its.filter(i => (i.priceUSD || i.price) >= mobileMinPrice);
-      if (mobileMaxPrice < GLOBAL_MAX) its = its.filter(i => (i.priceUSD || i.price) <= mobileMaxPrice);
-    } else {
-      its = its.filter(i => {
-        const p = i.priceUSD || i.price;
-        return p >= priceMin && p <= priceMax;
-      });
-    }
+    if (minPrice > 0) its = its.filter(i => (i.priceUSD || i.price) >= minPrice);
+    if (maxPrice < GLOBAL_MAX) its = its.filter(i => (i.priceUSD || i.price) <= maxPrice);
     if (sort === "price-asc") its.sort((a, b) => (a.priceUSD || a.price) - (b.priceUSD || b.price));
     else if (sort === "price-desc") its.sort((a, b) => (b.priceUSD || b.price) - (a.priceUSD || a.price));
     else if (sort === "date-asc") its.sort((a, b) => (freshDate(a) < freshDate(b) ? -1 : 1));
     else its.sort((a, b) => (freshDate(a) < freshDate(b) ? 1 : -1));
     return its;
-  }, [items, filterSources, filterBrands, search, sort, priceMax, newDays, isMobile, mobileMinPrice, mobileMaxPrice]);
+  }, [items, filterSources, filterBrands, search, sort, minPrice, maxPrice, newDays]);
 
   const visible = useMemo(() => allFiltered.slice(0, page * PAGE_SIZE), [allFiltered, page]);
   const hasMore = visible.length < allFiltered.length;
@@ -327,18 +339,40 @@ export default function Dial() {
   }, [watchlist, wishSort]);
 
   const watchCount = Object.keys(watchlist).length;
-  const hasFilters = filterSources.length > 0 || filterBrands.length > 0 || search || minPos > 0 || maxPos < 100 || newDays > 0 || minPriceText || maxPriceText;
+  const hasFilters = filterSources.length > 0 || filterBrands.length > 0 || search || newDays > 0 || minPriceText || maxPriceText;
 
   const savedSearchStats = useMemo(() => {
     const forSale = items.filter(i => !i.sold);
-    return SAVED_SEARCHES.map(({ label, query }) => {
-      const q = query.toLowerCase();
-      const matches = forSale.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q));
+    return searches.map(({ id, label, query }) => {
+      const q = (query || "").toLowerCase();
+      const matches = q
+        ? forSale.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q))
+        : [];
       const newCount = matches.filter(i => daysAgo(freshDate(i)) <= 7).length;
-      return { label, query, count: matches.length, newCount };
+      return { id, label, query, count: matches.length, newCount };
     });
-  }, [items]);
-  const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setSearch(""); setMinPos(0); setMaxPos(100); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
+  }, [items, searches]);
+
+  const startAddSearch    = () => setSearchEditor({ id: "new", label: "", query: "" });
+  const startEditSearch   = (s) => setSearchEditor({ id: s.id, label: s.label, query: s.query });
+  const cancelSearchEdit  = () => setSearchEditor(null);
+  const commitSearchEdit  = () => {
+    if (!searchEditor) return;
+    const label = searchEditor.label.trim();
+    const query = searchEditor.query.trim();
+    if (!label || !query) { cancelSearchEdit(); return; }
+    if (searchEditor.id === "new") {
+      setSearches(prev => [...prev, { id: newSearchId(), label, query }]);
+    } else {
+      setSearches(prev => prev.map(s => s.id === searchEditor.id ? { ...s, label, query } : s));
+    }
+    cancelSearchEdit();
+  };
+  const deleteSearch = (id) => {
+    setSearches(prev => prev.filter(s => s.id !== id));
+    if (searchEditor && searchEditor.id === id) cancelSearchEdit();
+  };
+  const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setSearch(""); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
 
   const visibleBrands = brandsExpanded ? BRANDS : BRANDS.slice(0, BRANDS_SHOW);
   const NEW_OPTS = [{ label: "Today", days: 1 }, { label: "3 days", days: 3 }, { label: "This week", days: 7 }];
@@ -359,37 +393,34 @@ export default function Dial() {
   const aboutModal = aboutOpen && (
     <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div onClick={() => setAboutOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} />
-      <div style={{ position: "relative", background: "var(--bg)", color: "var(--text1)", borderRadius: 16, maxWidth: 520, width: "100%", maxHeight: "86vh", overflowY: "auto", padding: "22px 22px 20px", boxShadow: "0 10px 40px rgba(0,0,0,0.3)" }}>
-        <button onClick={() => setAboutOpen(false)} aria-label="Close" style={{ position: "absolute", top: 10, right: 10, width: 32, height: 32, borderRadius: "50%", border: "none", background: "var(--surface)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <div style={{ position: "relative", background: "var(--bg)", color: "var(--text1)", borderRadius: 14, maxWidth: 460, width: "100%", padding: "18px 20px 16px", boxShadow: "0 10px 40px rgba(0,0,0,0.3)" }}>
+        <button onClick={() => setAboutOpen(false)} aria-label="Close" style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", border: "none", background: "var(--surface)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
 
-        <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.5px", marginBottom: 4 }}>Dial</div>
-        <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 18 }}>A personal vintage watch aggregator</div>
+        <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.5px", marginBottom: 2 }}>Dial</div>
+        <div style={{ fontSize: 11, color: "var(--text2)", marginBottom: 12 }}>A personal vintage watch aggregator</div>
 
-        <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--text1)", marginBottom: 12 }}>
-          Dial pulls active inventory from a handful of independent dealers I follow and puts everything in one feed, sorted by when I first saw each listing. It's how I keep up to speed every morning without bouncing between ten dealer sites.
+        <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--text1)", marginBottom: 8 }}>
+          Pulls active inventory from a handful of independent dealers I follow and puts everything in one feed, sorted by when I first saw each listing. A way to keep up to speed without bouncing between ten dealer sites.
+        </p>
+        <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--text1)", marginBottom: 8 }}>
+          Passion project, not a marketplace. No ads, no commissions, no affiliate links. Every listing links straight back to the dealer.
+        </p>
+        <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--text1)", marginBottom: 12 }}>
+          Wanted something more focused than Chrono24 and more consolidated than checking each dealer individually — one feed, just the sellers I trust.
         </p>
 
-        <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--text1)", marginBottom: 12 }}>
-          It's a passion project, not a marketplace. There are no ads, no commissions, no affiliate links. Every listing links straight back to the dealer — Dial never touches the transaction.
-        </p>
-
-        <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--text1)", marginBottom: 16 }}>
-          I wanted something more focused than Chrono24 and more consolidated than checking each dealer individually — a single feed, just the sellers I trust, in whatever order I choose. Built that for myself, left it public in case anyone else finds it useful.
-        </p>
-
-        <div style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Sources</div>
-        <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6, marginBottom: 18 }}>
+        <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 4 }}>Sources</div>
+        <div style={{ fontSize: 11, color: "var(--text2)", lineHeight: 1.5, marginBottom: 12 }}>
           Wind Vintage · Tropical Watch · Menta Watches · Collectors Corner NY · Falco Watches · Grey & Patina · Oliver & Clarke · Craft & Tailored · Watch Brothers London · MVV Watches
         </div>
 
-        <div style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Built with</div>
-        <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6, marginBottom: 18 }}>
-          Python scrapers on GitHub Actions, a React frontend on Vercel, and <a href="https://claude.com/claude-code" target="_blank" rel="noopener noreferrer" style={{ color: "#185FA5" }}>Claude</a> as co-author throughout.
+        <div style={{ fontSize: 11, color: "var(--text2)", lineHeight: 1.5, marginBottom: 10 }}>
+          Built with Python scrapers on GitHub Actions, React on Vercel, and <a href="https://claude.com/claude-code" target="_blank" rel="noopener noreferrer" style={{ color: "#185FA5" }}>Claude</a> as co-author.
         </div>
 
-        <a href="https://github.com/markatmutter-cloud/Dial" target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", fontSize: 13, color: "#185FA5", textDecoration: "none" }}>
+        <a href="https://github.com/markatmutter-cloud/Dial" target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", fontSize: 11, color: "#185FA5", textDecoration: "none" }}>
           View source on GitHub →
         </a>
       </div>
@@ -429,67 +460,90 @@ export default function Dial() {
       </div>
       <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
       <div style={{ padding: "12px 16px 14px" }}>
-        <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Price</div>
-        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 8 }}>
-          <span style={{ color: "var(--text1)", fontWeight: 500 }}>{minLabel}</span>
-          <span style={{ margin: "0 6px", color: "var(--text3)" }}>–</span>
-          <span style={{ color: "var(--text1)", fontWeight: 500 }}>{maxLabel}</span>
-        </div>
-        {/* Two independent range sliders; each clamps to stay on its side of
-            the other so min can never exceed max. */}
-        <input type="range" min={0} max={100} step={1} value={minPos}
-          onChange={e => setMinPos(Math.min(Number(e.target.value), maxPos))}
-          style={{ width: "100%", accentColor: "var(--text1)", marginBottom: 4 }} />
-        <input type="range" min={0} max={100} step={1} value={maxPos}
-          onChange={e => setMaxPos(Math.max(Number(e.target.value), minPos))}
-          style={{ width: "100%", accentColor: "var(--text1)", marginBottom: 6 }} />
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--text3)" }}>
-          <span>Min</span><span>Max</span>
+        <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Price (USD)</div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <input value={minPriceText} onChange={e => setMinPriceText(e.target.value)} placeholder="Min"
+            inputMode="numeric"
+            style={{ ...inp, fontSize: 12, padding: "6px 8px", flex: 1 }} />
+          <span style={{ fontSize: 11, color: "var(--text3)" }}>–</span>
+          <input value={maxPriceText} onChange={e => setMaxPriceText(e.target.value)} placeholder="Max"
+            inputMode="numeric"
+            style={{ ...inp, fontSize: 12, padding: "6px 8px", flex: 1 }} />
         </div>
       </div>
     </div>
   );
 
-  // ── SAVED TAB ─────────────────────────────────────────────────────────────
+  // ── SEARCHES TAB ──────────────────────────────────────────────────────────
+  const runSearch = (s) => { setSearch(s.query); setSort("date"); setTab("listings"); setPage(1); };
+
+  const EditorRow = ({ editor }) => (
+    <div style={{ border: "0.5px solid var(--border)", borderRadius: 12, background: "var(--card-bg)", padding: 12 }}>
+      <input autoFocus value={editor.label}
+        onChange={e => setSearchEditor({ ...editor, label: e.target.value })}
+        placeholder="Label (e.g. Jackie's DateJust)"
+        style={{ ...inp, marginBottom: 8 }} />
+      <input value={editor.query}
+        onChange={e => setSearchEditor({ ...editor, query: e.target.value })}
+        placeholder="Search term (e.g. DateJust)"
+        style={{ ...inp, marginBottom: 10 }} />
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={commitSearchEdit} style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "var(--text1)", color: "var(--bg)", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>Save</button>
+        <button onClick={cancelSearchEdit} style={{ padding: "8px 14px", borderRadius: 8, border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+        {editor.id !== "new" && (
+          <button onClick={() => deleteSearch(editor.id)} style={{ marginLeft: "auto", padding: "8px 14px", borderRadius: 8, border: "0.5px solid var(--border)", background: "transparent", color: "#c43", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Delete</button>
+        )}
+      </div>
+    </div>
+  );
+
   const SavedTab = () => (
     <div style={{ paddingTop: 4 }}>
-      <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 16 }}>
-        Tap a search to filter the feed
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div style={{ fontSize: 12, color: "var(--text3)" }}>Tap to run · pencil to edit</div>
+        {!searchEditor && (
+          <button onClick={startAddSearch} style={{ fontSize: 13, color: "#185FA5", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0 }}>+ Add search</button>
+        )}
       </div>
+
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {savedSearchStats.map(({ label, query, count, newCount }) => (
-          <button key={label} onClick={() => {
-            setSearch(query);
-            setSort("date");
-            setTab("listings");
-            setPage(1);
-          }} style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "14px 16px", borderRadius: 12,
-            border: "0.5px solid var(--border)",
-            background: "var(--card-bg)", cursor: "pointer",
-            fontFamily: "inherit", textAlign: "left",
-            width: "100%",
-          }}>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 3 }}>{label}</div>
-              <div style={{ fontSize: 12, color: "var(--text2)" }}>{count} for sale</div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-              {newCount > 0 && (
-                <div style={{ fontSize: 11, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 8px" }}>
-                  {newCount} new
+        {savedSearchStats.map((s) => {
+          const isEditing = searchEditor && searchEditor.id === s.id;
+          if (isEditing) return <EditorRow key={s.id} editor={searchEditor} />;
+          return (
+            <div key={s.id} style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 12, background: "var(--card-bg)", overflow: "hidden" }}>
+              <button onClick={() => runSearch(s)} style={{
+                flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "14px 14px", border: "none", background: "transparent",
+                cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+              }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 3 }}>{s.label}</div>
+                  <div style={{ fontSize: 12, color: "var(--text2)" }}>{s.count} for sale{s.query && s.query !== s.label ? ` · "${s.query}"` : ""}</div>
                 </div>
-              )}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                  {s.newCount > 0 && (
+                    <div style={{ fontSize: 11, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 8px" }}>
+                      {s.newCount} new
+                    </div>
+                  )}
+                </div>
+              </button>
+              <button onClick={() => startEditSearch(s)} aria-label="Edit" style={{ width: 44, border: "none", borderLeft: "0.5px solid var(--border)", background: "transparent", color: "var(--text3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </button>
             </div>
-          </button>
-        ))}
+          );
+        })}
+        {searchEditor && searchEditor.id === "new" && <EditorRow editor={searchEditor} />}
       </div>
-      <div style={{ marginTop: 24, padding: "14px 16px", borderRadius: 12, border: "0.5px dashed var(--border)", textAlign: "center" }}>
-        <div style={{ fontSize: 13, color: "var(--text3)" }}>More saved searches coming</div>
-        <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 3 }}>Edit SAVED_SEARCHES in App.js to add more</div>
-      </div>
+
+      {searches.length === 0 && !searchEditor && (
+        <div style={{ marginTop: 24, padding: "14px 16px", borderRadius: 12, border: "0.5px dashed var(--border)", textAlign: "center" }}>
+          <div style={{ fontSize: 13, color: "var(--text3)" }}>No saved searches yet</div>
+          <button onClick={startAddSearch} style={{ marginTop: 8, fontSize: 13, color: "#185FA5", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>+ Add your first</button>
+        </div>
+      )}
     </div>
   );
 
@@ -627,7 +681,7 @@ export default function Dial() {
           {tab === "listings" ? <ListingsGrid /> : tab === "saved" ? <SavedTab /> : <WatchlistGrid />}
         </div>
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "env(safe-area-inset-bottom, 8px)" }}>
-          {[["listings", "Feed"], ["saved", "Saved"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+          {[["listings", "Feed"], ["saved", "Searches"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "10px 0 12px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400 }}>
               {tab === key && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5", margin: "0 auto 4px" }} />}
               {label}
@@ -738,7 +792,7 @@ export default function Dial() {
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit" }} />
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-            {[["listings", "Feed"], ["saved", "Saved"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+            {[["listings", "Feed"], ["saved", "Searches"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
               <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
                 {label}
               </button>
