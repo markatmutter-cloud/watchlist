@@ -103,6 +103,10 @@ jobs:
         continue-on-error: true
         run: python phillips_auctions_scraper.py
 
+      - name: Run Bonhams auctions scraper
+        continue-on-error: true
+        run: python bonhams_auctions_scraper.py
+
       - name: Move CSVs to data folder
         run: |
           mkdir -p data
@@ -126,6 +130,7 @@ jobs:
           [ -f antiquorum_auctions_listings.csv ]   && mv antiquorum_auctions_listings.csv   data/antiquorum_auctions.csv   || echo "antiquorum auctions missing"
           [ -f monacolegend_auctions_listings.csv ] && mv monacolegend_auctions_listings.csv data/monacolegend_auctions.csv || echo "monacolegend auctions missing"
           [ -f phillips_auctions_listings.csv ]   && mv phillips_auctions_listings.csv   data/phillips_auctions.csv   || echo "phillips auctions missing"
+          [ -f bonhams_auctions_listings.csv ]    && mv bonhams_auctions_listings.csv    data/bonhams_auctions.csv    || echo "bonhams auctions missing"
 
       - name: Merge into listings.json
         run: python merge.py
