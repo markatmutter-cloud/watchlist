@@ -112,7 +112,7 @@ function Card({ item, wished, onWish, compact, onHide, isHidden }) {
   const showUSD = item.currency && item.currency !== "USD" && item.priceUSD;
   const priceDropped = (item.priceChange || 0) < 0;
   return (
-    <div style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative" }}>
+    <div style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative", minWidth: 0, overflow: "hidden" }}>
       <a href={item.url} target="_blank" rel="noopener noreferrer"
         style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
         <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
