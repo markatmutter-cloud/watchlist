@@ -799,28 +799,25 @@ export default function Dial() {
   if (isMobile) {
     return (
       <div style={baseStyle}>
-        {/* Sticky top stack: title row + search + sort pills. Stays pinned
-            as the feed scrolls so filters are always one tap away. */}
+        {/* Sticky top stack: ONE search row (with filter + dark buttons
+            flanking it) + sort/clear pills row. Dropped the separate title
+            row — bottom tab bar already tells you which section you're in,
+            and the title took a full row of vertical space for no signal. */}
         <div style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--bg)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px 8px", borderBottom: "0.5px solid var(--border)" }}>
-          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Watchlist</span>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ fontSize: 11, color: "var(--text3)" }}>{allFiltered.length}</span>
-            <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} style={{ width: 32, height: 32, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <FilterIcon />
-            </button>
-            <button onClick={() => setDarkOverride(dark ? false : true)} style={{ width: 32, height: 32, borderRadius: "50%", border: "0.5px solid var(--border)", background: "var(--surface)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-            </button>
-          </div>
-        </div>
-        <div style={{ padding: "8px 14px", borderBottom: "0.5px solid var(--border)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "8px 12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px 8px", borderBottom: "0.5px solid var(--border)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "8px 12px", flex: 1, minWidth: 0 }}>
             <SearchIcon />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 14, color: "var(--text1)", outline: "none", fontFamily: "inherit" }} />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 14, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
           </div>
+          <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} aria-label="Filters" style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <FilterIcon />
+          </button>
+          <button onClick={() => setDarkOverride(dark ? false : true)} aria-label="Toggle dark mode" style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "0.5px solid var(--border)", background: "var(--surface)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          </button>
         </div>
-        <div style={{ display: "flex", gap: 6, padding: "8px 14px", borderBottom: "0.5px solid var(--border)", position: "relative" }}>
+        <div style={{ display: "flex", gap: 6, padding: "8px 14px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center" }}>
+          <span style={{ fontSize: 11, color: "var(--text3)", marginRight: 2 }}>{allFiltered.length}</span>
           {/* Date sort pill */}
           {(() => {
             const isDateSort = sort === "date" || sort === "date-asc";
