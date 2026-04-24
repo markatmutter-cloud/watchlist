@@ -1,10 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { useAuth, isAuthConfigured } from "./supabase";
+import { useAuth, useWatchlist, useHidden, importLocalData, isAuthConfigured } from "./supabase";
 
 const LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/listings.json";
 const AUCTIONS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/auctions.json";
 const PAGE_SIZE = 48;
-const STORAGE_KEY = "dial_watchlist_v2";
+// Legacy localStorage keys — kept only for the one-shot import on first
+// sign-in (see importLocalData + the banner in the Watchlist tab). Active
+// reads/writes now go through Supabase via the hooks in ./supabase.js.
+const LEGACY_WATCHLIST_KEY = "dial_watchlist_v2";
+const LEGACY_HIDDEN_KEY    = "dial_hidden_v1";
 const GLOBAL_MAX = 600000;
 const CURRENCY_SYM = { USD: "$", GBP: "£", EUR: "€", CHF: "CHF " };
 const SIDEBAR_MIN = 160;
@@ -28,16 +32,6 @@ const SAVED_SEARCHES = [
 // Reference chips are aggregated from the current feed (same pattern as
 // Brand chips) — see REFS useMemo in the Dial component.
 
-// Hidden listings are per-device for now (localStorage). When the app gains
-// accounts (Supabase + Google auth) this will move server-side so hiding a
-// watch on one device reflects everywhere.
-const HIDDEN_STORAGE_KEY = "dial_hidden_v1";
-function loadHidden() {
-  try { return JSON.parse(localStorage.getItem(HIDDEN_STORAGE_KEY) || "{}"); } catch { return {}; }
-}
-function saveHidden(h) {
-  try { localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(h)); } catch {}
-}
 
 function fmt(price, currency) {
   return (CURRENCY_SYM[currency] || "$") + price.toLocaleString();
@@ -54,12 +48,6 @@ function logToPrice(pos) {
   if (pos >= 100) return GLOBAL_MAX;
   const minL = Math.log(500), maxL = Math.log(GLOBAL_MAX);
   return Math.round(Math.exp(minL + (pos / 100) * (maxL - minL)));
-}
-function loadWL() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
-}
-function saveWL(wl) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(wl)); } catch {}
 }
 function useWidth() {
   const [w, setW] = useState(window.innerWidth);
@@ -233,10 +221,28 @@ export default function Dial() {
   const [maxPriceText, setMaxPriceText] = useState("");
   const [newDays, setNewDays] = useState(0);
   const [page, setPage] = useState(1);
-  const [watchlist, setWatchlist] = useState(loadWL);
   const [wishSort, setWishSort] = useState("saved");
   const [filterRefs, setFilterRefs] = useState([]);
-  const [hidden, setHidden] = useState(loadHidden);
+  // Watchlist + hidden now live server-side (Supabase) per authenticated
+  // user. When signed out, these hooks return empty objects and their
+  // toggles no-op — we wrap the toggles below to kick off sign-in instead.
+  const { items: watchlist, toggle: toggleWatchlist } = useWatchlist(user);
+  const { items: hidden,   toggle: toggleHidden    } = useHidden(user);
+  // If there's leftover localStorage data from the pre-Supabase era, we
+  // offer to import it after sign-in. Read once at mount so we can tell
+  // the user *how many* items we'd import ("N saved, M hidden").
+  const [legacyLocal] = useState(() => {
+    try {
+      return {
+        watchlist: JSON.parse(localStorage.getItem(LEGACY_WATCHLIST_KEY) || "{}"),
+        hidden:    JSON.parse(localStorage.getItem(LEGACY_HIDDEN_KEY) || "{}"),
+      };
+    } catch { return { watchlist: {}, hidden: {} }; }
+  });
+  const [importState, setImportState] = useState(() => {
+    const any = Object.keys(legacyLocal.watchlist).length + Object.keys(legacyLocal.hidden).length;
+    return any ? "available" : "none";  // available → done (after success) → none
+  });
   const [brandsExpanded, setBrandsExpanded] = useState(false);
   const [refsExpanded, setRefsExpanded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -334,28 +340,26 @@ export default function Dial() {
 
   useEffect(() => { setPage(1); }, [filterSources, filterBrands, filterRefs, search, sort, newDays, minPriceText, maxPriceText]);
 
+  // Sign-in gate for save actions. Tapping the heart or X while signed
+  // out triggers the Google OAuth redirect instead of silently doing
+  // nothing. If auth isn't configured at all (dev environment missing
+  // env vars), we just no-op — no way to sign in anyway.
+  const requireSignIn = useCallback(() => {
+    if (isAuthConfigured) signInWithGoogle();
+  }, [signInWithGoogle]);
+
   const toggleHide = useCallback((item) => {
-    setHidden(prev => {
-      const next = { ...prev };
-      if (next[item.id]) delete next[item.id];
-      else next[item.id] = new Date().toISOString();
-      saveHidden(next);
-      return next;
-    });
-  }, []);
+    if (!user) { requireSignIn(); return; }
+    toggleHidden(item);
+  }, [user, toggleHidden, requireSignIn]);
 
   const toggleFilterRef = (ref) =>
     setFilterRefs(p => p.includes(ref) ? p.filter(x => x !== ref) : [...p, ref]);
 
   const handleWish = useCallback((item) => {
-    setWatchlist(prev => {
-      const next = { ...prev };
-      if (next[item.id]) { delete next[item.id]; }
-      else { next[item.id] = { ...item, savedAt: new Date().toISOString(), savedPrice: item.price, savedCurrency: item.currency || "USD", savedPriceUSD: item.priceUSD }; }
-      saveWL(next);
-      return next;
-    });
-  }, []);
+    if (!user) { requireSignIn(); return; }
+    toggleWatchlist(item);
+  }, [user, toggleWatchlist, requireSignIn]);
 
   const toggleSource = s => setFilterSources(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
   const toggleBrand = b => setFilterBrands(p => p.includes(b) ? p.filter(x => x !== b) : [...p, b]);
@@ -836,8 +840,58 @@ export default function Dial() {
   //   2. Hearted listings with their saved price
   // Inline JSX const (not a function component) to avoid remount-on-render
   // bugs the way the other tabs do.
+  // Import banner for legacy localStorage data. Fires importLocalData(),
+  // which upserts into Supabase; on success we clear the browser keys so
+  // the banner goes away and we don't nag on future visits.
+  const runImport = async () => {
+    if (!user) return;
+    setImportState("working");
+    const res = await importLocalData(user, legacyLocal);
+    if (res.error) {
+      setImportState("available");
+      alert("Import failed: " + res.error);
+      return;
+    }
+    try {
+      localStorage.removeItem(LEGACY_WATCHLIST_KEY);
+      localStorage.removeItem(LEGACY_HIDDEN_KEY);
+    } catch {}
+    setImportState("done");
+    // Reload the page so the hooks re-fetch from Supabase with the imported
+    // rows in place. Simpler than plumbing an explicit "refresh" into the
+    // hooks for this one-shot operation.
+    window.location.reload();
+  };
+  const legacyCounts = {
+    watchlist: Object.keys(legacyLocal.watchlist).length,
+    hidden:    Object.keys(legacyLocal.hidden).length,
+  };
+  const importBannerJSX = (user && importState === "available" &&
+                          (legacyCounts.watchlist + legacyCounts.hidden > 0)) ? (
+    <div style={{
+      border: "0.5px solid #185FA5", borderRadius: 12,
+      background: "var(--surface)", padding: 14, marginBottom: 20,
+    }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text1)", marginBottom: 4 }}>
+        Import from this browser
+      </div>
+      <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, marginBottom: 10 }}>
+        We found {legacyCounts.watchlist} saved {legacyCounts.watchlist === 1 ? "watch" : "watches"}
+        {legacyCounts.hidden ? ` and ${legacyCounts.hidden} hidden listing${legacyCounts.hidden === 1 ? "" : "s"}` : ""} in
+        this browser's local storage (from before accounts existed). Move them to your account
+        so you can see them on every device.
+      </div>
+      <button onClick={runImport} style={{
+        padding: "7px 14px", borderRadius: 8, border: "none",
+        background: "#185FA5", color: "#fff", cursor: "pointer",
+        fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+      }}>Import now</button>
+    </div>
+  ) : null;
+
   const watchlistTabJSX = (
     <div>
+      {importBannerJSX}
       {savedSearchStats.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)", marginBottom: 10 }}>Saved searches</div>
