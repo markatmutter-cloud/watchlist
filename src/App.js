@@ -522,15 +522,6 @@ export default function Dial() {
 
   const sidebarFilterPanelJSX = (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      {/* Search lives at the top of the sidebar now (moved out of the
-          main-content header for a tighter top bar). */}
-      <div style={{ padding: "12px 16px 10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 8, padding: "7px 10px" }}>
-          <SearchIcon />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
-        </div>
-      </div>
-      <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
       <div style={{ padding: "12px 16px 8px" }}>
         <div style={sectionHeadingStyle}>Sort</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -855,8 +846,11 @@ export default function Dial() {
             const active = sort === "price-asc" || sort === "price-desc";
             return (
               <button onClick={() => {
+                // Tapping Price should stay in price mode — toggles between
+                // asc and desc. Previous version fell back to date on the
+                // third tap, which felt like the button was broken.
                 if (sort === "price-asc") setSort("price-desc");
-                else if (sort === "price-desc") setSort("date");
+                else if (sort === "price-desc") setSort("price-asc");
                 else setSort("price-asc");
               }} style={{
                 fontSize: 13, padding: "7px 14px", borderRadius: 20, cursor: "pointer",
@@ -881,6 +875,19 @@ export default function Dial() {
               }}>{label} {sourcePickerOpen ? "↑" : "↓"}</button>
             );
           })()}
+          {/* Persistent reset button — sits next to the sort pills so users
+              don't have to open the filter drawer to clear everything. Only
+              rendered when there's actually something to clear. */}
+          {hasFilters && (
+            <button onClick={resetFilters} style={{
+              marginLeft: "auto",
+              fontSize: 13, padding: "7px 12px", borderRadius: 20, cursor: "pointer",
+              fontFamily: "inherit", whiteSpace: "nowrap",
+              border: "none", outline: "none",
+              background: "transparent", color: "#185FA5",
+              boxShadow: "inset 0 0 0 0.5px #185FA5",
+            }}>× Clear</button>
+          )}
         </div>
         {/* Source picker dropdown */}
         {sourcePickerOpen && (
@@ -1008,13 +1015,21 @@ export default function Dial() {
       </div>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-          {/* Search moved into the sidebar; this row is just tabs + count. */}
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flex: 1 }}>
+          {/* Header is 3 regions: tabs (left) | search (centered, capped
+              width) | count (right). The flex spacers on either side of
+              search keep it centered even as tab-count widths shift. */}
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
             {[["listings", "Available"], ["auctions", `Auctions${auctions.filter(a => a.status === "live").length > 0 ? ` · ${auctions.filter(a => a.status === "live").length}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
               <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 13, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
                 {label}
               </button>
             ))}
+          </div>
+          <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 8, padding: "7px 12px", width: "100%", maxWidth: 420 }}>
+              <SearchIcon />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
+            </div>
           </div>
           <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>{allFiltered.length}</span>
         </div>
