@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 
 const LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/listings.json";
+const AUCTIONS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/auctions.json";
 const PAGE_SIZE = 48;
 const STORAGE_KEY = "dial_watchlist_v2";
 const GLOBAL_MAX = 600000;
@@ -189,6 +190,7 @@ export default function Dial() {
   const compact = cols >= 4;
 
   const [items, setItems] = useState([]);
+  const [auctions, setAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [tab, setTab] = useState("listings");
@@ -243,6 +245,12 @@ export default function Dial() {
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => { setItems(d); setLoading(false); })
       .catch(() => { setLoadError(true); setLoading(false); });
+    // Auctions load in parallel. Failing silently is fine — the Auctions tab
+    // just won't have data, which we handle with an empty-state message.
+    fetch(AUCTIONS_URL)
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setAuctions(Array.isArray(d) ? d : []))
+      .catch(() => {});
   }, []);
 
   const c = dark ? {
@@ -578,6 +586,71 @@ export default function Dial() {
     )
   );
 
+  const auctionsTabJSX = (
+    auctions.length === 0 ? (
+      <div style={{ padding: "60px 0", textAlign: "center" }}>
+        <div style={{ fontSize: 28, marginBottom: 10 }}>🔨</div>
+        <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>No auctions on the calendar yet</div>
+        <div style={{ fontSize: 12, color: "var(--text2)", maxWidth: 340, margin: "0 auto", lineHeight: 1.5 }}>
+          Currently pulling from Antiquorum and Monaco Legend. Phillips, Christie's, Sotheby's, Bonhams, Loupe This and Watches of Knightsbridge are on the roadmap.
+        </div>
+      </div>
+    ) : (
+      <div style={{ paddingTop: 4 }}>
+        <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 14 }}>
+          {auctions.filter(a => a.status === "live").length > 0
+            ? `${auctions.filter(a => a.status === "live").length} live now · ${auctions.filter(a => a.status === "upcoming").length} upcoming`
+            : `${auctions.length} upcoming`}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {auctions.map(a => {
+            const isLive = a.status === "live";
+            // "New catalog" chip fires for any auction whose catalog URL
+            // first appeared within the last 7 days — matches the NEW badge
+            // on listings and signals "this is newly actionable".
+            const catalogAgeDays = a.catalogLiveAt
+              ? Math.floor((Date.now() - new Date(a.catalogLiveAt).getTime()) / 86400000)
+              : null;
+            const catalogJustOpened = catalogAgeDays !== null && catalogAgeDays <= 7;
+            return (
+              <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer"
+                 style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+                         padding: "14px 16px", borderRadius: 12,
+                         border: "0.5px solid var(--border)", background: "var(--card-bg)",
+                         textDecoration: "none", color: "inherit", fontFamily: "inherit" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
+                    {isLive && (
+                      <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#c43", borderRadius: 4, padding: "1px 6px", letterSpacing: "0.05em" }}>LIVE</span>
+                    )}
+                    {a.hasCatalog && (
+                      <span style={{ fontSize: 10, fontWeight: 500, color: catalogJustOpened ? "#fff" : "#185FA5", background: catalogJustOpened ? "#185FA5" : "transparent", border: catalogJustOpened ? "none" : "0.5px solid #185FA5", borderRadius: 4, padding: "1px 6px" }}>
+                        {catalogJustOpened ? "NEW CATALOG" : "Catalog"}
+                      </span>
+                    )}
+                    <span style={{ fontSize: 11, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{a.house}</span>
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {a.title}
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--text2)" }}>
+                    {a.dateLabel || a.dateStart || "Date TBD"}{a.location ? ` · ${a.location}` : ""}
+                  </div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, marginLeft: 10 }}><path d="M9 18l6-6-6-6"/></svg>
+              </a>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: 24, padding: "14px 16px", borderRadius: 12, border: "0.5px dashed var(--border)" }}>
+          <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>
+            <strong style={{ color: "var(--text1)" }}>Coming in future updates:</strong> Phillips, Christie's, Sotheby's, Bonhams, Watches of Knightsbridge auctions, Loupe This. Lot-level catalogue browsing and watched-lot price tracking are also on the list.
+          </div>
+        </div>
+      </div>
+    )
+  );
+
   const WatchlistGrid = () => (
     watchCount === 0 ? (
       <div style={{ padding: "60px 0", textAlign: "center" }}>
@@ -697,10 +770,10 @@ export default function Dial() {
           </div>
         )}
         <div style={{ padding: "12px 14px 80px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "saved" ? savedTabJSX : tab === "archive" ? archiveGridJSX : <WatchlistGrid />}
+          {tab === "listings" ? <ListingsGrid /> : tab === "saved" ? savedTabJSX : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : <WatchlistGrid />}
         </div>
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "env(safe-area-inset-bottom, 8px)" }}>
-          {[["listings", "Feed"], ["saved", `Searches${searchesNewTotal > 0 ? ` · ${searchesNewTotal}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+          {[["listings", "Feed"], ["saved", `Searches${searchesNewTotal > 0 ? ` · ${searchesNewTotal}` : ""}`], ["auctions", `Auctions${auctions.filter(a => a.status === "live").length > 0 ? ` · ${auctions.filter(a => a.status === "live").length}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "10px 0 12px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400 }}>
               {tab === key && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5", margin: "0 auto 4px" }} />}
               {label}
@@ -810,7 +883,7 @@ export default function Dial() {
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit" }} />
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-            {[["listings", "Feed"], ["saved", `Searches${searchesNewTotal > 0 ? ` · ${searchesNewTotal}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+            {[["listings", "Feed"], ["saved", `Searches${searchesNewTotal > 0 ? ` · ${searchesNewTotal}` : ""}`], ["auctions", `Auctions${auctions.filter(a => a.status === "live").length > 0 ? ` · ${auctions.filter(a => a.status === "live").length}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
               <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
                 {label}
               </button>
@@ -819,7 +892,7 @@ export default function Dial() {
           </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "saved" ? savedTabJSX : tab === "archive" ? archiveGridJSX : <WatchlistGrid />}
+          {tab === "listings" ? <ListingsGrid /> : tab === "saved" ? savedTabJSX : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : <WatchlistGrid />}
         </div>
       </div>
     </div>

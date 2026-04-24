@@ -43,6 +43,8 @@ FX = {'GBP': 1.27, 'EUR': 1.08, 'CHF': 1.13, 'JPY': 0.0067, 'CNY': 0.14, 'USD': 
 
 STATE_PATH = 'public/state.json'
 LISTINGS_PATH = 'public/listings.json'
+AUCTIONS_PATH = 'public/auctions.json'
+AUCTIONS_STATE_PATH = 'public/auctions_state.json'
 TODAY = str(date.today())
 
 
@@ -308,6 +310,133 @@ def main():
         json.dump(enriched, f, separators=(',', ':'))
     save_state(state)
     print(f"Written {LISTINGS_PATH} and {STATE_PATH}")
+
+    # Auctions are a separate, much smaller data pipeline. Kept out of the
+    # listings state machine since they have very different semantics
+    # (status is derived from dates, no price history, no NEW badge).
+    process_auctions()
+
+
+# ── AUCTIONS ──────────────────────────────────────────────────────────────────
+
+def load_json(path, default):
+    if not os.path.exists(path):
+        return default
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def auction_id(house, date_start, title):
+    """Stable hash so the same auction keeps the same key across runs."""
+    key = f"{house}|{date_start}|{title}".lower()
+    return hashlib.sha1(key.encode('utf-8')).hexdigest()[:12]
+
+
+def auction_status(date_start, date_end, today=TODAY):
+    if not date_start:
+        return 'upcoming'  # unknown date, assume not yet
+    end = date_end or date_start
+    if today > end:
+        return 'past'
+    if today >= date_start:
+        return 'live'
+    return 'upcoming'
+
+
+def process_auctions():
+    """Read every data/*_auctions.csv, enrich with firstSeen + catalogLiveAt
+    from auctions_state.json, emit public/auctions.json. Past auctions are
+    dropped from the emitted feed (we don't keep a sold-auction archive yet)
+    but their state entries are preserved for future use.
+    """
+    import glob
+    auction_csvs = sorted(glob.glob('data/*_auctions.csv'))
+    if not auction_csvs:
+        print("\nNo auction CSVs found, skipping auctions.json.")
+        return
+
+    state = load_json(AUCTIONS_STATE_PATH, {})
+    state_before = len(state)
+    auctions = []
+
+    for path in auction_csvs:
+        with open(path, encoding='utf-8') as f:
+            rows = list(csv.DictReader(f))
+        print(f"  auctions: {path}: {len(rows)} row(s)")
+        for r in rows:
+            house      = clean(r.get('house', ''))
+            title      = clean(r.get('title', ''))
+            location   = clean(r.get('location', ''))
+            date_start = r.get('date_start', '')
+            date_end   = r.get('date_end', '')
+            date_label = r.get('date_label', '')
+            url        = r.get('url', '')
+
+            if not house or not title:
+                continue
+
+            aid = auction_id(house, date_start or title, title)
+            entry = state.get(aid) or {}
+
+            if not entry.get('firstSeen'):
+                entry['firstSeen'] = TODAY
+            entry['lastSeen'] = TODAY
+
+            # Catalog-live signal: a per-auction URL that isn't just the
+            # generic catalog portal. Record the first day we saw a real
+            # catalog URL so the UI can show a "new" chip for ~7 days.
+            generic_catalog = url.rstrip('/').endswith(('antiquorum.swiss/catalog', 'catalog.antiquorum.swiss'))
+            has_real_catalog = bool(url) and not generic_catalog
+            if has_real_catalog and not entry.get('catalogLiveAt'):
+                entry['catalogLiveAt'] = TODAY
+
+            entry['lastUrl']   = url
+            entry['lastTitle'] = title
+            state[aid] = entry
+
+            # Prefer the scraper's explicit status hint when present (e.g.
+            # Monaco Legend's "Bidding Open" = live even before the auction's
+            # stated start date — pre-bidding phase). Fall back to date-based
+            # derivation for scrapers that don't provide one.
+            hint = (r.get('status_hint') or '').strip().lower()
+            if hint in ('live', 'upcoming', 'past'):
+                status = hint
+            else:
+                status = auction_status(date_start, date_end)
+            if status == 'past':
+                continue  # drop from emitted feed
+
+            auctions.append({
+                'id':            aid,
+                'house':         house,
+                'title':         title,
+                'location':      location,
+                'dateStart':     date_start,
+                'dateEnd':       date_end or date_start,
+                'dateLabel':     date_label,
+                'url':           url,
+                'hasCatalog':    has_real_catalog,
+                'catalogLiveAt': entry.get('catalogLiveAt'),
+                'status':        status,
+                'firstSeen':     entry['firstSeen'],
+            })
+
+    # Sort: live first, then upcoming by start date
+    status_rank = {'live': 0, 'upcoming': 1, 'past': 2}
+    auctions.sort(key=lambda a: (status_rank.get(a['status'], 9), a['dateStart'] or '9999-99-99'))
+
+    with open(AUCTIONS_PATH, 'w') as f:
+        json.dump(auctions, f, separators=(',', ':'))
+    with open(AUCTIONS_STATE_PATH, 'w') as f:
+        json.dump(state, f, separators=(',', ':'), sort_keys=True)
+
+    live_count = sum(1 for a in auctions if a['status'] == 'live')
+    print(f"\nAuctions: {len(auctions)} upcoming/live ({live_count} live now)")
+    print(f"  State entries: {state_before} -> {len(state)}")
+    print(f"Written {AUCTIONS_PATH} and {AUCTIONS_STATE_PATH}")
 
 
 if __name__ == '__main__':

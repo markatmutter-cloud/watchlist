@@ -4,7 +4,7 @@ _(project folder and repo are still named `Dial` — same thing.)_
 
 A personal vintage watch listing aggregator. Watchlist pulls active inventory from a handful of independent dealers I trust, merges it into one browsable feed, and tracks listings across runs so new arrivals and price changes are easily visible.
 
-**Live:** [watchdial.vercel.app](https://watchdial.vercel.app)
+**Live:** [dial-watchlist.vercel.app](https://dial-watchlist.vercel.app)
 
 Built without a development background — architecture, scrapers, React front-end, and CI/CD all co-authored with [Claude](https://claude.com/claude-code).
 
