@@ -63,7 +63,15 @@ export function useAuth() {
     if (!supabase) return;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: {
+        redirectTo: window.location.origin,
+        // Force Google to always show the account picker. Without this,
+        // Google silently re-auths anyone who has an active Google SSO
+        // session in this browser — sign-in looks like "the page just
+        // reloaded". The picker makes the auth step visible and lets
+        // users pick a different Google account if they want to.
+        queryParams: { prompt: 'select_account' },
+      },
     });
     if (error) {
       // Surface the error so a silent "nothing happens" stops being a
