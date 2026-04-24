@@ -360,6 +360,37 @@ export default function Dial() {
       return { id, label, query, count: matches.length, newCount };
     });
   }, [items]);
+
+  // Group auctions by "YYYY-MM" for the month-banded view. Auctions without
+  // a parseable start date go into a "Date TBD" bucket at the end.
+  // IMPORTANT: this useMemo must stay above the early-return guards
+  // (loading/loadError) so React sees the same hook count every render.
+  const auctionGroups = useMemo(() => {
+    const buckets = new Map();
+    for (const a of auctions) {
+      const key = a.dateStart ? a.dateStart.slice(0, 7) : "tbd";
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key).push(a);
+    }
+    const keys = [...buckets.keys()].sort((a, b) => {
+      if (a === "tbd") return 1;
+      if (b === "tbd") return -1;
+      return a < b ? -1 : 1;
+    });
+    return keys.map(key => {
+      const items = buckets.get(key).slice().sort((a, b) =>
+        (a.dateStart || "").localeCompare(b.dateStart || "") ||
+        a.house.localeCompare(b.house)
+      );
+      let label = "Date TBD";
+      if (key !== "tbd") {
+        const [y, m] = key.split("-").map(Number);
+        label = new Date(y, m - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
+      }
+      return { key, label, items };
+    });
+  }, [auctions]);
+
   const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setSearch(""); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
 
   const visibleBrands = brandsExpanded ? BRANDS : BRANDS.slice(0, BRANDS_SHOW);
@@ -507,36 +538,6 @@ export default function Dial() {
       </>
     )
   );
-
-  // Group auctions by "YYYY-MM" for the month-banded view. Auctions without
-  // a parseable start date go into a "Date TBD" bucket at the end. The
-  // bands are sorted chronologically; within a band, auctions sort by
-  // dateStart then house.
-  const auctionGroups = useMemo(() => {
-    const buckets = new Map();
-    for (const a of auctions) {
-      const key = a.dateStart ? a.dateStart.slice(0, 7) : "tbd";
-      if (!buckets.has(key)) buckets.set(key, []);
-      buckets.get(key).push(a);
-    }
-    const keys = [...buckets.keys()].sort((a, b) => {
-      if (a === "tbd") return 1;
-      if (b === "tbd") return -1;
-      return a < b ? -1 : 1;
-    });
-    return keys.map(key => {
-      const items = buckets.get(key).slice().sort((a, b) =>
-        (a.dateStart || "").localeCompare(b.dateStart || "") ||
-        a.house.localeCompare(b.house)
-      );
-      let label = "Date TBD";
-      if (key !== "tbd") {
-        const [y, m] = key.split("-").map(Number);
-        label = new Date(y, m - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
-      }
-      return { key, label, items };
-    });
-  }, [auctions]);
 
   const auctionsTabJSX = (
     auctions.length === 0 ? (
