@@ -610,7 +610,7 @@ export default function Dial() {
     return (
       <div style={baseStyle}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px 8px", borderBottom: "0.5px solid var(--border)" }}>
-          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Dial</span>
+          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Watchlist</span>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span style={{ fontSize: 11, color: "var(--text3)" }}>{allFiltered.length}</span>
             <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} style={{ width: 32, height: 32, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -788,7 +788,7 @@ export default function Dial() {
     <div style={{ ...baseStyle, display: "flex", height: "100vh", overflow: "hidden" }}>
       <div style={{ width: sidebarWidth, flexShrink: 0, borderRight: "0.5px solid var(--border)", overflowY: "auto", display: "flex", flexDirection: "column", position: "relative" }}>
         <div style={{ padding: "16px 16px 12px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Dial</span>
+          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Watchlist</span>
         </div>
         <div style={{ flex: 1, overflowY: "auto" }}>
           {sidebarFilterPanelJSX}

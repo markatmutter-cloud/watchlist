@@ -1,6 +1,8 @@
-# Dial
+# Watchlist
 
-A personal vintage watch listing aggregator. Dial pulls active inventory from a handful of independent dealers I trust, merges it into one browsable feed, and tracks listings across runs so new arrivals and price changes are easily visible.
+_(project folder and repo are still named `Dial` — same thing.)_
+
+A personal vintage watch listing aggregator. Watchlist pulls active inventory from a handful of independent dealers I trust, merges it into one browsable feed, and tracks listings across runs so new arrivals and price changes are easily visible.
 
 **Live:** [watchdial.vercel.app](https://watchdial.vercel.app)
 
