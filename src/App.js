@@ -445,11 +445,27 @@ export default function Dial() {
 
   const watchItems = useMemo(() => {
     let its = Object.values(watchlist);
+    // Apply the same source/brand/ref/search filters as Available and Archive,
+    // so the sidebar drawer narrows down the watchlist too. Saved entries
+    // carry the listing_snapshot fields (source, brand, ref), so the same
+    // predicates work here.
+    if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
+    if (filterBrands.length > 0)  its = its.filter(i => filterBrands.includes(i.brand));
+    if (filterRefs.length > 0) {
+      its = its.filter(i => {
+        const ref = (i.ref || "").toLowerCase();
+        return filterRefs.some(r => ref.includes(r.toLowerCase()));
+      });
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      its = its.filter(i => (i.ref || "").toLowerCase().includes(q) || (i.brand || "").toLowerCase().includes(q));
+    }
     if (wishSort === "price-asc") its.sort((a, b) => (a.savedPriceUSD || a.savedPrice) - (b.savedPriceUSD || b.savedPrice));
     else if (wishSort === "price-desc") its.sort((a, b) => (b.savedPriceUSD || b.savedPrice) - (a.savedPriceUSD || a.savedPrice));
-    else its.sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+    else its.sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
     return its;
-  }, [watchlist, wishSort]);
+  }, [watchlist, wishSort, filterSources, filterBrands, filterRefs, search]);
 
   // Archive shows three flavors side by side:
   //   • Sold/delisted — disappeared from scrape, soldAt from state-tracking.
@@ -689,13 +705,16 @@ export default function Dial() {
     </div>
   );
 
-  // ── SEARCHES TAB ──────────────────────────────────────────────────────────
+  // ── SEARCH RUNNER ─────────────────────────────────────────────────────────
+  // Saved searches aren't their own tab — they render as a subsection at the
+  // top of the Watchlist tab (see watchlistTabJSX below). This just handles
+  // the "tap a search chip → jump to Available with the query applied".
   const runSearch = (s) => { setSearch(s.query); setSort("date"); setTab("listings"); setPage(1); };
 
   // Inline editor row for add/edit. Rendered as a JSX helper (not a sub-
   // component) so React doesn't remount the inputs on every parent re-render
   // and lose focus mid-keystroke.
-  const renderEditorRow = () => (
+  const renderSearchEditor = () => (
     <div style={{
       padding: "12px 14px", borderRadius: 12,
       border: "0.5px solid var(--border)", background: "var(--card-bg)",
@@ -725,83 +744,6 @@ export default function Dial() {
           padding: "6px 12px", borderRadius: 6, cursor: "pointer",
           fontFamily: "inherit", fontSize: 13,
         }}>Save</button>
-      </div>
-    </div>
-  );
-
-  const savedTabJSX = (
-    <div style={{ paddingTop: 4 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 8 }}>
-        <div style={{ fontSize: 12, color: "var(--text3)" }}>
-          {user ? "Tap to run · pencil to edit" : "Tap a search to run it in the feed"}
-        </div>
-        {user && !searchEditor && (
-          <button onClick={startAddSearch} style={{
-            border: "0.5px solid var(--border)", background: "var(--card-bg)", color: "var(--text1)",
-            padding: "6px 10px", borderRadius: 6, cursor: "pointer",
-            fontFamily: "inherit", fontSize: 12,
-          }}>+ Add</button>
-        )}
-      </div>
-
-      {!user && isAuthConfigured && (
-        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 12 }}>
-          Sign in to save your own searches across devices.
-        </div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {searchEditor && searchEditor.id === "new" && renderEditorRow()}
-
-        {savedSearchStats.map((s) => (
-          searchEditor && searchEditor.id === s.id ? (
-            <div key={s.id}>{renderEditorRow()}</div>
-          ) : (
-            <div key={s.id} style={{
-              display: "flex", alignItems: "stretch",
-              borderRadius: 12, overflow: "hidden",
-              border: "0.5px solid var(--border)", background: "var(--card-bg)",
-            }}>
-              <button onClick={() => runSearch(s)} style={{
-                flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "14px 16px", border: "none", background: "transparent",
-                cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: "inherit",
-              }}>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 3 }}>{s.label}</div>
-                  <div style={{ fontSize: 12, color: "var(--text2)" }}>{s.count} for sale{s.query && s.query !== s.label ? ` · "${s.query}"` : ""}</div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                  {s.newCount > 0 && (
-                    <div style={{ fontSize: 11, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 8px" }}>
-                      {s.newCount} new
-                    </div>
-                  )}
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-                </div>
-              </button>
-              {user && (
-                <div style={{ display: "flex", flexDirection: "column", borderLeft: "0.5px solid var(--border)" }}>
-                  <button onClick={() => startEditSearch(s)} title="Edit" style={{
-                    flex: 1, border: "none", background: "transparent", color: "var(--text2)",
-                    padding: "0 12px", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-                  }}>✎</button>
-                  <button onClick={() => { if (window.confirm(`Delete "${s.label}"?`)) removeSearch(s.id); }} title="Delete" style={{
-                    flex: 1, border: "none", borderTop: "0.5px solid var(--border)",
-                    background: "transparent", color: "var(--text2)",
-                    padding: "0 12px", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-                  }}>✕</button>
-                </div>
-              )}
-            </div>
-          )
-        ))}
-
-        {user && savedSearchStats.length === 0 && !searchEditor && (
-          <div style={{ padding: "28px 0", textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
-            No saved searches yet. Tap <b>+ Add</b> to create one.
-          </div>
-        )}
       </div>
     </div>
   );
@@ -980,32 +922,70 @@ export default function Dial() {
   const watchlistTabJSX = (
     <div>
       {importBannerJSX}
-      {savedSearchStats.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)", marginBottom: 10 }}>Saved searches</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {savedSearchStats.map((s) => (
-              <button key={s.id} onClick={() => runSearch(s)} style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "12px 14px", borderRadius: 12,
-                border: "0.5px solid var(--border)", background: "var(--card-bg)",
-                cursor: "pointer", fontFamily: "inherit", textAlign: "left",
-              }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)", marginBottom: 2 }}>{s.label}</div>
-                  <div style={{ fontSize: 11, color: "var(--text2)" }}>{s.count} for sale{s.query && s.query !== s.label ? ` · "${s.query}"` : ""}</div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {s.newCount > 0 && (
-                    <div style={{ fontSize: 10, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 7px" }}>{s.newCount} new</div>
-                  )}
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-                </div>
-              </button>
-            ))}
-          </div>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 8 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>Saved searches</div>
+          {user && !searchEditor && (
+            <button onClick={startAddSearch} style={{
+              border: "0.5px solid var(--border)", background: "var(--card-bg)", color: "var(--text1)",
+              padding: "4px 10px", borderRadius: 6, cursor: "pointer",
+              fontFamily: "inherit", fontSize: 11,
+            }}>+ Add</button>
+          )}
         </div>
-      )}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {searchEditor && searchEditor.id === "new" && renderSearchEditor()}
+
+          {savedSearchStats.map((s) => (
+            searchEditor && searchEditor.id === s.id ? (
+              <div key={s.id}>{renderSearchEditor()}</div>
+            ) : (
+              <div key={s.id} style={{
+                display: "flex", alignItems: "stretch",
+                borderRadius: 12, overflow: "hidden",
+                border: "0.5px solid var(--border)", background: "var(--card-bg)",
+              }}>
+                <button onClick={() => runSearch(s)} style={{
+                  flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "12px 14px", border: "none", background: "transparent",
+                  cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: "inherit",
+                }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)", marginBottom: 2 }}>{s.label}</div>
+                    <div style={{ fontSize: 11, color: "var(--text2)" }}>{s.count} for sale{s.query && s.query !== s.label ? ` · "${s.query}"` : ""}</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {s.newCount > 0 && (
+                      <div style={{ fontSize: 10, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 7px" }}>{s.newCount} new</div>
+                    )}
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                  </div>
+                </button>
+                {user && (
+                  <div style={{ display: "flex", alignItems: "center", borderLeft: "0.5px solid var(--border)" }}>
+                    <button onClick={() => startEditSearch(s)} title="Edit" style={{
+                      border: "none", background: "transparent", color: "var(--text2)",
+                      padding: "0 10px", height: "100%", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+                    }}>✎</button>
+                    <button onClick={() => { if (window.confirm(`Delete "${s.label}"?`)) removeSearch(s.id); }} title="Delete" style={{
+                      border: "none", borderLeft: "0.5px solid var(--border)",
+                      background: "transparent", color: "var(--text2)",
+                      padding: "0 10px", height: "100%", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+                    }}>✕</button>
+                  </div>
+                )}
+              </div>
+            )
+          ))}
+
+          {user && savedSearchStats.length === 0 && !searchEditor && (
+            <div style={{ padding: "14px 0", textAlign: "center", color: "var(--text3)", fontSize: 12 }}>
+              No saved searches yet. Tap <b>+ Add</b> to create one.
+            </div>
+          )}
+        </div>
+      </div>
 
       <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)", marginBottom: 10 }}>Watchlist</div>
       {watchCount === 0 ? (
@@ -1017,7 +997,9 @@ export default function Dial() {
       ) : (
         <>
           <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: "var(--text3)" }}>{watchCount} saved</span>
+            <span style={{ fontSize: 12, color: "var(--text3)" }}>
+              {watchItems.length === watchCount ? `${watchCount} saved` : `${watchItems.length} of ${watchCount} saved`}
+            </span>
             <div style={{ display: "flex", gap: 6 }}>
               {[["saved", "Recent"], ["price-asc", "Price ↑"], ["price-desc", "Price ↓"]].map(([val, label]) => (
                 <Chip key={val} label={label} active={wishSort === val} onClick={() => setWishSort(val)} />
@@ -1028,6 +1010,7 @@ export default function Dial() {
             {watchItems.map(item => (
               <Card key={item.id} item={{ ...item, price: item.savedPrice, currency: item.savedCurrency || "USD", priceUSD: item.savedPriceUSD || item.savedPrice }} wished={true} onWish={handleWish} compact={compact} />
             ))}
+            {watchItems.length === 0 && <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>No saved watches match your filters</div>}
           </div>
           <div style={{ padding: "14px 0 0", fontSize: 11, color: "var(--text3)", textAlign: "center" }}>Prices saved at time of adding to watchlist</div>
         </>
