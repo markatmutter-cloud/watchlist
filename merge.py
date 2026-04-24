@@ -385,11 +385,16 @@ def process_auctions():
                 entry['firstSeen'] = TODAY
             entry['lastSeen'] = TODAY
 
-            # Catalog-live signal: a per-auction URL that isn't just the
-            # generic catalog portal. Record the first day we saw a real
-            # catalog URL so the UI can show a "new" chip for ~7 days.
-            generic_catalog = url.rstrip('/').endswith(('antiquorum.swiss/catalog', 'catalog.antiquorum.swiss'))
-            has_real_catalog = bool(url) and not generic_catalog
+            # Catalog-live signal: if the scraper told us explicitly via a
+            # `has_catalog` column, trust it — the scraper knows best whether
+            # the URL goes to a real catalog (vs a landing page or generic
+            # portal). Fall back to a heuristic otherwise.
+            raw_flag = (r.get('has_catalog') or '').strip().lower()
+            if raw_flag in ('true', 'false'):
+                has_real_catalog = raw_flag == 'true'
+            else:
+                generic_catalog = url.rstrip('/').endswith(('antiquorum.swiss/catalog', 'catalog.antiquorum.swiss'))
+                has_real_catalog = bool(url) and not generic_catalog
             if has_real_catalog and not entry.get('catalogLiveAt'):
                 entry['catalogLiveAt'] = TODAY
 

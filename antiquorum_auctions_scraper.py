@@ -19,10 +19,15 @@ import requests
 import csv
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, date, timedelta
 
 URL = "https://www.antiquorum.swiss/en/auctions/upcoming"
-CATALOG_URL = "https://catalog.antiquorum.swiss/"  # generic catalog portal
+UPCOMING_PAGE = "https://www.antiquorum.swiss/upcoming-auctions-and-viewings/"
+CATALOG_BASE = "https://catalog.antiquorum.swiss/en/auctions"
+# Catalogs typically go live 4-6 weeks before a sale. Use a generous
+# 60-day window: before this, link to the generic upcoming page. Within
+# it, build the per-sale catalog URL.
+CATALOG_WINDOW_DAYS = 60
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -34,6 +39,19 @@ MONTHS = {
     'january':1, 'february':2, 'march':3, 'april':4, 'may':5, 'june':6,
     'july':7, 'august':8, 'september':9, 'october':10, 'november':11, 'december':12,
 }
+
+
+def build_catalog_url(location, date_label):
+    """Mirror Antiquorum's own URL pattern:
+      https://catalog.antiquorum.swiss/en/auctions/{Location}_{Date}/lots
+    where spaces become underscores and the date keeps its ordinal suffixes.
+    Example: 'Geneva' + 'May 9th -10th, 2026' → 'Geneva_May_9th_10th_2026'.
+    """
+    loc_slug = re.sub(r'\s+', '_', location.strip())
+    # Drop comma, collapse dashes and whitespace to single underscore.
+    date_slug = date_label.replace(',', ' ')
+    date_slug = re.sub(r'[\s\-]+', '_', date_slug).strip('_')
+    return f"{CATALOG_BASE}/{loc_slug}_{date_slug}/lots"
 
 
 def parse_date_range(date_str):
@@ -107,14 +125,40 @@ def scrape():
             continue
         seen.add(key)
 
+        # Decide which URL to expose. Catalogs open an unpredictable number
+        # of weeks before a sale; instead of guessing, HEAD-check each
+        # candidate URL. Only sales whose catalog actually responds 200 get
+        # the specific URL + the Catalog chip. Everyone else links to the
+        # generic upcoming-auctions page.
+        today = date.today()
+        try:
+            days_until = (datetime.fromisoformat(start).date() - today).days
+        except ValueError:
+            days_until = 9999
+        candidate = build_catalog_url(location, date_str)
+        has_catalog = False
+        url = UPCOMING_PAGE
+        if 0 <= days_until <= CATALOG_WINDOW_DAYS:
+            try:
+                hr = requests.head(candidate, headers=HEADERS, timeout=15, allow_redirects=True)
+                # Some catalogs return 200 with a redirect to /lots; both are fine.
+                if hr.status_code == 200:
+                    url = candidate
+                    has_catalog = True
+                else:
+                    print(f"    catalog check {hr.status_code} for {candidate}")
+            except Exception as e:
+                print(f"    catalog check failed: {e}")
+
         results.append({
             'house':       'Antiquorum',
             'title':       title,
             'location':    location,
             'date_start':  start,
             'date_end':    end,
-            'date_label':  date_str,     # original pretty string for display
-            'url':         CATALOG_URL,  # no per-sale catalog URL on the upcoming page
+            'date_label':  date_str,
+            'url':         url,
+            'has_catalog': 'True' if has_catalog else 'False',
             'source':      'Antiquorum',
         })
 
@@ -141,7 +185,7 @@ def main():
 
     output = 'antiquorum_auctions_listings.csv'
     with open(output, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['house','title','location','date_start','date_end','date_label','url','source'])
+        writer = csv.DictWriter(f, fieldnames=['house','title','location','date_start','date_end','date_label','url','has_catalog','source'])
         writer.writeheader()
         writer.writerows(auctions)
     print(f"\nSaved {len(auctions)} auctions to {output}")

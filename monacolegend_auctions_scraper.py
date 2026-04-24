@@ -73,29 +73,36 @@ def scrape():
 
     by_path = {}  # dedup on path; prefer records that parsed a real date
 
-    # Find each auction link and pull a generous window of surrounding HTML
-    # to extract status + date text (which sit between the status chip and
-    # the View Auction link on the card).
+    # For each auction link, scope the text window to start at the nearest
+    # preceding status marker — that keeps adjacent cards' dates from
+    # bleeding into this auction's record (the previous version wrongly
+    # assigned Exclusive Timepieces 41's date to 40 because both cards fit
+    # inside a 2000-char backwards window).
     for m in re.finditer(r'href="(auction/[^"#?]+)"', html):
         path = m.group(1)
         idx = m.start()
-        chunk = html[max(0, idx - 2000):idx + 200]
+
+        status_candidates = [
+            (html.rfind('Bidding Open', 0, idx), 'live'),
+            (html.rfind('Upcoming Auction', 0, idx), 'upcoming'),
+            (html.rfind('Auction Result', 0, idx), 'past'),
+        ]
+        status_candidates = [(pos, s) for pos, s in status_candidates if pos >= 0]
+        if not status_candidates:
+            continue
+        # Nearest preceding marker wins — that's this card's status line.
+        status_candidates.sort(key=lambda x: -x[0])
+        start_pos, status = status_candidates[0]
+
+        if status == 'past':
+            continue
+
+        chunk = html[start_pos:idx + 200]
         text = re.sub(r'<[^>]+>', ' ', chunk)
-        # Preserve the en-dash as a literal hyphen so date-range regex still works.
         text = re.sub(r'&#8211;|–|—', '-', text)
         text = re.sub(r'&#8288;|&nbsp;', ' ', text)
         text = re.sub(r'&amp;', '&', text)
         text = re.sub(r'\s+', ' ', text).strip()
-
-        # Status signal
-        if 'Auction Result' in text:
-            continue  # past sale
-        if 'Bidding Open' in text:
-            status = 'live'
-        elif 'Upcoming Auction' in text:
-            status = 'upcoming'
-        else:
-            continue
 
         # Title guess: everything between the status phrase and the next date
         # or "View Auction" looks messy in practice; keep simple — use the
@@ -120,25 +127,28 @@ def scrape():
         if lm:
             location = lm.group(1).strip()
 
-        # Dedup: if we've seen this auction already, fill in any missing date
-        # info from this occurrence.
-        existing = by_path.get(path)
-        if existing:
-            if date_start and not existing['date_start']:
-                existing['date_start'] = date_start
-                existing['date_end']   = date_end
-                existing['date_label'] = date_label
+        # Dedup: keep the first occurrence only. Later occurrences of the
+        # same href tend to be teaser cards inside another sale's section,
+        # which causes status + date bleed-over if we merge them in.
+        if path in by_path:
             continue
 
+        # Monaco Legend's per-auction URL goes to a sale landing page, but
+        # the actual catalog (with lots + bidding) only opens for "Bidding
+        # Open" sales. Mark 'has_catalog' true only for live ones so the
+        # Catalog chip doesn't promise a catalog that isn't published yet.
+        has_catalog = 'True' if status == 'live' else 'False'
+
         by_path[path] = {
-            'house':      'Monaco Legend',
-            'title':      title,
-            'location':   location,
-            'date_start': date_start or '',
-            'date_end':   date_end or '',
-            'date_label': date_label,
-            'url':        f"{BASE}/{path}",
-            'source':     'Monaco Legend',
+            'house':       'Monaco Legend',
+            'title':       title,
+            'location':    location,
+            'date_start':  date_start or '',
+            'date_end':    date_end or '',
+            'date_label':  date_label,
+            'url':         f"{BASE}/{path}",
+            'has_catalog': has_catalog,
+            'source':      'Monaco Legend',
             'status_hint': status,
         }
 
@@ -158,7 +168,7 @@ def main():
 
     output = 'monacolegend_auctions_listings.csv'
     with open(output, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['house','title','location','date_start','date_end','date_label','url','source','status_hint'])
+        writer = csv.DictWriter(f, fieldnames=['house','title','location','date_start','date_end','date_label','url','has_catalog','source','status_hint'])
         writer.writeheader()
         writer.writerows(auctions)
     print(f"\nSaved {len(auctions)} auctions to {output}")

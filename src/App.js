@@ -13,28 +13,16 @@ function initialSidebarWidth() {
   if (typeof window === "undefined") return 280;
   return Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(window.innerWidth * SIDEBAR_DEFAULT_FRACTION)));
 }
-// Saved searches are now user-editable and persisted to localStorage. The
-// defaults below are seeded only on a fresh install (or after a user clears
-// their list back to zero). Each entry has a stable id, a display label,
-// and the query string used for matching.
-const SEARCHES_STORAGE_KEY = "dial_searches_v1";
-const DEFAULT_SEARCHES = [
+// Saved searches are currently a fixed list, read-only from the app's
+// perspective. Per-user persistence (editing, adding, removing) is deferred
+// until Supabase + Google auth lands — without accounts, edits get stuck in
+// one device's localStorage and get confusing fast. To change this list,
+// edit SAVED_SEARCHES and push a new build.
+const SAVED_SEARCHES = [
   { id: "seed-speedmaster",  label: "Speedmaster",        query: "Speedmaster" },
   { id: "seed-railmaster",   label: "Railmaster",         query: "Railmaster" },
   { id: "seed-jackies",      label: "Jackie's DateJust",  query: "DateJust"    },
 ];
-function loadSearches() {
-  try {
-    const raw = localStorage.getItem(SEARCHES_STORAGE_KEY);
-    if (!raw) return DEFAULT_SEARCHES;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : DEFAULT_SEARCHES;
-  } catch { return DEFAULT_SEARCHES; }
-}
-function saveSearches(list) {
-  try { localStorage.setItem(SEARCHES_STORAGE_KEY, JSON.stringify(list)); } catch {}
-}
-function newSearchId() { return "s-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6); }
 
 function fmt(price, currency) {
   return (CURRENCY_SYM[currency] || "$") + price.toLocaleString();
@@ -207,12 +195,6 @@ export default function Dial() {
   const [brandsExpanded, setBrandsExpanded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
-  // Saved searches are lifted to Dial-level state so they persist across the
-  // constant remounts of the SavedTab sub-component. Null editor = not
-  // editing; otherwise { id, label, query } — id can be 'new' for additions.
-  const [searches, setSearches] = useState(loadSearches);
-  const [searchEditor, setSearchEditor] = useState(null);
-  useEffect(() => { saveSearches(searches); }, [searches]);
   const observerRef = useRef(null);
   const BRANDS_SHOW = 8;
 
@@ -369,7 +351,7 @@ export default function Dial() {
 
   const savedSearchStats = useMemo(() => {
     const forSale = items.filter(i => !i.sold);
-    return searches.map(({ id, label, query }) => {
+    return SAVED_SEARCHES.map(({ id, label, query }) => {
       const q = (query || "").toLowerCase();
       const matches = q
         ? forSale.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q))
@@ -377,30 +359,7 @@ export default function Dial() {
       const newCount = matches.filter(i => daysAgo(freshDate(i)) <= 7).length;
       return { id, label, query, count: matches.length, newCount };
     });
-  }, [items, searches]);
-  // Total "new in the last 7 days" across all saved searches, shown as a
-  // pill on the Searches tab (matches how the Watchlist pill shows count).
-  const searchesNewTotal = savedSearchStats.reduce((sum, s) => sum + s.newCount, 0);
-
-  const startAddSearch    = () => setSearchEditor({ id: "new", label: "", query: "" });
-  const startEditSearch   = (s) => setSearchEditor({ id: s.id, label: s.label, query: s.query });
-  const cancelSearchEdit  = () => setSearchEditor(null);
-  const commitSearchEdit  = () => {
-    if (!searchEditor) return;
-    const label = searchEditor.label.trim();
-    const query = searchEditor.query.trim();
-    if (!label || !query) { cancelSearchEdit(); return; }
-    if (searchEditor.id === "new") {
-      setSearches(prev => [...prev, { id: newSearchId(), label, query }]);
-    } else {
-      setSearches(prev => prev.map(s => s.id === searchEditor.id ? { ...s, label, query } : s));
-    }
-    cancelSearchEdit();
-  };
-  const deleteSearch = (id) => {
-    setSearches(prev => prev.filter(s => s.id !== id));
-    if (searchEditor && searchEditor.id === id) cancelSearchEdit();
-  };
+  }, [items]);
   const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setSearch(""); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
 
   const visibleBrands = brandsExpanded ? BRANDS : BRANDS.slice(0, BRANDS_SHOW);
@@ -473,77 +432,40 @@ export default function Dial() {
   // ── SEARCHES TAB ──────────────────────────────────────────────────────────
   const runSearch = (s) => { setSearch(s.query); setSort("date"); setTab("listings"); setPage(1); };
 
-  // Helper that returns JSX (not a component) so React doesn't treat it as a
-  // new component type every render — which would unmount the inputs and lose
-  // focus after every keystroke. Same reason sidebarFilterPanelJSX below is
-  // a const, not a component.
-  const editorRowFor = (editor) => (
-    <div style={{ border: "0.5px solid var(--border)", borderRadius: 12, background: "var(--card-bg)", padding: 12 }}>
-      <input value={editor.label}
-        onChange={e => setSearchEditor({ ...editor, label: e.target.value })}
-        placeholder="Label (e.g. Jackie's DateJust)"
-        style={{ ...inp, marginBottom: 8 }} />
-      <input value={editor.query}
-        onChange={e => setSearchEditor({ ...editor, query: e.target.value })}
-        placeholder="Search term (e.g. DateJust)"
-        style={{ ...inp, marginBottom: 10 }} />
-      <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={commitSearchEdit} style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "var(--text1)", color: "var(--bg)", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>Save</button>
-        <button onClick={cancelSearchEdit} style={{ padding: "8px 14px", borderRadius: 8, border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
-        {editor.id !== "new" && (
-          <button onClick={() => deleteSearch(editor.id)} style={{ marginLeft: "auto", padding: "8px 14px", borderRadius: 8, border: "0.5px solid var(--border)", background: "transparent", color: "#c43", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Delete</button>
-        )}
-      </div>
-    </div>
-  );
-
+  // Read-only view of saved searches. Add/Edit/Delete is intentionally hidden
+  // until we have per-user persistence (Supabase + Google login) — without
+  // accounts, edits from any visitor would affect only their own browser's
+  // localStorage, which is confusing. Edits to the seeded list are done by
+  // changing DEFAULT_SEARCHES in this file and pushing a new build.
   const savedTabJSX = (
     <div style={{ paddingTop: 4 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-        <div style={{ fontSize: 12, color: "var(--text3)" }}>Tap to run · pencil to edit</div>
-        {!searchEditor && (
-          <button onClick={startAddSearch} style={{ fontSize: 13, color: "#185FA5", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0 }}>+ Add search</button>
-        )}
+      <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 14 }}>
+        Tap a search to run it in the feed
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {savedSearchStats.map((s) => {
-          const isEditing = searchEditor && searchEditor.id === s.id;
-          if (isEditing) return <div key={s.id}>{editorRowFor(searchEditor)}</div>;
-          return (
-            <div key={s.id} style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 12, background: "var(--card-bg)", overflow: "hidden" }}>
-              <button onClick={() => runSearch(s)} style={{
-                flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "14px 14px", border: "none", background: "transparent",
-                cursor: "pointer", fontFamily: "inherit", textAlign: "left",
-              }}>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 3 }}>{s.label}</div>
-                  <div style={{ fontSize: 12, color: "var(--text2)" }}>{s.count} for sale{s.query && s.query !== s.label ? ` · "${s.query}"` : ""}</div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                  {s.newCount > 0 && (
-                    <div style={{ fontSize: 11, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 8px" }}>
-                      {s.newCount} new
-                    </div>
-                  )}
-                </div>
-              </button>
-              <button onClick={() => startEditSearch(s)} aria-label="Edit" style={{ width: 44, border: "none", borderLeft: "0.5px solid var(--border)", background: "transparent", color: "var(--text3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              </button>
+        {savedSearchStats.map((s) => (
+          <button key={s.id} onClick={() => runSearch(s)} style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "14px 16px", borderRadius: 12,
+            border: "0.5px solid var(--border)", background: "var(--card-bg)",
+            cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+          }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 3 }}>{s.label}</div>
+              <div style={{ fontSize: 12, color: "var(--text2)" }}>{s.count} for sale{s.query && s.query !== s.label ? ` · "${s.query}"` : ""}</div>
             </div>
-          );
-        })}
-        {searchEditor && searchEditor.id === "new" && editorRowFor(searchEditor)}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+              {s.newCount > 0 && (
+                <div style={{ fontSize: 11, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 8px" }}>
+                  {s.newCount} new
+                </div>
+              )}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+          </button>
+        ))}
       </div>
-
-      {searches.length === 0 && !searchEditor && (
-        <div style={{ marginTop: 24, padding: "14px 16px", borderRadius: 12, border: "0.5px dashed var(--border)", textAlign: "center" }}>
-          <div style={{ fontSize: 13, color: "var(--text3)" }}>No saved searches yet</div>
-          <button onClick={startAddSearch} style={{ marginTop: 8, fontSize: 13, color: "#185FA5", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>+ Add your first</button>
-        </div>
-      )}
     </div>
   );
 
@@ -586,6 +508,36 @@ export default function Dial() {
     )
   );
 
+  // Group auctions by "YYYY-MM" for the month-banded view. Auctions without
+  // a parseable start date go into a "Date TBD" bucket at the end. The
+  // bands are sorted chronologically; within a band, auctions sort by
+  // dateStart then house.
+  const auctionGroups = useMemo(() => {
+    const buckets = new Map();
+    for (const a of auctions) {
+      const key = a.dateStart ? a.dateStart.slice(0, 7) : "tbd";
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key).push(a);
+    }
+    const keys = [...buckets.keys()].sort((a, b) => {
+      if (a === "tbd") return 1;
+      if (b === "tbd") return -1;
+      return a < b ? -1 : 1;
+    });
+    return keys.map(key => {
+      const items = buckets.get(key).slice().sort((a, b) =>
+        (a.dateStart || "").localeCompare(b.dateStart || "") ||
+        a.house.localeCompare(b.house)
+      );
+      let label = "Date TBD";
+      if (key !== "tbd") {
+        const [y, m] = key.split("-").map(Number);
+        label = new Date(y, m - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
+      }
+      return { key, label, items };
+    });
+  }, [auctions]);
+
   const auctionsTabJSX = (
     auctions.length === 0 ? (
       <div style={{ padding: "60px 0", textAlign: "center" }}>
@@ -602,46 +554,59 @@ export default function Dial() {
             ? `${auctions.filter(a => a.status === "live").length} live now · ${auctions.filter(a => a.status === "upcoming").length} upcoming`
             : `${auctions.length} upcoming`}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {auctions.map(a => {
-            const isLive = a.status === "live";
-            // "New catalog" chip fires for any auction whose catalog URL
-            // first appeared within the last 7 days — matches the NEW badge
-            // on listings and signals "this is newly actionable".
-            const catalogAgeDays = a.catalogLiveAt
-              ? Math.floor((Date.now() - new Date(a.catalogLiveAt).getTime()) / 86400000)
-              : null;
-            const catalogJustOpened = catalogAgeDays !== null && catalogAgeDays <= 7;
-            return (
-              <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer"
-                 style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-                         padding: "14px 16px", borderRadius: 12,
-                         border: "0.5px solid var(--border)", background: "var(--card-bg)",
-                         textDecoration: "none", color: "inherit", fontFamily: "inherit" }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
-                    {isLive && (
-                      <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#c43", borderRadius: 4, padding: "1px 6px", letterSpacing: "0.05em" }}>LIVE</span>
-                    )}
-                    {a.hasCatalog && (
-                      <span style={{ fontSize: 10, fontWeight: 500, color: catalogJustOpened ? "#fff" : "#185FA5", background: catalogJustOpened ? "#185FA5" : "transparent", border: catalogJustOpened ? "none" : "0.5px solid #185FA5", borderRadius: 4, padding: "1px 6px" }}>
-                        {catalogJustOpened ? "NEW CATALOG" : "Catalog"}
-                      </span>
-                    )}
-                    <span style={{ fontSize: 11, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{a.house}</span>
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {a.title}
-                  </div>
-                  <div style={{ fontSize: 12, color: "var(--text2)" }}>
-                    {a.dateLabel || a.dateStart || "Date TBD"}{a.location ? ` · ${a.location}` : ""}
-                  </div>
-                </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, marginLeft: 10 }}><path d="M9 18l6-6-6-6"/></svg>
-              </a>
-            );
-          })}
-        </div>
+
+        {auctionGroups.map(group => (
+          <div key={group.key} style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{
+                fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase",
+                color: "var(--text2)", background: "var(--surface)",
+                borderRadius: 4, padding: "3px 8px",
+              }}>{group.label}</span>
+              <div style={{ flex: 1, height: "0.5px", background: "var(--border)" }} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {group.items.map(a => {
+                const isLive = a.status === "live";
+                // "New catalog" chip: catalog URL first appeared within the
+                // last 7 days. Signals "this is newly actionable".
+                const catalogAgeDays = a.catalogLiveAt
+                  ? Math.floor((Date.now() - new Date(a.catalogLiveAt).getTime()) / 86400000)
+                  : null;
+                const catalogJustOpened = catalogAgeDays !== null && catalogAgeDays <= 7;
+                return (
+                  <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer"
+                     style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+                             padding: "14px 16px", borderRadius: 12,
+                             border: "0.5px solid var(--border)", background: "var(--card-bg)",
+                             textDecoration: "none", color: "inherit", fontFamily: "inherit" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
+                        {isLive && (
+                          <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#c43", borderRadius: 4, padding: "1px 6px", letterSpacing: "0.05em" }}>LIVE</span>
+                        )}
+                        {a.hasCatalog && (
+                          <span style={{ fontSize: 10, fontWeight: 500, color: catalogJustOpened ? "#fff" : "#185FA5", background: catalogJustOpened ? "#185FA5" : "transparent", border: catalogJustOpened ? "none" : "0.5px solid #185FA5", borderRadius: 4, padding: "1px 6px" }}>
+                            {catalogJustOpened ? "NEW CATALOG" : "Catalog"}
+                          </span>
+                        )}
+                        <span style={{ fontSize: 11, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{a.house}</span>
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {a.title}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--text2)" }}>
+                        {a.dateLabel || a.dateStart || "Date TBD"}{a.location ? ` · ${a.location}` : ""}
+                      </div>
+                    </div>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, marginLeft: 10 }}><path d="M9 18l6-6-6-6"/></svg>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
         <div style={{ marginTop: 24, padding: "14px 16px", borderRadius: 12, border: "0.5px dashed var(--border)" }}>
           <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>
             <strong style={{ color: "var(--text1)" }}>Coming in future updates:</strong> Phillips, Christie's, Sotheby's, Bonhams, Watches of Knightsbridge auctions, Loupe This. Lot-level catalogue browsing and watched-lot price tracking are also on the list.
@@ -773,7 +738,7 @@ export default function Dial() {
           {tab === "listings" ? <ListingsGrid /> : tab === "saved" ? savedTabJSX : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : <WatchlistGrid />}
         </div>
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "env(safe-area-inset-bottom, 8px)" }}>
-          {[["listings", "Feed"], ["saved", `Searches${searchesNewTotal > 0 ? ` · ${searchesNewTotal}` : ""}`], ["auctions", `Auctions${auctions.filter(a => a.status === "live").length > 0 ? ` · ${auctions.filter(a => a.status === "live").length}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+          {[["listings", "Feed"], ["saved", "Searches"], ["auctions", `Auctions${auctions.filter(a => a.status === "live").length > 0 ? ` · ${auctions.filter(a => a.status === "live").length}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "10px 0 12px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400 }}>
               {tab === key && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5", margin: "0 auto 4px" }} />}
               {label}
@@ -883,7 +848,7 @@ export default function Dial() {
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit" }} />
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-            {[["listings", "Feed"], ["saved", `Searches${searchesNewTotal > 0 ? ` · ${searchesNewTotal}` : ""}`], ["auctions", `Auctions${auctions.filter(a => a.status === "live").length > 0 ? ` · ${auctions.filter(a => a.status === "live").length}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+            {[["listings", "Feed"], ["saved", "Searches"], ["auctions", `Auctions${auctions.filter(a => a.status === "live").length > 0 ? ` · ${auctions.filter(a => a.status === "live").length}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
               <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
                 {label}
               </button>
