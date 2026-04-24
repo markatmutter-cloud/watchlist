@@ -799,13 +799,19 @@ export default function Dial() {
   if (isMobile) {
     return (
       <div style={baseStyle}>
-        {/* Sticky top stack: ONE search row (with filter + dark buttons
-            flanking it) + sort/clear pills row. Dropped the separate title
-            row — bottom tab bar already tells you which section you're in,
-            and the title took a full row of vertical space for no signal. */}
+        {/* "Watchlist" title sits OUTSIDE the sticky wrapper — it scrolls
+            off screen as you pan down, leaving just the sticky search +
+            sort rows pinned to the top. No JS needed; this is pure CSS
+            flow + sticky positioning. */}
+        <div style={{ padding: "10px 14px 4px" }}>
+          <span style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.5px" }}>Watchlist</span>
+        </div>
+        {/* Sticky stack: search row (with filter + dark-mode buttons) and
+            sort/clear pills row. Stays pinned to the viewport top so
+            filters are one tap away at any scroll depth. */}
         <div style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--bg)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px 8px", borderBottom: "0.5px solid var(--border)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "8px 12px", flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px 6px", borderBottom: "0.5px solid var(--border)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 0 }}>
             <SearchIcon />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 14, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
           </div>
@@ -816,7 +822,7 @@ export default function Dial() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
           </button>
         </div>
-        <div style={{ display: "flex", gap: 6, padding: "8px 14px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center" }}>
           <span style={{ fontSize: 11, color: "var(--text3)", marginRight: 2 }}>{allFiltered.length}</span>
           {/* Date sort pill */}
           {(() => {
