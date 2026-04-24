@@ -24,10 +24,8 @@ const SAVED_SEARCHES = [
   { id: "seed-jackies",      label: "Jackie's DateJust",  query: "DateJust"    },
 ];
 
-// Quick-filter reference numbers exposed as chips in the sidebar. Each chip
-// toggles a substring match against the title/ref field. Edit this list to
-// add more quick picks.
-const QUICK_REFS = ["1675", "1016", "1803", "2998", "165.024"];
+// Reference chips are aggregated from the current feed (same pattern as
+// Brand chips) — see REFS useMemo in the Dial component.
 
 // Hidden listings are per-device for now (localStorage). When the app gains
 // accounts (Supabase + Google auth) this will move server-side so hiding a
@@ -128,7 +126,10 @@ function Card({ item, wished, onWish, compact, onHide, isHidden }) {
         </div>
         <div style={{ padding: compact ? "5px 7px 8px" : "7px 9px 10px" }}>
           <div style={{ fontSize: compact ? 8 : 9, color: "var(--text3)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.source}</div>
-          <div style={{ fontSize: compact ? 10 : 12, fontWeight: 500, lineHeight: 1.3, marginBottom: 4, color: "var(--text1)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{item.ref}</div>
+          {/* Always reserve 2 lines' worth of height so cards in a grid row
+              line up regardless of whether the title wraps. Empty title gets
+              a space so the line-height still renders. */}
+          <div style={{ fontSize: compact ? 10 : 12, fontWeight: 500, lineHeight: 1.3, marginBottom: 4, color: "var(--text1)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: compact ? 26 : 32 }}>{item.ref || "\u00a0"}</div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
             <div style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: item.sold ? "var(--text2)" : "var(--text1)" }}>{displayPrice}</div>
             {priceDropped && (
@@ -230,6 +231,7 @@ export default function Dial() {
   const [filterRefs, setFilterRefs] = useState([]);
   const [hidden, setHidden] = useState(loadHidden);
   const [brandsExpanded, setBrandsExpanded] = useState(false);
+  const [refsExpanded, setRefsExpanded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
   const observerRef = useRef(null);
@@ -287,6 +289,28 @@ export default function Dial() {
     const counts = {};
     items.filter(i => !i.sold).forEach(i => { counts[i.brand] = (counts[i.brand] || 0) + 1; });
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([b]) => b);
+  }, [items]);
+  // Reference numbers aggregated from non-sold listings' titles. Matches 3-6
+  // digit sequences with an optional .NNN decimal (165.024), and drops
+  // numbers that are clearly four-digit years (1900-2099) to keep the list
+  // meaningful. Sorted by how many listings share that ref.
+  const REFS = useMemo(() => {
+    const counts = {};
+    const refRegex = /\b\d{3,6}(?:\.\d{1,3})?\b/g;
+    items.filter(i => !i.sold).forEach(i => {
+      const matches = (i.ref || "").match(refRegex) || [];
+      for (const m of matches) {
+        if (!m.includes(".")) {
+          const n = parseInt(m, 10);
+          if (n >= 1900 && n <= 2099 && m.length === 4) continue;  // year, skip
+        }
+        counts[m] = (counts[m] || 0) + 1;
+      }
+    });
+    return Object.entries(counts)
+      .filter(([, c]) => c >= 2)    // only refs appearing in 2+ listings
+      .sort((a, b) => b[1] - a[1])
+      .map(([r]) => r);
   }, [items]);
 
   // Desktop and mobile both use the same text-input model for price filtering
@@ -462,6 +486,8 @@ export default function Dial() {
   const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setFilterRefs([]); setSearch(""); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
 
   const visibleBrands = brandsExpanded ? BRANDS : BRANDS.slice(0, BRANDS_SHOW);
+  const REFS_SHOW = 12;
+  const visibleRefs = refsExpanded ? REFS : REFS.slice(0, REFS_SHOW);
   const NEW_OPTS = [{ label: "Today", days: 1 }, { label: "3 days", days: 3 }, { label: "This week", days: 7 }];
 
   const baseStyle = {
@@ -529,12 +555,15 @@ export default function Dial() {
         </div>
       </div>
       <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
-      <div style={{ padding: "12px 16px 8px" }}>
-        <div style={sectionHeadingStyle}>Reference</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-          {QUICK_REFS.map(r => <SidebarChip key={r} label={r} active={filterRefs.includes(r)} onClick={() => toggleFilterRef(r)} />)}
+      {REFS.length > 0 && (
+        <div style={{ padding: "12px 16px 8px" }}>
+          <div style={sectionHeadingStyle}>Reference</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {visibleRefs.map(r => <SidebarChip key={r} label={r} active={filterRefs.includes(r)} onClick={() => toggleFilterRef(r)} />)}
+            {REFS.length > REFS_SHOW && <SidebarChip label={refsExpanded ? "Less ↑" : `+${REFS.length - REFS_SHOW} more`} active={false} onClick={() => setRefsExpanded(!refsExpanded)} blue />}
+          </div>
         </div>
-      </div>
+      )}
       <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
       <div style={{ padding: "12px 16px 14px" }}>
         <div style={sectionHeadingStyle}>Price (USD)</div>
@@ -774,6 +803,9 @@ export default function Dial() {
   if (isMobile) {
     return (
       <div style={baseStyle}>
+        {/* Sticky top stack: title row + search + sort pills. Stays pinned
+            as the feed scrolls so filters are always one tap away. */}
+        <div style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--bg)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px 8px", borderBottom: "0.5px solid var(--border)" }}>
           <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Watchlist</span>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -861,6 +893,7 @@ export default function Dial() {
             </div>
           </div>
         )}
+        </div>
         <div style={{ padding: "12px 14px 80px" }}>
           {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : watchlistTabJSX}
         </div>

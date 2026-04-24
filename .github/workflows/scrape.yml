@@ -83,6 +83,10 @@ jobs:
         continue-on-error: true
         run: python watchesofknightsbridge_scraper.py
 
+      - name: Run Belmont Watches scraper
+        continue-on-error: true
+        run: python belmont_scraper.py
+
       - name: Run Antiquorum auctions scraper
         continue-on-error: true
         run: python antiquorum_auctions_scraper.py
@@ -90,6 +94,10 @@ jobs:
       - name: Run Monaco Legend auctions scraper
         continue-on-error: true
         run: python monacolegend_auctions_scraper.py
+
+      - name: Run Phillips auctions scraper
+        continue-on-error: true
+        run: python phillips_auctions_scraper.py
 
       - name: Move CSVs to data folder
         run: |
@@ -109,8 +117,10 @@ jobs:
           [ -f somlo_listings.csv ]               && mv somlo_listings.csv               data/somlo.csv               || echo "somlo missing"
           [ -f analogshift_listings.csv ]         && mv analogshift_listings.csv         data/analogshift.csv         || echo "analogshift missing"
           [ -f watchesofknightsbridge_listings.csv ] && mv watchesofknightsbridge_listings.csv data/watchesofknightsbridge.csv || echo "wok missing"
+          [ -f belmont_listings.csv ]             && mv belmont_listings.csv             data/belmont.csv             || echo "belmont missing"
           [ -f antiquorum_auctions_listings.csv ]   && mv antiquorum_auctions_listings.csv   data/antiquorum_auctions.csv   || echo "antiquorum auctions missing"
           [ -f monacolegend_auctions_listings.csv ] && mv monacolegend_auctions_listings.csv data/monacolegend_auctions.csv || echo "monacolegend auctions missing"
+          [ -f phillips_auctions_listings.csv ]   && mv phillips_auctions_listings.csv   data/phillips_auctions.csv   || echo "phillips auctions missing"
 
       - name: Merge into listings.json
         run: python merge.py

@@ -275,6 +275,7 @@ def main():
         ('data/somlo.csv',                'Somlo',                 'GBP'),
         ('data/analogshift.csv',          'Analog Shift',          'USD'),
         ('data/watchesofknightsbridge.csv', 'Watches of Knightsbridge', 'GBP'),
+        ('data/belmont.csv',              'Belmont Watches',       'USD'),
     ]
 
     state = load_state()
