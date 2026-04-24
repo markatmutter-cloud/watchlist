@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useAuth, isAuthConfigured } from "./supabase";
 
 const LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/listings.json";
 const AUCTIONS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/auctions.json";
@@ -204,6 +205,12 @@ export default function Dial() {
   const sysDark = useSystemDark();
   const isMobile = screenWidth < 640;
   const [darkOverride, setDarkOverride] = useState(null);
+  // Auth. `user` is null when signed out; non-null with `.email` etc. when
+  // signed in via Google. `ready` gates UI from flickering "Sign in" for a
+  // returning user while we check the session. `showUserMenu` toggles the
+  // small dropdown over the user badge.
+  const { user, ready: authReady, signInWithGoogle, signOut } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const dark = darkOverride !== null ? darkOverride : sysDark;
 
   const [sidebarWidth, setSidebarWidth] = useState(initialSidebarWidth);
@@ -519,6 +526,76 @@ export default function Dial() {
     ...Object.fromEntries(Object.entries(c).map(([k, v]) => [k, v]))
   };
   const gridStyle = { display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 1, background: "var(--border)" };
+
+  // ── AUTH UI ─────────────────────────────────────────────────────────────
+  // One block of JSX used by both the desktop sidebar footer and the mobile
+  // header so the experience is identical across layouts.
+  //   - Not configured (env vars missing): render nothing — app still works.
+  //   - Not ready yet: subtle placeholder so "Sign in" doesn't flash.
+  //   - Signed out: "Sign in with Google" pill.
+  //   - Signed in: user's first-letter avatar + dropdown with Sign out.
+  const userInitial = user?.user_metadata?.name?.[0]
+    || user?.user_metadata?.full_name?.[0]
+    || user?.email?.[0]
+    || "?";
+  const userName = user?.user_metadata?.name
+    || user?.user_metadata?.full_name
+    || user?.email
+    || "";
+
+  const authJSX = !isAuthConfigured ? null : !authReady ? (
+    <div style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--surface)" }} />
+  ) : !user ? (
+    <button onClick={() => signInWithGoogle()} style={{
+      fontSize: 12, padding: "5px 12px", borderRadius: 20,
+      border: "0.5px solid var(--border)", background: "var(--surface)",
+      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+      whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6,
+    }}>
+      <svg width="12" height="12" viewBox="0 0 48 48" aria-hidden="true">
+        <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.6 2.1 30.1 0 24 0 14.8 0 6.8 5.3 3 13l7.8 6C12.7 13.5 17.8 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.5 24.5c0-1.6-.2-3.1-.5-4.5H24v9h12.7c-.6 3-2.3 5.5-4.9 7.2l7.6 5.9c4.4-4.1 7.1-10.1 7.1-17.6z"/>
+        <path fill="#FBBC05" d="M10.8 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7l-7.8-6C1.1 16.3 0 20 0 24s1.1 7.7 3 11.2l7.8-6.5z"/>
+        <path fill="#34A853" d="M24 48c6.1 0 11.3-2 15.1-5.5l-7.6-5.9c-2.1 1.4-4.8 2.2-7.5 2.2-6.2 0-11.3-4-13.2-9.5l-7.8 6C6.8 42.7 14.8 48 24 48z"/>
+      </svg>
+      Sign in
+    </button>
+  ) : (
+    <div style={{ position: "relative" }}>
+      <button onClick={() => setShowUserMenu(o => !o)} aria-label="Account menu"
+        style={{
+          width: 30, height: 30, borderRadius: "50%",
+          border: "0.5px solid var(--border)", background: "var(--surface)",
+          color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+          fontSize: 13, fontWeight: 600,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+        {userInitial.toUpperCase()}
+      </button>
+      {showUserMenu && (
+        <div style={{
+          position: "absolute", right: 0, top: 36, zIndex: 50,
+          background: "var(--bg)", border: "0.5px solid var(--border)",
+          borderRadius: 10, padding: 8, minWidth: 200,
+          boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
+        }}>
+          <div style={{ fontSize: 11, color: "var(--text3)", padding: "4px 8px" }}>Signed in as</div>
+          <div style={{ fontSize: 13, color: "var(--text1)", padding: "0 8px 8px",
+                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {userName}
+          </div>
+          <div style={{ height: "0.5px", background: "var(--border)", margin: "4px -8px 4px" }} />
+          <button onClick={() => { setShowUserMenu(false); signOut(); }}
+            style={{ display: "block", width: "100%", textAlign: "left",
+                    padding: "6px 8px", border: "none", background: "transparent",
+                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                    fontSize: 13, borderRadius: 6 }}>
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
   const inp = { border: "none", borderRadius: 8, padding: "8px 10px", fontSize: 14, background: "var(--surface)", color: "var(--text1)", fontFamily: "inherit", outline: "none", width: "100%", boxSizing: "border-box" };
 
   if (loading) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Loading listings...</div>;
@@ -838,6 +915,7 @@ export default function Dial() {
           <button onClick={() => setDarkOverride(dark ? false : true)} aria-label="Toggle dark mode" style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "0.5px solid var(--border)", background: "var(--surface)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
           </button>
+          {authJSX}
         </div>
         <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center" }}>
           <span style={{ fontSize: 11, color: "var(--text3)", marginRight: 2 }}>{allFiltered.length}</span>
@@ -1023,11 +1101,12 @@ export default function Dial() {
         <div style={{ flex: 1, overflowY: "auto" }}>
           {sidebarFilterPanelJSX}
         </div>
-        <div style={{ padding: "10px 16px 14px", borderTop: "0.5px solid var(--border)", flexShrink: 0 }}>
+        <div style={{ padding: "10px 16px 14px", borderTop: "0.5px solid var(--border)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <button onClick={() => setDarkOverride(dark ? false : true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text3)", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit", fontSize: 11 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
             {dark ? "Light" : "Dark"}
           </button>
+          {authJSX}
         </div>
         <div onMouseDown={onDragStart} style={{ position: "absolute", top: 0, right: -3, width: 6, height: "100%", cursor: "col-resize", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ width: 2, height: 32, borderRadius: 1, background: "var(--border)", opacity: 0.8 }} />
