@@ -75,6 +75,14 @@ jobs:
         continue-on-error: true
         run: python somlo_scraper.py
 
+      - name: Run Analog Shift scraper
+        continue-on-error: true
+        run: python analogshift_scraper.py
+
+      - name: Run Watches of Knightsbridge scraper
+        continue-on-error: true
+        run: python watchesofknightsbridge_scraper.py
+
       - name: Move CSVs to data folder
         run: |
           mkdir -p data
@@ -91,6 +99,8 @@ jobs:
           [ -f db1983_listings.csv ]              && mv db1983_listings.csv              data/db1983.csv              || echo "db1983 missing"
           [ -f hairspring_listings.csv ]          && mv hairspring_listings.csv          data/hairspring.csv          || echo "hairspring missing"
           [ -f somlo_listings.csv ]               && mv somlo_listings.csv               data/somlo.csv               || echo "somlo missing"
+          [ -f analogshift_listings.csv ]         && mv analogshift_listings.csv         data/analogshift.csv         || echo "analogshift missing"
+          [ -f watchesofknightsbridge_listings.csv ] && mv watchesofknightsbridge_listings.csv data/watchesofknightsbridge.csv || echo "wok missing"
 
       - name: Merge into listings.json
         run: python merge.py
