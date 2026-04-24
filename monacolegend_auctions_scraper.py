@@ -19,7 +19,7 @@ import requests
 import csv
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, date
 
 BASE = "https://www.monacolegendauctions.com"
 HEADERS = {
@@ -71,80 +71,94 @@ def scrape():
     r.raise_for_status()
     html = r.text
 
-    by_path = {}  # dedup on path; prefer records that parsed a real date
+    # The homepage has three regions:
+    #   1. "Upcoming Auction" hero banner at the top — a promo card that
+    #      links to the featured sale with no date/location text around it.
+    #      Ignore this — it's what caused the previous version to capture
+    #      auctions with empty date fields and then bleed adjacent cards'
+    #      dates into them on dedup.
+    #   2. "Bidding Open" — actual card grid of currently-bidding auctions
+    #      (includes both today's live sale and any pre-bidding upcoming
+    #      ones). This is the only region we parse.
+    #   3. "Auction Result" — past auctions. Skipped.
+    bidding_start = html.find('Bidding Open')
+    if bidding_start < 0:
+        print("No 'Bidding Open' section found; skipping.")
+        return []
+    # End of the section is wherever Auction Result starts next (if any).
+    enders = [p for p in [html.find('Auction Result', bidding_start + 1)] if p >= 0]
+    section_end = min(enders) if enders else len(html)
+    section = html[bidding_start:section_end]
 
-    # For each auction link, scope the text window to start at the nearest
-    # preceding status marker — that keeps adjacent cards' dates from
-    # bleeding into this auction's record (the previous version wrongly
-    # assigned Exclusive Timepieces 41's date to 40 because both cards fit
-    # inside a 2000-char backwards window).
-    for m in re.finditer(r'href="(auction/[^"#?]+)"', html):
-        path = m.group(1)
-        idx = m.start()
+    # Monaco Legend renders two card templates — a featured layout for the
+    # currently-live sale and a grid layout for everything else — but both
+    # contain <p class="auction-date">{date} | {location}</p>. Anchor on
+    # that tag: the date+location come from its text, the href comes from
+    # the nearest auction link within a reasonable window, and the card
+    # spans from one auction-date tag to the next.
+    date_tags = list(re.finditer(
+        r'<p class="auction-date">([^<]+)</p>',
+        section,
+    ))
 
-        status_candidates = [
-            (html.rfind('Bidding Open', 0, idx), 'live'),
-            (html.rfind('Upcoming Auction', 0, idx), 'upcoming'),
-            (html.rfind('Auction Result', 0, idx), 'past'),
-        ]
-        status_candidates = [(pos, s) for pos, s in status_candidates if pos >= 0]
-        if not status_candidates:
+    by_path = {}
+    today = date.today()
+
+    for i, dm in enumerate(date_tags):
+        next_pos = date_tags[i + 1].start() if i + 1 < len(date_tags) else len(section)
+        chunk = section[dm.start():next_pos]
+        date_raw = dm.group(1)
+
+        hm = re.search(r'href="(auction/[^"#?]+)"', chunk)
+        if not hm:
             continue
-        # Nearest preceding marker wins — that's this card's status line.
-        status_candidates.sort(key=lambda x: -x[0])
-        start_pos, status = status_candidates[0]
-
-        if status == 'past':
+        path = hm.group(1)
+        if path in by_path:
             continue
 
-        chunk = html[start_pos:idx + 200]
-        text = re.sub(r'<[^>]+>', ' ', chunk)
+        # Clean the date+location text from the <p> tag
+        text = date_raw
         text = re.sub(r'&#8211;|–|—', '-', text)
         text = re.sub(r'&#8288;|&nbsp;', ' ', text)
         text = re.sub(r'&amp;', '&', text)
         text = re.sub(r'\s+', ' ', text).strip()
 
-        # Title guess: everything between the status phrase and the next date
-        # or "View Auction" looks messy in practice; keep simple — use the
-        # URL slug, title-cased and de-hyphenated.
+        # The auction-date <p> reads like "25 - 26 April 2026 | Monaco" or
+        # "4 June 2026 | Lugano". Parse date-then-location.
+        m = re.match(
+            r'(\d+\s*(?:-\s*\d+\s*)?[A-Z][a-z]+\s+202[4-7])'
+            r'\s*\|\s*'
+            r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)',
+            text,
+        )
+        if not m:
+            continue
+        date_label = m.group(1).strip()
+        location   = m.group(2).strip()
+        date_start, date_end = parse_date_range(date_label)
+        if not date_start:
+            continue
+
+        # Title: pull auction number from slug, e.g. exclusive-timepieces-41 → 41.
         slug = path.split('/', 1)[-1]
         title = slug.replace('-', ' ').strip().title()
 
-        # Date: look in the chunk for "dd - dd Month YYYY" or "dd Month YYYY"
-        date_start = date_end = None
-        date_label = ''
-        for dm in re.finditer(r'\d+\s*[\-\s]*\s*\d*\s*[A-Z][a-z]+\s+202[4-7]', text):
-            candidate = dm.group(0).strip()
-            s, e = parse_date_range(candidate)
-            if s:
-                date_start, date_end, date_label = s, e, candidate
-                break
-
-        # Location is typically right after the date: '25 - 26 April 2026 | Monaco'.
-        # Most Monaco Legend sales ARE in Monaco; default to that if no match.
-        location = 'Monaco'
-        lm = re.search(r'\| ?\s*([A-Z][a-z]+(?: [A-Z][a-z]+)?)\s*(?:View Auction|$)', text)
-        if lm:
-            location = lm.group(1).strip()
-
-        # Dedup: keep the first occurrence only. Later occurrences of the
-        # same href tend to be teaser cards inside another sale's section,
-        # which causes status + date bleed-over if we merge them in.
-        if path in by_path:
-            continue
-
-        # Monaco Legend's per-auction URL goes to a sale landing page, but
-        # the actual catalog (with lots + bidding) only opens for "Bidding
-        # Open" sales. Mark 'has_catalog' true only for live ones so the
-        # Catalog chip doesn't promise a catalog that isn't published yet.
-        has_catalog = 'True' if status == 'live' else 'False'
+        # Derive live vs upcoming from the actual dates rather than
+        # Monaco Legend's section header — their "Bidding Open" grid
+        # includes sales whose auction day is still weeks away (pre-bid
+        # phase). For our UI, "live" should mean "the auction day is
+        # today", so timers and catalog chips are accurate.
+        today_iso = today.isoformat()
+        is_live = date_start <= today_iso <= (date_end or date_start)
+        status = 'live' if is_live else 'upcoming'
+        has_catalog = 'True' if is_live else 'False'
 
         by_path[path] = {
             'house':       'Monaco Legend',
             'title':       title,
             'location':    location,
-            'date_start':  date_start or '',
-            'date_end':    date_end or '',
+            'date_start':  date_start,
+            'date_end':    date_end or date_start,
             'date_label':  date_label,
             'url':         f"{BASE}/{path}",
             'has_catalog': has_catalog,

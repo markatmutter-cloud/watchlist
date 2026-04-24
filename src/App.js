@@ -24,6 +24,22 @@ const SAVED_SEARCHES = [
   { id: "seed-jackies",      label: "Jackie's DateJust",  query: "DateJust"    },
 ];
 
+// Quick-filter reference numbers exposed as chips in the sidebar. Each chip
+// toggles a substring match against the title/ref field. Edit this list to
+// add more quick picks.
+const QUICK_REFS = ["1675", "1016", "1803", "2998", "165.024"];
+
+// Hidden listings are per-device for now (localStorage). When the app gains
+// accounts (Supabase + Google auth) this will move server-side so hiding a
+// watch on one device reflects everywhere.
+const HIDDEN_STORAGE_KEY = "dial_hidden_v1";
+function loadHidden() {
+  try { return JSON.parse(localStorage.getItem(HIDDEN_STORAGE_KEY) || "{}"); } catch { return {}; }
+}
+function saveHidden(h) {
+  try { localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(h)); } catch {}
+}
+
 function fmt(price, currency) {
   return (CURRENCY_SYM[currency] || "$") + price.toLocaleString();
 }
@@ -92,7 +108,7 @@ function SearchIcon() {
   );
 }
 
-function Card({ item, wished, onWish, compact }) {
+function Card({ item, wished, onWish, compact, onHide, isHidden }) {
   const isNew = daysAgo(freshDate(item)) <= 1 && !item.sold;
   const displayPrice = fmt(item.price, item.currency || "USD");
   const showUSD = item.currency && item.currency !== "USD" && item.priceUSD;
@@ -106,7 +122,8 @@ function Card({ item, wished, onWish, compact }) {
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
             loading="lazy" />
           {item.sold && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>}
-          {isNew && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(24,95,165,0.92)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em", fontWeight: 600 }}>NEW</div>}
+          {!item.sold && isHidden && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>}
+          {isNew && !isHidden && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(24,95,165,0.92)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em", fontWeight: 600 }}>NEW</div>}
           {item.currency && item.currency !== "USD" && <div style={{ position: "absolute", bottom: 6, left: 6, background: "rgba(0,0,0,0.5)", color: "#fff", fontSize: 8, padding: "2px 5px", borderRadius: 5 }}>{item.currency}</div>}
         </div>
         <div style={{ padding: compact ? "5px 7px 8px" : "7px 9px 10px" }}>
@@ -124,12 +141,30 @@ function Card({ item, wished, onWish, compact }) {
           <div style={{ fontSize: 9, color: "var(--text3)", minHeight: 12 }}>{showUSD ? `~${fmtUSD(item.priceUSD)}` : "\u00a0"}</div>
         </div>
       </a>
-      <button onClick={e => { e.preventDefault(); e.stopPropagation(); onWish(item); }}
-        style={{ position: "absolute", top: 0, right: 0, width: 44, height: 44, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "flex-start", justifyContent: "flex-end", padding: "7px 7px 0 0" }}>
-        <div style={{ background: wished ? "rgba(220,38,38,0.88)" : "rgba(0,0,0,0.28)", borderRadius: "50%", width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
+      <div style={{ position: "absolute", top: 6, right: 6, display: "flex", flexDirection: "column", gap: 6 }}>
+        <button onClick={e => { e.preventDefault(); e.stopPropagation(); onWish(item); }}
+          aria-label="Save"
+          style={{ width: 26, height: 26, borderRadius: "50%", border: "none", cursor: "pointer",
+                  background: wished ? "rgba(220,38,38,0.88)" : "rgba(0,0,0,0.28)",
+                  color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <HeartIcon filled={wished} size={12} />
-        </div>
-      </button>
+        </button>
+        {onHide && (
+          <button onClick={e => { e.preventDefault(); e.stopPropagation(); onHide(item); }}
+            aria-label={isHidden ? "Unhide" : "Hide"}
+            title={isHidden ? "Unhide" : "Hide from feed"}
+            style={{ width: 26, height: 26, borderRadius: "50%", border: "none", cursor: "pointer",
+                    background: isHidden ? "rgba(24,95,165,0.88)" : "rgba(0,0,0,0.28)",
+                    color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontFamily: "inherit" }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              {isHidden
+                ? <><path d="M4 12h16"/><path d="M12 4v16"/></> /* + sign = restore */
+                : <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></> /* X = hide */
+              }
+            </svg>
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -192,6 +227,8 @@ export default function Dial() {
   const [page, setPage] = useState(1);
   const [watchlist, setWatchlist] = useState(loadWL);
   const [wishSort, setWishSort] = useState("saved");
+  const [filterRefs, setFilterRefs] = useState([]);
+  const [hidden, setHidden] = useState(loadHidden);
   const [brandsExpanded, setBrandsExpanded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
@@ -259,7 +296,20 @@ export default function Dial() {
   const minPrice = minPriceText ? (parseInt(minPriceText.replace(/[^0-9]/g, "")) || 0) : 0;
   const maxPrice = maxPriceText ? (parseInt(maxPriceText.replace(/[^0-9]/g, "")) || GLOBAL_MAX) : GLOBAL_MAX;
 
-  useEffect(() => { setPage(1); }, [filterSources, filterBrands, search, sort, newDays, minPriceText, maxPriceText]);
+  useEffect(() => { setPage(1); }, [filterSources, filterBrands, filterRefs, search, sort, newDays, minPriceText, maxPriceText]);
+
+  const toggleHide = useCallback((item) => {
+    setHidden(prev => {
+      const next = { ...prev };
+      if (next[item.id]) delete next[item.id];
+      else next[item.id] = new Date().toISOString();
+      saveHidden(next);
+      return next;
+    });
+  }, []);
+
+  const toggleFilterRef = (ref) =>
+    setFilterRefs(p => p.includes(ref) ? p.filter(x => x !== ref) : [...p, ref]);
 
   const handleWish = useCallback((item) => {
     setWatchlist(prev => {
@@ -286,6 +336,13 @@ export default function Dial() {
   const allFiltered = useMemo(() => {
     let its = [...items];
     its = its.filter(i => !i.sold);
+    its = its.filter(i => !hidden[i.id]);   // drop user-hidden items from Available feed
+    if (filterRefs.length > 0) {
+      its = its.filter(i => {
+        const ref = (i.ref || "").toLowerCase();
+        return filterRefs.some(r => ref.includes(r.toLowerCase()));
+      });
+    }
     if (newDays > 0) its = its.filter(i => daysAgo(freshDate(i)) <= newDays);
     if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
     if (filterBrands.length > 0) its = its.filter(i => filterBrands.includes(i.brand));
@@ -300,7 +357,7 @@ export default function Dial() {
     else if (sort === "date-asc") its.sort((a, b) => (freshDate(a) < freshDate(b) ? -1 : 1));
     else its.sort((a, b) => (freshDate(a) < freshDate(b) ? 1 : -1));
     return its;
-  }, [items, filterSources, filterBrands, search, sort, minPrice, maxPrice, newDays]);
+  }, [items, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays]);
 
   const visible = useMemo(() => allFiltered.slice(0, page * PAGE_SIZE), [allFiltered, page]);
   const hasMore = visible.length < allFiltered.length;
@@ -327,27 +384,38 @@ export default function Dial() {
     return its;
   }, [watchlist, wishSort]);
 
-  // Archive = every sold listing. Two flavors live here:
-  //   • Items that disappeared from a source's scrape (truly delisted) —
-  //     soldAt is set by merge.py's state-tracking.
-  //   • Items the scraper flagged reserved/on-hold (Wind Vintage) — soldAt
-  //     is set when merge.py first notices sold=true in the CSV.
-  // User treats reserved as sold for price-history purposes. Sorted by
-  // soldAt descending; honors search/source/brand filters.
+  // Archive shows three flavors side by side:
+  //   • Sold/delisted — disappeared from scrape, soldAt from state-tracking.
+  //   • Reserved — Wind Vintage "on hold", soldAt from the CSV flag.
+  //   • Hidden — user-chosen not to see in Available. Still actually live.
+  // Each item is tagged with an `archivedAt` key (soldAt or hide date) so
+  // the combined list can sort by "most recently archived first".
   const archiveItems = useMemo(() => {
-    let its = items.filter(i => i.sold);
+    const sold = items
+      .filter(i => i.sold)
+      .map(i => ({ ...i, archivedAt: i.soldAt || i.lastSeen || "" }));
+    const userHidden = items
+      .filter(i => !i.sold && hidden[i.id])
+      .map(i => ({ ...i, archivedAt: hidden[i.id] || "" }));
+    let its = [...sold, ...userHidden];
     if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
     if (filterBrands.length > 0) its = its.filter(i => filterBrands.includes(i.brand));
+    if (filterRefs.length > 0) {
+      its = its.filter(i => {
+        const ref = (i.ref || "").toLowerCase();
+        return filterRefs.some(r => ref.includes(r.toLowerCase()));
+      });
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       its = its.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q));
     }
-    its.sort((a, b) => ((a.soldAt || "") < (b.soldAt || "") ? 1 : -1));
+    its.sort((a, b) => ((a.archivedAt || "") < (b.archivedAt || "") ? 1 : -1));
     return its;
-  }, [items, filterSources, filterBrands, search]);
+  }, [items, filterSources, filterBrands, filterRefs, search, hidden]);
 
   const watchCount = Object.keys(watchlist).length;
-  const hasFilters = filterSources.length > 0 || filterBrands.length > 0 || search || newDays > 0 || minPriceText || maxPriceText;
+  const hasFilters = filterSources.length > 0 || filterBrands.length > 0 || filterRefs.length > 0 || search || newDays > 0 || minPriceText || maxPriceText;
 
   const savedSearchStats = useMemo(() => {
     const forSale = items.filter(i => !i.sold);
@@ -391,7 +459,7 @@ export default function Dial() {
     });
   }, [auctions]);
 
-  const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setSearch(""); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
+  const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setFilterRefs([]); setSearch(""); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
 
   const visibleBrands = brandsExpanded ? BRANDS : BRANDS.slice(0, BRANDS_SHOW);
   const NEW_OPTS = [{ label: "Today", days: 1 }, { label: "3 days", days: 3 }, { label: "This week", days: 7 }];
@@ -414,10 +482,26 @@ export default function Dial() {
   // render. Function components defined inside Dial() get a new reference per
   // render and React treats them as a new component type — which was killing
   // input focus mid-keystroke.
+  // Sidebar section heading style — lifted out so all headings match and
+  // one edit changes them everywhere. Slightly darker + bolder than before.
+  const sectionHeadingStyle = {
+    fontSize: 10, fontWeight: 600, textTransform: "uppercase",
+    letterSpacing: "0.08em", color: "var(--text1)", marginBottom: 8,
+  };
+
   const sidebarFilterPanelJSX = (
     <div style={{ display: "flex", flexDirection: "column" }}>
+      {/* Search lives at the top of the sidebar now (moved out of the
+          main-content header for a tighter top bar). */}
+      <div style={{ padding: "12px 16px 10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 8, padding: "7px 10px" }}>
+          <SearchIcon />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
+        </div>
+      </div>
+      <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
       <div style={{ padding: "12px 16px 8px" }}>
-        <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 6 }}>Sort</div>
+        <div style={sectionHeadingStyle}>Sort</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
           {[["date", "Newest first"], ["price-asc", "Price: low to high"], ["price-desc", "Price: high to low"]].map(([val, label]) => (
             <button key={val} onClick={() => setSort(val)} style={{ padding: "5px 8px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, textAlign: "left", background: sort === val ? "var(--surface)" : "transparent", color: sort === val ? "var(--text1)" : "var(--text2)", fontWeight: sort === val ? 500 : 400 }}>{label}</button>
@@ -431,22 +515,29 @@ export default function Dial() {
       )}
       <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
       <div style={{ padding: "12px 16px 8px" }}>
-        <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Source</div>
+        <div style={sectionHeadingStyle}>Source</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
           {SOURCES.map(s => <SidebarChip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
         </div>
       </div>
       <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
       <div style={{ padding: "12px 16px 8px" }}>
-        <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Brand</div>
+        <div style={sectionHeadingStyle}>Brand</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
           {visibleBrands.map(b => <SidebarChip key={b} label={b} active={filterBrands.includes(b)} onClick={() => toggleBrand(b)} />)}
           {BRANDS.length > BRANDS_SHOW && <SidebarChip label={brandsExpanded ? "Less ↑" : `+${BRANDS.length - BRANDS_SHOW} more`} active={false} onClick={() => setBrandsExpanded(!brandsExpanded)} blue />}
         </div>
       </div>
       <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
+      <div style={{ padding: "12px 16px 8px" }}>
+        <div style={sectionHeadingStyle}>Reference</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          {QUICK_REFS.map(r => <SidebarChip key={r} label={r} active={filterRefs.includes(r)} onClick={() => toggleFilterRef(r)} />)}
+        </div>
+      </div>
+      <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
       <div style={{ padding: "12px 16px 14px" }}>
-        <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Price (USD)</div>
+        <div style={sectionHeadingStyle}>Price (USD)</div>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <input value={minPriceText} onChange={e => setMinPriceText(e.target.value)} placeholder="Min"
             inputMode="numeric"
@@ -504,7 +595,7 @@ export default function Dial() {
   const ListingsGrid = () => (
     <>
       <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-        {visible.map(item => <Card key={item.id} item={item} wished={!!watchlist[item.id]} onWish={handleWish} compact={compact} />)}
+        {visible.map(item => <Card key={item.id} item={item} wished={!!watchlist[item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[item.id]} />)}
         {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>No watches match your filters</div>}
       </div>
       {hasMore && <div ref={loaderRef} style={{ padding: 24, textAlign: "center", color: "var(--text3)", fontSize: 12 }}>Loading more...</div>}
@@ -529,11 +620,11 @@ export default function Dial() {
         </div>
         <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
           {archiveItems.map(item => (
-            <Card key={item.id} item={item} wished={!!watchlist[item.id]} onWish={handleWish} compact={compact} />
+            <Card key={item.id} item={item} wished={!!watchlist[item.id]} onWish={handleWish} compact={compact} onHide={hidden[item.id] ? toggleHide : undefined} isHidden={!!hidden[item.id]} />
           ))}
         </div>
         <div style={{ padding: "14px 0 0", fontSize: 11, color: "var(--text3)", textAlign: "center", lineHeight: 1.5 }}>
-          Price shown is the last asking price before the listing disappeared. Dealers don't publish sale prices, so this is the best proxy for the market.
+          Sold items show the last asking price. Hidden items stay live — tap the + to restore them to Available.
         </div>
       </>
     )
@@ -617,31 +708,66 @@ export default function Dial() {
     )
   );
 
-  const WatchlistGrid = () => (
-    watchCount === 0 ? (
-      <div style={{ padding: "60px 0", textAlign: "center" }}>
-        <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>
-        <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>Your watchlist is empty</div>
-        <div style={{ fontSize: 13, color: "var(--text2)" }}>Tap the heart on any listing to save it here</div>
-      </div>
-    ) : (
-      <>
-        <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center" }}>
-          <span style={{ fontSize: 12, color: "var(--text3)" }}>{watchCount} saved</span>
-          <div style={{ display: "flex", gap: 6 }}>
-            {[["saved", "Recent"], ["price-asc", "Price ↑"], ["price-desc", "Price ↓"]].map(([val, label]) => (
-              <Chip key={val} label={label} active={wishSort === val} onClick={() => setWishSort(val)} />
+  // Watchlist tab now stacks two subsections:
+  //   1. Saved searches (tap to run a search in Available)
+  //   2. Hearted listings with their saved price
+  // Inline JSX const (not a function component) to avoid remount-on-render
+  // bugs the way the other tabs do.
+  const watchlistTabJSX = (
+    <div>
+      {savedSearchStats.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)", marginBottom: 10 }}>Saved searches</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {savedSearchStats.map((s) => (
+              <button key={s.id} onClick={() => runSearch(s)} style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "12px 14px", borderRadius: 12,
+                border: "0.5px solid var(--border)", background: "var(--card-bg)",
+                cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+              }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)", marginBottom: 2 }}>{s.label}</div>
+                  <div style={{ fontSize: 11, color: "var(--text2)" }}>{s.count} for sale{s.query && s.query !== s.label ? ` · "${s.query}"` : ""}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {s.newCount > 0 && (
+                    <div style={{ fontSize: 10, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 7px" }}>{s.newCount} new</div>
+                  )}
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                </div>
+              </button>
             ))}
           </div>
         </div>
-        <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-          {watchItems.map(item => (
-            <Card key={item.id} item={{ ...item, price: item.savedPrice, currency: item.savedCurrency || "USD", priceUSD: item.savedPriceUSD || item.savedPrice }} wished={true} onWish={handleWish} compact={compact} />
-          ))}
+      )}
+
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)", marginBottom: 10 }}>Watchlist</div>
+      {watchCount === 0 ? (
+        <div style={{ padding: "40px 0", textAlign: "center" }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>
+          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>No watches saved yet</div>
+          <div style={{ fontSize: 12, color: "var(--text2)" }}>Tap the heart on any listing to save it here</div>
         </div>
-        <div style={{ padding: "14px 0 0", fontSize: 11, color: "var(--text3)", textAlign: "center" }}>Prices saved at time of adding to watchlist</div>
-      </>
-    )
+      ) : (
+        <>
+          <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center" }}>
+            <span style={{ fontSize: 12, color: "var(--text3)" }}>{watchCount} saved</span>
+            <div style={{ display: "flex", gap: 6 }}>
+              {[["saved", "Recent"], ["price-asc", "Price ↑"], ["price-desc", "Price ↓"]].map(([val, label]) => (
+                <Chip key={val} label={label} active={wishSort === val} onClick={() => setWishSort(val)} />
+              ))}
+            </div>
+          </div>
+          <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+            {watchItems.map(item => (
+              <Card key={item.id} item={{ ...item, price: item.savedPrice, currency: item.savedCurrency || "USD", priceUSD: item.savedPriceUSD || item.savedPrice }} wished={true} onWish={handleWish} compact={compact} />
+            ))}
+          </div>
+          <div style={{ padding: "14px 0 0", fontSize: 11, color: "var(--text3)", textAlign: "center" }}>Prices saved at time of adding to watchlist</div>
+        </>
+      )}
+    </div>
   );
 
   // ── MOBILE ────────────────────────────────────────────────────────────────
@@ -736,10 +862,10 @@ export default function Dial() {
           </div>
         )}
         <div style={{ padding: "12px 14px 80px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "saved" ? savedTabJSX : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : <WatchlistGrid />}
+          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : watchlistTabJSX}
         </div>
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "env(safe-area-inset-bottom, 8px)" }}>
-          {[["listings", "Feed"], ["saved", "Searches"], ["auctions", `Auctions${auctions.filter(a => a.status === "live").length > 0 ? ` · ${auctions.filter(a => a.status === "live").length}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+          {[["listings", "Available"], ["auctions", `Auctions${auctions.filter(a => a.status === "live").length > 0 ? ` · ${auctions.filter(a => a.status === "live").length}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "10px 0 12px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400 }}>
               {tab === key && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5", margin: "0 auto 4px" }} />}
               {label}
@@ -765,7 +891,7 @@ export default function Dial() {
 
 
                 <div style={{ padding: "10px 16px 10px" }}>
-                  <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Source</div>
+                  <div style={sectionHeadingStyle}>Source</div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {SOURCES.map(s => <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
                   </div>
@@ -773,7 +899,7 @@ export default function Dial() {
                 <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
 
                 <div style={{ padding: "10px 16px 10px" }}>
-                  <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Brand</div>
+                  <div style={sectionHeadingStyle}>Brand</div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {visibleBrands.map(b => <Chip key={b} label={b} active={filterBrands.includes(b)} onClick={() => toggleBrand(b)} />)}
                     {BRANDS.length > BRANDS_SHOW && <Chip label={brandsExpanded ? "Less ↑" : `+${BRANDS.length - BRANDS_SHOW} more`} active={false} onClick={() => setBrandsExpanded(!brandsExpanded)} blue />}
@@ -782,7 +908,7 @@ export default function Dial() {
                 <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
 
                 <div style={{ padding: "10px 16px 10px" }}>
-                  <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 8 }}>Price range</div>
+                  <div style={sectionHeadingStyle}>Price range</div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <input value={minPriceText} onChange={e => setMinPriceText(e.target.value)} placeholder="Min $" style={{ ...inp, flex: 1 }} />
                     <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>to</span>
@@ -795,7 +921,7 @@ export default function Dial() {
               <div style={{ borderTop: "0.5px solid var(--border)", padding: "12px 16px", background: "var(--bg)" }}>
                 <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 6 }}>Sort</div>
+                    <div style={{ ...sectionHeadingStyle, marginBottom: 6 }}>Sort</div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {[["date", "Newest"], ["price-asc", "Price ↑"], ["price-desc", "Price ↓"]].map(([val, label]) => (
                         <Chip key={val} label={label} active={sort === val} onClick={() => setSort(val)} />
@@ -844,21 +970,18 @@ export default function Dial() {
       </div>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, background: "var(--surface)", borderRadius: 8, padding: "7px 12px" }}>
-            <SearchIcon />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit" }} />
-          </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-            {[["listings", "Feed"], ["saved", "Searches"], ["auctions", `Auctions${auctions.filter(a => a.status === "live").length > 0 ? ` · ${auctions.filter(a => a.status === "live").length}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
-              <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
+          {/* Search moved into the sidebar; this row is just tabs + count. */}
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flex: 1 }}>
+            {[["listings", "Available"], ["auctions", `Auctions${auctions.filter(a => a.status === "live").length > 0 ? ` · ${auctions.filter(a => a.status === "live").length}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+              <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 13, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
                 {label}
               </button>
             ))}
-            <span style={{ fontSize: 12, color: "var(--text3)", paddingLeft: 4 }}>{allFiltered.length}</span>
           </div>
+          <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>{allFiltered.length}</span>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "saved" ? savedTabJSX : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : <WatchlistGrid />}
+          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : watchlistTabJSX}
         </div>
       </div>
     </div>
