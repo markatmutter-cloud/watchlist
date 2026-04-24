@@ -205,7 +205,6 @@ export default function Dial() {
   const [brandsExpanded, setBrandsExpanded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
-  const [aboutOpen, setAboutOpen] = useState(false);
   // Saved searches are lifted to Dial-level state so they persist across the
   // constant remounts of the SavedTab sub-component. Null editor = not
   // editing; otherwise { id, label, query } — id can be 'new' for additions.
@@ -338,6 +337,25 @@ export default function Dial() {
     return its;
   }, [watchlist, wishSort]);
 
+  // Archive = every sold listing. Two flavors live here:
+  //   • Items that disappeared from a source's scrape (truly delisted) —
+  //     soldAt is set by merge.py's state-tracking.
+  //   • Items the scraper flagged reserved/on-hold (Wind Vintage) — soldAt
+  //     is set when merge.py first notices sold=true in the CSV.
+  // User treats reserved as sold for price-history purposes. Sorted by
+  // soldAt descending; honors search/source/brand filters.
+  const archiveItems = useMemo(() => {
+    let its = items.filter(i => i.sold);
+    if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
+    if (filterBrands.length > 0) its = its.filter(i => filterBrands.includes(i.brand));
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      its = its.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q));
+    }
+    its.sort((a, b) => ((a.soldAt || "") < (b.soldAt || "") ? 1 : -1));
+    return its;
+  }, [items, filterSources, filterBrands, search]);
+
   const watchCount = Object.keys(watchlist).length;
   const hasFilters = filterSources.length > 0 || filterBrands.length > 0 || search || newDays > 0 || minPriceText || maxPriceText;
 
@@ -352,6 +370,9 @@ export default function Dial() {
       return { id, label, query, count: matches.length, newCount };
     });
   }, [items, searches]);
+  // Total "new in the last 7 days" across all saved searches, shown as a
+  // pill on the Searches tab (matches how the Watchlist pill shows count).
+  const searchesNewTotal = savedSearchStats.reduce((sum, s) => sum + s.newCount, 0);
 
   const startAddSearch    = () => setSearchEditor({ id: "new", label: "", query: "" });
   const startEditSearch   = (s) => setSearchEditor({ id: s.id, label: s.label, query: s.query });
@@ -389,46 +410,13 @@ export default function Dial() {
   if (loading) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Loading listings...</div>;
   if (loadError) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Could not load listings. Try refreshing.</div>;
 
-  // ── ABOUT MODAL ───────────────────────────────────────────────────────────
-  const aboutModal = aboutOpen && (
-    <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div onClick={() => setAboutOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }} />
-      <div style={{ position: "relative", background: "var(--bg)", color: "var(--text1)", borderRadius: 14, maxWidth: 460, width: "100%", padding: "18px 20px 16px", boxShadow: "0 10px 40px rgba(0,0,0,0.3)" }}>
-        <button onClick={() => setAboutOpen(false)} aria-label="Close" style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", border: "none", background: "var(--surface)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-
-        <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.5px", marginBottom: 2 }}>Dial</div>
-        <div style={{ fontSize: 11, color: "var(--text2)", marginBottom: 12 }}>A personal vintage watch aggregator</div>
-
-        <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--text1)", marginBottom: 8 }}>
-          Pulls active inventory from a handful of independent dealers I follow and puts everything in one feed, sorted by when I first saw each listing. A way to keep up to speed without bouncing between ten dealer sites.
-        </p>
-        <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--text1)", marginBottom: 8 }}>
-          Passion project, not a marketplace. No ads, no commissions, no affiliate links. Every listing links straight back to the dealer.
-        </p>
-        <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--text1)", marginBottom: 12 }}>
-          Wanted something more focused than Chrono24 and more consolidated than checking each dealer individually — one feed, just the sellers I trust.
-        </p>
-
-        <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 4 }}>Sources</div>
-        <div style={{ fontSize: 11, color: "var(--text2)", lineHeight: 1.5, marginBottom: 12 }}>
-          Wind Vintage · Tropical Watch · Menta Watches · Collectors Corner NY · Falco Watches · Grey & Patina · Oliver & Clarke · Craft & Tailored · Watch Brothers London · MVV Watches
-        </div>
-
-        <div style={{ fontSize: 11, color: "var(--text2)", lineHeight: 1.5, marginBottom: 10 }}>
-          Built with Python scrapers on GitHub Actions, React on Vercel, and <a href="https://claude.com/claude-code" target="_blank" rel="noopener noreferrer" style={{ color: "#185FA5" }}>Claude</a> as co-author.
-        </div>
-
-        <a href="https://github.com/markatmutter-cloud/Dial" target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", fontSize: 11, color: "#185FA5", textDecoration: "none" }}>
-          View source on GitHub →
-        </a>
-      </div>
-    </div>
-  );
-
   // ── SIDEBAR FILTER PANEL (desktop only) ──────────────────────────────────
-  const SidebarFilterPanel = () => (
+  // NOTE: defined as a JSX const rather than a function component so the DOM
+  // nodes (especially the price text inputs) aren't rebuilt on every parent
+  // render. Function components defined inside Dial() get a new reference per
+  // render and React treats them as a new component type — which was killing
+  // input focus mid-keystroke.
+  const sidebarFilterPanelJSX = (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <div style={{ padding: "12px 16px 8px" }}>
         <div style={{ fontSize: 9, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text3)", marginBottom: 6 }}>Sort</div>
@@ -477,9 +465,13 @@ export default function Dial() {
   // ── SEARCHES TAB ──────────────────────────────────────────────────────────
   const runSearch = (s) => { setSearch(s.query); setSort("date"); setTab("listings"); setPage(1); };
 
-  const EditorRow = ({ editor }) => (
+  // Helper that returns JSX (not a component) so React doesn't treat it as a
+  // new component type every render — which would unmount the inputs and lose
+  // focus after every keystroke. Same reason sidebarFilterPanelJSX below is
+  // a const, not a component.
+  const editorRowFor = (editor) => (
     <div style={{ border: "0.5px solid var(--border)", borderRadius: 12, background: "var(--card-bg)", padding: 12 }}>
-      <input autoFocus value={editor.label}
+      <input value={editor.label}
         onChange={e => setSearchEditor({ ...editor, label: e.target.value })}
         placeholder="Label (e.g. Jackie's DateJust)"
         style={{ ...inp, marginBottom: 8 }} />
@@ -497,7 +489,7 @@ export default function Dial() {
     </div>
   );
 
-  const SavedTab = () => (
+  const savedTabJSX = (
     <div style={{ paddingTop: 4 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <div style={{ fontSize: 12, color: "var(--text3)" }}>Tap to run · pencil to edit</div>
@@ -509,7 +501,7 @@ export default function Dial() {
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {savedSearchStats.map((s) => {
           const isEditing = searchEditor && searchEditor.id === s.id;
-          if (isEditing) return <EditorRow key={s.id} editor={searchEditor} />;
+          if (isEditing) return <div key={s.id}>{editorRowFor(searchEditor)}</div>;
           return (
             <div key={s.id} style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 12, background: "var(--card-bg)", overflow: "hidden" }}>
               <button onClick={() => runSearch(s)} style={{
@@ -535,7 +527,7 @@ export default function Dial() {
             </div>
           );
         })}
-        {searchEditor && searchEditor.id === "new" && <EditorRow editor={searchEditor} />}
+        {searchEditor && searchEditor.id === "new" && editorRowFor(searchEditor)}
       </div>
 
       {searches.length === 0 && !searchEditor && (
@@ -557,6 +549,33 @@ export default function Dial() {
       {hasMore && <div ref={loaderRef} style={{ padding: 24, textAlign: "center", color: "var(--text3)", fontSize: 12 }}>Loading more...</div>}
       {!hasMore && allFiltered.length > 0 && <div style={{ padding: 24, textAlign: "center", color: "var(--text3)", fontSize: 12 }}>All {allFiltered.length} shown</div>}
     </>
+  );
+
+  const archiveGridJSX = (
+    archiveItems.length === 0 ? (
+      <div style={{ padding: "60px 0", textAlign: "center" }}>
+        <div style={{ fontSize: 28, marginBottom: 10 }}>⌛</div>
+        <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>No archived listings yet</div>
+        <div style={{ fontSize: 12, color: "var(--text2)", maxWidth: 320, margin: "0 auto", lineHeight: 1.5 }}>
+          Listings that disappear from a dealer's site land here with the last price we saw them at. As more items cycle through, you can search for a reference and see how asking prices have moved over time.
+        </div>
+      </div>
+    ) : (
+      <>
+        <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center", fontSize: 12, color: "var(--text3)" }}>
+          <span>{archiveItems.length} archived</span>
+          <span style={{ color: "var(--text3)" }}>· sorted by date delisted</span>
+        </div>
+        <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+          {archiveItems.map(item => (
+            <Card key={item.id} item={item} wished={!!watchlist[item.id]} onWish={handleWish} compact={compact} />
+          ))}
+        </div>
+        <div style={{ padding: "14px 0 0", fontSize: 11, color: "var(--text3)", textAlign: "center", lineHeight: 1.5 }}>
+          Price shown is the last asking price before the listing disappeared. Dealers don't publish sale prices, so this is the best proxy for the market.
+        </div>
+      </>
+    )
   );
 
   const WatchlistGrid = () => (
@@ -591,7 +610,7 @@ export default function Dial() {
     return (
       <div style={baseStyle}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px 8px", borderBottom: "0.5px solid var(--border)" }}>
-          <button onClick={() => setAboutOpen(true)} style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px", background: "none", border: "none", color: "inherit", fontFamily: "inherit", padding: 0, cursor: "pointer" }}>Dial</button>
+          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Dial</span>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span style={{ fontSize: 11, color: "var(--text3)" }}>{allFiltered.length}</span>
             <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} style={{ width: 32, height: 32, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -678,10 +697,10 @@ export default function Dial() {
           </div>
         )}
         <div style={{ padding: "12px 14px 80px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "saved" ? <SavedTab /> : <WatchlistGrid />}
+          {tab === "listings" ? <ListingsGrid /> : tab === "saved" ? savedTabJSX : tab === "archive" ? archiveGridJSX : <WatchlistGrid />}
         </div>
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "env(safe-area-inset-bottom, 8px)" }}>
-          {[["listings", "Feed"], ["saved", "Searches"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+          {[["listings", "Feed"], ["saved", `Searches${searchesNewTotal > 0 ? ` · ${searchesNewTotal}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "10px 0 12px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400 }}>
               {tab === key && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5", margin: "0 auto 4px" }} />}
               {label}
@@ -689,7 +708,6 @@ export default function Dial() {
           ))}
         </div>
 
-        {aboutModal}
 
         {/* Mobile drawer */}
         {drawerOpen && (
@@ -770,10 +788,10 @@ export default function Dial() {
     <div style={{ ...baseStyle, display: "flex", height: "100vh", overflow: "hidden" }}>
       <div style={{ width: sidebarWidth, flexShrink: 0, borderRight: "0.5px solid var(--border)", overflowY: "auto", display: "flex", flexDirection: "column", position: "relative" }}>
         <div style={{ padding: "16px 16px 12px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-          <button onClick={() => setAboutOpen(true)} style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px", background: "none", border: "none", color: "inherit", fontFamily: "inherit", padding: 0, cursor: "pointer" }}>Dial</button>
+          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Dial</span>
         </div>
         <div style={{ flex: 1, overflowY: "auto" }}>
-          <SidebarFilterPanel />
+          {sidebarFilterPanelJSX}
         </div>
         <div style={{ padding: "10px 16px 14px", borderTop: "0.5px solid var(--border)", flexShrink: 0 }}>
           <button onClick={() => setDarkOverride(dark ? false : true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text3)", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit", fontSize: 11 }}>
@@ -792,7 +810,7 @@ export default function Dial() {
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit" }} />
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-            {[["listings", "Feed"], ["saved", "Searches"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+            {[["listings", "Feed"], ["saved", `Searches${searchesNewTotal > 0 ? ` · ${searchesNewTotal}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
               <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
                 {label}
               </button>
@@ -801,10 +819,9 @@ export default function Dial() {
           </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "saved" ? <SavedTab /> : <WatchlistGrid />}
+          {tab === "listings" ? <ListingsGrid /> : tab === "saved" ? savedTabJSX : tab === "archive" ? archiveGridJSX : <WatchlistGrid />}
         </div>
       </div>
-      {aboutModal}
     </div>
   );
 }

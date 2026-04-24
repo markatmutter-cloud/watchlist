@@ -5,12 +5,17 @@ Merge scraper CSVs into public/listings.json with cross-run state tracking.
 State model (public/state.json):
   {
     "<stable_id>": {
-      "firstSeen": "YYYY-MM-DD",
-      "lastSeen":  "YYYY-MM-DD",
+      "firstSeen":   "YYYY-MM-DD",
+      "lastSeen":    "YYYY-MM-DD",
       "priceHistory": [{"date": "YYYY-MM-DD", "price": int, "currency": "USD"}],
-      "lastSource": "Wind Vintage",
-      "lastUrl":    "https://...",
-      "active":     true        # False once it stops appearing in scrapes
+      "lastSource":  "Wind Vintage",
+      "lastUrl":     "https://...",
+      "lastTitle":   "1978 Rolex 6263 ...",   # cached so inactive listings
+      "lastBrand":   "Rolex",                 # can still render in the
+      "lastImg":     "https://.../img.jpg",   # Archive tab without needing
+      "lastCurrency": "USD",                  # a fresh scrape.
+      "active":      true,                     # False once it stops appearing.
+      "soldAt":      "YYYY-MM-DD"              # Set when active flips false.
     },
     ...
   }
@@ -126,7 +131,12 @@ def load_csv(path, source_name, currency='USD'):
 
 
 def update_state(items, state):
-    """Enrich each item with firstSeen/lastSeen/priceHistory and update state in place."""
+    """Enrich each item with firstSeen/lastSeen/priceHistory and update state in place.
+
+    Returns a list of dicts covering BOTH currently-active listings (from `items`)
+    and inactive/sold listings reconstructed from state — so the downstream
+    listings.json can serve both the Feed and the Archive tab off one file.
+    """
     seen_today = set()
     enriched = []
 
@@ -141,14 +151,10 @@ def update_state(items, state):
                 'firstSeen': TODAY,
                 'lastSeen':  TODAY,
                 'priceHistory': [{'date': TODAY, 'price': it['price'], 'currency': it['currency']}],
-                'lastSource': it['source'],
-                'lastUrl':    it['url'],
                 'active':     True,
             }
         else:
             entry['lastSeen'] = TODAY
-            entry['lastSource'] = it['source']
-            entry['lastUrl'] = it['url']
             entry['active'] = True
             # Append to price history only when price changes.
             history = entry.get('priceHistory') or []
@@ -157,12 +163,30 @@ def update_state(items, state):
                 history.append({'date': TODAY, 'price': it['price'], 'currency': it['currency']})
             entry['priceHistory'] = history
 
+        # Track when an active listing flips to sold/reserved (Wind Vintage
+        # marks its "on hold" items as sold=true). We treat reserved as sold
+        # for archive purposes. Preserve the first date we noticed; clear
+        # when the listing goes back to available.
+        if it['sold']:
+            if not entry.get('soldAt'):
+                entry['soldAt'] = TODAY
+        else:
+            entry.pop('soldAt', None)
+
+        # Always cache latest display fields on every seen run so the Archive
+        # can render the listing after it disappears from source sites.
+        entry['lastSource']   = it['source']
+        entry['lastUrl']      = it['url']
+        entry['lastTitle']    = it['ref']
+        entry['lastBrand']    = it['brand']
+        entry['lastImg']      = it['img']
+        entry['lastCurrency'] = it['currency']
+
         state[sid] = entry
 
         history = entry['priceHistory']
         price_change = 0
         if len(history) >= 2:
-            # Compare current price to the one before it in history.
             price_change = history[-1]['price'] - history[-2]['price']
 
         enriched.append({
@@ -170,17 +194,64 @@ def update_state(items, state):
             'firstSeen':    entry['firstSeen'],
             'lastSeen':     entry['lastSeen'],
             'priceHistory': history,
-            'priceChange':  price_change,   # negative = price dropped
+            'priceChange':  price_change,
+            # soldAt is set for both Wind Vintage "on hold" items (still in
+            # the live scrape but flagged reserved) and items that disappeared
+            # entirely — both get archived.
+            'soldAt':       entry.get('soldAt'),
         })
 
-    # Anything in state but not seen today: mark inactive (groundwork for sold archive).
-    disappeared = 0
+    # Anything in state but not seen today: mark inactive and emit as a sold
+    # listing so the Archive tab can show it.
+    disappeared_this_run = 0
+    archived_count = 0
     for sid, entry in state.items():
-        if sid not in seen_today and entry.get('active'):
+        if sid in seen_today:
+            continue
+
+        # Flip to inactive on first miss, recording when it disappeared.
+        if entry.get('active'):
             entry['active'] = False
-            disappeared += 1
-    if disappeared:
-        print(f"  {disappeared} listings disappeared from scrape this run (marked inactive)")
+            entry['soldAt'] = TODAY
+            disappeared_this_run += 1
+
+        # Only emit an archive row if we have enough cached display data.
+        # Older state entries written before we started caching won't have
+        # lastTitle — skip them silently (they'll appear once they reappear
+        # in a scrape and get re-cached, or just never, which is fine).
+        if not entry.get('lastTitle'):
+            continue
+
+        history = entry.get('priceHistory') or []
+        last_price = history[-1]['price'] if history else 0
+        currency = history[-1].get('currency') if history else entry.get('lastCurrency', 'USD')
+        rate = FX.get(currency, 1.0)
+        price_usd = round(last_price * rate)
+
+        enriched.append({
+            'id':            sid,
+            'brand':         entry.get('lastBrand') or detect_brand(entry.get('lastTitle', '')),
+            'ref':           entry.get('lastTitle', ''),
+            'price':         last_price,
+            'currency':      currency,
+            'priceUSD':      price_usd,
+            'source':        entry.get('lastSource', ''),
+            'url':           entry.get('lastUrl', ''),
+            'img':           entry.get('lastImg', ''),
+            'desc':          '',
+            'sold':          True,
+            'soldAt':        entry.get('soldAt') or entry.get('lastSeen', ''),
+            'firstSeen':     entry.get('firstSeen', ''),
+            'lastSeen':      entry.get('lastSeen', ''),
+            'priceHistory':  history,
+            'priceChange':   0,
+        })
+        archived_count += 1
+
+    if disappeared_this_run:
+        print(f"  {disappeared_this_run} listings disappeared from scrape this run (marked sold)")
+    if archived_count:
+        print(f"  {archived_count} sold/inactive listings emitted to archive")
 
     return enriched
 
