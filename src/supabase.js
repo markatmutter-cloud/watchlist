@@ -59,17 +59,48 @@ export function useAuth() {
     };
   }, []);
 
-  const signInWithGoogle = useCallback(() => {
-    if (!supabase) return Promise.reject(new Error('Auth not configured'));
-    return supabase.auth.signInWithOAuth({
+  const signInWithGoogle = useCallback(async () => {
+    if (!supabase) return;
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin },
     });
+    if (error) {
+      // Surface the error so a silent "nothing happens" stops being a
+      // mystery. supabase-js otherwise navigates automatically so we
+      // never reach the post-nav code.
+      console.warn('Sign in error', error);
+      alert('Sign in failed: ' + (error.message || 'unknown error'));
+    }
   }, []);
 
-  const signOut = useCallback(() => {
-    if (!supabase) return Promise.resolve();
-    return supabase.auth.signOut();
+  const signOut = useCallback(async () => {
+    if (!supabase) return;
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('signOut error', e);
+    }
+    // Belt-and-braces cleanup. Without this, two things can revive the
+    // session immediately after "logging out":
+    //   1. Supabase stores auth state in localStorage under keys like
+    //      sb-<project-ref>-auth-token. If signOut's network call fails
+    //      (expired token, offline, rate-limit), those keys aren't cleared.
+    //   2. After OAuth, tokens sit in the URL hash. If we don't scrub it,
+    //      the library re-parses the hash on next page load and
+    //      re-establishes the session.
+    try {
+      for (const k of Object.keys(localStorage)) {
+        if (k.startsWith('sb-') || k.toLowerCase().includes('supabase')) {
+          localStorage.removeItem(k);
+        }
+      }
+    } catch {}
+    if (window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    // Reload so every hook re-initialises with a clean, unauthenticated state.
+    window.location.reload();
   }, []);
 
   return { user, ready, signInWithGoogle, signOut };
