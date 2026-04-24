@@ -23,7 +23,18 @@ import re
 import time
 
 BASE = "https://www.bobswatches.com"
-COLLECTION_PATH = "/vintage-watches"
+
+# Pages to pull from. All results are tagged as a single "Bob's Watches"
+# source in the app regardless of which collection they come from. Add
+# entries here to include more vintage sub-collections (e.g. if Bob's
+# launches /patek/vintage-1.html later). Each entry is (path, supports_paging).
+# /vintage-watches paginates with ?page=N; /omega/vintage-1.html is a single
+# static page (vintage-2.html and vintage-3.html show non-vintage Omega).
+COLLECTIONS = [
+    ("/vintage-watches", True),
+    ("/omega/vintage-1.html", False),
+]
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -63,8 +74,8 @@ def extract_products(html):
     return products
 
 
-def fetch_page(page):
-    url = f"{BASE}{COLLECTION_PATH}"
+def fetch_page(path, page):
+    url = f"{BASE}{path}"
     params = {'page': page} if page > 1 else None
     r = requests.get(url, headers=HEADERS, params=params, timeout=30)
     r.raise_for_status()
@@ -123,37 +134,40 @@ def parse_product(p):
 
 
 def main():
-    print("Fetching Bob's Watches vintage collection...")
+    print("Fetching Bob's Watches vintage collections...")
     seen_urls = set()
     results = []
-    page = 1
-    while True:
-        print(f"Fetching page {page}...")
-        html = fetch_page(page)
-        raw = extract_products(html)
-        print(f"  Got {len(raw)} product blocks")
-        if not raw:
-            break
 
-        new_this_page = 0
-        for p in raw:
-            parsed = parse_product(p)
-            if not parsed or not parsed['url']:
-                continue
-            if parsed['url'] in seen_urls:
-                continue   # already saw this one earlier, pagination edge
-            seen_urls.add(parsed['url'])
-            new_this_page += 1
-            if parsed['price'] == 0 or parsed['sold']:
-                continue
-            results.append(parsed)
+    for path, paginates in COLLECTIONS:
+        print(f"\n--- {path}{' (paginated)' if paginates else ''} ---")
+        page = 1
+        while True:
+            print(f"  page {page}...")
+            html = fetch_page(path, page)
+            raw = extract_products(html)
+            print(f"    got {len(raw)} product blocks")
+            if not raw:
+                break
 
-        if new_this_page == 0:
-            break
-        page += 1
-        time.sleep(0.3)
+            new_this_page = 0
+            for p in raw:
+                parsed = parse_product(p)
+                if not parsed or not parsed['url']:
+                    continue
+                if parsed['url'] in seen_urls:
+                    continue
+                seen_urls.add(parsed['url'])
+                new_this_page += 1
+                if parsed['price'] == 0 or parsed['sold']:
+                    continue
+                results.append(parsed)
 
-    print(f"\nSaved {len(results)} vintage listings")
+            if not paginates or new_this_page == 0:
+                break
+            page += 1
+            time.sleep(0.3)
+
+    print(f"\nSaved {len(results)} vintage listings across {len(COLLECTIONS)} collection(s)")
     output = 'bobswatches_listings.csv'
     with open(output, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=['title','brand','price','url','img','description','source','sold'])
