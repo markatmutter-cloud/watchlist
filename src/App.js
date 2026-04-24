@@ -290,14 +290,19 @@ export default function Dial() {
     items.filter(i => !i.sold).forEach(i => { counts[i.brand] = (counts[i.brand] || 0) + 1; });
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([b]) => b);
   }, [items]);
-  // Reference numbers aggregated from non-sold listings' titles. Matches 3-6
-  // digit sequences with an optional .NNN decimal (165.024), and drops
-  // numbers that are clearly four-digit years (1900-2099) to keep the list
-  // meaningful. Sorted by how many listings share that ref.
+  // Reference chips aggregate digit sequences (3-6 digits, optional .NNN)
+  // found in listing titles. Years (1900-2099) are filtered out so a 4-digit
+  // year doesn't pose as a ref. Refs are **scoped to the current brand
+  // filter** — selecting Rolex hides "300" (Omega Seamaster/Speedy) and
+  // selecting Omega hides "1675" (Rolex GMT). Without any brand selected,
+  // chips draw from the whole catalog. Only refs with 2+ matches show.
   const REFS = useMemo(() => {
     const counts = {};
     const refRegex = /\b\d{3,6}(?:\.\d{1,3})?\b/g;
-    items.filter(i => !i.sold).forEach(i => {
+    const pool = items.filter(i =>
+      !i.sold && (filterBrands.length === 0 || filterBrands.includes(i.brand))
+    );
+    pool.forEach(i => {
       const matches = (i.ref || "").match(refRegex) || [];
       for (const m of matches) {
         if (!m.includes(".")) {
@@ -308,10 +313,10 @@ export default function Dial() {
       }
     });
     return Object.entries(counts)
-      .filter(([, c]) => c >= 2)    // only refs appearing in 2+ listings
+      .filter(([, c]) => c >= 2)
       .sort((a, b) => b[1] - a[1])
       .map(([r]) => r);
-  }, [items]);
+  }, [items, filterBrands]);
 
   // Desktop and mobile both use the same text-input model for price filtering
   // now (sliders kept breaking mid-drag because SidebarFilterPanel remounts
