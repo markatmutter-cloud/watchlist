@@ -39,7 +39,7 @@ BRANDS = [
     'Blancpain', 'Tissot', 'Gallet', 'Mulco', 'Girard-Perregaux', 'Eberhard',
 ]
 
-FX = {'GBP': 1.27, 'EUR': 1.08, 'JPY': 0.0067, 'CNY': 0.14, 'USD': 1.0}
+FX = {'GBP': 1.27, 'EUR': 1.08, 'CHF': 1.13, 'JPY': 0.0067, 'CNY': 0.14, 'USD': 1.0}
 
 STATE_PATH = 'public/state.json'
 LISTINGS_PATH = 'public/listings.json'
@@ -268,6 +268,9 @@ def main():
         ('data/craftandtailored.csv',     'Craft & Tailored',      'USD'),
         ('data/watchbrotherslondon.csv',  'Watch Brothers London', 'GBP'),
         ('data/mvvwatches.csv',           'MVV Watches',           'USD'),
+        ('data/db1983.csv',               'DB1983',                'CHF'),
+        ('data/hairspring.csv',           'Hairspring',            'USD'),
+        ('data/somlo.csv',                'Somlo',                 'GBP'),
     ]
 
     state = load_state()

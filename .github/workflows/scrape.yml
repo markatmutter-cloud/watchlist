@@ -63,6 +63,18 @@ jobs:
         continue-on-error: true
         run: python mvvwatches_scraper.py
 
+      - name: Run DB1983 scraper
+        continue-on-error: true
+        run: python db1983_scraper.py
+
+      - name: Run Hairspring scraper
+        continue-on-error: true
+        run: python hairspring_scraper.py
+
+      - name: Run Somlo scraper
+        continue-on-error: true
+        run: python somlo_scraper.py
+
       - name: Move CSVs to data folder
         run: |
           mkdir -p data
@@ -76,6 +88,9 @@ jobs:
           [ -f craftandtailored_listings.csv ]    && mv craftandtailored_listings.csv    data/craftandtailored.csv    || echo "craftandtailored missing"
           [ -f watchbrotherslondon_listings.csv ] && mv watchbrotherslondon_listings.csv data/watchbrotherslondon.csv || echo "watchbrotherslondon missing"
           [ -f mvvwatches_listings.csv ]          && mv mvvwatches_listings.csv          data/mvvwatches.csv          || echo "mvvwatches missing"
+          [ -f db1983_listings.csv ]              && mv db1983_listings.csv              data/db1983.csv              || echo "db1983 missing"
+          [ -f hairspring_listings.csv ]          && mv hairspring_listings.csv          data/hairspring.csv          || echo "hairspring missing"
+          [ -f somlo_listings.csv ]               && mv somlo_listings.csv               data/somlo.csv               || echo "somlo missing"
 
       - name: Merge into listings.json
         run: python merge.py
