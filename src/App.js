@@ -574,7 +574,11 @@ export default function Dial() {
       </button>
       {showUserMenu && (
         <div style={{
-          position: "absolute", right: 0, top: 36, zIndex: 50,
+          position: "absolute", right: 0, zIndex: 50,
+          // Open downward on mobile (button is in the top header), upward
+          // on desktop (button is in the sidebar footer, where "down" runs
+          // off the bottom of the viewport).
+          ...(isMobile ? { top: 36 } : { bottom: 36 }),
           background: "var(--bg)", border: "0.5px solid var(--border)",
           borderRadius: 10, padding: 8, minWidth: 200,
           boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
