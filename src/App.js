@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { useAuth, useWatchlist, useHidden, importLocalData, isAuthConfigured } from "./supabase";
+import { useAuth, useWatchlist, useHidden, useSearches, importLocalData, isAuthConfigured } from "./supabase";
 
 const LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/listings.json";
 const AUCTIONS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/auctions.json";
@@ -18,11 +18,9 @@ function initialSidebarWidth() {
   if (typeof window === "undefined") return 280;
   return Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(window.innerWidth * SIDEBAR_DEFAULT_FRACTION)));
 }
-// Saved searches are currently a fixed list, read-only from the app's
-// perspective. Per-user persistence (editing, adding, removing) is deferred
-// until Supabase + Google auth lands — without accounts, edits get stuck in
-// one device's localStorage and get confusing fast. To change this list,
-// edit SAVED_SEARCHES and push a new build.
+// Seed searches shown to signed-out visitors so the Searches tab isn't empty.
+// Signed-in users get their own list (stored in Supabase via useSearches), and
+// this seed is ignored — adding/editing/removing works on their list only.
 const SAVED_SEARCHES = [
   { id: "seed-speedmaster",  label: "Speedmaster",        query: "Speedmaster" },
   { id: "seed-railmaster",   label: "Railmaster",         query: "Railmaster" },
@@ -228,6 +226,18 @@ export default function Dial() {
   // toggles no-op — we wrap the toggles below to kick off sign-in instead.
   const { items: watchlist, toggle: toggleWatchlist } = useWatchlist(user);
   const { items: hidden,   toggle: toggleHidden    } = useHidden(user);
+  // Saved searches are per-user when signed in; signed-out visitors see
+  // the SAVED_SEARCHES seed above so the tab isn't empty.
+  const {
+    items: userSearches,
+    editor: searchEditor,
+    setEditor: setSearchEditor,
+    startAdd: startAddSearch,
+    startEdit: startEditSearch,
+    cancel: cancelSearchEdit,
+    commit: commitSearch,
+    remove: removeSearch,
+  } = useSearches(user);
   // If there's leftover localStorage data from the pre-Supabase era, we
   // offer to import it after sign-in. Read once at mount so we can tell
   // the user *how many* items we'd import ("N saved, M hidden").
@@ -476,7 +486,8 @@ export default function Dial() {
 
   const savedSearchStats = useMemo(() => {
     const forSale = items.filter(i => !i.sold);
-    return SAVED_SEARCHES.map(({ id, label, query }) => {
+    const source = user ? userSearches : SAVED_SEARCHES;
+    return source.map(({ id, label, query }) => {
       const q = (query || "").toLowerCase();
       const matches = q
         ? forSale.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q))
@@ -484,7 +495,7 @@ export default function Dial() {
       const newCount = matches.filter(i => daysAgo(freshDate(i)) <= 7).length;
       return { id, label, query, count: matches.length, newCount };
     });
-  }, [items]);
+  }, [items, user, userSearches]);
 
   // Group auctions by "YYYY-MM" for the month-banded view. Auctions without
   // a parseable start date go into a "Date TBD" bucket at the end.
@@ -681,39 +692,116 @@ export default function Dial() {
   // ── SEARCHES TAB ──────────────────────────────────────────────────────────
   const runSearch = (s) => { setSearch(s.query); setSort("date"); setTab("listings"); setPage(1); };
 
-  // Read-only view of saved searches. Add/Edit/Delete is intentionally hidden
-  // until we have per-user persistence (Supabase + Google login) — without
-  // accounts, edits from any visitor would affect only their own browser's
-  // localStorage, which is confusing. Edits to the seeded list are done by
-  // changing DEFAULT_SEARCHES in this file and pushing a new build.
+  // Inline editor row for add/edit. Rendered as a JSX helper (not a sub-
+  // component) so React doesn't remount the inputs on every parent re-render
+  // and lose focus mid-keystroke.
+  const renderEditorRow = () => (
+    <div style={{
+      padding: "12px 14px", borderRadius: 12,
+      border: "0.5px solid var(--border)", background: "var(--card-bg)",
+      display: "flex", flexDirection: "column", gap: 8,
+    }}>
+      <input
+        autoFocus
+        value={searchEditor.label}
+        onChange={e => setSearchEditor(ed => ({ ...ed, label: e.target.value }))}
+        placeholder="Name (e.g. Speedmaster)"
+        style={{ ...inp, fontSize: 14 }}
+      />
+      <input
+        value={searchEditor.query}
+        onChange={e => setSearchEditor(ed => ({ ...ed, query: e.target.value }))}
+        placeholder="Search terms (e.g. 145.022)"
+        style={{ ...inp, fontSize: 14 }}
+      />
+      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+        <button onClick={cancelSearchEdit} style={{
+          border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)",
+          padding: "6px 12px", borderRadius: 6, cursor: "pointer",
+          fontFamily: "inherit", fontSize: 13,
+        }}>Cancel</button>
+        <button onClick={commitSearch} style={{
+          border: "none", background: "#185FA5", color: "#fff",
+          padding: "6px 12px", borderRadius: 6, cursor: "pointer",
+          fontFamily: "inherit", fontSize: 13,
+        }}>Save</button>
+      </div>
+    </div>
+  );
+
   const savedTabJSX = (
     <div style={{ paddingTop: 4 }}>
-      <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 14 }}>
-        Tap a search to run it in the feed
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 8 }}>
+        <div style={{ fontSize: 12, color: "var(--text3)" }}>
+          {user ? "Tap to run · pencil to edit" : "Tap a search to run it in the feed"}
+        </div>
+        {user && !searchEditor && (
+          <button onClick={startAddSearch} style={{
+            border: "0.5px solid var(--border)", background: "var(--card-bg)", color: "var(--text1)",
+            padding: "6px 10px", borderRadius: 6, cursor: "pointer",
+            fontFamily: "inherit", fontSize: 12,
+          }}>+ Add</button>
+        )}
       </div>
 
+      {!user && isAuthConfigured && (
+        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 12 }}>
+          Sign in to save your own searches across devices.
+        </div>
+      )}
+
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {searchEditor && searchEditor.id === "new" && renderEditorRow()}
+
         {savedSearchStats.map((s) => (
-          <button key={s.id} onClick={() => runSearch(s)} style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "14px 16px", borderRadius: 12,
-            border: "0.5px solid var(--border)", background: "var(--card-bg)",
-            cursor: "pointer", fontFamily: "inherit", textAlign: "left",
-          }}>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 3 }}>{s.label}</div>
-              <div style={{ fontSize: 12, color: "var(--text2)" }}>{s.count} for sale{s.query && s.query !== s.label ? ` · "${s.query}"` : ""}</div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-              {s.newCount > 0 && (
-                <div style={{ fontSize: 11, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 8px" }}>
-                  {s.newCount} new
+          searchEditor && searchEditor.id === s.id ? (
+            <div key={s.id}>{renderEditorRow()}</div>
+          ) : (
+            <div key={s.id} style={{
+              display: "flex", alignItems: "stretch",
+              borderRadius: 12, overflow: "hidden",
+              border: "0.5px solid var(--border)", background: "var(--card-bg)",
+            }}>
+              <button onClick={() => runSearch(s)} style={{
+                flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "14px 16px", border: "none", background: "transparent",
+                cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: "inherit",
+              }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 3 }}>{s.label}</div>
+                  <div style={{ fontSize: 12, color: "var(--text2)" }}>{s.count} for sale{s.query && s.query !== s.label ? ` · "${s.query}"` : ""}</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                  {s.newCount > 0 && (
+                    <div style={{ fontSize: 11, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 8px" }}>
+                      {s.newCount} new
+                    </div>
+                  )}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                </div>
+              </button>
+              {user && (
+                <div style={{ display: "flex", flexDirection: "column", borderLeft: "0.5px solid var(--border)" }}>
+                  <button onClick={() => startEditSearch(s)} title="Edit" style={{
+                    flex: 1, border: "none", background: "transparent", color: "var(--text2)",
+                    padding: "0 12px", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+                  }}>✎</button>
+                  <button onClick={() => { if (window.confirm(`Delete "${s.label}"?`)) removeSearch(s.id); }} title="Delete" style={{
+                    flex: 1, border: "none", borderTop: "0.5px solid var(--border)",
+                    background: "transparent", color: "var(--text2)",
+                    padding: "0 12px", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+                  }}>✕</button>
                 </div>
               )}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
             </div>
-          </button>
+          )
         ))}
+
+        {user && savedSearchStats.length === 0 && !searchEditor && (
+          <div style={{ padding: "28px 0", textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
+            No saved searches yet. Tap <b>+ Add</b> to create one.
+          </div>
+        )}
       </div>
     </div>
   );
