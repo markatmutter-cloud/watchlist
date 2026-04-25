@@ -1159,12 +1159,16 @@ export default function Dial() {
           </div>
         )}
         </div>
-        <div style={{ padding: "12px 14px 80px" }}>
+        <div style={{ padding: "12px 14px 100px" }}>
           {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : watchlistTabJSX}
         </div>
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "env(safe-area-inset-bottom, 8px)" }}>
-          {[["listings", "Available"], ["auctions", "Auctions"], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
-            <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "10px 0 12px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400 }}>
+        {/* Bottom tab bar. The container reserves the iOS home-indicator
+            safe area PLUS a fixed extra padding, so the buttons aren't
+            hugging the home bar when the app is launched standalone from
+            the home screen. */}
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 14px)" }}>
+          {[["listings", "Available"], ["auctions", "Auctions"], ["archive", "Archive"], ["watchlist", "Watchlist"]].map(([key, label]) => (
+            <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "12px 0 14px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400 }}>
               {tab === key && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5", margin: "0 auto 4px" }} />}
               {label}
             </button>
@@ -1276,7 +1280,7 @@ export default function Dial() {
         {sidebarToggleJSX}
         <span style={{ fontSize: 18, fontWeight: 500, letterSpacing: "-0.5px", flexShrink: 0 }}>Watchlist</span>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
-          {[["listings", "Available"], ["auctions", "Auctions"], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+          {[["listings", "Available"], ["auctions", "Auctions"], ["archive", "Archive"], ["watchlist", "Watchlist"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 13, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
               {label}
             </button>
