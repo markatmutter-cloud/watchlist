@@ -14,9 +14,14 @@ import time
 BASE = "https://www.windvintage.com"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
 
+# Skip standalone-bracelet listings (Gay Frères, Jubilee bracelets, etc.)
+# WITHOUT eating watches that happen to be sold "on bracelet". The bare
+# word "bracelet" used to live here and was filtering out watches like
+# "Heuer Autavia ... 73463 On Bracelet" — fixed by listing only the
+# bracelet-typed product titles, never the bare word.
 SKIP_TITLE_WORDS = [
-    'bracelet', 'gay frères', 'gay freres', 'jubilee bracelet',
-    'rivet bracelet', 'mesh bracelet', 'oyster bracelet', 'end links'
+    'gay frères', 'gay freres', 'jubilee bracelet', 'rivet bracelet',
+    'mesh bracelet', 'oyster bracelet', 'end links',
 ]
 SKIP_DOMAINS = ['kith.com', 'mrporter.com', 'net-a-porter.com']
 
