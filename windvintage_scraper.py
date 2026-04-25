@@ -14,15 +14,11 @@ import time
 BASE = "https://www.windvintage.com"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
 
-# Skip standalone-bracelet listings (Gay Frères, Jubilee bracelets, etc.)
-# WITHOUT eating watches that happen to be sold "on bracelet". The bare
-# word "bracelet" used to live here and was filtering out watches like
-# "Heuer Autavia ... 73463 On Bracelet" — fixed by listing only the
-# bracelet-typed product titles, never the bare word.
-SKIP_TITLE_WORDS = [
-    'gay frères', 'gay freres', 'jubilee bracelet', 'rivet bracelet',
-    'mesh bracelet', 'oyster bracelet', 'end links',
-]
+# Bracelets, end links, and other accessories Wind Vintage sells are kept
+# in the feed alongside the watches — Mark wants to see them too.
+# SKIP_DOMAINS still rejects items whose href points OUT to a third-party
+# storefront (Kith, Mr Porter, Net-a-Porter); those aren't Wind Vintage
+# inventory, just affiliate-style links from the catalog page.
 SKIP_DOMAINS = ['kith.com', 'mrporter.com', 'net-a-porter.com']
 
 # Any of these near the price line = treat as sold but keep the price
@@ -36,9 +32,6 @@ BRANDS = [
 ]
 
 def is_skip(url, title):
-    for word in SKIP_TITLE_WORDS:
-        if word in title.lower():
-            return True
     for domain in SKIP_DOMAINS:
         if domain in url:
             return True
