@@ -192,6 +192,10 @@ export default function Dial() {
   const dark = darkOverride !== null ? darkOverride : sysDark;
 
   const [sidebarWidth, setSidebarWidth] = useState(initialSidebarWidth);
+  // Desktop-only: hide the filter drawer with a top-left toggle so the grid
+  // gets the full window width. Mobile already opens filters in a separate
+  // drawer, so this is irrelevant there.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isDragging = useRef(false);
   const dragStart = useRef(0);
   const widthStart = useRef(0);
@@ -211,7 +215,6 @@ export default function Dial() {
   const [maxPriceText, setMaxPriceText] = useState("");
   const [newDays, setNewDays] = useState(0);
   const [page, setPage] = useState(1);
-  const [wishSort, setWishSort] = useState("saved");
   const [filterRefs, setFilterRefs] = useState([]);
   // Watchlist + hidden now live server-side (Supabase) per authenticated
   // user. When signed out, these hooks return empty objects and their
@@ -453,11 +456,15 @@ export default function Dial() {
       const q = search.toLowerCase();
       its = its.filter(i => (i.ref || "").toLowerCase().includes(q) || (i.brand || "").toLowerCase().includes(q));
     }
-    if (wishSort === "price-asc") its.sort((a, b) => (a.savedPriceUSD || a.savedPrice) - (b.savedPriceUSD || b.savedPrice));
-    else if (wishSort === "price-desc") its.sort((a, b) => (b.savedPriceUSD || b.savedPrice) - (a.savedPriceUSD || a.savedPrice));
+    // Drive the watchlist sort off the same `sort` state the sidebar uses,
+    // so "Newest first" / "Price low to high" / "Price high to low" applies
+    // here too. "Newest first" maps to most-recently-saved (savedAt desc).
+    if (sort === "price-asc") its.sort((a, b) => (a.savedPriceUSD || a.savedPrice) - (b.savedPriceUSD || b.savedPrice));
+    else if (sort === "price-desc") its.sort((a, b) => (b.savedPriceUSD || b.savedPrice) - (a.savedPriceUSD || a.savedPrice));
+    else if (sort === "date-asc") its.sort((a, b) => (a.savedAt || "").localeCompare(b.savedAt || ""));
     else its.sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
     return its;
-  }, [watchlist, wishSort, filterSources, filterBrands, filterRefs, search]);
+  }, [watchlist, sort, filterSources, filterBrands, filterRefs, search]);
 
   // Archive shows three flavors side by side:
   //   • Sold/delisted — disappeared from scrape, soldAt from state-tracking.
@@ -1006,11 +1013,6 @@ export default function Dial() {
                 <span style={{ fontSize: 12, color: "var(--text3)" }}>
                   {watchItems.length === watchCount ? `${watchCount} saved` : `${watchItems.length} of ${watchCount} saved`}
                 </span>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {[["saved", "Recent"], ["price-asc", "Price ↑"], ["price-desc", "Price ↓"]].map(([val, label]) => (
-                    <Chip key={val} label={label} active={wishSort === val} onClick={() => setWishSort(val)} />
-                  ))}
-                </div>
               </div>
               <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
                 {watchItems.map(item => (
@@ -1145,7 +1147,7 @@ export default function Dial() {
           {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : watchlistTabJSX}
         </div>
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "env(safe-area-inset-bottom, 8px)" }}>
-          {[["listings", "Available"], ["auctions", `Auctions${auctions.filter(a => a.status === "live").length > 0 ? ` · ${auctions.filter(a => a.status === "live").length}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+          {[["listings", "Available"], ["auctions", "Auctions"], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "10px 0 12px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400 }}>
               {tab === key && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5", margin: "0 auto 4px" }} />}
               {label}
@@ -1229,33 +1231,49 @@ export default function Dial() {
   }
 
   // ── DESKTOP ───────────────────────────────────────────────────────────────
+  // Sidebar can be collapsed via the top-left toggle. When collapsed, the
+  // entire sidebar div is omitted — the grid expands to fill the window.
+  const sidebarToggleJSX = (
+    <button onClick={() => setSidebarCollapsed(c => !c)} aria-label={sidebarCollapsed ? "Show filters" : "Hide filters"}
+      title={sidebarCollapsed ? "Show filters" : "Hide filters"}
+      style={{
+        flexShrink: 0, width: 32, height: 32, borderRadius: 8,
+        border: "0.5px solid var(--border)", background: "var(--surface)",
+        color: "var(--text2)", cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+  );
+
   return (
     <div style={{ ...baseStyle, display: "flex", height: "100vh", overflow: "hidden" }}>
-      <div style={{ width: sidebarWidth, flexShrink: 0, borderRight: "0.5px solid var(--border)", overflowY: "auto", display: "flex", flexDirection: "column", position: "relative" }}>
-        <div style={{ padding: "16px 16px 12px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Watchlist</span>
+      {!sidebarCollapsed && (
+        <div style={{ width: sidebarWidth, flexShrink: 0, borderRight: "0.5px solid var(--border)", overflowY: "auto", display: "flex", flexDirection: "column", position: "relative" }}>
+          <div style={{ padding: "16px 16px 12px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
+            <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Watchlist</span>
+          </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {sidebarFilterPanelJSX}
+          </div>
+          <div onMouseDown={onDragStart} style={{ position: "absolute", top: 0, right: -3, width: 6, height: "100%", cursor: "col-resize", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 2, height: 32, borderRadius: 1, background: "var(--border)", opacity: 0.8 }} />
+          </div>
         </div>
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {sidebarFilterPanelJSX}
-        </div>
-        <div style={{ padding: "10px 16px 14px", borderTop: "0.5px solid var(--border)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <button onClick={() => setDarkOverride(dark ? false : true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text3)", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit", fontSize: 11 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-            {dark ? "Light" : "Dark"}
-          </button>
-          {authJSX}
-        </div>
-        <div onMouseDown={onDragStart} style={{ position: "absolute", top: 0, right: -3, width: 6, height: "100%", cursor: "col-resize", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ width: 2, height: 32, borderRadius: 1, background: "var(--border)", opacity: 0.8 }} />
-        </div>
-      </div>
+      )}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-          {/* Header is 3 regions: tabs (left) | search (centered, capped
-              width) | count (right). The flex spacers on either side of
-              search keep it centered even as tab-count widths shift. */}
+          {/* Header layout: [toggle][tabs] [centered search] [count][dark][auth].
+              Toggle hides/shows the filter sidebar. Auth lives in the top-
+              right per Mark's request — easier to reach than the sidebar
+              footer it used to live in. */}
+          {sidebarToggleJSX}
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-            {[["listings", "Available"], ["auctions", `Auctions${auctions.filter(a => a.status === "live").length > 0 ? ` · ${auctions.filter(a => a.status === "live").length}` : ""}`], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+            {[["listings", "Available"], ["auctions", "Auctions"], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
               <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 13, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
                 {label}
               </button>
@@ -1268,6 +1286,17 @@ export default function Dial() {
             </div>
           </div>
           <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>{allFiltered.length}</span>
+          <button onClick={() => setDarkOverride(dark ? false : true)} aria-label="Toggle dark mode"
+            title={dark ? "Switch to light" : "Switch to dark"}
+            style={{
+              flexShrink: 0, width: 32, height: 32, borderRadius: 8,
+              border: "0.5px solid var(--border)", background: "var(--surface)",
+              color: "var(--text2)", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          </button>
+          {authJSX}
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
           {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : watchlistTabJSX}
