@@ -908,11 +908,28 @@ export default function Dial() {
         this browser's local storage (from before accounts existed). Move them to your account
         so you can see them on every device.
       </div>
-      <button onClick={runImport} style={{
-        padding: "7px 14px", borderRadius: 8, border: "none",
-        background: "#185FA5", color: "#fff", cursor: "pointer",
-        fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-      }}>Import now</button>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={runImport} style={{
+          padding: "7px 14px", borderRadius: 8, border: "none",
+          background: "#185FA5", color: "#fff", cursor: "pointer",
+          fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+        }}>Import now</button>
+        <button onClick={() => {
+          // "No thanks" clears the legacy localStorage keys so the banner
+          // doesn't keep nagging on every visit. The user has explicitly
+          // chosen not to import this browser's pre-account data.
+          try {
+            localStorage.removeItem(LEGACY_WATCHLIST_KEY);
+            localStorage.removeItem(LEGACY_HIDDEN_KEY);
+          } catch {}
+          setImportState("done");
+        }} style={{
+          padding: "7px 14px", borderRadius: 8,
+          border: "0.5px solid var(--border)",
+          background: "transparent", color: "var(--text2)", cursor: "pointer",
+          fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+        }}>No thanks</button>
+      </div>
     </div>
   ) : null;
 
