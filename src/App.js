@@ -603,11 +603,10 @@ export default function Dial() {
       </button>
       {showUserMenu && (
         <div style={{
-          position: "absolute", right: 0, zIndex: 50,
-          // Open downward on mobile (button is in the top header), upward
-          // on desktop (button is in the sidebar footer, where "down" runs
-          // off the bottom of the viewport).
-          ...(isMobile ? { top: 36 } : { bottom: 36 }),
+          position: "absolute", right: 0, top: 36, zIndex: 50,
+          // Always open downward — both desktop and mobile buttons live in
+          // the top header now, so opening up would push the menu off the
+          // top of the viewport.
           background: "var(--bg)", border: "0.5px solid var(--border)",
           borderRadius: 10, padding: 8, minWidth: 200,
           boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
@@ -1251,53 +1250,51 @@ export default function Dial() {
   );
 
   return (
-    <div style={{ ...baseStyle, display: "flex", height: "100vh", overflow: "hidden" }}>
-      {!sidebarCollapsed && (
-        <div style={{ width: sidebarWidth, flexShrink: 0, borderRight: "0.5px solid var(--border)", overflowY: "auto", display: "flex", flexDirection: "column", position: "relative" }}>
-          <div style={{ padding: "16px 16px 12px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-            <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: "-0.5px" }}>Watchlist</span>
-          </div>
-          <div style={{ flex: 1, overflowY: "auto" }}>
-            {sidebarFilterPanelJSX}
-          </div>
-          <div onMouseDown={onDragStart} style={{ position: "absolute", top: 0, right: -3, width: 6, height: "100%", cursor: "col-resize", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: 2, height: 32, borderRadius: 1, background: "var(--border)", opacity: 0.8 }} />
+    <div style={{ ...baseStyle, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
+      {/* Full-width top bar: hamburger | Watchlist title | tabs |
+          centered search | count | dark | auth. Sits above both the
+          sidebar and the content area so the title is always visible
+          even when the sidebar is collapsed. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
+        {sidebarToggleJSX}
+        <span style={{ fontSize: 18, fontWeight: 500, letterSpacing: "-0.5px", flexShrink: 0 }}>Watchlist</span>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
+          {[["listings", "Available"], ["auctions", "Auctions"], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
+            <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 13, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 8, padding: "7px 12px", width: "100%", maxWidth: 420 }}>
+            <SearchIcon />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
           </div>
         </div>
-      )}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-          {/* Header layout: [toggle][tabs] [centered search] [count][dark][auth].
-              Toggle hides/shows the filter sidebar. Auth lives in the top-
-              right per Mark's request — easier to reach than the sidebar
-              footer it used to live in. */}
-          {sidebarToggleJSX}
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-            {[["listings", "Available"], ["auctions", "Auctions"], ["archive", "Archive"], ["watchlist", `Watchlist${watchCount > 0 ? ` · ${watchCount}` : ""}`]].map(([key, label]) => (
-              <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 13, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
-                {label}
-              </button>
-            ))}
-          </div>
-          <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 8, padding: "7px 12px", width: "100%", maxWidth: 420 }}>
-              <SearchIcon />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
+        <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>{allFiltered.length}</span>
+        <button onClick={() => setDarkOverride(dark ? false : true)} aria-label="Toggle dark mode"
+          title={dark ? "Switch to light" : "Switch to dark"}
+          style={{
+            flexShrink: 0, width: 32, height: 32, borderRadius: 8,
+            border: "0.5px solid var(--border)", background: "var(--surface)",
+            color: "var(--text2)", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+        {authJSX}
+      </div>
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        {!sidebarCollapsed && (
+          <div style={{ width: sidebarWidth, flexShrink: 0, borderRight: "0.5px solid var(--border)", overflowY: "auto", display: "flex", flexDirection: "column", position: "relative" }}>
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              {sidebarFilterPanelJSX}
+            </div>
+            <div onMouseDown={onDragStart} style={{ position: "absolute", top: 0, right: -3, width: 6, height: "100%", cursor: "col-resize", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 2, height: 32, borderRadius: 1, background: "var(--border)", opacity: 0.8 }} />
             </div>
           </div>
-          <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>{allFiltered.length}</span>
-          <button onClick={() => setDarkOverride(dark ? false : true)} aria-label="Toggle dark mode"
-            title={dark ? "Switch to light" : "Switch to dark"}
-            style={{
-              flexShrink: 0, width: 32, height: 32, borderRadius: 8,
-              border: "0.5px solid var(--border)", background: "var(--surface)",
-              color: "var(--text2)", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-          </button>
-          {authJSX}
-        </div>
+        )}
         <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
           {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : watchlistTabJSX}
         </div>
