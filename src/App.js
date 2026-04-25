@@ -397,27 +397,10 @@ export default function Dial() {
     }
     if (minPrice > 0) its = its.filter(i => (i.priceUSD || i.price) >= minPrice);
     if (maxPrice < GLOBAL_MAX) its = its.filter(i => (i.priceUSD || i.price) <= maxPrice);
-    // TEMPORARY: pin Tropical Watch and Wind Vintage to the top of the
-    // date-sorted views for a one-off demo. Remove this const to go back
-    // to a pure chronological sort. Doesn't affect price sorts.
-    const PRIORITY_SOURCES = ["Tropical Watch", "Wind Vintage"];
-    const sourceRank = (s) => {
-      const i = PRIORITY_SOURCES.indexOf(s);
-      return i >= 0 ? i : 999;
-    };
-
     if (sort === "price-asc") its.sort((a, b) => (a.priceUSD || a.price) - (b.priceUSD || b.price));
     else if (sort === "price-desc") its.sort((a, b) => (b.priceUSD || b.price) - (a.priceUSD || a.price));
-    else if (sort === "date-asc") its.sort((a, b) => {
-      const r = sourceRank(a.source) - sourceRank(b.source);
-      if (r !== 0) return r;
-      return freshDate(a) < freshDate(b) ? -1 : 1;
-    });
-    else its.sort((a, b) => {
-      const r = sourceRank(a.source) - sourceRank(b.source);
-      if (r !== 0) return r;
-      return freshDate(a) < freshDate(b) ? 1 : -1;
-    });
+    else if (sort === "date-asc") its.sort((a, b) => freshDate(a) < freshDate(b) ? -1 : 1);
+    else its.sort((a, b) => freshDate(a) < freshDate(b) ? 1 : -1);
     return its;
   }, [items, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays]);
 
