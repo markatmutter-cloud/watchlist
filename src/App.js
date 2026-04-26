@@ -1951,6 +1951,15 @@ export default function Dial() {
         )}
       </div>
 
+      {/* Show sold history — only relevant on the Available tab. Lives
+          in the filter row alongside the other content filters rather
+          than the top header (which is for app-level navigation). */}
+      {tab === "listings" && (
+        <button onClick={() => setShowSoldHistory(s => !s)} style={pillBase(showSoldHistory)}>
+          {showSoldHistory ? "Sold ✓" : "Show sold"}
+        </button>
+      )}
+
       {hasFilters && (
         <button onClick={resetFilters} style={{
           marginLeft: "auto",
@@ -2002,18 +2011,6 @@ export default function Dial() {
             )}
           </div>
         </div>
-        {tab === "listings" && (
-          <button onClick={() => setShowSoldHistory(s => !s)}
-            title={showSoldHistory ? "Hide sold history" : "Include sold listings inline"}
-            style={{
-              flexShrink: 0, padding: "5px 10px", borderRadius: 16,
-              border: "0.5px solid var(--border)", cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-              background: showSoldHistory ? "var(--text1)" : "var(--surface)",
-              color: showSoldHistory ? "var(--bg)" : "var(--text2)",
-            }}>
-            {showSoldHistory ? "Hide sold" : "Show sold"}
-          </button>
-        )}
         <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>{allFiltered.length}</span>
         <button onClick={() => setDarkOverride(dark ? false : true)} aria-label="Toggle dark mode"
           title={dark ? "Switch to light" : "Switch to dark"}
