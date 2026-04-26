@@ -1973,28 +1973,21 @@ export default function Dial() {
         )}
       </div>
 
-      {/* Status: Live vs Sold — mutually exclusive. Default Live. Sold
-          mode is the analytics view (most useful with a brand+ref filter
-          set). Counts in the popover labels make the volumes obvious. */}
+      {/* Status: Live vs Sold — segmented switch, mutually exclusive.
+          Default Live. Sold mode is the analytics view (most useful
+          with a brand+ref filter set). One tap, no popover, intent
+          obvious from the labels. */}
       {tab === "listings" && (() => {
         const liveTotal = items.filter(i => !i.sold && !hidden[i.id]).length;
         const soldTotal = items.filter(i =>  i.sold && !hidden[i.id]).length;
         return (
-          <div style={{ position: "relative" }}>
-            <button onClick={() => setActiveFilterPop(p => p === "status" ? null : "status")} style={pillBase(showSoldHistory)}>
-              Status: {showSoldHistory ? "Sold" : "Live"} ▾
+          <div style={{ display: "flex", gap: 4 }}>
+            <button onClick={() => setShowSoldHistory(false)} style={pillBase(!showSoldHistory)}>
+              Live · {liveTotal}
             </button>
-            {activeFilterPop === "status" && popShell(
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                {[[false, `Live · ${liveTotal}`], [true, `Sold · ${soldTotal}`]].map(([val, lbl]) => (
-                  <button key={String(val)} onClick={() => { setShowSoldHistory(val); setActiveFilterPop(null); }} style={{
-                    textAlign: "left", padding: "8px 10px", borderRadius: 6, border: "none",
-                    background: showSoldHistory === val ? "var(--surface)" : "transparent",
-                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-                  }}>{lbl}{showSoldHistory === val ? "  ✓" : ""}</button>
-                ))}
-              </div>
-            )}
+            <button onClick={() => setShowSoldHistory(true)} style={pillBase(showSoldHistory)}>
+              Sold · {soldTotal}
+            </button>
           </div>
         );
       })()}
