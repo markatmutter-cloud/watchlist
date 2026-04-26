@@ -86,6 +86,29 @@ function SearchIcon() {
   );
 }
 
+// Small leading icons for the tab buttons. Sized 12 so they sit just
+// inside the pill text without stealing real estate.
+function TabIcon({ kind }) {
+  const props = { width: 12, height: 12, viewBox: "0 0 24 24", fill: "none",
+                  stroke: "currentColor", strokeWidth: 2,
+                  strokeLinecap: "round", strokeLinejoin: "round" };
+  if (kind === "listings") return (
+    <svg {...props}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+      <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+  );
+  if (kind === "auctions") return (
+    <svg {...props}><path d="M14 12.5L7 19.5"/><path d="m20 4-8 8"/>
+      <path d="m17 1-7 7 5 5 7-7-5-5z"/><path d="M3 21h12"/></svg>
+  );
+  if (kind === "searches") return (
+    <svg {...props}><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+  );
+  if (kind === "watchlist") return (
+    <svg {...props}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+  );
+  return null;
+}
+
 function Card({ item, wished, onWish, compact, onHide, isHidden }) {
   // `backfilled` is set by merge.py when a single source contributes 10+
   // listings whose firstSeen == today — that pattern is almost always a
@@ -109,7 +132,9 @@ function Card({ item, wished, onWish, compact, onHide, isHidden }) {
           {item.sold && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>}
           {!item.sold && isHidden && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>}
           {isNew && !isHidden && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(24,95,165,0.92)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em", fontWeight: 600 }}>NEW</div>}
-          {item.currency && item.currency !== "USD" && <div style={{ position: "absolute", bottom: 6, left: 6, background: "rgba(0,0,0,0.5)", color: "#fff", fontSize: 8, padding: "2px 5px", borderRadius: 5 }}>{item.currency}</div>}
+          {/* On-image currency badge removed — currency lives in the
+              price text below now (e.g. "£4,500 · ~$5,715"). Keeping
+              all the price info in one place reads cleaner. */}
         </div>
         <div style={{ padding: compact ? "5px 7px 8px" : "7px 9px 10px" }}>
           <div style={{ fontSize: compact ? 8 : 9, color: "var(--text3)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.source}</div>
@@ -225,20 +250,35 @@ export default function Dial() {
   const isDragging = useRef(false);
   const dragStart = useRef(0);
   const widthStart = useRef(0);
-  // Mobile users can pick 1/2/3 columns from the View popover (top bar).
-  // Persisted in localStorage so the choice sticks per-device. Desktop is
-  // auto-fluid based on sidebar width — no manual override there.
+  // Per-device column override. Mobile picks 1-3, desktop picks 3-7 or
+  // "auto". Persisted in localStorage so the choice sticks across visits.
   const [mobileCols, setMobileCols] = useState(() => {
     try {
       const v = parseInt(localStorage.getItem("dial_mobile_cols") || "3", 10);
       return [1, 2, 3].includes(v) ? v : 3;
     } catch { return 3; }
   });
+  const [desktopCols, setDesktopCols] = useState(() => {
+    try {
+      const v = localStorage.getItem("dial_desktop_cols");
+      if (v === "auto" || v === null) return "auto";
+      const n = parseInt(v, 10);
+      return [3, 4, 5, 6, 7].includes(n) ? n : "auto";
+    } catch { return "auto"; }
+  });
   useEffect(() => {
     try { localStorage.setItem("dial_mobile_cols", String(mobileCols)); } catch {}
   }, [mobileCols]);
+  useEffect(() => {
+    try { localStorage.setItem("dial_desktop_cols", String(desktopCols)); } catch {}
+  }, [desktopCols]);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
-  const cols = isMobile ? mobileCols : Math.max(2, Math.round((screenWidth - sidebarWidth) / 180));
+  // Desktop column count: user override wins; otherwise the fluid default
+  // based on viewport width with a sensible minimum.
+  const desktopAutoCols = Math.max(3, Math.round(screenWidth / 240));
+  const cols = isMobile
+    ? mobileCols
+    : (desktopCols === "auto" ? desktopAutoCols : desktopCols);
   const compact = cols >= 4;
 
   const [items, setItems] = useState([]);
@@ -1249,6 +1289,32 @@ export default function Dial() {
       ? (typeof usdEquiv === "number" ? `~$${Math.round(usdEquiv).toLocaleString()}` : `~$${usdEquiv}`)
       : null;
 
+    // Three-data-block layout uses the full row width: title gets the
+    // left column, then three labelled blocks (Bid/Hammer · Estimate ·
+    // Countdown) flow inline at desktop widths and stack at narrow
+    // mobile widths via flex-wrap. Each block is a label + a value so
+    // the meaning is unambiguous without relying on the user inferring
+    // it from formatting.
+    const Block = ({ label, value, sub, valueColor }) => (
+      <div style={{ minWidth: 100 }}>
+        <div style={{ fontSize: 9, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginBottom: 2 }}>
+          {label}
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 500, color: valueColor || "var(--text1)" }}>
+          {value}
+        </div>
+        {sub && <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 1 }}>{sub}</div>}
+      </div>
+    );
+
+    const bidLabel = sold ? "Hammer" : (currentBid !== null && currentBid !== undefined && currentBid !== "" ? "Current bid" : "Starting price");
+    const bidValue = sold
+      ? fmtLotPrice(lot.sold_price, lot.currency)
+      : (currentBid !== null && currentBid !== undefined && currentBid !== ""
+          ? fmtLotPrice(currentBid, lot.currency)
+          : (lot.starting_price !== null && lot.starting_price !== undefined ? fmtLotPrice(lot.starting_price, lot.currency) : "—"));
+    const bidUsd = showUsd && (sold ? lot.sold_price_usd : (currentBid ?? lot.starting_price_usd));
+
     return (
       <div key={lot.url} style={{
         border: "0.5px solid var(--border)", borderRadius: 12,
@@ -1256,40 +1322,51 @@ export default function Dial() {
         display: "flex", alignItems: "stretch",
       }}>
         <a href={lot.url} target="_blank" rel="noopener noreferrer"
-          style={{ width: 88, flexShrink: 0, background: "var(--surface)", display: "block" }}>
+          style={{ width: 96, flexShrink: 0, background: "var(--surface)", display: "block", alignSelf: "stretch" }}>
           {lot.image && (
             <img src={lot.image} alt={lot.title || ""}
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           )}
         </a>
-        <a href={lot.url} target="_blank" rel="noopener noreferrer"
-          style={{ flex: 1, minWidth: 0, padding: "10px 12px",
-                  display: "flex", flexDirection: "column", justifyContent: "center",
-                  textDecoration: "none", color: "inherit" }}>
-          <div style={{ fontSize: 10, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
-            {lot.house}{lot.lot_number ? ` · Lot ${lot.lot_number}` : ""}
-          </div>
-          <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text1)", lineHeight: 1.3, marginBottom: 4,
-                      display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-            {lot.title || "—"}
-          </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-            {liveBid && (
-              <span style={{ fontSize: 12, fontWeight: 500, color: sold ? "#1b8f3a" : "var(--text1)" }}>{liveBid}</span>
-            )}
-            {estimate && (
-              <span style={{ fontSize: 11, color: "var(--text3)" }}>{estimate}</span>
-            )}
-          </div>
-          {usdLabel && (
-            <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 2 }}>{usdLabel}</div>
-          )}
-          {lot.auction_end && (
-            <div style={{ fontSize: 11, color: isPast ? "var(--text3)" : "#185FA5", marginTop: 4 }}>
-              {fmtCountdown(lot.auction_end)}
+        <div style={{ flex: 1, minWidth: 0, padding: "12px 16px",
+                    display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          {/* Title column: house · lot, then watch title. Min-width keeps
+              it from shrinking too far at narrow widths. */}
+          <a href={lot.url} target="_blank" rel="noopener noreferrer"
+            style={{ flex: "1 1 240px", minWidth: 200,
+                    textDecoration: "none", color: "inherit" }}>
+            <div style={{ fontSize: 10, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
+              {lot.house}{lot.lot_number ? ` · Lot ${lot.lot_number}` : ""}
             </div>
+            <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)", lineHeight: 1.3,
+                        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+              {lot.title || "—"}
+            </div>
+          </a>
+
+          <Block
+            label={bidLabel}
+            value={bidValue}
+            sub={bidUsd ? `~$${Math.round(bidUsd).toLocaleString()}` : null}
+            valueColor={sold ? "#1b8f3a" : undefined}
+          />
+
+          {(estimateLow && estimateHigh) && (
+            <Block
+              label="Estimate"
+              value={`${estimateLow} – ${estimateHigh}`}
+              sub={lot.estimate_low_usd && lot.estimate_high_usd ? `~$${Math.round(lot.estimate_low_usd).toLocaleString()}–${Math.round(lot.estimate_high_usd).toLocaleString()}` : null}
+            />
           )}
-        </a>
+
+          {lot.auction_end && (
+            <Block
+              label={isPast ? "Auction" : "Time left"}
+              value={fmtCountdown(lot.auction_end)}
+              valueColor={isPast ? "var(--text3)" : "#185FA5"}
+            />
+          )}
+        </div>
         <button onClick={() => removeTrackedLot(lot.url)} aria-label="Remove" title="Stop tracking"
           style={{ flexShrink: 0, background: "none", border: "none", borderLeft: "0.5px solid var(--border)",
                   color: "var(--text3)", cursor: "pointer", fontSize: 16, padding: "0 12px" }}>×</button>
@@ -1308,17 +1385,20 @@ export default function Dial() {
           {/* Top-level toggle between dealer listings and auction lots.
               Auction lots are time-sensitive (countdowns), so making
               them one tap away rather than a long scroll matters. */}
-          <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
+          <div style={{ display: "flex", marginBottom: 18, borderBottom: "0.5px solid var(--border)" }}>
             {[
               ["listings", `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
               ["lots",     `Auction lots${trackedLots.length > 0 ? ` · ${trackedLots.length}` : ""}`],
             ].map(([key, label]) => (
+              // Subordinate to the top tabs above: underline-style instead
+              // of a filled pill so the visual hierarchy reads
+              // tab → sub-tab clearly.
               <button key={key} onClick={() => setWatchTopTab(key)} style={{
-                flex: 1, padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer",
-                fontFamily: "inherit", fontSize: 13,
-                background: watchTopTab === key ? "var(--text1)" : "var(--surface)",
-                color: watchTopTab === key ? "var(--bg)" : "var(--text2)",
-                fontWeight: watchTopTab === key ? 500 : 400,
+                padding: "6px 0", marginRight: 18, border: "none", cursor: "pointer",
+                background: "transparent", fontFamily: "inherit", fontSize: 14,
+                color: watchTopTab === key ? "var(--text1)" : "var(--text3)",
+                fontWeight: watchTopTab === key ? 600 : 400,
+                borderBottom: watchTopTab === key ? "2px solid var(--text1)" : "2px solid transparent",
               }}>{label}</button>
             ))}
           </div>
@@ -1352,13 +1432,14 @@ export default function Dial() {
                   snapshot is the durable record for both — you keep the
                   image, title, and price you saved at even after a dealer
                   takes the URL down. */}
-              <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+              <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
                 {[["live", `Live · ${watchLive.length}`], ["sold", `Sold · ${watchSold.length}`]].map(([key, label]) => (
                   <button key={key} onClick={() => setWatchSubTab(key)} style={{
-                    padding: "5px 12px", borderRadius: 16, border: "none", cursor: "pointer",
-                    fontFamily: "inherit", fontSize: 12,
-                    background: watchSubTab === key ? "var(--text1)" : "var(--surface)",
-                    color: watchSubTab === key ? "var(--bg)" : "var(--text2)",
+                    padding: "4px 10px", borderRadius: 14, cursor: "pointer",
+                    fontFamily: "inherit", fontSize: 11,
+                    border: "0.5px solid var(--border)",
+                    background: watchSubTab === key ? "var(--surface)" : "transparent",
+                    color: watchSubTab === key ? "var(--text1)" : "var(--text3)",
                     fontWeight: watchSubTab === key ? 500 : 400,
                   }}>{label}</button>
                 ))}
@@ -1472,14 +1553,15 @@ export default function Dial() {
               </div>
             ) : (
               <>
-                <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
                   {[["upcoming", `Upcoming · ${trackedLotsUpcoming.length}`],
                     ["past", `Past · ${trackedLotsPast.length}`]].map(([key, label]) => (
                     <button key={key} onClick={() => setAuctionLotSubTab(key)} style={{
-                      padding: "5px 12px", borderRadius: 16, border: "none", cursor: "pointer",
-                      fontFamily: "inherit", fontSize: 12,
-                      background: auctionLotSubTab === key ? "var(--text1)" : "var(--surface)",
-                      color: auctionLotSubTab === key ? "var(--bg)" : "var(--text2)",
+                      padding: "4px 10px", borderRadius: 14, cursor: "pointer",
+                      fontFamily: "inherit", fontSize: 11,
+                      border: "0.5px solid var(--border)",
+                      background: auctionLotSubTab === key ? "var(--surface)" : "transparent",
+                      color: auctionLotSubTab === key ? "var(--text1)" : "var(--text3)",
                       fontWeight: auctionLotSubTab === key ? 500 : 400,
                     }}>{label}</button>
                   ))}
@@ -1699,9 +1781,11 @@ export default function Dial() {
             the home screen. */}
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 14px)" }}>
           {[["listings", "Available"], ["auctions", "Auctions"], ["searches", "Searches"], ["watchlist", "Watchlist"]].map(([key, label]) => (
-            <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "12px 0 14px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400 }}>
-              {tab === key && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5", margin: "0 auto 4px" }} />}
-              {label}
+            <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "12px 0 14px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+              {tab === key
+                ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5" }} />
+                : <TabIcon kind={key} />}
+              <span>{label}</span>
             </button>
           ))}
         </div>
@@ -1800,16 +1884,33 @@ export default function Dial() {
     boxShadow: active ? "none" : "inset 0 0 0 0.5px var(--border)",
   });
 
-  const popShell = (children) => (
+  // Generic popover shell. Pass `wide` for the multi-select pickers
+  // (Source / Brand / Reference) where the option list wants to flow
+  // into columns rather than stacking vertically.
+  const popShell = (children, { wide = false } = {}) => (
     <div ref={filterPopRef} style={{
       position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 60,
       background: "var(--bg)", border: "0.5px solid var(--border)",
-      borderRadius: 10, padding: 12, minWidth: 220, maxWidth: 360,
+      borderRadius: 10, padding: 12,
+      minWidth: wide ? 360 : 220,
+      maxWidth: wide ? 640 : 360,
+      width: wide ? "min(640px, calc(100vw - 32px))" : "auto",
       boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
     }}>
       {children}
     </div>
   );
+
+  // Two-column grid for option lists in the wide popovers. minmax 160px
+  // means columns expand to fill, but never narrower than ~160px so the
+  // labels don't get squeezed.
+  const popGridStyle = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+    gap: 2,
+    maxHeight: 360,
+    overflowY: "auto",
+  };
 
   const filterRowJSX = (
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
@@ -1849,24 +1950,28 @@ export default function Dial() {
           Source{filterSources.length > 0 ? ` · ${filterSources.length}` : ""} ▾
         </button>
         {activeFilterPop === "source" && popShell(
-          <div style={{ maxHeight: 320, overflowY: "auto" }}>
-            {SOURCES.map(s => (
-              <label key={s} style={{
-                display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
-                borderRadius: 6, cursor: "pointer", fontSize: 13, color: "var(--text1)",
-              }}>
-                <input type="checkbox" checked={filterSources.includes(s)} onChange={() => toggleSource(s)} />
-                {s}
-              </label>
-            ))}
+          <div>
+            <div style={popGridStyle}>
+              {SOURCES.map(s => (
+                <label key={s} style={{
+                  display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
+                  borderRadius: 6, cursor: "pointer", fontSize: 13, color: "var(--text1)",
+                  background: filterSources.includes(s) ? "var(--surface)" : "transparent",
+                }}>
+                  <input type="checkbox" checked={filterSources.includes(s)} onChange={() => toggleSource(s)} />
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s}</span>
+                </label>
+              ))}
+            </div>
             {filterSources.length > 0 && (
               <button onClick={() => setFilterSources([])} style={{
-                marginTop: 8, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
+                marginTop: 10, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
                 background: "transparent", color: "var(--text2)", cursor: "pointer",
                 fontFamily: "inherit", fontSize: 12, width: "100%",
               }}>Clear sources</button>
             )}
-          </div>
+          </div>,
+          { wide: true }
         )}
       </div>
 
@@ -1876,24 +1981,28 @@ export default function Dial() {
           Brand{filterBrands.length > 0 ? ` · ${filterBrands.length}` : ""} ▾
         </button>
         {activeFilterPop === "brand" && popShell(
-          <div style={{ maxHeight: 320, overflowY: "auto" }}>
-            {BRANDS.map(b => (
-              <label key={b} style={{
-                display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
-                borderRadius: 6, cursor: "pointer", fontSize: 13, color: "var(--text1)",
-              }}>
-                <input type="checkbox" checked={filterBrands.includes(b)} onChange={() => toggleBrand(b)} />
-                {b}
-              </label>
-            ))}
+          <div>
+            <div style={popGridStyle}>
+              {BRANDS.map(b => (
+                <label key={b} style={{
+                  display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
+                  borderRadius: 6, cursor: "pointer", fontSize: 13, color: "var(--text1)",
+                  background: filterBrands.includes(b) ? "var(--surface)" : "transparent",
+                }}>
+                  <input type="checkbox" checked={filterBrands.includes(b)} onChange={() => toggleBrand(b)} />
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b}</span>
+                </label>
+              ))}
+            </div>
             {filterBrands.length > 0 && (
               <button onClick={() => setFilterBrands([])} style={{
-                marginTop: 8, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
+                marginTop: 10, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
                 background: "transparent", color: "var(--text2)", cursor: "pointer",
                 fontFamily: "inherit", fontSize: 12, width: "100%",
               }}>Clear brands</button>
             )}
-          </div>
+          </div>,
+          { wide: true }
         )}
       </div>
 
@@ -1904,24 +2013,28 @@ export default function Dial() {
             Reference{filterRefs.length > 0 ? ` · ${filterRefs.length}` : ""} ▾
           </button>
           {activeFilterPop === "ref" && popShell(
-            <div style={{ maxHeight: 320, overflowY: "auto" }}>
-              {REFS.map(r => (
-                <label key={r} style={{
-                  display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
-                  borderRadius: 6, cursor: "pointer", fontSize: 13, color: "var(--text1)",
-                }}>
-                  <input type="checkbox" checked={filterRefs.includes(r)} onChange={() => toggleFilterRef(r)} />
-                  {r}
-                </label>
-              ))}
+            <div>
+              <div style={popGridStyle}>
+                {REFS.map(r => (
+                  <label key={r} style={{
+                    display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
+                    borderRadius: 6, cursor: "pointer", fontSize: 13, color: "var(--text1)",
+                    background: filterRefs.includes(r) ? "var(--surface)" : "transparent",
+                  }}>
+                    <input type="checkbox" checked={filterRefs.includes(r)} onChange={() => toggleFilterRef(r)} />
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r}</span>
+                  </label>
+                ))}
+              </div>
               {filterRefs.length > 0 && (
                 <button onClick={() => setFilterRefs([])} style={{
-                  marginTop: 8, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
+                  marginTop: 10, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
                   background: "transparent", color: "var(--text2)", cursor: "pointer",
                   fontFamily: "inherit", fontSize: 12, width: "100%",
                 }}>Clear refs</button>
               )}
-            </div>
+            </div>,
+            { wide: true }
           )}
         </div>
       )}
@@ -1973,22 +2086,16 @@ export default function Dial() {
         )}
       </div>
 
-      {/* Status: Live vs Sold — segmented switch, mutually exclusive.
-          Default Live. Sold mode is the analytics view (most useful
-          with a brand+ref filter set). One tap, no popover, intent
-          obvious from the labels. */}
+      {/* Status: single pill that flips between Live and Sold. Label shows
+          the current state; tap to switch to the other. */}
       {tab === "listings" && (() => {
         const liveTotal = items.filter(i => !i.sold && !hidden[i.id]).length;
         const soldTotal = items.filter(i =>  i.sold && !hidden[i.id]).length;
         return (
-          <div style={{ display: "flex", gap: 4 }}>
-            <button onClick={() => setShowSoldHistory(false)} style={pillBase(!showSoldHistory)}>
-              Live · {liveTotal}
-            </button>
-            <button onClick={() => setShowSoldHistory(true)} style={pillBase(showSoldHistory)}>
-              Sold · {soldTotal}
-            </button>
-          </div>
+          <button onClick={() => setShowSoldHistory(s => !s)} style={pillBase(showSoldHistory)}
+            title={showSoldHistory ? "Switch to live listings" : "Switch to sold history"}>
+            {showSoldHistory ? `Sold · ${soldTotal}` : `Live · ${liveTotal}`}
+          </button>
         );
       })()}
 
@@ -2022,9 +2129,17 @@ export default function Dial() {
                   color: "var(--text1)", flexShrink: 0 }}>
           Watchlist
         </button>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
           {[["listings", "Available"], ["auctions", "Auctions"], ["searches", "Searches"], ["watchlist", "Watchlist"]].map(([key, label]) => (
-            <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 13, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
+            <button key={key} onClick={() => setTab(key)} style={{
+              padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer",
+              fontFamily: "inherit", fontSize: 13,
+              background: tab === key ? "var(--text1)" : "var(--surface)",
+              color: tab === key ? "var(--bg)" : "var(--text2)",
+              fontWeight: tab === key ? 500 : 400,
+              display: "flex", alignItems: "center", gap: 6,
+            }}>
+              <TabIcon kind={key} />
               {label}
             </button>
           ))}
@@ -2044,16 +2159,60 @@ export default function Dial() {
           </div>
         </div>
         <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>{allFiltered.length}</span>
-        <button onClick={() => setDarkOverride(dark ? false : true)} aria-label="Toggle dark mode"
-          title={dark ? "Switch to light" : "Switch to dark"}
-          style={{
-            flexShrink: 0, width: 32, height: 32, borderRadius: 8,
-            border: "0.5px solid var(--border)", background: "var(--surface)",
-            color: "var(--text2)", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-        </button>
+        {/* Desktop View popover: theme + column count, mirroring mobile.
+            Replaces the standalone dark-mode icon button so per-device
+            display settings live in one place. */}
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <button onClick={() => { setViewMenuOpen(o => !o); setShowUserMenu(false); }} aria-label="View options"
+            style={{
+              width: 32, height: 32, borderRadius: 8,
+              border: "0.5px solid var(--border)",
+              background: viewMenuOpen ? "var(--text1)" : "var(--surface)",
+              color: viewMenuOpen ? "var(--bg)" : "var(--text2)", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+          {viewMenuOpen && (
+            <div style={{ position: "absolute", right: 0, top: 38, zIndex: 50,
+                         background: "var(--bg)", border: "0.5px solid var(--border)",
+                         borderRadius: 10, padding: 12, minWidth: 220,
+                         boxShadow: "0 6px 20px rgba(0,0,0,0.18)" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Theme</div>
+              <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                {[["light", "Light"], ["dark", "Dark"]].map(([key, lbl]) => {
+                  const active = (key === "dark") === dark;
+                  return (
+                    <button key={key} onClick={() => setDarkOverride(key === "dark")} style={{
+                      flex: 1, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
+                      background: active ? "var(--text1)" : "transparent",
+                      color: active ? "var(--bg)" : "var(--text2)",
+                      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                    }}>{lbl}</button>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Columns</div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {["auto", 3, 4, 5, 6, 7].map(n => (
+                  <button key={n} onClick={() => setDesktopCols(n)} style={{
+                    flex: "1 1 auto", minWidth: 36, padding: "6px 10px", borderRadius: 6,
+                    border: "0.5px solid var(--border)",
+                    background: desktopCols === n ? "var(--text1)" : "transparent",
+                    color: desktopCols === n ? "var(--bg)" : "var(--text2)",
+                    cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                  }}>{n === "auto" ? "Auto" : n}</button>
+                ))}
+              </div>
+              <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 6 }}>
+                Auto = {desktopAutoCols} columns at this width.
+              </div>
+            </div>
+          )}
+        </div>
         {authJSX}
       </div>
       {/* Filter pill row — sits below the top bar, above the content area.
