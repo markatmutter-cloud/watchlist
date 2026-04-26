@@ -2,12 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <!-- viewport-fit=cover lets the page extend behind the iPhone status
-         bar / dynamic island so the theme-color tint reads as a green
-         header rather than a separate stripe. Combine with
-         env(safe-area-inset-top) padding in CSS to keep content out
-         from under the status bar. -->
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <!-- Stuck with the default viewport (no viewport-fit=cover). Tried
+         cover briefly to get the green theme-color to extend behind the
+         iOS status bar, but it broke the bottom tab bar layout — env()
+         values weren't applied until a layout-trigger event (keyboard
+         opening), so on first paint the tabs sat partly behind the home
+         indicator. theme-color alone gives the green status-bar tint
+         in PWA standalone mode without this side effect. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <title>Watchlist</title>
     <link rel="apple-touch-icon" sizes="1024x1024" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
