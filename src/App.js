@@ -484,10 +484,25 @@ export default function Dial() {
     }
     if (minPrice > 0) its = its.filter(i => (i.priceUSD || i.price) >= minPrice);
     if (maxPrice < GLOBAL_MAX) its = its.filter(i => (i.priceUSD || i.price) <= maxPrice);
-    if (sort === "price-asc") its.sort((a, b) => (a.priceUSD || a.price) - (b.priceUSD || b.price));
-    else if (sort === "price-desc") its.sort((a, b) => (b.priceUSD || b.price) - (a.priceUSD || a.price));
-    else if (sort === "date-asc") its.sort((a, b) => freshDate(a) < freshDate(b) ? -1 : 1);
-    else its.sort((a, b) => freshDate(a) < freshDate(b) ? 1 : -1);
+    const cmp = (a, b) => {
+      if (sort === "price-asc") return (a.priceUSD || a.price) - (b.priceUSD || b.price);
+      if (sort === "price-desc") return (b.priceUSD || b.price) - (a.priceUSD || a.price);
+      if (sort === "date-asc") return freshDate(a) < freshDate(b) ? -1 : 1;
+      return freshDate(a) < freshDate(b) ? 1 : -1;
+    };
+    if (showSoldHistory) {
+      // Live items first, sold items after — never interleaved. Otherwise
+      // sold listings from months ago appear scattered through the grid in
+      // chronological order, breaking up the "what's for sale" view. Each
+      // sub-list still respects the user's chosen sort.
+      const live = its.filter(i => !i.sold);
+      const sold = its.filter(i =>  i.sold);
+      live.sort(cmp);
+      sold.sort(cmp);
+      its = [...live, ...sold];
+    } else {
+      its.sort(cmp);
+    }
     return its;
   }, [items, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, showSoldHistory]);
 
@@ -852,16 +867,41 @@ export default function Dial() {
   );
 
   // ── GRIDS ─────────────────────────────────────────────────────────────────
-  const ListingsGrid = () => (
-    <>
-      <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-        {visible.map(item => <Card key={item.id} item={item} wished={!!watchlist[item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[item.id]} />)}
-        {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>No watches match your filters</div>}
-      </div>
-      {hasMore && <div ref={loaderRef} style={{ padding: 24, textAlign: "center", color: "var(--text3)", fontSize: 12 }}>Loading more...</div>}
-      {!hasMore && allFiltered.length > 0 && <div style={{ padding: 24, textAlign: "center", color: "var(--text3)", fontSize: 12 }}>All {allFiltered.length} shown</div>}
-    </>
-  );
+  // When showSoldHistory is on, allFiltered is ordered live-first then
+  // sold-last. We split the visible slice at the live/sold boundary and
+  // render two grids with a "Sold history" divider between them so the
+  // transition is obvious — the SOLD badges alone weren't doing enough
+  // to signal "you're now looking at archive."
+  const ListingsGrid = () => {
+    const liveCount = allFiltered.findIndex(i => i.sold);
+    const liveBoundary = liveCount === -1 ? allFiltered.length : liveCount;
+    const visibleLive = visible.slice(0, liveBoundary);
+    const visibleSold = visible.slice(liveBoundary);
+    return (
+      <>
+        <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+          {visibleLive.map(item => <Card key={item.id} item={item} wished={!!watchlist[item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[item.id]} />)}
+          {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>No watches match your filters</div>}
+        </div>
+        {visibleSold.length > 0 && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "20px 0 10px" }}>
+              <div style={{ flex: 1, height: "0.5px", background: "var(--border)" }} />
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text3)" }}>
+                Sold history · {allFiltered.length - liveBoundary}
+              </span>
+              <div style={{ flex: 1, height: "0.5px", background: "var(--border)" }} />
+            </div>
+            <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+              {visibleSold.map(item => <Card key={item.id} item={item} wished={!!watchlist[item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[item.id]} />)}
+            </div>
+          </>
+        )}
+        {hasMore && <div ref={loaderRef} style={{ padding: 24, textAlign: "center", color: "var(--text3)", fontSize: 12 }}>Loading more...</div>}
+        {!hasMore && allFiltered.length > 0 && <div style={{ padding: 24, textAlign: "center", color: "var(--text3)", fontSize: 12 }}>All {allFiltered.length} shown</div>}
+      </>
+    );
+  };
 
   // Hidden listings manager modal. Accessed from the user dropdown.
   // Lets the user un-hide items they previously dismissed.
