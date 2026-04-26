@@ -86,7 +86,12 @@ function SearchIcon() {
 }
 
 function Card({ item, wished, onWish, compact, onHide, isHidden }) {
-  const isNew = daysAgo(freshDate(item)) <= 1 && !item.sold;
+  // `backfilled` is set by merge.py when a single source contributes 10+
+  // listings whose firstSeen == today — that pattern is almost always a
+  // scraper change retroactively picking up listings that were already on
+  // the dealer's site, not real new inventory. Suppress the NEW badge for
+  // those so the signal stays useful.
+  const isNew = daysAgo(freshDate(item)) <= 1 && !item.sold && !item.backfilled;
   const displayPrice = fmt(item.price, item.currency || "USD");
   const showUSD = item.currency && item.currency !== "USD" && item.priceUSD;
   const priceDropped = (item.priceChange || 0) < 0;
@@ -370,7 +375,9 @@ export default function Dial() {
   const toggleBrand = b => setFilterBrands(p => p.includes(b) ? p.filter(x => x !== b) : [...p, b]);
 
   const newCounts = useMemo(() => {
-    const fs = items.filter(i => !i.sold);
+    // Exclude backfilled items so the Today/3-day/Week counts reflect
+    // real new inventory, not a scraper-change retro pickup.
+    const fs = items.filter(i => !i.sold && !i.backfilled);
     return {
       1: fs.filter(i => daysAgo(freshDate(i)) <= 1).length,
       3: fs.filter(i => daysAgo(freshDate(i)) <= 3).length,
@@ -388,7 +395,7 @@ export default function Dial() {
         return filterRefs.some(r => ref.includes(r.toLowerCase()));
       });
     }
-    if (newDays > 0) its = its.filter(i => daysAgo(freshDate(i)) <= newDays);
+    if (newDays > 0) its = its.filter(i => daysAgo(freshDate(i)) <= newDays && !i.backfilled);
     if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
     if (filterBrands.length > 0) its = its.filter(i => filterBrands.includes(i.brand));
     if (search.trim()) {
@@ -489,7 +496,7 @@ export default function Dial() {
       const matches = q
         ? forSale.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q))
         : [];
-      const newCount = matches.filter(i => daysAgo(freshDate(i)) <= 7).length;
+      const newCount = matches.filter(i => daysAgo(freshDate(i)) <= 7 && !i.backfilled).length;
       return { id, label, query, count: matches.length, newCount };
     });
   }, [items, userSearches]);

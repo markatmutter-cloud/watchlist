@@ -255,6 +255,33 @@ def update_state(items, state):
     if archived_count:
         print(f"  {archived_count} sold/inactive listings emitted to archive")
 
+    # Backfill detection: if a single source suddenly contributes ≥10 listings
+    # whose firstSeen == TODAY, those almost certainly aren't genuinely new
+    # inventory — more likely a scraper change picked up listings that were
+    # already on the dealer's site (e.g. the Wind Vintage bracelet filter
+    # being relaxed picked up ~107 listings in one run). Tag them so the
+    # frontend doesn't show NEW badges for the bulk.
+    new_per_source = {}
+    for e in enriched:
+        if e.get('firstSeen') == TODAY and not e.get('sold'):
+            new_per_source[e['source']] = new_per_source.get(e['source'], 0) + 1
+    backfilled_sources = {s for s, c in new_per_source.items() if c >= 10}
+    if backfilled_sources:
+        for src in backfilled_sources:
+            print(f"  Backfill detected: {src} ({new_per_source[src]} listings first seen today)")
+        for e in enriched:
+            if (e.get('firstSeen') == TODAY
+                and e['source'] in backfilled_sources
+                and not e.get('sold')):
+                e['backfilled'] = True
+                # Also persist on the state entry so it survives re-runs.
+                if e['id'] in state:
+                    state[e['id']]['backfilled'] = True
+    # Carry forward an existing backfilled flag from previous runs.
+    for e in enriched:
+        if not e.get('backfilled') and e['id'] in state and state[e['id']].get('backfilled'):
+            e['backfilled'] = True
+
     return enriched
 
 
