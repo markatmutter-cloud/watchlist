@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { useAuth, useWatchlist, useHidden, useSearches, importLocalData, isAuthConfigured } from "./supabase";
+import { useAuth, useWatchlist, useHidden, useSearches, useTrackedLots, importLocalData, isAuthConfigured } from "./supabase";
 
 const LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/listings.json";
 const AUCTIONS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/auctions.json";
+const TRACKED_LOTS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/tracked_lots.json";
 const PAGE_SIZE = 48;
 // Legacy localStorage keys — kept only for the one-shot import on first
 // sign-in (see importLocalData + the banner in the Watchlist tab). Active
@@ -224,6 +225,16 @@ export default function Dial() {
 
   const [items, setItems] = useState([]);
   const [auctions, setAuctions] = useState([]);
+  // Scraped state for tracked auction lots, keyed by URL. The user's own
+  // tracked URLs come from Supabase (useTrackedLots); we join those URLs
+  // against this object to render lot cards.
+  const [trackedLotsState, setTrackedLotsState] = useState({});
+  // Sub-tab inside Watchlist > Auction lots: upcoming vs past.
+  const [auctionLotSubTab, setAuctionLotSubTab] = useState("upcoming");
+  // Paste-URL input state for adding a new tracked lot.
+  const [lotInputUrl, setLotInputUrl] = useState("");
+  const [lotInputError, setLotInputError] = useState("");
+  const [lotInputBusy, setLotInputBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [tab, setTab] = useState("listings");
@@ -265,6 +276,7 @@ export default function Dial() {
     commit: commitSearch,
     remove: removeSearch,
   } = useSearches(user);
+  const { urls: trackedLotUrls, add: addTrackedLot, remove: removeTrackedLot } = useTrackedLots(user);
   // If there's leftover localStorage data from the pre-Supabase era, we
   // offer to import it after sign-in. Read once at mount so we can tell
   // the user *how many* items we'd import ("N saved, M hidden").
@@ -321,6 +333,14 @@ export default function Dial() {
     fetch(AUCTIONS_URL)
       .then(r => r.ok ? r.json() : [])
       .then(d => setAuctions(Array.isArray(d) ? d : []))
+      .catch(() => {});
+    // Tracked lots is keyed by URL. Failing silently is fine — empty
+    // object means no tracked-lot cards render, which is correct when the
+    // file doesn't exist yet (first deployment, or Supabase env vars not
+    // set in the Action).
+    fetch(TRACKED_LOTS_URL)
+      .then(r => r.ok ? r.json() : {})
+      .then(d => setTrackedLotsState(d && typeof d === "object" ? d : {}))
       .catch(() => {});
   }, []);
 
@@ -505,6 +525,35 @@ export default function Dial() {
 
   const watchLive = useMemo(() => watchItems.filter(i => !i._isSold), [watchItems]);
   const watchSold = useMemo(() => watchItems.filter(i =>  i._isSold), [watchItems]);
+
+  // Tracked auction lots: join user's saved URLs against the global
+  // scraped state. URLs without scraped data yet show as a placeholder
+  // ("Fetching details on next scrape").
+  const trackedLots = useMemo(() => {
+    return trackedLotUrls.map(url => {
+      const data = trackedLotsState[url];
+      return data ? { ...data, url } : { url, _pending: true };
+    });
+  }, [trackedLotUrls, trackedLotsState]);
+
+  // Split into upcoming vs past based on auction_end. Pending entries
+  // (no scraped data yet) sort with upcoming so the user sees them.
+  const nowMs = Date.now();
+  const lotIsPast = (lot) => {
+    if (lot._pending) return false;
+    if (!lot.auction_end) return false;
+    return new Date(lot.auction_end).getTime() < nowMs;
+  };
+  const trackedLotsUpcoming = useMemo(
+    () => trackedLots.filter(l => !lotIsPast(l)).sort((a, b) =>
+      (a.auction_end || "9").localeCompare(b.auction_end || "9")),
+    [trackedLots]
+  );
+  const trackedLotsPast = useMemo(
+    () => trackedLots.filter(lotIsPast).sort((a, b) =>
+      (b.auction_end || "").localeCompare(a.auction_end || "")),
+    [trackedLots]
+  );
 
   // User-hidden items (still live, just told to disappear from Available).
   // Surfaced via a "Manage hidden" modal opened from the user dropdown.
@@ -1069,6 +1118,131 @@ export default function Dial() {
     </div>
   );
 
+  // Friendly relative-time label like "3 days left" / "6 hours left" /
+  // "ended 2 days ago". Computed fresh on render — no need to scrape.
+  const fmtCountdown = (endIso) => {
+    if (!endIso) return "";
+    const ms = new Date(endIso).getTime() - Date.now();
+    const past = ms < 0;
+    const abs = Math.abs(ms);
+    const days = Math.floor(abs / 86400000);
+    const hours = Math.floor((abs % 86400000) / 3600000);
+    const mins = Math.floor((abs % 3600000) / 60000);
+    let label;
+    if (days >= 1) label = `${days} day${days === 1 ? "" : "s"}`;
+    else if (hours >= 1) label = `${hours} hour${hours === 1 ? "" : "s"}`;
+    else label = `${mins} min${mins === 1 ? "" : "s"}`;
+    return past ? `ended ${label} ago` : `${label} left`;
+  };
+
+  const fmtLotPrice = (val, currency) => {
+    if (val === null || val === undefined || val === "") return null;
+    const n = typeof val === "number" ? val : parseFloat(val);
+    if (Number.isNaN(n)) return null;
+    return `${currency || ""} ${Math.round(n).toLocaleString()}`.trim();
+  };
+
+  // Inline editor row for the paste-URL flow. Rendered inside the Auction
+  // lots subsection. Submitting an invalid URL surfaces the validation
+  // error inline rather than via alert().
+  const submitTrackedLot = async () => {
+    if (!lotInputUrl.trim()) return;
+    setLotInputBusy(true);
+    setLotInputError("");
+    const { error } = await addTrackedLot(lotInputUrl);
+    setLotInputBusy(false);
+    if (error) {
+      setLotInputError(error);
+    } else {
+      setLotInputUrl("");
+    }
+  };
+
+  // One auction-lot card. Pending state shows just the URL until the
+  // scraper fills in details on the next cron run.
+  const renderLotCard = (lot) => {
+    if (lot._pending) {
+      return (
+        <div key={lot.url} style={{
+          border: "0.5px solid var(--border)", borderRadius: 12,
+          background: "var(--card-bg)", padding: 14,
+          display: "flex", alignItems: "center", gap: 12,
+        }}>
+          <div style={{ width: 60, height: 60, borderRadius: 8, background: "var(--surface)", flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 4 }}>Pending</div>
+            <div style={{ fontSize: 11, color: "var(--text3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {lot.url}
+            </div>
+            <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 4 }}>
+              Details fetch on next scrape (within ~12 hours).
+            </div>
+          </div>
+          <button onClick={() => removeTrackedLot(lot.url)} aria-label="Remove" title="Stop tracking"
+            style={{ flexShrink: 0, background: "none", border: "none", color: "var(--text3)", cursor: "pointer", fontSize: 18, padding: 6 }}>×</button>
+        </div>
+      );
+    }
+
+    const isPast = lotIsPast(lot);
+    const sold = lot.sold_price !== null && lot.sold_price !== undefined && lot.sold_price !== "";
+    const currentBid = lot.current_bid;
+    const estimateLow = fmtLotPrice(lot.estimate_low, lot.currency);
+    const estimateHigh = fmtLotPrice(lot.estimate_high, lot.currency);
+    const estimate = (estimateLow && estimateHigh) ? `Est. ${estimateLow} – ${estimateHigh}` : null;
+    const liveBid = sold
+      ? `Hammer ${fmtLotPrice(lot.sold_price, lot.currency)}`
+      : (currentBid !== null && currentBid !== undefined && currentBid !== ""
+          ? `Bid ${fmtLotPrice(currentBid, lot.currency)}`
+          : (lot.starting_price !== null && lot.starting_price !== undefined
+              ? `Start ${fmtLotPrice(lot.starting_price, lot.currency)}`
+              : null));
+
+    return (
+      <div key={lot.url} style={{
+        border: "0.5px solid var(--border)", borderRadius: 12,
+        background: "var(--card-bg)", overflow: "hidden",
+        display: "flex", alignItems: "stretch",
+      }}>
+        <a href={lot.url} target="_blank" rel="noopener noreferrer"
+          style={{ width: 88, flexShrink: 0, background: "var(--surface)", display: "block" }}>
+          {lot.image && (
+            <img src={lot.image} alt={lot.title || ""}
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          )}
+        </a>
+        <a href={lot.url} target="_blank" rel="noopener noreferrer"
+          style={{ flex: 1, minWidth: 0, padding: "10px 12px",
+                  display: "flex", flexDirection: "column", justifyContent: "center",
+                  textDecoration: "none", color: "inherit" }}>
+          <div style={{ fontSize: 10, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
+            {lot.house}{lot.lot_number ? ` · Lot ${lot.lot_number}` : ""}
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text1)", lineHeight: 1.3, marginBottom: 4,
+                      display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+            {lot.title || "—"}
+          </div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+            {liveBid && (
+              <span style={{ fontSize: 12, fontWeight: 500, color: sold ? "#1b8f3a" : "var(--text1)" }}>{liveBid}</span>
+            )}
+            {estimate && (
+              <span style={{ fontSize: 11, color: "var(--text3)" }}>{estimate}</span>
+            )}
+          </div>
+          {lot.auction_end && (
+            <div style={{ fontSize: 11, color: isPast ? "var(--text3)" : "#185FA5", marginTop: 4 }}>
+              {fmtCountdown(lot.auction_end)}
+            </div>
+          )}
+        </a>
+        <button onClick={() => removeTrackedLot(lot.url)} aria-label="Remove" title="Stop tracking"
+          style={{ flexShrink: 0, background: "none", border: "none", borderLeft: "0.5px solid var(--border)",
+                  color: "var(--text3)", cursor: "pointer", fontSize: 16, padding: "0 12px" }}>×</button>
+      </div>
+    );
+  };
+
   const watchlistTabJSX = (
     <div>
       {importBannerJSX}
@@ -1166,6 +1340,73 @@ export default function Dial() {
               })()}
             </>
           )}
+
+          {/* ─── Auction lots subsection ─── */}
+          <div style={{ marginTop: 32 }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10, gap: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>
+                Auction lots
+              </div>
+              {trackedLots.length > 0 && (
+                <span style={{ fontSize: 11, color: "var(--text3)" }}>
+                  {trackedLotsUpcoming.length} upcoming · {trackedLotsPast.length} past
+                </span>
+              )}
+            </div>
+            {/* Paste-URL box. Antiquorum-only for now; the validation
+                message inside addTrackedLot will catch other URLs. */}
+            <div style={{
+              border: "0.5px solid var(--border)", borderRadius: 12,
+              background: "var(--card-bg)", padding: 10, marginBottom: 14,
+            }}>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  value={lotInputUrl}
+                  onChange={e => { setLotInputUrl(e.target.value); setLotInputError(""); }}
+                  onKeyDown={e => { if (e.key === "Enter") submitTrackedLot(); }}
+                  placeholder="Paste an Antiquorum lot URL…"
+                  style={{ ...inp, flex: 1, fontSize: 13 }}
+                />
+                <button onClick={submitTrackedLot} disabled={lotInputBusy || !lotInputUrl.trim()} style={{
+                  border: "none", background: "#185FA5", color: "#fff",
+                  padding: "8px 14px", borderRadius: 6, cursor: "pointer",
+                  fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+                  opacity: (lotInputBusy || !lotInputUrl.trim()) ? 0.5 : 1,
+                }}>{lotInputBusy ? "Adding…" : "+ Track"}</button>
+              </div>
+              {lotInputError && (
+                <div style={{ fontSize: 11, color: "#c0392b", marginTop: 6 }}>{lotInputError}</div>
+              )}
+            </div>
+            {trackedLots.length === 0 ? (
+              <div style={{ padding: "24px 0", textAlign: "center", color: "var(--text3)", fontSize: 12 }}>
+                No tracked lots yet. Paste a lot URL above to start.
+              </div>
+            ) : (
+              <>
+                <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                  {[["upcoming", `Upcoming · ${trackedLotsUpcoming.length}`],
+                    ["past", `Past · ${trackedLotsPast.length}`]].map(([key, label]) => (
+                    <button key={key} onClick={() => setAuctionLotSubTab(key)} style={{
+                      padding: "5px 12px", borderRadius: 16, border: "none", cursor: "pointer",
+                      fontFamily: "inherit", fontSize: 12,
+                      background: auctionLotSubTab === key ? "var(--text1)" : "var(--surface)",
+                      color: auctionLotSubTab === key ? "var(--bg)" : "var(--text2)",
+                      fontWeight: auctionLotSubTab === key ? 500 : 400,
+                    }}>{label}</button>
+                  ))}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {(auctionLotSubTab === "past" ? trackedLotsPast : trackedLotsUpcoming).map(renderLotCard)}
+                  {(auctionLotSubTab === "past" ? trackedLotsPast : trackedLotsUpcoming).length === 0 && (
+                    <div style={{ padding: "24px 0", textAlign: "center", color: "var(--text3)", fontSize: 12 }}>
+                      {auctionLotSubTab === "past" ? "No past lots yet." : "No upcoming lots."}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </>
       )}
     </div>

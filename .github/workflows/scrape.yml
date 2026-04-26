@@ -111,6 +111,17 @@ jobs:
         continue-on-error: true
         run: python bonhams_auctions_scraper.py
 
+      - name: Run tracked auction lots scraper
+        # Reads the union of tracked_lots URLs across all users from
+        # Supabase, scrapes each, writes public/tracked_lots.json. Soft
+        # failure — if Supabase env vars aren't set, the scraper logs a
+        # warning and exits cleanly without breaking the run.
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python auctionlots_scraper.py
+
       - name: Move CSVs to data folder
         run: |
           mkdir -p data

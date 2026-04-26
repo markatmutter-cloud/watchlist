@@ -283,6 +283,66 @@ export function useSearches(user) {
 }
 
 
+// ── TRACKED AUCTION LOTS ────────────────────────────────────────────────────
+// Per-user. Each row is just a (user_id, lot_url) pairing — the lot's
+// scraped data (image, title, estimate, current bid, sold price, auction
+// end time) lives in public/tracked_lots.json keyed by URL, refreshed by
+// the cron pipeline. The frontend joins the two.
+
+export function useTrackedLots(user) {
+  const [urls, setUrls] = useState([]);
+
+  useEffect(() => {
+    if (!user || !supabase) { setUrls([]); return; }
+    let cancelled = false;
+    supabase.from('tracked_lots').select('lot_url, added_at')
+      .order('added_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) { console.warn('tracked lots load failed', error); return; }
+        setUrls((data || []).map(r => r.lot_url));
+      });
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const add = useCallback(async (rawUrl) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const url = (rawUrl || '').trim();
+    if (!url) return { error: 'empty URL' };
+    // Light validation: only Antiquorum's live-auction lot URL pattern is
+    // supported by the scraper today. Reject everything else with a clear
+    // message rather than silently letting the row in.
+    if (!/^https?:\/\/live\.antiquorum\.swiss\/lots\/view\//i.test(url)) {
+      return { error: 'Only Antiquorum lot URLs are supported (live.antiquorum.swiss/lots/view/...).' };
+    }
+    if (urls.includes(url)) return { error: 'Already tracking this lot.' };
+    setUrls(prev => [url, ...prev]);
+    const { error } = await supabase.from('tracked_lots').insert({
+      user_id: user.id,
+      lot_url: url,
+      added_at: new Date().toISOString(),
+    });
+    if (error) {
+      // Roll back optimistic add on failure.
+      setUrls(prev => prev.filter(u => u !== url));
+      console.warn('tracked lot add', error);
+      return { error: error.message };
+    }
+    return { error: null };
+  }, [user, urls]);
+
+  const remove = useCallback(async (url) => {
+    if (!user || !supabase) return;
+    setUrls(prev => prev.filter(u => u !== url));
+    const { error } = await supabase.from('tracked_lots').delete()
+      .match({ user_id: user.id, lot_url: url });
+    if (error) console.warn('tracked lot remove', error);
+  }, [user]);
+
+  return { urls, add, remove };
+}
+
+
 // ── IMPORT FROM LOCALSTORAGE ────────────────────────────────────────────────
 // One-shot helper: bulk-upload whatever's in the user's browser localStorage
 // (watchlist + hidden) into their Supabase account. `ignoreDuplicates` means
