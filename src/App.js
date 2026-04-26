@@ -1197,6 +1197,21 @@ export default function Dial() {
           : (lot.starting_price !== null && lot.starting_price !== undefined
               ? `Start ${fmtLotPrice(lot.starting_price, lot.currency)}`
               : null));
+    // USD equivalent for non-USD lots — keeps the native amount as the
+    // primary number and shows the conversion underneath, same pattern
+    // as GBP listings on the Available tab.
+    const showUsd = lot.currency && lot.currency.toUpperCase() !== "USD";
+    const usdEquiv = showUsd && (
+      sold ? lot.sold_price_usd
+        : (currentBid !== null && currentBid !== undefined && currentBid !== ""
+           ? lot.current_bid_usd
+           : (lot.estimate_low_usd && lot.estimate_high_usd
+              ? `${Math.round(lot.estimate_low_usd).toLocaleString()} – ${Math.round(lot.estimate_high_usd).toLocaleString()}`
+              : lot.starting_price_usd))
+    );
+    const usdLabel = showUsd && usdEquiv
+      ? (typeof usdEquiv === "number" ? `~$${Math.round(usdEquiv).toLocaleString()}` : `~$${usdEquiv}`)
+      : null;
 
     return (
       <div key={lot.url} style={{
@@ -1230,6 +1245,9 @@ export default function Dial() {
               <span style={{ fontSize: 11, color: "var(--text3)" }}>{estimate}</span>
             )}
           </div>
+          {usdLabel && (
+            <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 2 }}>{usdLabel}</div>
+          )}
           {lot.auction_end && (
             <div style={{ fontSize: 11, color: isPast ? "var(--text3)" : "#185FA5", marginTop: 4 }}>
               {fmtCountdown(lot.auction_end)}

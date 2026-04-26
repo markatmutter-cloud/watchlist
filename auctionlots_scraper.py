@@ -30,6 +30,28 @@ from urllib.parse import urlparse
 
 import requests
 
+# Reuse merge.py's FX table so a single source of truth controls every
+# currency conversion in the project (listings + auction lots). Falls
+# back to a USD-only table if merge can't be imported (shouldn't happen
+# in CI but keeps local runs robust).
+try:
+    from merge import FX  # noqa: E402
+except Exception:
+    FX = {'USD': 1.0}
+
+
+def to_usd(amount, currency):
+    """Best-effort numeric → USD. Returns None when amount is None/missing."""
+    if amount is None or amount == "":
+        return None
+    try:
+        n = float(amount)
+    except (TypeError, ValueError):
+        return None
+    rate = FX.get((currency or "USD").upper(), 1.0)
+    return round(n * rate)
+
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -75,18 +97,26 @@ def scrape_antiquorum_lot(url):
     images = lot.get("images") or []
     img_url = lot.get("cover_thumbnail") or (images[0].get("url") if images and isinstance(images[0], dict) else None)
 
+    currency = lot.get("currency_code") or "CHF"
     return {
         "house": "Antiquorum",
         "lot_id": lot.get("row_id"),
         "lot_number": lot.get("lot_number"),
         "title": (lot.get("title") or "").strip(),
         "description": (lot.get("description") or "").replace("<br/>", " ").strip()[:600],
-        "currency": lot.get("currency_code") or "CHF",
+        "currency": currency,
         "estimate_low": lot.get("estimate_low"),
         "estimate_high": lot.get("estimate_high"),
         "starting_price": lot.get("starting_price"),
         "current_bid": lot.get("highest_live_bid"),
         "sold_price": lot.get("sold_price"),
+        # USD equivalents — frontend displays "~$X" alongside native amounts.
+        # Computed via merge.FX so the same rates apply everywhere.
+        "estimate_low_usd":  to_usd(lot.get("estimate_low"),     currency),
+        "estimate_high_usd": to_usd(lot.get("estimate_high"),    currency),
+        "starting_price_usd":to_usd(lot.get("starting_price"),   currency),
+        "current_bid_usd":   to_usd(lot.get("highest_live_bid"), currency),
+        "sold_price_usd":    to_usd(lot.get("sold_price"),       currency),
         "status": lot.get("status"),
         "image": img_url,
         "auction_title": auction.get("title"),
