@@ -1883,7 +1883,7 @@ export default function Dial() {
                   padding: "6px 8px", border: "none", background: "transparent",
                   color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
                   fontSize: 13, borderRadius: 6,
-                }}>About & contact</button>
+                }}>About & Contact</button>
               </div>
             )}
           </div>
@@ -2085,6 +2085,7 @@ export default function Dial() {
           </div>
         )}
         {hiddenModalJSX}
+        {aboutModalJSX}
       </div>
     );
   }
@@ -2428,7 +2429,7 @@ export default function Dial() {
                 padding: "6px 8px", border: "none", background: "transparent",
                 color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
                 fontSize: 13, borderRadius: 6,
-              }}>About & contact</button>
+              }}>About & Contact</button>
             </div>
           )}
         </div>
@@ -2460,6 +2461,7 @@ export default function Dial() {
         </div>
       </div>
       {hiddenModalJSX}
+        {aboutModalJSX}
     </div>
   );
 }
