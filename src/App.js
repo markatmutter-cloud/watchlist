@@ -1850,7 +1850,12 @@ export default function Dial() {
             empty placeholder of the same height so the content below
             doesn't jump up when switching sub-tabs. */}
         {tab === "watchlist" && watchTopTab === "searches" && (
-          <div style={{ height: 41, borderBottom: "0.5px solid var(--border)" }} />
+          // Spacer row — matches the active filter row's padding +
+          // pill-shaped child so the height is identical to the real row.
+          // Avoids a layout shift when switching to Searches sub-tab.
+          <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", alignItems: "center" }}>
+            <span style={{ fontSize: 13, padding: "7px 14px", borderRadius: 20, border: "0.5px solid transparent", visibility: "hidden" }}>placeholder</span>
+          </div>
         )}
         {!(tab === "watchlist" && watchTopTab === "searches") && (
         <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center" }}>
@@ -2403,7 +2408,14 @@ export default function Dial() {
       {(tab === "listings" || (tab === "watchlist" && watchTopTab !== "searches"))
         ? filterRowJSX
         : (tab === "watchlist"
-            ? <div style={{ height: 49, borderBottom: "0.5px solid var(--border)", flexShrink: 0 }} />
+            ? (
+              // Spacer row that matches the real filter pill row's padding
+              // + pill-sized child so the watchlist sub-tabs don't jump
+              // when switching to Searches.
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
+                <span style={{ fontSize: 13, padding: "6px 12px", borderRadius: 18, visibility: "hidden" }}>placeholder</span>
+              </div>
+            )
             : null)}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
         {/* The desktop sidebar previously held all the filters. Replaced
