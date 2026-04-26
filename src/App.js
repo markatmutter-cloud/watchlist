@@ -1586,7 +1586,20 @@ export default function Dial() {
           {/* Top-level toggle between dealer listings and auction lots.
               Auction lots are time-sensitive (countdowns), so making
               them one tap away rather than a long scroll matters. */}
-          <div style={{ display: "flex", marginBottom: 18, borderBottom: "0.5px solid var(--border)" }}>
+          <div style={{
+            display: "flex", marginBottom: 18,
+            borderBottom: "0.5px solid var(--border)",
+            // Stay visible while scrolling. On desktop the closest
+            // scrolling ancestor is the right-pane (data-desktop-main),
+            // so top: 0 anchors to that. On mobile the body scrolls —
+            // the page sticky stack above is ~92px tall, so sit below
+            // that.
+            position: "sticky",
+            top: isMobile ? 92 : 0,
+            background: "var(--bg)",
+            zIndex: 15,
+            paddingTop: isMobile ? 8 : 4,
+          }}>
             {[
               ["listings", `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
               ["lots",     `Auction lots${trackedLots.length > 0 ? ` · ${trackedLots.length}` : ""}`],
