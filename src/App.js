@@ -1447,9 +1447,11 @@ export default function Dial() {
               </button>
             )}
           </div>
-          <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} aria-label="Filters" style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <FilterIcon />
-          </button>
+          {tab !== "searches" && (
+            <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} aria-label="Filters" style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <FilterIcon />
+            </button>
+          )}
           {/* "View" button consolidates theme + column count so the top bar
               doesn't have to grow as we add per-device display settings. */}
           <div style={{ position: "relative", flexShrink: 0 }}>
@@ -1495,6 +1497,9 @@ export default function Dial() {
           </div>
           {authJSX}
         </div>
+        {/* Sort/source/sold/clear pill row — only relevant for tabs that
+            have a list to filter. Searches tab doesn't use any of these. */}
+        {tab !== "searches" && (
         <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center" }}>
           <span style={{ fontSize: 11, color: "var(--text3)", marginRight: 2 }}>{allFiltered.length}</span>
           {/* Date sort pill */}
@@ -1575,8 +1580,9 @@ export default function Dial() {
             }}>× Clear</button>
           )}
         </div>
+        )}
         {/* Source picker dropdown */}
-        {sourcePickerOpen && (
+        {tab !== "searches" && sourcePickerOpen && (
           <div style={{ borderBottom: "0.5px solid var(--border)", padding: "8px 14px 10px", background: "var(--surface)" }}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {SOURCES.map(s => (
@@ -1711,7 +1717,7 @@ export default function Dial() {
           sidebar and the content area so the title is always visible
           even when the sidebar is collapsed. */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-        {sidebarToggleJSX}
+        {tab !== "searches" && sidebarToggleJSX}
         {/* Watchlist title doubles as a "home" link — click to jump to
             Available. */}
         <button onClick={() => { setTab("listings"); setPage(1); }}
@@ -1768,7 +1774,12 @@ export default function Dial() {
         {authJSX}
       </div>
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        {!sidebarCollapsed && (
+        {/* Sidebar hides automatically on the Searches tab — none of the
+            sort/source/brand/ref/price filters apply to a saved-searches
+            list. Auctions and Watchlist still get the sidebar (filters
+            apply to Watchlist; we'll revisit Auctions in the filter
+            consolidation pass). */}
+        {!sidebarCollapsed && tab !== "searches" && (
           <div style={{ width: sidebarWidth, flexShrink: 0, borderRight: "0.5px solid var(--border)", overflowY: "auto", display: "flex", flexDirection: "column", position: "relative" }}>
             <div style={{ flex: 1, overflowY: "auto" }}>
               {sidebarFilterPanelJSX}

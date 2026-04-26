@@ -167,7 +167,15 @@ jobs:
           for i in 1 2 3; do
             if git push; then exit 0; fi
             echo "Push rejected, rebasing and retrying ($i/3)..."
-            git pull --rebase
+            # `--strategy-option=theirs` means: when two runs collide on
+            # the same file (almost always public/listings.json or
+            # state.json), keep our local commit's version. Both runs are
+            # legitimate scrapes; the later-finishing one is fresher and
+            # safe to keep wholesale.
+            if ! git pull --rebase --strategy-option=theirs; then
+              echo "Rebase failed, aborting and retrying push"
+              git rebase --abort 2>/dev/null || true
+            fi
           done
           echo "Push still failing after 3 retries"
           exit 1
