@@ -89,22 +89,32 @@ def get_price_and_status(url):
         text = re.sub(r'\s+', ' ', text).strip()
         text_lower = text.lower()
 
-        # Check for on-hold / sold signals in a window around PRICE
-        sold = False
-        price_area = re.search(r'.{0,150}PRICE.{0,150}', text, re.IGNORECASE)
-        if price_area:
-            area_lower = price_area.group(0).lower()
-            for pattern in ON_HOLD_PATTERNS:
-                if pattern in area_lower:
-                    sold = True
-                    break
-
-        # Also check the top 500 chars (title area of the page)
-        if not sold:
-            for pattern in ON_HOLD_PATTERNS:
-                if pattern in text_lower[:500]:
-                    sold = True
-                    break
+        # Status detection. The reliable marker on Wind Vintage product
+        # pages is the status word immediately followed by "(Item SKU…)" —
+        # e.g. "ON HOLD (Item SBUXYT3222)" or "PRICE: INQUIRE (Item …)".
+        # This appears regardless of whether there's a "PRICE:" prefix
+        # above it (some listings omit that field). The bare-keyword
+        # check is too noisy because "sold" appears in descriptions
+        # verbatim ("originally sold in 2019" etc.), so we anchor on
+        # the SKU parenthetical.
+        #
+        # INQUIRE = for sale, no public price → priceOnRequest=True
+        # everything else (ON HOLD / SOLD / RESERVED / etc.) → sold=True
+        inquire = bool(re.search(r'\binquire\s*\(item\b', text_lower))
+        sold = bool(re.search(
+            r'(on hold|under offer|pending|reserved)\s*\(item\b',
+            text_lower
+        )) or bool(re.search(r'\bsold\s*\(item\b', text_lower))
+        # Fallback: also catch the older PRICE-area pattern in case some
+        # pages use a different format we haven't seen.
+        if not sold and not inquire:
+            price_area = re.search(r'.{0,150}PRICE.{0,150}', text, re.IGNORECASE)
+            if price_area:
+                area_lower = price_area.group(0).lower()
+                for pattern in ON_HOLD_PATTERNS:
+                    if pattern in area_lower:
+                        sold = True
+                        break
 
         # Extract price - handles ON HOLD variants
         price = None
@@ -121,11 +131,11 @@ def get_price_and_status(url):
         desc_match = re.search(r'(The [A-Z][^.]{20,}\..*?)(?:PRICE|\Z)', text, re.DOTALL)
         desc = desc_match.group(1).strip()[:400] if desc_match else ""
 
-        return price, sold, desc
+        return price, sold, inquire, desc
 
     except Exception as e:
         print(f"  Error: {e}")
-        return None, False, ""
+        return None, False, False, ""
 
 def main():
     listings = get_listings()
@@ -134,12 +144,20 @@ def main():
 
     for i, item in enumerate(listings):
         print(f"[{i+1}/{len(listings)}] {item['title'][:55]}...", end=' ')
-        price, sold, desc = get_price_and_status(item['url'])
+        price, sold, inquire, desc = get_price_and_status(item['url'])
 
+        # ON HOLD without numeric price OR explicit INQUIRE: keep with
+        # price=0 and surface via priceOnRequest so the frontend can
+        # display "Price on request" instead of dropping the listing.
+        price_on_request = False
         if not price:
-            print("no price, skipped")
-            skipped += 1
-            continue
+            if sold or inquire:
+                price = 0
+                price_on_request = True
+            else:
+                print("no price, skipped")
+                skipped += 1
+                continue
 
         results.append({
             'title': item['title'],
@@ -151,13 +169,19 @@ def main():
             'source': 'Wind Vintage',
             'date': '2026-04-19',
             'sold': sold,
+            'priceOnRequest': price_on_request,
         })
-        print(f"${price:,}{' [ON HOLD]' if sold else ''}")
+        if price:
+            print(f"${price:,}{' [ON HOLD]' if sold else ''}")
+        elif sold:
+            print("[ON HOLD, no price]")
+        else:
+            print("[Price on request]")
         time.sleep(0.3)
 
     output_file = 'windvintage_listings.csv'
     with open(output_file, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['title','brand','price','url','img','description','source','date','sold'])
+        writer = csv.DictWriter(f, fieldnames=['title','brand','price','url','img','description','source','date','sold','priceOnRequest'])
         writer.writeheader()
         writer.writerows(results)
 

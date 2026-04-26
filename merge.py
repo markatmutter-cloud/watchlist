@@ -111,7 +111,11 @@ def load_csv(path, source_name, currency='USD'):
                 price = int(r.get('price', 0))
             except (ValueError, TypeError):
                 continue
-            if price < 500:
+            price_on_request = parse_bool(r.get('priceOnRequest', False))
+            # Price floor exists to drop obvious parse errors (a $5 listing
+            # is almost always a bug, not a real watch). priceOnRequest
+            # listings legitimately have price=0 — let those through.
+            if price < 500 and not price_on_request:
                 continue
             title = clean(r.get('title', ''))
             url = r.get('url', '')
@@ -127,6 +131,7 @@ def load_csv(path, source_name, currency='USD'):
                 'url': url,
                 'img': r.get('img', ''),
                 'sold': parse_bool(r.get('sold', False)),
+                'priceOnRequest': price_on_request,
                 'desc': r.get('description', '')[:300],
             })
     return items

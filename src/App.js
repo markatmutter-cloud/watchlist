@@ -92,9 +92,11 @@ function Card({ item, wished, onWish, compact, onHide, isHidden }) {
   // the dealer's site, not real new inventory. Suppress the NEW badge for
   // those so the signal stays useful.
   const isNew = daysAgo(freshDate(item)) <= 1 && !item.sold && !item.backfilled;
-  const displayPrice = fmt(item.price, item.currency || "USD");
-  const showUSD = item.currency && item.currency !== "USD" && item.priceUSD;
-  const priceDropped = (item.priceChange || 0) < 0;
+  // priceOnRequest items have price=0 — show "Price on request" instead
+  // of "$0". Set by the WV scraper for INQUIRE / ON HOLD-no-price pages.
+  const displayPrice = item.priceOnRequest ? "Price on request" : fmt(item.price, item.currency || "USD");
+  const showUSD = item.currency && item.currency !== "USD" && item.priceUSD && !item.priceOnRequest;
+  const priceDropped = !item.priceOnRequest && (item.priceChange || 0) < 0;
   return (
     <div style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative", minWidth: 0, overflow: "hidden" }}>
       <a href={item.url} target="_blank" rel="noopener noreferrer"
