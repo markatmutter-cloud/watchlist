@@ -236,6 +236,10 @@ export default function Dial() {
   const [newDays, setNewDays] = useState(0);
   const [page, setPage] = useState(1);
   const [filterRefs, setFilterRefs] = useState([]);
+  // Watchlist tab has a [Live | Sold] sub-toggle. "Sold" includes items
+  // that have disappeared from the scrape AND items still in the scrape
+  // marked sold (Wind Vintage on-hold). Default to Live on each session.
+  const [watchSubTab, setWatchSubTab] = useState("live");
   // Watchlist + hidden now live server-side (Supabase) per authenticated
   // user. When signed out, these hooks return empty objects and their
   // toggles no-op — we wrap the toggles below to kick off sign-in instead.
@@ -443,8 +447,26 @@ export default function Dial() {
     observerRef.current = obs;
   }, []);
 
+  // Lookup map of current scrape state by listing id, used to determine
+  // whether each watchlisted item is still live or has gone sold/inactive.
+  const liveStateById = useMemo(() => {
+    const m = new Map();
+    for (const it of items) m.set(it.id, it);
+    return m;
+  }, [items]);
+
   const watchItems = useMemo(() => {
     let its = Object.values(watchlist);
+    // Tag each entry with its current liveness so we can split into
+    // Live/Sold sub-views below. An item is "sold" if the live scrape
+    // says it's sold/on-hold OR if it's no longer in the scrape at all
+    // (dealer pulled the listing → assume sold). The saved snapshot is
+    // still the durable record either way.
+    its = its.map(it => {
+      const live = liveStateById.get(it.id);
+      const isSold = !live || !!live.sold;
+      return { ...it, _isSold: isSold };
+    });
     // Apply the same source/brand/ref/search filters as Available and Archive,
     // so the sidebar drawer narrows down the watchlist too. Saved entries
     // carry the listing_snapshot fields (source, brand, ref), so the same
@@ -469,7 +491,10 @@ export default function Dial() {
     else if (sort === "date-asc") its.sort((a, b) => (a.savedAt || "").localeCompare(b.savedAt || ""));
     else its.sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
     return its;
-  }, [watchlist, sort, filterSources, filterBrands, filterRefs, search]);
+  }, [watchlist, liveStateById, sort, filterSources, filterBrands, filterRefs, search]);
+
+  const watchLive = useMemo(() => watchItems.filter(i => !i._isSold), [watchItems]);
+  const watchSold = useMemo(() => watchItems.filter(i =>  i._isSold), [watchItems]);
 
   // Archive shows three flavors side by side:
   //   • Sold/delisted — disappeared from scrape, soldAt from state-tracking.
@@ -1021,7 +1046,14 @@ export default function Dial() {
             </div>
           </div>
 
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)", marginBottom: 10 }}>Watchlist</div>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10, gap: 8 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>Watchlist</div>
+            {watchCount > 0 && (
+              <span style={{ fontSize: 11, color: "var(--text3)" }}>
+                {watchLive.length} live · {watchSold.length} sold
+              </span>
+            )}
+          </div>
           {watchCount === 0 ? (
             <div style={{ padding: "40px 0", textAlign: "center" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>
@@ -1030,18 +1062,77 @@ export default function Dial() {
             </div>
           ) : (
             <>
-              <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center" }}>
-                <span style={{ fontSize: 12, color: "var(--text3)" }}>
-                  {watchItems.length === watchCount ? `${watchCount} saved` : `${watchItems.length} of ${watchCount} saved`}
-                </span>
-              </div>
-              <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-                {watchItems.map(item => (
-                  <Card key={item.id} item={{ ...item, price: item.savedPrice, currency: item.savedCurrency || "USD", priceUSD: item.savedPriceUSD || item.savedPrice }} wished={true} onWish={handleWish} compact={compact} />
+              {/* Live / Sold sub-tab. Sold = items the dealer has pulled or
+                  marked sold; live = still listed and for sale. The saved
+                  snapshot is the durable record for both — you keep the
+                  image, title, and price you saved at even after a dealer
+                  takes the URL down. */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                {[["live", `Live · ${watchLive.length}`], ["sold", `Sold · ${watchSold.length}`]].map(([key, label]) => (
+                  <button key={key} onClick={() => setWatchSubTab(key)} style={{
+                    padding: "5px 12px", borderRadius: 16, border: "none", cursor: "pointer",
+                    fontFamily: "inherit", fontSize: 12,
+                    background: watchSubTab === key ? "var(--text1)" : "var(--surface)",
+                    color: watchSubTab === key ? "var(--bg)" : "var(--text2)",
+                    fontWeight: watchSubTab === key ? 500 : 400,
+                  }}>{label}</button>
                 ))}
-                {watchItems.length === 0 && <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>No saved watches match your filters</div>}
               </div>
-              <div style={{ padding: "14px 0 0", fontSize: 11, color: "var(--text3)", textAlign: "center" }}>Prices saved at time of adding to watchlist</div>
+              {(() => {
+                const view = watchSubTab === "sold" ? watchSold : watchLive;
+                const totalForView = watchSubTab === "sold"
+                  ? Object.values(watchlist).filter(it => {
+                      const live = liveStateById.get(it.id);
+                      return !live || !!live.sold;
+                    }).length
+                  : Object.values(watchlist).filter(it => {
+                      const live = liveStateById.get(it.id);
+                      return live && !live.sold;
+                    }).length;
+                return (
+                  <>
+                    {view.length !== totalForView && (
+                      <div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 10 }}>
+                        {view.length} of {totalForView} matching filters
+                      </div>
+                    )}
+                    <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+                      {view.map(item => (
+                        <Card
+                          key={item.id}
+                          item={{
+                            ...item,
+                            price: item.savedPrice,
+                            currency: item.savedCurrency || "USD",
+                            priceUSD: item.savedPriceUSD || item.savedPrice,
+                            // Force the SOLD badge on items in the Sold sub-tab.
+                            // The saved snapshot's own `sold` flag reflects state
+                            // at save time; we want the current state to win.
+                            sold: watchSubTab === "sold",
+                          }}
+                          wished={true}
+                          onWish={handleWish}
+                          compact={compact}
+                        />
+                      ))}
+                      {view.length === 0 && (
+                        <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
+                          {totalForView === 0
+                            ? (watchSubTab === "sold"
+                                ? "No watchlisted items have sold yet."
+                                : "All your saved items have sold or been pulled. Check the Sold tab.")
+                            : "No saved watches match your filters"}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ padding: "14px 0 0", fontSize: 11, color: "var(--text3)", textAlign: "center" }}>
+                      {watchSubTab === "sold"
+                        ? "Prices and links shown are from the moment you saved each listing."
+                        : "Prices saved at time of adding to watchlist."}
+                    </div>
+                  </>
+                );
+              })()}
             </>
           )}
         </>
