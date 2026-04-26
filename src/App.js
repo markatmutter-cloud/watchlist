@@ -288,7 +288,10 @@ export default function Dial() {
   // against this object to render lot cards.
   const [trackedLotsState, setTrackedLotsState] = useState({});
   // Sub-tab inside Watchlist > Auction lots: upcoming vs past.
-  const [auctionLotSubTab, setAuctionLotSubTab] = useState("upcoming");
+  // Inline visibility for the "+ Add lot" input. Default closed so the
+  // grid leads with the cards, not the input. Toggled by the "+ Track lot"
+  // button in the Auction lots header.
+  const [addLotOpen, setAddLotOpen] = useState(false);
   // Sub-tab on the Watchlist tab. Three values: "listings" (dealer
   // items you've hearted), "lots" (tracked auction lots), "searches"
   // (saved searches editor). Persisted in localStorage so a returning
@@ -301,6 +304,13 @@ export default function Dial() {
   });
   useEffect(() => {
     try { localStorage.setItem("dial_watch_top_tab", watchTopTab); } catch {}
+    // Reset scroll on sub-tab change. Without this the page can appear
+    // to "jump" when switching from the long Listings grid to the
+    // shorter Searches list — the scroll position is preserved but the
+    // shorter section sits below where the user was looking.
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" });
+    const desktopMain = document.querySelector("[data-desktop-main]");
+    if (desktopMain) desktopMain.scrollTop = 0;
   }, [watchTopTab]);
   // Paste-URL input state for adding a new tracked lot.
   const [lotInputUrl, setLotInputUrl] = useState("");
@@ -646,13 +656,25 @@ export default function Dial() {
     if (isPast) return (b.auction_end || "").localeCompare(a.auction_end || "");
     return (a.auction_end || "9").localeCompare(b.auction_end || "9");
   });
+  // Apply the search filter to lots — title, house, and lot number all
+  // match. Wired so the same search box that filters dealer listings on
+  // the Watchlist tab also narrows the auction lots.
+  const trackedLotsFiltered = useMemo(() => {
+    const q = (search || "").trim().toLowerCase();
+    if (!q) return trackedLots;
+    return trackedLots.filter(l => {
+      if (l._pending) return l.url.toLowerCase().includes(q);
+      const haystack = `${l.title || ""} ${l.house || ""} ${l.description || ""} ${l.lot_number || ""}`.toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [trackedLots, search]);
   const trackedLotsUpcoming = useMemo(
-    () => sortLots(trackedLots.filter(l => !lotIsPast(l)), false),
-    [trackedLots, sort]
+    () => sortLots(trackedLotsFiltered.filter(l => !lotIsPast(l)), false),
+    [trackedLotsFiltered, sort]
   );
   const trackedLotsPast = useMemo(
-    () => sortLots(trackedLots.filter(lotIsPast), true),
-    [trackedLots, sort]
+    () => sortLots(trackedLotsFiltered.filter(lotIsPast), true),
+    [trackedLotsFiltered, sort]
   );
 
   // User-hidden items (still live, just told to disappear from Available).
@@ -1516,81 +1538,87 @@ export default function Dial() {
           )}
           </>)}
 
-          {watchTopTab === "lots" && (
-          <div>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10, gap: 8 }}>
-              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>
-                Auction lots
-              </div>
-              {trackedLots.length > 0 && (
-                <span style={{ fontSize: 11, color: "var(--text3)" }}>
-                  {trackedLotsUpcoming.length} upcoming · {trackedLotsPast.length} past
-                </span>
-              )}
-            </div>
-            {/* Paste-URL box. Antiquorum-only for now; the validation
-                message inside addTrackedLot will catch other URLs. */}
-            <div style={{
-              border: "0.5px solid var(--border)", borderRadius: 12,
-              background: "var(--card-bg)", padding: 10, marginBottom: 14,
-            }}>
-              <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  value={lotInputUrl}
-                  onChange={e => { setLotInputUrl(e.target.value); setLotInputError(""); }}
-                  onKeyDown={e => { if (e.key === "Enter") submitTrackedLot(); }}
-                  placeholder="Paste an Antiquorum lot URL…"
-                  style={{ ...inp, flex: 1, fontSize: 13 }}
-                />
-                <button onClick={submitTrackedLot} disabled={lotInputBusy || !lotInputUrl.trim()} style={{
-                  border: "none", background: "#185FA5", color: "#fff",
-                  padding: "8px 14px", borderRadius: 6, cursor: "pointer",
-                  fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-                  opacity: (lotInputBusy || !lotInputUrl.trim()) ? 0.5 : 1,
-                }}>{lotInputBusy ? "Adding…" : "+ Track"}</button>
-              </div>
-              {lotInputError && (
-                <div style={{ fontSize: 11, color: "#c0392b", marginTop: 6 }}>{lotInputError}</div>
-              )}
-            </div>
-            {trackedLots.length === 0 ? (
-              <div style={{ padding: "32px 20px", textAlign: "center" }}>
-                <div style={{ fontSize: 28, marginBottom: 10 }}>⌛</div>
-                <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)", marginBottom: 6 }}>No tracked lots yet</div>
-                <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto" }}>
-                  Paste an Antiquorum lot URL into the box above. Each tracked lot gets a daily price update and a countdown to the auction. After the hammer, the sold price stays as a permanent record.
+          {watchTopTab === "lots" && (() => {
+            // Live/Sold for auction lots maps to: Live = still upcoming
+            // (auction not yet ended), Sold = past (hammer happened or
+            // ended). Same filter pill as Listings, same mental model.
+            const lotsView = showSoldHistory ? trackedLotsPast : trackedLotsUpcoming;
+            const lotsTotal = showSoldHistory ? trackedLotsPast.length : trackedLotsUpcoming.length;
+            return (
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 8 }}>
+                  <div style={{ fontSize: 11, color: "var(--text3)" }}>
+                    {trackedLots.length === 0
+                      ? ""
+                      : (showSoldHistory ? `${lotsTotal} past` : `${lotsTotal} upcoming`)}
+                  </div>
+                  <button onClick={() => { setAddLotOpen(o => !o); setLotInputError(""); }} style={{
+                    border: "0.5px solid var(--border)", background: addLotOpen ? "var(--text1)" : "var(--card-bg)",
+                    color: addLotOpen ? "var(--bg)" : "var(--text1)",
+                    padding: "5px 12px", borderRadius: 8, cursor: "pointer",
+                    fontFamily: "inherit", fontSize: 12,
+                  }}>{addLotOpen ? "Cancel" : "+ Track lot"}</button>
                 </div>
-                <div style={{ fontSize: 11, color: "var(--text3)", lineHeight: 1.5, marginTop: 12, fontFamily: "monospace" }}>
-                  e.g. https://live.antiquorum.swiss/lots/view/1-CECBOW/omega
-                </div>
-              </div>
-            ) : (
-              <>
-                <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
-                  {[["upcoming", `Upcoming · ${trackedLotsUpcoming.length}`],
-                    ["past", `Past · ${trackedLotsPast.length}`]].map(([key, label]) => (
-                    <button key={key} onClick={() => setAuctionLotSubTab(key)} style={{
-                      padding: "4px 10px", borderRadius: 14, cursor: "pointer",
-                      fontFamily: "inherit", fontSize: 11,
-                      border: "0.5px solid var(--border)",
-                      background: auctionLotSubTab === key ? "var(--surface)" : "transparent",
-                      color: auctionLotSubTab === key ? "var(--text1)" : "var(--text3)",
-                      fontWeight: auctionLotSubTab === key ? 500 : 400,
-                    }}>{label}</button>
-                  ))}
-                </div>
-                <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-                  {(auctionLotSubTab === "past" ? trackedLotsPast : trackedLotsUpcoming).map(renderLotCard)}
-                  {(auctionLotSubTab === "past" ? trackedLotsPast : trackedLotsUpcoming).length === 0 && (
-                    <div style={{ padding: "24px 0", textAlign: "center", color: "var(--text3)", fontSize: 12 }}>
-                      {auctionLotSubTab === "past" ? "No past lots yet." : "No upcoming lots."}
+
+                {/* Inline paste-URL editor — only visible when "+ Track lot"
+                    is open. Otherwise the cards lead. */}
+                {addLotOpen && (
+                  <div style={{
+                    border: "0.5px solid var(--border)", borderRadius: 12,
+                    background: "var(--card-bg)", padding: 10, marginBottom: 14,
+                  }}>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        autoFocus
+                        value={lotInputUrl}
+                        onChange={e => { setLotInputUrl(e.target.value); setLotInputError(""); }}
+                        onKeyDown={e => { if (e.key === "Enter") submitTrackedLot(); }}
+                        placeholder="Paste an Antiquorum lot URL…"
+                        style={{ ...inp, flex: 1, fontSize: 13 }}
+                      />
+                      <button onClick={submitTrackedLot} disabled={lotInputBusy || !lotInputUrl.trim()} style={{
+                        border: "none", background: "#185FA5", color: "#fff",
+                        padding: "8px 14px", borderRadius: 6, cursor: "pointer",
+                        fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+                        opacity: (lotInputBusy || !lotInputUrl.trim()) ? 0.5 : 1,
+                      }}>{lotInputBusy ? "Adding…" : "Track"}</button>
                     </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-          )}
+                    {lotInputError && (
+                      <div style={{ fontSize: 11, color: "#c0392b", marginTop: 6 }}>{lotInputError}</div>
+                    )}
+                    <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 6 }}>
+                      Antiquorum only for now. Lot URL looks like
+                      <span style={{ fontFamily: "monospace" }}> live.antiquorum.swiss/lots/view/…</span>
+                    </div>
+                  </div>
+                )}
+
+                {trackedLots.length === 0 ? (
+                  <div style={{ padding: "48px 20px", textAlign: "center" }}>
+                    <div style={{ fontSize: 32, marginBottom: 12 }}>⌛</div>
+                    <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>No tracked lots yet</div>
+                    <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto 16px" }}>
+                      Tap <b>+ Track lot</b> above and paste an Antiquorum lot URL. Each tracked lot gets a daily price update, a countdown to the hammer, and the sold price recorded after.
+                    </div>
+                    <button onClick={() => { setAddLotOpen(true); setLotInputError(""); }} style={{
+                      padding: "8px 16px", borderRadius: 8, border: "0.5px solid var(--border)",
+                      background: "var(--card-bg)", color: "var(--text1)", cursor: "pointer",
+                      fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+                    }}>+ Track first lot</button>
+                  </div>
+                ) : (
+                  <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+                    {lotsView.map(renderLotCard)}
+                    {lotsView.length === 0 && (
+                      <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
+                        {showSoldHistory ? "No past lots yet." : "No upcoming lots."}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Searches sub-tab — promoted from a top-level tab into the
               Watchlist tab so all per-user content lives in one place. */}
@@ -1928,6 +1956,24 @@ export default function Dial() {
     maxHeight: 360,
     overflowY: "auto",
   };
+  // Multi-select row inside the wide popovers — same look as the Sort
+  // dropdown rows: greyed background when selected, right-aligned tick
+  // instead of a leading checkbox. Click toggles selection without
+  // closing the popover (since these are multi-select).
+  const multiSelectRowStyle = (active) => ({
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    gap: 8, padding: "8px 10px", borderRadius: 6, border: "none",
+    background: active ? "var(--surface)" : "transparent",
+    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+    fontSize: 13, textAlign: "left", width: "100%",
+  });
+  const tickStyle = { color: "var(--text2)", fontSize: 12, flexShrink: 0 };
+  const popClearStyle = {
+    marginTop: 10, padding: "6px 10px", borderRadius: 6,
+    border: "0.5px solid var(--border)",
+    background: "transparent", color: "var(--text2)", cursor: "pointer",
+    fontFamily: "inherit", fontSize: 12, width: "100%",
+  };
 
   const filterRowJSX = (() => {
     // Live/Sold counts reflect the current set of items minus user-hidden
@@ -1984,101 +2030,6 @@ export default function Dial() {
         )}
       </div>
 
-      {/* Source */}
-      <div style={{ position: "relative" }}>
-        <button onClick={() => setActiveFilterPop(p => p === "source" ? null : "source")} style={pillBase(filterSources.length > 0)}>
-          Source{filterSources.length > 0 ? ` · ${filterSources.length}` : ""} ▾
-        </button>
-        {activeFilterPop === "source" && popShell(
-          <div>
-            <div style={popGridStyle}>
-              {SOURCES.map(s => (
-                <label key={s} style={{
-                  display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
-                  borderRadius: 6, cursor: "pointer", fontSize: 13, color: "var(--text1)",
-                  background: filterSources.includes(s) ? "var(--surface)" : "transparent",
-                }}>
-                  <input type="checkbox" checked={filterSources.includes(s)} onChange={() => toggleSource(s)} />
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s}</span>
-                </label>
-              ))}
-            </div>
-            {filterSources.length > 0 && (
-              <button onClick={() => setFilterSources([])} style={{
-                marginTop: 10, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
-                background: "transparent", color: "var(--text2)", cursor: "pointer",
-                fontFamily: "inherit", fontSize: 12, width: "100%",
-              }}>Clear sources</button>
-            )}
-          </div>,
-          { wide: true }
-        )}
-      </div>
-
-      {/* Brand */}
-      <div style={{ position: "relative" }}>
-        <button onClick={() => setActiveFilterPop(p => p === "brand" ? null : "brand")} style={pillBase(filterBrands.length > 0)}>
-          Brand{filterBrands.length > 0 ? ` · ${filterBrands.length}` : ""} ▾
-        </button>
-        {activeFilterPop === "brand" && popShell(
-          <div>
-            <div style={popGridStyle}>
-              {BRANDS.map(b => (
-                <label key={b} style={{
-                  display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
-                  borderRadius: 6, cursor: "pointer", fontSize: 13, color: "var(--text1)",
-                  background: filterBrands.includes(b) ? "var(--surface)" : "transparent",
-                }}>
-                  <input type="checkbox" checked={filterBrands.includes(b)} onChange={() => toggleBrand(b)} />
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b}</span>
-                </label>
-              ))}
-            </div>
-            {filterBrands.length > 0 && (
-              <button onClick={() => setFilterBrands([])} style={{
-                marginTop: 10, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
-                background: "transparent", color: "var(--text2)", cursor: "pointer",
-                fontFamily: "inherit", fontSize: 12, width: "100%",
-              }}>Clear brands</button>
-            )}
-          </div>,
-          { wide: true }
-        )}
-      </div>
-
-      {/* Reference (multi-select; refs are scoped by selected brands) */}
-      {REFS.length > 0 && (
-        <div style={{ position: "relative" }}>
-          <button onClick={() => setActiveFilterPop(p => p === "ref" ? null : "ref")} style={pillBase(filterRefs.length > 0)}>
-            Reference{filterRefs.length > 0 ? ` · ${filterRefs.length}` : ""} ▾
-          </button>
-          {activeFilterPop === "ref" && popShell(
-            <div>
-              <div style={popGridStyle}>
-                {REFS.map(r => (
-                  <label key={r} style={{
-                    display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
-                    borderRadius: 6, cursor: "pointer", fontSize: 13, color: "var(--text1)",
-                    background: filterRefs.includes(r) ? "var(--surface)" : "transparent",
-                  }}>
-                    <input type="checkbox" checked={filterRefs.includes(r)} onChange={() => toggleFilterRef(r)} />
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r}</span>
-                  </label>
-                ))}
-              </div>
-              {filterRefs.length > 0 && (
-                <button onClick={() => setFilterRefs([])} style={{
-                  marginTop: 10, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
-                  background: "transparent", color: "var(--text2)", cursor: "pointer",
-                  fontFamily: "inherit", fontSize: 12, width: "100%",
-                }}>Clear refs</button>
-              )}
-            </div>,
-            { wide: true }
-          )}
-        </div>
-      )}
-
       {/* Price */}
       <div style={{ position: "relative" }}>
         <button onClick={() => setActiveFilterPop(p => p === "price" ? null : "price")} style={pillBase(!!minPriceText || !!maxPriceText)}>
@@ -2104,6 +2055,77 @@ export default function Dial() {
           </div>
         )}
       </div>
+
+      {/* Source */}
+      <div style={{ position: "relative" }}>
+        <button onClick={() => setActiveFilterPop(p => p === "source" ? null : "source")} style={pillBase(filterSources.length > 0)}>
+          Source{filterSources.length > 0 ? ` · ${filterSources.length}` : ""} ▾
+        </button>
+        {activeFilterPop === "source" && popShell(
+          <div>
+            <div style={popGridStyle}>
+              {SOURCES.map(s => (
+                <button key={s} onClick={() => toggleSource(s)} style={multiSelectRowStyle(filterSources.includes(s))}>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s}</span>
+                  {filterSources.includes(s) && <span style={tickStyle}>✓</span>}
+                </button>
+              ))}
+            </div>
+            {filterSources.length > 0 && (
+              <button onClick={() => setFilterSources([])} style={popClearStyle}>Clear sources</button>
+            )}
+          </div>,
+          { wide: true }
+        )}
+      </div>
+
+      {/* Brand */}
+      <div style={{ position: "relative" }}>
+        <button onClick={() => setActiveFilterPop(p => p === "brand" ? null : "brand")} style={pillBase(filterBrands.length > 0)}>
+          Brand{filterBrands.length > 0 ? ` · ${filterBrands.length}` : ""} ▾
+        </button>
+        {activeFilterPop === "brand" && popShell(
+          <div>
+            <div style={popGridStyle}>
+              {BRANDS.map(b => (
+                <button key={b} onClick={() => toggleBrand(b)} style={multiSelectRowStyle(filterBrands.includes(b))}>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b}</span>
+                  {filterBrands.includes(b) && <span style={tickStyle}>✓</span>}
+                </button>
+              ))}
+            </div>
+            {filterBrands.length > 0 && (
+              <button onClick={() => setFilterBrands([])} style={popClearStyle}>Clear brands</button>
+            )}
+          </div>,
+          { wide: true }
+        )}
+      </div>
+
+      {/* Reference (multi-select; refs are scoped by selected brands) */}
+      {REFS.length > 0 && (
+        <div style={{ position: "relative" }}>
+          <button onClick={() => setActiveFilterPop(p => p === "ref" ? null : "ref")} style={pillBase(filterRefs.length > 0)}>
+            Reference{filterRefs.length > 0 ? ` · ${filterRefs.length}` : ""} ▾
+          </button>
+          {activeFilterPop === "ref" && popShell(
+            <div>
+              <div style={popGridStyle}>
+                {REFS.map(r => (
+                  <button key={r} onClick={() => toggleFilterRef(r)} style={multiSelectRowStyle(filterRefs.includes(r))}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r}</span>
+                    {filterRefs.includes(r) && <span style={tickStyle}>✓</span>}
+                  </button>
+                ))}
+              </div>
+              {filterRefs.length > 0 && (
+                <button onClick={() => setFilterRefs([])} style={popClearStyle}>Clear refs</button>
+              )}
+            </div>,
+            { wide: true }
+          )}
+        </div>
+      )}
 
       {/* The "New" pill was retired — recency is now visualised as
           age-bucket dividers in the grid (Today / 3 days / This week /
@@ -2156,7 +2178,7 @@ export default function Dial() {
           ))}
         </div>
         <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 8, padding: "7px 12px", width: "100%", maxWidth: 420 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 8, padding: "7px 12px", width: "100%", maxWidth: 640 }}>
             <SearchIcon />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
             {search && (
@@ -2169,7 +2191,8 @@ export default function Dial() {
             )}
           </div>
         </div>
-        <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>{allFiltered.length}</span>
+        {/* Total-count was here — removed; the Live/Sold pill in the
+            filter row already shows the count for the active state. */}
         {/* Desktop View popover: theme + column count, mirroring mobile.
             Replaces the standalone dark-mode icon button so per-device
             display settings live in one place. */}
@@ -2242,7 +2265,7 @@ export default function Dial() {
             the source code (sidebarFilterPanelJSX, sidebarToggleJSX,
             resize handlers) is still defined further up so we can revert
             quickly if the new pattern doesn't pan out. */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
+        <div data-desktop-main style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
           {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : watchlistTabJSX}
         </div>
       </div>
