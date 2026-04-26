@@ -204,6 +204,24 @@ export default function Dial() {
   // gets the full window width. Mobile already opens filters in a separate
   // drawer, so this is irrelevant there.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Desktop filter consolidation: the sidebar's role is taken over by a
+  // row of pill-style filter dropdowns below the top header. Only one
+  // popover open at a time. `null` = nothing open.
+  const [activeFilterPop, setActiveFilterPop] = useState(null);
+  const filterPopRef = useRef(null);
+  // Close the active popover when user clicks anywhere outside it.
+  useEffect(() => {
+    if (!activeFilterPop) return;
+    const handler = (e) => {
+      if (filterPopRef.current && !filterPopRef.current.contains(e.target)) {
+        setActiveFilterPop(null);
+      }
+    };
+    // Defer to next tick so the click that opened the popover doesn't
+    // immediately close it.
+    const t = setTimeout(() => document.addEventListener("mousedown", handler), 0);
+    return () => { clearTimeout(t); document.removeEventListener("mousedown", handler); };
+  }, [activeFilterPop]);
   const isDragging = useRef(false);
   const dragStart = useRef(0);
   const widthStart = useRef(0);
@@ -1743,23 +1761,207 @@ export default function Dial() {
   }
 
   // ── DESKTOP ───────────────────────────────────────────────────────────────
-  // Sidebar can be collapsed via the top-left toggle. When collapsed, the
-  // entire sidebar div is omitted — the grid expands to fill the window.
-  const sidebarToggleJSX = (
-    <button onClick={() => setSidebarCollapsed(c => !c)} aria-label={sidebarCollapsed ? "Show filters" : "Hide filters"}
-      title={sidebarCollapsed ? "Show filters" : "Hide filters"}
-      style={{
-        flexShrink: 0, width: 32, height: 32, borderRadius: 8,
-        border: "0.5px solid var(--border)", background: "var(--surface)",
-        color: "var(--text2)", cursor: "pointer",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="3" y1="6" x2="21" y2="6"/>
-        <line x1="3" y1="12" x2="21" y2="12"/>
-        <line x1="3" y1="18" x2="21" y2="18"/>
-      </svg>
-    </button>
+  // The desktop sidebar is gone. Filters live in a pill row below the top
+  // header (see filterRowJSX). The sidebar collapse toggle still exists
+  // but is hidden in the markup until/unless we restore the sidebar
+  // pattern; left in place to avoid churning state references.
+  const sidebarToggleJSX = null;
+
+  // Pill-style filter row. Each pill opens a popover anchored below it.
+  // One popover open at a time, click-outside to close. Style matches
+  // the mobile sticky sort row so the experience is consistent.
+  const pillBase = (active) => ({
+    fontSize: 13, padding: "6px 12px", borderRadius: 18, cursor: "pointer",
+    fontFamily: "inherit", whiteSpace: "nowrap", border: "none", outline: "none",
+    background: active ? "var(--text1)" : "transparent",
+    color: active ? "var(--bg)" : "var(--text2)",
+    boxShadow: active ? "none" : "inset 0 0 0 0.5px var(--border)",
+  });
+
+  const popShell = (children) => (
+    <div ref={filterPopRef} style={{
+      position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 60,
+      background: "var(--bg)", border: "0.5px solid var(--border)",
+      borderRadius: 10, padding: 12, minWidth: 220, maxWidth: 360,
+      boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+    }}>
+      {children}
+    </div>
+  );
+
+  const filterRowJSX = (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
+                  borderBottom: "0.5px solid var(--border)", flexShrink: 0,
+                  flexWrap: "wrap", position: "relative" }}>
+      {/* Sort */}
+      <div style={{ position: "relative" }}>
+        {(() => {
+          const label = sort === "price-asc" ? "Price ↑"
+                      : sort === "price-desc" ? "Price ↓"
+                      : sort === "date-asc" ? "Oldest first"
+                      : "Newest first";
+          return (
+            <button onClick={() => setActiveFilterPop(p => p === "sort" ? null : "sort")} style={pillBase(false)}>
+              Sort: {label} ▾
+            </button>
+          );
+        })()}
+        {activeFilterPop === "sort" && popShell(
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {[["date", "Newest first"], ["date-asc", "Oldest first"],
+              ["price-asc", "Price: low to high"], ["price-desc", "Price: high to low"]
+            ].map(([val, lbl]) => (
+              <button key={val} onClick={() => { setSort(val); setActiveFilterPop(null); }} style={{
+                textAlign: "left", padding: "8px 10px", borderRadius: 6, border: "none",
+                background: sort === val ? "var(--surface)" : "transparent",
+                color: "var(--text1)", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+              }}>{lbl}{sort === val ? "  ✓" : ""}</button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Source */}
+      <div style={{ position: "relative" }}>
+        <button onClick={() => setActiveFilterPop(p => p === "source" ? null : "source")} style={pillBase(filterSources.length > 0)}>
+          Source{filterSources.length > 0 ? ` · ${filterSources.length}` : ""} ▾
+        </button>
+        {activeFilterPop === "source" && popShell(
+          <div style={{ maxHeight: 320, overflowY: "auto" }}>
+            {SOURCES.map(s => (
+              <label key={s} style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
+                borderRadius: 6, cursor: "pointer", fontSize: 13, color: "var(--text1)",
+              }}>
+                <input type="checkbox" checked={filterSources.includes(s)} onChange={() => toggleSource(s)} />
+                {s}
+              </label>
+            ))}
+            {filterSources.length > 0 && (
+              <button onClick={() => setFilterSources([])} style={{
+                marginTop: 8, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
+                background: "transparent", color: "var(--text2)", cursor: "pointer",
+                fontFamily: "inherit", fontSize: 12, width: "100%",
+              }}>Clear sources</button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Brand */}
+      <div style={{ position: "relative" }}>
+        <button onClick={() => setActiveFilterPop(p => p === "brand" ? null : "brand")} style={pillBase(filterBrands.length > 0)}>
+          Brand{filterBrands.length > 0 ? ` · ${filterBrands.length}` : ""} ▾
+        </button>
+        {activeFilterPop === "brand" && popShell(
+          <div style={{ maxHeight: 320, overflowY: "auto" }}>
+            {BRANDS.map(b => (
+              <label key={b} style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
+                borderRadius: 6, cursor: "pointer", fontSize: 13, color: "var(--text1)",
+              }}>
+                <input type="checkbox" checked={filterBrands.includes(b)} onChange={() => toggleBrand(b)} />
+                {b}
+              </label>
+            ))}
+            {filterBrands.length > 0 && (
+              <button onClick={() => setFilterBrands([])} style={{
+                marginTop: 8, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
+                background: "transparent", color: "var(--text2)", cursor: "pointer",
+                fontFamily: "inherit", fontSize: 12, width: "100%",
+              }}>Clear brands</button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Reference (multi-select; refs are scoped by selected brands) */}
+      {REFS.length > 0 && (
+        <div style={{ position: "relative" }}>
+          <button onClick={() => setActiveFilterPop(p => p === "ref" ? null : "ref")} style={pillBase(filterRefs.length > 0)}>
+            Reference{filterRefs.length > 0 ? ` · ${filterRefs.length}` : ""} ▾
+          </button>
+          {activeFilterPop === "ref" && popShell(
+            <div style={{ maxHeight: 320, overflowY: "auto" }}>
+              {REFS.map(r => (
+                <label key={r} style={{
+                  display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
+                  borderRadius: 6, cursor: "pointer", fontSize: 13, color: "var(--text1)",
+                }}>
+                  <input type="checkbox" checked={filterRefs.includes(r)} onChange={() => toggleFilterRef(r)} />
+                  {r}
+                </label>
+              ))}
+              {filterRefs.length > 0 && (
+                <button onClick={() => setFilterRefs([])} style={{
+                  marginTop: 8, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
+                  background: "transparent", color: "var(--text2)", cursor: "pointer",
+                  fontFamily: "inherit", fontSize: 12, width: "100%",
+                }}>Clear refs</button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Price */}
+      <div style={{ position: "relative" }}>
+        <button onClick={() => setActiveFilterPop(p => p === "price" ? null : "price")} style={pillBase(!!minPriceText || !!maxPriceText)}>
+          Price{(minPriceText || maxPriceText) ? ` · ${minPriceText || "0"}–${maxPriceText || "∞"}` : ""} ▾
+        </button>
+        {activeFilterPop === "price" && popShell(
+          <div>
+            <div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>Price (USD)</div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input value={minPriceText} onChange={e => setMinPriceText(e.target.value)} placeholder="Min" inputMode="numeric"
+                style={{ ...inp, fontSize: 13, padding: "6px 8px", flex: 1 }} />
+              <span style={{ fontSize: 11, color: "var(--text3)" }}>–</span>
+              <input value={maxPriceText} onChange={e => setMaxPriceText(e.target.value)} placeholder="Max" inputMode="numeric"
+                style={{ ...inp, fontSize: 13, padding: "6px 8px", flex: 1 }} />
+            </div>
+            {(minPriceText || maxPriceText) && (
+              <button onClick={() => { setMinPriceText(""); setMaxPriceText(""); }} style={{
+                marginTop: 8, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
+                background: "transparent", color: "var(--text2)", cursor: "pointer",
+                fontFamily: "inherit", fontSize: 12, width: "100%",
+              }}>Clear price</button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* New / recency */}
+      <div style={{ position: "relative" }}>
+        <button onClick={() => setActiveFilterPop(p => p === "new" ? null : "new")} style={pillBase(newDays > 0)}>
+          New{newDays > 0 ? ` · ${newDays === 1 ? "today" : newDays === 3 ? "3d" : newDays + "d"}` : ""} ▾
+        </button>
+        {activeFilterPop === "new" && popShell(
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {[[0, "Any time"], [1, `Today${newCounts[1] ? ` (${newCounts[1]})` : ""}`],
+              [3, `Last 3 days${newCounts[3] ? ` (${newCounts[3]})` : ""}`],
+              [7, `This week${newCounts[7] ? ` (${newCounts[7]})` : ""}`]
+            ].map(([days, lbl]) => (
+              <button key={days} onClick={() => { setNewDays(days); setActiveFilterPop(null); }} style={{
+                textAlign: "left", padding: "8px 10px", borderRadius: 6, border: "none",
+                background: newDays === days ? "var(--surface)" : "transparent",
+                color: "var(--text1)", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+              }}>{lbl}{newDays === days ? "  ✓" : ""}</button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {hasFilters && (
+        <button onClick={resetFilters} style={{
+          marginLeft: "auto",
+          fontSize: 13, padding: "6px 12px", borderRadius: 18, cursor: "pointer",
+          fontFamily: "inherit", whiteSpace: "nowrap",
+          border: "none", outline: "none",
+          background: "transparent", color: "#185FA5",
+          boxShadow: "inset 0 0 0 0.5px #185FA5",
+        }}>× Clear all</button>
+      )}
+    </div>
   );
 
   return (
@@ -1825,22 +2027,16 @@ export default function Dial() {
         </button>
         {authJSX}
       </div>
+      {/* Filter pill row — sits below the top bar, above the content area.
+          Only relevant on tabs that filter (Available + Watchlist). */}
+      {(tab === "listings" || tab === "watchlist") && filterRowJSX}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        {/* Sidebar hides automatically on the Searches tab — none of the
-            sort/source/brand/ref/price filters apply to a saved-searches
-            list. Auctions and Watchlist still get the sidebar (filters
-            apply to Watchlist; we'll revisit Auctions in the filter
-            consolidation pass). */}
-        {!sidebarCollapsed && tab !== "searches" && (
-          <div style={{ width: sidebarWidth, flexShrink: 0, borderRight: "0.5px solid var(--border)", overflowY: "auto", display: "flex", flexDirection: "column", position: "relative" }}>
-            <div style={{ flex: 1, overflowY: "auto" }}>
-              {sidebarFilterPanelJSX}
-            </div>
-            <div onMouseDown={onDragStart} style={{ position: "absolute", top: 0, right: -3, width: 6, height: "100%", cursor: "col-resize", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: 2, height: 32, borderRadius: 1, background: "var(--border)", opacity: 0.8 }} />
-            </div>
-          </div>
-        )}
+        {/* The desktop sidebar previously held all the filters. Replaced
+            in the April '26 filter-consolidation pass by the top
+            filterRowJSX above. Sidebar markup intentionally retired here;
+            the source code (sidebarFilterPanelJSX, sidebarToggleJSX,
+            resize handlers) is still defined further up so we can revert
+            quickly if the new pattern doesn't pan out. */}
         <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
           {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "searches" ? searchesTabJSX : watchlistTabJSX}
         </div>
