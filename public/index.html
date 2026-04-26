@@ -9,7 +9,14 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
     <meta name="apple-mobile-web-app-title" content="Watchlist" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- iOS PWA status bar: "default" lets theme-color tint it. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- Theme color drives the iOS PWA status bar tint (and Android
+         Chrome address bar). Spell it out for both light and dark
+         schemes so dark-mode phones don't fall back to system black. -->
     <meta name="theme-color" content="#3b4a36" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#3b4a36" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#3b4a36" />
     <style>* { box-sizing: border-box; margin: 0; padding: 0; } body { -webkit-font-smoothing: antialiased; }</style>
   </head>
   <body>

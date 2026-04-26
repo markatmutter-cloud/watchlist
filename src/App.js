@@ -1544,12 +1544,10 @@ export default function Dial() {
               them one tap away rather than a long scroll matters. */}
           <div style={{
             display: "flex", marginBottom: 18,
-            borderBottom: "0.5px solid var(--border)",
-            // Stay visible while scrolling. On desktop the closest
-            // scrolling ancestor is the right-pane (data-desktop-main),
-            // so top: 0 anchors to that. On mobile the body scrolls —
-            // the page sticky stack above is ~92px tall, so sit below
-            // that.
+            // No bottom hairline on the row — only the active sub-tab
+            // shows an underline (its 2px border-bottom). Previously
+            // the row hairline persisted under all three labels and
+            // looked like a "ghost" underline trailing the active one.
             position: "sticky",
             top: isMobile ? 92 : 0,
             background: "var(--bg)",
