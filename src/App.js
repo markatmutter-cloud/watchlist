@@ -693,7 +693,7 @@ export default function Dial() {
     </button>
   ) : (
     <div style={{ position: "relative" }}>
-      <button onClick={() => setShowUserMenu(o => !o)} aria-label="Account menu"
+      <button onClick={() => { setShowUserMenu(o => !o); setViewMenuOpen(false); }} aria-label="Account menu"
         style={{
           width: 30, height: 30, borderRadius: "50%",
           border: "0.5px solid var(--border)", background: "var(--surface)",
@@ -1333,10 +1333,17 @@ export default function Dial() {
             )}
           </div>
           {watchCount === 0 ? (
-            <div style={{ padding: "40px 0", textAlign: "center" }}>
+            <div style={{ padding: "48px 20px", textAlign: "center" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>
-              <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>No watches saved yet</div>
-              <div style={{ fontSize: 12, color: "var(--text2)" }}>Tap the heart on any listing to save it here</div>
+              <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>No watches saved yet</div>
+              <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 320, margin: "0 auto 16px" }}>
+                Browse the Available tab and tap the heart on any listing — it'll appear here with the price you saved at, even after the dealer takes the URL down.
+              </div>
+              <button onClick={() => { setTab("listings"); setPage(1); }} style={{
+                padding: "8px 16px", borderRadius: 8, border: "0.5px solid var(--border)",
+                background: "var(--card-bg)", color: "var(--text1)", cursor: "pointer",
+                fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+              }}>Browse Available</button>
             </div>
           ) : (
             <>
@@ -1453,8 +1460,15 @@ export default function Dial() {
               )}
             </div>
             {trackedLots.length === 0 ? (
-              <div style={{ padding: "24px 0", textAlign: "center", color: "var(--text3)", fontSize: 12 }}>
-                No tracked lots yet. Paste a lot URL above to start.
+              <div style={{ padding: "32px 20px", textAlign: "center" }}>
+                <div style={{ fontSize: 28, marginBottom: 10 }}>⌛</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)", marginBottom: 6 }}>No tracked lots yet</div>
+                <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto" }}>
+                  Paste an Antiquorum lot URL into the box above. Each tracked lot gets a daily price update and a countdown to the auction. After the hammer, the sold price stays as a permanent record.
+                </div>
+                <div style={{ fontSize: 11, color: "var(--text3)", lineHeight: 1.5, marginTop: 12, fontFamily: "monospace" }}>
+                  e.g. https://live.antiquorum.swiss/lots/view/1-CECBOW/omega
+                </div>
               </div>
             ) : (
               <>
@@ -1530,11 +1544,14 @@ export default function Dial() {
           {/* "View" button consolidates theme + column count so the top bar
               doesn't have to grow as we add per-device display settings. */}
           <div style={{ position: "relative", flexShrink: 0 }}>
-            <button onClick={() => setViewMenuOpen(o => !o)} aria-label="View options"
+            <button onClick={() => { setViewMenuOpen(o => !o); setShowUserMenu(false); }} aria-label="View options"
               style={{ width: 36, height: 36, borderRadius: "50%", border: "0.5px solid var(--border)", background: viewMenuOpen ? "var(--text1)" : "var(--surface)", color: viewMenuOpen ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {/* Eye icon — feels right for "view settings" (theme + column
+                  count). Mark's call: cog read like "settings", eye reads
+                  like "how the page looks". */}
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
               </svg>
             </button>
             {viewMenuOpen && (
