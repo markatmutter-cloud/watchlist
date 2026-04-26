@@ -206,7 +206,20 @@ export default function Dial() {
   const isDragging = useRef(false);
   const dragStart = useRef(0);
   const widthStart = useRef(0);
-  const cols = isMobile ? 3 : Math.max(2, Math.round((screenWidth - sidebarWidth) / 180));
+  // Mobile users can pick 1/2/3 columns from the View popover (top bar).
+  // Persisted in localStorage so the choice sticks per-device. Desktop is
+  // auto-fluid based on sidebar width — no manual override there.
+  const [mobileCols, setMobileCols] = useState(() => {
+    try {
+      const v = parseInt(localStorage.getItem("dial_mobile_cols") || "3", 10);
+      return [1, 2, 3].includes(v) ? v : 3;
+    } catch { return 3; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("dial_mobile_cols", String(mobileCols)); } catch {}
+  }, [mobileCols]);
+  const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  const cols = isMobile ? mobileCols : Math.max(2, Math.round((screenWidth - sidebarWidth) / 180));
   const compact = cols >= 4;
 
   const [items, setItems] = useState([]);
@@ -1045,7 +1058,14 @@ export default function Dial() {
             sort rows pinned to the top. No JS needed; this is pure CSS
             flow + sticky positioning. */}
         <div style={{ padding: "10px 14px 4px" }}>
-          <span style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.5px" }}>Watchlist</span>
+          {/* Tap the title to jump back to Available (home). */}
+          <button onClick={() => { setTab("listings"); setPage(1); }}
+            style={{ background: "none", border: "none", cursor: "pointer",
+                    padding: 0, fontFamily: "inherit",
+                    fontSize: 22, fontWeight: 600, letterSpacing: "-0.5px",
+                    color: "var(--text1)" }}>
+            Watchlist
+          </button>
         </div>
         {/* Sticky stack: search row (with filter + dark-mode buttons) and
             sort/clear pills row. Stays pinned to the viewport top so
@@ -1055,13 +1075,61 @@ export default function Dial() {
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 0 }}>
             <SearchIcon />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 14, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
+            {search && (
+              <button onClick={() => setSearch("")} aria-label="Clear search"
+                style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer",
+                        color: "var(--text3)", padding: 2, fontFamily: "inherit",
+                        display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            )}
           </div>
           <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} aria-label="Filters" style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <FilterIcon />
           </button>
-          <button onClick={() => setDarkOverride(dark ? false : true)} aria-label="Toggle dark mode" style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "0.5px solid var(--border)", background: "var(--surface)", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-          </button>
+          {/* "View" button consolidates theme + column count so the top bar
+              doesn't have to grow as we add per-device display settings. */}
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <button onClick={() => setViewMenuOpen(o => !o)} aria-label="View options"
+              style={{ width: 36, height: 36, borderRadius: "50%", border: "0.5px solid var(--border)", background: viewMenuOpen ? "var(--text1)" : "var(--surface)", color: viewMenuOpen ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </button>
+            {viewMenuOpen && (
+              <div style={{ position: "absolute", right: 0, top: 42, zIndex: 50,
+                           background: "var(--bg)", border: "0.5px solid var(--border)",
+                           borderRadius: 10, padding: 12, minWidth: 180,
+                           boxShadow: "0 6px 20px rgba(0,0,0,0.18)" }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Theme</div>
+                <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                  {[["light", "Light"], ["dark", "Dark"]].map(([key, lbl]) => {
+                    const active = (key === "dark") === dark;
+                    return (
+                      <button key={key} onClick={() => setDarkOverride(key === "dark")} style={{
+                        flex: 1, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
+                        background: active ? "var(--text1)" : "transparent",
+                        color: active ? "var(--bg)" : "var(--text2)",
+                        cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                      }}>{lbl}</button>
+                    );
+                  })}
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Columns</div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[1, 2, 3].map(n => (
+                    <button key={n} onClick={() => setMobileCols(n)} style={{
+                      flex: 1, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
+                      background: mobileCols === n ? "var(--text1)" : "transparent",
+                      color: mobileCols === n ? "var(--bg)" : "var(--text2)",
+                      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                    }}>{n}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           {authJSX}
         </div>
         <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center" }}>
@@ -1270,7 +1338,15 @@ export default function Dial() {
           even when the sidebar is collapsed. */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
         {sidebarToggleJSX}
-        <span style={{ fontSize: 18, fontWeight: 500, letterSpacing: "-0.5px", flexShrink: 0 }}>Watchlist</span>
+        {/* Watchlist title doubles as a "home" link — click to jump to
+            Available. */}
+        <button onClick={() => { setTab("listings"); setPage(1); }}
+          style={{ background: "none", border: "none", cursor: "pointer",
+                  padding: 0, fontFamily: "inherit",
+                  fontSize: 18, fontWeight: 500, letterSpacing: "-0.5px",
+                  color: "var(--text1)", flexShrink: 0 }}>
+          Watchlist
+        </button>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
           {[["listings", "Available"], ["auctions", "Auctions"], ["archive", "Archive"], ["watchlist", "Watchlist"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 13, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
@@ -1282,6 +1358,14 @@ export default function Dial() {
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 8, padding: "7px 12px", width: "100%", maxWidth: 420 }}>
             <SearchIcon />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
+            {search && (
+              <button onClick={() => setSearch("")} aria-label="Clear search"
+                style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer",
+                        color: "var(--text3)", padding: 2, fontFamily: "inherit",
+                        display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            )}
           </div>
         </div>
         <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>{allFiltered.length}</span>
