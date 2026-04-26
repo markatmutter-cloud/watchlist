@@ -231,6 +231,19 @@ export default function Dial() {
   const [trackedLotsState, setTrackedLotsState] = useState({});
   // Sub-tab inside Watchlist > Auction lots: upcoming vs past.
   const [auctionLotSubTab, setAuctionLotSubTab] = useState("upcoming");
+  // Top-level toggle on the Watchlist tab between dealer listings and
+  // auction lots. Persisted in localStorage so users land back where
+  // they left off — auction lots are time-sensitive, so a returning
+  // user mid-auction shouldn't have to flip again.
+  const [watchTopTab, setWatchTopTab] = useState(() => {
+    try {
+      const v = localStorage.getItem("dial_watch_top_tab");
+      return v === "lots" ? "lots" : "listings";
+    } catch { return "listings"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("dial_watch_top_tab", watchTopTab); } catch {}
+  }, [watchTopTab]);
   // Paste-URL input state for adding a new tracked lot.
   const [lotInputUrl, setLotInputUrl] = useState("");
   const [lotInputError, setLotInputError] = useState("");
@@ -1269,6 +1282,25 @@ export default function Dial() {
         "Heart any listing to save it here. Saved items sync across every device you use."
       ) : (
         <>
+          {/* Top-level toggle between dealer listings and auction lots.
+              Auction lots are time-sensitive (countdowns), so making
+              them one tap away rather than a long scroll matters. */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
+            {[
+              ["listings", `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
+              ["lots",     `Auction lots${trackedLots.length > 0 ? ` · ${trackedLots.length}` : ""}`],
+            ].map(([key, label]) => (
+              <button key={key} onClick={() => setWatchTopTab(key)} style={{
+                flex: 1, padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer",
+                fontFamily: "inherit", fontSize: 13,
+                background: watchTopTab === key ? "var(--text1)" : "var(--surface)",
+                color: watchTopTab === key ? "var(--bg)" : "var(--text2)",
+                fontWeight: watchTopTab === key ? 500 : 400,
+              }}>{label}</button>
+            ))}
+          </div>
+
+          {watchTopTab === "listings" && (<>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10, gap: 8 }}>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>Watchlist</div>
             {watchCount > 0 && (
@@ -1358,9 +1390,10 @@ export default function Dial() {
               })()}
             </>
           )}
+          </>)}
 
-          {/* ─── Auction lots subsection ─── */}
-          <div style={{ marginTop: 32 }}>
+          {watchTopTab === "lots" && (
+          <div>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10, gap: 8 }}>
               <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>
                 Auction lots
@@ -1425,6 +1458,7 @@ export default function Dial() {
               </>
             )}
           </div>
+          )}
         </>
       )}
     </div>
