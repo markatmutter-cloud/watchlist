@@ -240,6 +240,14 @@ export default function Dial() {
   // that have disappeared from the scrape AND items still in the scrape
   // marked sold (Wind Vintage on-hold). Default to Live on each session.
   const [watchSubTab, setWatchSubTab] = useState("live");
+  // Available tab toggle: when on, sold/inactive items appear inline with
+  // the live ones (with SOLD badges). Useful for reference-history lookups
+  // — pick a ref, flip on, see every example we've ever scraped at the
+  // last asking price. Replaces the standalone Archive tab.
+  const [showSoldHistory, setShowSoldHistory] = useState(false);
+  // Hidden listings manager (was the Archive tab's hidden-section, now
+  // a modal opened from the user dropdown).
+  const [hiddenModalOpen, setHiddenModalOpen] = useState(false);
   // Watchlist + hidden now live server-side (Supabase) per authenticated
   // user. When signed out, these hooks return empty objects and their
   // toggles no-op — we wrap the toggles below to kick off sign-in instead.
@@ -406,7 +414,9 @@ export default function Dial() {
 
   const allFiltered = useMemo(() => {
     let its = [...items];
-    its = its.filter(i => !i.sold);
+    // When `showSoldHistory` is on, sold/inactive items stay in the feed
+    // (rendered with the SOLD badge by Card). Otherwise we hide them.
+    if (!showSoldHistory) its = its.filter(i => !i.sold);
     its = its.filter(i => !hidden[i.id]);   // drop user-hidden items from Available feed
     if (filterRefs.length > 0) {
       its = its.filter(i => {
@@ -428,7 +438,7 @@ export default function Dial() {
     else if (sort === "date-asc") its.sort((a, b) => freshDate(a) < freshDate(b) ? -1 : 1);
     else its.sort((a, b) => freshDate(a) < freshDate(b) ? 1 : -1);
     return its;
-  }, [items, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays]);
+  }, [items, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, showSoldHistory]);
 
   const visible = useMemo(() => allFiltered.slice(0, page * PAGE_SIZE), [allFiltered, page]);
   const hasMore = visible.length < allFiltered.length;
@@ -496,35 +506,14 @@ export default function Dial() {
   const watchLive = useMemo(() => watchItems.filter(i => !i._isSold), [watchItems]);
   const watchSold = useMemo(() => watchItems.filter(i =>  i._isSold), [watchItems]);
 
-  // Archive shows three flavors side by side:
-  //   • Sold/delisted — disappeared from scrape, soldAt from state-tracking.
-  //   • Reserved — Wind Vintage "on hold", soldAt from the CSV flag.
-  //   • Hidden — user-chosen not to see in Available. Still actually live.
-  // Each item is tagged with an `archivedAt` key (soldAt or hide date) so
-  // the combined list can sort by "most recently archived first".
-  const archiveItems = useMemo(() => {
-    const sold = items
-      .filter(i => i.sold)
-      .map(i => ({ ...i, archivedAt: i.soldAt || i.lastSeen || "" }));
-    const userHidden = items
+  // User-hidden items (still live, just told to disappear from Available).
+  // Surfaced via a "Manage hidden" modal opened from the user dropdown.
+  const hiddenItems = useMemo(() => {
+    return items
       .filter(i => !i.sold && hidden[i.id])
-      .map(i => ({ ...i, archivedAt: hidden[i.id] || "" }));
-    let its = [...sold, ...userHidden];
-    if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
-    if (filterBrands.length > 0) its = its.filter(i => filterBrands.includes(i.brand));
-    if (filterRefs.length > 0) {
-      its = its.filter(i => {
-        const ref = (i.ref || "").toLowerCase();
-        return filterRefs.some(r => ref.includes(r.toLowerCase()));
-      });
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      its = its.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q));
-    }
-    its.sort((a, b) => ((a.archivedAt || "") < (b.archivedAt || "") ? 1 : -1));
-    return its;
-  }, [items, filterSources, filterBrands, filterRefs, search, hidden]);
+      .map(i => ({ ...i, hiddenAt: hidden[i.id] || "" }))
+      .sort((a, b) => (a.hiddenAt < b.hiddenAt ? 1 : -1));
+  }, [items, hidden]);
 
   const watchCount = Object.keys(watchlist).length;
   const hasFilters = filterSources.length > 0 || filterBrands.length > 0 || filterRefs.length > 0 || search || newDays > 0 || minPriceText || maxPriceText;
@@ -647,6 +636,13 @@ export default function Dial() {
             {userName}
           </div>
           <div style={{ height: "0.5px", background: "var(--border)", margin: "4px -8px 4px" }} />
+          <button onClick={() => { setShowUserMenu(false); setHiddenModalOpen(true); }}
+            style={{ display: "block", width: "100%", textAlign: "left",
+                    padding: "6px 8px", border: "none", background: "transparent",
+                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                    fontSize: 13, borderRadius: 6 }}>
+            Manage hidden{hiddenItems.length > 0 ? ` · ${hiddenItems.length}` : ""}
+          </button>
           <button onClick={() => { setShowUserMenu(false); signOut(); }}
             style={{ display: "block", width: "100%", textAlign: "left",
                     padding: "6px 8px", border: "none", background: "transparent",
@@ -787,32 +783,54 @@ export default function Dial() {
     </>
   );
 
-  const archiveGridJSX = (
-    archiveItems.length === 0 ? (
-      <div style={{ padding: "60px 0", textAlign: "center" }}>
-        <div style={{ fontSize: 28, marginBottom: 10 }}>⌛</div>
-        <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>No archived listings yet</div>
-        <div style={{ fontSize: 12, color: "var(--text2)", maxWidth: 320, margin: "0 auto", lineHeight: 1.5 }}>
-          Listings that disappear from a dealer's site land here with the last price we saw them at. As more items cycle through, you can search for a reference and see how asking prices have moved over time.
+  // Hidden listings manager modal. Accessed from the user dropdown.
+  // Lets the user un-hide items they previously dismissed.
+  const hiddenModalJSX = hiddenModalOpen ? (
+    <div onClick={() => setHiddenModalOpen(false)} style={{
+      position: "fixed", inset: 0, zIndex: 200,
+      background: "rgba(0,0,0,0.45)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: "var(--bg)", borderRadius: 14,
+        border: "0.5px solid var(--border)",
+        padding: 18, maxWidth: 720, width: "100%", maxHeight: "80vh",
+        overflowY: "auto", boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text1)" }}>
+            Hidden listings · {hiddenItems.length}
+          </div>
+          <button onClick={() => setHiddenModalOpen(false)} aria-label="Close"
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 22, lineHeight: 1, padding: 4 }}>
+            ×
+          </button>
         </div>
+        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 14 }}>
+          Items you've hidden from the Available feed. Tap × on any to restore it.
+        </div>
+        {hiddenItems.length === 0 ? (
+          <div style={{ padding: "40px 0", textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
+            Nothing hidden.
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10 }}>
+            {hiddenItems.map(item => (
+              <Card
+                key={item.id}
+                item={item}
+                wished={!!watchlist[item.id]}
+                onWish={handleWish}
+                compact={true}
+                onHide={toggleHide}
+                isHidden={true}
+              />
+            ))}
+          </div>
+        )}
       </div>
-    ) : (
-      <>
-        <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center", fontSize: 12, color: "var(--text3)" }}>
-          <span>{archiveItems.length} archived</span>
-          <span style={{ color: "var(--text3)" }}>· sorted by date delisted</span>
-        </div>
-        <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-          {archiveItems.map(item => (
-            <Card key={item.id} item={item} wished={!!watchlist[item.id]} onWish={handleWish} compact={compact} onHide={hidden[item.id] ? toggleHide : undefined} isHidden={!!hidden[item.id]} />
-          ))}
-        </div>
-        <div style={{ padding: "14px 0 0", fontSize: 11, color: "var(--text3)", textAlign: "center", lineHeight: 1.5 }}>
-          Sold items show the last asking price. Hidden items stay live — tap the + to restore them to Available.
-        </div>
-      </>
-    )
-  );
+    </div>
+  ) : null;
 
   const auctionsTabJSX = (
     auctions.length === 0 ? (
@@ -963,89 +981,102 @@ export default function Dial() {
     </div>
   ) : null;
 
+  // Reusable signed-out prompt — shown on Searches and Watchlist tabs
+  // when the user isn't signed in. Both tabs need an account for any of
+  // their content (saved searches, watchlist) to make sense.
+  const signInPromptJSX = (heading, blurb) => (
+    <div style={{ padding: "60px 20px", textAlign: "center" }}>
+      <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>
+      <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>{heading}</div>
+      <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto 18px" }}>
+        {blurb}
+      </div>
+      {isAuthConfigured && (
+        <button onClick={signInWithGoogle} style={{
+          padding: "8px 16px", borderRadius: 8, border: "0.5px solid var(--border)",
+          background: "var(--card-bg)", color: "var(--text1)", cursor: "pointer",
+          fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+        }}>Sign in with Google</button>
+      )}
+    </div>
+  );
+
+  const searchesTabJSX = !user ? signInPromptJSX(
+    "Sign in to use saved searches",
+    "Save searches and run them with one tap. Your list syncs across every device you use."
+  ) : (
+    <div style={{ paddingTop: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 8 }}>
+        <div style={{ fontSize: 12, color: "var(--text3)" }}>Tap to run · pencil to edit</div>
+        {!searchEditor && (
+          <button onClick={startAddSearch} style={{
+            border: "0.5px solid var(--border)", background: "var(--card-bg)", color: "var(--text1)",
+            padding: "5px 12px", borderRadius: 8, cursor: "pointer",
+            fontFamily: "inherit", fontSize: 12,
+          }}>+ Add search</button>
+        )}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {searchEditor && searchEditor.id === "new" && renderSearchEditor()}
+
+        {savedSearchStats.map((s) => (
+          searchEditor && searchEditor.id === s.id ? (
+            <div key={s.id}>{renderSearchEditor()}</div>
+          ) : (
+            <div key={s.id} style={{
+              display: "flex", alignItems: "stretch",
+              borderRadius: 12, overflow: "hidden",
+              border: "0.5px solid var(--border)", background: "var(--card-bg)",
+            }}>
+              <button onClick={() => runSearch(s)} style={{
+                flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "14px 16px", border: "none", background: "transparent",
+                cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: "inherit",
+              }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 2 }}>{s.label}</div>
+                  <div style={{ fontSize: 12, color: "var(--text2)" }}>{s.count} for sale{s.query && s.query !== s.label ? ` · "${s.query}"` : ""}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {s.newCount > 0 && (
+                    <div style={{ fontSize: 11, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 8px" }}>{s.newCount} new</div>
+                  )}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                </div>
+              </button>
+              <div style={{ display: "flex", alignItems: "center", borderLeft: "0.5px solid var(--border)" }}>
+                <button onClick={() => startEditSearch(s)} title="Edit" style={{
+                  border: "none", background: "transparent", color: "var(--text2)",
+                  padding: "0 12px", height: "100%", cursor: "pointer", fontFamily: "inherit", fontSize: 14,
+                }}>✎</button>
+                <button onClick={() => { if (window.confirm(`Delete "${s.label}"?`)) removeSearch(s.id); }} title="Delete" style={{
+                  border: "none", borderLeft: "0.5px solid var(--border)",
+                  background: "transparent", color: "var(--text2)",
+                  padding: "0 12px", height: "100%", cursor: "pointer", fontFamily: "inherit", fontSize: 14,
+                }}>✕</button>
+              </div>
+            </div>
+          )
+        ))}
+
+        {savedSearchStats.length === 0 && !searchEditor && (
+          <div style={{ padding: "40px 0", textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
+            No saved searches yet. Tap <b>+ Add search</b> to create one.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   const watchlistTabJSX = (
     <div>
       {importBannerJSX}
-      {!user ? (
-        <div style={{ padding: "60px 20px", textAlign: "center" }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>
-          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>Sign in to see saved searches and your watchlist</div>
-          <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto 18px" }}>
-            Save searches and favorite listings to sync them across every device you use.
-          </div>
-          {isAuthConfigured && (
-            <button onClick={signInWithGoogle} style={{
-              padding: "8px 16px", borderRadius: 8, border: "0.5px solid var(--border)",
-              background: "var(--card-bg)", color: "var(--text1)", cursor: "pointer",
-              fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-            }}>Sign in with Google</button>
-          )}
-        </div>
+      {!user ? signInPromptJSX(
+        "Sign in to see your watchlist",
+        "Heart any listing to save it here. Saved items sync across every device you use."
       ) : (
         <>
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 8 }}>
-              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>Saved searches</div>
-              {!searchEditor && (
-                <button onClick={startAddSearch} style={{
-                  border: "0.5px solid var(--border)", background: "var(--card-bg)", color: "var(--text1)",
-                  padding: "4px 10px", borderRadius: 6, cursor: "pointer",
-                  fontFamily: "inherit", fontSize: 11,
-                }}>+ Add</button>
-              )}
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {searchEditor && searchEditor.id === "new" && renderSearchEditor()}
-
-              {savedSearchStats.map((s) => (
-                searchEditor && searchEditor.id === s.id ? (
-                  <div key={s.id}>{renderSearchEditor()}</div>
-                ) : (
-                  <div key={s.id} style={{
-                    display: "flex", alignItems: "stretch",
-                    borderRadius: 12, overflow: "hidden",
-                    border: "0.5px solid var(--border)", background: "var(--card-bg)",
-                  }}>
-                    <button onClick={() => runSearch(s)} style={{
-                      flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: "12px 14px", border: "none", background: "transparent",
-                      cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: "inherit",
-                    }}>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)", marginBottom: 2 }}>{s.label}</div>
-                        <div style={{ fontSize: 11, color: "var(--text2)" }}>{s.count} for sale{s.query && s.query !== s.label ? ` · "${s.query}"` : ""}</div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {s.newCount > 0 && (
-                          <div style={{ fontSize: 10, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 7px" }}>{s.newCount} new</div>
-                        )}
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-                      </div>
-                    </button>
-                    <div style={{ display: "flex", alignItems: "center", borderLeft: "0.5px solid var(--border)" }}>
-                      <button onClick={() => startEditSearch(s)} title="Edit" style={{
-                        border: "none", background: "transparent", color: "var(--text2)",
-                        padding: "0 10px", height: "100%", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-                      }}>✎</button>
-                      <button onClick={() => { if (window.confirm(`Delete "${s.label}"?`)) removeSearch(s.id); }} title="Delete" style={{
-                        border: "none", borderLeft: "0.5px solid var(--border)",
-                        background: "transparent", color: "var(--text2)",
-                        padding: "0 10px", height: "100%", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-                      }}>✕</button>
-                    </div>
-                  </div>
-                )
-              ))}
-
-              {savedSearchStats.length === 0 && !searchEditor && (
-                <div style={{ padding: "14px 0", textAlign: "center", color: "var(--text3)", fontSize: 12 }}>
-                  No saved searches yet. Tap <b>+ Add</b> to create one.
-                </div>
-              )}
-            </div>
-          </div>
-
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10, gap: 8 }}>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>Watchlist</div>
             {watchCount > 0 && (
@@ -1279,6 +1310,16 @@ export default function Dial() {
               }}>{label} {sourcePickerOpen ? "↑" : "↓"}</button>
             );
           })()}
+          {/* Show-sold-history pill — only on Available tab. Off by default. */}
+          {tab === "listings" && (
+            <button onClick={() => setShowSoldHistory(s => !s)} style={{
+              fontSize: 13, padding: "7px 14px", borderRadius: 20, cursor: "pointer",
+              fontFamily: "inherit", whiteSpace: "nowrap", border: "none", outline: "none",
+              background: showSoldHistory ? "var(--text1)" : "transparent",
+              color: showSoldHistory ? "var(--bg)" : "var(--text2)",
+              boxShadow: showSoldHistory ? "none" : "inset 0 0 0 0.5px var(--border)",
+            }}>{showSoldHistory ? "Sold ✓" : "Sold"}</button>
+          )}
           {/* Persistent reset button — sits next to the sort pills so users
               don't have to open the filter drawer to clear everything. Only
               rendered when there's actually something to clear. */}
@@ -1311,14 +1352,14 @@ export default function Dial() {
         )}
         </div>
         <div style={{ padding: "12px 14px 100px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : watchlistTabJSX}
+          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "searches" ? searchesTabJSX : watchlistTabJSX}
         </div>
         {/* Bottom tab bar. The container reserves the iOS home-indicator
             safe area PLUS a fixed extra padding, so the buttons aren't
             hugging the home bar when the app is launched standalone from
             the home screen. */}
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 14px)" }}>
-          {[["listings", "Available"], ["auctions", "Auctions"], ["archive", "Archive"], ["watchlist", "Watchlist"]].map(([key, label]) => (
+          {[["listings", "Available"], ["auctions", "Auctions"], ["searches", "Searches"], ["watchlist", "Watchlist"]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "12px 0 14px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 14, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400 }}>
               {tab === key && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5", margin: "0 auto 4px" }} />}
               {label}
@@ -1397,6 +1438,7 @@ export default function Dial() {
             </div>
           </div>
         )}
+        {hiddenModalJSX}
       </div>
     );
   }
@@ -1439,7 +1481,7 @@ export default function Dial() {
           Watchlist
         </button>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
-          {[["listings", "Available"], ["auctions", "Auctions"], ["archive", "Archive"], ["watchlist", "Watchlist"]].map(([key, label]) => (
+          {[["listings", "Available"], ["auctions", "Auctions"], ["searches", "Searches"], ["watchlist", "Watchlist"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{ padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 13, background: tab === key ? "var(--text1)" : "var(--surface)", color: tab === key ? "var(--bg)" : "var(--text2)", fontWeight: tab === key ? 500 : 400 }}>
               {label}
             </button>
@@ -1459,6 +1501,18 @@ export default function Dial() {
             )}
           </div>
         </div>
+        {tab === "listings" && (
+          <button onClick={() => setShowSoldHistory(s => !s)}
+            title={showSoldHistory ? "Hide sold history" : "Include sold listings inline"}
+            style={{
+              flexShrink: 0, padding: "5px 10px", borderRadius: 16,
+              border: "0.5px solid var(--border)", cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+              background: showSoldHistory ? "var(--text1)" : "var(--surface)",
+              color: showSoldHistory ? "var(--bg)" : "var(--text2)",
+            }}>
+            {showSoldHistory ? "Hide sold" : "Show sold"}
+          </button>
+        )}
         <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>{allFiltered.length}</span>
         <button onClick={() => setDarkOverride(dark ? false : true)} aria-label="Toggle dark mode"
           title={dark ? "Switch to light" : "Switch to dark"}
@@ -1484,9 +1538,10 @@ export default function Dial() {
           </div>
         )}
         <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "archive" ? archiveGridJSX : watchlistTabJSX}
+          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "searches" ? searchesTabJSX : watchlistTabJSX}
         </div>
       </div>
+      {hiddenModalJSX}
     </div>
   );
 }
