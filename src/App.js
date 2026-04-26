@@ -318,14 +318,12 @@ export default function Dial() {
   const [newDays, setNewDays] = useState(0);
   const [page, setPage] = useState(1);
   const [filterRefs, setFilterRefs] = useState([]);
-  // Watchlist tab has a [Live | Sold] sub-toggle. "Sold" includes items
-  // that have disappeared from the scrape AND items still in the scrape
-  // marked sold (Wind Vintage on-hold). Default to Live on each session.
-  const [watchSubTab, setWatchSubTab] = useState("live");
-  // Available tab toggle: when on, sold/inactive items appear inline with
-  // the live ones (with SOLD badges). Useful for reference-history lookups
-  // — pick a ref, flip on, see every example we've ever scraped at the
-  // last asking price. Replaces the standalone Archive tab.
+  // Single Live ↔ Sold filter shared by Available and Watchlist tabs.
+  // false = Live (default), true = Sold. The pill in the filter row
+  // toggles it, and both tabs honour it: on Available it switches the
+  // grid between live listings and sold/inactive history; on Watchlist
+  // it switches the watchlist between items still for sale and ones the
+  // dealer has pulled. Same mental model in both places.
   const [showSoldHistory, setShowSoldHistory] = useState(false);
   // Hidden listings manager (was the Archive tab's hidden-section, now
   // a modal opened from the user dropdown).
@@ -1427,26 +1425,12 @@ export default function Dial() {
             </div>
           ) : (
             <>
-              {/* Live / Sold sub-tab. Sold = items the dealer has pulled or
-                  marked sold; live = still listed and for sale. The saved
-                  snapshot is the durable record for both — you keep the
-                  image, title, and price you saved at even after a dealer
-                  takes the URL down. */}
-              <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
-                {[["live", `Live · ${watchLive.length}`], ["sold", `Sold · ${watchSold.length}`]].map(([key, label]) => (
-                  <button key={key} onClick={() => setWatchSubTab(key)} style={{
-                    padding: "4px 10px", borderRadius: 14, cursor: "pointer",
-                    fontFamily: "inherit", fontSize: 11,
-                    border: "0.5px solid var(--border)",
-                    background: watchSubTab === key ? "var(--surface)" : "transparent",
-                    color: watchSubTab === key ? "var(--text1)" : "var(--text3)",
-                    fontWeight: watchSubTab === key ? 500 : 400,
-                  }}>{label}</button>
-                ))}
-              </div>
+              {/* Live/Sold split is driven by the Live↔Sold pill in the
+                  top filter row (shared with Available). No inner
+                  segmented control here anymore. */}
               {(() => {
-                const view = watchSubTab === "sold" ? watchSold : watchLive;
-                const totalForView = watchSubTab === "sold"
+                const view = showSoldHistory ? watchSold : watchLive;
+                const totalForView = showSoldHistory
                   ? Object.values(watchlist).filter(it => {
                       const live = liveStateById.get(it.id);
                       return !live || !!live.sold;
@@ -1471,10 +1455,10 @@ export default function Dial() {
                             price: item.savedPrice,
                             currency: item.savedCurrency || "USD",
                             priceUSD: item.savedPriceUSD || item.savedPrice,
-                            // Force the SOLD badge on items in the Sold sub-tab.
+                            // Force the SOLD badge on items in the Sold view.
                             // The saved snapshot's own `sold` flag reflects state
                             // at save time; we want the current state to win.
-                            sold: watchSubTab === "sold",
+                            sold: showSoldHistory,
                           }}
                           wished={true}
                           onWish={handleWish}
@@ -1484,15 +1468,15 @@ export default function Dial() {
                       {view.length === 0 && (
                         <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
                           {totalForView === 0
-                            ? (watchSubTab === "sold"
+                            ? (showSoldHistory
                                 ? "No watchlisted items have sold yet."
-                                : "All your saved items have sold or been pulled. Check the Sold tab.")
+                                : "All your saved items have sold or been pulled. Tap the Live pill above to switch to Sold.")
                             : "No saved watches match your filters"}
                         </div>
                       )}
                     </div>
                     <div style={{ padding: "14px 0 0", fontSize: 11, color: "var(--text3)", textAlign: "center" }}>
-                      {watchSubTab === "sold"
+                      {showSoldHistory
                         ? "Prices and links shown are from the moment you saved each listing."
                         : "Prices saved at time of adding to watchlist."}
                     </div>
@@ -1912,10 +1896,33 @@ export default function Dial() {
     overflowY: "auto",
   };
 
-  const filterRowJSX = (
+  const filterRowJSX = (() => {
+    // Live/Sold counts reflect the current set of items minus user-hidden
+    // ones, but BEFORE the live/sold filter itself is applied. So flipping
+    // Live↔Sold doesn't make either count drop to 0.
+    const liveTotalForPill = tab === "watchlist"
+      ? Object.values(watchlist).filter(it => {
+          const live = liveStateById.get(it.id);
+          return live && !live.sold;
+        }).length
+      : items.filter(i => !i.sold && !hidden[i.id]).length;
+    const soldTotalForPill = tab === "watchlist"
+      ? Object.values(watchlist).filter(it => {
+          const live = liveStateById.get(it.id);
+          return !live || !!live.sold;
+        }).length
+      : items.filter(i =>  i.sold && !hidden[i.id]).length;
+    return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
                   borderBottom: "0.5px solid var(--border)", flexShrink: 0,
                   flexWrap: "wrap", position: "relative" }}>
+      {/* Live ↔ Sold — single pill, click to flip. Always first in the
+          row. Counts reflect what's available in each state. */}
+      <button onClick={() => setShowSoldHistory(s => !s)} style={pillBase(showSoldHistory)}
+        title={showSoldHistory ? "Switch to live listings" : "Switch to sold history"}>
+        {showSoldHistory ? `Sold · ${soldTotalForPill}` : `Live · ${liveTotalForPill}`}
+      </button>
+
       {/* Sort */}
       <div style={{ position: "relative" }}>
         {(() => {
@@ -2065,39 +2072,9 @@ export default function Dial() {
         )}
       </div>
 
-      {/* New / recency */}
-      <div style={{ position: "relative" }}>
-        <button onClick={() => setActiveFilterPop(p => p === "new" ? null : "new")} style={pillBase(newDays > 0)}>
-          New{newDays > 0 ? ` · ${newDays === 1 ? "today" : newDays === 3 ? "3d" : newDays + "d"}` : ""} ▾
-        </button>
-        {activeFilterPop === "new" && popShell(
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {[[0, "Any time"], [1, `Today${newCounts[1] ? ` (${newCounts[1]})` : ""}`],
-              [3, `Last 3 days${newCounts[3] ? ` (${newCounts[3]})` : ""}`],
-              [7, `This week${newCounts[7] ? ` (${newCounts[7]})` : ""}`]
-            ].map(([days, lbl]) => (
-              <button key={days} onClick={() => { setNewDays(days); setActiveFilterPop(null); }} style={{
-                textAlign: "left", padding: "8px 10px", borderRadius: 6, border: "none",
-                background: newDays === days ? "var(--surface)" : "transparent",
-                color: "var(--text1)", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              }}>{lbl}{newDays === days ? "  ✓" : ""}</button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Status: single pill that flips between Live and Sold. Label shows
-          the current state; tap to switch to the other. */}
-      {tab === "listings" && (() => {
-        const liveTotal = items.filter(i => !i.sold && !hidden[i.id]).length;
-        const soldTotal = items.filter(i =>  i.sold && !hidden[i.id]).length;
-        return (
-          <button onClick={() => setShowSoldHistory(s => !s)} style={pillBase(showSoldHistory)}
-            title={showSoldHistory ? "Switch to live listings" : "Switch to sold history"}>
-            {showSoldHistory ? `Sold · ${soldTotal}` : `Live · ${liveTotal}`}
-          </button>
-        );
-      })()}
+      {/* The "New" pill was retired — recency is now visualised as
+          age-bucket dividers in the grid (Today / 3 days / This week /
+          Older) when sorting by date. */}
 
       {hasFilters && (
         <button onClick={resetFilters} style={{
@@ -2110,7 +2087,8 @@ export default function Dial() {
         }}>× Clear all</button>
       )}
     </div>
-  );
+    );
+  })();
 
   return (
     <div style={{ ...baseStyle, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
