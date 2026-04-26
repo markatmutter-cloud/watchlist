@@ -1922,18 +1922,20 @@ export default function Dial() {
               boxShadow: showSoldHistory ? "none" : "inset 0 0 0 0.5px var(--border)",
             }}>{showSoldHistory ? "Sold ✓" : "Sold"}</button>
           )}
-          {/* Persistent reset button — sits next to the sort pills so users
-              don't have to open the filter drawer to clear everything. Only
-              rendered when there's actually something to clear. */}
+          {/* Compact "clear filters" — just a small × icon to keep the
+              row from wrapping when filters are set. The text version
+              ("× Clear") got cropped at narrow widths. */}
           {hasFilters && (
-            <button onClick={resetFilters} style={{
-              marginLeft: "auto",
-              fontSize: 13, padding: "7px 12px", borderRadius: 20, cursor: "pointer",
-              fontFamily: "inherit", whiteSpace: "nowrap",
-              border: "none", outline: "none",
-              background: "transparent", color: "#185FA5",
-              boxShadow: "inset 0 0 0 0.5px #185FA5",
-            }}>× Clear</button>
+            <button onClick={resetFilters} aria-label="Clear all filters" title="Clear all filters"
+              style={{
+                marginLeft: "auto", flexShrink: 0,
+                width: 32, height: 32, borderRadius: "50%",
+                border: "none", outline: "none", cursor: "pointer",
+                fontFamily: "inherit", fontSize: 16, lineHeight: 1, padding: 0,
+                background: "transparent", color: "#185FA5",
+                boxShadow: "inset 0 0 0 0.5px #185FA5",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>×</button>
           )}
         </div>
         )}
