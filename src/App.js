@@ -289,14 +289,14 @@ export default function Dial() {
   const [trackedLotsState, setTrackedLotsState] = useState({});
   // Sub-tab inside Watchlist > Auction lots: upcoming vs past.
   const [auctionLotSubTab, setAuctionLotSubTab] = useState("upcoming");
-  // Top-level toggle on the Watchlist tab between dealer listings and
-  // auction lots. Persisted in localStorage so users land back where
-  // they left off — auction lots are time-sensitive, so a returning
-  // user mid-auction shouldn't have to flip again.
+  // Sub-tab on the Watchlist tab. Three values: "listings" (dealer
+  // items you've hearted), "lots" (tracked auction lots), "searches"
+  // (saved searches editor). Persisted in localStorage so a returning
+  // user lands back where they left off.
   const [watchTopTab, setWatchTopTab] = useState(() => {
     try {
       const v = localStorage.getItem("dial_watch_top_tab");
-      return v === "lots" ? "lots" : "listings";
+      return ["lots", "searches"].includes(v) ? v : "listings";
     } catch { return "listings"; }
   });
   useEffect(() => {
@@ -616,15 +616,43 @@ export default function Dial() {
     if (!lot.auction_end) return false;
     return new Date(lot.auction_end).getTime() < nowMs;
   };
+  // Sort tracked lots by the same `sort` state Available + Watchlist use.
+  // For lots, "price" maps to the most-relevant figure: hammer if sold,
+  // current bid if there is one, else the estimate-low. Date sort uses
+  // auction_end (soonest first by default for upcoming, latest first
+  // for past so the most recent hammer leads).
+  const lotSortValue = (l) => {
+    if (l._pending) return null;
+    if (l.sold_price_usd != null) return l.sold_price_usd;
+    if (l.current_bid_usd != null) return l.current_bid_usd;
+    if (l.estimate_low_usd != null) return l.estimate_low_usd;
+    return null;
+  };
+  const sortLots = (arr, isPast) => arr.slice().sort((a, b) => {
+    if (sort === "price-asc" || sort === "price-desc") {
+      const av = lotSortValue(a), bv = lotSortValue(b);
+      // Push pending/no-price lots to the end regardless of asc/desc.
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      return sort === "price-asc" ? av - bv : bv - av;
+    }
+    if (sort === "date-asc") {
+      // Oldest end-time first, regardless of section.
+      return (a.auction_end || "").localeCompare(b.auction_end || "");
+    }
+    // "date" (newest first): for upcoming, that means soonest-ending
+    // first (most time-sensitive); for past, latest-ended first.
+    if (isPast) return (b.auction_end || "").localeCompare(a.auction_end || "");
+    return (a.auction_end || "9").localeCompare(b.auction_end || "9");
+  });
   const trackedLotsUpcoming = useMemo(
-    () => trackedLots.filter(l => !lotIsPast(l)).sort((a, b) =>
-      (a.auction_end || "9").localeCompare(b.auction_end || "9")),
-    [trackedLots]
+    () => sortLots(trackedLots.filter(l => !lotIsPast(l)), false),
+    [trackedLots, sort]
   );
   const trackedLotsPast = useMemo(
-    () => trackedLots.filter(lotIsPast).sort((a, b) =>
-      (b.auction_end || "").localeCompare(a.auction_end || "")),
-    [trackedLots]
+    () => sortLots(trackedLots.filter(lotIsPast), true),
+    [trackedLots, sort]
   );
 
   // User-hidden items (still live, just told to disappear from Available).
@@ -893,10 +921,56 @@ export default function Dial() {
   );
 
   // ── GRIDS ─────────────────────────────────────────────────────────────────
+  // Walk `visible` and inject divider rows where the age bucket changes.
+  // Only kicks in when sorted by date (newest or oldest first) and not
+  // viewing sold history — date sort is what makes time-bucketing
+  // meaningful. Other sorts (price) get a flat grid as before.
+  const ageBucketLabel = (i) => {
+    const d = daysAgo(freshDate(i));
+    if (d <= 1) return "Today";
+    if (d <= 3) return "Last 3 days";
+    if (d <= 7) return "This week";
+    return "Older";
+  };
+  const visibleWithDividers = (() => {
+    if (showSoldHistory || !(sort === "date" || sort === "date-asc") || visible.length === 0) {
+      return visible.map(it => ({ kind: "card", item: it }));
+    }
+    const out = [];
+    let last = null;
+    for (const it of visible) {
+      const bucket = ageBucketLabel(it);
+      if (bucket !== last) {
+        // Count how many of allFiltered (not just visible) fall in this
+        // bucket so the label shows the true total per age band, not just
+        // what's currently rendered.
+        const total = allFiltered.filter(x => ageBucketLabel(x) === bucket).length;
+        out.push({ kind: "divider", label: bucket, total });
+        last = bucket;
+      }
+      out.push({ kind: "card", item: it });
+    }
+    return out;
+  })();
+
   const ListingsGrid = () => (
     <>
       <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-        {visible.map(item => <Card key={item.id} item={item} wished={!!watchlist[item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[item.id]} />)}
+        {visibleWithDividers.map((entry, idx) => (
+          entry.kind === "divider" ? (
+            <div key={`div-${idx}-${entry.label}`} style={{
+              gridColumn: "1/-1", padding: idx === 0 ? "0 0 8px" : "20px 0 8px",
+              fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em",
+              color: "var(--text3)",
+              display: "flex", alignItems: "center", gap: 10,
+            }}>
+              <span>{entry.label} · {entry.total}</span>
+              <div style={{ flex: 1, height: "0.5px", background: "var(--border)" }} />
+            </div>
+          ) : (
+            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} />
+          )
+        ))}
         {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>
           {showSoldHistory ? "No sold listings match your filters" : "No watches match your filters"}
         </div>}
@@ -1234,140 +1308,94 @@ export default function Dial() {
 
   // One auction-lot card. Pending state shows just the URL until the
   // scraper fills in details on the next cron run.
+  // Auction lot card — same portrait shape as the regular `Card`
+  // component so the Watchlist Listings and Auction lots grids feel
+  // consistent. Image on top with countdown badge overlay; below the
+  // image: house+lot, title, primary price, sub-line USD/estimate.
   const renderLotCard = (lot) => {
-    if (lot._pending) {
-      return (
-        <div key={lot.url} style={{
-          border: "0.5px solid var(--border)", borderRadius: 12,
-          background: "var(--card-bg)", padding: 14,
-          display: "flex", alignItems: "center", gap: 12,
-        }}>
-          <div style={{ width: 60, height: 60, borderRadius: 8, background: "var(--surface)", flexShrink: 0 }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 4 }}>Pending</div>
-            <div style={{ fontSize: 11, color: "var(--text3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {lot.url}
-            </div>
-            <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 4 }}>
-              Details fetch on next scrape (within ~12 hours).
-            </div>
-          </div>
-          <button onClick={() => removeTrackedLot(lot.url)} aria-label="Remove" title="Stop tracking"
-            style={{ flexShrink: 0, background: "none", border: "none", color: "var(--text3)", cursor: "pointer", fontSize: 18, padding: 6 }}>×</button>
-        </div>
-      );
-    }
-
-    const isPast = lotIsPast(lot);
-    const sold = lot.sold_price !== null && lot.sold_price !== undefined && lot.sold_price !== "";
+    const isPending = !!lot._pending;
+    const isPast = !isPending && lotIsPast(lot);
+    const sold = !isPending && lot.sold_price !== null && lot.sold_price !== undefined && lot.sold_price !== "";
     const currentBid = lot.current_bid;
-    const estimateLow = fmtLotPrice(lot.estimate_low, lot.currency);
-    const estimateHigh = fmtLotPrice(lot.estimate_high, lot.currency);
-    const estimate = (estimateLow && estimateHigh) ? `Est. ${estimateLow} – ${estimateHigh}` : null;
-    const liveBid = sold
-      ? `Hammer ${fmtLotPrice(lot.sold_price, lot.currency)}`
-      : (currentBid !== null && currentBid !== undefined && currentBid !== ""
-          ? `Bid ${fmtLotPrice(currentBid, lot.currency)}`
-          : (lot.starting_price !== null && lot.starting_price !== undefined
-              ? `Start ${fmtLotPrice(lot.starting_price, lot.currency)}`
-              : null));
-    // USD equivalent for non-USD lots — keeps the native amount as the
-    // primary number and shows the conversion underneath, same pattern
-    // as GBP listings on the Available tab.
     const showUsd = lot.currency && lot.currency.toUpperCase() !== "USD";
-    const usdEquiv = showUsd && (
+
+    const primaryNative = isPending ? "—"
+      : sold ? fmtLotPrice(lot.sold_price, lot.currency)
+      : (currentBid !== null && currentBid !== undefined && currentBid !== ""
+          ? fmtLotPrice(currentBid, lot.currency)
+          : (lot.starting_price !== null && lot.starting_price !== undefined
+              ? fmtLotPrice(lot.starting_price, lot.currency)
+              : "—"));
+    const primaryLabel = isPending ? "Pending"
+      : sold ? "HAMMER"
+      : (currentBid !== null && currentBid !== undefined && currentBid !== "" ? "BID" : "START");
+    const primaryUsd = !isPending && showUsd && (
       sold ? lot.sold_price_usd
         : (currentBid !== null && currentBid !== undefined && currentBid !== ""
            ? lot.current_bid_usd
-           : (lot.estimate_low_usd && lot.estimate_high_usd
-              ? `${Math.round(lot.estimate_low_usd).toLocaleString()} – ${Math.round(lot.estimate_high_usd).toLocaleString()}`
-              : lot.starting_price_usd))
+           : lot.starting_price_usd)
     );
-    const usdLabel = showUsd && usdEquiv
-      ? (typeof usdEquiv === "number" ? `~$${Math.round(usdEquiv).toLocaleString()}` : `~$${usdEquiv}`)
-      : null;
+    const estimateLow = fmtLotPrice(lot.estimate_low, lot.currency);
+    const estimateHigh = fmtLotPrice(lot.estimate_high, lot.currency);
+    const estimateLine = (estimateLow && estimateHigh) ? `Est. ${estimateLow}–${estimateHigh}` : null;
 
-    // Three-data-block layout uses the full row width: title gets the
-    // left column, then three labelled blocks (Bid/Hammer · Estimate ·
-    // Countdown) flow inline at desktop widths and stack at narrow
-    // mobile widths via flex-wrap. Each block is a label + a value so
-    // the meaning is unambiguous without relying on the user inferring
-    // it from formatting.
-    const Block = ({ label, value, sub, valueColor }) => (
-      <div style={{ minWidth: 100 }}>
-        <div style={{ fontSize: 9, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginBottom: 2 }}>
-          {label}
-        </div>
-        <div style={{ fontSize: 13, fontWeight: 500, color: valueColor || "var(--text1)" }}>
-          {value}
-        </div>
-        {sub && <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 1 }}>{sub}</div>}
-      </div>
-    );
-
-    const bidLabel = sold ? "Hammer" : (currentBid !== null && currentBid !== undefined && currentBid !== "" ? "Current bid" : "Starting price");
-    const bidValue = sold
-      ? fmtLotPrice(lot.sold_price, lot.currency)
-      : (currentBid !== null && currentBid !== undefined && currentBid !== ""
-          ? fmtLotPrice(currentBid, lot.currency)
-          : (lot.starting_price !== null && lot.starting_price !== undefined ? fmtLotPrice(lot.starting_price, lot.currency) : "—"));
-    const bidUsd = showUsd && (sold ? lot.sold_price_usd : (currentBid ?? lot.starting_price_usd));
+    const countdownLabel = lot.auction_end ? fmtCountdown(lot.auction_end) : null;
+    const countdownColor = isPast ? "rgba(0,0,0,0.55)" : "rgba(24,95,165,0.92)";
 
     return (
       <div key={lot.url} style={{
-        border: "0.5px solid var(--border)", borderRadius: 12,
-        background: "var(--card-bg)", overflow: "hidden",
-        display: "flex", alignItems: "stretch",
+        background: "var(--card-bg)", display: "flex", flexDirection: "column",
+        position: "relative", minWidth: 0, overflow: "hidden",
       }}>
         <a href={lot.url} target="_blank" rel="noopener noreferrer"
-          style={{ width: 96, flexShrink: 0, background: "var(--surface)", display: "block", alignSelf: "stretch" }}>
-          {lot.image && (
-            <img src={lot.image} alt={lot.title || ""}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          )}
+          style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
+          <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: "var(--surface)" }}>
+            {lot.image && (
+              <img src={lot.image} alt={lot.title || ""}
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                loading="lazy" />
+            )}
+            {/* Status pill in top-left: SOLD, ENDED, or countdown. */}
+            {sold ? (
+              <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>
+            ) : countdownLabel ? (
+              <div style={{ position: "absolute", top: 6, left: 6, background: countdownColor, color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.04em", fontWeight: 600 }}>
+                {isPast ? "ENDED" : countdownLabel.toUpperCase()}
+              </div>
+            ) : isPending ? (
+              <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.5)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>PENDING</div>
+            ) : null}
+          </div>
+          <div style={{ padding: compact ? "5px 7px 8px" : "7px 9px 10px" }}>
+            <div style={{ fontSize: compact ? 8 : 9, color: "var(--text3)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              {lot.house || "—"}{lot.lot_number ? ` · Lot ${lot.lot_number}` : ""}
+            </div>
+            <div style={{ fontSize: compact ? 10 : 12, fontWeight: 500, lineHeight: 1.3, marginBottom: 4, color: "var(--text1)",
+                        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: compact ? 26 : 32 }}>
+              {lot.title || (isPending ? "Fetching…" : "—")}
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <span style={{ fontSize: 8, color: "var(--text3)", letterSpacing: "0.05em", fontWeight: 600 }}>{primaryLabel}</span>
+              <span style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: sold ? "#1b8f3a" : "var(--text1)" }}>{primaryNative}</span>
+            </div>
+            {/* Sub-line: USD equivalent of the primary price (when non-USD)
+                OR the estimate range when there's no bid yet. Always one
+                line tall so the cards line up in the grid. */}
+            <div style={{ fontSize: 9, color: "var(--text3)", minHeight: 12 }}>
+              {primaryUsd ? `~$${Math.round(primaryUsd).toLocaleString()}` : (estimateLine || " ")}
+            </div>
+          </div>
         </a>
-        <div style={{ flex: 1, minWidth: 0, padding: "12px 16px",
-                    display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-          {/* Title column: house · lot, then watch title. Min-width keeps
-              it from shrinking too far at narrow widths. */}
-          <a href={lot.url} target="_blank" rel="noopener noreferrer"
-            style={{ flex: "1 1 240px", minWidth: 200,
-                    textDecoration: "none", color: "inherit" }}>
-            <div style={{ fontSize: 10, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
-              {lot.house}{lot.lot_number ? ` · Lot ${lot.lot_number}` : ""}
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)", lineHeight: 1.3,
-                        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-              {lot.title || "—"}
-            </div>
-          </a>
-
-          <Block
-            label={bidLabel}
-            value={bidValue}
-            sub={bidUsd ? `~$${Math.round(bidUsd).toLocaleString()}` : null}
-            valueColor={sold ? "#1b8f3a" : undefined}
-          />
-
-          {(estimateLow && estimateHigh) && (
-            <Block
-              label="Estimate"
-              value={`${estimateLow} – ${estimateHigh}`}
-              sub={lot.estimate_low_usd && lot.estimate_high_usd ? `~$${Math.round(lot.estimate_low_usd).toLocaleString()}–${Math.round(lot.estimate_high_usd).toLocaleString()}` : null}
-            />
-          )}
-
-          {lot.auction_end && (
-            <Block
-              label={isPast ? "Auction" : "Time left"}
-              value={fmtCountdown(lot.auction_end)}
-              valueColor={isPast ? "var(--text3)" : "#185FA5"}
-            />
-          )}
-        </div>
-        <button onClick={() => removeTrackedLot(lot.url)} aria-label="Remove" title="Stop tracking"
-          style={{ flexShrink: 0, background: "none", border: "none", borderLeft: "0.5px solid var(--border)",
-                  color: "var(--text3)", cursor: "pointer", fontSize: 16, padding: "0 12px" }}>×</button>
+        {/* × stop-tracking, top-right where the heart sits on regular cards. */}
+        <button onClick={() => removeTrackedLot(lot.url)} aria-label="Stop tracking" title="Stop tracking"
+          style={{
+            position: "absolute", top: 6, right: 6,
+            width: 22, height: 22, borderRadius: "50%",
+            background: "rgba(255,255,255,0.92)", border: "none", cursor: "pointer",
+            color: "#444", fontSize: 14, lineHeight: 1, padding: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.18)",
+          }}>×</button>
       </div>
     );
   };
@@ -1387,6 +1415,7 @@ export default function Dial() {
             {[
               ["listings", `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
               ["lots",     `Auction lots${trackedLots.length > 0 ? ` · ${trackedLots.length}` : ""}`],
+              ["searches", `Searches${userSearches.length > 0 ? ` · ${userSearches.length}` : ""}`],
             ].map(([key, label]) => (
               // Subordinate to the top tabs above: underline-style instead
               // of a filled pill so the visual hierarchy reads
@@ -1550,7 +1579,7 @@ export default function Dial() {
                     }}>{label}</button>
                   ))}
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
                   {(auctionLotSubTab === "past" ? trackedLotsPast : trackedLotsUpcoming).map(renderLotCard)}
                   {(auctionLotSubTab === "past" ? trackedLotsPast : trackedLotsUpcoming).length === 0 && (
                     <div style={{ padding: "24px 0", textAlign: "center", color: "var(--text3)", fontSize: 12 }}>
@@ -1562,6 +1591,10 @@ export default function Dial() {
             )}
           </div>
           )}
+
+          {/* Searches sub-tab — promoted from a top-level tab into the
+              Watchlist tab so all per-user content lives in one place. */}
+          {watchTopTab === "searches" && searchesTabJSX}
         </>
       )}
     </div>
@@ -1602,7 +1635,7 @@ export default function Dial() {
               </button>
             )}
           </div>
-          {tab !== "searches" && (
+          {!(tab === "watchlist" && watchTopTab === "searches") && (
             <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} aria-label="Filters" style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <FilterIcon />
             </button>
@@ -1657,7 +1690,7 @@ export default function Dial() {
         </div>
         {/* Sort/source/sold/clear pill row — only relevant for tabs that
             have a list to filter. Searches tab doesn't use any of these. */}
-        {tab !== "searches" && (
+        {!(tab === "watchlist" && watchTopTab === "searches") && (
         <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center" }}>
           <span style={{ fontSize: 11, color: "var(--text3)", marginRight: 2 }}>{allFiltered.length}</span>
           {/* Date sort pill */}
@@ -1740,7 +1773,7 @@ export default function Dial() {
         </div>
         )}
         {/* Source picker dropdown */}
-        {tab !== "searches" && sourcePickerOpen && (
+        {!(tab === "watchlist" && watchTopTab === "searches") && sourcePickerOpen && (
           <div style={{ borderBottom: "0.5px solid var(--border)", padding: "8px 14px 10px", background: "var(--surface)" }}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {SOURCES.map(s => (
@@ -1757,14 +1790,14 @@ export default function Dial() {
         )}
         </div>
         <div style={{ padding: "12px 14px 100px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "searches" ? searchesTabJSX : watchlistTabJSX}
+          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : watchlistTabJSX}
         </div>
         {/* Bottom tab bar. The container reserves the iOS home-indicator
             safe area PLUS a fixed extra padding, so the buttons aren't
             hugging the home bar when the app is launched standalone from
             the home screen. */}
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 14px)" }}>
-          {[["listings", "Available"], ["auctions", "Auctions"], ["searches", "Searches"], ["watchlist", "Watchlist"]].map(([key, label]) => (
+          {[["listings", "Available"], ["auctions", "Auctions"], ["watchlist", "Watchlist"]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "12px 0 14px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               {tab === key
                 ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5" }} />
@@ -2097,7 +2130,7 @@ export default function Dial() {
           sidebar and the content area so the title is always visible
           even when the sidebar is collapsed. */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-        {tab !== "searches" && sidebarToggleJSX}
+        {!(tab === "watchlist" && watchTopTab === "searches") && sidebarToggleJSX}
         {/* Watchlist title doubles as a "home" link — click to jump to
             Available. */}
         <button onClick={() => { setTab("listings"); setPage(1); }}
@@ -2108,7 +2141,7 @@ export default function Dial() {
           Watchlist
         </button>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
-          {[["listings", "Available"], ["auctions", "Auctions"], ["searches", "Searches"], ["watchlist", "Watchlist"]].map(([key, label]) => (
+          {[["listings", "Available"], ["auctions", "Auctions"], ["watchlist", "Watchlist"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,
@@ -2195,7 +2228,13 @@ export default function Dial() {
       </div>
       {/* Filter pill row — sits below the top bar, above the content area.
           Only relevant on tabs that filter (Available + Watchlist). */}
-      {(tab === "listings" || tab === "watchlist") && filterRowJSX}
+      {/* Filter row only on tabs/sub-tabs that filter:
+          • Available — always
+          • Watchlist > Listings — yes
+          • Watchlist > Auction lots — yes (sort still applies, Live/Sold split too)
+          • Watchlist > Searches — no, the saved-searches list has its own controls */}
+      {(tab === "listings"
+        || (tab === "watchlist" && watchTopTab !== "searches")) && filterRowJSX}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
         {/* The desktop sidebar previously held all the filters. Replaced
             in the April '26 filter-consolidation pass by the top
@@ -2204,7 +2243,7 @@ export default function Dial() {
             resize handlers) is still defined further up so we can revert
             quickly if the new pattern doesn't pan out. */}
         <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : tab === "searches" ? searchesTabJSX : watchlistTabJSX}
+          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : watchlistTabJSX}
         </div>
       </div>
       {hiddenModalJSX}
