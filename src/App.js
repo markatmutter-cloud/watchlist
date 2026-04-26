@@ -1877,7 +1877,12 @@ export default function Dial() {
           {authJSX}
         </div>
         {/* Sort/source/sold/clear pill row — only relevant for tabs that
-            have a list to filter. Searches tab doesn't use any of these. */}
+            have a list to filter. On Searches sub-tab we still render an
+            empty placeholder of the same height so the content below
+            doesn't jump up when switching sub-tabs. */}
+        {tab === "watchlist" && watchTopTab === "searches" && (
+          <div style={{ height: 41, borderBottom: "0.5px solid var(--border)" }} />
+        )}
         {!(tab === "watchlist" && watchTopTab === "searches") && (
         <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center" }}>
           <span style={{ fontSize: 11, color: "var(--text3)", marginRight: 2 }}>{allFiltered.length}</span>
@@ -2422,9 +2427,14 @@ export default function Dial() {
           • Available — always
           • Watchlist > Listings — yes
           • Watchlist > Auction lots — yes (sort still applies, Live/Sold split too)
-          • Watchlist > Searches — no, the saved-searches list has its own controls */}
-      {(tab === "listings"
-        || (tab === "watchlist" && watchTopTab !== "searches")) && filterRowJSX}
+          • Watchlist > Searches — render an empty placeholder of the
+            same height so the content area doesn't jump up when
+            switching sub-tabs. */}
+      {(tab === "listings" || (tab === "watchlist" && watchTopTab !== "searches"))
+        ? filterRowJSX
+        : (tab === "watchlist"
+            ? <div style={{ height: 49, borderBottom: "0.5px solid var(--border)", flexShrink: 0 }} />
+            : null)}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
         {/* The desktop sidebar previously held all the filters. Replaced
             in the April '26 filter-consolidation pass by the top
