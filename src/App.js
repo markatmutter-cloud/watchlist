@@ -1773,7 +1773,9 @@ export default function Dial() {
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px 6px", borderBottom: "0.5px solid var(--border)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 0 }}>
             <SearchIcon />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 14, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}
+              placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 14, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
             {search && (
               <button onClick={() => setSearch("")} aria-label="Clear search"
                 style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer",
@@ -2320,7 +2322,9 @@ export default function Dial() {
         <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 8, padding: "7px 12px", width: "100%", maxWidth: 640 }}>
             <SearchIcon />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}
+              placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
             {search && (
               <button onClick={() => setSearch("")} aria-label="Clear search"
                 style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer",

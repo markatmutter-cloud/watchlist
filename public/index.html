@@ -2,7 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <!-- viewport-fit=cover lets the page extend behind the iPhone status
+         bar / dynamic island so the theme-color tint reads as a green
+         header rather than a separate stripe. Combine with
+         env(safe-area-inset-top) padding in CSS to keep content out
+         from under the status bar. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
     <title>Watchlist</title>
     <link rel="apple-touch-icon" sizes="1024x1024" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
