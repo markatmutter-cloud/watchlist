@@ -53,7 +53,7 @@ async function fetchImage(url) {
   let host;
   try { host = new URL(url).hostname; } catch { return null; }
   const headers = {
-    "User-Agent": "Mozilla/5.0 (compatible; Dial/1.0; +https://dial-watchlist.vercel.app)",
+    "User-Agent": "Mozilla/5.0 (compatible; Watchlist/1.0; +https://the-watch-list.app)",
     "Accept": "image/*,*/*;q=0.8",
   };
   if (REFERER_BY_HOST[host]) headers["Referer"] = REFERER_BY_HOST[host];

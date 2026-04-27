@@ -4,7 +4,7 @@ Two things to do once before the Antiquorum lot scraper can run end-to-end.
 
 ## 1. Create the Supabase table
 
-Open the Supabase SQL editor for the `dial-watchlist` project and run:
+Open the Supabase SQL editor for the `Watchlist` project and run:
 
 ```sql
 create table if not exists public.tracked_lots (

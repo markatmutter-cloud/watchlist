@@ -1,10 +1,8 @@
 # Watchlist
 
-_(project folder and repo are still named `Dial` — same thing.)_
-
 A personal vintage watch listing aggregator. Watchlist pulls active inventory from a handful of independent dealers I trust, merges it into one browsable feed, and tracks listings across runs so new arrivals, price changes, and disappearances are easily visible. It also tracks upcoming auctions from the houses worth following.
 
-**Live:** [dial-watchlist.vercel.app](https://dial-watchlist.vercel.app)
+**Live:** [the-watch-list.app](https://the-watch-list.app)
 
 Built without a development background — architecture, scrapers, React front-end, Supabase auth/data, and CI/CD all co-authored with [Claude](https://claude.com/claude-code).
 
@@ -20,7 +18,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 ## What it does
 
-- **Available** — aggregates 17 curated dealer sources into one feed (see table below)
+- **Available** — aggregates 19 curated dealer sources into one feed (see table below)
 - **Auctions** — tracks upcoming auctions from 4 houses, grouped by month
 - **Archive** — sold/delisted items (kept around so you can search reference history) and hidden listings
 - **Watchlist** — heart any listing to save it; price-at-save is preserved so you can see drops
@@ -48,7 +46,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
   ┌─────────────────────────────────────────────────────────────┐
   │                  GitHub Actions (cron, daily)               │
   │                                                             │
-  │   17× listing scrapers + 4× auction scrapers (Python)       │
+  │   19× listing scrapers + 4× auction scrapers (Python)       │
   │            │                              │                 │
   │            ▼                              ▼                 │
   │     *_listings.csv               *_auctions.csv             │
@@ -85,7 +83,7 @@ Listings/auctions are static JSON committed to the repo. The only thing behind a
 
 ## Data sources
 
-### Dealers (17)
+### Dealers (19)
 
 All scrapers hit each dealer's existing public endpoint — no credential-protected APIs, no headless browsers where it can be avoided.
 
@@ -108,6 +106,8 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 | DB1983 | Shopify | `/products.json` | GBP |
 | Hairspring | Shopify | `/products.json` | USD |
 | Somlo | Shopify | `/products.json` | GBP |
+| Bulang & Sons | Shopify | collection-scoped `/products.json` | EUR |
+| Watchfid | Custom (WordPress) | WP REST API; images proxied via `/api/img` | EUR |
 
 Tropical Watch is the only source still routed through Browse AI — their site actively blocks scrapers. Every other source is scraped with vanilla `requests`. Browse AI robot ID and API key live in GitHub Secrets, never in the repo.
 
@@ -147,7 +147,8 @@ This means the pipeline is **self-healing**: if a single run misses listings (sc
 
 - **Scrapers:** Python 3.11 with `requests`. No Playwright, no Selenium — Browse AI fills the gap for JS-rendered sources.
 - **Pipeline:** GitHub Actions (ubuntu-latest). Each scraper step uses `continue-on-error: true` so one failing source doesn't kill the batch.
-- **Frontend:** React (Create React App), single-file component, no UI libraries — inline styles only. Now ~1,300 lines and starting to feel that.
+- **Frontend:** React (Create React App), single-file component, no UI libraries — inline styles only. Now ~2,700 lines — overdue for splitting (see "What I'd do differently next" below).
+- **Per-user image persistence:** Hearted listings get their dealer image cached to **Vercel Blob** by `cache_watchlist_images.mjs` (runs once a day inside the auctions workflow). The frontend prefers the cached URL, so favorited cards survive a dealer deleting the original. Listings/auction images aren't cached — auction houses keep theirs up long-term, and caching the full feed isn't worth the storage cost.
 - **Auth + per-user data:** [Supabase](https://supabase.com) — Postgres with row-level security, Google OAuth provider. Free tier; no backend code of my own.
 - **Hosting:** Vercel free tier, auto-deploy from `main`.
 - **Static data:** JSON committed to the repo. At current scale (~1,800 listings, ~2 MB) keeping this in git is cheaper and simpler than running a database for it. Per-user data (which actually needs writes) lives in Supabase.
@@ -157,8 +158,11 @@ This means the pipeline is **self-healing**: if a single run misses listings (sc
 ## Folder layout
 
 ```
-Dial/
-├─ .github/workflows/scrape.yml    # daily cron pipeline
+watchlist/
+├─ .github/workflows/
+│   ├─ scrape-listings.yml         # daily dealer listings pipeline
+│   ├─ scrape-auctions.yml         # daily auctions + tracked-lots + watchlist-image cache
+│   └─ scrape-tropicalwatch.yml    # higher-cadence Browse AI run (TW only)
 ├─ *_scraper.py                    # one file per dealer + auction house
 ├─ merge.py                        # state + listings + auctions enrichment
 ├─ data/                           # generated CSVs, one per source
@@ -224,7 +228,7 @@ The pushed `state.json` / `auctions_state.json` will be updated on completion an
 
 Honest list, since this is a learning project:
 
-- **Extract React components out of `App.js`.** Sub-components defined inside `Dial()` cause unmount/remount on every render — bit me twice already (input focus loss, slider drag breaking). Worked around with JSX-const helpers and callback refs, but the right fix is splitting the component into its own files.
+- **Extract React components out of `App.js`.** Sub-components defined inside the root component cause unmount/remount on every render — bit me twice already (input focus loss, slider drag breaking). Worked around with JSX-const helpers and callback refs, but the right fix is splitting the component into its own files.
 - **Add a verification script.** Fetch each dealer's homepage, compare URL count to `state.json`, flag silent drop-outs. Catches scrape regressions that don't throw errors.
 - **Lot-level auction tracking.** Currently we surface auction *dates* but not individual lots. Would be a meaningful step up but adds a lot of scraper surface area.
 - **Automated tests for `merge.py`'s state transitions** — fixtures with two sequential scrape outputs, asserting the expected ID/firstSeen/priceHistory changes. Only layer of the app where tests would meaningfully prevent regressions.

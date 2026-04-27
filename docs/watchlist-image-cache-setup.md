@@ -6,7 +6,7 @@ the dealer image and uploading to Vercel Blob.
 
 ## SQL
 
-Open the Supabase SQL editor for the `dial-watchlist` project and run:
+Open the Supabase SQL editor for the `Watchlist` project and run:
 
 ```sql
 alter table public.watchlist_items

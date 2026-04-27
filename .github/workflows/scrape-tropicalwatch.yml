@@ -2,7 +2,7 @@ name: Scrape Tropical Watch only
 
 # Manual-trigger-only workflow for refreshing just the Tropical Watch source
 # without touching the other nine. Useful when you've kicked off a fresh Browse
-# AI run on the TW robot and want to pull those specific results into Dial
+# AI run on the TW robot and want to pull those specific results into Watchlist
 # before the next full daily cron.
 #
 # Everything else is left untouched: other CSVs in data/ are unchanged, state.json

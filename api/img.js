@@ -17,6 +17,14 @@ const ALLOWED_HOSTS = new Set([
   "watchfid.com",
 ]);
 
+// Hot-link-protected hosts require their own domain in Referer or the
+// CDN returns 404. Watchfid's .jpg uploads enforce this; their .webp
+// uploads happen to be exempt, which masked the bug for a while.
+const REFERER_BY_HOST = {
+  "www.watchfid.com": "https://www.watchfid.com/",
+  "watchfid.com": "https://www.watchfid.com/",
+};
+
 export default async function handler(req, res) {
   const u = (req.query && req.query.u) || "";
   if (!u) {
@@ -37,14 +45,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Minimal headers. Watchfid's Apache rules return 404 when
-    // Accept includes image/webp, so we don't pass it through. Same
-    // for Referer — we rely on the host allow-list to keep the proxy
-    // from being abused for other purposes.
+    // Minimal headers. Watchfid's Apache rules return 404 when Accept
+    // includes image/webp, so we don't pass it through. Referer is set
+    // per-host above for the dealers that hot-link protect — the host
+    // allow-list keeps the proxy from being abused for other purposes.
+    const headers = {
+      "User-Agent": "Mozilla/5.0 (compatible; Watchlist/1.0; +https://the-watch-list.app)",
+    };
+    if (REFERER_BY_HOST[target.hostname]) {
+      headers["Referer"] = REFERER_BY_HOST[target.hostname];
+    }
     const upstream = await fetch(target.toString(), {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; Dial/1.0; +https://dial-watchlist.vercel.app)",
-      },
+      headers,
       redirect: "follow",
     });
 
