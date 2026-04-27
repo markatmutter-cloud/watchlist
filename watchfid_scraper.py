@@ -76,47 +76,103 @@ def parse_eur_price(s):
     return int(s) if s else None
 
 
-def get_listings():
-    """Return [{"url", "title", "price", "sold"}] from /available-watches/."""
-    print(f"Fetching {LIST_URL}...")
-    r = requests.get(LIST_URL, headers=HEADERS, timeout=20)
-    r.raise_for_status()
-    html = r.text
+AVAILABILITY_TAXONOMY = "/wp-json/wp/v2/availability"
+WATCHES_ENDPOINT = "/wp-json/wp/v2/watch"
 
-    # Each watch card on the page renders a title link followed (further
-    # down the same Elementor row) by a status word ("Available") and a
-    # price block. We anchor on the title link and then scan a window
-    # forward in the HTML for the matching price.
-    title_re = re.compile(
-        r'<a href="(https://www\.watchfid\.com/watch/[a-z0-9-]+/)"\s*>([^<]*(?:<br[^>]*>[^<]*)*)</a>',
-        re.IGNORECASE
-    )
+
+def get_available_term_id():
+    """Look up the term ID for availability=available so the watch query
+    can filter on it. The slug is stable; the ID isn't (depends on the
+    site)."""
+    r = requests.get(BASE + AVAILABILITY_TAXONOMY, headers=HEADERS, timeout=15)
+    r.raise_for_status()
+    for t in r.json():
+        if t.get("slug") == "available":
+            return t.get("id")
+    return None
+
+
+def get_listings():
+    """Pull every watch tagged with availability=available via the WP REST
+    API. The user-facing /available-watches/ page paginates client-side
+    via JetEngine; the REST endpoint exposes the full list in one query
+    and survives layout changes upstream."""
+    term_id = get_available_term_id()
+    if not term_id:
+        raise RuntimeError("availability=available term not found")
+    print(f"Fetching available watches (term id={term_id})...")
+
     out = []
     seen = set()
-    for m in title_re.finditer(html):
-        url = m.group(1)
-        if url in seen:
-            continue
-        seen.add(url)
-        raw_title = m.group(2)
-        title = clean_title(raw_title)
+    page = 1
+    while True:
+        r = requests.get(
+            BASE + WATCHES_ENDPOINT,
+            params={"per_page": 100, "availability": term_id, "page": page, "_embed": "true"},
+            headers=HEADERS, timeout=20,
+        )
+        if r.status_code == 400 and page > 1:
+            break  # past the last page
+        r.raise_for_status()
+        items = r.json()
+        if not items:
+            break
 
-        # Look for the next "Available" / "Reserved" / "Sold" status
-        # token + price within the next ~3KB of HTML (one Elementor card
-        # is ~2.5KB).
-        window = html[m.end():m.end() + 3500]
-        status_m = re.search(r'<span>(Available|Reserved|Sold|On Hold|Pending)</span>', window, re.IGNORECASE)
-        status = status_m.group(1).strip() if status_m else "Available"
-        sold = status.lower() not in ("available",)
+        for w in items:
+            url = w.get("link") or ""
+            if not url or url in seen:
+                continue
+            seen.add(url)
+            title_html = (w.get("title") or {}).get("rendered") or ""
+            title = clean_title(title_html)
+            out.append({
+                "url": url,
+                "title": title,
+                # Price + image come from the detail page — REST doesn't
+                # expose Elementor widget content. Detail-page scrape in
+                # main() handles both.
+                "price": None,
+                "sold": False,  # filtered on the server, all are Available
+            })
 
-        # Price block sits in a text-editor widget right after status.
-        price_m = re.search(r'<div class="elementor-widget-container">\s*€[^\d<]*([\d.,\s]+)', window)
-        price = parse_eur_price(price_m.group(1)) if price_m else None
+        total_pages = int(r.headers.get("X-WP-TotalPages", "1"))
+        if page >= total_pages:
+            break
+        page += 1
+        time.sleep(0.3)
 
-        out.append({"url": url, "title": title, "price": price, "sold": sold})
-
-    print(f"Found {len(out)} watch cards")
+    print(f"Found {len(out)} watches available")
     return out
+
+
+def get_price_and_status(url):
+    """Visit a watch detail page and return (price, sold). Pulled out
+    of the listing flow so the REST-driven enumeration above doesn't
+    need Elementor parsing."""
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=20)
+        r.raise_for_status()
+        html = r.text
+        text_lower = html.lower()
+
+        on_hold_m = re.search(
+            r'(on hold|reserved|under offer|pending|sold)\s*\(item\b',
+            text_lower
+        )
+        inquire = bool(re.search(r'\binquire\s*\(item\b', text_lower))
+        sold = bool(on_hold_m)
+
+        # Price: look for "€ 9.500" pattern anywhere in the rendered text.
+        # Watchfid templates put the EUR amount inside an Elementor
+        # text-editor widget right after the status word.
+        price = None
+        price_m = re.search(r'€[\s\xa0]*([\d.,\s]+)', html)
+        if price_m:
+            price = parse_eur_price(price_m.group(1))
+        return price, sold, inquire
+    except Exception as e:
+        print(f"  detail fetch error: {e}")
+        return None, False, False
 
 
 def get_image(url):
@@ -167,14 +223,18 @@ def main():
     for i, item in enumerate(listings, 1):
         title = item["title"]
         url = item["url"]
-        price = item["price"]
-        sold = item["sold"]
         print(f"[{i}/{len(listings)}] {title[:55]}...", end=" ", flush=True)
 
+        # REST tells us availability; detail page tells us price + image.
+        price, sold, inquire = get_price_and_status(url)
+
         if not price:
-            print("no price, skipped")
-            skipped += 1
-            continue
+            if sold or inquire:
+                price = 0  # surfaced as "Price on request" by the frontend
+            else:
+                print("no price, skipped")
+                skipped += 1
+                continue
 
         img = get_image(url) or ""
         results.append({
@@ -188,8 +248,13 @@ def main():
             "date":        time.strftime("%Y-%m-%d"),
             "sold":        sold,
         })
-        print(f"€{price:,}{' [SOLD]' if sold else ''}")
-        time.sleep(0.4)
+        if price:
+            print(f"€{price:,}{' [SOLD]' if sold else ''}")
+        elif sold:
+            print("[SOLD, no price]")
+        else:
+            print("[Price on request]")
+        time.sleep(0.3)
 
     out_file = "watchfid_listings.csv"
     with open(out_file, "w", newline="", encoding="utf-8") as f:
