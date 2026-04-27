@@ -310,6 +310,7 @@ def main():
         ('data/belmont.csv',              'Belmont Watches',       'USD'),
         ('data/bobswatches.csv',          "Bob's Watches",         'USD'),
         ('data/watchfid.csv',             'Watchfid',              'EUR'),
+        ('data/bulangandsons.csv',        'Bulang & Sons',         'EUR'),
     ]
 
     state = load_state()

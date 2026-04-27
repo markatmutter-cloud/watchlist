@@ -120,11 +120,38 @@ def get_listings():
 
 
 def get_image(url):
-    """Pull the og:image from a detail page. Returns None on miss."""
+    """Return a cross-origin-loadable image URL for the watch detail page.
+
+    Watchfid hot-link-protects their .jpg uploads (returns 404 unless the
+    Referer is watchfid.com), so og:image often points to an unusable
+    .jpg. Their .webp uploads serve fine cross-origin. We prefer those.
+
+    Picture-Books.webp / Picture-Shop.webp / Picture-Watches.webp are
+    section-placeholder images that appear on every page — filtered out.
+    """
     try:
         r = requests.get(url, headers=HEADERS, timeout=20)
         r.raise_for_status()
-        m = re.search(r'<meta property="og:image" content="([^"]+)"', r.text)
+        html = r.text
+
+        # Find webp images in /uploads/, excluding sized variants and the
+        # site-wide placeholders.
+        webps = re.findall(
+            r'https://www\.watchfid\.com/wp-content/uploads/\d{4}/\d{2}/[^\s"\'<>]+\.webp',
+            html
+        )
+        for u in webps:
+            fname = u.rsplit("/", 1)[-1]
+            if re.search(r'-\d+x\d+\.webp$', fname):
+                continue
+            if fname.startswith("Picture-"):
+                continue
+            return u
+
+        # Fallback to og:image (likely a hot-linked-protected .jpg, but
+        # better than nothing — at least the URL is right if Watchfid
+        # ever drops the protection).
+        m = re.search(r'<meta property="og:image" content="([^"]+)"', html)
         if m:
             return m.group(1)
     except Exception as e:

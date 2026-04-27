@@ -99,6 +99,10 @@ jobs:
         continue-on-error: true
         run: python watchfid_scraper.py
 
+      - name: Run Bulang & Sons scraper
+        continue-on-error: true
+        run: python bulangandsons_scraper.py
+
       - name: Run Antiquorum auctions scraper
         continue-on-error: true
         run: python antiquorum_auctions_scraper.py
@@ -147,6 +151,7 @@ jobs:
           [ -f belmont_listings.csv ]             && mv belmont_listings.csv             data/belmont.csv             || echo "belmont missing"
           [ -f bobswatches_listings.csv ]         && mv bobswatches_listings.csv         data/bobswatches.csv         || echo "bobswatches missing"
           [ -f watchfid_listings.csv ]            && mv watchfid_listings.csv            data/watchfid.csv            || echo "watchfid missing"
+          [ -f bulangandsons_listings.csv ]       && mv bulangandsons_listings.csv       data/bulangandsons.csv       || echo "bulangandsons missing"
           [ -f antiquorum_auctions_listings.csv ]   && mv antiquorum_auctions_listings.csv   data/antiquorum_auctions.csv   || echo "antiquorum auctions missing"
           [ -f monacolegend_auctions_listings.csv ] && mv monacolegend_auctions_listings.csv data/monacolegend_auctions.csv || echo "monacolegend auctions missing"
           [ -f phillips_auctions_listings.csv ]   && mv phillips_auctions_listings.csv   data/phillips_auctions.csv   || echo "phillips auctions missing"
