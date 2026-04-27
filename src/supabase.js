@@ -279,7 +279,28 @@ export function useSearches(user) {
     if (error) console.warn('search remove', error);
   }, [user, editor]);
 
-  return { items, editor, setEditor, startAdd, startEdit, cancel, commit, remove };
+  // Direct insert without going through the editor flow — useful for the
+  // "save current search as a favorite" heart button in the search bar.
+  // Returns { error: null } on success, { error: string } otherwise.
+  const quickAdd = useCallback(async (label, query) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const cleanLabel = (label || '').trim();
+    const cleanQuery = (query || '').trim();
+    if (!cleanLabel || !cleanQuery) return { error: 'label and query required' };
+    // Reject exact duplicates so the heart can't accidentally spawn dozens
+    // of identical entries on repeated taps.
+    if (items.some(s => s.query.toLowerCase() === cleanQuery.toLowerCase())) {
+      return { error: 'already saved' };
+    }
+    const { data, error } = await supabase.from('saved_searches')
+      .insert({ user_id: user.id, label: cleanLabel, query: cleanQuery })
+      .select().single();
+    if (error) return { error: error.message };
+    setItems(prev => [...prev, { id: data.id, label: data.label, query: data.query }]);
+    return { error: null };
+  }, [user, items]);
+
+  return { items, editor, setEditor, startAdd, startEdit, cancel, commit, remove, quickAdd };
 }
 
 

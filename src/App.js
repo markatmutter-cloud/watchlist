@@ -373,7 +373,31 @@ export default function Dial() {
     cancel: cancelSearchEdit,
     commit: commitSearch,
     remove: removeSearch,
+    quickAdd: quickAddSearch,
   } = useSearches(user);
+  // "Save current search as a favorite" prompt — opened by the heart
+  // button inside the search input. State is just the label being
+  // typed; the query comes from the live search field.
+  const [favPromptOpen, setFavPromptOpen] = useState(false);
+  const [favPromptLabel, setFavPromptLabel] = useState("");
+  const [favPromptError, setFavPromptError] = useState("");
+  const openFavPrompt = useCallback(() => {
+    setFavPromptLabel(search.trim());
+    setFavPromptError("");
+    setFavPromptOpen(true);
+  }, [search]);
+  const submitFavSearch = useCallback(async () => {
+    const { error } = await quickAddSearch(favPromptLabel, search);
+    if (error) { setFavPromptError(error); return; }
+    setFavPromptOpen(false);
+    setFavPromptLabel("");
+  }, [favPromptLabel, search, quickAddSearch]);
+  // Whether the current search is already a saved favourite.
+  const currentIsSaved = useMemo(() => {
+    const q = (search || "").trim().toLowerCase();
+    if (!q) return false;
+    return userSearches.some(s => (s.query || "").toLowerCase() === q);
+  }, [search, userSearches]);
   const { urls: trackedLotUrls, add: addTrackedLot, remove: removeTrackedLot } = useTrackedLots(user);
   // If there's leftover localStorage data from the pre-Supabase era, we
   // offer to import it after sign-in. Read once at mount so we can tell
@@ -1069,6 +1093,56 @@ export default function Dial() {
           </svg>
           @lagunabeachwatch
         </a>
+      </div>
+    </div>
+  ) : null;
+
+  // Save-current-search modal. Opened by the heart in the search input.
+  // Single-field form (label) — query comes from the live search field.
+  const favSearchModalJSX = favPromptOpen ? (
+    <div onClick={() => setFavPromptOpen(false)} style={{
+      position: "fixed", inset: 0, zIndex: 200,
+      background: "rgba(0,0,0,0.45)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: "var(--bg)", borderRadius: 14,
+        border: "0.5px solid var(--border)",
+        padding: 22, maxWidth: 380, width: "100%",
+        boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text1)" }}>Save search</div>
+          <button onClick={() => setFavPromptOpen(false)} aria-label="Close"
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 22, lineHeight: 1, padding: 4 }}>×</button>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 10 }}>
+          Saving "<b>{search}</b>" — find it again from Watchlist → Searches.
+        </div>
+        <input
+          autoFocus
+          value={favPromptLabel}
+          onChange={e => { setFavPromptLabel(e.target.value); setFavPromptError(""); }}
+          onKeyDown={e => { if (e.key === "Enter") submitFavSearch(); }}
+          placeholder="Name (e.g. Speedmaster pro)"
+          style={{ ...inp, fontSize: 14, marginBottom: 8 }}
+        />
+        {favPromptError && (
+          <div style={{ fontSize: 12, color: "#c0392b", marginBottom: 8 }}>{favPromptError}</div>
+        )}
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button onClick={() => setFavPromptOpen(false)} style={{
+            border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)",
+            padding: "8px 14px", borderRadius: 8, cursor: "pointer",
+            fontFamily: "inherit", fontSize: 13,
+          }}>Cancel</button>
+          <button onClick={submitFavSearch} disabled={!favPromptLabel.trim()} style={{
+            border: "none", background: "#185FA5", color: "#fff",
+            padding: "8px 14px", borderRadius: 8, cursor: "pointer",
+            fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+            opacity: favPromptLabel.trim() ? 1 : 0.5,
+          }}>Save</button>
+        </div>
       </div>
     </div>
   ) : null;
@@ -1791,6 +1865,20 @@ export default function Dial() {
             <input value={search} onChange={e => setSearch(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}
               placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 14, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
+            {search && user && (
+              <button onClick={openFavPrompt} aria-label={currentIsSaved ? "Already saved" : "Save search as favorite"}
+                title={currentIsSaved ? "Saved to favorites" : "Save as favorite search"}
+                disabled={currentIsSaved}
+                style={{ flexShrink: 0, background: "none", border: "none",
+                        cursor: currentIsSaved ? "default" : "pointer",
+                        color: currentIsSaved ? "#185FA5" : "var(--text3)",
+                        padding: 2, fontFamily: "inherit",
+                        display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill={currentIsSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </button>
+            )}
             {search && (
               <button onClick={() => setSearch("")} aria-label="Clear search"
                 style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer",
@@ -2064,6 +2152,7 @@ export default function Dial() {
         )}
         {hiddenModalJSX}
         {aboutModalJSX}
+        {favSearchModalJSX}
       </div>
     );
   }
@@ -2449,6 +2538,7 @@ export default function Dial() {
       </div>
       {hiddenModalJSX}
         {aboutModalJSX}
+        {favSearchModalJSX}
     </div>
   );
 }
