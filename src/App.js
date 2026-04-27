@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useAuth, useWatchlist, useHidden, useSearches, useTrackedLots, importLocalData, isAuthConfigured } from "./supabase";
 
-const LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/listings.json";
-const AUCTIONS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/auctions.json";
-const TRACKED_LOTS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/Dial/main/public/tracked_lots.json";
+const LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/listings.json";
+const AUCTIONS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/auctions.json";
+const TRACKED_LOTS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/tracked_lots.json";
 const PAGE_SIZE = 48;
 // Legacy localStorage keys — kept only for the one-shot import on first
 // sign-in (see importLocalData + the banner in the Watchlist tab). Active
@@ -21,7 +21,7 @@ function initialSidebarWidth() {
 }
 
 // Reference chips are aggregated from the current feed (same pattern as
-// Brand chips) — see REFS useMemo in the Dial component.
+// Brand chips) — see REFS useMemo in the Watchlist component.
 
 
 function fmt(price, currency) {
@@ -54,6 +54,19 @@ function logToPrice(pos) {
   if (pos >= 100) return GLOBAL_MAX;
   const minL = Math.log(500), maxL = Math.log(GLOBAL_MAX);
   return Math.round(Math.exp(minL + (pos / 100) * (maxL - minL)));
+}
+// First non-year 3-6 digit number in a title, used for grouping the
+// watchlist by reference. Mirrors the regex behind the REFS chips.
+function extractRef(title) {
+  const matches = (title || "").match(/\b\d{3,6}(?:\.\d{1,3})?\b/g) || [];
+  for (const m of matches) {
+    if (!m.includes(".")) {
+      const n = parseInt(m, 10);
+      if (n >= 1900 && n <= 2099 && m.length === 4) continue;
+    }
+    return m;
+  }
+  return null;
 }
 function useWidth() {
   const [w, setW] = useState(window.innerWidth);
@@ -258,7 +271,7 @@ function SidebarChip({ label, active, onClick, blue }) {
   );
 }
 
-export default function Dial() {
+export default function Watchlist() {
   const screenWidth = useWidth();
   const sysDark = useSystemDark();
   const isMobile = screenWidth < 640;
@@ -385,6 +398,27 @@ export default function Dial() {
   // Hidden listings manager (was the Archive tab's hidden-section, now
   // a modal opened from the user dropdown).
   const [hiddenModalOpen, setHiddenModalOpen] = useState(false);
+  // Watchlist > Listings status filter. Tri-state on top of the
+  // global Live/Sold pill so you can see live + sold side-by-side
+  // (useful when the same reference exists in both buckets). Persisted
+  // so the user's preference survives reloads.
+  const [watchStatusMode, setWatchStatusMode] = useState(() => {
+    try { return localStorage.getItem("watchlist_status_v1") || "live"; }
+    catch { return "live"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("watchlist_status_v1", watchStatusMode); } catch {}
+  }, [watchStatusMode]);
+  // Watchlist > Listings grouping. "none" preserves the existing flat
+  // grid; brand/source/ref render sectioned grids. Persisted so a
+  // chosen grouping sticks across visits.
+  const [watchGroupBy, setWatchGroupBy] = useState(() => {
+    try { return localStorage.getItem("watchlist_group_v1") || "none"; }
+    catch { return "none"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("watchlist_group_v1", watchGroupBy); } catch {}
+  }, [watchGroupBy]);
   // Bulk-edit mode for the Watchlist > Listings grid. When on, cards
   // show a checkbox overlay; tapping a card toggles selection rather
   // than opening the listing. Selection set + state below.
@@ -725,6 +759,40 @@ export default function Dial() {
   const watchLive = useMemo(() => watchItems.filter(i => !i._isSold), [watchItems]);
   const watchSold = useMemo(() => watchItems.filter(i =>  i._isSold), [watchItems]);
 
+  // Status-filtered slice: "live" / "sold" / "all". Drives the Watchlist
+  // > Listings sub-tab. Sort + filters from the existing controls flow
+  // through watchItems already.
+  const watchView = useMemo(() => {
+    if (watchStatusMode === "all")  return watchItems;
+    if (watchStatusMode === "sold") return watchSold;
+    return watchLive;
+  }, [watchStatusMode, watchItems, watchLive, watchSold]);
+
+  // Group watchView into [groupKey, items[]] entries for sectioned
+  // rendering. Items missing the field land in "Other". Group order:
+  // ref → most populous first (so the references with the most matches
+  // bubble up); brand/source → A→Z. Within each group, the existing
+  // sort from watchItems is preserved.
+  const watchGroups = useMemo(() => {
+    if (watchGroupBy === "none") return [["", watchView]];
+    const map = new Map();
+    for (const item of watchView) {
+      let key;
+      if (watchGroupBy === "brand")       key = item.brand || "Other";
+      else if (watchGroupBy === "source") key = item.source || "Other";
+      else /* ref */                      key = extractRef(item.ref) || "Other";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(item);
+    }
+    const entries = [...map.entries()];
+    if (watchGroupBy === "ref") {
+      entries.sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+    } else {
+      entries.sort((a, b) => a[0].localeCompare(b[0]));
+    }
+    return entries;
+  }, [watchView, watchGroupBy]);
+
   // Tracked auction lots: join user's saved URLs against the global
   // scraped state. URLs without scraped data yet show as a placeholder
   // ("Fetching details on next scrape").
@@ -966,7 +1034,7 @@ export default function Dial() {
   // ── SIDEBAR FILTER PANEL (desktop only) ──────────────────────────────────
   // NOTE: defined as a JSX const rather than a function component so the DOM
   // nodes (especially the price text inputs) aren't rebuilt on every parent
-  // render. Function components defined inside Dial() get a new reference per
+  // render. Function components defined inside Watchlist() get a new reference per
   // render and React treats them as a new component type — which was killing
   // input focus mid-keystroke.
   // Sidebar section heading style — lifted out so all headings match and
@@ -1646,9 +1714,12 @@ export default function Dial() {
           : (lot.starting_price !== null && lot.starting_price !== undefined
               ? fmtLotPrice(lot.starting_price, lot.currency)
               : "—"));
+    // Pre-hammer, the starting price IS the current price until someone
+    // bids. Collapsing "BID" and "START" into one "CURRENT" label so the
+    // card reads consistently whether bidding has opened or not.
     const primaryLabel = isPending ? "Pending"
       : sold ? "HAMMER"
-      : (currentBid !== null && currentBid !== undefined && currentBid !== "" ? "BID" : "START");
+      : "CURRENT";
     const primaryUsd = !isPending && showUsd && (
       sold ? lot.sold_price_usd
         : (currentBid !== null && currentBid !== undefined && currentBid !== ""
@@ -1765,10 +1836,39 @@ export default function Dial() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 8, flexWrap: "wrap" }}>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>Watchlist</div>
             {watchCount > 0 && !watchSelectMode && (
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 11, color: "var(--text3)" }}>
-                  {watchLive.length} live · {watchSold.length} sold
-                </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                {/* Tri-state status: Live / Sold / All. Counts on each
+                    segment double as the breakdown line we used to show
+                    separately. Local to this sub-tab — the global Live↔Sold
+                    pill still drives Available and Lots. */}
+                <div style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
+                  {[
+                    ["live", `Live · ${watchLive.length}`],
+                    ["sold", `Sold · ${watchSold.length}`],
+                    ["all",  `All · ${watchItems.length}`],
+                  ].map(([k, label], idx) => (
+                    <button key={k} onClick={() => setWatchStatusMode(k)} style={{
+                      border: "none",
+                      borderLeft: idx === 0 ? "none" : "0.5px solid var(--border)",
+                      padding: "4px 10px", fontSize: 11, cursor: "pointer",
+                      background: watchStatusMode === k ? "var(--text1)" : "transparent",
+                      color: watchStatusMode === k ? "var(--bg)" : "var(--text2)",
+                      fontFamily: "inherit",
+                    }}>{label}</button>
+                  ))}
+                </div>
+                <select value={watchGroupBy} onChange={e => setWatchGroupBy(e.target.value)}
+                  aria-label="Group by"
+                  style={{
+                    fontSize: 11, padding: "4px 8px", borderRadius: 8,
+                    border: "0.5px solid var(--border)", background: "var(--card-bg)",
+                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                  }}>
+                  <option value="none">No grouping</option>
+                  <option value="brand">Group: Brand</option>
+                  <option value="source">Group: Source</option>
+                  <option value="ref">Group: Reference</option>
+                </select>
                 <button onClick={() => setWatchSelectMode(true)} style={{
                   fontSize: 11, padding: "4px 10px", borderRadius: 6,
                   border: "0.5px solid var(--border)", background: "transparent",
@@ -1813,92 +1913,107 @@ export default function Dial() {
             </div>
           ) : (
             <>
-              {/* Live/Sold split is driven by the Live↔Sold pill in the
-                  top filter row (shared with Available). No inner
-                  segmented control here anymore. */}
               {(() => {
-                const view = showSoldHistory ? watchSold : watchLive;
-                const totalForView = showSoldHistory
-                  ? Object.values(watchlist).filter(it => {
-                      const live = liveStateById.get(it.id);
-                      return !live || !!live.sold;
-                    }).length
-                  : Object.values(watchlist).filter(it => {
-                      const live = liveStateById.get(it.id);
-                      return live && !live.sold;
-                    }).length;
+                // Single card renderer reused across all groups so we
+                // don't duplicate the select-mode overlay logic.
+                const renderItem = (item) => {
+                  const selected = watchSelectedIds.has(item.id);
+                  const cardJSX = (
+                    <Card
+                      item={{
+                        ...item,
+                        price: item.savedPrice,
+                        currency: item.savedCurrency || "USD",
+                        priceUSD: item.savedPriceUSD || item.savedPrice,
+                        // SOLD badge follows current state (item._isSold),
+                        // not the snapshot's at-save-time `sold` field.
+                        // Works correctly across live/sold/all views.
+                        sold: item._isSold,
+                      }}
+                      wished={true}
+                      onWish={handleWish}
+                      compact={compact}
+                    />
+                  );
+                  if (!watchSelectMode) return <div key={item.id}>{cardJSX}</div>;
+                  return (
+                    <div key={item.id} style={{ position: "relative", opacity: selected ? 0.55 : 1 }}>
+                      {cardJSX}
+                      <div onClick={() => toggleWatchSelected(item.id)}
+                        role="button" aria-pressed={selected}
+                        style={{
+                          position: "absolute", inset: 0, cursor: "pointer",
+                          background: selected ? "rgba(24,95,165,0.18)" : "transparent",
+                          outline: selected ? "2px solid #185FA5" : "none",
+                          outlineOffset: -2,
+                        }}>
+                        <div style={{
+                          position: "absolute", top: 8, right: 8,
+                          width: 24, height: 24, borderRadius: "50%",
+                          background: selected ? "#185FA5" : "rgba(255,255,255,0.92)",
+                          color: selected ? "#fff" : "var(--text2)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 14, fontWeight: 700, lineHeight: 1,
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.18)",
+                        }}>
+                          {selected ? "✓" : ""}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                };
+
+                if (watchView.length === 0) {
+                  // Differentiate "nothing in this status at all" from
+                  // "filters too restrictive". Use the raw watchlist
+                  // (unfiltered) to count what's available in each
+                  // status — watchView is post-filter so it can't tell
+                  // us this on its own.
+                  const rawSold = Object.values(watchlist).filter(it => {
+                    const live = liveStateById.get(it.id);
+                    return !live || !!live.sold;
+                  }).length;
+                  const rawLive = Object.keys(watchlist).length - rawSold;
+                  const rawForStatus =
+                    watchStatusMode === "all"  ? Object.keys(watchlist).length :
+                    watchStatusMode === "sold" ? rawSold : rawLive;
+                  return (
+                    <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+                      <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
+                        {rawForStatus === 0
+                          ? (watchStatusMode === "sold"
+                              ? "No watchlisted items have sold yet."
+                              : watchStatusMode === "live"
+                                ? "All your saved items have sold or been pulled. Try the Sold or All segment above."
+                                : "No saved watches yet.")
+                          : "No saved watches match your filters"}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Sectioned render. groupKey === "" → no grouping (flat).
                 return (
                   <>
-                    {view.length !== totalForView && (
-                      <div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 10 }}>
-                        {view.length} of {totalForView} matching filters
-                      </div>
-                    )}
-                    <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-                      {view.map(item => {
-                        const selected = watchSelectedIds.has(item.id);
-                        const cardJSX = (
-                          <Card
-                            item={{
-                              ...item,
-                              price: item.savedPrice,
-                              currency: item.savedCurrency || "USD",
-                              priceUSD: item.savedPriceUSD || item.savedPrice,
-                              // Force the SOLD badge on items in the Sold view.
-                              // The saved snapshot's own `sold` flag reflects state
-                              // at save time; we want the current state to win.
-                              sold: showSoldHistory,
-                            }}
-                            wished={true}
-                            onWish={handleWish}
-                            compact={compact}
-                          />
-                        );
-                        // In select mode, wrap the card with a click-capture
-                        // overlay that toggles selection instead of opening
-                        // the listing. Also dim selected cards subtly.
-                        if (!watchSelectMode) return <div key={item.id}>{cardJSX}</div>;
-                        return (
-                          <div key={item.id} style={{ position: "relative", opacity: selected ? 0.55 : 1 }}>
-                            {cardJSX}
-                            <div onClick={() => toggleWatchSelected(item.id)}
-                              role="button" aria-pressed={selected}
-                              style={{
-                                position: "absolute", inset: 0, cursor: "pointer",
-                                background: selected ? "rgba(24,95,165,0.18)" : "transparent",
-                                outline: selected ? "2px solid #185FA5" : "none",
-                                outlineOffset: -2,
-                              }}>
-                              {/* Checkbox in the same spot the heart would be */}
-                              <div style={{
-                                position: "absolute", top: 8, right: 8,
-                                width: 24, height: 24, borderRadius: "50%",
-                                background: selected ? "#185FA5" : "rgba(255,255,255,0.92)",
-                                color: selected ? "#fff" : "var(--text2)",
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 14, fontWeight: 700, lineHeight: 1,
-                                boxShadow: "0 1px 3px rgba(0,0,0,0.18)",
-                              }}>
-                                {selected ? "✓" : ""}
-                              </div>
-                            </div>
+                    {watchGroups.map(([groupKey, groupItems]) => (
+                      <div key={groupKey || "_flat"} style={{ marginBottom: groupKey ? 18 : 0 }}>
+                        {groupKey && (
+                          <div style={{
+                            fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
+                            textTransform: "uppercase", color: "var(--text2)",
+                            padding: "10px 0 6px",
+                            borderTop: "0.5px solid var(--border)", marginTop: 4,
+                          }}>
+                            {groupKey} <span style={{ color: "var(--text3)", fontWeight: 400 }}>· {groupItems.length}</span>
                           </div>
-                        );
-                      })}
-                      {view.length === 0 && (
-                        <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
-                          {totalForView === 0
-                            ? (showSoldHistory
-                                ? "No watchlisted items have sold yet."
-                                : "All your saved items have sold or been pulled. Tap the Live pill above to switch to Sold.")
-                            : "No saved watches match your filters"}
+                        )}
+                        <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+                          {groupItems.map(renderItem)}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ))}
                     <div style={{ padding: "14px 0 0", fontSize: 11, color: "var(--text3)", textAlign: "center" }}>
-                      {showSoldHistory
-                        ? "Prices and links shown are from the moment you saved each listing."
-                        : "Prices saved at time of adding to watchlist."}
+                      Prices shown are from the moment you saved each listing.
                     </div>
                   </>
                 );
