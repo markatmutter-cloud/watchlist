@@ -35,6 +35,21 @@ function daysAgo(dateStr) {
 // Prefer firstSeen (from state.json) over the scrape-stamped date. Falls back
 // for listings that predate the state-tracking change.
 function freshDate(item) { return item.firstSeen || item.date; }
+// Watchfid hot-link-protects their images (returns 404 to cross-origin
+// browser fetches that include image/webp in Accept). Routing through
+// /api/img — a small Vercel function that fetches with stripped headers
+// — gets around it. Other dealers serve cleanly without the proxy.
+const PROXIED_IMG_HOSTS = ["watchfid.com"];
+function imgSrc(url) {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    if (PROXIED_IMG_HOSTS.some(h => u.hostname.endsWith(h))) {
+      return `/api/img?u=${encodeURIComponent(url)}`;
+    }
+  } catch { /* malformed URL — fall through to the raw value */ }
+  return url;
+}
 function logToPrice(pos) {
   if (pos >= 100) return GLOBAL_MAX;
   const minL = Math.log(500), maxL = Math.log(GLOBAL_MAX);
@@ -126,7 +141,7 @@ function Card({ item, wished, onWish, compact, onHide, isHidden }) {
       <a href={item.url} target="_blank" rel="noopener noreferrer"
         style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
         <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
-          <img src={item.img} alt={item.ref}
+          <img src={imgSrc(item.img)} alt={item.ref}
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
             loading="lazy" />
           {item.sold && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>}
@@ -1482,7 +1497,7 @@ export default function Dial() {
           style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
           <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: "var(--surface)" }}>
             {lot.image && (
-              <img src={lot.image} alt={lot.title || ""}
+              <img src={imgSrc(lot.image)} alt={lot.title || ""}
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
                 loading="lazy" />
             )}
