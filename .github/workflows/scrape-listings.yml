@@ -2,12 +2,13 @@ name: Scrape listings
 
 on:
   schedule:
-    # Two daily runs scheduled around Mark's morning + evening Pacific
-    # time so the freshest data lands right before he checks the site.
-    # GitHub Actions cron is UTC and does NOT observe DST — the times
-    # below shift by an hour twice a year. We've biased toward "good
-    # enough year-round" rather than perfect on either side.
+    # Three daily runs scheduled around morning, midday, and evening
+    # Pacific time so the freshest data lands right when Mark checks the
+    # site. GitHub Actions cron is UTC and does NOT observe DST — the
+    # times below shift by an hour twice a year. We've biased toward
+    # "good enough year-round" rather than perfect on either side.
     - cron: '0 14 * * *'   # 6am PST / 7am PDT — morning slot
+    - cron: '0 20 * * *'   # noon PST / 1pm PDT — midday slot
     - cron: '0 2 * * *'    # 6pm PST / 7pm PDT — evening slot (02:00 UTC)
   workflow_dispatch:
 

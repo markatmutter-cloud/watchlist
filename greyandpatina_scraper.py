@@ -16,7 +16,20 @@ import time
 
 BASE = "https://greyandpatina.com"
 API = f"{BASE}/wp-json/wc/store/v1/products"
-HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"}
+# Cloudflare in front of greyandpatina.com sometimes 401s the bare-UA
+# request from CI runners. A complete browser-like UA + cookie-persisting
+# Session lets the __cf_bm bot-management cookie established by the first
+# request carry through to subsequent paginated requests.
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": f"{BASE}/",
+}
+SESSION = requests.Session()
+SESSION.headers.update(HEADERS)
 
 # Small brand list just for early filtering; merge.py reassigns brand from title anyway.
 BRANDS = [
@@ -44,30 +57,50 @@ def strip_html(text):
     return re.sub(r'\s+', ' ', text).strip()
 
 
+def fetch_page(page, per_page):
+    """One paginated request with retry-on-transient-failure. Cloudflare
+    returns 401/403 occasionally to fresh sessions; a short backoff
+    usually clears it because the __cf_bm cookie has been issued by then."""
+    last_err = None
+    for attempt in range(3):
+        try:
+            r = SESSION.get(API, params={
+                'per_page': per_page,
+                'page': page,
+                'status': 'publish',
+            }, timeout=20)
+            if r.status_code == 200:
+                return r.json()
+            # 401/403/429/5xx → backoff and retry
+            last_err = f"HTTP {r.status_code}"
+            time.sleep(2 ** attempt)
+        except requests.RequestException as e:
+            last_err = str(e)
+            time.sleep(2 ** attempt)
+    raise RuntimeError(f"page {page} failed after 3 attempts: {last_err}")
+
+
 def get_all_listings():
     all_items = []
     page = 1
     per_page = 100
+    # Warm the session with a homepage GET so Cloudflare hands us a
+    # __cf_bm cookie before we hit the API. Skips silently if it fails;
+    # the API call below has its own retry.
+    try:
+        SESSION.get(BASE + "/", timeout=20)
+    except requests.RequestException:
+        pass
 
     while True:
         print(f"Fetching page {page}...")
-        r = requests.get(API, headers=HEADERS, params={
-            'per_page': per_page,
-            'page': page,
-            'status': 'publish',
-        }, timeout=20)
-        r.raise_for_status()
-        items = r.json()
-
+        items = fetch_page(page, per_page)
         if not items:
             break
-
         all_items.extend(items)
         print(f"  Got {len(items)} items (total so far: {len(all_items)})")
-
         if len(items) < per_page:
             break
-
         page += 1
         time.sleep(0.5)
 

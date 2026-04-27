@@ -623,12 +623,22 @@ export default function Watchlist() {
   // out triggers the Google OAuth redirect instead of silently doing
   // nothing. If auth isn't configured at all (dev environment missing
   // env vars), we just no-op — no way to sign in anyway.
-  const requireSignIn = useCallback(() => {
-    if (isAuthConfigured) signInWithGoogle();
+  // Pending-intent stash: when a signed-out user clicks heart or X, we
+  // capture the listing id in sessionStorage before redirecting to
+  // Google. After OAuth completes and the page reloads, the effect
+  // below replays the action so the click isn't lost. sessionStorage
+  // (vs localStorage) auto-clears with the tab and naturally scopes
+  // per-window — different tabs don't replay each other's intents.
+  const requireSignIn = useCallback((intent) => {
+    if (!isAuthConfigured) return;
+    if (intent) {
+      try { sessionStorage.setItem("pending_intent", JSON.stringify(intent)); } catch {}
+    }
+    signInWithGoogle();
   }, [signInWithGoogle]);
 
   const toggleHide = useCallback((item) => {
-    if (!user) { requireSignIn(); return; }
+    if (!user) { requireSignIn({ kind: "hide", id: item.id }); return; }
     toggleHidden(item);
   }, [user, toggleHidden, requireSignIn]);
 
@@ -636,9 +646,29 @@ export default function Watchlist() {
     setFilterRefs(p => p.includes(ref) ? p.filter(x => x !== ref) : [...p, ref]);
 
   const handleWish = useCallback((item) => {
-    if (!user) { requireSignIn(); return; }
+    if (!user) { requireSignIn({ kind: "wish", id: item.id }); return; }
     toggleWatchlist(item);
   }, [user, toggleWatchlist, requireSignIn]);
+
+  // Replay a pending heart/hide once the user is back from OAuth and
+  // the items list has loaded (so we can resolve the saved id to the
+  // current item snapshot). Idempotent: only acts when the item isn't
+  // already in the target collection, so re-runs from React strict-mode
+  // or repeated renders don't toggle off what we just toggled on.
+  useEffect(() => {
+    if (!user || items.length === 0) return;
+    let raw;
+    try { raw = sessionStorage.getItem("pending_intent"); } catch { return; }
+    if (!raw) return;
+    try { sessionStorage.removeItem("pending_intent"); } catch {}
+    let intent;
+    try { intent = JSON.parse(raw); } catch { return; }
+    if (!intent || !intent.id) return;
+    const target = items.find(i => i.id === intent.id);
+    if (!target) return;
+    if (intent.kind === "wish" && !watchlist[target.id]) toggleWatchlist(target);
+    if (intent.kind === "hide" && !hidden[target.id])    toggleHidden(target);
+  }, [user, items, watchlist, hidden, toggleWatchlist, toggleHidden]);
 
   const toggleSource = s => setFilterSources(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
   const toggleBrand = b => setFilterBrands(p => p.includes(b) ? p.filter(x => x !== b) : [...p, b]);
