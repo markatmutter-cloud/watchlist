@@ -446,13 +446,18 @@ export default function Dial() {
   }, []);
 
   useEffect(() => {
-    fetch(LISTINGS_URL)
+    // `cache: 'no-cache'` forces the browser/PWA to revalidate with the
+    // origin on every load (sends If-None-Match, gets 304 if unchanged
+    // — fast). Without it, iOS PWA + GitHub raw's 5-minute Cache-Control
+    // could serve stale data for hours after a fresh scrape commit.
+    const fetchOpts = { cache: "no-cache" };
+    fetch(LISTINGS_URL, fetchOpts)
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => { setItems(d); setLoading(false); })
       .catch(() => { setLoadError(true); setLoading(false); });
     // Auctions load in parallel. Failing silently is fine — the Auctions tab
     // just won't have data, which we handle with an empty-state message.
-    fetch(AUCTIONS_URL)
+    fetch(AUCTIONS_URL, fetchOpts)
       .then(r => r.ok ? r.json() : [])
       .then(d => setAuctions(Array.isArray(d) ? d : []))
       .catch(() => {});
@@ -460,7 +465,7 @@ export default function Dial() {
     // object means no tracked-lot cards render, which is correct when the
     // file doesn't exist yet (first deployment, or Supabase env vars not
     // set in the Action).
-    fetch(TRACKED_LOTS_URL)
+    fetch(TRACKED_LOTS_URL, fetchOpts)
       .then(r => r.ok ? r.json() : {})
       .then(d => setTrackedLotsState(d && typeof d === "object" ? d : {}))
       .catch(() => {});
