@@ -192,16 +192,45 @@ def update_state(items, state):
         state[sid] = entry
 
         history = entry['priceHistory']
+        # Last-step change: most recent transition (just the latest move).
         price_change = 0
         if len(history) >= 2:
             price_change = history[-1]['price'] - history[-2]['price']
+
+        # Cumulative drop from peak: total price reduction since the
+        # listing's highest historical price. Positive number means
+        # "this much cheaper than it's ever been at." 0 = no drop, or
+        # currently at peak. Used by the frontend to surface big-mover
+        # items at the top of the listings grid and show a chip like
+        # "↓ $800" reflecting two consecutive $400 cuts.
+        prices = [h.get('price') or 0 for h in history]
+        price_peak = max(prices) if prices else (it.get('price') or 0)
+        price_drop_total = max(0, price_peak - (it.get('price') or 0))
+
+        # Date of the most recent step where price decreased. Lets the
+        # sort bubble freshly-cut items back to the top even if firstSeen
+        # is old.
+        price_drop_at = None
+        for h_prev, h_now in zip(history, history[1:]):
+            if (h_now.get('price') or 0) < (h_prev.get('price') or 0):
+                price_drop_at = h_now.get('date')
+        # Persist on the state entry so it survives across runs even
+        # when no new drop happens this run.
+        if price_drop_at:
+            entry['priceDropAt'] = price_drop_at
+        elif 'priceDropAt' in entry:
+            # Stale field cleanup — nothing if the history shows no drop.
+            entry.pop('priceDropAt', None)
 
         enriched.append({
             **it,
             'firstSeen':    entry['firstSeen'],
             'lastSeen':     entry['lastSeen'],
             'priceHistory': history,
-            'priceChange':  price_change,
+            'priceChange':       price_change,
+            'priceDropTotal':    price_drop_total,
+            'pricePeak':         price_peak,
+            'priceDropAt':       entry.get('priceDropAt'),
             # soldAt is set for both Wind Vintage "on hold" items (still in
             # the live scrape but flagged reserved) and items that disappeared
             # entirely — both get archived.

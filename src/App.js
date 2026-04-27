@@ -135,7 +135,15 @@ function Card({ item, wished, onWish, compact, onHide, isHidden }) {
   // of "$0". Set by the WV scraper for INQUIRE / ON HOLD-no-price pages.
   const displayPrice = item.priceOnRequest ? "Price on request" : fmt(item.price, item.currency || "USD");
   const showUSD = item.currency && item.currency !== "USD" && item.priceUSD && !item.priceOnRequest;
-  const priceDropped = !item.priceOnRequest && (item.priceChange || 0) < 0;
+  // Show CUMULATIVE drop from peak (priceDropTotal) — so two
+  // consecutive $400 cuts read as "↓ $800" rather than just the
+  // latest step. Falls back to the last-step `priceChange` for items
+  // scraped before priceDropTotal was introduced.
+  const cumulativeDrop = (item.priceDropTotal && item.priceDropTotal > 0)
+    ? item.priceDropTotal
+    : ((item.priceChange || 0) < 0 ? -item.priceChange : 0);
+  const priceDropped = !item.priceOnRequest && cumulativeDrop > 0;
+  const peakPrice = item.pricePeak || (item.price + cumulativeDrop);
   return (
     <div style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative", minWidth: 0, overflow: "hidden" }}>
       <a href={item.url} target="_blank" rel="noopener noreferrer"
@@ -160,8 +168,9 @@ function Card({ item, wished, onWish, compact, onHide, isHidden }) {
           <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
             <div style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: item.sold ? "var(--text2)" : "var(--text1)" }}>{displayPrice}</div>
             {priceDropped && (
-              <span title={`Was ${fmt(item.price - item.priceChange, item.currency || "USD")}`} style={{ fontSize: 9, color: "#1b8f3a", fontWeight: 600 }}>
-                ↓ {fmt(Math.abs(item.priceChange), item.currency || "USD")}
+              <span title={`Peak ${fmt(peakPrice, item.currency || "USD")} → ${fmt(item.price, item.currency || "USD")}`}
+                style={{ fontSize: 9, color: "#1b8f3a", fontWeight: 600 }}>
+                ↓ {fmt(cumulativeDrop, item.currency || "USD")}
               </span>
             )}
           </div>
@@ -585,8 +594,25 @@ export default function Dial() {
     if (maxPrice < GLOBAL_MAX) its = its.filter(i => (i.priceUSD || i.price) <= maxPrice);
     if (sort === "price-asc") its.sort((a, b) => (a.priceUSD || a.price) - (b.priceUSD || b.price));
     else if (sort === "price-desc") its.sort((a, b) => (b.priceUSD || b.price) - (a.priceUSD || a.price));
-    else if (sort === "date-asc") its.sort((a, b) => freshDate(a) < freshDate(b) ? -1 : 1);
-    else its.sort((a, b) => freshDate(a) < freshDate(b) ? 1 : -1);
+    else {
+      // Date sorts use the LATER of firstSeen and priceDropAt as the
+      // effective "freshness" date, so a re-cut item bubbles back to
+      // the top even if firstSeen is old. priceDropAt only applies
+      // when there's a non-zero cumulative drop — otherwise we'd
+      // promote items whose price went up then back down to the same
+      // amount (priceDropAt set, but no drop visible).
+      const effectiveDate = (i) => {
+        const f = freshDate(i) || "";
+        const d = (i.priceDropTotal && i.priceDropTotal > 0) ? (i.priceDropAt || "") : "";
+        return d > f ? d : f;
+      };
+      const ascending = sort === "date-asc";
+      its.sort((a, b) => {
+        const ea = effectiveDate(a), eb = effectiveDate(b);
+        if (ea === eb) return 0;
+        return ascending ? (ea < eb ? -1 : 1) : (ea < eb ? 1 : -1);
+      });
+    }
     return its;
   }, [items, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, showSoldHistory]);
 
@@ -1011,8 +1037,18 @@ export default function Dial() {
   // Only kicks in when sorted by date (newest or oldest first) and not
   // viewing sold history — date sort is what makes time-bucketing
   // meaningful. Other sorts (price) get a flat grid as before.
+  // "Effective" age = whichever is more recent, the original firstSeen
+  // or the most recent price-drop date (when there's a non-zero drop).
+  // Same logic the sort uses, so a freshly-cut card lands in the same
+  // bucket it sorts into rather than appearing as the "first card under
+  // an Older header".
+  const effectiveAgeDate = (i) => {
+    const f = freshDate(i) || "";
+    const d = (i.priceDropTotal && i.priceDropTotal > 0) ? (i.priceDropAt || "") : "";
+    return d > f ? d : f;
+  };
   const ageBucketLabel = (i) => {
-    const d = daysAgo(freshDate(i));
+    const d = daysAgo(effectiveAgeDate(i));
     if (d <= 1) return "Today";
     if (d <= 3) return "Last 3 days";
     if (d <= 7) return "This week";
