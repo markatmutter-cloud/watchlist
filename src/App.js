@@ -703,14 +703,30 @@ export default function Dial() {
   // match. Wired so the same search box that filters dealer listings on
   // the Watchlist tab also narrows the auction lots.
   const trackedLotsFiltered = useMemo(() => {
+    let arr = trackedLots;
+    // Source filter — for auction lots the "source" is the auction house.
+    // The same Source pill in the filter row drives both: dealer sources
+    // for listings, auction houses for lots.
+    if (filterSources.length > 0) {
+      arr = arr.filter(l => filterSources.includes(l.house));
+    }
     const q = (search || "").trim().toLowerCase();
-    if (!q) return trackedLots;
-    return trackedLots.filter(l => {
-      if (l._pending) return l.url.toLowerCase().includes(q);
-      const haystack = `${l.title || ""} ${l.house || ""} ${l.description || ""} ${l.lot_number || ""}`.toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [trackedLots, search]);
+    if (q) {
+      arr = arr.filter(l => {
+        if (l._pending) return l.url.toLowerCase().includes(q);
+        const haystack = `${l.title || ""} ${l.house || ""} ${l.description || ""} ${l.lot_number || ""}`.toLowerCase();
+        return haystack.includes(q);
+      });
+    }
+    return arr;
+  }, [trackedLots, search, filterSources]);
+
+  // Distinct auction houses across the user's tracked lots — used to
+  // populate the Source pill's options when on Watchlist > Auction lots.
+  const lotHouses = useMemo(
+    () => [...new Set(trackedLots.map(l => l.house).filter(Boolean))].sort(),
+    [trackedLots]
+  );
   const trackedLotsUpcoming = useMemo(
     () => sortLots(trackedLotsFiltered.filter(l => !lotIsPast(l)), false),
     [trackedLotsFiltered, sort]
@@ -2302,28 +2318,45 @@ export default function Dial() {
         )}
       </div>
 
-      {/* Source */}
-      <div style={{ position: "relative" }}>
-        <button onClick={() => setActiveFilterPop(p => p === "source" ? null : "source")} style={pillBase(filterSources.length > 0)}>
-          Source{filterSources.length > 0 ? ` · ${filterSources.length}` : ""} ▾
-        </button>
-        {activeFilterPop === "source" && popShell(
-          <div>
-            <div style={popGridStyle}>
-              {SOURCES.map(s => (
-                <button key={s} onClick={() => toggleSource(s)} style={multiSelectRowStyle(filterSources.includes(s))}>
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s}</span>
-                  {filterSources.includes(s) && <span style={tickStyle}>✓</span>}
-                </button>
-              ))}
-            </div>
-            {filterSources.length > 0 && (
-              <button onClick={() => setFilterSources([])} style={popClearStyle}>Clear sources</button>
+      {/* Source — when on Watchlist > Auction lots, the option list is
+          the user's tracked auction houses (Antiquorum, Christie's, ...).
+          Everywhere else, dealer sources from the listings catalogue. */}
+      {(() => {
+        const onLots = (tab === "watchlist" && watchTopTab === "lots");
+        const sourceOptions = onLots ? lotHouses : SOURCES;
+        const pillLabel = onLots ? "House" : "Source";
+        return (
+          <div style={{ position: "relative" }}>
+            <button onClick={() => setActiveFilterPop(p => p === "source" ? null : "source")} style={pillBase(filterSources.length > 0)}>
+              {pillLabel}{filterSources.length > 0 ? ` · ${filterSources.length}` : ""} ▾
+            </button>
+            {activeFilterPop === "source" && popShell(
+              <div>
+                {sourceOptions.length === 0 ? (
+                  <div style={{ fontSize: 12, color: "var(--text3)", padding: "8px 4px" }}>
+                    No {onLots ? "tracked auction houses" : "sources"} yet.
+                  </div>
+                ) : (
+                  <div style={popGridStyle}>
+                    {sourceOptions.map(s => (
+                      <button key={s} onClick={() => toggleSource(s)} style={multiSelectRowStyle(filterSources.includes(s))}>
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s}</span>
+                        {filterSources.includes(s) && <span style={tickStyle}>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {filterSources.length > 0 && (
+                  <button onClick={() => setFilterSources([])} style={popClearStyle}>
+                    Clear {onLots ? "houses" : "sources"}
+                  </button>
+                )}
+              </div>,
+              { wide: true }
             )}
-          </div>,
-          { wide: true }
-        )}
-      </div>
+          </div>
+        );
+      })()}
 
       {/* Brand */}
       <div style={{ position: "relative" }}>
@@ -2429,6 +2462,20 @@ export default function Dial() {
             <input value={search} onChange={e => setSearch(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}
               placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
+            {search && user && (
+              <button onClick={openFavPrompt} aria-label={currentIsSaved ? "Already saved" : "Save search as favorite"}
+                title={currentIsSaved ? "Saved to favorites" : "Save as favorite search"}
+                disabled={currentIsSaved}
+                style={{ flexShrink: 0, background: "none", border: "none",
+                        cursor: currentIsSaved ? "default" : "pointer",
+                        color: currentIsSaved ? "#185FA5" : "var(--text3)",
+                        padding: 2, fontFamily: "inherit",
+                        display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill={currentIsSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </button>
+            )}
             {search && (
               <button onClick={() => setSearch("")} aria-label="Clear search"
                 style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer",
