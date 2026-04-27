@@ -130,6 +130,7 @@ export function useWatchlist(user) {
       if (error) { console.warn('watchlist load failed', error); return; }
       const next = {};
       for (const row of data || []) {
+        const snap = row.listing_snapshot || {};
         next[row.listing_id] = {
           id: row.listing_id,
           savedAt:        row.saved_at,
@@ -138,7 +139,13 @@ export function useWatchlist(user) {
           savedPriceUSD:  row.saved_price_usd,
           // listing_snapshot is the full listing payload at save time —
           // we spread it so Card can render from the watchlist entry alone.
-          ...(row.listing_snapshot || {}),
+          ...snap,
+          // cached_img_url is populated by cache_watchlist_images.mjs in
+          // the cron — when present, it points at a Vercel Blob copy
+          // that survives the dealer deleting their original. Prefer
+          // it over the dealer URL when rendering. Empty string means
+          // "processed, no image available" (skip).
+          img: row.cached_img_url || snap.img || "",
         };
       }
       setItems(next);
