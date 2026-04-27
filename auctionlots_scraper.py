@@ -128,11 +128,108 @@ def scrape_antiquorum_lot(url):
     }
 
 
+def scrape_christies_lot(url):
+    """Return a dict of fields scraped from one Christie's lot page.
+
+    Christie's renders lot data via inline scripts that assign
+    `window.chrComponents.lotHeader_<id> = {...}`. We brace-match the
+    JSON object after the assignment and read the same fields used
+    for Antiquorum so the frontend can render either with the same
+    schema."""
+    r = requests.get(url, headers=HEADERS, timeout=20)
+    r.raise_for_status()
+    html = r.text
+
+    m = re.search(r'window\.chrComponents\.lotHeader_\d+\s*=\s*', html)
+    if not m:
+        raise RuntimeError("lotHeader assignment not found")
+    start = m.end()
+    # Manual brace counter — the embedded JSON contains many close-braces
+    # so a regex-only approach is too fragile.
+    depth = 0
+    i = start
+    while i < len(html):
+        c = html[i]
+        if c == '{':
+            depth += 1
+        elif c == '}':
+            depth -= 1
+            if depth == 0:
+                i += 1
+                break
+        elif c in '"\'':
+            q = c
+            i += 1
+            while i < len(html) and html[i] != q:
+                if html[i] == '\\':
+                    i += 2
+                else:
+                    i += 1
+        i += 1
+    raw = html[start:i]
+    data = json.loads(raw).get("data", {})
+
+    lots = data.get("lots") or [{}]
+    lot = lots[0]
+    sale = data.get("sale") or {}
+    assets = lot.get("lot_assets") or []
+    img_url = assets[0].get("image_url") if assets else None
+
+    # Currency lives in estimate_txt as the leading token. Examples seen:
+    # "CHF 11,000 – CHF 17,000", "$8,000 – $12,000", "HKD 80,000 – HKD 120,000".
+    currency = "USD"
+    est_txt = (lot.get("estimate_txt") or "").strip()
+    cm = re.match(r'(?P<cur>CHF|USD|GBP|EUR|HKD|JPY|CNY|\$|£|€)', est_txt)
+    if cm:
+        sym = cm.group("cur")
+        currency = {"$": "USD", "£": "GBP", "€": "EUR"}.get(sym, sym)
+
+    sold_price = lot.get("price_realised") or None
+    if sold_price == 0:
+        sold_price = None
+
+    # Title combines primary + secondary so the watch reference comes
+    # through (Christie's puts the model + ref on title_secondary_txt).
+    title_primary = (lot.get("title_primary_txt") or "").strip()
+    title_secondary = (lot.get("title_secondary_txt") or "").strip()
+
+    # Status: Christie's gives is_auction_over on the sale block.
+    status = "ended" if sale.get("is_auction_over") else "active"
+
+    return {
+        "house": "Christie's",
+        "lot_id": lot.get("object_id"),
+        "lot_number": lot.get("lot_id_txt"),
+        "title": title_primary,
+        "description": title_secondary[:600],
+        "currency": currency,
+        "estimate_low": lot.get("estimate_low"),
+        "estimate_high": lot.get("estimate_high"),
+        "starting_price": None,
+        "current_bid": None,
+        "sold_price": sold_price,
+        "estimate_low_usd":   to_usd(lot.get("estimate_low"),  currency),
+        "estimate_high_usd":  to_usd(lot.get("estimate_high"), currency),
+        "starting_price_usd": None,
+        "current_bid_usd":    None,
+        "sold_price_usd":     to_usd(sold_price,                currency),
+        "status": status,
+        "image": img_url,
+        "auction_title": (sale.get("title_txt") or "").strip(),
+        "auction_start": sale.get("start_date"),
+        "auction_end":   sale.get("end_date") or sale.get("start_date"),
+        "auction_url":   sale.get("url"),
+        "scraped_at":    time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+
 def scrape(url):
     """Dispatch by host. Add new auction houses here as scrapers are built."""
     host = urlparse(url).hostname or ""
     if host.endswith("antiquorum.swiss"):
         return scrape_antiquorum_lot(url)
+    if host.endswith("christies.com"):
+        return scrape_christies_lot(url)
     raise NotImplementedError(f"No scraper for host: {host}")
 
 
