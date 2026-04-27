@@ -125,6 +125,10 @@ function TabIcon({ kind }) {
 }
 
 function Card({ item, wished, onWish, compact, onHide, isHidden }) {
+  // When the dealer's image URL goes 404 (e.g. they cleaned up their CDN
+  // for a sold listing), the browser shows an ugly broken-image icon.
+  // Track the failure and render a clean placeholder instead.
+  const [imgFailed, setImgFailed] = useState(false);
   // `backfilled` is set by merge.py when a single source contributes 10+
   // listings whose firstSeen == today — that pattern is almost always a
   // scraper change retroactively picking up listings that were already on
@@ -149,9 +153,32 @@ function Card({ item, wished, onWish, compact, onHide, isHidden }) {
       <a href={item.url} target="_blank" rel="noopener noreferrer"
         style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
         <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
-          <img src={imgSrc(item.img)} alt={item.ref}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-            loading="lazy" />
+          {item.img && !imgFailed ? (
+            <img src={imgSrc(item.img)} alt={item.ref}
+              onError={() => setImgFailed(true)}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+              loading="lazy" />
+          ) : (
+            // Clean placeholder when the image either wasn't recorded or
+            // the dealer's URL has gone 404. Beats a broken-image icon.
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "var(--surface)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexDirection: "column", gap: 6,
+              color: "var(--text3)",
+            }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <line x1="12" y1="3" x2="12" y2="6"/>
+                <line x1="12" y1="18" x2="12" y2="21"/>
+                <line x1="3" y1="12" x2="6" y2="12"/>
+                <line x1="18" y1="12" x2="21" y2="12"/>
+                <polyline points="12 7 12 12 15 14"/>
+              </svg>
+              <span style={{ fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase" }}>Image not available</span>
+            </div>
+          )}
           {item.sold && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>}
           {!item.sold && isHidden && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>}
           {isNew && !isHidden && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(24,95,165,0.92)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em", fontWeight: 600 }}>NEW</div>}
