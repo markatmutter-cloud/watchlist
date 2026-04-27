@@ -30,7 +30,16 @@ function fmt(price, currency) {
 function fmtUSD(p) { return "$" + Math.round(p).toLocaleString(); }
 function daysAgo(dateStr) {
   if (!dateStr) return 9999;
-  return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+  // Parse "YYYY-MM-DD" as local-tz midnight, not UTC midnight. With the
+  // default `new Date("2026-04-27")` parse, the day boundary lands at
+  // 5pm PT (= midnight UTC), so NEW badges flip mid-afternoon. This
+  // keeps the boundary at the user's actual midnight.
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr);
+  if (!m) return 9999;
+  const then = new Date(+m[1], +m[2] - 1, +m[3]).getTime();
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return Math.floor((today - then) / 86400000);
 }
 // Prefer firstSeen (from state.json) over the scrape-stamped date. Falls back
 // for listings that predate the state-tracking change.

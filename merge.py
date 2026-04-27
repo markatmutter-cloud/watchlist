@@ -26,7 +26,8 @@ expose. Index-based IDs (wv-0, wv-1) are not stable: a new listing at the top
 shifts every other ID and breaks the watchlist.
 """
 import csv, json, re, os, hashlib
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from collections import Counter
 
 BRANDS = [
@@ -45,7 +46,11 @@ STATE_PATH = 'public/state.json'
 LISTINGS_PATH = 'public/listings.json'
 AUCTIONS_PATH = 'public/auctions.json'
 AUCTIONS_STATE_PATH = 'public/auctions_state.json'
-TODAY = str(date.today())
+# PT-anchored date so firstSeen/lastSeen/priceHistory align with Mark's
+# local day. The cron is already PT-scheduled (6am + 7pm PT) — using
+# UTC here meant the evening run wrote tomorrow's date, inflating "new
+# today" counts the next morning. zoneinfo handles DST automatically.
+TODAY = datetime.now(ZoneInfo("America/Los_Angeles")).date().isoformat()
 
 
 def detect_brand(name):
