@@ -1,0 +1,90 @@
+name: Scrape auctions
+
+# Runs the four auction-house calendar scrapers + the tracked-lots
+# scraper, merges into public/auctions.json + public/auctions_state.json,
+# and writes public/tracked_lots.json. Independent of the listings
+# pipeline — auctions change on a much slower cadence.
+
+on:
+  schedule:
+    # Once per day at 06:00 UTC. Auction calendars don't update often
+    # enough to justify multiple runs; this gives Mark fresh data each
+    # morning without hammering the houses' sites.
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Antiquorum auctions scraper
+        continue-on-error: true
+        run: python antiquorum_auctions_scraper.py
+
+      - name: Run Monaco Legend auctions scraper
+        continue-on-error: true
+        run: python monacolegend_auctions_scraper.py
+
+      - name: Run Phillips auctions scraper
+        continue-on-error: true
+        run: python phillips_auctions_scraper.py
+
+      - name: Run Bonhams auctions scraper
+        continue-on-error: true
+        run: python bonhams_auctions_scraper.py
+
+      - name: Run tracked auction lots scraper
+        # Reads the union of tracked_lots URLs across all users from
+        # Supabase, scrapes each, writes public/tracked_lots.json. Soft
+        # failure — if Supabase env vars aren't set, the scraper logs a
+        # warning and exits cleanly without breaking the run.
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python auctionlots_scraper.py
+
+      - name: Move CSVs to data folder
+        run: |
+          mkdir -p data
+          [ -f antiquorum_auctions_listings.csv ]   && mv antiquorum_auctions_listings.csv   data/antiquorum_auctions.csv   || echo "antiquorum auctions missing"
+          [ -f monacolegend_auctions_listings.csv ] && mv monacolegend_auctions_listings.csv data/monacolegend_auctions.csv || echo "monacolegend auctions missing"
+          [ -f phillips_auctions_listings.csv ]     && mv phillips_auctions_listings.csv     data/phillips_auctions.csv     || echo "phillips auctions missing"
+          [ -f bonhams_auctions_listings.csv ]      && mv bonhams_auctions_listings.csv      data/bonhams_auctions.csv      || echo "bonhams auctions missing"
+
+      - name: Merge into auctions.json
+        run: python merge.py --auctions-only
+
+      - name: Commit and push
+        # Same race-resilient retry as the listings workflow.
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ public/
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Auctions update $(date -u '+%Y-%m-%d %H:%M UTC')"
+          for i in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected, rebasing and retrying ($i/3)..."
+            if ! git pull --rebase --strategy-option=theirs; then
+              echo "Rebase failed, aborting and retrying push"
+              git rebase --abort 2>/dev/null || true
+            fi
+          done
+          echo "Push still failing after 3 retries"
+          exit 1

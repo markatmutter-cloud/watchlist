@@ -1,4 +1,4 @@
-name: Scrape watch listings
+name: Scrape listings
 
 on:
   schedule:
@@ -103,33 +103,6 @@ jobs:
         continue-on-error: true
         run: python bulangandsons_scraper.py
 
-      - name: Run Antiquorum auctions scraper
-        continue-on-error: true
-        run: python antiquorum_auctions_scraper.py
-
-      - name: Run Monaco Legend auctions scraper
-        continue-on-error: true
-        run: python monacolegend_auctions_scraper.py
-
-      - name: Run Phillips auctions scraper
-        continue-on-error: true
-        run: python phillips_auctions_scraper.py
-
-      - name: Run Bonhams auctions scraper
-        continue-on-error: true
-        run: python bonhams_auctions_scraper.py
-
-      - name: Run tracked auction lots scraper
-        # Reads the union of tracked_lots URLs across all users from
-        # Supabase, scrapes each, writes public/tracked_lots.json. Soft
-        # failure — if Supabase env vars aren't set, the scraper logs a
-        # warning and exits cleanly without breaking the run.
-        continue-on-error: true
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-        run: python auctionlots_scraper.py
-
       - name: Move CSVs to data folder
         run: |
           mkdir -p data
@@ -152,13 +125,9 @@ jobs:
           [ -f bobswatches_listings.csv ]         && mv bobswatches_listings.csv         data/bobswatches.csv         || echo "bobswatches missing"
           [ -f watchfid_listings.csv ]            && mv watchfid_listings.csv            data/watchfid.csv            || echo "watchfid missing"
           [ -f bulangandsons_listings.csv ]       && mv bulangandsons_listings.csv       data/bulangandsons.csv       || echo "bulangandsons missing"
-          [ -f antiquorum_auctions_listings.csv ]   && mv antiquorum_auctions_listings.csv   data/antiquorum_auctions.csv   || echo "antiquorum auctions missing"
-          [ -f monacolegend_auctions_listings.csv ] && mv monacolegend_auctions_listings.csv data/monacolegend_auctions.csv || echo "monacolegend auctions missing"
-          [ -f phillips_auctions_listings.csv ]   && mv phillips_auctions_listings.csv   data/phillips_auctions.csv   || echo "phillips auctions missing"
-          [ -f bonhams_auctions_listings.csv ]    && mv bonhams_auctions_listings.csv    data/bonhams_auctions.csv    || echo "bonhams auctions missing"
 
       - name: Merge into listings.json
-        run: python merge.py
+        run: python merge.py --listings-only
 
       - name: Commit and push
         # Push race-resilient: if main has moved while we were scraping
@@ -173,7 +142,7 @@ jobs:
             echo "No changes to commit"
             exit 0
           fi
-          git commit -m "Update listings $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git commit -m "Listings update $(date -u '+%Y-%m-%d %H:%M UTC')"
           for i in 1 2 3; do
             if git push; then exit 0; fi
             echo "Push rejected, rebasing and retrying ($i/3)..."

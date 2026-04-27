@@ -290,7 +290,10 @@ def update_state(items, state):
     return enriched
 
 
-def main():
+def process_listings():
+    """The listings half of the pipeline. Loads every dealer CSV, merges
+    against state.json (firstSeen / priceHistory / sold detection),
+    writes public/listings.json. Independent of the auctions pipeline."""
     sources = [
         ('data/windvintage.csv',          'Wind Vintage',          'USD'),
         ('data/tropicalwatch.csv',        'Tropical Watch',        'USD'),
@@ -347,10 +350,22 @@ def main():
     save_state(state)
     print(f"Written {LISTINGS_PATH} and {STATE_PATH}")
 
-    # Auctions are a separate, much smaller data pipeline. Kept out of the
-    # listings state machine since they have very different semantics
-    # (status is derived from dates, no price history, no NEW badge).
-    process_auctions()
+
+def main():
+    """CLI entry. Default behavior runs both halves of the pipeline.
+    Flags let the GitHub Actions workflows pick just the half they care
+    about: scrape-listings.yml runs --listings-only, scrape-auctions.yml
+    runs --auctions-only."""
+    import sys
+    args = sys.argv[1:]
+    do_listings = ('--auctions-only' not in args)
+    do_auctions = ('--listings-only' not in args)
+    if do_listings:
+        process_listings()
+    if do_auctions:
+        # Separate, much smaller data pipeline — different semantics
+        # (status from dates, no price history, no NEW badge).
+        process_auctions()
 
 
 # ── AUCTIONS ──────────────────────────────────────────────────────────────────
