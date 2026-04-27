@@ -159,24 +159,20 @@ function Card({ item, wished, onWish, compact, onHide, isHidden }) {
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
               loading="lazy" />
           ) : (
-            // Clean placeholder when the image either wasn't recorded or
-            // the dealer's URL has gone 404. Beats a broken-image icon.
+            // On-brand placeholder when the image is missing or the dealer's
+            // URL has gone 404. Uses the same hourglass mark as the favicon
+            // / app icon. Tinted against the existing site palette.
             <div style={{
               position: "absolute", inset: 0,
               background: "var(--surface)",
               display: "flex", alignItems: "center", justifyContent: "center",
               flexDirection: "column", gap: 6,
-              color: "var(--text3)",
             }}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="9"/>
-                <line x1="12" y1="3" x2="12" y2="6"/>
-                <line x1="12" y1="18" x2="12" y2="21"/>
-                <line x1="3" y1="12" x2="6" y2="12"/>
-                <line x1="18" y1="12" x2="21" y2="12"/>
-                <polyline points="12 7 12 12 15 14"/>
-              </svg>
-              <span style={{ fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase" }}>Image not available</span>
+              <img src="/favicon-192.png" alt="" aria-hidden="true"
+                style={{ width: "44%", maxWidth: 88, opacity: 0.55 }} />
+              <span style={{ fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text3)" }}>
+                Image not available
+              </span>
             </div>
           )}
           {item.sold && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>}
@@ -389,6 +385,26 @@ export default function Dial() {
   // Hidden listings manager (was the Archive tab's hidden-section, now
   // a modal opened from the user dropdown).
   const [hiddenModalOpen, setHiddenModalOpen] = useState(false);
+  // Bulk-edit mode for the Watchlist > Listings grid. When on, cards
+  // show a checkbox overlay; tapping a card toggles selection rather
+  // than opening the listing. Selection set + state below.
+  const [watchSelectMode, setWatchSelectMode] = useState(false);
+  const [watchSelectedIds, setWatchSelectedIds] = useState(() => new Set());
+  const toggleWatchSelected = (id) => setWatchSelectedIds(prev => {
+    const n = new Set(prev);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
+  const exitWatchSelect = () => { setWatchSelectMode(false); setWatchSelectedIds(new Set()); };
+  const removeSelectedFromWatchlist = async () => {
+    // Iterate over the snapshot — toggleWatchlist mutates state.
+    const ids = Array.from(watchSelectedIds);
+    for (const id of ids) {
+      const item = watchlist[id];
+      if (item) await toggleWatchlist(item);
+    }
+    exitWatchSelect();
+  };
   // About + Contact modal. Opened from the View popover so it's
   // available to signed-out visitors too. Contact = Instagram link;
   // no email or form (keeps email out of the bundle and avoids spam).
@@ -1746,12 +1762,40 @@ export default function Dial() {
           </div>
 
           {watchTopTab === "listings" && (<>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10, gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 8, flexWrap: "wrap" }}>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>Watchlist</div>
-            {watchCount > 0 && (
-              <span style={{ fontSize: 11, color: "var(--text3)" }}>
-                {watchLive.length} live · {watchSold.length} sold
-              </span>
+            {watchCount > 0 && !watchSelectMode && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 11, color: "var(--text3)" }}>
+                  {watchLive.length} live · {watchSold.length} sold
+                </span>
+                <button onClick={() => setWatchSelectMode(true)} style={{
+                  fontSize: 11, padding: "4px 10px", borderRadius: 6,
+                  border: "0.5px solid var(--border)", background: "transparent",
+                  color: "var(--text2)", cursor: "pointer", fontFamily: "inherit",
+                }}>Select</button>
+              </div>
+            )}
+            {watchSelectMode && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 11, color: "var(--text3)" }}>
+                  {watchSelectedIds.size} selected
+                </span>
+                <button onClick={exitWatchSelect} style={{
+                  fontSize: 11, padding: "4px 10px", borderRadius: 6,
+                  border: "0.5px solid var(--border)", background: "transparent",
+                  color: "var(--text2)", cursor: "pointer", fontFamily: "inherit",
+                }}>Cancel</button>
+                <button onClick={removeSelectedFromWatchlist}
+                  disabled={watchSelectedIds.size === 0}
+                  style={{
+                    fontSize: 11, padding: "4px 10px", borderRadius: 6,
+                    border: "none", background: watchSelectedIds.size ? "#c43" : "var(--surface)",
+                    color: watchSelectedIds.size ? "#fff" : "var(--text3)",
+                    cursor: watchSelectedIds.size ? "pointer" : "default",
+                    fontFamily: "inherit",
+                  }}>Remove</button>
+              </div>
             )}
           </div>
           {watchCount === 0 ? (
@@ -1791,24 +1835,56 @@ export default function Dial() {
                       </div>
                     )}
                     <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-                      {view.map(item => (
-                        <Card
-                          key={item.id}
-                          item={{
-                            ...item,
-                            price: item.savedPrice,
-                            currency: item.savedCurrency || "USD",
-                            priceUSD: item.savedPriceUSD || item.savedPrice,
-                            // Force the SOLD badge on items in the Sold view.
-                            // The saved snapshot's own `sold` flag reflects state
-                            // at save time; we want the current state to win.
-                            sold: showSoldHistory,
-                          }}
-                          wished={true}
-                          onWish={handleWish}
-                          compact={compact}
-                        />
-                      ))}
+                      {view.map(item => {
+                        const selected = watchSelectedIds.has(item.id);
+                        const cardJSX = (
+                          <Card
+                            item={{
+                              ...item,
+                              price: item.savedPrice,
+                              currency: item.savedCurrency || "USD",
+                              priceUSD: item.savedPriceUSD || item.savedPrice,
+                              // Force the SOLD badge on items in the Sold view.
+                              // The saved snapshot's own `sold` flag reflects state
+                              // at save time; we want the current state to win.
+                              sold: showSoldHistory,
+                            }}
+                            wished={true}
+                            onWish={handleWish}
+                            compact={compact}
+                          />
+                        );
+                        // In select mode, wrap the card with a click-capture
+                        // overlay that toggles selection instead of opening
+                        // the listing. Also dim selected cards subtly.
+                        if (!watchSelectMode) return <div key={item.id}>{cardJSX}</div>;
+                        return (
+                          <div key={item.id} style={{ position: "relative", opacity: selected ? 0.55 : 1 }}>
+                            {cardJSX}
+                            <div onClick={() => toggleWatchSelected(item.id)}
+                              role="button" aria-pressed={selected}
+                              style={{
+                                position: "absolute", inset: 0, cursor: "pointer",
+                                background: selected ? "rgba(24,95,165,0.18)" : "transparent",
+                                outline: selected ? "2px solid #185FA5" : "none",
+                                outlineOffset: -2,
+                              }}>
+                              {/* Checkbox in the same spot the heart would be */}
+                              <div style={{
+                                position: "absolute", top: 8, right: 8,
+                                width: 24, height: 24, borderRadius: "50%",
+                                background: selected ? "#185FA5" : "rgba(255,255,255,0.92)",
+                                color: selected ? "#fff" : "var(--text2)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                fontSize: 14, fontWeight: 700, lineHeight: 1,
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.18)",
+                              }}>
+                                {selected ? "✓" : ""}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                       {view.length === 0 && (
                         <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
                           {totalForView === 0
