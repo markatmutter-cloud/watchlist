@@ -223,6 +223,139 @@ def scrape_christies_lot(url):
     }
 
 
+def scrape_sothebys_lot(url):
+    """Return a dict of fields scraped from one Sotheby's lot page.
+
+    Sotheby's uses Next.js + Apollo Client. The full lot record lives
+    in the `apolloCache` object embedded in `__NEXT_DATA__`, keyed
+    `LotV2:<base64>`. Fields are normalised against the same schema we
+    use for Antiquorum + Christie's so the frontend renders them with
+    the same Card layout."""
+    r = requests.get(url, headers=HEADERS, timeout=20)
+    r.raise_for_status()
+    html = r.text
+
+    m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>',
+                  html, re.DOTALL)
+    if not m:
+        raise RuntimeError("__NEXT_DATA__ not found")
+    data = json.loads(m.group(1))
+    cache = (data.get("props", {}).get("pageProps", {}).get("apolloCache")
+             or {})
+
+    def resolve(ref):
+        if isinstance(ref, dict) and "__ref" in ref:
+            return cache.get(ref["__ref"], {})
+        return ref or {}
+
+    lot_key = next((k for k in cache if k.startswith("LotV2:")), None)
+    if not lot_key:
+        raise RuntimeError("LotV2 entry not found in Apollo cache")
+    lot = cache[lot_key]
+
+    auction = resolve(lot.get("auction"))
+    session = resolve(lot.get("session"))
+    bid_state = resolve(lot.get("bidState"))
+    estimate = resolve(lot.get("estimateV2"))
+
+    # Money sub-objects: {__typename: 'Amount', amount: '60000'}
+    def amount_of(obj_ref):
+        obj = resolve(obj_ref)
+        a = obj.get("amount") if obj else None
+        if a in (None, ""):
+            return None
+        try:
+            return int(float(a))
+        except (TypeError, ValueError):
+            return None
+
+    estimate_low = amount_of(estimate.get("lowEstimate"))
+    estimate_high = amount_of(estimate.get("highEstimate"))
+    starting_price = amount_of(bid_state.get("startingBidV2"))
+    current_bid = amount_of(bid_state.get("currentBidV2"))
+
+    sold_obj = resolve(bid_state.get("sold"))
+    is_sold = bool(sold_obj.get("isSold"))
+    sold_price = None
+    if is_sold:
+        premiums = resolve(sold_obj.get("premiums"))
+        sold_price = amount_of(premiums.get("finalPriceV2")) if premiums else None
+
+    currency = (auction.get("currency") or auction.get("currencyV2") or "USD").upper()
+
+    # Image: pick the largest rendition of the first media image.
+    img_url = None
+    for k, v in lot.items():
+        if k.startswith("media("):
+            media = resolve(v)
+            images = media.get("images") or []
+            if images:
+                first = resolve(images[0])
+                renditions = first.get("renditions") or []
+                # Prefer Large / ExtraLarge so the Card has decent res.
+                ranked = sorted(
+                    (resolve(r) for r in renditions),
+                    key=lambda r: r.get("width") or 0,
+                    reverse=True,
+                )
+                # Cap at 1024 to avoid huge payloads in the JSON.
+                for r in ranked:
+                    w = r.get("width") or 0
+                    if w <= 1500:
+                        img_url = r.get("url")
+                        break
+                if not img_url and ranked:
+                    img_url = ranked[0].get("url")
+            break
+
+    # Status: open (= "Opened") → active; closed sessions → ended.
+    auction_state = (auction.get("state") or "").lower()
+    if is_sold or auction_state in ("closed", "complete", "completed"):
+        status = "ended"
+    else:
+        status = "active"
+
+    # Auction window: scheduledOpeningDate is when the live session
+    # starts. Use it as both start and end for one-day live sales (good
+    # enough for the countdown UI).
+    auction_start = session.get("scheduledOpeningDate") or auction.get("dates", {}).get("acceptsBids")
+    auction_end = auction_start
+    auction_dates = resolve(auction.get("dates")) if isinstance(auction.get("dates"), dict) else (auction.get("dates") or {})
+    if isinstance(auction_dates, dict) and auction_dates.get("closed"):
+        auction_end = auction_dates["closed"]
+
+    return {
+        "house": "Sotheby's",
+        "lot_id": lot.get("lotId"),
+        "lot_number": None,                   # Sotheby's lot numbers
+                                              # are inside lotNumber → VisibleLotNumber → number
+                                              # but format varies; not surfacing for now.
+        "title": (lot.get("title") or "").strip(),
+        "description": "",                    # description is long HTML;
+                                              # the frontend Card doesn't render desc, skipping
+        "currency": currency,
+        "estimate_low": estimate_low,
+        "estimate_high": estimate_high,
+        "starting_price": starting_price,
+        "current_bid": current_bid,
+        "sold_price": sold_price,
+        "estimate_low_usd":   to_usd(estimate_low,   currency),
+        "estimate_high_usd":  to_usd(estimate_high,  currency),
+        "starting_price_usd": to_usd(starting_price, currency),
+        "current_bid_usd":    to_usd(current_bid,    currency),
+        "sold_price_usd":     to_usd(sold_price,     currency),
+        "status": status,
+        "image": img_url,
+        "auction_title": (auction.get("title") or "").strip(),
+        "auction_start": auction_start,
+        "auction_end":   auction_end,
+        "auction_url":   None,                 # Sotheby's auction URL slug
+                                               # isn't in the lot's apolloCache;
+                                               # frontend falls back to lot URL
+        "scraped_at":    time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+
 def scrape(url):
     """Dispatch by host. Add new auction houses here as scrapers are built."""
     host = urlparse(url).hostname or ""
@@ -230,6 +363,8 @@ def scrape(url):
         return scrape_antiquorum_lot(url)
     if host.endswith("christies.com"):
         return scrape_christies_lot(url)
+    if host.endswith("sothebys.com"):
+        return scrape_sothebys_lot(url)
     raise NotImplementedError(f"No scraper for host: {host}")
 
 

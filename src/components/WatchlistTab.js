@@ -652,7 +652,7 @@ export function WatchlistTab(props) {
                         value={lotInputUrl}
                         onChange={e => { setLotInputUrl(e.target.value); setLotInputError(""); }}
                         onKeyDown={e => { if (e.key === "Enter") submitTrackedLot(); }}
-                        placeholder="Paste an Antiquorum or Christie's lot URL…"
+                        placeholder="Paste an Antiquorum, Christie's, or Sotheby's lot URL…"
                         style={{ ...inp, flex: 1, fontSize: 13 }}
                       />
                       <button onClick={submitTrackedLot} disabled={lotInputBusy || !lotInputUrl.trim()} style={{
@@ -666,8 +666,9 @@ export function WatchlistTab(props) {
                       <div style={{ fontSize: 11, color: "#c0392b", marginTop: 6 }}>{lotInputError}</div>
                     )}
                     <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 6 }}>
-                      Antiquorum (<span style={{ fontFamily: "monospace" }}>live.antiquorum.swiss/lots/view/…</span>)
-                      or Christie's (<span style={{ fontFamily: "monospace" }}>christies.com/…/lot/lot-NNN</span>).
+                      Antiquorum (<span style={{ fontFamily: "monospace" }}>live.antiquorum.swiss/lots/view/…</span>),
+                      Christie's (<span style={{ fontFamily: "monospace" }}>christies.com/…/lot/lot-NNN</span>),
+                      or Sotheby's (<span style={{ fontFamily: "monospace" }}>sothebys.com/en/buy/auction/YYYY/…</span>).
                     </div>
                   </div>
                 )}
@@ -677,7 +678,7 @@ export function WatchlistTab(props) {
                     <div style={{ fontSize: 32, marginBottom: 12 }}>⌛</div>
                     <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>No tracked lots yet</div>
                     <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto 16px" }}>
-                      Tap <b>+ Track lot</b> above and paste an Antiquorum or Christie's lot URL. Each tracked lot gets a daily price update, a countdown to the hammer, and the sold price recorded after.
+                      Tap <b>+ Track lot</b> above and paste an Antiquorum, Christie's, or Sotheby's lot URL. Each tracked lot gets a daily price update, a countdown to the hammer, and the sold price recorded after.
                     </div>
                     <button onClick={() => { setAddLotOpen(true); setLotInputError(""); }} style={{
                       padding: "8px 16px", borderRadius: 8, border: "0.5px solid var(--border)",

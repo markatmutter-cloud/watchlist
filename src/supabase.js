@@ -337,15 +337,16 @@ export function useTrackedLots(user) {
     if (!user || !supabase) return { error: 'not signed in' };
     const url = (rawUrl || '').trim();
     if (!url) return { error: 'empty URL' };
-    // Light validation: scraper supports Antiquorum live auctions and
-    // Christie's lot pages. Anything else gets a clear rejection rather
+    // Light validation: scraper supports Antiquorum, Christie's, and
+    // Sotheby's lot pages. Anything else gets a clear rejection rather
     // than a silent insert that the cron would later choke on.
     const supported = [
       /^https?:\/\/live\.antiquorum\.swiss\/lots\/view\//i,
       /^https?:\/\/(?:www\.)?christies\.com\/(?:[a-z]{2}\/)?lot\/lot-\d+/i,
+      /^https?:\/\/(?:www\.)?sothebys\.com\/(?:en\/)?buy\/auction\/\d{4}\/[a-z0-9-]+\/[a-z0-9-]+/i,
     ];
     if (!supported.some(re => re.test(url))) {
-      return { error: 'Supported lot URLs: Antiquorum (live.antiquorum.swiss/lots/view/...) or Christie\'s (christies.com/en/lot/lot-...).' };
+      return { error: 'Supported lot URLs: Antiquorum, Christie\'s (christies.com/.../lot/lot-NNN), or Sotheby\'s (sothebys.com/en/buy/auction/YYYY/.../...).' };
     }
     if (urls.includes(url)) return { error: 'Already tracking this lot.' };
     setUrls(prev => [url, ...prev]);
