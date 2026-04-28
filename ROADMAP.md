@@ -1,0 +1,287 @@
+# Watchlist Roadmap
+
+Last updated: 2026-04-28
+Living document. Updated as priorities shift.
+
+## How to use this doc
+
+This is the strategic doc for Watchlist. Architecture and conventions live in
+CLAUDE.md; current status of in-flight work lives in handoff docs. This doc is
+direction, not state.
+
+### For me (Mark)
+
+- Skim the priority order before starting a session. The order changes; the
+  epics rarely do.
+- When tempted to add scope mid-session, check the "explicitly NOT" section
+  before saying yes.
+- Update this doc when an epic ships, when a priority changes, or when a "no"
+  becomes a "yes."
+
+### For Claude Code
+
+- Read this doc at the start of any new session, after CLAUDE.md and any
+  active handoff doc.
+- Don't propose work outside this roadmap without flagging it as out-of-scope.
+- When asked "what's next?", default to the priority order in this doc.
+- When the user wavers on priorities mid-session, point them back here rather
+  than just complying. Discipline is part of the value.
+- When suggesting work, name the epic it lives under. ("This is Epic 3 work.")
+- When work is finished, suggest updating this doc to reflect the change.
+
+## North star
+
+Watchlist is a personal vintage-watch tool first, a public site second. Built
+for me to discover, track, and understand vintage watches across the dealer
+and auction market. Public access is a secondary benefit, not the primary
+purpose.
+
+The long-term value is the accumulated cross-source data and the analytics
+and learning experiences on top of it. Listings are the current surface;
+discovery, learning, and personal-collection-as-play are the next chapters.
+
+Watchlist is not trying to be Watchcharts. Don't compete on historical
+price-per-reference; build what they don't.
+
+## Constraints
+
+- Solo non-technical builder, co-authoring with Claude.
+- Budget: under $20/month for hosted services.
+- Free-tier-first: Vercel, Supabase, GitHub Actions. Mac mini at home as a
+  later-phase capability for jobs that don't fit free tiers (Playwright,
+  embeddings, reference-guide generation).
+- Don't telegraph commercial intent publicly. Admin/analytics features stay
+  hidden from regular users to avoid pressure from dealers and auction houses.
+- References will be 70-80% accurate via parsing, with LLM fallback for the
+  long tail and manual curation for the unparseable. Don't let perfect be
+  the enemy of good.
+
+## Epic 0: Foundations
+
+Cross-cutting infrastructure. Several later epics depend on this.
+
+- **References as first-class entities.** Normalized references table in
+  Supabase (or wherever it ends up). Each reference has brand, model,
+  era/years, category. Listings, auction lots, and curated content link
+  to references. Detection via per-source structured fields, regex on
+  title/description, and LLM fallback for the long tail. Manual curation
+  for what slips through.
+- **Verification script.** Daily check on each source: count listings vs.
+  rolling baseline, flag scraper breakage (count to zero, count drop >70%,
+  HTTP errors, parse failures). Email or status banner.
+- **Source quality dashboard (admin only).** Per-source: total listings,
+  hearted-by-me count, scraper health, days since last new listing. Drives
+  the "which sources earn their keep" decision.
+- **Maintenance rhythm.** Every 4th-5th session is hygiene only: bug fixes,
+  dependency updates, source pruning. No new features.
+
+## Epic 1: Sources
+
+Target end state: ~30 dealers + 6 auction houses, all earning their keep.
+Currently at 26 dealers + 6 auction houses.
+
+- **Active candidates** (evaluate, not all guaranteed):
+  - Vision Vintage Watches
+  - Wristicons
+  - Vintage Watch Collective
+  - Specific Pushers dealers
+- **Auction houses still to add:** Sotheby's, Heritage. Cloudflare-protected
+  ones go via Mac mini Playwright (Epic 6).
+- **Stop rule.** At ~30 dealers, audit and prune to 25. Don't add a source
+  unless it brings inventory not already covered or unique to a reference
+  category I care about.
+
+## Epic 2: Auction history
+
+Reference-led capture of past auction results. Not "every auction forever"
+but "what has come up for this reference, when, and what did it sell for."
+
+- **Open houses (Antiquorum, Phillips, Bonhams):** scrape realized prices
+  where publicly available.
+- **Gated houses (Christie's, Sotheby's):** skip realized prices behind login
+  walls; capture publicly visible lot details, estimates, images.
+- **Manual entry** for important results that aren't auto-captured. Admin form,
+  paste URL + price.
+- **Reference-led search UI.** "Show me every time the AP 5548BA has been to
+  auction" with prices, dates, photos, links.
+- **Data shape:** auctions are events that happen to references, not the
+  primary unit. Reference-first, auction-second.
+
+## Epic 3: Lovable features (organized around discovery and play)
+
+The features that make Watchlist tell me things, not just show me things.
+
+### Three-tier save model
+Replaces the current single-heart system:
+- **Heart (Favorite):** "I love this watch." High bar. Powers AI taste features.
+- **Watch (Track):** "Tell me if the price drops or it sells." Medium bar.
+- **Note (Save for later):** "I want to come back to this." Low bar. Folder
+  system for research/comparison.
+
+### Reference-level grouping
+Three saved 5548BAs collapse into one card with "3 listings, click to expand."
+Depends on Epic 0 references.
+
+### Build-a-collection (promoted, near-term after references)
+
+User-defined hypothetical collections. Specifications:
+
+- **User picks:** number of watches, challenge headline ("3 watches for
+  business"), budget.
+- **Source:** picks from current AND past listings (sold archive becomes
+  a query-able source, not just an archive tab).
+- **Multiple collections per user.** Named collections you maintain over time.
+- **Send as challenge:** invite another user to build a collection responding
+  to your spec.
+- **Share later:** public read-only link to a collection.
+- **Value-over-time tracking:** show how the cost of assembling that
+  collection has shifted since you built it. Powerful only after enough price
+  history accumulates.
+
+Depends on: Epic 0 (references), past listings being browseable as a query-
+able set rather than just an archive tab. Once references land, this is fast
+to build.
+
+### AI-powered serendipity (admin/wife/me only initially)
+
+- **Text embeddings** on listings from top dealers (Wind Vintage, Tropical
+  Watch, Bob's vintage Omega, Hairspring, others I actually browse). Stored in
+  Supabase pgvector. Computed once per listing on first sight.
+- **"More like this"** on any listing.
+- **Weekly "things you might have missed" email.** 5 listings from this week
+  matching my taste based on hearted history. Sunday morning ritual.
+- **Restricted initially** to me and wife. Can extend to friends later, or
+  remain admin-only indefinitely.
+- **Cost** estimate: pennies per month at current scale. Comfortable in
+  budget.
+
+### Deferred under this epic
+- **Taste arcs** ("you love Rolex, fall out, return"). Defer until
+  embeddings prove themselves; embeddings cover ~70% of this naturally.
+- **Cross-source duplicate detection.** Possibly combine with reference
+  normalization.
+- **Listing-quality signals** (priced above/below dealer norm).
+- **Comparison view** for similar saved items.
+
+## Epic 4: Personal analytics (admin-only)
+
+A separate area of the same site (`/admin` route, gated to my Supabase user
+ID). Hidden from regular users. Different visual language: dense, data-heavy.
+
+Build incrementally as questions surface:
+
+- **Source quality dashboard** (also Epic 0). First view to ship.
+- **Cross-source live inventory** for any reference.
+- **Personal taste-relative pricing.** "This Heuer is priced 15% above where
+  similar Heuers from this dealer have sold in the last year."
+- **Auction lot prediction.** "Phillips Geneva has 3 lots that match your
+  interests."
+
+What Watchcharts already does well: don't compete on historical
+price-per-reference. Use it; build what it doesn't.
+
+## Epic 5: Reference encyclopedia (the headline feature)
+
+Reference-led learning resource. Combines three layers:
+
+1. **LLM-synthesized body.** Aggregates dealer descriptions, auction lot
+   notes, and other on-platform writing about a reference into a coherent
+   reference guide. Refreshes periodically. Credit: "synthesized from
+   descriptions by Hairspring, Wind Vintage, Analog Shift, ..."
+2. **Curated layer.** Hand-picked links to deep dives, forum threads, videos,
+   photo galleries. Public can suggest via form; I moderate. Inspired by
+   explorer1016.com and similar collector-built sites.
+3. **Live layer.** Currently-available listings of that reference, plus past
+   auction results, plus price trends.
+
+Surfaces on listings of relevant references and as a standalone browseable
+encyclopedia.
+
+This is potentially the platform's most differentiated feature. Watchcharts
+has prices. Hodinkee has editorial. Dealer sites have inventory. Nobody has
+all three synthesized into a single reference-led learning view drawn from
+the dealer market itself.
+
+Depends on: Epic 0 (references) + Epic 6 Phase A or cloud LLM access for
+generation + accumulated dealer descriptions (already happening passively if
+we start storing full descriptions for tracked references).
+
+Storage decision: full dealer descriptions for tracked references stored
+locally on Mac mini and synced to Supabase, rather than bloating
+`listings.json` for everyone.
+
+## Epic 6: Mac mini infrastructure
+
+Learning project plus capability extension. Phased.
+
+- **Phase A:** Mac mini scrapes hard sources (Cloudflare-protected, JS-heavy)
+  using headed Playwright. Pushes CSVs to repo. Rest of system unchanged.
+  ~1 weekend setup. Concrete and useful.
+- **Phase A.5 (likely combined with A):** Mac mini stores full dealer
+  descriptions for tracked references. Generates reference guides via local
+  LLM (Llama 3 or similar). Pushes results to Supabase. Powers Epic 5
+  encyclopedia without burning cloud LLM budget.
+- **Phase B (later, optional):** Mac mini runs Postgres and the API; Vercel
+  still serves frontend.
+- **Phase C (later, optional):** Full self-hosting on Mac mini.
+
+Watch out for: CGNAT on home internet (check before buying), power/network
+reliability, SSL cert renewal, backup strategy.
+
+Hardware: M4 Mac mini base, 16GB RAM, ~$600.
+
+## Priority order
+
+Current best-guess sequence. Will shift; update this doc when it does.
+
+1. **Epic 0 foundations.** References + verification script before adding
+   more sources. Without this, everything downstream is shaky.
+2. **Epic 6 Phase A** when a specific blocked source needs it OR when ready
+   to start Epic 5 generation work.
+3. **Epic 1 source list** to target end state, then close it.
+4. **Build-a-collection (Epic 3)** as soon as references land. Showcase
+   feature that proves references were worth doing.
+5. **Epic 2 auction history**, reference-led, open houses first.
+6. **Epic 5 encyclopedia** built incrementally as descriptions accumulate.
+7. **Epic 3 discovery features** (embeddings, weekly email) once references
+   and Mac mini are in place.
+8. **Epic 4 admin analytics** built incrementally throughout.
+
+## Explicitly NOT on the roadmap
+
+Saying no is part of the roadmap. These have been considered and parked
+or rejected:
+
+- **Refactoring all scrapers into a shared module.** Premature; current
+  per-file structure is debuggable. Revisit only if a class of bug spans
+  many scrapers.
+- **Custom domain.** Already done via the-watch-list.app.
+- **Mobile native app.** PWA install is sufficient.
+- **Public market analytics like Watchcharts.** They do it better.
+- **Original editorial content.** Curating and synthesizing others' work
+  is enough.
+- **Birthday/anniversary mode.** Not interesting to me.
+- **Taste arcs as a near-term feature.** Embeddings cover most of this;
+  revisit only if embeddings disappoint.
+- **Generic public social features** (comments, ratings, profiles). Build-a-
+  collection sharing is the only social primitive on the roadmap. Keep it
+  small.
+
+## Fun ideas, parked
+
+Not active. Worth keeping a list because some might graduate.
+
+- **Watch arrival animation.** Subtle entrance for firstSeen-today listings.
+- **Watchlist export.** PDF or CSV download of saved listings.
+- **Random watch button.** Pure serendipity, zero algorithm.
+- **Reference browser.** Encyclopedia view as standalone navigation, not
+  just attached to listings. (Likely combines with Epic 5.)
+- **Year-in-review.** Once a year of data exists: hearted-most, dealers-
+  browsed-most, biggest price drops caught.
+
+## Update log
+
+- 2026-04-28: Roadmap created. Build-a-collection promoted. Reference
+  encyclopedia reframed as headline feature using LLM synthesis of dealer
+  descriptions. Birthday mode dropped. Taste arcs deferred. Three-tier save
+  added. References established as cross-cutting foundation.
