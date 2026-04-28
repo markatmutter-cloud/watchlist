@@ -895,25 +895,6 @@ export default function Watchlist() {
     </div>
   ) : null;
 
-
-
-
-
-  // Watchlist tab now stacks two subsections:
-  //   1. Saved searches (tap to run a search in Available)
-  //   2. Hearted listings with their saved price
-  // Inline JSX const (not a function component) to avoid remount-on-render
-  // bugs the way the other tabs do.
-  // Import banner for legacy localStorage data. Fires importLocalData(),
-  // which upserts into Supabase; on success we clear the browser keys so
-  // the banner goes away and we don't nag on future visits.
-  };
-
-  // Reusable signed-out prompt — shown on Searches and Watchlist tabs
-  // when the user isn't signed in. Both tabs need an account for any of
-  // their content (saved searches, watchlist) to make sense.
-
-
   // Watchlist tab JSX. Built once so both mobile + desktop returns can
   // reference the same instance without re-spelling the long prop list.
   const watchlistTabJSX = (
