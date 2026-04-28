@@ -1,20 +1,36 @@
 name: Scrape Tropical Watch only
 
-# Manual-trigger-only workflow for refreshing just the Tropical Watch source
-# without touching the other nine. Useful when you've kicked off a fresh Browse
-# AI run on the TW robot and want to pull those specific results into Watchlist
-# before the next full daily cron.
+# Refreshes just the Tropical Watch source without touching the other 23.
+# State.json still updates (so disappeared TW items get marked inactive
+# and new ones picked up) and listings.json is regenerated from the
+# complete set.
 #
-# Everything else is left untouched: other CSVs in data/ are unchanged, state.json
-# is still updated (so disappeared TW items get marked inactive and new ones
-# picked up), and listings.json is regenerated from the complete set.
+# Browse AI integration: this workflow TRIGGERS a fresh robot run (not
+# `--latest`) and polls until completion. That keeps the schedule in
+# ONE place — this file — instead of needing alignment between Browse
+# AI's own schedule and the GitHub cron. Each run consumes Browse-AI
+# credits up to the watches_limit set in the scraper (150 today).
+#
+# Cost note: 2 runs/day × 150 watches × ~30 days = ~9k credits/month at
+# the cap. If TW inventory is below the cap, fewer credits are billed.
+# If the Browse AI quota is tighter than that, drop to 1 run/day or
+# lower the watches_limit in tropicalwatch_scraper.py.
 
 on:
+  schedule:
+    # 6am PST / 7am PDT — aligns with the morning listings cron so TW
+    # updates land alongside the other dealers in the morning feed.
+    - cron: '0 14 * * *'
+    # 6pm PST / 7pm PDT — same alignment for the evening run.
+    - cron: '0 2 * * *'
   workflow_dispatch:
 
 jobs:
   scrape-tw:
     runs-on: ubuntu-latest
+    # Each run includes a Browse-AI poll loop that can wait up to MAX_WAIT
+    # (10 min) for the robot to finish.
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repo
@@ -28,10 +44,13 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run Tropical Watch scraper (Browse AI)
+      - name: Run Tropical Watch scraper (triggers Browse AI + polls)
         env:
           BROWSE_AI_API_KEY: ${{ secrets.BROWSE_AI_API_KEY }}
-        run: python tropicalwatch_scraper.py --latest
+        # No --latest flag: scraper triggers a fresh robot run, polls
+        # until completion, then writes the CSV. One credit charge per
+        # cron firing.
+        run: python tropicalwatch_scraper.py
 
       - name: Move TW CSV to data folder
         run: |
