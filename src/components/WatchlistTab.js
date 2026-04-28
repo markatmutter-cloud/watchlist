@@ -50,16 +50,10 @@ export function WatchlistTab(props) {
   };
 
 
-  // Group-by selector for the Listings sub-tab — local because grouping
-  // semantics only make sense inside a watchlist view. Status filter is
-  // global (statusMode prop) so users don't have to set it per tab.
-  const [watchGroupBy, setWatchGroupBy] = useState(() => {
-    try { return localStorage.getItem("watchlist_group_v1") || "none"; }
-    catch { return "none"; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem("watchlist_group_v1", watchGroupBy); } catch {}
-  }, [watchGroupBy]);
+  // Group-by is global now (driven by the filter bar's Group pill);
+  // alias the prop to the local name so the rest of this file's
+  // grouping logic keeps reading naturally.
+  const watchGroupBy = props.groupBy || "none";
 
   // ── DERIVED ────────────────────────────────────────────────────────────
   const watchView = useMemo(() => {
@@ -317,21 +311,9 @@ export function WatchlistTab(props) {
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>Watchlist</div>
             {watchCount > 0 && !watchSelectMode && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                {/* Status (Live/Sold/All) is now driven by the global
-                    pill in the filter bar — same control, same state,
-                    consistent across Available + Watchlist + Lots. */}
-                <select value={watchGroupBy} onChange={e => setWatchGroupBy(e.target.value)}
-                  aria-label="Group by"
-                  style={{
-                    fontSize: 11, padding: "4px 8px", borderRadius: 8,
-                    border: "0.5px solid var(--border)", background: "var(--card-bg)",
-                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                  }}>
-                  <option value="none">No grouping</option>
-                  <option value="brand">Group: Brand</option>
-                  <option value="source">Group: Source</option>
-                  <option value="ref">Group: Reference</option>
-                </select>
+                {/* Status + Group are both driven by the global filter
+                    bar now — same controls, same state, consistent
+                    across Available + Watchlist. */}
                 <button onClick={() => setWatchSelectMode(true)} style={{
                   fontSize: 11, padding: "4px 10px", borderRadius: 6,
                   border: "0.5px solid var(--border)", background: "transparent",

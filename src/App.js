@@ -149,6 +149,20 @@ export default function Watchlist() {
   // One source of truth for "what status am I looking at" so the user
   // doesn't have to set it per tab.
   const [statusMode, setStatusMode] = useState("live");
+  // Global Group-by control. Replaces age-bucket dividers in the
+  // Available/Archive feed AND drives the Watchlist > Listings sub-tab.
+  // Persisted under `dial_group_v1`; falls back to the legacy
+  // `watchlist_group_v1` key for users who set it before this lift.
+  const [groupBy, setGroupBy] = useState(() => {
+    try {
+      return localStorage.getItem("dial_group_v1")
+        || localStorage.getItem("watchlist_group_v1")
+        || "none";
+    } catch { return "none"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("dial_group_v1", groupBy); } catch {}
+  }, [groupBy]);
   // Hidden listings manager (was the Archive tab's hidden-section, now
   // a modal opened from the user dropdown).
   const [hiddenModalOpen, setHiddenModalOpen] = useState(false);
@@ -793,8 +807,47 @@ export default function Watchlist() {
     if (d <= 7) return "This week";
     return "Older";
   };
+  // Derive the group key for a single item under the current `groupBy`.
+  // Mirrors the same logic the Watchlist tab used before this was lifted
+  // to App.js so brand/source/ref bucketing is consistent everywhere.
+  const groupKeyOf = (it) => {
+    if (groupBy === "brand")  return it.brand || "Other";
+    if (groupBy === "source") return it.source || "Other";
+    if (groupBy === "ref")    return extractRef(it.ref) || "Other";
+    return null;
+  };
+
   const visibleWithDividers = (() => {
-    if (statusMode === "sold" || !(sort === "date" || sort === "date-asc") || visible.length === 0) {
+    if (visible.length === 0) {
+      return [];
+    }
+    // Brand/Source/Reference grouping takes priority over the age
+    // bucketing — it's what the user explicitly asked for.
+    if (groupBy !== "none") {
+      const groups = new Map();
+      for (const it of visible) {
+        const key = groupKeyOf(it) || "Other";
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(it);
+      }
+      const entries = [...groups.entries()];
+      if (groupBy === "ref") {
+        // References: most-populous first so the dense buckets read first.
+        entries.sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+      } else {
+        entries.sort((a, b) => a[0].localeCompare(b[0]));
+      }
+      const out = [];
+      for (const [key, items] of entries) {
+        const total = allFiltered.filter(x => groupKeyOf(x) === key).length;
+        out.push({ kind: "divider", label: key, total });
+        for (const it of items) out.push({ kind: "card", item: it });
+      }
+      return out;
+    }
+    // Default behaviour: age-bucket dividers when sorted by date and
+    // not viewing sold history. Sold + non-date sorts get a flat grid.
+    if (statusMode === "sold" || !(sort === "date" || sort === "date-asc")) {
       return visible.map(it => ({ kind: "card", item: it }));
     }
     const out = [];
@@ -990,6 +1043,7 @@ export default function Watchlist() {
       inp={inp}
       isMobile={isMobile}
       statusMode={statusMode}
+      groupBy={groupBy}
       watchTopTab={watchTopTab}
       setWatchTopTab={setWatchTopTab}
       legacyLocal={legacyLocal}
@@ -1296,6 +1350,14 @@ export default function Watchlist() {
                       ))}
                     </div>
                   </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ ...sectionHeadingStyle, marginBottom: 6 }}>Group by</div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {[["none", "None"], ["brand", "Brand"], ["source", "Source"], ["ref", "Ref"]].map(([val, label]) => (
+                        <Chip key={val} label={label} active={groupBy === val} onClick={() => setGroupBy(val)} />
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   {hasFilters && (
@@ -1425,6 +1487,34 @@ export default function Watchlist() {
                 background: sort === val ? "var(--surface)" : "transparent",
                 color: "var(--text1)", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
               }}>{lbl}{sort === val ? "  ✓" : ""}</button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Group */}
+      <div style={{ position: "relative" }}>
+        {(() => {
+          const label = groupBy === "brand" ? "Brand"
+                      : groupBy === "source" ? "Source"
+                      : groupBy === "ref" ? "Reference"
+                      : "None";
+          return (
+            <button onClick={() => setActiveFilterPop(p => p === "group" ? null : "group")} style={pillBase(groupBy !== "none")}>
+              Group: {label} ▾
+            </button>
+          );
+        })()}
+        {activeFilterPop === "group" && popShell(
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {[["none", "No grouping"], ["brand", "Brand"],
+              ["source", "Source"], ["ref", "Reference"]
+            ].map(([val, lbl]) => (
+              <button key={val} onClick={() => { setGroupBy(val); setActiveFilterPop(null); }} style={{
+                textAlign: "left", padding: "8px 10px", borderRadius: 6, border: "none",
+                background: groupBy === val ? "var(--surface)" : "transparent",
+                color: "var(--text1)", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+              }}>{lbl}{groupBy === val ? "  ✓" : ""}</button>
             ))}
           </div>
         )}
