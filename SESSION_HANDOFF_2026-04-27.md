@@ -8,7 +8,7 @@ Self-contained handoff for a fresh Claude Code session. Read this top-to-bottom 
 - **Repo:** `https://github.com/markatmutter-cloud/watchlist.git`
 - **Local path:** `~/Documents/watchlist`
 - **Live:** [the-watch-list.app](https://the-watch-list.app) (custom domain via Vercel; old `dial-watchlist.vercel.app` sunset).
-- **What it is:** personal vintage-watch listing aggregator. **24 dealers + 4 auction houses** scraped 3x/day (PT-aligned: 6am, noon, 6pm), merged into static JSON committed to the repo, deployed via Vercel. Per-user data (watchlist, hidden, saved searches, tracked auction lots) lives in Supabase with RLS.
+- **What it is:** personal vintage-watch listing aggregator. **25 dealers + 4 auction houses** scraped 3x/day (PT-aligned: 6am, noon, 6pm), merged into static JSON committed to the repo, deployed via Vercel. Per-user data (watchlist, hidden, saved searches, tracked auction lots) lives in Supabase with RLS.
 - **Builder:** Mark — based in California (PT). Non-technical; Claude is co-author. Tone: terse, action-oriented; flag risks but don't overexplain.
 
 ## Stack
@@ -48,9 +48,9 @@ api/img.js                    Vercel serverless image proxy (Watchfid-allowliste
 - **`public/state.json` (~1.1 MB) and `public/auctions_state.json`** — cross-run memory: stable `sha1(normalized_url)[:12]` IDs, `firstSeen`, `lastSeen`, `priceHistory`, `active/sold` flags. The pipeline is self-healing because of this. Dates are PT-anchored.
 - **Supabase tables (RLS, per-user):** `watchlist_items` (with `cached_img_url`), `hidden_listings`, `saved_searches`, `tracked_lots`.
 
-## Sources (24 dealers + 4 auction houses)
+## Sources (25 dealers + 4 auction houses)
 
-**Dealers:** Wind Vintage, Tropical Watch (Browse AI), Menta, Collectors Corner NY, Falco, Grey & Patina, Oliver & Clarke, Craft & Tailored, Watch Brothers London, MVV Watches, Analog Shift, Watches of Knightsbridge, Belmont, Bob's Watches (vintage Omega only), DB1983, Hairspring (brand from JSON-LD detail-page scrape), Somlo, Bulang & Sons (EUR Shopify), Watchfid (EUR, WP REST API; images proxied via `/api/img`), Moonphase (EUR, Paris-based, sourced via pushers.io JSON API), Huntington Company (Shopify, `/collections/watchshop`), The Vintage Watch (Shopify, `/collections/available-watches`), Avocado Vintage (Squarespace), **Chronoholic** (Wix, scoped to the Omega category — most listings are "Price on request" inquire-style).
+**Dealers:** Wind Vintage, Tropical Watch (Browse AI), Menta, Collectors Corner NY, Falco, Grey & Patina, Oliver & Clarke, Craft & Tailored, Watch Brothers London, MVV Watches, Analog Shift, Watches of Knightsbridge, Belmont, Bob's Watches (vintage Omega only), DB1983, Hairspring (brand from JSON-LD detail-page scrape), Somlo, Bulang & Sons (EUR Shopify), Watchfid (EUR, WP REST API; images proxied via `/api/img`), Moonphase (EUR, Paris-based, sourced via pushers.io JSON API), Huntington Company (Shopify, `/collections/watchshop`), The Vintage Watch (Shopify, `/collections/available-watches`), Avocado Vintage (Squarespace), Chronoholic (Wix, scoped to the Omega category — most listings are "Price on request" inquire-style), **Vintage Watch Fam** (Shopify, hosted at dannysvintagewatches.com but Mark wanted the public name "Vintage Watch Fam").
 
 **Auctions:** Antiquorum, Monaco Legend, Phillips, Bonhams. Plus a manual-entry CSV (`data/manual_auctions.csv`) and a tracked-lots scraper (`auctionlots_scraper.py`) that reads the union of users' tracked lot URLs from Supabase (Christie's URL support added).
 

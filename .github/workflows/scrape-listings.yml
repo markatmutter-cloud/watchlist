@@ -124,6 +124,10 @@ jobs:
         continue-on-error: true
         run: python chronoholic_scraper.py
 
+      - name: Run Vintage Watch Fam scraper
+        continue-on-error: true
+        run: python vintagewatchfam_scraper.py
+
       - name: Move CSVs to data folder
         run: |
           mkdir -p data
@@ -151,6 +155,7 @@ jobs:
           [ -f thevintagewatch_listings.csv ]     && mv thevintagewatch_listings.csv     data/thevintagewatch.csv     || echo "thevintagewatch missing"
           [ -f avocadovintage_listings.csv ]      && mv avocadovintage_listings.csv      data/avocadovintage.csv      || echo "avocadovintage missing"
           [ -f chronoholic_listings.csv ]         && mv chronoholic_listings.csv         data/chronoholic.csv         || echo "chronoholic missing"
+          [ -f vintagewatchfam_listings.csv ]     && mv vintagewatchfam_listings.csv     data/vintagewatchfam.csv     || echo "vintagewatchfam missing"
 
       - name: Merge into listings.json
         run: python merge.py --listings-only
