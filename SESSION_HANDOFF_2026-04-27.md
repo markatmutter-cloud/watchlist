@@ -104,7 +104,12 @@ That's it. The big bug list from the previous handoff is resolved.
 
 1. **eBay API integration scoped to saved searches.** Highest-impact single feature. eBay has a stable Browse API (free tier, OAuth). Recommended scope: extend saved searches with an "include eBay matches" toggle rather than dumping all of eBay into the main feed.
 2. **Alerts** — email/push when a saved search matches a new listing. Mark's flagged this as the feature that turns it from "browse tool" into "daily-open tool". Best built after eBay so it covers both dealer + eBay matches.
-3. **Sotheby's / Christie's / Heritage auction houses.** Christie's lot-URL support already exists for tracked lots. Sotheby's is the unknown (likely Cloudflare). Manual entry CSV exists as a safety net.
+3. ~~Christie's auction calendar~~ shipped 2026-04-28 (Next.js `__NEXT_DATA__` parse).
+4. ~~Sotheby's auction calendar~~ shipped 2026-04-28 (calendar URL with watches filter).
+5. **Heritage Auctions** — DataDome-blocked. Both `jewelry.ha.com/timepieces/` and the schedule URL (`jewelry.ha.com/heritage-auctions-schedule.s?category=timepieces&view=current`) return a `geo.captcha-delivery.com` challenge page no matter the headers. Standard `requests` won't get past this — DataDome fingerprints at the TLS / browser level. Three options if Mark wants Heritage on the calendar:
+   - **Browse AI robot** — would need extra paid credits in addition to the existing Tropical Watch robot.
+   - **Mac mini at home** running headed Playwright — the parked fallback option (~$600 one-time + ~$5/mo electricity).
+   - **Manual entry** via `data/manual_auctions.csv` — works today, Mark already uses it for hand-curated dates.
 
 **More dealer sources to evaluate** (Mark's list, 2026-04-27):
 
