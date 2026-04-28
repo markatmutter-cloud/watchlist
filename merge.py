@@ -125,9 +125,20 @@ def load_csv(path, source_name, currency='USD'):
             title = clean(r.get('title', ''))
             url = r.get('url', '')
             rate = FX.get(currency, 1.0)
+            # Prefer the scraper's brand column when it's set to a known
+            # brand or a non-"Other" value — most scrapers fill this from
+            # the title (same regex as detect_brand) but Hairspring and
+            # similar sources can set it from structured data the title
+            # alone wouldn't reveal. Fall back to title-based detection
+            # when the column is missing or "Other".
+            scraped_brand = (r.get('brand') or '').strip()
+            if scraped_brand and scraped_brand != 'Other':
+                brand = scraped_brand
+            else:
+                brand = detect_brand(title)
             items.append({
                 'id': stable_id(url, fallback_key=f"{source_name}|{title}"),
-                'brand': detect_brand(title),
+                'brand': brand,
                 'ref': title,
                 'price': price,
                 'currency': currency,

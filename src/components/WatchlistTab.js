@@ -52,7 +52,7 @@ export function WatchlistTab(props) {
     // Card
     handleWish,
     // UI shared
-    compact, gridStyle, inp, isMobile, showSoldHistory,
+    compact, gridStyle, inp, isMobile, statusMode,
     // Sub-tab routing — controlled by parent because the surrounding
     // chrome (sidebar, filter bar) gates on it too.
     watchTopTab, setWatchTopTab,
@@ -94,16 +94,9 @@ export function WatchlistTab(props) {
     else setLotInputUrl("");
   };
 
-  // Listings sub-tab status filter (Live / Sold / All) — local to this
-  // sub-tab. Persisted so the user's preference survives reloads.
-  const [watchStatusMode, setWatchStatusMode] = useState(() => {
-    try { return localStorage.getItem("watchlist_status_v1") || "live"; }
-    catch { return "live"; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem("watchlist_status_v1", watchStatusMode); } catch {}
-  }, [watchStatusMode]);
-
+  // Group-by selector for the Listings sub-tab — local because grouping
+  // semantics only make sense inside a watchlist view. Status filter is
+  // global (statusMode prop) so users don't have to set it per tab.
   const [watchGroupBy, setWatchGroupBy] = useState(() => {
     try { return localStorage.getItem("watchlist_group_v1") || "none"; }
     catch { return "none"; }
@@ -114,10 +107,10 @@ export function WatchlistTab(props) {
 
   // ── DERIVED ────────────────────────────────────────────────────────────
   const watchView = useMemo(() => {
-    if (watchStatusMode === "all")  return watchItems;
-    if (watchStatusMode === "sold") return watchSold;
+    if (statusMode === "all")  return watchItems;
+    if (statusMode === "sold") return watchSold;
     return watchLive;
-  }, [watchStatusMode, watchItems, watchLive, watchSold]);
+  }, [statusMode, watchItems, watchLive, watchSold]);
 
   const watchGroups = useMemo(() => {
     if (watchGroupBy === "none") return [["", watchView]];
@@ -428,15 +421,18 @@ export function WatchlistTab(props) {
       ) : (
         <>
           {/* Top-level toggle between dealer listings and auction lots.
-              Auction lots are time-sensitive (countdowns), so making
-              them one tap away rather than a long scroll matters. */}
+              Sticky so the sub-tabs stay reachable as the user scrolls.
+              No paddingTop — the bar pins flush against the chrome
+              above it. Border + paddingBottom keep the bar visually
+              integrated rather than a floating strip. */}
           <div style={{
-            display: "flex", marginBottom: 18,
+            display: "flex", marginBottom: 14,
             position: "sticky",
             top: isMobile ? 92 : 0,
             background: "var(--bg)",
             zIndex: 15,
-            paddingTop: isMobile ? 8 : 4,
+            paddingBottom: 4,
+            borderBottom: "0.5px solid var(--border)",
           }}>
             {[
               ["listings", `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
@@ -458,25 +454,9 @@ export function WatchlistTab(props) {
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>Watchlist</div>
             {watchCount > 0 && !watchSelectMode && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                {/* Tri-state status: Live / Sold / All. Local to this
-                    sub-tab — the global Live↔Sold pill still drives
-                    Available and Lots. */}
-                <div style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
-                  {[
-                    ["live", `Live · ${watchLive.length}`],
-                    ["sold", `Sold · ${watchSold.length}`],
-                    ["all",  `All · ${watchItems.length}`],
-                  ].map(([k, label], idx) => (
-                    <button key={k} onClick={() => setWatchStatusMode(k)} style={{
-                      border: "none",
-                      borderLeft: idx === 0 ? "none" : "0.5px solid var(--border)",
-                      padding: "4px 10px", fontSize: 11, cursor: "pointer",
-                      background: watchStatusMode === k ? "var(--text1)" : "transparent",
-                      color: watchStatusMode === k ? "var(--bg)" : "var(--text2)",
-                      fontFamily: "inherit",
-                    }}>{label}</button>
-                  ))}
-                </div>
+                {/* Status (Live/Sold/All) is now driven by the global
+                    pill in the filter bar — same control, same state,
+                    consistent across Available + Watchlist + Lots. */}
                 <select value={watchGroupBy} onChange={e => setWatchGroupBy(e.target.value)}
                   aria-label="Group by"
                   style={{
@@ -587,16 +567,16 @@ export function WatchlistTab(props) {
                   }).length;
                   const rawLive = Object.keys(watchlist).length - rawSold;
                   const rawForStatus =
-                    watchStatusMode === "all"  ? Object.keys(watchlist).length :
-                    watchStatusMode === "sold" ? rawSold : rawLive;
+                    statusMode === "all"  ? Object.keys(watchlist).length :
+                    statusMode === "sold" ? rawSold : rawLive;
                   return (
                     <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
                       <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
                         {rawForStatus === 0
-                          ? (watchStatusMode === "sold"
+                          ? (statusMode === "sold"
                               ? "No watchlisted items have sold yet."
-                              : watchStatusMode === "live"
-                                ? "All your saved items have sold or been pulled. Try the Sold or All segment above."
+                              : statusMode === "live"
+                                ? "All your saved items have sold or been pulled. Try Sold or All in the filter bar above."
                                 : "No saved watches yet.")
                           : "No saved watches match your filters"}
                       </div>
@@ -636,17 +616,22 @@ export function WatchlistTab(props) {
           {watchTopTab === "lots" && (() => {
             // Live/Sold for auction lots maps to: Live = still upcoming
             // (auction not yet ended), Sold = past (hammer happened or
-            // ended). Same global filter pill as Available, same mental
-            // model.
-            const lotsView = showSoldHistory ? trackedLotsPast : trackedLotsUpcoming;
-            const lotsTotal = showSoldHistory ? trackedLotsPast.length : trackedLotsUpcoming.length;
+            // ended), All = both combined (upcoming first, then past).
+            // Driven by the same global statusMode pill as Available +
+            // Watchlist Listings.
+            const lotsView =
+              statusMode === "sold" ? trackedLotsPast :
+              statusMode === "all"  ? [...trackedLotsUpcoming, ...trackedLotsPast] :
+                                      trackedLotsUpcoming;
+            const lotsLabel =
+              statusMode === "sold" ? `${trackedLotsPast.length} past` :
+              statusMode === "all"  ? `${trackedLotsUpcoming.length} upcoming · ${trackedLotsPast.length} past` :
+                                      `${trackedLotsUpcoming.length} upcoming`;
             return (
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 8 }}>
                   <div style={{ fontSize: 11, color: "var(--text3)" }}>
-                    {trackedLots.length === 0
-                      ? ""
-                      : (showSoldHistory ? `${lotsTotal} past` : `${lotsTotal} upcoming`)}
+                    {trackedLots.length === 0 ? "" : lotsLabel}
                   </div>
                   <button onClick={() => { setAddLotOpen(o => !o); setLotInputError(""); }} style={{
                     border: "0.5px solid var(--border)", background: addLotOpen ? "var(--text1)" : "var(--card-bg)",
@@ -705,7 +690,9 @@ export function WatchlistTab(props) {
                     {lotsView.map(renderLotCard)}
                     {lotsView.length === 0 && (
                       <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
-                        {showSoldHistory ? "No past lots yet." : "No upcoming lots."}
+                        {statusMode === "sold" ? "No past lots yet."
+                          : statusMode === "all" ? "No tracked lots yet."
+                          : "No upcoming lots."}
                       </div>
                     )}
                   </div>

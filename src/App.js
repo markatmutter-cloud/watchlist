@@ -139,13 +139,14 @@ export default function Watchlist() {
   const [newDays, setNewDays] = useState(0);
   const [page, setPage] = useState(1);
   const [filterRefs, setFilterRefs] = useState([]);
-  // Single Live ↔ Sold filter shared by Available and Watchlist tabs.
-  // false = Live (default), true = Sold. The pill in the filter row
-  // toggles it, and both tabs honour it: on Available it switches the
-  // grid between live listings and sold/inactive history; on Watchlist
-  // it switches the watchlist between items still for sale and ones the
-  // dealer has pulled. Same mental model in both places.
-  const [showSoldHistory, setShowSoldHistory] = useState(false);
+  // Tri-state status filter shared globally: "live" (default), "sold",
+  // or "all" (both combined). Applies to:
+  //   - Available feed: filter to live, sold, or no filter (all).
+  //   - Watchlist > Listings: same semantics on saved items.
+  //   - Watchlist > Lots: live = upcoming, sold = past, all = combined.
+  // One source of truth for "what status am I looking at" so the user
+  // doesn't have to set it per tab.
+  const [statusMode, setStatusMode] = useState("live");
   // Hidden listings manager (was the Archive tab's hidden-section, now
   // a modal opened from the user dropdown).
   const [hiddenModalOpen, setHiddenModalOpen] = useState(false);
@@ -387,12 +388,13 @@ export default function Watchlist() {
 
   const allFiltered = useMemo(() => {
     let its = [...items];
-    // The "Status" filter is a mutually-exclusive Live vs Sold toggle.
-    // Default is Live (current scraped inventory). Sold mode swaps the
-    // grid to historical/inactive listings — the analytics view, useful
-    // when paired with a brand+ref filter to see price history.
-    if (showSoldHistory) its = its.filter(i => i.sold);
-    else its = its.filter(i => !i.sold);
+    // Tri-state Status filter. "live" = current scraped inventory,
+    // "sold" = historical/inactive (analytics view), "all" = both — the
+    // useful comparison when paired with a brand+ref filter to see price
+    // history alongside what's still on the market.
+    if (statusMode === "live") its = its.filter(i => !i.sold);
+    else if (statusMode === "sold") its = its.filter(i => i.sold);
+    // "all" — no status filter
     its = its.filter(i => !hidden[i.id]);   // drop user-hidden items from Available feed
     if (filterRefs.length > 0) {
       its = its.filter(i => {
@@ -431,7 +433,7 @@ export default function Watchlist() {
       });
     }
     return its;
-  }, [items, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, showSoldHistory]);
+  }, [items, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, statusMode]);
 
   const visible = useMemo(() => allFiltered.slice(0, page * PAGE_SIZE), [allFiltered, page]);
   const hasMore = visible.length < allFiltered.length;
@@ -742,16 +744,6 @@ export default function Watchlist() {
         </div>
       </div>
       <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
-      {REFS.length > 0 && (
-        <div style={{ padding: "12px 16px 8px" }}>
-          <div style={sectionHeadingStyle}>Reference</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-            {visibleRefs.map(r => <SidebarChip key={r} label={r} active={filterRefs.includes(r)} onClick={() => toggleFilterRef(r)} />)}
-            {REFS.length > REFS_SHOW && <SidebarChip label={refsExpanded ? "Less ↑" : `+${REFS.length - REFS_SHOW} more`} active={false} onClick={() => setRefsExpanded(!refsExpanded)} blue />}
-          </div>
-        </div>
-      )}
-      <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
       <div style={{ padding: "12px 16px 14px" }}>
         <div style={sectionHeadingStyle}>Price (USD)</div>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -800,7 +792,7 @@ export default function Watchlist() {
     return "Older";
   };
   const visibleWithDividers = (() => {
-    if (showSoldHistory || !(sort === "date" || sort === "date-asc") || visible.length === 0) {
+    if (statusMode === "sold" || !(sort === "date" || sort === "date-asc") || visible.length === 0) {
       return visible.map(it => ({ kind: "card", item: it }));
     }
     const out = [];
@@ -844,7 +836,7 @@ export default function Watchlist() {
           )
         ))}
         {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>
-          {showSoldHistory ? "No sold listings match your filters" : "No watches match your filters"}
+          {statusMode === "sold" ? "No sold listings match your filters" : "No watches match your filters"}
         </div>}
       </div>
       {hasMore && <div ref={loaderRef} style={{ padding: 24, textAlign: "center", color: "var(--text3)", fontSize: 12 }}>Loading more...</div>}
@@ -953,7 +945,7 @@ export default function Watchlist() {
       gridStyle={gridStyle}
       inp={inp}
       isMobile={isMobile}
-      showSoldHistory={showSoldHistory}
+      statusMode={statusMode}
       watchTopTab={watchTopTab}
       setWatchTopTab={setWatchTopTab}
       legacyLocal={legacyLocal}
@@ -1145,16 +1137,9 @@ export default function Watchlist() {
               }}>{label} {sourcePickerOpen ? "↑" : "↓"}</button>
             );
           })()}
-          {/* Show-sold-history pill — only on Available tab. Off by default. */}
-          {tab === "listings" && (
-            <button onClick={() => setShowSoldHistory(s => !s)} style={{
-              fontSize: 13, padding: "7px 14px", borderRadius: 20, cursor: "pointer",
-              fontFamily: "inherit", whiteSpace: "nowrap", border: "none", outline: "none",
-              background: showSoldHistory ? "var(--text1)" : "transparent",
-              color: showSoldHistory ? "var(--bg)" : "var(--text2)",
-              boxShadow: showSoldHistory ? "none" : "inset 0 0 0 0.5px var(--border)",
-            }}>{showSoldHistory ? "Sold ✓" : "Sold"}</button>
-          )}
+          {/* Tri-state Status segment — Live / Sold / All. Drives Available
+              feed AND Watchlist sub-tabs (Listings + Lots). */}
+          {statusSegmentJSX}
           {/* Compact "clear filters" — just a small × icon to keep the
               row from wrapping when filters are set. The text version
               ("× Clear") got cropped at narrow widths. */}
@@ -1359,32 +1344,54 @@ export default function Watchlist() {
     fontFamily: "inherit", fontSize: 12, width: "100%",
   };
 
+  // Live/Sold counts. Computed BEFORE the status filter is applied so
+  // flipping segments doesn't make either count drop to 0. Counts are
+  // tab-aware: Available counts use the global feed; Watchlist counts
+  // use the saved items only.
+  const isWatchlistTab = tab === "watchlist";
+  const liveCountForPill = isWatchlistTab
+    ? Object.values(watchlist).filter(it => {
+        const live = liveStateById.get(it.id);
+        return live && !live.sold;
+      }).length
+    : items.filter(i => !i.sold && !hidden[i.id]).length;
+  const soldCountForPill = isWatchlistTab
+    ? Object.values(watchlist).filter(it => {
+        const live = liveStateById.get(it.id);
+        return !live || !!live.sold;
+      }).length
+    : items.filter(i =>  i.sold && !hidden[i.id]).length;
+  const allCountForPill = liveCountForPill + soldCountForPill;
+
+  // Tri-state Status segment, used in the desktop filter row AND the
+  // mobile sticky sort row so the same control drives every view.
+  const statusSegmentJSX = (
+    <div style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 18, overflow: "hidden" }}>
+      {[
+        ["live", `Live · ${liveCountForPill}`],
+        ["sold", `Sold · ${soldCountForPill}`],
+        ["all",  `All · ${allCountForPill}`],
+      ].map(([k, label], idx) => (
+        <button key={k} onClick={() => setStatusMode(k)} style={{
+          border: "none",
+          borderLeft: idx === 0 ? "none" : "0.5px solid var(--border)",
+          padding: "6px 10px", fontSize: 12, cursor: "pointer",
+          background: statusMode === k ? "var(--text1)" : "transparent",
+          color: statusMode === k ? "var(--bg)" : "var(--text2)",
+          fontFamily: "inherit", whiteSpace: "nowrap",
+        }}>{label}</button>
+      ))}
+    </div>
+  );
+
   const filterRowJSX = (() => {
-    // Live/Sold counts reflect the current set of items minus user-hidden
-    // ones, but BEFORE the live/sold filter itself is applied. So flipping
-    // Live↔Sold doesn't make either count drop to 0.
-    const liveTotalForPill = tab === "watchlist"
-      ? Object.values(watchlist).filter(it => {
-          const live = liveStateById.get(it.id);
-          return live && !live.sold;
-        }).length
-      : items.filter(i => !i.sold && !hidden[i.id]).length;
-    const soldTotalForPill = tab === "watchlist"
-      ? Object.values(watchlist).filter(it => {
-          const live = liveStateById.get(it.id);
-          return !live || !!live.sold;
-        }).length
-      : items.filter(i =>  i.sold && !hidden[i.id]).length;
     return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
                   borderBottom: "0.5px solid var(--border)", flexShrink: 0,
                   flexWrap: "wrap", position: "relative" }}>
-      {/* Live ↔ Sold — single pill, click to flip. Always first in the
-          row. Counts reflect what's available in each state. */}
-      <button onClick={() => setShowSoldHistory(s => !s)} style={pillBase(showSoldHistory)}
-        title={showSoldHistory ? "Switch to live listings" : "Switch to sold history"}>
-        {showSoldHistory ? `Sold · ${soldTotalForPill}` : `Live · ${liveTotalForPill}`}
-      </button>
+      {/* Tri-state Status segment — Live / Sold / All. Always first in
+          the row. Counts reflect what's available in each state. */}
+      {statusSegmentJSX}
 
       {/* Sort */}
       <div style={{ position: "relative" }}>
@@ -1503,30 +1510,11 @@ export default function Watchlist() {
         )}
       </div>
 
-      {/* Reference (multi-select; refs are scoped by selected brands) */}
-      {REFS.length > 0 && (
-        <div style={{ position: "relative" }}>
-          <button onClick={() => setActiveFilterPop(p => p === "ref" ? null : "ref")} style={pillBase(filterRefs.length > 0)}>
-            Reference{filterRefs.length > 0 ? ` · ${filterRefs.length}` : ""} ▾
-          </button>
-          {activeFilterPop === "ref" && popShell(
-            <div>
-              <div style={popGridStyle}>
-                {REFS.map(r => (
-                  <button key={r} onClick={() => toggleFilterRef(r)} style={multiSelectRowStyle(filterRefs.includes(r))}>
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r}</span>
-                    {filterRefs.includes(r) && <span style={tickStyle}>✓</span>}
-                  </button>
-                ))}
-              </div>
-              {filterRefs.length > 0 && (
-                <button onClick={() => setFilterRefs([])} style={popClearStyle}>Clear refs</button>
-              )}
-            </div>,
-            { wide: true }
-          )}
-        </div>
-      )}
+      {/* Reference filter dropped from the top filter row — auto-extracted
+          ref numbers were noisy, especially for sources whose titles use
+          model names instead of ref digits (Hairspring, etc.). The
+          sidebar still surfaces ref chips when they aggregate cleanly,
+          and the search box covers any specific lookup. */}
 
       {/* The "New" pill was retired — recency is now visualised as
           age-bucket dividers in the grid (Today / 3 days / This week /

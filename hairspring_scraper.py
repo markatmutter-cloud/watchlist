@@ -25,13 +25,39 @@ BRANDS = [
 ]
 
 
-def detect_brand(name, vendor=""):
-    if vendor and vendor.strip().lower() not in ['hairspring', '']:
-        for b in BRANDS:
-            if b.lower() == vendor.lower():
-                return b
-        if len(vendor) > 2 and vendor not in ['Default', 'Other']:
-            return vendor
+def normalize_brand(raw):
+    """Map a brand string from JSON-LD to the canonical form used in
+    merge.py BRANDS list. Examples: "A. Lange & Söhne" → "A. Lange",
+    "Patek Philippe SA" → "Patek Philippe". Pure-string match for the
+    rest, returned as-is so unknown brands ("Laurent Ferrier", "Urban
+    Jürgensen") still propagate cleanly."""
+    if not raw:
+        return ''
+    raw = raw.replace('&amp;', '&').strip()
+    # First check substring against canonical BRANDS so common variants
+    # (with/without trademark text, ampersand, etc.) collapse to one.
+    for b in BRANDS:
+        if b.lower() in raw.lower():
+            return b
+    return raw
+
+
+def fetch_brand_from_detail(url):
+    """Pull the JSON-LD `"brand": "..."` from a Hairspring detail page.
+    Hairspring's products.json doesn't expose the watch brand (vendor
+    field is the dealer name). The detail page renders structured data
+    with the actual manufacturer."""
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=15)
+        r.raise_for_status()
+        m = re.search(r'"brand"\s*:\s*"([^"]+)"', r.text)
+        return m.group(1) if m else ''
+    except Exception:
+        return ''
+
+
+def detect_brand(name):
+    """Title-only brand detection (used when JSON-LD scrape failed)."""
     for b in BRANDS:
         if b.lower() in name.lower():
             return b
@@ -72,7 +98,6 @@ def get_all_products():
 
 def parse_product(p):
     title = p.get('title', '')
-    vendor = p.get('vendor', '')
     body = strip_html(p.get('body_html', ''))[:400]
     published_at = p.get('published_at', '')[:10] or ''
     handle = p.get('handle', '')
@@ -92,9 +117,20 @@ def parse_product(p):
     images = p.get('images', [])
     img = images[0]['src'] if images else ''
 
+    # Visit the detail page for the JSON-LD brand. Title-only fallback
+    # would bucket most of Hairspring as "Other" because their titles
+    # lead with the model name (Tank, Royal Oak, Lange 1) rather than
+    # the manufacturer.
+    brand = ''
+    if available and price > 0:
+        time.sleep(0.2)
+        brand = normalize_brand(fetch_brand_from_detail(url))
+    if not brand:
+        brand = detect_brand(title)
+
     return {
         'title': title,
-        'brand': detect_brand(title, vendor),
+        'brand': brand,
         'price': price,
         'url': url,
         'img': img,
