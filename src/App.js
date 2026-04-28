@@ -1162,9 +1162,10 @@ export default function Watchlist() {
               }}>{label} {sourcePickerOpen ? "↑" : "↓"}</button>
             );
           })()}
-          {/* Tri-state Status segment — Live / Sold / All. Drives Available
-              feed AND Watchlist sub-tabs (Listings + Lots). */}
-          {statusSegmentJSX}
+          {/* Status segment lives inside the mobile filter drawer
+              (see drawerOpen block) — too wide for the sticky sort row
+              once it became three buttons. Desktop still renders it
+              inline in the filter row. */}
           {/* Compact "clear filters" — just a small × icon to keep the
               row from wrapping when filters are set. The text version
               ("× Clear") got cropped at narrow widths. */}
@@ -1232,7 +1233,11 @@ export default function Watchlist() {
               {/* Scrollable filter content */}
               <div style={{ flex: 1, overflowY: "auto", padding: "0 0 8px" }}>
 
-
+                <div style={{ padding: "10px 16px 10px" }}>
+                  <div style={sectionHeadingStyle}>Status</div>
+                  {statusSegmentJSX}
+                </div>
+                <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
 
                 <div style={{ padding: "10px 16px 10px" }}>
                   <div style={sectionHeadingStyle}>Source</div>

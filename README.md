@@ -18,7 +18,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 ## What it does
 
-- **Available** — aggregates 23 curated dealer sources into one feed (see table below)
+- **Available** — aggregates 24 curated dealer sources into one feed (see table below)
 - **Auctions** — tracks upcoming auctions from 4 houses, grouped by month
 - **Archive** — sold/delisted items (kept around so you can search reference history) and hidden listings
 - **Watchlist** — heart any listing to save it; price-at-save is preserved so you can see drops
@@ -46,7 +46,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
   ┌─────────────────────────────────────────────────────────────┐
   │                  GitHub Actions (cron, daily)               │
   │                                                             │
-  │   23× listing scrapers + 4× auction scrapers (Python)       │
+  │   24× listing scrapers + 4× auction scrapers (Python)       │
   │            │                              │                 │
   │            ▼                              ▼                 │
   │     *_listings.csv               *_auctions.csv             │
@@ -83,7 +83,7 @@ Listings/auctions are static JSON committed to the repo. The only thing behind a
 
 ## Data sources
 
-### Dealers (23)
+### Dealers (24)
 
 All scrapers hit each dealer's existing public endpoint — no credential-protected APIs, no headless browsers where it can be avoided.
 
@@ -112,6 +112,7 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 | Huntington Company | Shopify | `/collections/watchshop/products.json` | USD |
 | The Vintage Watch | Shopify | `/collections/available-watches/products.json` | USD |
 | Avocado Vintage | Squarespace | `?format=json` items[] | USD |
+| Chronoholic (Omega only) | Wix | `productsWithMetaData.list[]` JSON embedded in HTML | USD |
 
 Tropical Watch is the only source still routed through Browse AI — their site actively blocks scrapers. Every other source is scraped with vanilla `requests`. Browse AI robot ID and API key live in GitHub Secrets, never in the repo.
 
