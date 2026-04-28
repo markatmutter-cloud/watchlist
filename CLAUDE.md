@@ -2,9 +2,19 @@
 
 Notes for Claude Code (and any human picking this up cold). Keep this
 file tight — read it once at the start of a session and you should know
-how to behave for the rest of it. Strategy and direction live in
-[ROADMAP.md](ROADMAP.md); current in-flight state lives in the latest
-`SESSION_HANDOFF_*.md`.
+how to behave for the rest of it.
+
+**Doc separation (each has one job):**
+- This file (CLAUDE.md) — durable working conventions. Read every session.
+- [README.md](README.md) — what the project is + architecture. Public-facing.
+- [ROADMAP.md](ROADMAP.md) — priorities, epics, what's explicitly out of scope.
+- `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
+  The current one is [SESSION_HANDOFF_2026-04-27.md](SESSION_HANDOFF_2026-04-27.md);
+  older ones live in `archive/`.
+
+If a gotcha or convention is durable (still true next session), graduate
+it from the handoff to this file. If it's session-specific, leave it in
+the handoff. When in doubt, ask.
 
 ## Working with Mark
 
@@ -28,22 +38,20 @@ how to behave for the rest of it. Strategy and direction live in
 For current priorities, direction, and what's explicitly out of scope,
 read [ROADMAP.md](ROADMAP.md) before suggesting work.
 
-## Architecture pointers
+## Architecture quick reference
 
-- **Static-data architecture.** Scrapers run in GitHub Actions 3x daily
-  (PT-aligned), write CSVs into `data/`, `merge.py` enriches into
-  `public/listings.json` + `public/state.json` (cross-run memory using
-  stable URL-hash IDs). Per-user data (watchlist, hidden, saved searches,
-  tracked auction lots) lives in Supabase with row-level security.
-- **Frontend.** React (CRA), inline styles, no UI library. App.js was a
-  single 2,800-line file; now split across `src/components/` (Card, Chip,
-  icons, AuctionsTab, AboutModal, HiddenModal, WatchlistTab) plus
-  `src/utils.js` and `src/hooks.js`. Root is ~1,700 lines.
-- **One serverless function:** `api/img.js` proxies hot-link-protected
-  dealer images (Watchfid). Sends `Referer` per allowlisted host.
-- **Vercel Blob** caches dealer images for hearted listings only — see
-  `cache_watchlist_images.mjs` and the `dial_image_caching.md` memory
-  note. Don't extend that cache to the full feed.
+Full diagram + folder layout in [README.md](README.md). One-paragraph summary:
+
+Scrapers (Python `requests`, GitHub Actions 3×/day PT) write per-source
+CSVs into `data/`. `merge.py` enriches into `public/listings.json` +
+`public/state.json` (cross-run memory via stable URL-hash IDs).
+Frontend is React (CRA, inline styles), root `App.js` ~1,700 lines plus
+`src/components/` and `src/utils.js`/`src/hooks.js`. Per-user data
+(watchlist, hidden, saved searches, tracked lots) is in Supabase with
+RLS. One serverless function: `api/img.js` (image proxy for hot-link-
+protected dealers). Vercel Blob caches dealer images for hearted items
+**only** — see `cache_watchlist_images.mjs`; **don't extend the blob
+cache to the full feed**.
 
 ## Scraper conventions
 

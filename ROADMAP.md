@@ -3,6 +3,9 @@
 Last updated: 2026-04-28
 Living document. Updated as priorities shift.
 
+For project context and architecture, see [README.md](README.md). For
+working conventions, see [CLAUDE.md](CLAUDE.md).
+
 ## How to use this doc
 
 This is the strategic doc for Watchlist. Architecture and conventions live in
@@ -80,13 +83,27 @@ Cross-cutting infrastructure. Several later epics depend on this.
 Target end state: ~30 dealers + 6 auction houses, all earning their keep.
 Currently at 26 dealers + 6 auction houses.
 
-- **Active candidates** (evaluate, not all guaranteed):
-  - Vision Vintage Watches
-  - Wristicons
-  - Vintage Watch Collective
-  - Specific Pushers dealers
-- **Auction houses still to add:** Sotheby's, Heritage. Cloudflare-protected
-  ones go via Mac mini Playwright (Epic 6).
+- **Active candidates** (evaluated, not all guaranteed):
+
+  | Candidate | Status |
+  |---|---|
+  | Vintage Watch Collective | not standard Shopify (400 on `/products.json`); needs HTML scrape or different platform |
+  | Wrist Icons | WordPress; `/wp-json/wc/store/v1/products` returned 301 — follow redirect to confirm WooCommerce |
+  | Vision Vintage Watches | Wix (not Squarespace despite the URL trick); needs custom HTML parsing |
+  | Vintage Heuer | WordPress; would need a Shuck-style detail-page walker |
+  | Specific pushers.io dealers | reuse the Moonphase pattern (~30 lines per dealer) |
+
+- **Auction houses still to add:** Heritage. DataDome-blocked at the
+  TLS/browser level — `requests` won't get past it. Three options when
+  it's worth pursuing:
+  - Browse AI robot (extra paid credits)
+  - Mac mini at home running headed Playwright (Epic 6 Phase A)
+  - Manual entry via `data/manual_auctions.csv`
+
+- **Lot tracking parked for** Phillips (opaque IDs from JS-rendered
+  catalog), Bonhams (Cloudflare), Monaco Legend (SPA, no server-rendered
+  lot links), Heritage (DataDome). Same three escape hatches as above.
+
 - **Stop rule.** At ~30 dealers, audit and prune to 25. Don't add a source
   unless it brings inventory not already covered or unique to a reference
   category I care about.
@@ -110,6 +127,19 @@ but "what has come up for this reference, when, and what did it sell for."
 ## Epic 3: Lovable features (organized around discovery and play)
 
 The features that make Watchlist tell me things, not just show me things.
+
+### eBay integration scoped to saved searches
+
+Highest-impact single feature on this list. eBay has a stable Browse API
+(free tier, OAuth). Recommended scope: extend saved searches with an
+"include eBay matches" toggle rather than dumping all of eBay into the
+main feed. Avoids drowning the curated dealer feed in noise.
+
+### Alerts (email or push) on saved-search matches
+
+Turns Watchlist from a browse tool into a daily-open tool. Built after
+eBay so it covers both dealer matches AND eBay matches in the same
+notification.
 
 ### Three-tier save model
 Replaces the current single-heart system:
@@ -142,7 +172,7 @@ Depends on: Epic 0 (references), past listings being browseable as a query-
 able set rather than just an archive tab. Once references land, this is fast
 to build.
 
-### AI-powered serendipity (admin/wife/me only initially)
+### AI-powered serendipity (admin / household only initially)
 
 - **Text embeddings** on listings from top dealers (Wind Vintage, Tropical
   Watch, Bob's vintage Omega, Hairspring, others I actually browse). Stored in
@@ -150,7 +180,7 @@ to build.
 - **"More like this"** on any listing.
 - **Weekly "things you might have missed" email.** 5 listings from this week
   matching my taste based on hearted history. Sunday morning ritual.
-- **Restricted initially** to me and wife. Can extend to friends later, or
+- **Restricted initially** to my household. Can extend to friends later, or
   remain admin-only indefinitely.
 - **Cost** estimate: pennies per month at current scale. Comfortable in
   budget.
@@ -249,13 +279,12 @@ Current best-guess sequence. Will shift; update this doc when it does.
 
 ## Explicitly NOT on the roadmap
 
-Saying no is part of the roadmap. These have been considered and parked
-or rejected:
+Saying no is part of the roadmap. These have been considered and rejected
+(or deferred indefinitely):
 
 - **Refactoring all scrapers into a shared module.** Premature; current
   per-file structure is debuggable. Revisit only if a class of bug spans
   many scrapers.
-- **Custom domain.** Already done via the-watch-list.app.
 - **Mobile native app.** PWA install is sufficient.
 - **Public market analytics like Watchcharts.** They do it better.
 - **Original editorial content.** Curating and synthesizing others' work
@@ -281,6 +310,13 @@ Not active. Worth keeping a list because some might graduate.
 
 ## Update log
 
+- 2026-04-28 (PM): Doc-hygiene pass. Absorbed in-flight roadmap items
+  from SESSION_HANDOFF_2026-04-27 — eBay integration and Alerts named
+  under Epic 3; Heritage's DataDome blocking + the three escape hatches
+  documented under Epic 1; the dealer-evaluation table consolidated under
+  Epic 1 "Active candidates" with platform notes per source. Removed
+  "Custom domain" from "Explicitly NOT" (it's shipped, not declined).
+  Cross-reference header added.
 - 2026-04-28: Roadmap created. Build-a-collection promoted. Reference
   encyclopedia reframed as headline feature using LLM synthesis of dealer
   descriptions. Birthday mode dropped. Taste arcs deferred. Three-tier save

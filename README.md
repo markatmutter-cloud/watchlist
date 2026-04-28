@@ -6,6 +6,8 @@ A personal vintage watch listing aggregator. Watchlist pulls active inventory fr
 
 Built without a development background — architecture, scrapers, React front-end, Supabase auth/data, and CI/CD all co-authored with [Claude](https://claude.com/claude-code).
 
+> For working conventions, see [CLAUDE.md](CLAUDE.md). For roadmap and what's explicitly out of scope, see [ROADMAP.md](ROADMAP.md).
+
 ---
 
 ## Why this exists
@@ -247,16 +249,11 @@ The pushed `state.json` / `auctions_state.json` will be updated on completion an
 
 ---
 
-## What I'd do differently next
+## What's next
 
-Honest list, since this is a learning project:
+Direction, priorities, and what's explicitly off the roadmap live in [ROADMAP.md](ROADMAP.md). Short version: foundations (references as first-class entities, verification script) come before more sources or features.
 
-- **Add a verification script.** Fetch each dealer's homepage, compare URL count to `state.json`, flag silent drop-outs. Catches scrape regressions that don't throw errors.
-- **Lot-level auction tracking.** Currently we surface auction *dates* but not individual lots. Would be a meaningful step up but adds a lot of scraper surface area.
-- **Automated tests for `merge.py`'s state transitions** — fixtures with two sequential scrape outputs, asserting the expected ID/firstSeen/priceHistory changes. Only layer of the app where tests would meaningfully prevent regressions.
-- **Refactor scrapers into a shared base.** Each scraper duplicates `BRANDS`, request boilerplate, and CSV writing (~50 lines copy-paste). Worth extracting only when the duplication starts hurting — currently it doesn't.
-
-No automated tests today. It's a personal project scraping sites I don't control; most breakage comes from a dealer changing their page shape, which isn't something unit tests catch anyway. I rely on catching issues on the site itself.
+No automated tests today. Most breakage comes from a dealer changing their page shape — not something unit tests catch. The merge.py state-transition layer is the one place tests would help, on the roadmap as Epic 0.
 
 ---
 
