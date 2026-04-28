@@ -128,6 +128,13 @@ jobs:
         continue-on-error: true
         run: python vintagewatchfam_scraper.py
 
+      - name: Run Shuck the Oyster scraper (WordPress, detail-page walk)
+        # ~3-5 min runtime — walks /portfolio/ pages then fetches each
+        # detail page for price extraction. Continue-on-error so a slow
+        # response doesn't block the rest of the batch.
+        continue-on-error: true
+        run: python shucktheoyster_scraper.py
+
       - name: Move CSVs to data folder
         run: |
           mkdir -p data
@@ -156,6 +163,7 @@ jobs:
           [ -f avocadovintage_listings.csv ]      && mv avocadovintage_listings.csv      data/avocadovintage.csv      || echo "avocadovintage missing"
           [ -f chronoholic_listings.csv ]         && mv chronoholic_listings.csv         data/chronoholic.csv         || echo "chronoholic missing"
           [ -f vintagewatchfam_listings.csv ]     && mv vintagewatchfam_listings.csv     data/vintagewatchfam.csv     || echo "vintagewatchfam missing"
+          [ -f shucktheoyster_listings.csv ]      && mv shucktheoyster_listings.csv      data/shucktheoyster.csv      || echo "shucktheoyster missing"
 
       - name: Merge into listings.json
         run: python merge.py --listings-only
