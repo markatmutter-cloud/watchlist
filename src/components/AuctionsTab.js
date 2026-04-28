@@ -1,4 +1,7 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import { imgSrc } from "../utils";
+
+// ── PURE HELPERS ─────────────────────────────────────────────────────────
 
 // Pretty month-band heading: turn "2026-05" into "May 2026". Falls
 // through gracefully on the synthetic "tbd" key.
@@ -11,9 +14,37 @@ function fmtMonthBand(key) {
   return `${months[idx]} ${y}`;
 }
 
-// Compact date block on the left side of each auction card. Renders the
-// start day large with the month abbreviation under it (calendar
-// affordance). For "Date TBD" entries shows a small placeholder.
+// Friendly relative-time label like "3 days left" / "6 hours left" /
+// "ended 2 days ago". Used by tracked-lot cards.
+function fmtCountdown(endIso) {
+  if (!endIso) return "";
+  const ms = new Date(endIso).getTime() - Date.now();
+  const past = ms < 0;
+  const abs = Math.abs(ms);
+  const days = Math.floor(abs / 86400000);
+  const hours = Math.floor((abs % 86400000) / 3600000);
+  const mins = Math.floor((abs % 3600000) / 60000);
+  let label;
+  if (days >= 1) label = `${days} day${days === 1 ? "" : "s"}`;
+  else if (hours >= 1) label = `${hours} hour${hours === 1 ? "" : "s"}`;
+  else label = `${mins} min${mins === 1 ? "" : "s"}`;
+  return past ? `ended ${label} ago` : `${label} left`;
+}
+
+function fmtLotPrice(val, currency) {
+  if (val === null || val === undefined || val === "") return null;
+  const n = typeof val === "number" ? val : parseFloat(val);
+  if (Number.isNaN(n)) return null;
+  return `${currency || ""} ${Math.round(n).toLocaleString()}`.trim();
+}
+
+function lotIsPast(lot) {
+  if (lot.sold_price !== null && lot.sold_price !== undefined && lot.sold_price !== "") return true;
+  if (!lot.auction_end) return false;
+  return new Date(lot.auction_end).getTime() < Date.now();
+}
+
+// Compact date block on the left side of each auction card.
 function AuctionDateBlock({ a }) {
   if (!a.dateStart) {
     return (
@@ -42,7 +73,18 @@ function AuctionDateBlock({ a }) {
   );
 }
 
-export function AuctionsTab({ auctions }) {
+// ── MAIN COMPONENT ───────────────────────────────────────────────────────
+
+export function AuctionsTab(props) {
+  const {
+    auctions,
+    // Tracked-lots — moved here from the Watchlist tab.
+    user, signInWithGoogle, isAuthConfigured,
+    trackedLots = [], addTrackedLot, removeTrackedLot,
+    statusMode, compact, gridStyle, inp,
+  } = props;
+
+  // ── AUCTION CALENDAR ───────────────────────────────────────────────────
   const auctionGroups = useMemo(() => {
     const buckets = new Map();
     for (const a of auctions) {
@@ -69,14 +111,213 @@ export function AuctionsTab({ auctions }) {
     });
   }, [auctions]);
 
+  // ── TRACKED LOTS ───────────────────────────────────────────────────────
+  const [addLotOpen, setAddLotOpen] = useState(false);
+  const [lotInputUrl, setLotInputUrl] = useState("");
+  const [lotInputBusy, setLotInputBusy] = useState(false);
+  const [lotInputError, setLotInputError] = useState("");
+
+  const submitTrackedLot = async () => {
+    if (!lotInputUrl.trim() || !addTrackedLot) return;
+    setLotInputBusy(true);
+    setLotInputError("");
+    const { error } = await addTrackedLot(lotInputUrl);
+    setLotInputBusy(false);
+    if (error) setLotInputError(error);
+    else { setLotInputUrl(""); setAddLotOpen(false); }
+  };
+
+  const trackedLotsUpcoming = useMemo(
+    () => trackedLots.filter(l => !lotIsPast(l)), [trackedLots]
+  );
+  const trackedLotsPast = useMemo(
+    () => trackedLots.filter(l => lotIsPast(l)), [trackedLots]
+  );
+
+  // Status filter (live=upcoming, sold=past, all=both) drives which lots
+  // show. Mirrors the global statusMode pill.
+  const lotsView =
+    statusMode === "sold" ? trackedLotsPast :
+    statusMode === "all"  ? [...trackedLotsUpcoming, ...trackedLotsPast] :
+                            trackedLotsUpcoming;
+
+  const renderLotCard = (lot) => {
+    const isPending = !!lot._pending;
+    const isPast = !isPending && lotIsPast(lot);
+    const sold = !isPending && lot.sold_price !== null && lot.sold_price !== undefined && lot.sold_price !== "";
+    const currentBid = lot.current_bid;
+    const showUsd = lot.currency && lot.currency.toUpperCase() !== "USD";
+
+    const primaryNative = isPending ? "—"
+      : sold ? fmtLotPrice(lot.sold_price, lot.currency)
+      : (currentBid !== null && currentBid !== undefined && currentBid !== ""
+          ? fmtLotPrice(currentBid, lot.currency)
+          : (lot.starting_price !== null && lot.starting_price !== undefined
+              ? fmtLotPrice(lot.starting_price, lot.currency)
+              : "—"));
+    const primaryLabel = isPending ? "Pending"
+      : sold ? "HAMMER"
+      : "CURRENT";
+    const primaryUsd = !isPending && showUsd && (
+      sold ? lot.sold_price_usd
+        : (currentBid !== null && currentBid !== undefined && currentBid !== ""
+           ? lot.current_bid_usd
+           : lot.starting_price_usd)
+    );
+    const estimateLow = fmtLotPrice(lot.estimate_low, lot.currency);
+    const estimateHigh = fmtLotPrice(lot.estimate_high, lot.currency);
+    const estimateLine = (estimateLow && estimateHigh) ? `Est. ${estimateLow}–${estimateHigh}` : null;
+
+    const countdownLabel = lot.auction_end ? fmtCountdown(lot.auction_end) : null;
+    const countdownColor = isPast ? "rgba(0,0,0,0.55)" : "rgba(24,95,165,0.92)";
+
+    return (
+      <div key={lot.url} style={{
+        background: "var(--card-bg)", display: "flex", flexDirection: "column",
+        position: "relative", minWidth: 0, overflow: "hidden",
+      }}>
+        <a href={lot.url} target="_blank" rel="noopener noreferrer"
+          style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
+          <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: "var(--surface)" }}>
+            {lot.image && (
+              <img src={imgSrc(lot.image)} alt={lot.title || ""}
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                loading="lazy" />
+            )}
+            {sold ? (
+              <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>
+            ) : countdownLabel ? (
+              <div style={{ position: "absolute", top: 6, left: 6, background: countdownColor, color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.04em", fontWeight: 600 }}>
+                {isPast ? "ENDED" : countdownLabel.toUpperCase()}
+              </div>
+            ) : isPending ? (
+              <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.5)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>PENDING</div>
+            ) : null}
+          </div>
+          <div style={{ padding: compact ? "5px 7px 8px" : "7px 9px 10px" }}>
+            <div style={{ fontSize: compact ? 8 : 9, color: "var(--text3)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              {lot.house || "—"}{lot.lot_number ? ` · Lot ${lot.lot_number}` : ""}
+            </div>
+            <div style={{ fontSize: compact ? 10 : 12, fontWeight: 500, lineHeight: 1.3, marginBottom: 4, color: "var(--text1)",
+                        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: compact ? 26 : 32 }}>
+              {lot.title || (isPending ? "Fetching…" : "—")}
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <span style={{ fontSize: 8, color: "var(--text3)", letterSpacing: "0.05em", fontWeight: 600 }}>{primaryLabel}</span>
+              <span style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: sold ? "#1b8f3a" : "var(--text1)" }}>{primaryNative}</span>
+            </div>
+            <div style={{ fontSize: 9, color: "var(--text3)", minHeight: 12 }}>
+              {primaryUsd ? `~$${Math.round(primaryUsd).toLocaleString()}` : (estimateLine || " ")}
+            </div>
+          </div>
+        </a>
+        <button onClick={() => removeTrackedLot && removeTrackedLot(lot.url)} aria-label="Stop tracking" title="Stop tracking"
+          style={{
+            position: "absolute", top: 6, right: 6,
+            width: 22, height: 22, borderRadius: "50%",
+            background: "rgba(255,255,255,0.92)", border: "none", cursor: "pointer",
+            color: "#444", fontSize: 14, lineHeight: 1, padding: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.18)",
+          }}>×</button>
+      </div>
+    );
+  };
+
+  // ── RENDER ─────────────────────────────────────────────────────────────
+
+  // Tracked-lots section JSX. Built once so the empty-calendar path
+  // and the populated-calendar path can both render it identically.
+  const trackedLotsJSX = (
+    <div style={{ marginTop: 36 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 8, paddingTop: 16, borderTop: "0.5px solid var(--border)" }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
+            Tracked lots
+          </div>
+          <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>
+            {!user ? "Sign in to track lots from Antiquorum, Christie's, and Sotheby's"
+              : trackedLots.length === 0 ? "Paste a lot URL to follow it through to hammer"
+              : statusMode === "sold" ? `${trackedLotsPast.length} past`
+              : statusMode === "all"  ? `${trackedLotsUpcoming.length} upcoming · ${trackedLotsPast.length} past`
+              :                          `${trackedLotsUpcoming.length} upcoming`}
+          </div>
+        </div>
+        {user && (
+          <button onClick={() => { setAddLotOpen(o => !o); setLotInputError(""); }} style={{
+            border: "0.5px solid var(--border)", background: addLotOpen ? "var(--text1)" : "var(--card-bg)",
+            color: addLotOpen ? "var(--bg)" : "var(--text1)",
+            padding: "5px 12px", borderRadius: 8, cursor: "pointer",
+            fontFamily: "inherit", fontSize: 12,
+          }}>{addLotOpen ? "Cancel" : "+ Track lot"}</button>
+        )}
+        {!user && isAuthConfigured && (
+          <button onClick={signInWithGoogle} style={{
+            border: "0.5px solid var(--border)", background: "var(--card-bg)", color: "var(--text1)",
+            padding: "5px 12px", borderRadius: 8, cursor: "pointer",
+            fontFamily: "inherit", fontSize: 12, fontWeight: 500,
+          }}>Sign in</button>
+        )}
+      </div>
+
+      {addLotOpen && (
+        <div style={{
+          border: "0.5px solid var(--border)", borderRadius: 12,
+          background: "var(--card-bg)", padding: 10, marginBottom: 14,
+        }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              autoFocus
+              value={lotInputUrl}
+              onChange={e => { setLotInputUrl(e.target.value); setLotInputError(""); }}
+              onKeyDown={e => { if (e.key === "Enter") submitTrackedLot(); }}
+              placeholder="Paste an Antiquorum, Christie's, or Sotheby's lot URL…"
+              style={{ ...inp, flex: 1, fontSize: 13 }}
+            />
+            <button onClick={submitTrackedLot} disabled={lotInputBusy || !lotInputUrl.trim()} style={{
+              border: "none", background: "#185FA5", color: "#fff",
+              padding: "8px 14px", borderRadius: 6, cursor: "pointer",
+              fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+              opacity: (lotInputBusy || !lotInputUrl.trim()) ? 0.5 : 1,
+            }}>{lotInputBusy ? "Adding…" : "Track"}</button>
+          </div>
+          {lotInputError && (
+            <div style={{ fontSize: 11, color: "#c0392b", marginTop: 6 }}>{lotInputError}</div>
+          )}
+          <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 6 }}>
+            Antiquorum (<span style={{ fontFamily: "monospace" }}>live.antiquorum.swiss/lots/view/…</span>),
+            Christie's (<span style={{ fontFamily: "monospace" }}>christies.com/…/lot/lot-NNN</span>),
+            or Sotheby's (<span style={{ fontFamily: "monospace" }}>sothebys.com/en/buy/auction/YYYY/…</span>).
+          </div>
+        </div>
+      )}
+
+      {user && trackedLots.length > 0 && (
+        <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+          {lotsView.map(renderLotCard)}
+          {lotsView.length === 0 && (
+            <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
+              {statusMode === "sold" ? "No past lots yet."
+                : statusMode === "all" ? "No tracked lots yet."
+                : "No upcoming lots."}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   if (auctions.length === 0) {
     return (
-      <div style={{ padding: "60px 0", textAlign: "center" }}>
-        <div style={{ fontSize: 28, marginBottom: 10 }}>🔨</div>
-        <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>No auctions on the calendar yet</div>
-        <div style={{ fontSize: 12, color: "var(--text2)", maxWidth: 340, margin: "0 auto", lineHeight: 1.5 }}>
-          Currently pulling from Antiquorum, Monaco Legend, Phillips, and Bonhams. Christie's, Sotheby's, Loupe This and Watches of Knightsbridge are on the roadmap.
+      <div>
+        <div style={{ padding: "60px 0", textAlign: "center" }}>
+          <div style={{ fontSize: 28, marginBottom: 10 }}>🔨</div>
+          <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>No auctions on the calendar yet</div>
+          <div style={{ fontSize: 12, color: "var(--text2)", maxWidth: 340, margin: "0 auto", lineHeight: 1.5 }}>
+            Currently pulling from Antiquorum, Monaco Legend, Phillips, Bonhams, Christie's, and Sotheby's.
+          </div>
         </div>
+        {trackedLotsJSX}
       </div>
     );
   }
@@ -94,8 +335,6 @@ export function AuctionsTab({ auctions }) {
 
       {auctionGroups.map(group => (
         <div key={group.key} style={{ marginBottom: 28 }}>
-          {/* Month band — sentence case, tier-1 weight to read like a
-              section heading rather than a chip. */}
           <div style={{
             display: "flex", alignItems: "baseline", gap: 12,
             padding: "0 4px 10px", marginBottom: 10,
@@ -157,11 +396,7 @@ export function AuctionsTab({ auctions }) {
         </div>
       ))}
 
-      <div style={{ marginTop: 24, padding: "14px 16px", borderRadius: 12, border: "0.5px dashed var(--border)" }}>
-        <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>
-          <strong style={{ color: "var(--text1)" }}>Coming in future updates:</strong> Christie's, Sotheby's, Watches of Knightsbridge auctions, Loupe This. Lot-level catalogue browsing and watched-lot price tracking are also on the list.
-        </div>
-      </div>
+      {trackedLotsJSX}
     </div>
   );
 }

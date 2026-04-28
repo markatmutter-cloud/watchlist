@@ -1,40 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Card } from "./Card";
-import { extractRef, imgSrc } from "../utils";
+import { extractRef } from "../utils";
 import { importLocalData } from "../supabase";
 
-// Pure helpers — defined at module scope so their identity is stable
-// across renders (no remount-on-render issues).
 
-// Friendly relative-time label like "3 days left" / "6 hours left" /
-// "ended 2 days ago". Computed fresh on render — no need to scrape.
-function fmtCountdown(endIso) {
-  if (!endIso) return "";
-  const ms = new Date(endIso).getTime() - Date.now();
-  const past = ms < 0;
-  const abs = Math.abs(ms);
-  const days = Math.floor(abs / 86400000);
-  const hours = Math.floor((abs % 86400000) / 3600000);
-  const mins = Math.floor((abs % 3600000) / 60000);
-  let label;
-  if (days >= 1) label = `${days} day${days === 1 ? "" : "s"}`;
-  else if (hours >= 1) label = `${hours} hour${hours === 1 ? "" : "s"}`;
-  else label = `${mins} min${mins === 1 ? "" : "s"}`;
-  return past ? `ended ${label} ago` : `${label} left`;
-}
 
-function fmtLotPrice(val, currency) {
-  if (val === null || val === undefined || val === "") return null;
-  const n = typeof val === "number" ? val : parseFloat(val);
-  if (Number.isNaN(n)) return null;
-  return `${currency || ""} ${Math.round(n).toLocaleString()}`.trim();
-}
-
-function lotIsPast(lot) {
-  if (lot.sold_price !== null && lot.sold_price !== undefined && lot.sold_price !== "") return true;
-  if (!lot.auction_end) return false;
-  return new Date(lot.auction_end).getTime() < Date.now();
-}
 
 export function WatchlistTab(props) {
   const {
@@ -43,8 +13,8 @@ export function WatchlistTab(props) {
     // Watchlist data
     watchlist, watchItems, watchLive, watchSold, watchCount,
     toggleWatchlist,
-    // Tracked lots
-    trackedLots, addTrackedLot, removeTrackedLot, liveStateById,
+    // For computing the unfiltered raw counts in the Listings empty state
+    liveStateById,
     // Searches
     savedSearchStats, searchEditor, setSearchEditor,
     startAddSearch, startEditSearch, cancelSearchEdit, commitSearch, removeSearch,
@@ -79,20 +49,6 @@ export function WatchlistTab(props) {
     exitWatchSelect();
   };
 
-  // Lot input state.
-  const [addLotOpen, setAddLotOpen] = useState(false);
-  const [lotInputUrl, setLotInputUrl] = useState("");
-  const [lotInputBusy, setLotInputBusy] = useState(false);
-  const [lotInputError, setLotInputError] = useState("");
-  const submitTrackedLot = async () => {
-    if (!lotInputUrl.trim()) return;
-    setLotInputBusy(true);
-    setLotInputError("");
-    const { error } = await addTrackedLot(lotInputUrl);
-    setLotInputBusy(false);
-    if (error) setLotInputError(error);
-    else setLotInputUrl("");
-  };
 
   // Group-by selector for the Listings sub-tab — local because grouping
   // semantics only make sense inside a watchlist view. Status filter is
@@ -132,12 +88,6 @@ export function WatchlistTab(props) {
     return entries;
   }, [watchView, watchGroupBy]);
 
-  const trackedLotsUpcoming = useMemo(
-    () => trackedLots.filter(l => !lotIsPast(l)), [trackedLots]
-  );
-  const trackedLotsPast = useMemo(
-    () => trackedLots.filter(l => lotIsPast(l)), [trackedLots]
-  );
 
   const legacyCounts = {
     watchlist: Object.keys(legacyLocal.watchlist).length,
@@ -197,91 +147,6 @@ export function WatchlistTab(props) {
     </div>
   );
 
-  const renderLotCard = (lot) => {
-    const isPending = !!lot._pending;
-    const isPast = !isPending && lotIsPast(lot);
-    const sold = !isPending && lot.sold_price !== null && lot.sold_price !== undefined && lot.sold_price !== "";
-    const currentBid = lot.current_bid;
-    const showUsd = lot.currency && lot.currency.toUpperCase() !== "USD";
-
-    const primaryNative = isPending ? "—"
-      : sold ? fmtLotPrice(lot.sold_price, lot.currency)
-      : (currentBid !== null && currentBid !== undefined && currentBid !== ""
-          ? fmtLotPrice(currentBid, lot.currency)
-          : (lot.starting_price !== null && lot.starting_price !== undefined
-              ? fmtLotPrice(lot.starting_price, lot.currency)
-              : "—"));
-    // Pre-hammer, the starting price IS the current price until someone
-    // bids. Collapsing "BID" and "START" into one "CURRENT" label so the
-    // card reads consistently whether bidding has opened or not.
-    const primaryLabel = isPending ? "Pending"
-      : sold ? "HAMMER"
-      : "CURRENT";
-    const primaryUsd = !isPending && showUsd && (
-      sold ? lot.sold_price_usd
-        : (currentBid !== null && currentBid !== undefined && currentBid !== ""
-           ? lot.current_bid_usd
-           : lot.starting_price_usd)
-    );
-    const estimateLow = fmtLotPrice(lot.estimate_low, lot.currency);
-    const estimateHigh = fmtLotPrice(lot.estimate_high, lot.currency);
-    const estimateLine = (estimateLow && estimateHigh) ? `Est. ${estimateLow}–${estimateHigh}` : null;
-
-    const countdownLabel = lot.auction_end ? fmtCountdown(lot.auction_end) : null;
-    const countdownColor = isPast ? "rgba(0,0,0,0.55)" : "rgba(24,95,165,0.92)";
-
-    return (
-      <div key={lot.url} style={{
-        background: "var(--card-bg)", display: "flex", flexDirection: "column",
-        position: "relative", minWidth: 0, overflow: "hidden",
-      }}>
-        <a href={lot.url} target="_blank" rel="noopener noreferrer"
-          style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
-          <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden", background: "var(--surface)" }}>
-            {lot.image && (
-              <img src={imgSrc(lot.image)} alt={lot.title || ""}
-                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-                loading="lazy" />
-            )}
-            {sold ? (
-              <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>
-            ) : countdownLabel ? (
-              <div style={{ position: "absolute", top: 6, left: 6, background: countdownColor, color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.04em", fontWeight: 600 }}>
-                {isPast ? "ENDED" : countdownLabel.toUpperCase()}
-              </div>
-            ) : isPending ? (
-              <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.5)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>PENDING</div>
-            ) : null}
-          </div>
-          <div style={{ padding: compact ? "5px 7px 8px" : "7px 9px 10px" }}>
-            <div style={{ fontSize: compact ? 8 : 9, color: "var(--text3)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              {lot.house || "—"}{lot.lot_number ? ` · Lot ${lot.lot_number}` : ""}
-            </div>
-            <div style={{ fontSize: compact ? 10 : 12, fontWeight: 500, lineHeight: 1.3, marginBottom: 4, color: "var(--text1)",
-                        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: compact ? 26 : 32 }}>
-              {lot.title || (isPending ? "Fetching…" : "—")}
-            </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <span style={{ fontSize: 8, color: "var(--text3)", letterSpacing: "0.05em", fontWeight: 600 }}>{primaryLabel}</span>
-              <span style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: sold ? "#1b8f3a" : "var(--text1)" }}>{primaryNative}</span>
-            </div>
-            <div style={{ fontSize: 9, color: "var(--text3)", minHeight: 12 }}>
-              {primaryUsd ? `~$${Math.round(primaryUsd).toLocaleString()}` : (estimateLine || " ")}
-            </div>
-          </div>
-        </a>
-        <button onClick={() => removeTrackedLot(lot.url)} aria-label="Stop tracking" title="Stop tracking"
-          style={{
-            position: "absolute", top: 6, right: 6,
-            width: 22, height: 22, borderRadius: "50%",
-            background: "rgba(255,255,255,0.92)", border: "none", cursor: "pointer",
-            color: "#444", fontSize: 14, lineHeight: 1, padding: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.18)",
-          }}>×</button>
-      </div>
-    );
-  };
 
   // Import flow — runs once when the user opts in. Reloads the page on
   // success so all the data hooks re-fetch from Supabase with the fresh
@@ -420,11 +285,10 @@ export function WatchlistTab(props) {
         "Heart any listing to save it here. Saved items sync across every device you use."
       ) : (
         <>
-          {/* Top-level toggle between dealer listings and auction lots.
-              Sticky so the sub-tabs stay reachable as the user scrolls.
-              No paddingTop — the bar pins flush against the chrome
-              above it. Border + paddingBottom keep the bar visually
-              integrated rather than a floating strip. */}
+          {/* Sub-tabs: Listings + Searches. The Lots sub-tab moved to
+              the Auctions tab — auction tracking lives next to the
+              auction calendar now, not under the Watchlist umbrella.
+              Sticky so the bar stays reachable as the user scrolls. */}
           <div style={{
             display: "flex", marginBottom: 14,
             position: "sticky",
@@ -436,7 +300,6 @@ export function WatchlistTab(props) {
           }}>
             {[
               ["listings", `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
-              ["lots",     `Auction lots${trackedLots.length > 0 ? ` · ${trackedLots.length}` : ""}`],
               ["searches", `Searches${savedSearchStats.length > 0 ? ` · ${savedSearchStats.length}` : ""}`],
             ].map(([key, label]) => (
               <button key={key} onClick={() => setWatchTopTab(key)} style={{
@@ -613,96 +476,6 @@ export function WatchlistTab(props) {
           )}
           </>)}
 
-          {watchTopTab === "lots" && (() => {
-            // Live/Sold for auction lots maps to: Live = still upcoming
-            // (auction not yet ended), Sold = past (hammer happened or
-            // ended), All = both combined (upcoming first, then past).
-            // Driven by the same global statusMode pill as Available +
-            // Watchlist Listings.
-            const lotsView =
-              statusMode === "sold" ? trackedLotsPast :
-              statusMode === "all"  ? [...trackedLotsUpcoming, ...trackedLotsPast] :
-                                      trackedLotsUpcoming;
-            const lotsLabel =
-              statusMode === "sold" ? `${trackedLotsPast.length} past` :
-              statusMode === "all"  ? `${trackedLotsUpcoming.length} upcoming · ${trackedLotsPast.length} past` :
-                                      `${trackedLotsUpcoming.length} upcoming`;
-            return (
-              <div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 8 }}>
-                  <div style={{ fontSize: 11, color: "var(--text3)" }}>
-                    {trackedLots.length === 0 ? "" : lotsLabel}
-                  </div>
-                  <button onClick={() => { setAddLotOpen(o => !o); setLotInputError(""); }} style={{
-                    border: "0.5px solid var(--border)", background: addLotOpen ? "var(--text1)" : "var(--card-bg)",
-                    color: addLotOpen ? "var(--bg)" : "var(--text1)",
-                    padding: "5px 12px", borderRadius: 8, cursor: "pointer",
-                    fontFamily: "inherit", fontSize: 12,
-                  }}>{addLotOpen ? "Cancel" : "+ Track lot"}</button>
-                </div>
-
-                {addLotOpen && (
-                  <div style={{
-                    border: "0.5px solid var(--border)", borderRadius: 12,
-                    background: "var(--card-bg)", padding: 10, marginBottom: 14,
-                  }}>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <input
-                        autoFocus
-                        value={lotInputUrl}
-                        onChange={e => { setLotInputUrl(e.target.value); setLotInputError(""); }}
-                        onKeyDown={e => { if (e.key === "Enter") submitTrackedLot(); }}
-                        placeholder="Paste an Antiquorum, Christie's, or Sotheby's lot URL…"
-                        style={{ ...inp, flex: 1, fontSize: 13 }}
-                      />
-                      <button onClick={submitTrackedLot} disabled={lotInputBusy || !lotInputUrl.trim()} style={{
-                        border: "none", background: "#185FA5", color: "#fff",
-                        padding: "8px 14px", borderRadius: 6, cursor: "pointer",
-                        fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-                        opacity: (lotInputBusy || !lotInputUrl.trim()) ? 0.5 : 1,
-                      }}>{lotInputBusy ? "Adding…" : "Track"}</button>
-                    </div>
-                    {lotInputError && (
-                      <div style={{ fontSize: 11, color: "#c0392b", marginTop: 6 }}>{lotInputError}</div>
-                    )}
-                    <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 6 }}>
-                      Antiquorum (<span style={{ fontFamily: "monospace" }}>live.antiquorum.swiss/lots/view/…</span>),
-                      Christie's (<span style={{ fontFamily: "monospace" }}>christies.com/…/lot/lot-NNN</span>),
-                      or Sotheby's (<span style={{ fontFamily: "monospace" }}>sothebys.com/en/buy/auction/YYYY/…</span>).
-                    </div>
-                  </div>
-                )}
-
-                {trackedLots.length === 0 ? (
-                  <div style={{ padding: "48px 20px", textAlign: "center" }}>
-                    <div style={{ fontSize: 32, marginBottom: 12 }}>⌛</div>
-                    <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>No tracked lots yet</div>
-                    <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto 16px" }}>
-                      Tap <b>+ Track lot</b> above and paste an Antiquorum, Christie's, or Sotheby's lot URL. Each tracked lot gets a daily price update, a countdown to the hammer, and the sold price recorded after.
-                    </div>
-                    <button onClick={() => { setAddLotOpen(true); setLotInputError(""); }} style={{
-                      padding: "8px 16px", borderRadius: 8, border: "0.5px solid var(--border)",
-                      background: "var(--card-bg)", color: "var(--text1)", cursor: "pointer",
-                      fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-                    }}>+ Track first lot</button>
-                  </div>
-                ) : (
-                  <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-                    {lotsView.map(renderLotCard)}
-                    {lotsView.length === 0 && (
-                      <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
-                        {statusMode === "sold" ? "No past lots yet."
-                          : statusMode === "all" ? "No tracked lots yet."
-                          : "No upcoming lots."}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-
-          {/* Searches sub-tab — promoted from a top-level tab into the
               Watchlist tab so all per-user content lives in one place. */}
           {watchTopTab === "searches" && searchesTabJSX}
         </>

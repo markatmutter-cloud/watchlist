@@ -109,14 +109,16 @@ export default function Watchlist() {
   const [trackedLotsState, setTrackedLotsState] = useState({});
   // Sub-tab inside Watchlist > Auction lots: upcoming vs past.
   // Sub-tab on the Watchlist tab. Three values: "listings" (dealer
-  // items you've hearted), "lots" (tracked auction lots), "searches"
-  // (saved searches editor). Lives here (not inside WatchlistTab)
-  // because the surrounding chrome — sidebar, filter bar, mobile drawer
-  // — gates on it too. Persisted across visits.
+  // items you've hearted) or "searches" (saved searches editor). The
+  // "lots" sub-tab moved to the Auctions tab — keep its localStorage
+  // value valid by mapping any old "lots" preference back to "listings".
+  // Lives here (not inside WatchlistTab) because the surrounding chrome
+  // — sidebar, filter bar, mobile drawer — gates on it too. Persisted
+  // across visits.
   const [watchTopTab, setWatchTopTab] = useState(() => {
     try {
       const v = localStorage.getItem("dial_watch_top_tab");
-      return ["lots", "searches"].includes(v) ? v : "listings";
+      return v === "searches" ? "searches" : "listings";
     } catch { return "listings"; }
   });
   useEffect(() => {
@@ -939,6 +941,26 @@ export default function Watchlist() {
     </div>
   );
 
+  // Auctions tab JSX. Built once so mobile + desktop returns can share
+  // the same element. Now includes tracked-lots functionality (moved
+  // here from the Watchlist tab — auction tracking belongs next to
+  // the auction calendar).
+  const auctionsTabJSX = (
+    <AuctionsTab
+      auctions={auctions}
+      user={user}
+      signInWithGoogle={signInWithGoogle}
+      isAuthConfigured={isAuthConfigured}
+      trackedLots={trackedLots}
+      addTrackedLot={addTrackedLot}
+      removeTrackedLot={removeTrackedLot}
+      statusMode={statusMode}
+      compact={compact}
+      gridStyle={gridStyle}
+      inp={inp}
+    />
+  );
+
   // Watchlist tab JSX. Built once so both mobile + desktop returns can
   // reference the same instance without re-spelling the long prop list.
   const watchlistTabJSX = (
@@ -952,9 +974,6 @@ export default function Watchlist() {
       watchSold={watchSold}
       watchCount={watchCount}
       toggleWatchlist={toggleWatchlist}
-      trackedLots={trackedLots}
-      addTrackedLot={addTrackedLot}
-      removeTrackedLot={removeTrackedLot}
       liveStateById={liveStateById}
       savedSearchStats={savedSearchStats}
       searchEditor={searchEditor}
@@ -1201,7 +1220,7 @@ export default function Watchlist() {
         )}
         </div>
         <div style={{ padding: "12px 14px 100px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? <AuctionsTab auctions={auctions} /> : watchlistTabJSX}
+          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : watchlistTabJSX}
         </div>
         {/* Bottom tab bar. The container reserves the iOS home-indicator
             safe area PLUS a fixed extra padding, so the buttons aren't
@@ -1437,45 +1456,39 @@ export default function Watchlist() {
         )}
       </div>
 
-      {/* Source — when on Watchlist > Auction lots, the option list is
-          the user's tracked auction houses (Antiquorum, Christie's, ...).
-          Everywhere else, dealer sources from the listings catalogue. */}
-      {(() => {
-        const onLots = (tab === "watchlist" && watchTopTab === "lots");
-        const sourceOptions = onLots ? lotHouses : SOURCES;
-        const pillLabel = onLots ? "House" : "Source";
-        return (
-          <div style={{ position: "relative" }}>
-            <button onClick={() => setActiveFilterPop(p => p === "source" ? null : "source")} style={pillBase(filterSources.length > 0)}>
-              {pillLabel}{filterSources.length > 0 ? ` · ${filterSources.length}` : ""} ▾
-            </button>
-            {activeFilterPop === "source" && popShell(
-              <div>
-                {sourceOptions.length === 0 ? (
-                  <div style={{ fontSize: 12, color: "var(--text3)", padding: "8px 4px" }}>
-                    No {onLots ? "tracked auction houses" : "sources"} yet.
-                  </div>
-                ) : (
-                  <div style={popGridStyle}>
-                    {sourceOptions.map(s => (
-                      <button key={s} onClick={() => toggleSource(s)} style={multiSelectRowStyle(filterSources.includes(s))}>
-                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s}</span>
-                        {filterSources.includes(s) && <span style={tickStyle}>✓</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {filterSources.length > 0 && (
-                  <button onClick={() => setFilterSources([])} style={popClearStyle}>
-                    Clear {onLots ? "houses" : "sources"}
+      {/* Source — dealer sources from the listings catalogue. The
+          house-filter variant for tracked lots was retired when lot
+          tracking moved into the Auctions tab; if needed later it'd
+          live there as an internal control. */}
+      <div style={{ position: "relative" }}>
+        <button onClick={() => setActiveFilterPop(p => p === "source" ? null : "source")} style={pillBase(filterSources.length > 0)}>
+          Source{filterSources.length > 0 ? ` · ${filterSources.length}` : ""} ▾
+        </button>
+        {activeFilterPop === "source" && popShell(
+          <div>
+            {SOURCES.length === 0 ? (
+              <div style={{ fontSize: 12, color: "var(--text3)", padding: "8px 4px" }}>
+                No sources yet.
+              </div>
+            ) : (
+              <div style={popGridStyle}>
+                {SOURCES.map(s => (
+                  <button key={s} onClick={() => toggleSource(s)} style={multiSelectRowStyle(filterSources.includes(s))}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s}</span>
+                    {filterSources.includes(s) && <span style={tickStyle}>✓</span>}
                   </button>
-                )}
-              </div>,
-              { wide: true }
+                ))}
+              </div>
             )}
-          </div>
-        );
-      })()}
+            {filterSources.length > 0 && (
+              <button onClick={() => setFilterSources([])} style={popClearStyle}>
+                Clear sources
+              </button>
+            )}
+          </div>,
+          { wide: true }
+        )}
+      </div>
 
       {/* Brand */}
       <div style={{ position: "relative" }}>
@@ -1680,7 +1693,7 @@ export default function Watchlist() {
             resize handlers) is still defined further up so we can revert
             quickly if the new pattern doesn't pan out. */}
         <div data-desktop-main style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? <AuctionsTab auctions={auctions} /> : watchlistTabJSX}
+          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : watchlistTabJSX}
         </div>
       </div>
       <HiddenModal
