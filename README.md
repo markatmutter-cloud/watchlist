@@ -18,7 +18,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 ## What it does
 
-- **Available** — aggregates 20 curated dealer sources into one feed (see table below)
+- **Available** — aggregates 23 curated dealer sources into one feed (see table below)
 - **Auctions** — tracks upcoming auctions from 4 houses, grouped by month
 - **Archive** — sold/delisted items (kept around so you can search reference history) and hidden listings
 - **Watchlist** — heart any listing to save it; price-at-save is preserved so you can see drops
@@ -46,7 +46,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
   ┌─────────────────────────────────────────────────────────────┐
   │                  GitHub Actions (cron, daily)               │
   │                                                             │
-  │   20× listing scrapers + 4× auction scrapers (Python)       │
+  │   23× listing scrapers + 4× auction scrapers (Python)       │
   │            │                              │                 │
   │            ▼                              ▼                 │
   │     *_listings.csv               *_auctions.csv             │
@@ -83,7 +83,7 @@ Listings/auctions are static JSON committed to the repo. The only thing behind a
 
 ## Data sources
 
-### Dealers (20)
+### Dealers (23)
 
 All scrapers hit each dealer's existing public endpoint — no credential-protected APIs, no headless browsers where it can be avoided.
 
@@ -109,6 +109,9 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 | Bulang & Sons | Shopify | collection-scoped `/products.json` | EUR |
 | Watchfid | Custom (WordPress) | WP REST API; images proxied via `/api/img` | EUR |
 | Moonphase | pushers.io | `/api/dealers/{handle}.json` (structured brand + price + state) | EUR |
+| Huntington Company | Shopify | `/collections/watchshop/products.json` | USD |
+| The Vintage Watch | Shopify | `/collections/available-watches/products.json` | USD |
+| Avocado Vintage | Squarespace | `?format=json` items[] | USD |
 
 Tropical Watch is the only source still routed through Browse AI — their site actively blocks scrapers. Every other source is scraped with vanilla `requests`. Browse AI robot ID and API key live in GitHub Secrets, never in the repo.
 

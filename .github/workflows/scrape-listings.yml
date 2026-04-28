@@ -108,6 +108,18 @@ jobs:
         continue-on-error: true
         run: python moonphase_scraper.py
 
+      - name: Run Huntington Company scraper
+        continue-on-error: true
+        run: python huntington_scraper.py
+
+      - name: Run The Vintage Watch scraper
+        continue-on-error: true
+        run: python thevintagewatch_scraper.py
+
+      - name: Run Avocado Vintage scraper
+        continue-on-error: true
+        run: python avocadovintage_scraper.py
+
       - name: Move CSVs to data folder
         run: |
           mkdir -p data
@@ -131,6 +143,9 @@ jobs:
           [ -f watchfid_listings.csv ]            && mv watchfid_listings.csv            data/watchfid.csv            || echo "watchfid missing"
           [ -f bulangandsons_listings.csv ]       && mv bulangandsons_listings.csv       data/bulangandsons.csv       || echo "bulangandsons missing"
           [ -f moonphase_listings.csv ]           && mv moonphase_listings.csv           data/moonphase.csv           || echo "moonphase missing"
+          [ -f huntington_listings.csv ]          && mv huntington_listings.csv          data/huntington.csv          || echo "huntington missing"
+          [ -f thevintagewatch_listings.csv ]     && mv thevintagewatch_listings.csv     data/thevintagewatch.csv     || echo "thevintagewatch missing"
+          [ -f avocadovintage_listings.csv ]      && mv avocadovintage_listings.csv      data/avocadovintage.csv      || echo "avocadovintage missing"
 
       - name: Merge into listings.json
         run: python merge.py --listings-only

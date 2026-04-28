@@ -8,7 +8,7 @@ Self-contained handoff for a fresh Claude Code session. Read this top-to-bottom 
 - **Repo:** `https://github.com/markatmutter-cloud/watchlist.git`
 - **Local path:** `~/Documents/watchlist`
 - **Live:** [the-watch-list.app](https://the-watch-list.app) (custom domain via Vercel; old `dial-watchlist.vercel.app` sunset).
-- **What it is:** personal vintage-watch listing aggregator. **20 dealers + 4 auction houses** scraped 3x/day (PT-aligned: 6am, noon, 6pm), merged into static JSON committed to the repo, deployed via Vercel. Per-user data (watchlist, hidden, saved searches, tracked auction lots) lives in Supabase with RLS.
+- **What it is:** personal vintage-watch listing aggregator. **23 dealers + 4 auction houses** scraped 3x/day (PT-aligned: 6am, noon, 6pm), merged into static JSON committed to the repo, deployed via Vercel. Per-user data (watchlist, hidden, saved searches, tracked auction lots) lives in Supabase with RLS.
 - **Builder:** Mark — based in California (PT). Non-technical; Claude is co-author. Tone: terse, action-oriented; flag risks but don't overexplain.
 
 ## Stack
@@ -48,9 +48,9 @@ api/img.js                    Vercel serverless image proxy (Watchfid-allowliste
 - **`public/state.json` (~1.1 MB) and `public/auctions_state.json`** — cross-run memory: stable `sha1(normalized_url)[:12]` IDs, `firstSeen`, `lastSeen`, `priceHistory`, `active/sold` flags. The pipeline is self-healing because of this. Dates are PT-anchored.
 - **Supabase tables (RLS, per-user):** `watchlist_items` (with `cached_img_url`), `hidden_listings`, `saved_searches`, `tracked_lots`.
 
-## Sources (20 dealers + 4 auction houses)
+## Sources (23 dealers + 4 auction houses)
 
-**Dealers:** Wind Vintage, Tropical Watch (Browse AI), Menta, Collectors Corner NY, Falco, Grey & Patina, Oliver & Clarke, Craft & Tailored, Watch Brothers London, MVV Watches, Analog Shift, Watches of Knightsbridge, Belmont, Bob's Watches (vintage Omega only), DB1983, Hairspring (brand from JSON-LD detail-page scrape), Somlo, Bulang & Sons (EUR Shopify), Watchfid (EUR, WP REST API; images proxied via `/api/img`), **Moonphase** (EUR, Paris-based, sourced via pushers.io JSON API).
+**Dealers:** Wind Vintage, Tropical Watch (Browse AI), Menta, Collectors Corner NY, Falco, Grey & Patina, Oliver & Clarke, Craft & Tailored, Watch Brothers London, MVV Watches, Analog Shift, Watches of Knightsbridge, Belmont, Bob's Watches (vintage Omega only), DB1983, Hairspring (brand from JSON-LD detail-page scrape), Somlo, Bulang & Sons (EUR Shopify), Watchfid (EUR, WP REST API; images proxied via `/api/img`), Moonphase (EUR, Paris-based, sourced via pushers.io JSON API), **Huntington Company** (Shopify, `/collections/watchshop`), **The Vintage Watch** (Shopify, `/collections/available-watches`), **Avocado Vintage** (Squarespace).
 
 **Auctions:** Antiquorum, Monaco Legend, Phillips, Bonhams. Plus a manual-entry CSV (`data/manual_auctions.csv`) and a tracked-lots scraper (`auctionlots_scraper.py`) that reads the union of users' tracked lot URLs from Supabase (Christie's URL support added).
 
@@ -58,7 +58,10 @@ api/img.js                    Vercel serverless image proxy (Watchfid-allowliste
 
 **This session (2026-04-27):**
 
-- **Moonphase added** (20th dealer source) via the pushers.io JSON API. pushers.io is a multi-dealer marketplace with a clean `/api/dealers/{handle}.json` endpoint that exposes brand, price, state, and images as structured fields — no HTML scraping. Same pattern works for any other dealer hosted on pushers.io.
+- **Three more dealer sources** (now 23 total): Huntington Company (Shopify, scoped to `/collections/watchshop`), The Vintage Watch (Shopify, scoped to `/collections/available-watches`), Avocado Vintage Watches (Squarespace `?format=json`). All three brought in cleanly with the existing scraper templates.
+- **Mobile blank-screen fix** — `statusSegmentJSX` was being referenced in the mobile render path before its `const` declaration (~200 lines later in App.js). JS const isn't hoisted → ReferenceError → white screen. Desktop's render is below the declaration so it worked. Moved the declaration above the `watchlistTabJSX` const so both renders are below it.
+- **App.js syntax-error fix** — earlier in the session, an orphan `};` left over from runImport extraction was breaking every Vercel build for several commits. Spotted only because Mark reported the master tri-state pill / sticky-tab fix / Hairspring brand / Moonphase weren't visible. Lesson: check Vercel deploy status after every push, especially after a destructive cleanup pass.
+- **Moonphase added** (was 20th dealer source) via the pushers.io JSON API. pushers.io is a multi-dealer marketplace with a clean `/api/dealers/{handle}.json` endpoint that exposes brand, price, state, and images as structured fields — no HTML scraping. Same pattern works for any other dealer hosted on pushers.io.
 - **Master Live/Sold/All pill.** `showSoldHistory` boolean → `statusMode` string. One global tri-state segment drives Available + Watchlist Listings + Watchlist Lots. WatchlistTab no longer has its own per-tab segment. Lots in `'all'` mode shows upcoming + past combined.
 - **Watchlist sticky sub-tab gap fix.** Removed paddingTop from the pinned bar, tightened marginBottom, added a hairline borderBottom so it reads as integrated chrome.
 - **Hairspring brand fix.** Their titles lead with model names ("Tank Cintrée", "Royal Oak", "Lange 1") not manufacturer names, so detect_brand returned "Other" for ~90% of inventory. Scraper now visits each detail page (~6s extra per scrape) and pulls brand from JSON-LD; merge.py now respects the scraper's brand column when set.
@@ -107,15 +110,15 @@ That's it. The big bug list from the previous handoff is resolved.
 
 | Dealer | URL | Notes |
 |---|---|---|
-| Moonphase | https://pushers.io/dealers/@moonphase.fr | ✅ Live (20th source) — proves the pushers.io pattern |
-| Vintage Watch Collective | https://www.vintagewatchcollective.com/shop | TBD platform |
-| Wrist Icons | https://www.wristicons.com/all-watches/ | TBD platform |
-| Vision Vintage Watches | https://www.visionvintagewatches.com/vintage-watches | TBD platform |
-| Huntington Company | https://huntingtoncompany.com/collections/watchshop?filter.v.availability=1 | Shopify (`/collections/`) |
-| Avocado Vintage Watches | https://www.avocadovintagewatches.com/watches | TBD platform |
-| Shuck the Oyster | https://www.shucktheoyster.com/portfolio-category/vintage-watches/ | WordPress; previously parked because prices behind click-through |
-| Chronoholic | https://www.chronoholic.com/omega-2 | TBD platform |
-| The Vintage Watch | https://thevintage.watch/collections/available-watches | Shopify (`/collections/`) |
+| Moonphase | https://pushers.io/dealers/@moonphase.fr | ✅ Live — pushers.io API pattern |
+| Huntington Company | https://huntingtoncompany.com/collections/watchshop | ✅ Live — Shopify `/collections/watchshop/products.json` |
+| The Vintage Watch | https://thevintage.watch/collections/available-watches | ✅ Live — Shopify `/collections/available-watches/products.json` |
+| Avocado Vintage | https://www.avocadovintagewatches.com/watches | ✅ Live — Squarespace `?format=json` |
+| Vintage Watch Collective | https://www.vintagewatchcollective.com/shop | ❌ probed: not standard Shopify (400 on `/products.json`) — needs HTML scrape or different platform |
+| Wrist Icons | https://www.wristicons.com/all-watches/ | ⚠️ probed: WordPress, `/wp-json/wc/store/v1/products` returned 301 — follow redirect to confirm WooCommerce |
+| Vision Vintage Watches | https://www.visionvintagewatches.com/vintage-watches | ❌ probed: Wix (not Squarespace despite the URL trick). Needs custom HTML parsing |
+| Chronoholic | https://www.chronoholic.com/omega-2 | ❌ probed: neither Shopify nor WooCommerce Store API; unknown platform |
+| Shuck the Oyster | https://www.shucktheoyster.com/portfolio-category/vintage-watches/ | ⏭️ WordPress; prices behind click-through. Previously parked. |
 
 **Pattern:** anything Shopify can use the existing `/products.json` template (low effort, ~30 lines per source). pushers.io-hosted dealers can use the moonphase pattern (also ~30 lines). WordPress/custom sites need bespoke parsing.
 
