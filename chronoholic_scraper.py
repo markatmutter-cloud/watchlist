@@ -95,13 +95,17 @@ def parse_product(p):
     except (ValueError, TypeError):
         price = 0
 
-    # Chronoholic lists most items as price=0 (inquire-for-price).
-    # Surface those as priceOnRequest so the frontend renders
-    # "Price on request" instead of dropping them — same convention
-    # Wind Vintage and Watchfid use for INQUIRE / ON HOLD listings.
+    # On Chronoholic, price=0 means SOLD — not "inquire for price".
+    # Mark those items as sold so they flow into the Archive (merge.py's
+    # state tracker keeps sold entries with their cached title/image).
+    # priceOnRequest stays True alongside so:
+    #   (a) merge.py's price-floor check (`price < 500 and not
+    #       priceOnRequest`) lets them through;
+    #   (b) the Card's price slot renders "Price on request" instead of
+    #       "$0".
+    in_stock_flag = bool(p.get("isInStock"))
+    sold = (price == 0) or (not in_stock_flag)
     price_on_request = price == 0
-
-    in_stock = bool(p.get("isInStock"))
 
     img = ""
     media = p.get("media") or []
@@ -121,7 +125,7 @@ def parse_product(p):
         "img": img,
         "description": "",
         "source": SOURCE_NAME,
-        "sold": not in_stock,
+        "sold": sold,
         "priceOnRequest": price_on_request,
     }
 
@@ -154,19 +158,20 @@ def main():
     print(f"\nTotal raw items: {len(products)}")
 
     results = []
-    skipped_sold = skipped_no_price = inquire = 0
+    sold_count = active_count = skipped_no_data = 0
     for p in products:
         parsed = parse_product(p)
+        # Drop only items missing both price AND sold — those are scrape
+        # errors we can't render meaningfully. Sold-with-price-zero are
+        # the legitimate "sold, price never published" case Mark wants
+        # in the Archive.
+        if parsed["price"] == 0 and not parsed["sold"]:
+            skipped_no_data += 1
+            continue
         if parsed["sold"]:
-            skipped_sold += 1
-            continue
-        # priceOnRequest items go through (frontend renders them as
-        # "Price on request" — Wind Vintage / Watchfid pattern).
-        if parsed["price"] == 0 and not parsed.get("priceOnRequest"):
-            skipped_no_price += 1
-            continue
-        if parsed.get("priceOnRequest"):
-            inquire += 1
+            sold_count += 1
+        else:
+            active_count += 1
         results.append(parsed)
 
     out_file = "chronoholic_listings.csv"
@@ -179,8 +184,8 @@ def main():
         writer.writerows(results)
 
     print(f"\n✓ Saved {len(results)} listings to {out_file}")
-    print(f"  ({inquire} priced as 'inquire')")
-    print(f"  Skipped: {skipped_sold} sold, {skipped_no_price} no price")
+    print(f"  Active: {active_count}, Sold (price=0 → archive): {sold_count}")
+    print(f"  Skipped: {skipped_no_data} (missing price + not sold)")
 
 
 if __name__ == "__main__":
