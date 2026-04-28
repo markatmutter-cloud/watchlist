@@ -359,6 +359,7 @@ def process_listings():
         ('data/bobswatches.csv',          "Bob's Watches",         'USD'),
         ('data/watchfid.csv',             'Watchfid',              'EUR'),
         ('data/bulangandsons.csv',        'Bulang & Sons',         'EUR'),
+        ('data/moonphase.csv',            'Moonphase',             'EUR'),
     ]
 
     state = load_state()

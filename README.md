@@ -18,7 +18,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 ## What it does
 
-- **Available** — aggregates 19 curated dealer sources into one feed (see table below)
+- **Available** — aggregates 20 curated dealer sources into one feed (see table below)
 - **Auctions** — tracks upcoming auctions from 4 houses, grouped by month
 - **Archive** — sold/delisted items (kept around so you can search reference history) and hidden listings
 - **Watchlist** — heart any listing to save it; price-at-save is preserved so you can see drops
@@ -46,7 +46,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
   ┌─────────────────────────────────────────────────────────────┐
   │                  GitHub Actions (cron, daily)               │
   │                                                             │
-  │   19× listing scrapers + 4× auction scrapers (Python)       │
+  │   20× listing scrapers + 4× auction scrapers (Python)       │
   │            │                              │                 │
   │            ▼                              ▼                 │
   │     *_listings.csv               *_auctions.csv             │
@@ -83,7 +83,7 @@ Listings/auctions are static JSON committed to the repo. The only thing behind a
 
 ## Data sources
 
-### Dealers (19)
+### Dealers (20)
 
 All scrapers hit each dealer's existing public endpoint — no credential-protected APIs, no headless browsers where it can be avoided.
 
@@ -108,6 +108,7 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 | Somlo | Shopify | `/products.json` | GBP |
 | Bulang & Sons | Shopify | collection-scoped `/products.json` | EUR |
 | Watchfid | Custom (WordPress) | WP REST API; images proxied via `/api/img` | EUR |
+| Moonphase | pushers.io | `/api/dealers/{handle}.json` (structured brand + price + state) | EUR |
 
 Tropical Watch is the only source still routed through Browse AI — their site actively blocks scrapers. Every other source is scraped with vanilla `requests`. Browse AI robot ID and API key live in GitHub Secrets, never in the repo.
 
@@ -147,7 +148,7 @@ This means the pipeline is **self-healing**: if a single run misses listings (sc
 
 - **Scrapers:** Python 3.11 with `requests`. No Playwright, no Selenium — Browse AI fills the gap for JS-rendered sources.
 - **Pipeline:** GitHub Actions (ubuntu-latest). Each scraper step uses `continue-on-error: true` so one failing source doesn't kill the batch.
-- **Frontend:** React (Create React App), single-file component, no UI libraries — inline styles only. Now ~2,700 lines — overdue for splitting (see "What I'd do differently next" below).
+- **Frontend:** React (Create React App), inline styles only, no UI libraries. The root `App.js` was a 2,700-line single file; now ~1,700 lines after a three-phase split, with the rest in `src/components/` (Card, Chip, icons, AuctionsTab, AboutModal, HiddenModal, WatchlistTab) plus `src/utils.js` and `src/hooks.js`.
 - **Per-user image persistence:** Hearted listings get their dealer image cached to **Vercel Blob** by `cache_watchlist_images.mjs` (runs once a day inside the auctions workflow). The frontend prefers the cached URL, so favorited cards survive a dealer deleting the original. Listings/auction images aren't cached — auction houses keep theirs up long-term, and caching the full feed isn't worth the storage cost.
 - **Auth + per-user data:** [Supabase](https://supabase.com) — Postgres with row-level security, Google OAuth provider. Free tier; no backend code of my own.
 - **Hosting:** Vercel free tier, auto-deploy from `main`.
@@ -165,6 +166,8 @@ watchlist/
 │   └─ scrape-tropicalwatch.yml    # higher-cadence Browse AI run (TW only)
 ├─ *_scraper.py                    # one file per dealer + auction house
 ├─ merge.py                        # state + listings + auctions enrichment
+├─ cache_watchlist_images.mjs      # Vercel Blob image persistence for hearted items
+├─ api/img.js                      # serverless image proxy for hot-link-protected dealers
 ├─ data/                           # generated CSVs, one per source
 ├─ public/
 │   ├─ listings.json               # what the Available/Watchlist/Archive tabs read
@@ -175,9 +178,19 @@ watchlist/
 │   ├─ favicon-32.png              # browser tab favicon
 │   └─ index.html
 ├─ src/
-│   ├─ App.js                      # entire React UI
+│   ├─ App.js                      # root component, tab routing, sidebar, listings grid
 │   ├─ supabase.js                 # auth + per-user data hooks
-│   └─ index.js
+│   ├─ utils.js                    # pure helpers + constants
+│   ├─ hooks.js                    # useWidth, useSystemDark
+│   ├─ index.js                    # bootstrap + service-worker registration
+│   └─ components/
+│       ├─ Card.js                 # listing card
+│       ├─ Chip.js                 # filter pills
+│       ├─ icons.js                # Heart, Filter, Search, Tab icons
+│       ├─ AuctionsTab.js          # auction calendar
+│       ├─ AboutModal.js           # about modal
+│       ├─ HiddenModal.js          # hidden-listings modal
+│       └─ WatchlistTab.js         # Watchlist tab (Listings/Lots/Searches sub-tabs)
 └─ package.json
 ```
 
@@ -228,10 +241,10 @@ The pushed `state.json` / `auctions_state.json` will be updated on completion an
 
 Honest list, since this is a learning project:
 
-- **Extract React components out of `App.js`.** Sub-components defined inside the root component cause unmount/remount on every render — bit me twice already (input focus loss, slider drag breaking). Worked around with JSX-const helpers and callback refs, but the right fix is splitting the component into its own files.
 - **Add a verification script.** Fetch each dealer's homepage, compare URL count to `state.json`, flag silent drop-outs. Catches scrape regressions that don't throw errors.
 - **Lot-level auction tracking.** Currently we surface auction *dates* but not individual lots. Would be a meaningful step up but adds a lot of scraper surface area.
 - **Automated tests for `merge.py`'s state transitions** — fixtures with two sequential scrape outputs, asserting the expected ID/firstSeen/priceHistory changes. Only layer of the app where tests would meaningfully prevent regressions.
+- **Refactor scrapers into a shared base.** Each scraper duplicates `BRANDS`, request boilerplate, and CSV writing (~50 lines copy-paste). Worth extracting only when the duplication starts hurting — currently it doesn't.
 
 No automated tests today. It's a personal project scraping sites I don't control; most breakage comes from a dealer changing their page shape, which isn't something unit tests catch anyway. I rely on catching issues on the site itself.
 

@@ -104,6 +104,10 @@ jobs:
         continue-on-error: true
         run: python bulangandsons_scraper.py
 
+      - name: Run Moonphase scraper (via pushers.io)
+        continue-on-error: true
+        run: python moonphase_scraper.py
+
       - name: Move CSVs to data folder
         run: |
           mkdir -p data
@@ -126,6 +130,7 @@ jobs:
           [ -f bobswatches_listings.csv ]         && mv bobswatches_listings.csv         data/bobswatches.csv         || echo "bobswatches missing"
           [ -f watchfid_listings.csv ]            && mv watchfid_listings.csv            data/watchfid.csv            || echo "watchfid missing"
           [ -f bulangandsons_listings.csv ]       && mv bulangandsons_listings.csv       data/bulangandsons.csv       || echo "bulangandsons missing"
+          [ -f moonphase_listings.csv ]           && mv moonphase_listings.csv           data/moonphase.csv           || echo "moonphase missing"
 
       - name: Merge into listings.json
         run: python merge.py --listings-only
