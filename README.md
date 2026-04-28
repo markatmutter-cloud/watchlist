@@ -46,7 +46,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
   ┌─────────────────────────────────────────────────────────────┐
   │                  GitHub Actions (cron, daily)               │
   │                                                             │
-  │   26× listing scrapers + 4× auction scrapers (Python)       │
+  │   26× listing scrapers + 6× auction scrapers (Python)       │
   │            │                              │                 │
   │            ▼                              ▼                 │
   │     *_listings.csv               *_auctions.csv             │
@@ -118,7 +118,7 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 
 Tropical Watch is the only source still routed through Browse AI — their site actively blocks scrapers. Every other source is scraped with vanilla `requests`. Browse AI robot ID and API key live in GitHub Secrets, never in the repo.
 
-### Auction houses (4)
+### Auction houses (6)
 
 | House | Method | Notes |
 |---|---|---|
@@ -126,6 +126,8 @@ Tropical Watch is the only source still routed through Browse AI — their site 
 | Monaco Legend | HTML, anchored on `<p class="auction-date">` | Both featured + grid card layouts share that element |
 | Phillips | HTML, walking backward from each `atc_date_start` block | Phillips puts the auction href above the date block |
 | Bonhams | HTML, explicit `_pair(y1, mo1, d1, y2, mo2, d2)` date parser | Earlier helper had a buggy implicit-end-year bug |
+| Christie's | Next.js `__NEXT_DATA__` Sitecore JSS payload from `/en/departments/watches-and-wristwatches` | Structured `Auctions[]` array with SaleNumber, dates, location, URL |
+| Sotheby's | Calendar URL with watches filter (`f4=...`); flat-text parse of card descriptors | Cross-month date ranges supported (`29 April–13 May 2026`) |
 
 Auction tracking is lot-agnostic — we surface upcoming sale dates and a link, not individual lots.
 
