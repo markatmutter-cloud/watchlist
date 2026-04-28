@@ -31,8 +31,8 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
   - Price drops get a green ↓ chip
   - Watchlist stays glued to the right listing even as dealers add new inventory
   - Listings that disappear from the scrape are flipped to inactive and slide into the Archive
-- Client-side search, filter (by source / brand / reference / price / recency), sort
-- Dynamic reference filter chips, scoped to whatever brands you've selected
+- Client-side search, filter (by source / brand / price / recency / Live-Sold-All status), sort
+- Group-by control (Brand / Source / Reference) replaces the date-bucket dividers when active — works on Available, Archive, and Watchlist Listings
 - Dark/light mode following system preference, with manual override
 - GBP→USD conversion for UK dealers, shown alongside the native price
 - Mobile: 3-col grid with a slide-up filter drawer and bottom-tab nav
@@ -129,7 +129,9 @@ Tropical Watch is the only source still routed through Browse AI — their site 
 | Christie's | Next.js `__NEXT_DATA__` Sitecore JSS payload from `/en/departments/watches-and-wristwatches` | Structured `Auctions[]` array with SaleNumber, dates, location, URL |
 | Sotheby's | Calendar URL with watches filter (`f4=...`); flat-text parse of card descriptors | Cross-month date ranges supported (`29 April–13 May 2026`) |
 
-Auction tracking is lot-agnostic — we surface upcoming sale dates and a link, not individual lots.
+### Tracked auction lots
+
+Signed-in users can paste a lot URL into the Auctions tab's **+ Track lot** input to follow that specific lot through to hammer. Supported houses (auctionlots_scraper.py): **Antiquorum, Christie's, Sotheby's**. Each scraper pulls title, image, estimate, starting price, current bid, sold price, and auction end date. Phillips, Bonhams, Monaco Legend, and Heritage are parked — their lot pages are JS-rendered and/or behind bot mitigation that requires Browse AI / a self-hosted Playwright runner / manual entry to bypass.
 
 ---
 

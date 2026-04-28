@@ -11,6 +11,7 @@ approach — left for later.
 """
 import requests
 import csv
+import json
 import re
 import time
 
@@ -42,22 +43,195 @@ def normalize_brand(raw):
     return raw
 
 
-def fetch_brand_from_detail(url):
-    """Pull the JSON-LD `"brand": "..."` from a Hairspring detail page.
-    Hairspring's products.json doesn't expose the watch brand (vendor
-    field is the dealer name). The detail page renders structured data
-    with the actual manufacturer."""
+# Hairspring's titles often lead with a reference number or a model
+# name and omit the manufacturer entirely. When their JSON-LD also
+# fails (returns "Hairspring" — the dealer's own name — or nothing),
+# we fall back to this lookup. Keys are matched against the title
+# substring-style (case-insensitive); first match wins. Order matters
+# only where one key is a substring of another.
+MODEL_TO_BRAND = [
+    # Model names — distinctive enough to identify the maker.
+    ("Mirage", "Berneron"),
+    ("Royal Oak", "Audemars Piguet"),
+    ("Calatrava", "Patek Philippe"),
+    ("Nautilus", "Patek Philippe"),
+    ("Aquanaut", "Patek Philippe"),
+    ("Tank Cintrée", "Cartier"),
+    ("Tank Louis", "Cartier"),
+    ("Tank Basculante", "Cartier"),
+    ("Tank Asymétrique", "Cartier"),
+    ("Tank Américaine", "Cartier"),
+    ("Tank Française", "Cartier"),
+    ("Tank Must", "Cartier"),
+    ("Crash", "Cartier"),
+    ("Tonneau", "Cartier"),
+    ("Pasha", "Cartier"),
+    ("Daytona", "Rolex"),
+    ("Submariner", "Rolex"),
+    ("GMT-Master", "Rolex"),
+    ("Datejust", "Rolex"),
+    ("Day-Date", "Rolex"),
+    ("Explorer", "Rolex"),
+    ("Sea-Dweller", "Rolex"),
+    ("Speedmaster", "Omega"),
+    ("Seamaster", "Omega"),
+    ("Constellation", "Omega"),
+    ("Reverso", "Jaeger-LeCoultre"),
+    ("Memovox", "Jaeger-LeCoultre"),
+    ("Polaris", "Jaeger-LeCoultre"),
+    ("Lange 1", "A. Lange"),
+    ("Datograph", "A. Lange"),
+    ("Saxonia", "A. Lange"),
+    ("Zeitwerk", "A. Lange"),
+    ("Odysseus", "A. Lange"),
+    ("Polerouter", "Universal Geneve"),
+    ("Carrera", "Tag Heuer"),
+    ("Autavia", "Heuer"),
+    ("Monaco", "Heuer"),
+    ("Black Bay", "Tudor"),
+    ("Pelagos", "Tudor"),
+    # Independents + niche models that orphan-out in Hairspring's catalog.
+    ("LUC XPS", "Chopard"),
+    ("LUC ", "Chopard"),
+    ("Grönograaf", "Grönefeld"),
+    ("Chronomètre Souverain", "F.P. Journe"),
+    ("Chonomètre Souverain", "F.P. Journe"),  # observed misspelling
+    ("Chronomètre Bleu", "F.P. Journe"),
+    ("Élégante", "F.P. Journe"),
+    ("Elegante", "F.P. Journe"),
+    ("Insight Micro-Rotor", "Laurent Ferrier"),
+    ("Galet", "Laurent Ferrier"),
+    ("Quadruple Tourbillon", "Greubel Forsey"),
+    ("Fifty Fathoms", "Blancpain"),
+    ("Star Wheel", "Audemars Piguet"),
+    # Reference-number prefixes done separately below.
+]
+
+# Reference-number → brand. Matched as a leading token in the title
+# (digits + optional letter suffix) so "5270R, Perpetual Calendar..." resolves
+# to Patek. Curated for the references Hairspring has surfaced as orphans.
+REF_TO_BRAND = [
+    # Patek Philippe
+    (r"^3970", "Patek Philippe"),
+    (r"^5270", "Patek Philippe"),
+    (r"^5711", "Patek Philippe"),
+    (r"^5712", "Patek Philippe"),
+    (r"^5167", "Patek Philippe"),
+    (r"^5168", "Patek Philippe"),
+    (r"^5980", "Patek Philippe"),
+    (r"^5990", "Patek Philippe"),
+    (r"^2526", "Patek Philippe"),
+    (r"^2577", "Patek Philippe"),
+    (r"^3940", "Patek Philippe"),
+    (r"^5950", "Patek Philippe"),
+    (r"^5004", "Patek Philippe"),
+    # Audemars Piguet
+    (r"^25720", "Audemars Piguet"),
+    (r"^15202", "Audemars Piguet"),
+    (r"^15400", "Audemars Piguet"),
+    (r"^15500", "Audemars Piguet"),
+    (r"^15710", "Audemars Piguet"),
+    (r"^15720", "Audemars Piguet"),
+    (r"^26240", "Audemars Piguet"),
+    (r"^5402", "Audemars Piguet"),
+    # Vacheron Constantin
+    (r"^5500", "Vacheron Constantin"),
+    (r"^4500", "Vacheron Constantin"),
+    # A. Lange
+    (r"^110\.\d", "A. Lange"),
+    (r"^113\.\d", "A. Lange"),
+    (r"^140\.\d", "A. Lange"),
+    (r"^211\.\d", "A. Lange"),
+    (r"^215\.\d", "A. Lange"),
+    (r"^217\.\d", "A. Lange"),
+    # Cartier
+    (r"^WGTA", "Cartier"),
+    (r"^CRWS", "Cartier"),
+]
+
+
+def _match_model_brand(title):
+    t = title.lower()
+    for needle, brand in MODEL_TO_BRAND:
+        if needle.lower() in t:
+            return brand
+    for pattern, brand in REF_TO_BRAND:
+        if re.match(pattern, title, re.IGNORECASE):
+            return brand
+    return None
+
+
+def fetch_brand_from_detail(url, product_title):
+    """Pull the brand for THIS product's JSON-LD entry from a Hairspring
+    detail page. The page also embeds JSON-LD blocks for every related
+    product (often dozens) — taking the first "brand" match in document
+    order conflates them with the main listing.
+
+    Strategy: parse each <script type="application/ld+json"> block;
+    find the @type=Product entry whose `name` matches the product
+    title we already know; use its brand. If the brand is "Hairspring"
+    (the dealer's own name, which they sometimes mis-set on their own
+    products) or empty, return None so the model-name fallback in
+    detect_brand() runs."""
     try:
         r = requests.get(url, headers=HEADERS, timeout=15)
         r.raise_for_status()
-        m = re.search(r'"brand"\s*:\s*"([^"]+)"', r.text)
-        return m.group(1) if m else ''
     except Exception:
-        return ''
+        return ""
+
+    # Pull each ld+json block, JSON-decode, walk for Product entries.
+    blocks = re.findall(
+        r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>',
+        r.text, re.DOTALL,
+    )
+    target = (product_title or "").strip().lower()
+
+    def brand_of(entry):
+        b = entry.get("brand")
+        if isinstance(b, dict):
+            b = b.get("name", "")
+        return (b or "").strip()
+
+    def visit(node, found):
+        if isinstance(node, dict):
+            t = node.get("@type")
+            if t == "Product" or (isinstance(t, list) and "Product" in t):
+                name = (node.get("name") or "").strip().lower()
+                # Match the main product by exact name; the related-
+                # product blocks have different names so they're skipped.
+                if target and name == target:
+                    found.append(brand_of(node))
+            for v in node.values():
+                visit(v, found)
+        elif isinstance(node, list):
+            for v in node:
+                visit(v, found)
+
+    found = []
+    for raw in blocks:
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        visit(data, found)
+
+    # Pick the first non-empty, non-"Hairspring" brand. If only the
+    # mis-labelled "Hairspring" string is present, return empty so the
+    # model-name fallback can take over.
+    for cand in found:
+        if cand and cand.lower() != "hairspring":
+            return cand
+    return ""
 
 
 def detect_brand(name):
     """Title-only brand detection (used when JSON-LD scrape failed)."""
+    # Try the curated model/ref lookup first — handles the orphan cases
+    # where the title leads with a model name (Mirage 38) or a reference
+    # number (3970EJ, 5402ST) without the manufacturer.
+    model_hit = _match_model_brand(name)
+    if model_hit:
+        return model_hit
     for b in BRANDS:
         if b.lower() in name.lower():
             return b
@@ -124,7 +298,7 @@ def parse_product(p):
     brand = ''
     if available and price > 0:
         time.sleep(0.2)
-        brand = normalize_brand(fetch_brand_from_detail(url))
+        brand = normalize_brand(fetch_brand_from_detail(url, title))
     if not brand:
         brand = detect_brand(title)
 

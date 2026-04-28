@@ -52,13 +52,38 @@ api/img.js                    Vercel serverless image proxy (Watchfid-allowliste
 
 **Dealers:** Wind Vintage, Tropical Watch (Browse AI), Menta, Collectors Corner NY, Falco, Grey & Patina, Oliver & Clarke, Craft & Tailored, Watch Brothers London, MVV Watches, Analog Shift, Watches of Knightsbridge, Belmont, Bob's Watches (vintage Omega only), DB1983, Hairspring (brand from JSON-LD detail-page scrape), Somlo, Bulang & Sons (EUR Shopify), Watchfid (EUR, WP REST API; images proxied via `/api/img`), Moonphase (EUR, Paris-based, sourced via pushers.io JSON API), Huntington Company (Shopify, `/collections/watchshop`), The Vintage Watch (Shopify, `/collections/available-watches`), Avocado Vintage (Squarespace), Chronoholic (Wix, scoped to the Omega category — most listings are "Price on request" inquire-style), Vintage Watch Fam (Shopify, hosted at dannysvintagewatches.com but Mark wanted the public name "Vintage Watch Fam"), **Shuck the Oyster** (EUR, WordPress / Cologne; no products endpoint, scraper walks the /portfolio/ root pages and fetches each detail page to extract `PRICE NNNN€`).
 
-**Auctions:** Antiquorum, Monaco Legend, Phillips, Bonhams, **Christie's** (Next.js `__NEXT_DATA__` from the watches department), **Sotheby's** (calendar URL with watches filter; flat-text card parser handles cross-month date ranges like "29 April–13 May 2026"). Plus a manual-entry CSV (`data/manual_auctions.csv`) and a tracked-lots scraper (`auctionlots_scraper.py`) that reads the union of users' tracked lot URLs from Supabase (Christie's lot-URL support already in place).
+**Auctions:** Antiquorum, Monaco Legend, Phillips, Bonhams, Christie's (Next.js `__NEXT_DATA__` from the watches department), Sotheby's (calendar URL with watches filter; flat-text card parser handles cross-month date ranges like "29 April–13 May 2026"). Plus a manual-entry CSV (`data/manual_auctions.csv`).
+
+**Tracked auction lots** (`auctionlots_scraper.py`, runs in the auctions cron): supports lot-URL pasting from **Antiquorum, Christie's, and Sotheby's**. Each scraper pulls title, image, estimate, starting price, current bid, sold price, and auction end date so the frontend can render every house through the same Card layout.
+
+**Lot-tracking parked for** Phillips (opaque IDs from JS-rendered catalog), Bonhams (Cloudflare), Monaco Legend (SPA, no server-rendered lot links), Heritage (DataDome). All four would need Browse AI / Mac mini at home / manual entry to support — see the Roadmap section.
 
 ## What just shipped (most recent first)
 
-**This session (2026-04-27):**
+**Carried over to 2026-04-28:**
 
-- **Three more dealer sources** (now 23 total): Huntington Company (Shopify, scoped to `/collections/watchshop`), The Vintage Watch (Shopify, scoped to `/collections/available-watches`), Avocado Vintage Watches (Squarespace `?format=json`). All three brought in cleanly with the existing scraper templates.
+- **Hairspring brand fix v2.** Some Hairspring products list `brand: "Hairspring"` (the dealer's own name) in their JSON-LD — the scraper used to take that at face value. Updated to (a) parse each `<script type="application/ld+json">` block as JSON and find the `Product` entry whose `name` matches the page's product title (rejects related-product carousels), (b) skip "Hairspring" as a brand value, and (c) fall back to a curated MODEL_TO_BRAND + REF_TO_BRAND lookup (Mirage → Berneron, 3970/5270/5004 → Patek, 110.041 → A. Lange, LUC → Chopard, Chronomètre Bleu → F.P. Journe, Fifty Fathoms → Blancpain, etc.). "Other" count on first run dropped from 21 → 11; the remaining 11 are accessories (Watch Roll, Strap, Loupe) that are correctly Other.
+
+- **Group-by lifted to global filter bar.** Was a Watchlist-only `<select>`. Now a `Group: None ▾` pill in the desktop filter row + chip row in the mobile drawer. Available/Archive feeds use it too — when active, brand/source/ref dividers replace the date-bucket dividers. Old `watchlist_group_v1` localStorage key migrates to `dial_group_v1` on first read.
+
+- **Auctions tab restructure (3 commits):**
+  - Sotheby's lot tracking added (3rd house alongside Antiquorum + Christie's). Apollo Cache parser inside `__NEXT_DATA__` extracts estimate, starting bid, current bid, sold price, auction date.
+  - + Track lot UI moved from Watchlist > Lots to the Auctions tab. Watchlist sub-tabs are now Listings + Searches only.
+  - Auction calendar collapsable by default — shows the next 5 entries; "Show all auctions · N more" expands. State persisted to localStorage.
+
+- **Christie's + Sotheby's auction calendars** (now 6 auction houses). Christie's via Sitecore JSS `__NEXT_DATA__`; Sotheby's via the calendar URL with watches filter.
+
+- **Shuck the Oyster** added (26th source). WordPress detail-page walker — server-rendered listing pages + per-item `PRICE NNNN€` extraction. Reserved-slug denylist (feed/page/embed) added after a `/portfolio/feed/` row leaked through as "Portfolio Items Archive".
+
+- **Vintage Watch Fam** (dannysvintagewatches.com, 25th source — public name override at Mark's request). 426 listings, biggest single-source addition.
+
+- **Tropical Watch on autopilot.** scrape-tropicalwatch.yml now triggers Browse AI on a 6am+6pm PT cron rather than fetching `--latest` from a separate Browse AI schedule.
+
+- **Chronoholic price=0 = sold.** First implementation treated zero-priced items as "Price on request" actives; corrected to mark them sold and route to the Archive (which is what the dealer means by it).
+
+**Earlier in 2026-04-27:**
+
+- **Three Shopify/Squarespace dealers** (was 23 total at the time): Huntington Company (Shopify, scoped to `/collections/watchshop`), The Vintage Watch (Shopify, scoped to `/collections/available-watches`), Avocado Vintage Watches (Squarespace `?format=json`). All three brought in cleanly with the existing scraper templates.
 - **Mobile blank-screen fix** — `statusSegmentJSX` was being referenced in the mobile render path before its `const` declaration (~200 lines later in App.js). JS const isn't hoisted → ReferenceError → white screen. Desktop's render is below the declaration so it worked. Moved the declaration above the `watchlistTabJSX` const so both renders are below it.
 - **App.js syntax-error fix** — earlier in the session, an orphan `};` left over from runImport extraction was breaking every Vercel build for several commits. Spotted only because Mark reported the master tri-state pill / sticky-tab fix / Hairspring brand / Moonphase weren't visible. Lesson: check Vercel deploy status after every push, especially after a destructive cleanup pass.
 - **Moonphase added** (was 20th dealer source) via the pushers.io JSON API. pushers.io is a multi-dealer marketplace with a clean `/api/dealers/{handle}.json` endpoint that exposes brand, price, state, and images as structured fields — no HTML scraping. Same pattern works for any other dealer hosted on pushers.io.
