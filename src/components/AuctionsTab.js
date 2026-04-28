@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { imgSrc } from "../utils";
 
 // ── PURE HELPERS ─────────────────────────────────────────────────────────
@@ -85,9 +85,42 @@ export function AuctionsTab(props) {
   } = props;
 
   // ── AUCTION CALENDAR ───────────────────────────────────────────────────
+  // Collapsed by default to keep the page scannable; expand reveals
+  // every upcoming sale grouped by month. Persisted across visits so
+  // Mark's preference (collapsed vs expanded) sticks.
+  const CALENDAR_PREVIEW_COUNT = 5;
+  const [calendarExpanded, setCalendarExpanded] = useState(() => {
+    try { return localStorage.getItem("auctions_calendar_expanded_v1") === "1"; }
+    catch { return false; }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("auctions_calendar_expanded_v1", calendarExpanded ? "1" : "0");
+    } catch {}
+  }, [calendarExpanded]);
+
+  // Date-sorted flat list of all upcoming auctions. Used to slice the
+  // first N for the collapsed preview.
+  const sortedAuctions = useMemo(() => {
+    const arr = auctions.slice();
+    arr.sort((a, b) => {
+      const da = a.dateStart || "9999";
+      const db = b.dateStart || "9999";
+      return da.localeCompare(db) || (a.house || "").localeCompare(b.house || "");
+    });
+    return arr;
+  }, [auctions]);
+
+  const visibleAuctions = useMemo(() => {
+    if (calendarExpanded || sortedAuctions.length <= CALENDAR_PREVIEW_COUNT) {
+      return sortedAuctions;
+    }
+    return sortedAuctions.slice(0, CALENDAR_PREVIEW_COUNT);
+  }, [sortedAuctions, calendarExpanded]);
+
   const auctionGroups = useMemo(() => {
     const buckets = new Map();
-    for (const a of auctions) {
+    for (const a of visibleAuctions) {
       const key = a.dateStart ? a.dateStart.slice(0, 7) : "tbd";
       if (!buckets.has(key)) buckets.set(key, []);
       buckets.get(key).push(a);
@@ -98,10 +131,7 @@ export function AuctionsTab(props) {
       return a < b ? -1 : 1;
     });
     return keys.map(key => {
-      const items = buckets.get(key).slice().sort((a, b) =>
-        (a.dateStart || "").localeCompare(b.dateStart || "") ||
-        a.house.localeCompare(b.house)
-      );
+      const items = buckets.get(key);   // already date-sorted from sortedAuctions
       let label = "Date TBD";
       if (key !== "tbd") {
         const [y, m] = key.split("-").map(Number);
@@ -109,7 +139,9 @@ export function AuctionsTab(props) {
       }
       return { key, label, items };
     });
-  }, [auctions]);
+  }, [visibleAuctions]);
+
+  const hiddenAuctionCount = sortedAuctions.length - visibleAuctions.length;
 
   // ── TRACKED LOTS ───────────────────────────────────────────────────────
   const [addLotOpen, setAddLotOpen] = useState(false);
@@ -395,6 +427,20 @@ export function AuctionsTab(props) {
           </div>
         </div>
       ))}
+
+      {(hiddenAuctionCount > 0 || calendarExpanded) && (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 8, marginBottom: 4 }}>
+          <button onClick={() => setCalendarExpanded(e => !e)} style={{
+            border: "0.5px solid var(--border)", background: "transparent",
+            color: "var(--text2)", padding: "8px 16px", borderRadius: 8,
+            cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
+          }}>
+            {calendarExpanded
+              ? `Show fewer · next ${CALENDAR_PREVIEW_COUNT} only`
+              : `Show all auctions · ${hiddenAuctionCount} more`}
+          </button>
+        </div>
+      )}
 
       {trackedLotsJSX}
     </div>
