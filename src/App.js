@@ -895,6 +895,50 @@ export default function Watchlist() {
     </div>
   ) : null;
 
+  // Live/Sold/All counts for the global tri-state pill. Computed
+  // BEFORE the status filter is applied so flipping segments doesn't
+  // make either count drop to 0. Counts are tab-aware: Available
+  // counts use the global feed; Watchlist counts use saved items only.
+  const isWatchlistTab = tab === "watchlist";
+  const liveCountForPill = isWatchlistTab
+    ? Object.values(watchlist).filter(it => {
+        const live = liveStateById.get(it.id);
+        return live && !live.sold;
+      }).length
+    : items.filter(i => !i.sold && !hidden[i.id]).length;
+  const soldCountForPill = isWatchlistTab
+    ? Object.values(watchlist).filter(it => {
+        const live = liveStateById.get(it.id);
+        return !live || !!live.sold;
+      }).length
+    : items.filter(i =>  i.sold && !hidden[i.id]).length;
+  const allCountForPill = liveCountForPill + soldCountForPill;
+
+  // Tri-state Status segment, used in BOTH the desktop filter row AND
+  // the mobile sticky sort row so the same control drives every view.
+  // Declared up here (not next to filterRowJSX) so both mobile and
+  // desktop returns are below the declaration — JS const isn't hoisted,
+  // so a reference before declaration would crash mobile (which renders
+  // first). That's exactly the regression that hit 2026-04-27.
+  const statusSegmentJSX = (
+    <div style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 18, overflow: "hidden" }}>
+      {[
+        ["live", `Live · ${liveCountForPill}`],
+        ["sold", `Sold · ${soldCountForPill}`],
+        ["all",  `All · ${allCountForPill}`],
+      ].map(([k, label], idx) => (
+        <button key={k} onClick={() => setStatusMode(k)} style={{
+          border: "none",
+          borderLeft: idx === 0 ? "none" : "0.5px solid var(--border)",
+          padding: "6px 10px", fontSize: 12, cursor: "pointer",
+          background: statusMode === k ? "var(--text1)" : "transparent",
+          color: statusMode === k ? "var(--bg)" : "var(--text2)",
+          fontFamily: "inherit", whiteSpace: "nowrap",
+        }}>{label}</button>
+      ))}
+    </div>
+  );
+
   // Watchlist tab JSX. Built once so both mobile + desktop returns can
   // reference the same instance without re-spelling the long prop list.
   const watchlistTabJSX = (
@@ -1324,46 +1368,6 @@ export default function Watchlist() {
     background: "transparent", color: "var(--text2)", cursor: "pointer",
     fontFamily: "inherit", fontSize: 12, width: "100%",
   };
-
-  // Live/Sold counts. Computed BEFORE the status filter is applied so
-  // flipping segments doesn't make either count drop to 0. Counts are
-  // tab-aware: Available counts use the global feed; Watchlist counts
-  // use the saved items only.
-  const isWatchlistTab = tab === "watchlist";
-  const liveCountForPill = isWatchlistTab
-    ? Object.values(watchlist).filter(it => {
-        const live = liveStateById.get(it.id);
-        return live && !live.sold;
-      }).length
-    : items.filter(i => !i.sold && !hidden[i.id]).length;
-  const soldCountForPill = isWatchlistTab
-    ? Object.values(watchlist).filter(it => {
-        const live = liveStateById.get(it.id);
-        return !live || !!live.sold;
-      }).length
-    : items.filter(i =>  i.sold && !hidden[i.id]).length;
-  const allCountForPill = liveCountForPill + soldCountForPill;
-
-  // Tri-state Status segment, used in the desktop filter row AND the
-  // mobile sticky sort row so the same control drives every view.
-  const statusSegmentJSX = (
-    <div style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 18, overflow: "hidden" }}>
-      {[
-        ["live", `Live · ${liveCountForPill}`],
-        ["sold", `Sold · ${soldCountForPill}`],
-        ["all",  `All · ${allCountForPill}`],
-      ].map(([k, label], idx) => (
-        <button key={k} onClick={() => setStatusMode(k)} style={{
-          border: "none",
-          borderLeft: idx === 0 ? "none" : "0.5px solid var(--border)",
-          padding: "6px 10px", fontSize: 12, cursor: "pointer",
-          background: statusMode === k ? "var(--text1)" : "transparent",
-          color: statusMode === k ? "var(--bg)" : "var(--text2)",
-          fontFamily: "inherit", whiteSpace: "nowrap",
-        }}>{label}</button>
-      ))}
-    </div>
-  );
 
   const filterRowJSX = (() => {
     return (
