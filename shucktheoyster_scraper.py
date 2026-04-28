@@ -62,6 +62,16 @@ BRAND_ALIASES = {
     "Audemars Piquet": "Audemars Piguet",  # site frequently misspells
 }
 
+# WordPress reserved slugs that share /portfolio/<slug>/ with real
+# entries but aren't actual listings. Anything matching gets skipped
+# by collect_detail_urls.
+RESERVED_SLUGS = {
+    "feed",         # RSS endpoint — was leaking in as "Portfolio Items Archive"
+    "page",         # pagination root
+    "embed",        # WP oEmbed iframes
+    "comments-page",
+}
+
 
 def detect_brand(title):
     for b in BRANDS:
@@ -84,11 +94,15 @@ def collect_detail_urls():
             print(f"  page {page} failed: {e}")
             break
         # Match /portfolio/<slug>/ links — exclude category links and
-        # the listing root itself.
+        # the listing root itself. Reserved WordPress slugs (feed, page,
+        # comments-page, embed) live at the same path level as real
+        # portfolio entries and would otherwise be scraped as listings.
         new = []
-        for m in re.finditer(r'href="(https://www\.shucktheoyster\.com/portfolio/[^"/]+/)"', r.text):
-            link = m.group(1)
+        for m in re.finditer(r'href="(https://www\.shucktheoyster\.com/portfolio/([^"/]+)/)"', r.text):
+            link, slug = m.group(1), m.group(2)
             if link == BASE + LISTING_PATH + "/":
+                continue
+            if slug in RESERVED_SLUGS:
                 continue
             if link in seen:
                 continue
