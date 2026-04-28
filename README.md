@@ -239,6 +239,12 @@ REACT_APP_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 
 The app no-ops auth gracefully if these aren't set — you just can't sign in. Useful for running locally without a Supabase project of your own.
 
+```bash
+# Tests (state-transition coverage on merge.py)
+pip install -r requirements-dev.txt
+pytest
+```
+
 ---
 
 ## Triggering a manual scrape
@@ -253,7 +259,7 @@ The pushed `state.json` / `auctions_state.json` will be updated on completion an
 
 Direction, priorities, and what's explicitly off the roadmap live in [ROADMAP.md](ROADMAP.md). Short version: foundations (references as first-class entities, verification script) come before more sources or features.
 
-No automated tests today. Most breakage comes from a dealer changing their page shape — not something unit tests catch. The merge.py state-transition layer is the one place tests would help, on the roadmap as Epic 0.
+Test coverage is intentionally scoped to `merge.py`'s state-transition layer — the one place where a regression would silently corrupt the cross-run memory that drives "NEW" badges, price-drop detection, and the Archive. The suite lives in `tests/` and runs in CI on every push and PR (`pytest`, ~10 tests). Scrapers and the frontend aren't tested — most breakage there comes from external page changes that unit tests don't catch.
 
 ---
 

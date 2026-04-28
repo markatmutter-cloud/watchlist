@@ -1,0 +1,29 @@
+name: Tests
+
+# Runs the pytest suite on every push to main and every PR. The suite
+# is small (state-transition tests for merge.py) and fast — sub-second
+# locally — so running on every push is cheap.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test deps
+        run: pip install -r requirements-dev.txt
+
+      - name: Run pytest
+        run: pytest

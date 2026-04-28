@@ -310,6 +310,12 @@ Not active. Worth keeping a list because some might graduate.
 
 ## Update log
 
+- 2026-04-28 (PM): **Shipped:** pytest suite for `merge.update_state`
+  state transitions (`tests/test_merge_state.py`, 10 tests covering
+  new/persist/drop/increase/disappear/reappear/currency-edge/multi-cycle).
+  CI runs on every push to main and every PR. The "tests for merge.py
+  state transitions" item that was on Epic 0 / Code quality is now
+  done.
 - 2026-04-28 (PM): Doc-hygiene pass. Absorbed in-flight roadmap items
   from SESSION_HANDOFF_2026-04-27 — eBay integration and Alerts named
   under Epic 3; Heritage's DataDome blocking + the three escape hatches

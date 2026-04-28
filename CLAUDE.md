@@ -68,6 +68,29 @@ cache to the full feed**.
 - `continue-on-error: true` on each scrape step in the workflow so one
   failing source doesn't kill the batch.
 
+## Tests
+
+`tests/test_merge_state.py` covers state-transition logic in
+`merge.update_state` — the cross-run memory layer where regressions
+would be costly and silent. Synthetic input dicts only (no CSV files,
+no scraper output, no frontend). Driven by pytest. Each test name
+describes the transition it covers so a failure points straight at the
+broken case.
+
+Run locally:
+
+```
+pip install -r requirements-dev.txt    # one-time setup
+pytest                                  # runs the suite
+```
+
+The suite also runs in CI on every push to main and every PR
+(`.github/workflows/tests.yml`). When adding new state-transition
+behavior to `merge.py`, add a corresponding test in the same file.
+Currently-documented bugs (e.g. silent currency switches) live as
+behavior-documenting tests rather than expected-failures — when those
+bugs are fixed, the relevant test needs an update too.
+
 ## Things to never do
 
 - **Don't bump `LEGACY_WATCHLIST_KEY` / `LEGACY_HIDDEN_KEY`** in App.js —
