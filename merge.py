@@ -225,7 +225,15 @@ def load_csv(path, source_name, currency='USD'):
                 continue
             title = clean(r.get('title', ''))
             url = r.get('url', '')
-            rate = FX.get(currency, 1.0)
+            # Per-row currency support: eBay's Browse API returns
+            # listings priced in their seller's native currency, so the
+            # eBay CSV emits one row per (item, currency) and we honor
+            # the per-row value. Existing dealer scrapers don't write
+            # this column → fall back to the source default. Same FX
+            # table either way.
+            row_currency = (r.get('currency') or '').strip().upper()
+            effective_currency = row_currency if row_currency in FX else currency
+            rate = FX.get(effective_currency, 1.0)
             # Prefer the scraper's brand column when it's set to a known
             # brand or a non-"Other" value — most scrapers fill this from
             # the title (same regex as detect_brand) but Hairspring and
@@ -261,7 +269,7 @@ def load_csv(path, source_name, currency='USD'):
                 'brand': brand,
                 'ref': title,
                 'price': price,
-                'currency': currency,
+                'currency': effective_currency,
                 'priceUSD': round(price * rate),
                 'source': source_name,
                 'url': url,
@@ -494,6 +502,11 @@ def process_listings():
         ('data/chronoholic.csv',          'Chronoholic',           'USD'),
         ('data/vintagewatchfam.csv',      'Vintage Watch Fam',     'USD'),
         ('data/shucktheoyster.csv',       'Shuck the Oyster',      'EUR'),
+        # eBay is multi-currency by design — the source-default 'USD'
+        # is just a fallback for rows where the per-row `currency`
+        # column is missing or unrecognized. Each Browse API result
+        # carries its own currency in the CSV.
+        ('data/ebay.csv',                 'eBay',                  'USD'),
     ]
 
     state = load_state()
