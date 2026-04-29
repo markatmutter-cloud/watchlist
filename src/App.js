@@ -295,11 +295,42 @@ export default function Watchlist() {
   };
 
   const SOURCES = useMemo(() => [...new Set(items.map(i => i.source))].sort(), [items]);
-  const BRANDS = useMemo(() => {
-    const counts = {};
-    items.filter(i => !i.sold).forEach(i => { counts[i.brand] = (counts[i.brand] || 0) + 1; });
-    return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([b]) => b);
+
+  // Singleton-brand collapse threshold. Brands with FEWER live listings
+  // than this get pooled into "Other" rather than getting their own
+  // filter chip. Stops one-off oddballs from cluttering the brand rail
+  // while still letting niche brands surface as soon as a second
+  // listing of the same brand appears. Mark set this to 2 on
+  // 2026-04-29 — adjustable later if the chip rail feels sparse.
+  const BRAND_CHIP_MIN = 2;
+  const brandCounts = useMemo(() => {
+    const c = {};
+    items.filter(i => !i.sold).forEach(i => {
+      const k = i.brand || "Other";
+      c[k] = (c[k] || 0) + 1;
+    });
+    return c;
   }, [items]);
+  // Bucket label for one item under singleton-collapse rules.
+  // "Other" + any brand below the chip threshold all funnel into one
+  // "Other" bucket for filter + group-by purposes.
+  const displayBrand = useCallback((it) => {
+    const b = it.brand || "Other";
+    return (brandCounts[b] || 0) >= BRAND_CHIP_MIN ? b : "Other";
+  }, [brandCounts]);
+  const BRANDS = useMemo(() => {
+    const visible = Object.entries(brandCounts)
+      .filter(([b, n]) => n >= BRAND_CHIP_MIN && b !== "Other")
+      .sort((a, b) => b[1] - a[1])
+      .map(([b]) => b);
+    // If any singleton or genuinely-Other items exist, expose an
+    // "Other" chip so they remain reachable from the brand filter UI.
+    const otherTotal = Object.entries(brandCounts)
+      .filter(([b, n]) => n < BRAND_CHIP_MIN || b === "Other")
+      .reduce((s, [, n]) => s + n, 0);
+    if (otherTotal > 0) visible.push("Other");
+    return visible;
+  }, [brandCounts]);
   // Reference chips aggregate digit sequences (3-6 digits, optional .NNN)
   // found in listing titles. Years (1900-2099) are filtered out so a 4-digit
   // year doesn't pose as a ref. Refs are **scoped to the current brand
@@ -310,7 +341,7 @@ export default function Watchlist() {
     const counts = {};
     const refRegex = /\b\d{3,6}(?:\.\d{1,3})?\b/g;
     const pool = items.filter(i =>
-      !i.sold && (filterBrands.length === 0 || filterBrands.includes(i.brand))
+      !i.sold && (filterBrands.length === 0 || filterBrands.includes(displayBrand(i)))
     );
     pool.forEach(i => {
       const matches = (i.ref || "").match(refRegex) || [];
@@ -420,7 +451,7 @@ export default function Watchlist() {
     }
     if (newDays > 0) its = its.filter(i => daysAgo(freshDate(i)) <= newDays && !i.backfilled);
     if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
-    if (filterBrands.length > 0) its = its.filter(i => filterBrands.includes(i.brand));
+    if (filterBrands.length > 0) its = its.filter(i => filterBrands.includes(displayBrand(i)));
     if (search.trim()) {
       const q = search.toLowerCase();
       its = its.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q));
@@ -491,7 +522,7 @@ export default function Watchlist() {
     // carry the listing_snapshot fields (source, brand, ref), so the same
     // predicates work here.
     if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
-    if (filterBrands.length > 0)  its = its.filter(i => filterBrands.includes(i.brand));
+    if (filterBrands.length > 0)  its = its.filter(i => filterBrands.includes(displayBrand(i)));
     if (filterRefs.length > 0) {
       its = its.filter(i => {
         const ref = (i.ref || "").toLowerCase();
@@ -809,7 +840,7 @@ export default function Watchlist() {
   // Mirrors the same logic the Watchlist tab used before this was lifted
   // to App.js so brand/source/ref bucketing is consistent everywhere.
   const groupKeyOf = (it) => {
-    if (groupBy === "brand")  return it.brand || "Other";
+    if (groupBy === "brand")  return displayBrand(it);
     if (groupBy === "source") return it.source || "Other";
     if (groupBy === "ref")    return extractRef(it.ref) || "Other";
     return null;
@@ -1277,7 +1308,10 @@ export default function Watchlist() {
           </div>
         )}
         </div>
-        <div style={{ padding: "12px 14px 100px" }}>
+        {/* Top padding 0 on Watchlist so the sub-tab strip sits flush
+            against the sticky filter pills above (otherwise a ~12px gap
+            at scroll-top shows cards peeking through). */}
+        <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
           {tab === "listings" ? listingsGridJSX : tab === "auctions" ? auctionsTabJSX : watchlistTabJSX}
         </div>
         {/* Bottom tab bar. The container reserves the iOS home-indicator
@@ -1791,7 +1825,11 @@ export default function Watchlist() {
             the source code (sidebarFilterPanelJSX, sidebarToggleJSX,
             resize handlers) is still defined further up so we can revert
             quickly if the new pattern doesn't pan out. */}
-        <div data-desktop-main style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
+        {/* Top padding is 0 on the Watchlist tab so the sub-tab strip
+            (Listings / Searches) sits flush against the filter pill row.
+            Without this there's a ~14px gap at scroll-top where cards
+            peek through. Listings + Auctions keep the breathing room. */}
+        <div data-desktop-main style={{ flex: 1, overflowY: "auto", padding: `${tab === "watchlist" ? 0 : 14}px 16px 32px` }}>
           {tab === "listings" ? listingsGridJSX : tab === "auctions" ? auctionsTabJSX : watchlistTabJSX}
         </div>
       </div>

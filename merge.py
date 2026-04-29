@@ -33,11 +33,19 @@ from collections import Counter
 BRANDS = [
     'Rolex', 'Omega', 'Patek Philippe', 'Tudor', 'Breitling', 'IWC', 'Cartier',
     'Jaeger-LeCoultre', 'Panerai', 'Audemars Piguet', 'Vacheron Constantin',
-    'A. Lange', 'Aquastar', 'Ralph Lauren', 'Seiko', 'Universal Geneve',
+    'A. Lange', 'Aquastar', 'Ralph Lauren',
+    # Grand Seiko must come BEFORE Seiko so substring match grabs the
+    # full name first.
+    'Grand Seiko', 'Seiko',
+    'Universal Geneve',
     # Tag Heuer must come BEFORE Heuer so substring match doesn't grab "Heuer" first.
     'Tag Heuer', 'Heuer',
     'Longines', 'Movado', 'Czapek', 'Urwerk', 'Zenith', 'Breguet',
     'Blancpain', 'Tissot', 'Gallet', 'Mulco', 'Girard-Perregaux', 'Eberhard',
+    # Added 2026-04-29 — Mark requested Favre-Leuba + Vulcain; Ebel /
+    # Ikepod / Piaget were sitting in the Other bucket despite clearly
+    # branded titles.
+    'Favre-Leuba', 'Vulcain', 'Ebel', 'Ikepod', 'Piaget',
 ]
 
 # Brand-name variants we want to collapse onto a single canonical chip.
@@ -119,6 +127,19 @@ def canonicalize_brand(brand):
         return brand
     key = re.sub(r'\s+', ' ', brand).strip().lower()
     return BRAND_ALIASES.get(key, brand)
+
+
+# Set of brand strings we trust as legitimate. Anything outside this
+# set that comes through a scraper's brand column (e.g. dealer names
+# like "Oliver & Clarke Vintage Watches", "Collectors Corner NY",
+# "bulangandsons-backend" — Shopify vendor leaks) gets overridden by
+# title-derived detect_brand. Built lazily after BRAND_ALIASES is
+# defined so canonical alias values are also accepted.
+KNOWN_BRANDS_SET = (
+    set(BRANDS)
+    | {b.strip() for b in BRAND_ALIASES.values()}
+    | {'Other'}  # Treat literal "Other" as known so we don't loop on it.
+)
 
 FX = {'GBP': 1.27, 'EUR': 1.08, 'CHF': 1.13, 'JPY': 0.0067, 'CNY': 0.14, 'USD': 1.0}
 
@@ -211,11 +232,23 @@ def load_csv(path, source_name, currency='USD'):
             # similar sources can set it from structured data the title
             # alone wouldn't reveal. Fall back to title-based detection
             # when the column is missing or "Other".
-            scraped_brand = (r.get('brand') or '').strip()
-            if scraped_brand and scraped_brand != 'Other':
+            # Brand resolution with a dealer-name-leak guard. Trust
+            # the scraper's value when it's a known brand (Hairspring
+            # passes Czapek/Urwerk from structured data the title
+            # alone wouldn't reveal). Fall back to title-derived
+            # detection when the scraper's value is unrecognised — that
+            # catches cases where the scraper accidentally passed the
+            # dealer's own store name (Shopify "vendor" field leak):
+            # "Oliver & Clarke Vintage Watches", "Collectors Corner NY",
+            # "bulangandsons-backend" all came in via this path.
+            scraped_brand = canonicalize_brand((r.get('brand') or '').strip())
+            title_brand = detect_brand(title)
+            if scraped_brand and scraped_brand in KNOWN_BRANDS_SET and scraped_brand != 'Other':
                 brand = scraped_brand
+            elif title_brand != 'Other':
+                brand = title_brand
             else:
-                brand = detect_brand(title)
+                brand = scraped_brand or 'Other'
             brand = canonicalize_brand(brand)
             # Drop excluded brands entirely — never reach the feed.
             # Mark removed Franck Muller from the lineup; if the source
