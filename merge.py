@@ -40,6 +40,49 @@ BRANDS = [
     'Blancpain', 'Tissot', 'Gallet', 'Mulco', 'Girard-Perregaux', 'Eberhard',
 ]
 
+# Brand-name variants we want to collapse onto a single canonical chip.
+# Lookup is case-insensitive with whitespace + punctuation normalised.
+# Add new aliases here when a dealer uses a non-standard spelling that
+# leaks through detect_brand or comes from a scraper's own brand field.
+#
+# JLC group: "LeCoultre" (without "Jaeger") is the historic pre-1937
+# brand line. Modern collectors (and Mark) treat all of these as the
+# same maison for filter purposes.
+BRAND_ALIASES = {
+    # JLC variants → canonical hyphenated form
+    'jaeger lecoultre':   'Jaeger-LeCoultre',
+    'jaeger-lecoultre':   'Jaeger-LeCoultre',
+    'jaeger le coultre':  'Jaeger-LeCoultre',
+    'jaegerlecoultre':    'Jaeger-LeCoultre',
+    'lecoultre':          'Jaeger-LeCoultre',
+    'le coultre':         'Jaeger-LeCoultre',
+    # Franck Muller variants — collapsed before the EXCLUDED_BRANDS
+    # check below so typo'd rows ("Frank Muller") get filtered out too.
+    'frank muller':       'Franck Muller',
+    'franck muller':      'Franck Muller',
+    'franck-muller':      'Franck Muller',
+}
+
+
+# Brands we never want in the user-facing feed. Matched after
+# canonicalize_brand so any spelling variant gets caught. Lowercase;
+# canonical name (post-canonicalize_brand) is checked case-insensitively.
+EXCLUDED_BRANDS = {'Franck Muller'}
+
+
+def canonicalize_brand(brand):
+    """Map any known variant of a brand name to its canonical form.
+
+    Idempotent — passing an already-canonical brand returns it
+    unchanged. Whitespace runs collapse, case is ignored, and
+    apostrophes/diacritics are stripped before lookup so e.g.
+    "Jaeger  LeCoultre" with extra spaces still hits the alias map.
+    """
+    if not brand:
+        return brand
+    key = re.sub(r'\s+', ' ', brand).strip().lower()
+    return BRAND_ALIASES.get(key, brand)
+
 FX = {'GBP': 1.27, 'EUR': 1.08, 'CHF': 1.13, 'JPY': 0.0067, 'CNY': 0.14, 'USD': 1.0}
 
 STATE_PATH = 'public/state.json'
@@ -136,6 +179,13 @@ def load_csv(path, source_name, currency='USD'):
                 brand = scraped_brand
             else:
                 brand = detect_brand(title)
+            brand = canonicalize_brand(brand)
+            # Drop excluded brands entirely — never reach the feed.
+            # Mark removed Franck Muller from the lineup; if the source
+            # CSV still ships rows tagged that way, skip them here so
+            # the scraper code itself doesn't need per-source patches.
+            if brand in EXCLUDED_BRANDS:
+                continue
             items.append({
                 'id': stable_id(url, fallback_key=f"{source_name}|{title}"),
                 'brand': brand,
@@ -280,9 +330,17 @@ def update_state(items, state):
         rate = FX.get(currency, 1.0)
         price_usd = round(last_price * rate)
 
+        archive_brand = canonicalize_brand(
+            entry.get('lastBrand') or detect_brand(entry.get('lastTitle', ''))
+        )
+        # Excluded brands stay out of the archive feed too — Mark
+        # doesn't want them surfacing in either Available or Sold.
+        if archive_brand in EXCLUDED_BRANDS:
+            continue
+
         enriched.append({
             'id':            sid,
-            'brand':         entry.get('lastBrand') or detect_brand(entry.get('lastTitle', '')),
+            'brand':         archive_brand,
             'ref':           entry.get('lastTitle', ''),
             'price':         last_price,
             'currency':      currency,
