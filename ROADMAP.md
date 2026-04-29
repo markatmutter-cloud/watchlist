@@ -128,12 +128,56 @@ but "what has come up for this reference, when, and what did it sell for."
 
 The features that make Watchlist tell me things, not just show me things.
 
-### eBay integration scoped to saved searches
+### eBay integration (in design, 2026-04-28)
 
 Highest-impact single feature on this list. eBay has a stable Browse API
-(free tier, OAuth). Recommended scope: extend saved searches with an
-"include eBay matches" toggle rather than dumping all of eBay into the
-main feed. Avoids drowning the curated dealer feed in noise.
+(free tier 5k calls/day, OAuth). **Decisions made 2026-04-28:**
+
+- **Two surfaces, single integration:**
+  1. Timed auctions → new **eBay sub-tab inside the Auctions tab**
+     (third sub-tab alongside Tracked lots / Calendar). Card format
+     matches the existing tracked-lots cards (image, title, current
+     bid, time-remaining badge, seller). Data kept in a separate
+     table from auction-house tracked lots — different schema, same
+     visual language.
+  2. Buy-It-Now → mixed into the **Available feed** alongside dealer
+     listings, with `source = "eBay"`. Same Card component, same
+     filters. Source filter lets users hide eBay if they want
+     dealer-only.
+- **Targeted searches only.** Users define searches as
+  reference/keyword strings (e.g. "Railmaster CK2914"). Country filter
+  per search: USA / UK / Europe (where Europe = a multi-country list,
+  not a single ISO code — eBay's API takes one country at a time, so
+  "Europe" means the search runs N times and merges).
+- **Manual single-item URL tracking.** Paste an eBay URL → track that
+  specific listing's current price + time-remaining. Same flow as the
+  existing Christie's/Sotheby's/Antiquorum tracked-lot URL paste.
+- **NOT in scope:** re-listing detection (originally considered;
+  dropped 2026-04-28 — too speculative for v1).
+- **NOT in scope:** broad keyword searches like "vintage Rolex". Only
+  targeted reference-level searches to avoid drowning the curated
+  dealer feed.
+
+**Setup required from Mark before code starts:**
+1. Create an eBay developer account at developer.ebay.com (free).
+2. Create a "Production" keyset to get Client ID + Client Secret.
+3. Add both as GitHub Actions secrets: `EBAY_CLIENT_ID` /
+   `EBAY_CLIENT_SECRET`. Also add to Vercel env (for the eventual
+   per-user search panel).
+4. Share one example search URL (e.g. the Railmaster CK2914 search on
+   ebay.com filtered to USA) so the first scraper can be validated
+   against real data.
+
+**Architecture sketch:**
+- `ebay_search_scraper.py` — runs each saved search via Browse API,
+  writes one CSV per search to `data/ebay/<search-slug>.csv`.
+- `ebay_tracked_scraper.py` — polls each manually tracked URL for
+  price + time. Writes to `data/ebay_tracked.csv`.
+- Both feed `merge.py` extensions that route Buy-It-Now items into
+  `listings.json` and timed-auction items into a new
+  `ebay_auctions.json`.
+- New file: `ebay_oauth.py` — OAuth client-credentials token refresh
+  shared by both scrapers.
 
 ### Alerts (email or push) on saved-search matches
 
@@ -310,6 +354,26 @@ Not active. Worth keeping a list because some might graduate.
 
 ## Update log
 
+- 2026-04-28 (PM): **Shipped:** Card-tile flash fix on heart click /
+  scroll. `ListingsGrid` was a function-component nested inside `App`,
+  giving it new identity each render → React unmounted+remounted the
+  whole grid → every `<img>` re-fetched. Converted to a JSX expression;
+  wrapped `Card` in `React.memo`. Live on `the-watch-list.app` at bundle
+  `main.bd1be653.js`. Same commit also renamed the "None" group option
+  to "Date" on Available (the implicit Today / Last 3 days / This week
+  / Older dividers were misleadingly labeled).
+- 2026-04-28 (PM): **Shipped:** Auctions tab gets two sub-tabs —
+  Tracked lots (default) + Calendar. Mirrors Watchlist's
+  Listings/Searches sub-tab pattern. Choice persists in localStorage.
+  Sets up the eBay sub-tab landing as a third entry once that
+  integration ships.
+- 2026-04-28 (PM): **Designed:** eBay integration scope finalized.
+  Sub-tab inside Auctions for timed lots; mixed into Available feed
+  for Buy-It-Now (with `source = "eBay"`). Targeted reference searches
+  + manual URL tracking. No re-listing detection. Setup blocker:
+  Mark needs to create developer.ebay.com keyset and add
+  `EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET` to GitHub Actions secrets
+  before code can begin. Full plan under Epic 3.
 - 2026-04-28 (PM): **Shipped:** pytest suite for `merge.update_state`
   state transitions (`tests/test_merge_state.py`, 10 tests covering
   new/persist/drop/increase/disappear/reappear/currency-edge/multi-cycle).
