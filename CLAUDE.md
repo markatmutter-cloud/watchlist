@@ -9,7 +9,7 @@ how to behave for the rest of it.
 - [README.md](README.md) — what the project is + architecture. Public-facing.
 - [ROADMAP.md](ROADMAP.md) — priorities, epics, what's explicitly out of scope.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
-  The current one is [SESSION_HANDOFF_2026-04-27.md](SESSION_HANDOFF_2026-04-27.md);
+  The current one is [SESSION_HANDOFF_2026-04-29.md](SESSION_HANDOFF_2026-04-29.md);
   older ones live in `archive/`.
 
 If a gotcha or convention is durable (still true next session), graduate
@@ -90,6 +90,48 @@ behavior to `merge.py`, add a corresponding test in the same file.
 Currently-documented bugs (e.g. silent currency switches) live as
 behavior-documenting tests rather than expected-failures — when those
 bugs are fixed, the relevant test needs an update too.
+
+## Print scoping for in-app tools
+
+Anything that needs to print (currently: References → Watch size
+comparison) should NOT use the prototype pattern of
+`body * { visibility: hidden }`. That pattern is brittle inside a
+React app — it visibility-hides the entire app tree and depends on
+incidental CSS specificity to surface the print content.
+
+Instead, use a **React Portal** mounted to `document.body`:
+
+```jsx
+const [printActive, setPrintActive] = useState(false);
+const handlePrint = () => {
+  setPrintActive(true);
+  setTimeout(() => {
+    try { window.print(); } finally { setPrintActive(false); }
+  }, 60);
+};
+// ...
+{printActive && createPortal(<PrintSheet ... />, document.body)}
+```
+
+The portal renders the print sheet as a direct child of `<body>`,
+sibling to `#root`. The global `@media print` rule in
+`public/index.html` hides every body child except the portal:
+
+```css
+@media print {
+  body > *:not(.size-compare-print-sheet-portal) { display: none !important; }
+}
+```
+
+When `printActive` is false the portal isn't in the DOM at all, so
+printing from any other page on the site is unaffected. Verify the
+calibration ruler measures correctly in Chrome's print preview at
+100% scale — that's the killer feature for size comparison and the
+non-negotiable bar for any future print-to-scale tool.
+
+To add a new printable tool: render its sheet via `createPortal` to
+`document.body` with a class that matches a selector in the
+`index.html` print rules (or extend the rule's selector list).
 
 ## Things to never do
 

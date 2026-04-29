@@ -9,6 +9,7 @@ import { FilterIcon, SearchIcon, TabIcon } from "./components/icons";
 import { Card } from "./components/Card";
 import { Chip, SidebarChip } from "./components/Chip";
 import { AuctionsTab } from "./components/AuctionsTab";
+import { ReferencesTab } from "./components/ReferencesTab";
 import { AboutModal } from "./components/AboutModal";
 import { HiddenModal } from "./components/HiddenModal";
 import { WatchlistTab } from "./components/WatchlistTab";
@@ -1312,14 +1313,17 @@ export default function Watchlist() {
             against the sticky filter pills above (otherwise a ~12px gap
             at scroll-top shows cards peeking through). */}
         <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
-          {tab === "listings" ? listingsGridJSX : tab === "auctions" ? auctionsTabJSX : watchlistTabJSX}
+          {tab === "listings" ? listingsGridJSX
+            : tab === "auctions" ? auctionsTabJSX
+            : tab === "references" ? <ReferencesTab />
+            : watchlistTabJSX}
         </div>
         {/* Bottom tab bar. The container reserves the iOS home-indicator
             safe area PLUS a fixed extra padding, so the buttons aren't
             hugging the home bar when the app is launched standalone from
             the home screen. */}
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}>
-          {[["listings", "Available"], ["auctions", "Auctions"], ["watchlist", "Watchlist"]].map(([key, label]) => (
+          {[["listings", "Available"], ["auctions", "Auctions"], ["watchlist", "Watchlist"], ["references", "References"]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "8px 0 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               {tab === key
                 ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5" }} />
@@ -1688,7 +1692,7 @@ export default function Watchlist() {
           Watchlist
         </button>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
-          {[["listings", "Available"], ["auctions", "Auctions"], ["watchlist", "Watchlist"]].map(([key, label]) => (
+          {[["listings", "Available"], ["auctions", "Auctions"], ["watchlist", "Watchlist"], ["references", "References"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,
@@ -1830,7 +1834,10 @@ export default function Watchlist() {
             Without this there's a ~14px gap at scroll-top where cards
             peek through. Listings + Auctions keep the breathing room. */}
         <div data-desktop-main style={{ flex: 1, overflowY: "auto", padding: `${tab === "watchlist" ? 0 : 14}px 16px 32px` }}>
-          {tab === "listings" ? listingsGridJSX : tab === "auctions" ? auctionsTabJSX : watchlistTabJSX}
+          {tab === "listings" ? listingsGridJSX
+            : tab === "auctions" ? auctionsTabJSX
+            : tab === "references" ? <ReferencesTab />
+            : watchlistTabJSX}
         </div>
       </div>
       <HiddenModal

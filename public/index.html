@@ -24,7 +24,36 @@
     <meta name="theme-color" content="#3b4a36" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#3b4a36" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#3b4a36" />
-    <style>* { box-sizing: border-box; margin: 0; padding: 0; } body { -webkit-font-smoothing: antialiased; }</style>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { -webkit-font-smoothing: antialiased; }
+
+      /*
+        Print scoping for in-app print-to-scale tools (currently:
+        References → Watch size comparison). Each tool renders its
+        printable sheet via React Portal as a direct child of <body>
+        with class `size-compare-print-sheet-portal` (or whatever
+        future tools use). When printing, hide every direct child of
+        <body> EXCEPT that one — that hides the entire React app
+        (#root) and surfaces only the print sheet.
+
+        Why portal-scoped instead of `body * { visibility: hidden }`:
+        the prototype's pattern was global and brittle. Scoping by
+        portal class keeps print clean, leaves printing from any
+        OTHER page on the site unaffected, and works regardless of
+        where in the app's tree the tool is mounted.
+
+        Add a new printable tool: render its sheet via createPortal
+        to document.body with a class matching the selector below
+        (or extend the selector to a list).
+      */
+      @media print {
+        body { background: #fff; }
+        body > *:not(.size-compare-print-sheet-portal) { display: none !important; }
+        .size-compare-print-sheet-portal { display: block !important; }
+        @page { size: letter portrait; margin: 0.5in; }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

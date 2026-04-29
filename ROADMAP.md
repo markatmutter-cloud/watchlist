@@ -254,35 +254,83 @@ Build incrementally as questions surface:
 What Watchcharts already does well: don't compete on historical
 price-per-reference. Use it; build what it doesn't.
 
-## Epic 5: Reference encyclopedia (the headline feature)
+## Epic 5: References (collector resources surface)
 
-Reference-led learning resource. Combines three layers:
+A top-level **References** section in the app for tools, calculators, and
+reference material that supports vintage-watch collecting but isn't tied
+to a specific listing or auction. Lives at its own main-nav tab alongside
+Available / Auctions / Watchlist.
+
+**Naming note.** "References" here is the section name (collector
+resources). It is distinct from "watch reference numbers" (Rolex 1675,
+Omega 2998, etc.) which are the data concept tracked under Epic 0. When
+both meanings appear in the same paragraph, prefer the explicit forms
+"References section" vs "reference numbers" for clarity. If/when the
+ambiguity becomes painful in product copy, we can rename one — but in
+docs and code the two coexist with the disambiguating qualifier.
+
+### Sub-area: Tools and calculators
+
+Shipped:
+
+- **2026-04-29: Watch size comparison.** Two case dimensions (width ×
+  length in mm) → side-by-side preview, stat boxes (width / length /
+  footprint diff), and a print-to-scale sheet you can print on US Letter
+  to lay on your wrist. First feature in the References section. Print
+  scoping uses a React Portal pattern (see CLAUDE.md "Print scoping for
+  in-app tools" — pattern is reusable for future printable tools).
+
+Parking lot of future ideas (none promised, surface as Mark's interest
+allows):
+
+- Lug-to-lug calculator (wrist size + max lug-to-lug fit)
+- Strap size calculator (lug width + wrist size → strap length)
+- Round-watch variant of size comparison (case diameter input)
+- Serial number decoder (per brand, vintage Rolex / Omega / Heuer / etc.)
+- Service interval tracker
+- Crystal / case material reference chart
+
+### Sub-area: Reference-number encyclopedia (the headline feature)
+
+Reference-number-led learning resource — what was previously this epic's
+sole content. Surfaces under the same References tab once it's built.
+Combines three layers:
 
 1. **LLM-synthesized body.** Aggregates dealer descriptions, auction lot
-   notes, and other on-platform writing about a reference into a coherent
-   reference guide. Refreshes periodically. Credit: "synthesized from
-   descriptions by Hairspring, Wind Vintage, Analog Shift, ..."
-2. **Curated layer.** Hand-picked links to deep dives, forum threads, videos,
-   photo galleries. Public can suggest via form; I moderate. Inspired by
-   explorer1016.com and similar collector-built sites.
-3. **Live layer.** Currently-available listings of that reference, plus past
-   auction results, plus price trends.
+   notes, and other on-platform writing about a reference number into a
+   coherent reference guide. Refreshes periodically. Credit: "synthesized
+   from descriptions by Hairspring, Wind Vintage, Analog Shift, ..."
+2. **Curated layer.** Hand-picked links to deep dives, forum threads,
+   videos, photo galleries. Public can suggest via form; I moderate.
+   Inspired by explorer1016.com and similar collector-built sites.
+3. **Live layer.** Currently-available listings of that reference number,
+   plus past auction results, plus price trends.
 
-Surfaces on listings of relevant references and as a standalone browseable
-encyclopedia.
+Surfaces on listings of relevant reference numbers and as a standalone
+browseable encyclopedia inside the References section.
 
-This is potentially the platform's most differentiated feature. Watchcharts
-has prices. Hodinkee has editorial. Dealer sites have inventory. Nobody has
-all three synthesized into a single reference-led learning view drawn from
-the dealer market itself.
+This is potentially the platform's most differentiated feature.
+Watchcharts has prices. Hodinkee has editorial. Dealer sites have
+inventory. Nobody has all three synthesized into a single
+reference-number-led learning view drawn from the dealer market itself.
 
-Depends on: Epic 0 (references) + Epic 6 Phase A or cloud LLM access for
-generation + accumulated dealer descriptions (already happening passively if
-we start storing full descriptions for tracked references).
+Depends on: Epic 0 (reference numbers) + Epic 6 Phase A or cloud LLM
+access for generation + accumulated dealer descriptions (already
+happening passively if we start storing full descriptions for tracked
+reference numbers).
 
-Storage decision: full dealer descriptions for tracked references stored
-locally on Mac mini and synced to Supabase, rather than bloating
+Storage decision: full dealer descriptions for tracked reference numbers
+stored locally on Mac mini and synced to Supabase, rather than bloating
 `listings.json` for everyone.
+
+### Sub-area: Curated link aggregator
+
+Hand-picked outbound resources that are useful but don't fit the
+encyclopedia structure: forum threads, vintage dealers' shop tours,
+historical references, articles. Lives under References as a browsable
+list with brand / topic / type filters. Some overlap with the
+encyclopedia's curated layer; this surface is the catch-all home when
+the link doesn't tie cleanly to one reference number.
 
 ## Epic 6: Mac mini infrastructure
 
@@ -354,6 +402,16 @@ Not active. Worth keeping a list because some might graduate.
 
 ## Update log
 
+- 2026-04-29 (AM): **Shipped:** new top-level **References** section
+  with the Watch size comparison tool as its first feature. Two case
+  dimensions in → preview + stat boxes + print-to-scale sheet for US
+  Letter. Print scoping uses a React Portal pattern (only the print
+  sheet survives `@media print`; the rest of the app, including
+  `#root`, is hidden); pattern is reusable for future printable tools.
+  Epic 5 restructured under "References (collector resources surface)"
+  with the existing reference-number encyclopedia content moved into a
+  sub-area; the section/reference-number naming overlap is documented
+  inline so we can disambiguate as needed when more sub-areas land.
 - 2026-04-28 (PM): **Shipped:** Card-tile flash fix on heart click /
   scroll. `ListingsGrid` was a function-component nested inside `App`,
   giving it new identity each render → React unmounted+remounted the

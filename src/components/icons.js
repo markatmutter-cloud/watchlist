@@ -48,5 +48,14 @@ export function TabIcon({ kind }) {
   if (kind === "watchlist") return (
     <svg {...props}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
   );
+  if (kind === "references") return (
+    // Open-book glyph — reads as "reference resources" (encyclopedia
+    // + tools + calculators) on hover/inspection without overstating
+    // any single sub-feature.
+    <svg {...props}>
+      <path d="M2 4.5h7a3 3 0 0 1 3 3v12a2.5 2.5 0 0 0-2.5-2.5H2z"/>
+      <path d="M22 4.5h-7a3 3 0 0 0-3 3v12a2.5 2.5 0 0 1 2.5-2.5H22z"/>
+    </svg>
+  );
   return null;
 }
