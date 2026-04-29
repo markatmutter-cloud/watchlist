@@ -10,6 +10,34 @@ export const CURRENCY_SYM = { USD: "$", GBP: "£", EUR: "€", CHF: "CHF " };
 // — gets around it. Other dealers serve cleanly without the proxy.
 export const PROXIED_IMG_HOSTS = ["watchfid.com"];
 
+// Brand-name variants we want to collapse onto a single canonical chip.
+// Mirrors merge.py's BRAND_ALIASES so the frontend can normalize saved
+// snapshots that were captured before merge.py learned the alias.
+// (Watchlist saves a frozen snapshot of the listing into Supabase —
+// those rows pre-date any merge-time normalization and need to be
+// canonicalized at read.)
+//
+// Lookup is case-insensitive with whitespace runs collapsed. Add a
+// new alias here AND in merge.py BRAND_ALIASES so frontend + backend
+// stay in sync.
+const BRAND_ALIASES = {
+  "jaeger lecoultre":  "Jaeger-LeCoultre",
+  "jaeger-lecoultre":  "Jaeger-LeCoultre",
+  "jaeger le coultre": "Jaeger-LeCoultre",
+  "jaegerlecoultre":   "Jaeger-LeCoultre",
+  "lecoultre":         "Jaeger-LeCoultre",
+  "le coultre":        "Jaeger-LeCoultre",
+  "frank muller":      "Franck Muller",
+  "franck muller":     "Franck Muller",
+  "franck-muller":     "Franck Muller",
+};
+
+export function canonicalizeBrand(brand) {
+  if (!brand) return brand;
+  const key = String(brand).replace(/\s+/g, " ").trim().toLowerCase();
+  return BRAND_ALIASES[key] || brand;
+}
+
 export function fmt(price, currency) {
   return (CURRENCY_SYM[currency] || "$") + price.toLocaleString();
 }

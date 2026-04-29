@@ -12,6 +12,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { useState, useEffect, useCallback } from 'react';
+import { canonicalizeBrand } from './utils';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const SUPABASE_KEY = process.env.REACT_APP_SUPABASE_PUBLISHABLE_KEY;
@@ -140,6 +141,12 @@ export function useWatchlist(user) {
           // listing_snapshot is the full listing payload at save time —
           // we spread it so Card can render from the watchlist entry alone.
           ...snap,
+          // Snapshots predate brand-alias normalization in merge.py —
+          // a listing hearted as "Jaeger LeCoultre" / "LeCoultre" /
+          // etc. lives in Supabase with that frozen string. Canonicalize
+          // on read so chips and group-by buckets collapse correctly.
+          // Idempotent on already-canonical brands.
+          brand: canonicalizeBrand(snap.brand),
           // cached_img_url is populated by cache_watchlist_images.mjs in
           // the cron — when present, it points at a Vercel Blob copy
           // that survives the dealer deleting their original. Prefer
