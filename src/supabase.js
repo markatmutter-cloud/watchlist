@@ -347,9 +347,10 @@ export function useTrackedLots(user) {
       /^https?:\/\/(?:www\.)?christies\.com\/(?:[a-z]{2}\/)?lot\/lot-\d+/i,
       /^https?:\/\/(?:www\.)?sothebys\.com\/(?:en\/)?buy\/auction\/\d{4}\/[a-z0-9-]+\/[a-z0-9-]+/i,
       /^https?:\/\/(?:www\.)?monacolegendauctions\.com\/auction\/[a-z0-9-]+\/lot-\d+/i,
+      /^https?:\/\/(?:www\.)?phillips\.com\/detail\/[a-z0-9-]+\/\d+/i,
     ];
     if (!supported.some(re => re.test(url))) {
-      return { error: 'Supported lot URLs: Antiquorum, Christie\'s (christies.com/.../lot/lot-NNN), Sotheby\'s (sothebys.com/en/buy/auction/YYYY/.../...), or Monaco Legend (monacolegendauctions.com/auction/<slug>/lot-NNN).' };
+      return { error: 'Supported lot URLs: Antiquorum, Christie\'s (christies.com/.../lot/lot-NNN), Sotheby\'s (sothebys.com/en/buy/auction/YYYY/.../...), Monaco Legend (monacolegendauctions.com/auction/<slug>/lot-NNN), or Phillips (phillips.com/detail/<brand>/<id>).' };
     }
     if (urls.includes(url)) return { error: 'Already tracking this lot.' };
     setUrls(prev => [url, ...prev]);

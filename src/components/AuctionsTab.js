@@ -282,7 +282,7 @@ export function AuctionsTab(props) {
             Tracked lots
           </div>
           <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>
-            {!user ? "Sign in to track lots from Antiquorum, Christie's, Sotheby's, and Monaco Legend"
+            {!user ? "Sign in to track lots from Antiquorum, Christie's, Sotheby's, Monaco Legend, and Phillips"
               : trackedLots.length === 0 ? "Paste a lot URL to follow it through to hammer"
               : statusMode === "sold" ? `${trackedLotsPast.length} past`
               : statusMode === "all"  ? `${trackedLotsUpcoming.length} upcoming · ${trackedLotsPast.length} past`
@@ -317,7 +317,7 @@ export function AuctionsTab(props) {
               value={lotInputUrl}
               onChange={e => { setLotInputUrl(e.target.value); setLotInputError(""); }}
               onKeyDown={e => { if (e.key === "Enter") submitTrackedLot(); }}
-              placeholder="Paste an Antiquorum, Christie's, Sotheby's, or Monaco Legend lot URL…"
+              placeholder="Paste an Antiquorum, Christie's, Sotheby's, Monaco Legend, or Phillips lot URL…"
               style={{ ...inp, flex: 1, fontSize: 13 }}
             />
             <button onClick={submitTrackedLot} disabled={lotInputBusy || !lotInputUrl.trim()} style={{
@@ -334,7 +334,8 @@ export function AuctionsTab(props) {
             Antiquorum (<span style={{ fontFamily: "monospace" }}>live.antiquorum.swiss/lots/view/…</span> or <span style={{ fontFamily: "monospace" }}>catalog.antiquorum.swiss/en/lots/…</span>),
             Christie's (<span style={{ fontFamily: "monospace" }}>christies.com/…/lot/lot-NNN</span>),
             Sotheby's (<span style={{ fontFamily: "monospace" }}>sothebys.com/en/buy/auction/YYYY/…</span>),
-            or Monaco Legend (<span style={{ fontFamily: "monospace" }}>monacolegendauctions.com/auction/&lt;slug&gt;/lot-NNN</span>).
+            Monaco Legend (<span style={{ fontFamily: "monospace" }}>monacolegendauctions.com/auction/&lt;slug&gt;/lot-NNN</span>),
+            or Phillips (<span style={{ fontFamily: "monospace" }}>phillips.com/detail/&lt;brand&gt;/&lt;id&gt;</span>).
           </div>
         </div>
       )}

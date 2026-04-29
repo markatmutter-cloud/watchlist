@@ -460,6 +460,166 @@ def scrape_sothebys_lot(url):
     }
 
 
+def scrape_phillips_lot(url):
+    """Return a dict of fields scraped from one Phillips lot page.
+
+    Phillips ships two parseable surfaces on each lot page:
+      1. A clean JSON-LD ``Product`` block: name, sku, description,
+         image, brand, offers (price + currency + availability).
+      2. A large transit-format / Apollo-style data blob embedded as
+         an escaped JSON string in the HTML, carrying the richer
+         fields the JSON-LD omits — high estimate, lot number, etc.
+         The escape pattern is ``\\\\\"key\\\\\"`` (double-escaped
+         because the blob is JSON-encoded inside a JSON string).
+
+    JSON-LD's ``offers.price`` is the LOW estimate, not the current
+    bid — Phillips uses the schema.org Product/Offer shape loosely
+    here. We fill the high estimate from the inline blob and treat
+    the JSON-LD price purely as low_estimate.
+
+    Phillips lot URLs: ``phillips.com/detail/<brand-slug>/<sku>``.
+
+    Availability mapping mirrors the other JSON-LD-based scrapers:
+      - SoldOut / OutOfStock → status="ended", offers.price → sold_price
+      - InStock / etc        → status="active",  offers.price NOT mapped
+                               to current_bid (it's just the low estimate)
+    """
+    r = requests.get(url, headers=HEADERS, timeout=20)
+    r.raise_for_status()
+    html = r.text
+
+    # JSON-LD: there are two blocks; the second carries the Product.
+    ld_blocks = re.findall(
+        r'<script type="application/ld\+json"[^>]*>(.*?)</script>',
+        html, re.DOTALL,
+    )
+    product = None
+    for raw in ld_blocks:
+        try:
+            data = json.loads(raw)
+        except Exception:
+            continue
+        nodes = data.get("@graph", [data])
+        for node in nodes:
+            if isinstance(node, dict) and node.get("@type") == "Product":
+                product = node
+                break
+        if product:
+            break
+    if not product:
+        raise RuntimeError("Phillips Product JSON-LD not found")
+
+    offers = product.get("offers") or {}
+
+    brand_name = ""
+    brand = product.get("brand")
+    if isinstance(brand, dict):
+        brand_name = brand.get("name") or ""
+
+    # Title: JSON-LD `name` is "<brand> - <auction>" (useless). Build
+    # a watch-descriptive title by combining brand + description, since
+    # Phillips doesn't surface a short-form watch title elsewhere.
+    description = (product.get("description") or "").strip()
+    if brand_name and description:
+        title = f"{brand_name} {description}"
+    else:
+        title = description or product.get("name") or ""
+    # Cap to a reasonable length so the JSON file stays compact —
+    # the Card's CSS clamps to 2 lines anyway.
+    if len(title) > 240:
+        title = title[:237].rstrip() + "…"
+
+    # Auction name: derive from the JSON-LD `name` field which is
+    # "<brand> - <auction>". The Card surfaces this via auction_title.
+    auction_title = None
+    raw_name = product.get("name") or ""
+    if " - " in raw_name:
+        auction_title = raw_name.split(" - ", 1)[1].strip()
+
+    # Image: Phillips returns an array of strings; pick the first.
+    img_url = None
+    img_field = product.get("image")
+    if isinstance(img_field, list) and img_field:
+        img_url = img_field[0]
+    elif isinstance(img_field, str):
+        img_url = img_field
+
+    currency = (offers.get("priceCurrency") or "CHF").upper()
+    try:
+        ld_price = (
+            int(float(offers.get("price")))
+            if offers.get("price") not in (None, "")
+            else None
+        )
+    except (TypeError, ValueError):
+        ld_price = None
+
+    availability = (offers.get("availability") or "").rsplit("/", 1)[-1].lower()
+    is_ended = availability in {"soldout", "outofstock"}
+    status = "ended" if is_ended else "active"
+
+    # JSON-LD price IS the low estimate (verified against the inline
+    # blob's `lowEstimate` on the test URL — both = 5000 CHF). Treat
+    # it as such rather than as a current bid.
+    estimate_low = ld_price
+
+    # High estimate + lot number live in the escaped-JSON inline blob.
+    estimate_high = None
+    high_match = re.search(r'\\"highEstimate\\",(\d+)', html)
+    if high_match:
+        try:
+            estimate_high = int(high_match.group(1))
+        except ValueError:
+            pass
+
+    lot_number = None
+    lotnum_match = re.search(r'\\"lotNumberFull\\",\\"(\d+)\\"', html)
+    if lotnum_match:
+        lot_number = lotnum_match.group(1)
+
+    # Currency from the inline blob is more reliable than JSON-LD
+    # (JSON-LD sometimes omits currency on multi-currency lots).
+    cur_match = re.search(r'\\"currencyCode\\",\\"([A-Z]{3})\\"', html)
+    if cur_match:
+        currency = cur_match.group(1)
+
+    # For sold lots, JSON-LD price gets overloaded onto sold_price —
+    # we don't have access to a live "currentBid" / "hammerPrice" at
+    # the granularity Phillips' bid widget uses. Mark's first test
+    # URL is upcoming, so this branch is provisional until validated
+    # against a sold lot.
+    sold_price = ld_price if is_ended else None
+    current_bid = None  # Phillips bid widget data isn't in static HTML.
+
+    return {
+        "house": "Phillips",
+        "lot_id": product.get("sku"),
+        "lot_number": lot_number,
+        "title": title,
+        "description": "",
+        "currency": currency,
+        "estimate_low": estimate_low,
+        "estimate_high": estimate_high,
+        "starting_price": None,
+        "current_bid": current_bid,
+        "sold_price": sold_price,
+        "estimate_low_usd":   to_usd(estimate_low,   currency),
+        "estimate_high_usd":  to_usd(estimate_high,  currency),
+        "starting_price_usd": None,
+        "current_bid_usd":    None,
+        "sold_price_usd":     to_usd(sold_price,     currency),
+        "status": status,
+        "image": img_url,
+        "auction_title": auction_title,
+        "auction_start": None,    # Phillips' sessionStartDateTime sits
+        "auction_end":   None,    # in a transit-format graph the static
+                                  # parser doesn't follow; leaving empty
+                                  # rather than guessing.
+        "auction_url":   None,
+        "scraped_at":    time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+
 def scrape_monaco_legend_lot(url):
     """Return a dict of fields scraped from one Monaco Legend lot page.
 
@@ -607,6 +767,8 @@ def scrape(url):
         return scrape_sothebys_lot(url)
     if host.endswith("monacolegendauctions.com"):
         return scrape_monaco_legend_lot(url)
+    if host.endswith("phillips.com"):
+        return scrape_phillips_lot(url)
     raise NotImplementedError(f"No scraper for host: {host}")
 
 
