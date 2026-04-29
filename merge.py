@@ -67,7 +67,7 @@ BRAND_ALIASES = {
 # Brands we never want in the user-facing feed. Matched after
 # canonicalize_brand so any spelling variant gets caught. Lowercase;
 # canonical name (post-canonicalize_brand) is checked case-insensitively.
-EXCLUDED_BRANDS = {'Franck Muller'}
+EXCLUDED_BRANDS = {'Franck Muller', 'Hublot'}
 
 
 def canonicalize_brand(brand):
