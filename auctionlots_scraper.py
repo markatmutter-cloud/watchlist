@@ -30,6 +30,15 @@ from urllib.parse import urlparse
 
 import requests
 
+# eBay tracked-lot scraper uses Browse API via OAuth (see ebay_oauth).
+# Import is local to avoid a hard dependency for non-eBay-only runs;
+# falls through with a clear error in scrape_ebay_lot if creds missing.
+try:
+    from ebay_oauth import auth_headers as ebay_auth_headers
+except Exception:
+    def ebay_auth_headers(force_refresh=False):  # type: ignore
+        return None
+
 # Reuse merge.py's FX table so a single source of truth controls every
 # currency conversion in the project (listings + auction lots). Falls
 # back to a USD-only table if merge can't be imported (shouldn't happen
@@ -746,6 +755,133 @@ def scrape_monaco_legend_lot(url):
     }
 
 
+def scrape_ebay_lot(url):
+    """Return tracked-lot dict for one eBay item URL, via Browse API.
+
+    Works for both timed auctions and Buy-It-Now items. eBay item
+    URLs come in several flavors — canonical (`/itm/<id>`), with a
+    title slug (`/itm/some-title-slug/<id>`), regional TLDs
+    (ebay.co.uk, ebay.de, ebay.it, ...), with or without `www.`
+    Pull the trailing numeric component as the legacy item ID and
+    look it up via the Browse API's
+    ``/buy/browse/v1/item/get_item_by_legacy_id`` endpoint.
+
+    No-ops with a clear error when EBAY_CLIENT_ID/SECRET aren't
+    configured — the caller catches and preserves the prior snapshot.
+
+    Card-shape mapping (matches Antiquorum / Christie's / Sotheby's /
+    Monaco Legend / Phillips so the frontend renders identically):
+      - Auction (buyingOption AUCTION):  current_bid = currentBidPrice,
+        auction_end = itemEndDate.
+      - Buy It Now (buyingOption FIXED_PRICE): current_bid = listing
+        price (the only "price" eBay surfaces). auction_end remains
+        itemEndDate when present, else null.
+      - Ended / unavailable (estimatedAvailabilities = OUT_OF_STOCK,
+        or itemEndDate < now): status = "ended", sold_price = the last
+        observable price.
+    """
+    headers = ebay_auth_headers()
+    if not headers:
+        raise RuntimeError(
+            "eBay credentials not configured "
+            "(EBAY_CLIENT_ID / EBAY_CLIENT_SECRET)"
+        )
+
+    # Pull the trailing numeric ID from any of eBay's URL shapes.
+    m = re.search(r"/itm/(?:[^/]+/)?(\d{6,})", url)
+    if not m:
+        raise RuntimeError(f"could not parse eBay item ID from URL: {url}")
+    item_id = m.group(1)
+
+    api_url = (
+        "https://api.ebay.com/buy/browse/v1/item/get_item_by_legacy_id"
+        f"?legacy_item_id={item_id}"
+    )
+    r = requests.get(api_url, headers=headers, timeout=30)
+    if r.status_code == 401:
+        # Token may have expired between cache write and call.
+        retry_headers = ebay_auth_headers(force_refresh=True)
+        if retry_headers:
+            r = requests.get(api_url, headers=retry_headers, timeout=30)
+    r.raise_for_status()
+    item = r.json()
+
+    title = (item.get("title") or "").strip()
+
+    img_url = None
+    if isinstance(item.get("image"), dict):
+        img_url = item["image"].get("imageUrl")
+
+    # Price / currency: eBay puts the current asking price in `price`
+    # (FIXED_PRICE) or `currentBidPrice` (AUCTION). Pick the one
+    # corresponding to the item's primary buying option.
+    buying_options = item.get("buyingOptions") or []
+    is_auction = "AUCTION" in buying_options
+    price_obj = (
+        item.get("currentBidPrice")
+        if is_auction
+        else item.get("price")
+    ) or {}
+
+    currency = (price_obj.get("currency") or "USD").upper()
+    try:
+        raw = price_obj.get("value")
+        price = int(round(float(raw))) if raw not in (None, "") else None
+    except (TypeError, ValueError):
+        price = None
+
+    # Status: ended if eBay says OUT_OF_STOCK or the auction end has
+    # already passed. Active otherwise.
+    avail = ""
+    if isinstance(item.get("estimatedAvailabilities"), list) and item["estimatedAvailabilities"]:
+        avail = (item["estimatedAvailabilities"][0]
+                 .get("estimatedAvailabilityStatus") or "").upper()
+    end_iso = item.get("itemEndDate")
+    is_ended = avail == "OUT_OF_STOCK"
+    if not is_ended and end_iso:
+        try:
+            from datetime import datetime as _dt
+            if _dt.fromisoformat(end_iso.replace("Z", "+00:00")).timestamp() < time.time():
+                is_ended = True
+        except (ValueError, TypeError):
+            pass
+
+    status = "ended" if is_ended else "active"
+    sold_price = price if is_ended else None
+    current_bid = None if is_ended else price
+
+    seller = item.get("seller") or {}
+    seller_name = seller.get("username")
+
+    return {
+        "house":         "eBay",
+        "lot_id":        item_id,
+        # eBay doesn't have lot numbers; use the seller as a sub-line
+        # so the card's "Lot N" slot still carries useful identity.
+        "lot_number":    seller_name,
+        "title":         title,
+        "description":   "",
+        "currency":      currency,
+        "estimate_low":  None,
+        "estimate_high": None,
+        "starting_price": None,
+        "current_bid":   current_bid,
+        "sold_price":    sold_price,
+        "estimate_low_usd":   None,
+        "estimate_high_usd":  None,
+        "starting_price_usd": None,
+        "current_bid_usd":    to_usd(current_bid, currency),
+        "sold_price_usd":     to_usd(sold_price,  currency),
+        "status":        status,
+        "image":         img_url,
+        "auction_title": "AUCTION" if is_auction else "BUY IT NOW",
+        "auction_start": None,
+        "auction_end":   end_iso,
+        "auction_url":   None,
+        "scraped_at":    time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+
 def scrape(url):
     """Dispatch by host. Add new auction houses here as scrapers are built."""
     host = urlparse(url).hostname or ""
@@ -769,6 +905,9 @@ def scrape(url):
         return scrape_monaco_legend_lot(url)
     if host.endswith("phillips.com"):
         return scrape_phillips_lot(url)
+    # eBay regional TLDs all live under ebay.<cc> — match any.
+    if host == "ebay.com" or host.endswith(".ebay.com") or ".ebay." in host:
+        return scrape_ebay_lot(url)
     raise NotImplementedError(f"No scraper for host: {host}")
 
 

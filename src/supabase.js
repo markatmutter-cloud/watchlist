@@ -358,9 +358,14 @@ export function useTrackedLots(user) {
       // ampersands, and Unicode (umlauts, accents). Use a permissive
       // class that excludes only path/query/fragment delimiters.
       /^https?:\/\/(?:www\.)?phillips\.com\/detail\/[^/?#]+\/\d+/i,
+      // eBay item URLs come in several flavors: canonical
+      // /itm/<id>, with title slug /itm/<slug>/<id>, regional TLDs
+      // (ebay.co.uk, ebay.de, ebay.fr, ...). We only need the
+      // numeric legacy item ID; the scraper extracts it.
+      /^https?:\/\/(?:www\.)?ebay\.(?:com|co\.uk|de|fr|it|es|nl|at|ch|ca|com\.au)\/itm\/(?:[^/]+\/)?\d{6,}/i,
     ];
     if (!supported.some(re => re.test(url))) {
-      return { error: 'Supported lot URLs: Antiquorum, Christie\'s (christies.com/.../lot/lot-NNN), Sotheby\'s (sothebys.com/en/buy/auction/YYYY/.../...), Monaco Legend (monacolegendauctions.com/auction/<slug>/lot-NNN), or Phillips (phillips.com/detail/<brand>/<id>).' };
+      return { error: 'Supported lot URLs: Antiquorum, Christie\'s (christies.com/.../lot/lot-NNN), Sotheby\'s (sothebys.com/en/buy/auction/YYYY/.../...), Monaco Legend (monacolegendauctions.com/auction/<slug>/lot-NNN), Phillips (phillips.com/detail/<brand>/<id>), or eBay (ebay.com/itm/<id>).' };
     }
     if (urls.includes(url)) return { error: 'Already tracking this lot.' };
     setUrls(prev => [url, ...prev]);

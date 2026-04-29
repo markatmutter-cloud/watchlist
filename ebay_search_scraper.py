@@ -85,13 +85,18 @@ def _country_list(spec):
     return [None]  # No country filter at all
 
 
-def _filter_url(country):
+def _filter_url(country, seller=None):
     """Browse API ``filter`` parameter. We always ask for buyingOptions
     that map to "watch this listing" — fixed-price (Buy-It-Now) and
-    auction. We narrow to a single country when one is supplied."""
+    auction. Narrow to a single country when supplied. When seller is
+    set, also restrict to that seller's listings — useful for tracking
+    a curated dealer's whole eBay store."""
     parts = ["buyingOptions:{FIXED_PRICE|AUCTION}"]
     if country:
         parts.append(f"itemLocationCountry:{country}")
+    if seller:
+        # Browse API expects sellers in {seller1|seller2|...} form.
+        parts.append(f"sellers:{{{seller}}}")
     return ",".join(parts)
 
 
@@ -154,12 +159,20 @@ def _row_for(item, search):
 
 
 def _run_search(search, country, headers):
-    params = {
-        "q": search.get("query", "").strip(),
-        "limit": RESULTS_PER_CALL,
-        "filter": _filter_url(country),
-    }
-    if not params["q"]:
+    query = (search.get("query") or "").strip()
+    seller = (search.get("seller") or "").strip() or None
+    # The Browse API requires either q or category_ids; when tracking
+    # an entire seller's inventory without a keyword, we substitute
+    # category 31387 (Wristwatches) so the filter accepts the call.
+    # That cap is wide enough to capture a watch-focused seller's
+    # whole feed without polluting with non-watch inventory.
+    params = {"limit": RESULTS_PER_CALL, "filter": _filter_url(country, seller=seller)}
+    if query:
+        params["q"] = query
+    elif seller:
+        params["category_ids"] = "31387"  # Wristwatches
+    else:
+        # Neither query nor seller — skip silently. Empty config row.
         return []
     r = requests.get(BROWSE_URL, headers=headers, params=params, timeout=30)
     if r.status_code == 401:
