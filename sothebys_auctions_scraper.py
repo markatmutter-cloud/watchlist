@@ -138,23 +138,43 @@ def parse_card(card_text):
     return title, date_start, date_end, location
 
 
-def find_auction_url(html, title, date_start):
-    """Best-effort lookup of an auction URL on the calendar HTML. The
-    calendar repeats listings + page-nav links so we just take the
-    first /buy/auction/ slug whose surrounding window contains the
-    title's first word — close enough for an aggregate display."""
+def list_unique_auction_urls(html):
+    """Return distinct ``/en/buy/auction/YYYY/<slug>`` paths in raw-HTML
+    document order. Same slug appears 5x per card (image tile, title
+    anchor, CTA, etc.); we collapse to first occurrence."""
+    seen = set()
+    out = []
+    for m in re.finditer(r"/en/buy/auction/\d{4}/[a-z0-9-]+", html):
+        url = m.group(0)
+        if url not in seen:
+            seen.add(url)
+            out.append(url)
+    return out
+
+
+def assign_url_for_card(available, title):
+    """Pop the first URL whose slug contains the title's first word.
+
+    Sotheby's runs multiple sales with the same title each season
+    ("Fine Watches" in Geneva AND New York AND Paris) — distinguished
+    by slug suffixes (``-ge2611`` Geneva, ``-pf2660`` Paris, bare or
+    ``-N`` for New York). Cards in flat-text order and unique URLs in
+    raw-HTML document order both follow the same Sotheby's calendar
+    order, so the greedy first-fit pop matches each card to its own
+    URL even when multiple candidates contain the title word.
+
+    The first-word filter skips obviously-unrelated sales (e.g. a
+    "Précieuses Reliures" books auction interleaved with the watch
+    calendar).
+    """
     if not title:
         return ""
     first_word = title.split()[0].lower()
-    flat = strip_flat(html)
-    candidates = list(re.finditer(
-        r"(/en/buy/auction/\d{4}/[a-z0-9-]+)", flat
-    ))
-    for m in candidates:
-        slug = m.group(1).rsplit("/", 1)[-1]
+    for i, url in enumerate(available):
+        slug = url.rsplit("/", 1)[-1]
         if first_word in slug:
-            # Build absolute URL.
-            return "https://www.sothebys.com" + m.group(1)
+            available.pop(i)
+            return "https://www.sothebys.com" + url
     return ""
 
 
@@ -164,6 +184,12 @@ def scrape():
     r.raise_for_status()
     flat = strip_flat(r.text)
     today = datetime.utcnow().date().isoformat()
+
+    # Pre-build the list of unique auction URLs in document order so
+    # we can greedy-assign one to each card. The greedy approach
+    # disambiguates when multiple sales share a title (e.g. two
+    # "Fine Watches" — Geneva + New York).
+    available_urls = list_unique_auction_urls(r.text)
 
     results = []
     for m in CARD_RE.finditer(flat):
@@ -176,7 +202,7 @@ def scrape():
             continue
         if date_end < today:
             continue
-        url = find_auction_url(r.text, title, date_start)
+        url = assign_url_for_card(available_urls, title)
         date_label = (f"{date_start} – {date_end}"
                       if date_end != date_start else date_start)
         results.append({
