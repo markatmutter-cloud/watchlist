@@ -21,12 +21,41 @@ export const PROXIED_IMG_HOSTS = ["watchfid.com"];
 // new alias here AND in merge.py BRAND_ALIASES so frontend + backend
 // stay in sync.
 const BRAND_ALIASES = {
+  // JLC
   "jaeger lecoultre":  "Jaeger-LeCoultre",
   "jaeger-lecoultre":  "Jaeger-LeCoultre",
   "jaeger le coultre": "Jaeger-LeCoultre",
   "jaegerlecoultre":   "Jaeger-LeCoultre",
   "lecoultre":         "Jaeger-LeCoultre",
   "le coultre":        "Jaeger-LeCoultre",
+  // A. Lange & Söhne
+  "a. lange":           "A. Lange & Söhne",
+  "a lange":            "A. Lange & Söhne",
+  "a. lange & söhne":   "A. Lange & Söhne",
+  "a. lange & sohne":   "A. Lange & Söhne",
+  "a. lange and söhne": "A. Lange & Söhne",
+  "lange & söhne":      "A. Lange & Söhne",
+  "lange & sohne":      "A. Lange & Söhne",
+  // TAG Heuer
+  "tag heuer":         "TAG Heuer",
+  // Universal Genève
+  "universal geneve":  "Universal Genève",
+  "universal genève":  "Universal Genève",
+  // Hermès
+  "hermes":            "Hermès",
+  "hermès":            "Hermès",
+  // Tiffany & Co.
+  "tiffany & co.":     "Tiffany & Co.",
+  "tiffany & co":      "Tiffany & Co.",
+  "tiffany and co.":   "Tiffany & Co.",
+  "tiffany and co":    "Tiffany & Co.",
+  // Girard-Perregaux
+  "girard-perregaux":  "Girard-Perregaux",
+  "girard perregaux":  "Girard-Perregaux",
+  // Ulysse Nardin (also fixes "Ulysee" typo)
+  "ulysse nardin":     "Ulysse Nardin",
+  "ulysee nardin":     "Ulysse Nardin",
+  // Franck Muller — excluded brand; aliases catch typos.
   "frank muller":      "Franck Muller",
   "franck muller":     "Franck Muller",
   "franck-muller":     "Franck Muller",

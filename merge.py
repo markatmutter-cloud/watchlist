@@ -56,6 +56,43 @@ BRAND_ALIASES = {
     'jaegerlecoultre':    'Jaeger-LeCoultre',
     'lecoultre':          'Jaeger-LeCoultre',
     'le coultre':         'Jaeger-LeCoultre',
+
+    # A. Lange variants — full Maison name as canonical. detect_brand
+    # returns 'A. Lange' (substring match against the BRANDS list); the
+    # alias step upgrades that to the proper Maison form.
+    'a. lange':           'A. Lange & Söhne',
+    'a lange':            'A. Lange & Söhne',
+    'a. lange & söhne':   'A. Lange & Söhne',
+    'a. lange & sohne':   'A. Lange & Söhne',
+    'a. lange and söhne': 'A. Lange & Söhne',
+    'lange & söhne':      'A. Lange & Söhne',
+    'lange & sohne':      'A. Lange & Söhne',
+
+    # TAG Heuer — Maison's own all-caps spelling.
+    'tag heuer':          'TAG Heuer',
+
+    # Universal Genève — accent on the canonical form.
+    'universal geneve':   'Universal Genève',
+    'universal genève':   'Universal Genève',
+
+    # Hermès — accent on the canonical form.
+    'hermes':             'Hermès',
+    'hermès':             'Hermès',
+
+    # Tiffany & Co.
+    'tiffany & co.':      'Tiffany & Co.',
+    'tiffany & co':       'Tiffany & Co.',
+    'tiffany and co.':    'Tiffany & Co.',
+    'tiffany and co':     'Tiffany & Co.',
+
+    # Girard-Perregaux — hyphenated canonical.
+    'girard-perregaux':   'Girard-Perregaux',
+    'girard perregaux':   'Girard-Perregaux',
+
+    # Ulysse Nardin — fixes the "Ulysee" typo too.
+    'ulysse nardin':      'Ulysse Nardin',
+    'ulysee nardin':      'Ulysse Nardin',
+
     # Franck Muller variants — collapsed before the EXCLUDED_BRANDS
     # check below so typo'd rows ("Frank Muller") get filtered out too.
     'frank muller':       'Franck Muller',

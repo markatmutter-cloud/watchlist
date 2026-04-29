@@ -22,15 +22,23 @@ BRANDS = [
 
 
 def detect_brand(name, vendor=""):
-    if vendor and vendor.strip().lower() not in ['oliver & clarke', 'oliverandclarke', 'oliver and clarke', '']:
-        for b in BRANDS:
-            if b.lower() == vendor.lower():
-                return b
-        if len(vendor) > 2 and vendor not in ['Default', 'Other']:
-            return vendor
+    # Title first — most reliable signal. The Shopify vendor field on
+    # this store is unreliable: usually the actual brand (Rolex, Movado),
+    # but sometimes the dealer's own name with a suffix
+    # ("Oliver & Clarke Vintage Watches") that the previous string-list
+    # exclusion missed and accepted as the brand. Title-first sidesteps
+    # that whole class of bug — if the title contains a known brand,
+    # use it. Vendor only kicks in as a last resort and only when it's
+    # an exact known-brand match.
+    name_lower = (name or "").lower()
     for b in BRANDS:
-        if b.lower() in name.lower():
+        if b.lower() in name_lower:
             return b
+    if vendor:
+        v = vendor.strip().lower()
+        for b in BRANDS:
+            if b.lower() == v:
+                return b
     return 'Other'
 
 
