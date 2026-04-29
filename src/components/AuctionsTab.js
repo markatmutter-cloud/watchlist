@@ -200,9 +200,14 @@ export function AuctionsTab(props) {
           : (lot.starting_price !== null && lot.starting_price !== undefined
               ? fmtLotPrice(lot.starting_price, lot.currency)
               : "—"));
+    // Label switches by buying option: eBay BIN ≠ an auction, so
+    // CURRENT/HAMMER read wrong there. eBay scraper sets
+    // buying_option = "BUY_IT_NOW" / "AUCTION"; auction houses leave
+    // it undefined and default to the auction labels.
+    const isBin = lot.buying_option === "BUY_IT_NOW";
     const primaryLabel = isPending ? "Pending"
-      : sold ? "HAMMER"
-      : "CURRENT";
+      : isBin ? (sold ? "SOLD" : "BUY NOW")
+      : (sold ? "HAMMER" : "CURRENT");
     const primaryUsd = !isPending && showUsd && (
       sold ? lot.sold_price_usd
         : (currentBid !== null && currentBid !== undefined && currentBid !== ""
@@ -241,7 +246,7 @@ export function AuctionsTab(props) {
           </div>
           <div style={{ padding: compact ? "5px 7px 8px" : "7px 9px 10px" }}>
             <div style={{ fontSize: compact ? 8 : 9, color: "var(--text3)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              {lot.house || "—"}{lot.lot_number ? ` · Lot ${lot.lot_number}` : ""}
+              {lot.house || "—"}{lot.lot_number ? ` · ${lot.house === "eBay" ? lot.lot_number : `Lot ${lot.lot_number}`}` : ""}
             </div>
             <div style={{ fontSize: compact ? 10 : 12, fontWeight: 500, lineHeight: 1.3, marginBottom: 4, color: "var(--text1)",
                         display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: compact ? 26 : 32 }}>
@@ -276,6 +281,23 @@ export function AuctionsTab(props) {
   // from the calendar above) is gone.
   const trackedLotsJSX = (
     <div>
+      {/* Track lot — primary CTA, lifted above the heading per Mark's
+          ask. Full-width on its own row so it's the first thing users
+          see when they hit Tracked lots, especially on mobile. The
+          prior in-row "+ Track lot" pill was easy to miss. */}
+      {user && (
+        <button onClick={() => { setAddLotOpen(o => !o); setLotInputError(""); }} style={{
+          width: "100%",
+          border: "none",
+          background: addLotOpen ? "var(--card-bg)" : "#185FA5",
+          color: addLotOpen ? "var(--text1)" : "#fff",
+          padding: "11px 16px", borderRadius: 10,
+          cursor: "pointer", fontFamily: "inherit",
+          fontSize: 14, fontWeight: 500,
+          marginBottom: 14,
+          boxShadow: addLotOpen ? "inset 0 0 0 0.5px var(--border)" : "none",
+        }}>{addLotOpen ? "Cancel" : "+ Track a lot or eBay listing"}</button>
+      )}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 8 }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
@@ -289,14 +311,6 @@ export function AuctionsTab(props) {
               :                          `${trackedLotsUpcoming.length} upcoming`}
           </div>
         </div>
-        {user && (
-          <button onClick={() => { setAddLotOpen(o => !o); setLotInputError(""); }} style={{
-            border: "0.5px solid var(--border)", background: addLotOpen ? "var(--text1)" : "var(--card-bg)",
-            color: addLotOpen ? "var(--bg)" : "var(--text1)",
-            padding: "5px 12px", borderRadius: 8, cursor: "pointer",
-            fontFamily: "inherit", fontSize: 12,
-          }}>{addLotOpen ? "Cancel" : "+ Track lot"}</button>
-        )}
         {!user && isAuthConfigured && (
           <button onClick={signInWithGoogle} style={{
             border: "0.5px solid var(--border)", background: "var(--card-bg)", color: "var(--text1)",

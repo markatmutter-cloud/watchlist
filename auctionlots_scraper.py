@@ -886,6 +886,8 @@ def scrape_ebay_lot(url):
         "lot_id":        item_id,
         # eBay doesn't have lot numbers; use the seller as a sub-line
         # so the card's "Lot N" slot still carries useful identity.
+        # Card render is house-aware: drops the "Lot " prefix for eBay
+        # so we get "eBay · windvintage" rather than "eBay · Lot windvintage".
         "lot_number":    seller_name,
         "title":         title,
         "description":   "",
@@ -902,7 +904,13 @@ def scrape_ebay_lot(url):
         "sold_price_usd":     to_usd(sold_price,  currency),
         "status":        status,
         "image":         img_url,
-        "auction_title": "AUCTION" if is_auction else "BUY IT NOW",
+        # auction_title is the human-readable category for the slot;
+        # buying_option drives the Card's CURRENT/HAMMER/BUY NOW/SOLD
+        # label switch. Both fields needed because the auction_title
+        # slot is also used by other houses for the actual auction
+        # name ("Important Watches"), and we don't want to overload it.
+        "auction_title": "eBay auction" if is_auction else "eBay Buy It Now",
+        "buying_option": "AUCTION" if is_auction else "BUY_IT_NOW",
         "auction_start": None,
         "auction_end":   end_iso,
         "auction_url":   None,
