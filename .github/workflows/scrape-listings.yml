@@ -135,15 +135,11 @@ jobs:
         continue-on-error: true
         run: python shucktheoyster_scraper.py
 
-      - name: Run eBay saved-search scraper (Browse API)
-        # No-ops cleanly when EBAY_CLIENT_ID / EBAY_CLIENT_SECRET aren't
-        # set (writes empty CSV) so adding the secrets later flips this
-        # on without a workflow change.
-        env:
-          EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
-          EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
-        continue-on-error: true
-        run: python ebay_search_scraper.py
+      # eBay runs in its own workflow (.github/workflows/scrape-ebay.yml)
+      # so a slow Browse API response or token blip doesn't slow the
+      # dealer-listings cron. eBay can iterate on its own cadence and
+      # commits to the same data/ebay.csv → merge.py picks it up on
+      # any subsequent listings run.
 
       - name: Move CSVs to data folder
         run: |
@@ -174,7 +170,6 @@ jobs:
           [ -f chronoholic_listings.csv ]         && mv chronoholic_listings.csv         data/chronoholic.csv         || echo "chronoholic missing"
           [ -f vintagewatchfam_listings.csv ]     && mv vintagewatchfam_listings.csv     data/vintagewatchfam.csv     || echo "vintagewatchfam missing"
           [ -f shucktheoyster_listings.csv ]      && mv shucktheoyster_listings.csv      data/shucktheoyster.csv      || echo "shucktheoyster missing"
-          [ -f ebay_listings.csv ]                && mv ebay_listings.csv                data/ebay.csv                || echo "ebay missing"
 
       - name: Merge into listings.json
         run: python merge.py --listings-only

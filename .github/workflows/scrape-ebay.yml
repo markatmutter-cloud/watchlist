@@ -1,0 +1,80 @@
+name: Scrape eBay
+
+# eBay runs as its own workflow so a slow Browse API response or
+# OAuth blip doesn't slow the dealer-listings cron. Mark also tends
+# to want to react to eBay activity faster than the 3×/day dealer
+# cadence — this workflow can iterate independently. The cron below
+# matches the listings schedule for now; bump frequency later (every
+# few hours, hourly, etc.) without touching anything else.
+
+on:
+  schedule:
+    # Same three-times-a-day cadence as scrape-listings, but offset
+    # by ~30 minutes so the two workflows don't fight for the
+    # commit/push lock right at the top of the hour.
+    - cron: '30 14 * * *'   # ~6:30am PT — morning
+    - cron: '30 20 * * *'   # ~12:30pm PT — midday
+    - cron: '30 2 * * *'    # ~6:30pm PT — evening
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run eBay saved-search scraper (Browse API)
+        # No-ops cleanly (writes empty CSV) when secrets aren't set,
+        # so the workflow can be safely cron-scheduled even before
+        # credentials land in a fork.
+        env:
+          EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
+          EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+        continue-on-error: true
+        run: python ebay_search_scraper.py
+
+      - name: Move CSV to data folder
+        run: |
+          mkdir -p data
+          [ -f ebay_listings.csv ] && mv ebay_listings.csv data/ebay.csv || echo "ebay missing"
+
+      - name: Merge into listings.json
+        # Re-run merge.py so eBay's contribution flows into
+        # public/listings.json without waiting for the next listings
+        # cron. --listings-only skips the auctions side (this workflow
+        # is feed-only).
+        run: python merge.py --listings-only
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ public/
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "eBay update $(date -u '+%Y-%m-%d %H:%M UTC')"
+          # Race-resilient push: parallel listings/auctions workflows
+          # may have moved main while we scraped. Rebase + retry up to
+          # 3 times, taking our scrape's results in case of merge
+          # conflicts on listings.json (the later finisher is fresher).
+          for i in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected, rebasing and retrying ($i/3)..."
+            if ! git pull --rebase --strategy-option=theirs; then
+              echo "Rebase failed, aborting and retrying push"
+              git rebase --abort 2>/dev/null || true
+            fi
+          done
+          echo "Push still failing after 3 retries"

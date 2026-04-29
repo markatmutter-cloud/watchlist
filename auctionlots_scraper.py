@@ -600,6 +600,36 @@ def scrape_phillips_lot(url):
     sold_price = ld_price if is_ended else None
     current_bid = None  # Phillips bid widget data isn't in static HTML.
 
+    # Auction window: Phillips' lot detail page embeds session times
+    # only via a transit-format graph that's hard to follow without
+    # writing a normalizer. Cross-reference the Phillips auction
+    # calendar instead — the auction code from the lot's image URL
+    # (e.g. ``CH080226``) maps to a row in data/phillips_auctions.csv,
+    # and that row carries date_start + date_end. Good enough for the
+    # countdown display: "X days left" / once-live "today, ends 6pm".
+    auction_start = None
+    auction_end = None
+    auction_url = None
+    auction_code = None
+    if img_url:
+        code_match = re.search(r"/auction(?:s|-assets)/([A-Z]{2}\d+)", img_url)
+        if code_match:
+            auction_code = code_match.group(1)
+    if auction_code:
+        auction_url = f"https://www.phillips.com/auction/{auction_code}"
+        cal_path = "data/phillips_auctions.csv"
+        if os.path.exists(cal_path):
+            try:
+                import csv as _csv
+                with open(cal_path, encoding="utf-8") as cf:
+                    for row in _csv.DictReader(cf):
+                        if auction_code in (row.get("url") or ""):
+                            auction_start = row.get("date_start") or None
+                            auction_end   = row.get("date_end") or row.get("date_start") or None
+                            break
+            except (OSError, _csv.Error):
+                pass
+
     return {
         "house": "Phillips",
         "lot_id": product.get("sku"),
@@ -620,11 +650,9 @@ def scrape_phillips_lot(url):
         "status": status,
         "image": img_url,
         "auction_title": auction_title,
-        "auction_start": None,    # Phillips' sessionStartDateTime sits
-        "auction_end":   None,    # in a transit-format graph the static
-                                  # parser doesn't follow; leaving empty
-                                  # rather than guessing.
-        "auction_url":   None,
+        "auction_start": auction_start,
+        "auction_end":   auction_end,
+        "auction_url":   auction_url,
         "scraped_at":    time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
 
