@@ -449,6 +449,28 @@ def auction_status(date_start, date_end, today=TODAY):
     return 'upcoming'
 
 
+# Days after an auction's date_end that we keep showing it on the
+# calendar with a CLOSED chip. After this window the auction drops
+# off the rolling calendar but its state entry sticks around for any
+# future analytics surfaces.
+PAST_AUCTION_RETENTION_DAYS = 30
+
+
+def _days_since(date_str, today=TODAY):
+    """Return the number of days from `date_str` to `today`, or None
+    if either date is unparseable. Negative if `date_str` is in the
+    future."""
+    if not date_str:
+        return None
+    try:
+        from datetime import datetime as _dt
+        d  = _dt.strptime(date_str, '%Y-%m-%d').date()
+        td = _dt.strptime(today,    '%Y-%m-%d').date()
+        return (td - d).days
+    except (ValueError, TypeError):
+        return None
+
+
 def process_auctions():
     """Read every data/*_auctions.csv, enrich with firstSeen + catalogLiveAt
     from auctions_state.json, emit public/auctions.json. Past auctions are
@@ -505,17 +527,33 @@ def process_auctions():
             entry['lastTitle'] = title
             state[aid] = entry
 
-            # Prefer the scraper's explicit status hint when present (e.g.
-            # Monaco Legend's "Bidding Open" = live even before the auction's
-            # stated start date — pre-bidding phase). Fall back to date-based
-            # derivation for scrapers that don't provide one.
+            # Prefer the scraper's explicit status hint when present
+            # (e.g. Monaco Legend's "Bidding Open" = live even before
+            # the auction's stated start date — pre-bidding phase).
+            # Fall back to date-based derivation otherwise.
             hint = (r.get('status_hint') or '').strip().lower()
             if hint in ('live', 'upcoming', 'past'):
                 status = hint
             else:
                 status = auction_status(date_start, date_end)
+
+            # Date-sanity override: hints can go stale (Monaco Legend
+            # left Exclusive Timepieces 40 marked "live" on its calendar
+            # for days after April 26 ended). The auction can't be live
+            # past its end date, full stop.
+            if (date_end or date_start) and _days_since(date_end or date_start) is not None and _days_since(date_end or date_start) > 0:
+                if status == 'live':
+                    status = 'past'
+
+            # 30-day post-auction window: keep recently-finished auctions
+            # on the calendar with a CLOSED chip so users can pull up
+            # results, but drop them after a month so the rolling
+            # calendar doesn't grow without bound. State entry is
+            # preserved either way.
             if status == 'past':
-                continue  # drop from emitted feed
+                age = _days_since(date_end or date_start)
+                if age is None or age > PAST_AUCTION_RETENTION_DAYS:
+                    continue
 
             auctions.append({
                 'id':            aid,

@@ -393,11 +393,14 @@ export function AuctionsTab(props) {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {group.items.map(a => {
-              const isLive = a.status === "live";
+              const isLive   = a.status === "live";
+              const isClosed = a.status === "past";
               const catalogAgeDays = a.catalogLiveAt
                 ? Math.floor((Date.now() - new Date(a.catalogLiveAt).getTime()) / 86400000)
                 : null;
-              const catalogJustOpened = catalogAgeDays !== null && catalogAgeDays <= 7;
+              // Don't show NEW CATALOG on closed auctions — the chip
+              // is irrelevant once bidding has ended.
+              const catalogJustOpened = !isClosed && catalogAgeDays !== null && catalogAgeDays <= 7;
               return (
                 <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer"
                    style={{ display: "flex", alignItems: "stretch",
@@ -415,6 +418,9 @@ export function AuctionsTab(props) {
                       </span>
                       {isLive && (
                         <span style={{ fontSize: 9, fontWeight: 600, color: "#fff", background: "#c43", borderRadius: 3, padding: "1px 6px", letterSpacing: "0.06em" }}>LIVE</span>
+                      )}
+                      {isClosed && (
+                        <span style={{ fontSize: 9, fontWeight: 600, color: "#fff", background: "#666", borderRadius: 3, padding: "1px 6px", letterSpacing: "0.06em" }}>CLOSED</span>
                       )}
                       {catalogJustOpened && (
                         <span style={{ fontSize: 9, fontWeight: 600, color: "#fff", background: "#185FA5", borderRadius: 3, padding: "1px 6px", letterSpacing: "0.06em" }}>NEW CATALOG</span>

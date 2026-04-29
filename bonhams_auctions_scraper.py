@@ -101,8 +101,14 @@ def scrape():
         href_m = re.search(r'href="(/auction/\d+/[^"]*)"', chunk)
         h3_m = re.search(r'<h3[^>]*>([^<]+)</h3>', chunk)
         p_m  = re.search(r'<p[^>]*>([^<]+)</p>', chunk)
+        # NOTE: deliberately NOT matching "Live auction" — at Bonhams
+        # that phrase is a *venue type* (live in-room sale, vs Online
+        # auction), not a bidding-state. It appears on upcoming sales
+        # too. Earlier versions confused it with "live now" and
+        # incorrectly chipped future London sales as LIVE. Bidding
+        # state lives in the actual state phrases below.
         status_m = re.search(
-            r'(Live auction|Open for bidding|Coming soon|Bidding closed|Register to bid|Bid now)',
+            r'(Open for bidding|Coming soon|Bidding closed|Register to bid|Bid now)',
             chunk,
         )
         if not (href_m and h3_m and p_m):
@@ -132,9 +138,18 @@ def scrape():
         else:
             status_hint = ''
 
-        # Has catalog: Bonhams auction-landing pages always exist once the
-        # sale is announced (has a sale number). True when we have a URL.
-        has_catalog = bool(url)
+        # Has catalog: Bonhams auction-landing pages always exist once
+        # the sale has a sale number (so URL alone isn't a signal).
+        # The card explicitly shows "View lots" / "View catalogue" /
+        # "Browse lots" only when the catalog is actually published.
+        # Cards that just say "Coming soon" / "Register to bid" omit
+        # those phrases — those upcoming sales don't have a catalog
+        # yet despite having a sale URL.
+        has_catalog = bool(re.search(
+            r'(?:View|Browse|See)\s+(?:lots|catalogue|catalog)',
+            chunk,
+            re.IGNORECASE,
+        ))
 
         # Skip past sales (shouldn't appear on this page anyway)
         if status_hint == 'past':
