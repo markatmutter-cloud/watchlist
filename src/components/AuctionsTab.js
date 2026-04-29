@@ -281,22 +281,20 @@ export function AuctionsTab(props) {
   // from the calendar above) is gone.
   const trackedLotsJSX = (
     <div>
-      {/* Track lot — primary CTA, lifted above the heading per Mark's
-          ask. Full-width on its own row so it's the first thing users
-          see when they hit Tracked lots, especially on mobile. The
-          prior in-row "+ Track lot" pill was easy to miss. */}
+      {/* Track lot — lifted out of the heading row but kept compact:
+          a pill on its own row above the heading. Visible enough to
+          register, not so loud it competes with the cards below. */}
       {user && (
-        <button onClick={() => { setAddLotOpen(o => !o); setLotInputError(""); }} style={{
-          width: "100%",
-          border: "none",
-          background: addLotOpen ? "var(--card-bg)" : "#185FA5",
-          color: addLotOpen ? "var(--text1)" : "#fff",
-          padding: "11px 16px", borderRadius: 10,
-          cursor: "pointer", fontFamily: "inherit",
-          fontSize: 14, fontWeight: 500,
-          marginBottom: 14,
-          boxShadow: addLotOpen ? "inset 0 0 0 0.5px var(--border)" : "none",
-        }}>{addLotOpen ? "Cancel" : "+ Track a lot or eBay listing"}</button>
+        <div style={{ marginBottom: 10 }}>
+          <button onClick={() => { setAddLotOpen(o => !o); setLotInputError(""); }} style={{
+            border: "0.5px solid var(--border)",
+            background: addLotOpen ? "var(--text1)" : "var(--card-bg)",
+            color: addLotOpen ? "var(--bg)" : "var(--text1)",
+            padding: "6px 14px", borderRadius: 18,
+            cursor: "pointer", fontFamily: "inherit",
+            fontSize: 13, fontWeight: 500,
+          }}>{addLotOpen ? "Cancel" : "+ Track a lot or eBay listing"}</button>
+        </div>
       )}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 8 }}>
         <div>

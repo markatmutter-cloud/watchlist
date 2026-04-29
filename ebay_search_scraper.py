@@ -161,19 +161,24 @@ def _row_for(item, search):
 def _run_search(search, country, headers):
     query = (search.get("query") or "").strip()
     seller = (search.get("seller") or "").strip() or None
-    # The Browse API requires either q or category_ids; when tracking
-    # an entire seller's inventory without a keyword, we substitute
-    # category 31387 (Wristwatches) so the filter accepts the call.
-    # That cap is wide enough to capture a watch-focused seller's
-    # whole feed without polluting with non-watch inventory.
-    params = {"limit": RESULTS_PER_CALL, "filter": _filter_url(country, seller=seller)}
+    # eBay's Wristwatches category — narrows results to watches and
+    # filters out parts/accessories/random non-watch noise that might
+    # match a keyword by accident. Override on a per-search basis via
+    # the `category` field if needed (e.g. parts, tools, ephemera).
+    category = str(search.get("category") or "31387").strip()
+    params = {
+        "limit": RESULTS_PER_CALL,
+        "filter": _filter_url(country, seller=seller),
+        "category_ids": category,
+    }
     if query:
         params["q"] = query
-    elif seller:
-        params["category_ids"] = "31387"  # Wristwatches
-    else:
+    elif not seller:
         # Neither query nor seller — skip silently. Empty config row.
         return []
+    # When seller-only with no query, category_ids alone satisfies the
+    # API's "must have q OR category_ids" requirement. (Already in
+    # params above.)
     r = requests.get(BROWSE_URL, headers=headers, params=params, timeout=30)
     if r.status_code == 401:
         # Force a token refresh once on 401 — token may have expired

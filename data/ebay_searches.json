@@ -15,6 +15,21 @@
     "country": ["DE", "IT", "FR", "CH", "AT", "NL", "BE", "ES"]
   },
   {
+    "label": "Heuer Autavia GMT — USA",
+    "query": "heuer autavia gmt",
+    "country": "US"
+  },
+  {
+    "label": "Heuer Autavia GMT — UK",
+    "query": "heuer autavia gmt",
+    "country": "GB"
+  },
+  {
+    "label": "Heuer Autavia GMT — Europe",
+    "query": "heuer autavia gmt",
+    "country": ["DE", "IT", "FR", "CH", "AT", "NL", "BE", "ES"]
+  },
+  {
     "_note": "Seller-only example (filtered out at runtime). Add real sellers like { 'label': 'Wind Vintage on eBay', 'seller': 'windvintage' } — when seller is set without a query, the scraper pulls that seller's full Wristwatches inventory. Combine seller + query to filter that seller's listings by keyword. country still applies.",
     "label": "Example seller — REPLACE OR REMOVE",
     "seller": "<ebay_username>",
