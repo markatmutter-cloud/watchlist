@@ -1,8 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import { fmt, fmtUSD, daysAgo, freshDate, imgSrc } from "../utils";
 import { HeartIcon } from "./icons";
 
-export function Card({ item, wished, onWish, compact, onHide, isHidden }) {
+// Wrapped in React.memo so an unrelated state change in App (heart toggle
+// on a different card, scroll-triggered page bump, filter tweak) doesn't
+// re-render every card in the grid. Default shallow-compare works because
+// onWish/onHide are useCallback-stable and item identity is preserved
+// across renders for the listings feed. Watchlist tab spreads item to
+// override snapshot fields, so its cards still re-render — that's fine,
+// re-render ≠ image remount.
+export const Card = memo(function Card({ item, wished, onWish, compact, onHide, isHidden }) {
   // When the dealer's image URL goes 404 (e.g. they cleaned up their CDN
   // for a sold listing), the browser shows an ugly broken-image icon.
   // Track the failure and render a clean placeholder instead.
@@ -102,4 +109,4 @@ export function Card({ item, wished, onWish, compact, onHide, isHidden }) {
       </div>
     </div>
   );
-}
+});

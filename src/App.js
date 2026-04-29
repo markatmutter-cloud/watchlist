@@ -454,10 +454,8 @@ export default function Watchlist() {
   const visible = useMemo(() => allFiltered.slice(0, page * PAGE_SIZE), [allFiltered, page]);
   const hasMore = visible.length < allFiltered.length;
 
-  // Callback ref: because ListingsGrid is defined inside this component, it
-  // unmounts/remounts on every render. A plain useRef + useEffect would stop
-  // firing after the first page bump. Reattaching the IntersectionObserver
-  // inside the ref callback guarantees it's always watching the live DOM node.
+  // Callback ref so the IntersectionObserver always tracks the current
+  // loader DOM node, even if React swaps it out between page bumps.
   const loaderRef = useCallback((node) => {
     if (observerRef.current) observerRef.current.disconnect();
     if (!node) return;
@@ -867,7 +865,13 @@ export default function Watchlist() {
     return out;
   })();
 
-  const ListingsGrid = () => (
+  // Built once per render as a JSX expression (NOT a nested component).
+  // A nested function-component gets a new identity on every App render,
+  // which forces React to unmount + remount the entire grid — including
+  // every <img> — making all tiles flash white on heart toggles, page
+  // bumps, and any other state change. As a JSX expression, the same
+  // grid instance is reused and only changed cards re-render.
+  const listingsGridJSX = (
     <>
       <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
         {visibleWithDividers.map((entry, idx) => (
@@ -1274,7 +1278,7 @@ export default function Watchlist() {
         )}
         </div>
         <div style={{ padding: "12px 14px 100px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : watchlistTabJSX}
+          {tab === "listings" ? listingsGridJSX : tab === "auctions" ? auctionsTabJSX : watchlistTabJSX}
         </div>
         {/* Bottom tab bar. The container reserves the iOS home-indicator
             safe area PLUS a fixed extra padding, so the buttons aren't
@@ -1353,7 +1357,7 @@ export default function Watchlist() {
                   <div style={{ flex: 1 }}>
                     <div style={{ ...sectionHeadingStyle, marginBottom: 6 }}>Group by</div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {[["none", "None"], ["brand", "Brand"], ["source", "Source"], ["ref", "Ref"]].map(([val, label]) => (
+                      {[["none", tab === "listings" ? "Date" : "None"], ["brand", "Brand"], ["source", "Source"], ["ref", "Ref"]].map(([val, label]) => (
                         <Chip key={val} label={label} active={groupBy === val} onClick={() => setGroupBy(val)} />
                       ))}
                     </div>
@@ -1495,9 +1499,14 @@ export default function Watchlist() {
       {/* Group */}
       <div style={{ position: "relative" }}>
         {(() => {
+          // "Date" on the Available tab because the no-explicit-group state
+          // still shows Today / Last 3 days / This week / Older dividers
+          // when sorted by date. On Watchlist, no such grouping happens —
+          // "None" is accurate there.
           const label = groupBy === "brand" ? "Brand"
                       : groupBy === "source" ? "Source"
                       : groupBy === "ref" ? "Reference"
+                      : tab === "listings" ? "Date"
                       : "None";
           return (
             <button onClick={() => setActiveFilterPop(p => p === "group" ? null : "group")} style={pillBase(groupBy !== "none")}>
@@ -1507,7 +1516,7 @@ export default function Watchlist() {
         })()}
         {activeFilterPop === "group" && popShell(
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {[["none", "No grouping"], ["brand", "Brand"],
+            {[["none", tab === "listings" ? "Date" : "No grouping"], ["brand", "Brand"],
               ["source", "Source"], ["ref", "Reference"]
             ].map(([val, lbl]) => (
               <button key={val} onClick={() => { setGroupBy(val); setActiveFilterPop(null); }} style={{
@@ -1783,7 +1792,7 @@ export default function Watchlist() {
             resize handlers) is still defined further up so we can revert
             quickly if the new pattern doesn't pan out. */}
         <div data-desktop-main style={{ flex: 1, overflowY: "auto", padding: "14px 16px 32px" }}>
-          {tab === "listings" ? <ListingsGrid /> : tab === "auctions" ? auctionsTabJSX : watchlistTabJSX}
+          {tab === "listings" ? listingsGridJSX : tab === "auctions" ? auctionsTabJSX : watchlistTabJSX}
         </div>
       </div>
       <HiddenModal
