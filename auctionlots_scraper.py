@@ -356,6 +356,132 @@ def scrape_sothebys_lot(url):
     }
 
 
+def scrape_monaco_legend_lot(url):
+    """Return a dict of fields scraped from one Monaco Legend lot page.
+
+    Monaco Legend ships a single JSON-LD ``<script type="application/ld+json">``
+    block with a ``@graph`` array. The ``Product`` node inside that
+    array carries everything we need: image, additionalProperty list
+    (Brand/Reference/Year/etc), and an ``offers`` sub-object with
+    price, currency, validFrom/validThrough, availability, and a
+    priceSpecification list with low/high estimates. No Apollo cache,
+    no __NEXT_DATA__ — much simpler than Sotheby's.
+
+    Availability mapping:
+      - ``schema.org/SoldOut`` / ``OutOfStock`` → status="ended", price → sold_price
+      - anything else (InStock / PreOrder / etc) → status="active", price → current_bid
+    """
+    r = requests.get(url, headers=HEADERS, timeout=20)
+    r.raise_for_status()
+    html = r.text
+
+    m = re.search(r'<script type="application/ld\+json"[^>]*>(.*?)</script>',
+                  html, re.DOTALL)
+    if not m:
+        raise RuntimeError("JSON-LD block not found")
+    data = json.loads(m.group(1))
+
+    # Product node lives inside @graph; fall back to the root if
+    # Monaco Legend ever changes shape.
+    product = None
+    for node in data.get("@graph", [data]):
+        if isinstance(node, dict) and node.get("@type") == "Product":
+            product = node
+            break
+    if not product:
+        raise RuntimeError("Product node not found in JSON-LD")
+
+    offers = product.get("offers") or {}
+
+    # Estimates live in priceSpecification (one PriceSpecification per
+    # bound, named "Low Estimate" / "High Estimate").
+    estimate_low = None
+    estimate_high = None
+    for spec in offers.get("priceSpecification", []) or []:
+        if not isinstance(spec, dict):
+            continue
+        name = (spec.get("name") or "").lower()
+        try:
+            v = int(float(spec.get("price"))) if spec.get("price") not in (None, "") else None
+        except (TypeError, ValueError):
+            v = None
+        if "low" in name and "estimate" in name:
+            estimate_low = v
+        elif "high" in name and "estimate" in name:
+            estimate_high = v
+
+    # Availability → status + which price field carries the headline.
+    availability = (offers.get("availability") or "").rsplit("/", 1)[-1].lower()
+    is_ended = availability in {"soldout", "outofstock"}
+    status = "ended" if is_ended else "active"
+
+    try:
+        price = int(float(offers.get("price"))) if offers.get("price") not in (None, "") else None
+    except (TypeError, ValueError):
+        price = None
+
+    sold_price = price if is_ended else None
+    current_bid = None if is_ended else price
+    currency = (offers.get("priceCurrency") or "EUR").upper()
+
+    # Title: the JSON-LD `name` is just "Lot 148" — the rich watch
+    # description sits in the page <title>:
+    # "Lot 148 - <maker> <description> - <auction> - Monaco Legend Auctions".
+    # Strip leading "Lot N -" and trailing house+auction-name segments.
+    title = product.get("name") or ""
+    page_title_match = re.search(r"<title>([^<]+)</title>", html)
+    if page_title_match:
+        raw = page_title_match.group(1).strip()
+        parts = [p.strip() for p in raw.split(" - ")]
+        if len(parts) >= 4:
+            # ["Lot 148", "<watch description>", "<auction name>", "Monaco Legend Auctions"]
+            title = parts[1]
+        elif len(parts) >= 2:
+            title = " - ".join(parts[1:-1]) or raw
+
+    # Lot number: pull from the URL slug `/lot-NNN` — JSON-LD `sku` is
+    # an internal ID, not the displayed lot number.
+    lot_match = re.search(r"/lot-(\d+)", url)
+    lot_number = lot_match.group(1) if lot_match else None
+
+    # Auction name + URL: derive from the `/auction/<slug>/lot-NNN`
+    # path so the frontend's auction_url link works without a 2nd fetch.
+    auction_url = None
+    auction_title = None
+    auc_match = re.search(r"/auction/([^/]+)/lot-\d+", url)
+    if auc_match:
+        slug = auc_match.group(1)
+        auction_url = f"https://www.monacolegendauctions.com/auction/{slug}"
+        # "exclusive-timepieces-40" → "Exclusive Timepieces 40"
+        auction_title = " ".join(w.capitalize() for w in slug.split("-"))
+
+    return {
+        "house": "Monaco Legend Auctions",
+        "lot_id": product.get("sku"),
+        "lot_number": lot_number,
+        "title": title,
+        "description": "",
+        "currency": currency,
+        "estimate_low": estimate_low,
+        "estimate_high": estimate_high,
+        "starting_price": None,
+        "current_bid": current_bid,
+        "sold_price": sold_price,
+        "estimate_low_usd":   to_usd(estimate_low,   currency),
+        "estimate_high_usd":  to_usd(estimate_high,  currency),
+        "starting_price_usd": None,
+        "current_bid_usd":    to_usd(current_bid,    currency),
+        "sold_price_usd":     to_usd(sold_price,     currency),
+        "status": status,
+        "image": product.get("image"),
+        "auction_title": auction_title,
+        "auction_start": offers.get("validFrom"),
+        "auction_end":   offers.get("validThrough"),
+        "auction_url":   auction_url,
+        "scraped_at":    time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+
 def scrape(url):
     """Dispatch by host. Add new auction houses here as scrapers are built."""
     host = urlparse(url).hostname or ""
@@ -365,6 +491,8 @@ def scrape(url):
         return scrape_christies_lot(url)
     if host.endswith("sothebys.com"):
         return scrape_sothebys_lot(url)
+    if host.endswith("monacolegendauctions.com"):
+        return scrape_monaco_legend_lot(url)
     raise NotImplementedError(f"No scraper for host: {host}")
 
 
