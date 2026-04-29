@@ -128,6 +128,110 @@ def scrape_antiquorum_lot(url):
     }
 
 
+def scrape_catalog_antiquorum_lot(url):
+    """Return a dict of fields scraped from one catalog.antiquorum.swiss lot.
+
+    catalog.antiquorum.swiss is the *published catalog* surface — used
+    before a sale opens for live bidding. live.antiquorum.swiss is the
+    interactive platform once bidding is live. Different system,
+    different markup. The catalog page is static HTML with RDFa
+    microdata (`property="schema:..."` attributes), no Apollo/Next.js
+    JSON blob to crack.
+
+    Available fields on the catalog page:
+      - <title>: "<watch desc> | <auction name> | <city, date>"
+      - schema:priceCurrency content attribute
+      - rel="schema:image" resource attribute (S3 URL)
+      - <h4>{CCY} {low} - {high}</h4> for the estimate range
+      - URL slug: /en/lots/<title-slug>-lot-{auction_id}-{lot_number}
+
+    Bid state (current bid / sold price) lives behind a JS bid widget;
+    for upcoming auctions there's nothing to read yet, and once bidding
+    is live users would watch via live.antiquorum.swiss anyway.
+    Status is therefore always "active" until the lot's auction date
+    passes (caller can derive an "ended" view from auction_end if
+    needed).
+    """
+    r = requests.get(url, headers=HEADERS, timeout=20)
+    r.raise_for_status()
+    html = r.text
+
+    # Page <title>: "<watch> | <auction> | <city, date>"
+    raw_title = ""
+    title_match = re.search(r"<title>([^<]+)</title>", html)
+    if title_match:
+        raw_title = re.sub(r"\s+", " ",
+                           title_match.group(1).replace("&amp;", "&")).strip()
+    parts = [p.strip() for p in raw_title.split(" | ")]
+    title = parts[0] if parts else raw_title
+    auction_title = parts[1] if len(parts) >= 2 else None
+    auction_date_label = parts[2] if len(parts) >= 3 else None
+
+    # Currency: schema:priceCurrency content="CHF"
+    currency = "CHF"
+    cur_match = re.search(
+        r'property="schema:priceCurrency"\s+content="([^"]+)"', html
+    )
+    if cur_match:
+        currency = cur_match.group(1).upper()
+
+    # Image: rel="schema:image" resource="https://...s3..../images/.../medium_NNN.jpg"
+    img_url = None
+    img_match = re.search(r'rel="schema:image"\s+resource="([^"]+)"', html)
+    if img_match:
+        img_url = img_match.group(1)
+
+    # Estimate range: <h4>CCY low - high</h4>
+    estimate_low = None
+    estimate_high = None
+    est_match = re.search(
+        r"<h4>\s*[A-Z]{3}\s+([\d,]+)\s*-\s*([\d,]+)\s*</h4>", html
+    )
+    if est_match:
+        try:
+            estimate_low = int(est_match.group(1).replace(",", ""))
+            estimate_high = int(est_match.group(2).replace(",", ""))
+        except ValueError:
+            pass
+
+    # URL slug: /en/lots/<title-slug>-lot-<auction_id>-<lot_number>
+    auction_id = None
+    lot_number = None
+    slug_match = re.search(r"/en/lots/[^/?#]*?-lot-(\d+)-(\d+)", url)
+    if slug_match:
+        auction_id = slug_match.group(1)
+        lot_number = slug_match.group(2)
+
+    return {
+        "house": "Antiquorum",
+        "lot_id": f"{auction_id}-{lot_number}" if auction_id and lot_number else None,
+        "lot_number": lot_number,
+        "title": title,
+        "description": "",
+        "currency": currency,
+        "estimate_low": estimate_low,
+        "estimate_high": estimate_high,
+        "starting_price": None,
+        "current_bid": None,
+        "sold_price": None,
+        "estimate_low_usd":   to_usd(estimate_low,   currency),
+        "estimate_high_usd":  to_usd(estimate_high,  currency),
+        "starting_price_usd": None,
+        "current_bid_usd":    None,
+        "sold_price_usd":     None,
+        "status": "active",
+        "image": img_url,
+        "auction_title": auction_title,
+        "auction_start": None,                     # catalog page only carries
+        "auction_end":   None,                     # the human-readable "May 9th-10th, 2026"
+                                                   # — leaving structured fields empty
+                                                   # rather than guessing a parse
+        "auction_url":   None,
+        "auction_date_label": auction_date_label,  # e.g. "Geneva, May 9th-10th, 2026"
+        "scraped_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+
 def scrape_christies_lot(url):
     """Return a dict of fields scraped from one Christie's lot page.
 
@@ -485,7 +589,17 @@ def scrape_monaco_legend_lot(url):
 def scrape(url):
     """Dispatch by host. Add new auction houses here as scrapers are built."""
     host = urlparse(url).hostname or ""
+    # Antiquorum runs two surfaces:
+    #   live.antiquorum.swiss    → live-bid platform (Apollo/JSON blob)
+    #   catalog.antiquorum.swiss → published catalog (RDFa microdata)
+    # Different scrapers, same `house` value so the Card UI stays unified.
+    if host == "live.antiquorum.swiss" or host.endswith(".live.antiquorum.swiss"):
+        return scrape_antiquorum_lot(url)
+    if host == "catalog.antiquorum.swiss" or host.endswith(".catalog.antiquorum.swiss"):
+        return scrape_catalog_antiquorum_lot(url)
     if host.endswith("antiquorum.swiss"):
+        # Generic fallback for any other antiquorum subdomain — assume
+        # the live platform since it's the more common surface today.
         return scrape_antiquorum_lot(url)
     if host.endswith("christies.com"):
         return scrape_christies_lot(url)

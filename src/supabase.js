@@ -343,6 +343,7 @@ export function useTrackedLots(user) {
     // later choke on.
     const supported = [
       /^https?:\/\/live\.antiquorum\.swiss\/lots\/view\//i,
+      /^https?:\/\/catalog\.antiquorum\.swiss\/(?:en|fr|it|de)\/lots\/[a-z0-9-]+-lot-\d+-\d+/i,
       /^https?:\/\/(?:www\.)?christies\.com\/(?:[a-z]{2}\/)?lot\/lot-\d+/i,
       /^https?:\/\/(?:www\.)?sothebys\.com\/(?:en\/)?buy\/auction\/\d{4}\/[a-z0-9-]+\/[a-z0-9-]+/i,
       /^https?:\/\/(?:www\.)?monacolegendauctions\.com\/auction\/[a-z0-9-]+\/lot-\d+/i,

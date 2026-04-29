@@ -331,7 +331,7 @@ export function AuctionsTab(props) {
             <div style={{ fontSize: 11, color: "#c0392b", marginTop: 6 }}>{lotInputError}</div>
           )}
           <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 6 }}>
-            Antiquorum (<span style={{ fontFamily: "monospace" }}>live.antiquorum.swiss/lots/view/…</span>),
+            Antiquorum (<span style={{ fontFamily: "monospace" }}>live.antiquorum.swiss/lots/view/…</span> or <span style={{ fontFamily: "monospace" }}>catalog.antiquorum.swiss/en/lots/…</span>),
             Christie's (<span style={{ fontFamily: "monospace" }}>christies.com/…/lot/lot-NNN</span>),
             Sotheby's (<span style={{ fontFamily: "monospace" }}>sothebys.com/en/buy/auction/YYYY/…</span>),
             or Monaco Legend (<span style={{ fontFamily: "monospace" }}>monacolegendauctions.com/auction/&lt;slug&gt;/lot-NNN</span>).
