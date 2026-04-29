@@ -84,6 +84,19 @@ export function AuctionsTab(props) {
     statusMode, compact, gridStyle, inp,
   } = props;
 
+  // ── SUB-TAB ────────────────────────────────────────────────────────────
+  // Two sections live under Auctions: the user's tracked lots and the
+  // calendar of upcoming sales. Tracked lots is the default — it's
+  // personal data and the more frequent destination once a user has
+  // started following lots.
+  const [auctionSubtab, setAuctionSubtab] = useState(() => {
+    try { return localStorage.getItem("auctions_subtab_v1") || "tracked"; }
+    catch { return "tracked"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("auctions_subtab_v1", auctionSubtab); } catch {}
+  }, [auctionSubtab]);
+
   // ── AUCTION CALENDAR ───────────────────────────────────────────────────
   // Collapsed by default to keep the page scannable; expand reveals
   // every upcoming sale grouped by month. Persisted across visits so
@@ -258,11 +271,12 @@ export function AuctionsTab(props) {
 
   // ── RENDER ─────────────────────────────────────────────────────────────
 
-  // Tracked-lots section JSX. Built once so the empty-calendar path
-  // and the populated-calendar path can both render it identically.
+  // Tracked-lots section JSX. Standalone now — lives under its own
+  // sub-tab, so the previous top-border/padding (which separated it
+  // from the calendar above) is gone.
   const trackedLotsJSX = (
-    <div style={{ marginTop: 36 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 8, paddingTop: 16, borderTop: "0.5px solid var(--border)" }}>
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 8 }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
             Tracked lots
@@ -339,26 +353,22 @@ export function AuctionsTab(props) {
     </div>
   );
 
-  if (auctions.length === 0) {
-    return (
-      <div>
-        <div style={{ padding: "60px 0", textAlign: "center" }}>
-          <div style={{ fontSize: 28, marginBottom: 10 }}>🔨</div>
-          <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>No auctions on the calendar yet</div>
-          <div style={{ fontSize: 12, color: "var(--text2)", maxWidth: 340, margin: "0 auto", lineHeight: 1.5 }}>
-            Currently pulling from Antiquorum, Monaco Legend, Phillips, Bonhams, Christie's, and Sotheby's.
-          </div>
-        </div>
-        {trackedLotsJSX}
-      </div>
-    );
-  }
-
   const liveCount = auctions.filter(a => a.status === "live").length;
   const upcomingCount = auctions.filter(a => a.status === "upcoming").length;
 
-  return (
-    <div style={{ paddingTop: 4 }}>
+  // Calendar section JSX. Empty-state replaces the body when there are
+  // no auctions yet — the sub-tab strip stays visible so users can still
+  // jump to Tracked lots.
+  const calendarSectionJSX = auctions.length === 0 ? (
+    <div style={{ padding: "60px 0", textAlign: "center" }}>
+      <div style={{ fontSize: 28, marginBottom: 10 }}>🔨</div>
+      <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>No auctions on the calendar yet</div>
+      <div style={{ fontSize: 12, color: "var(--text2)", maxWidth: 340, margin: "0 auto", lineHeight: 1.5 }}>
+        Currently pulling from Antiquorum, Monaco Legend, Phillips, Bonhams, Christie's, and Sotheby's.
+      </div>
+    </div>
+  ) : (
+    <div>
       <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 18 }}>
         {liveCount > 0
           ? `${liveCount} live now · ${upcomingCount} upcoming`
@@ -441,8 +451,33 @@ export function AuctionsTab(props) {
           </button>
         </div>
       )}
+    </div>
+  );
 
-      {trackedLotsJSX}
+  return (
+    <div>
+      {/* Sub-tabs: Tracked lots (default) + Calendar. Mirrors the
+          Watchlist tab's Listings/Searches sub-tab pattern. */}
+      <div style={{
+        display: "flex", marginBottom: 14,
+        paddingBottom: 4,
+        borderBottom: "0.5px solid var(--border)",
+      }}>
+        {[
+          ["tracked",  `Tracked lots${trackedLots.length > 0 ? ` · ${trackedLots.length}` : ""}`],
+          ["calendar", `Calendar${auctions.length > 0 ? ` · ${auctions.length}` : ""}`],
+        ].map(([key, label]) => (
+          <button key={key} onClick={() => setAuctionSubtab(key)} style={{
+            padding: "6px 0", marginRight: 18, border: "none", cursor: "pointer",
+            background: "transparent", fontFamily: "inherit", fontSize: 14,
+            color: auctionSubtab === key ? "var(--text1)" : "var(--text3)",
+            fontWeight: auctionSubtab === key ? 600 : 400,
+            borderBottom: auctionSubtab === key ? "2px solid var(--text1)" : "2px solid transparent",
+          }}>{label}</button>
+        ))}
+      </div>
+
+      {auctionSubtab === "tracked" ? trackedLotsJSX : calendarSectionJSX}
     </div>
   );
 }
