@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Card } from "./Card";
 import { AuctionCalendar } from "./AuctionCalendar";
-import { extractRef, ageBucketFromDate } from "../utils";
+import { ageBucketFromDate } from "../utils";
 import { importLocalData } from "../supabase";
 
 
@@ -24,10 +24,10 @@ export function WatchlistTab(props) {
     handleWish,
     // UI shared
     compact, gridStyle, inp, isMobile, statusMode,
-    // Group + sort state from the global filter bar
-    groupBy, sort,
+    // Sort state from the global filter bar
+    sort,
     // Auction calendar (3rd sub-tab) and tracked-URL flow
-    auctions, addTrackedLot, removeTrackedLot,
+    auctions,
     // Sub-tab routing — controlled by parent because the surrounding
     // chrome (sidebar, filter bar) gates on it too.
     watchTopTab, setWatchTopTab,
@@ -67,10 +67,8 @@ export function WatchlistTab(props) {
   };
 
 
-  // Group-by is global now (driven by the filter bar's Group pill);
-  // alias the prop to the local name so the rest of this file's
-  // grouping logic keeps reading naturally.
-  const watchGroupBy = props.groupBy || "none";
+  // (Group-by feature removed 2026-04-30. Only implicit date
+  // dividers remain when sort is by date — see watchGroups below.)
 
   // ── DERIVED ────────────────────────────────────────────────────────────
   const watchView = useMemo(() => {
@@ -97,39 +95,23 @@ export function WatchlistTab(props) {
     }
     return max;
   };
+  // Group-by feature removed 2026-04-30 — only implicit weekday-
+  // named dividers remain when sort is by date and status isn't
+  // sold-archive. Other sorts get a single flat bucket.
   const watchGroups = useMemo(() => {
-    if (watchGroupBy === "none") {
-      if (isDateSort && statusMode !== "sold") {
-        const map = new Map();
-        for (const item of watchView) {
-          const key = ageBucketFromDate((item.savedAt || "").slice(0, 10));
-          if (!map.has(key)) map.set(key, []);
-          map.get(key).push(item);
-        }
-        const entries = [...map.entries()].sort(
-          (a, b) => groupRecency(b[1]) - groupRecency(a[1])
-        );
-        return entries;
+    if (isDateSort && statusMode !== "sold") {
+      const map = new Map();
+      for (const item of watchView) {
+        const key = ageBucketFromDate((item.savedAt || "").slice(0, 10));
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(item);
       }
-      return [["", watchView]];
+      return [...map.entries()].sort(
+        (a, b) => groupRecency(b[1]) - groupRecency(a[1])
+      );
     }
-    const map = new Map();
-    for (const item of watchView) {
-      let key;
-      if (watchGroupBy === "brand")       key = item.brand || "Other";
-      else if (watchGroupBy === "source") key = item.source || "Other";
-      else /* ref */                      key = extractRef(item.ref) || "Other";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key).push(item);
-    }
-    const entries = [...map.entries()];
-    if (watchGroupBy === "ref") {
-      entries.sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
-    } else {
-      entries.sort((a, b) => a[0].localeCompare(b[0]));
-    }
-    return entries;
-  }, [watchView, watchGroupBy, isDateSort, statusMode]);
+    return [["", watchView]];
+  }, [watchView, isDateSort, statusMode]);
 
 
   const legacyCounts = {

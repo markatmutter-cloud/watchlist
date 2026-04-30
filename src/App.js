@@ -162,22 +162,14 @@ export default function Watchlist() {
   // Available/Archive feed AND drives the Watchlist > Listings sub-tab.
   // Persisted under `dial_group_v1`; falls back to the legacy
   // `watchlist_group_v1` key for users who set it before this lift.
-  const [groupBy, setGroupBy] = useState(() => {
-    try {
-      const v = localStorage.getItem("dial_group_v1")
-        || localStorage.getItem("watchlist_group_v1");
-      // 2026-04-30 (PM): briefly promoted "date" to its own explicit
-      // chip; reverted same day per Mark — date dividers now fire
-      // implicitly when sort is newest/oldest and no other group is
-      // selected. Migrate any user who got bumped to "date" back
-      // to "none" so the chip set stays in sync with the UI.
-      if (!v || v === "date") return "none";
-      return v;
-    } catch { return "none"; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem("dial_group_v1", groupBy); } catch {}
-  }, [groupBy]);
+  // (Group-by feature removed entirely 2026-04-30 per Mark — too
+  // many overlapping axes against sort + status + filter pills.
+  // Date dividers when sorted by date stay as an implicit
+  // side-effect of the date sort. Brand / Source / Ref grouping
+  // could come back later if there's a use case but isn't in
+  // current scope. localStorage key dial_group_v1 is left untouched
+  // for any users who might roll back.)
+
   // Hidden listings manager (was the Archive tab's hidden-section, now
   // a modal opened from the user dropdown).
   const [hiddenModalOpen, setHiddenModalOpen] = useState(false);
@@ -974,17 +966,8 @@ export default function Watchlist() {
     if (d <= 7) return "This week";
     return "Older";
   };
-  // Derive the group key for a single item under the current `groupBy`.
-  // brand/source/ref bucket by their respective fields; "none" returns
-  // null (flat, no explicit dividers). Date dividers under "none" are
-  // produced implicitly in `visibleWithDividers` when the sort is by
-  // date — see the fall-through branch there.
-  const groupKeyOf = (it) => {
-    if (groupBy === "brand")  return displayBrand(it);
-    if (groupBy === "source") return it.source || "Other";
-    if (groupBy === "ref")    return extractRef(it.ref) || "Other";
-    return null;
-  };
+  // (Group-by helpers removed with the feature. Date dividers under
+  // a date-sort are produced inline in `visibleWithDividers` below.)
 
   // Date-bucket ordering. Labels are now weekday-based (Today /
   // Yesterday / Wednesday / Tuesday / ... / Last week / Older), so
@@ -1005,36 +988,12 @@ export default function Watchlist() {
     if (visible.length === 0) {
       return [];
     }
-    // Group acts first; sort applies within groups (the items list
-    // arrives pre-sorted from `allFiltered`, so each bucket inherits
-    // the user's chosen sort order). "none" = flat, no dividers.
-    if (groupBy !== "none") {
-      const groups = new Map();
-      for (const it of visible) {
-        const key = groupKeyOf(it) || "Other";
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(it);
-      }
-      const entries = [...groups.entries()];
-      if (groupBy === "ref") {
-        // References: most-populous first so the dense buckets read first.
-        entries.sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
-      } else {
-        entries.sort((a, b) => a[0].localeCompare(b[0]));
-      }
-      const out = [];
-      for (const [key, items] of entries) {
-        const total = allFiltered.filter(x => groupKeyOf(x) === key).length;
-        out.push({ kind: "divider", label: key, total });
-        for (const it of items) out.push({ kind: "card", item: it });
-      }
-      return out;
-    }
-    // groupBy === "none". When the user has sorted by date (newest or
-    // oldest first) and isn't viewing the sold archive, surface
-    // implicit age-bucket dividers (Today / Last 3 days / This week /
-    // Older). Other sorts (price) get a flat grid since date headings
-    // wouldn't align with the row order.
+    // Group-by feature was removed 2026-04-30 — only implicit
+    // date-bucket dividers remain (Today / Yesterday / weekday /
+    // Last week / Older), and only when the user has sorted by
+    // date and isn't viewing the sold archive. Other sorts get
+    // a flat grid since date headings wouldn't align with the row
+    // order.
     if (statusMode === "sold" || !(sort === "date" || sort === "date-asc")) {
       return visible.map(it => ({ kind: "card", item: it }));
     }
@@ -1218,7 +1177,6 @@ export default function Watchlist() {
       inp={inp}
       isMobile={isMobile}
       statusMode={statusMode}
-      groupBy={groupBy}
       sort={sort}
       auctions={auctions}
       addTrackedLot={addTrackedLot}
@@ -1757,32 +1715,7 @@ export default function Watchlist() {
         ))}
       </div>
 
-      {/* Group */}
-      <div style={{ position: "relative" }}>
-        {(() => {
-          const label = groupBy === "brand" ? "Brand"
-                      : groupBy === "source" ? "Source"
-                      : "None";
-          return (
-            <button onClick={() => setActiveFilterPop(p => p === "group" ? null : "group")} style={pillBase(groupBy !== "none")}>
-              Group: {label} ▾
-            </button>
-          );
-        })()}
-        {activeFilterPop === "group" && popShell(
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {[["none", "No grouping"], ["brand", "Brand"],
-              ["source", "Source"]
-            ].map(([val, lbl]) => (
-              <button key={val} onClick={() => { setGroupBy(val); setActiveFilterPop(null); }} style={{
-                textAlign: "left", padding: "8px 10px", borderRadius: 6, border: "none",
-                background: groupBy === val ? "var(--surface)" : "transparent",
-                color: "var(--text1)", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              }}>{lbl}{groupBy === val ? "  ✓" : ""}</button>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* (Group-by pill + popover removed 2026-04-30.) */}
 
       {/* Price — inline mini/max inputs (was a popover; replaced
           2026-04-30 per Mark's ask). Always visible in the filter
