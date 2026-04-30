@@ -156,10 +156,16 @@ export default function Watchlist() {
   // `watchlist_group_v1` key for users who set it before this lift.
   const [groupBy, setGroupBy] = useState(() => {
     try {
-      return localStorage.getItem("dial_group_v1")
-        || localStorage.getItem("watchlist_group_v1")
-        || "none";
-    } catch { return "none"; }
+      const v = localStorage.getItem("dial_group_v1")
+        || localStorage.getItem("watchlist_group_v1");
+      // 2026-04-30: "none" used to be the default and produced
+      // implicit date dividers when sort=date. Now "date" is its own
+      // explicit chip and "none" means flat-no-dividers. Migrate any
+      // user still on the old default so date buckets still appear
+      // out of the box.
+      if (!v || v === "none") return "date";
+      return v;
+    } catch { return "date"; }
   });
   useEffect(() => {
     try { localStorage.setItem("dial_group_v1", groupBy); } catch {}
@@ -838,21 +844,29 @@ export default function Watchlist() {
     return "Older";
   };
   // Derive the group key for a single item under the current `groupBy`.
-  // Mirrors the same logic the Watchlist tab used before this was lifted
-  // to App.js so brand/source/ref bucketing is consistent everywhere.
+  // "date" buckets by age (Today / Last 3 days / This week / Older);
+  // brand/source/ref bucket by their respective fields; "none" returns
+  // null (flat, no dividers).
   const groupKeyOf = (it) => {
     if (groupBy === "brand")  return displayBrand(it);
     if (groupBy === "source") return it.source || "Other";
     if (groupBy === "ref")    return extractRef(it.ref) || "Other";
+    if (groupBy === "date")   return ageBucketLabel(it);
     return null;
   };
+
+  // Bucket-order for date so Today shows first, then Last 3 days,
+  // then This week, then Older. Used wherever we sort grouped output
+  // for the date dimension.
+  const dateBucketOrder = { "Today": 0, "Last 3 days": 1, "This week": 2, "Older": 3 };
 
   const visibleWithDividers = (() => {
     if (visible.length === 0) {
       return [];
     }
-    // Brand/Source/Reference grouping takes priority over the age
-    // bucketing — it's what the user explicitly asked for.
+    // Group acts first; sort applies within groups (the items list
+    // arrives pre-sorted from `allFiltered`, so each bucket inherits
+    // the user's chosen sort order). "none" = flat, no dividers.
     if (groupBy !== "none") {
       const groups = new Map();
       for (const it of visible) {
@@ -864,6 +878,9 @@ export default function Watchlist() {
       if (groupBy === "ref") {
         // References: most-populous first so the dense buckets read first.
         entries.sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+      } else if (groupBy === "date") {
+        // Date buckets: chronological (Today → Older), not alphabetical.
+        entries.sort((a, b) => (dateBucketOrder[a[0]] ?? 9) - (dateBucketOrder[b[0]] ?? 9));
       } else {
         entries.sort((a, b) => a[0].localeCompare(b[0]));
       }
@@ -875,26 +892,8 @@ export default function Watchlist() {
       }
       return out;
     }
-    // Default behaviour: age-bucket dividers when sorted by date and
-    // not viewing sold history. Sold + non-date sorts get a flat grid.
-    if (statusMode === "sold" || !(sort === "date" || sort === "date-asc")) {
-      return visible.map(it => ({ kind: "card", item: it }));
-    }
-    const out = [];
-    let last = null;
-    for (const it of visible) {
-      const bucket = ageBucketLabel(it);
-      if (bucket !== last) {
-        // Count how many of allFiltered (not just visible) fall in this
-        // bucket so the label shows the true total per age band, not just
-        // what's currently rendered.
-        const total = allFiltered.filter(x => ageBucketLabel(x) === bucket).length;
-        out.push({ kind: "divider", label: bucket, total });
-        last = bucket;
-      }
-      out.push({ kind: "card", item: it });
-    }
-    return out;
+    // groupBy === "none": flat, no dividers, regardless of sort.
+    return visible.map(it => ({ kind: "card", item: it }));
   })();
 
   // Built once per render as a JSX expression (NOT a nested component).
@@ -1399,7 +1398,7 @@ export default function Watchlist() {
                   <div style={{ flex: 1 }}>
                     <div style={{ ...sectionHeadingStyle, marginBottom: 6 }}>Group by</div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {[["none", tab === "listings" ? "Date" : "None"], ["brand", "Brand"], ["source", "Source"], ["ref", "Ref"]].map(([val, label]) => (
+                      {[["date", "Date"], ["brand", "Brand"], ["source", "Source"], ["ref", "Ref"], ["none", "None"]].map(([val, label]) => (
                         <Chip key={val} label={label} active={groupBy === val} onClick={() => setGroupBy(val)} />
                       ))}
                     </div>
@@ -1541,14 +1540,10 @@ export default function Watchlist() {
       {/* Group */}
       <div style={{ position: "relative" }}>
         {(() => {
-          // "Date" on the Available tab because the no-explicit-group state
-          // still shows Today / Last 3 days / This week / Older dividers
-          // when sorted by date. On Watchlist, no such grouping happens —
-          // "None" is accurate there.
           const label = groupBy === "brand" ? "Brand"
                       : groupBy === "source" ? "Source"
                       : groupBy === "ref" ? "Reference"
-                      : tab === "listings" ? "Date"
+                      : groupBy === "date" ? "Date"
                       : "None";
           return (
             <button onClick={() => setActiveFilterPop(p => p === "group" ? null : "group")} style={pillBase(groupBy !== "none")}>
@@ -1558,8 +1553,8 @@ export default function Watchlist() {
         })()}
         {activeFilterPop === "group" && popShell(
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {[["none", tab === "listings" ? "Date" : "No grouping"], ["brand", "Brand"],
-              ["source", "Source"], ["ref", "Reference"]
+            {[["date", "Date"], ["brand", "Brand"],
+              ["source", "Source"], ["ref", "Reference"], ["none", "No grouping"]
             ].map(([val, lbl]) => (
               <button key={val} onClick={() => { setGroupBy(val); setActiveFilterPop(null); }} style={{
                 textAlign: "left", padding: "8px 10px", borderRadius: 6, border: "none",

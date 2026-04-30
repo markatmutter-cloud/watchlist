@@ -95,6 +95,19 @@ export function freshDate(item) {
   return item.firstSeen || item.date;
 }
 
+// Age-bucket label for date-grouped views. Same buckets used on the
+// Available feed and the Watchlist tab so the chip set + group key
+// labels read identically across surfaces. Caller decides which
+// date field to feed in (firstSeen for live listings, savedAt for
+// watchlist snapshots, etc.).
+export function ageBucketFromDate(dateStr) {
+  const d = daysAgo(dateStr);
+  if (d <= 1) return "Today";
+  if (d <= 3) return "Last 3 days";
+  if (d <= 7) return "This week";
+  return "Older";
+}
+
 export function imgSrc(url) {
   if (!url) return url;
   try {

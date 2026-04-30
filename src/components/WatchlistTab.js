@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Card } from "./Card";
-import { extractRef } from "../utils";
+import { extractRef, ageBucketFromDate } from "../utils";
 import { importLocalData } from "../supabase";
 
 
@@ -62,6 +62,12 @@ export function WatchlistTab(props) {
     return watchLive;
   }, [statusMode, watchItems, watchLive, watchSold]);
 
+  // Watchlist date-grouping uses savedAt (when the user hearted the
+  // item) rather than the dealer's firstSeen, since "Today / Last 3
+  // days / etc." is more meaningful per-user-action on this surface.
+  // Group acts first, sort applies within (watchView arrives already
+  // sorted by the global sort state).
+  const dateBucketOrder = { "Today": 0, "Last 3 days": 1, "This week": 2, "Older": 3 };
   const watchGroups = useMemo(() => {
     if (watchGroupBy === "none") return [["", watchView]];
     const map = new Map();
@@ -69,6 +75,7 @@ export function WatchlistTab(props) {
       let key;
       if (watchGroupBy === "brand")       key = item.brand || "Other";
       else if (watchGroupBy === "source") key = item.source || "Other";
+      else if (watchGroupBy === "date")   key = ageBucketFromDate((item.savedAt || "").slice(0, 10));
       else /* ref */                      key = extractRef(item.ref) || "Other";
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(item);
@@ -76,6 +83,8 @@ export function WatchlistTab(props) {
     const entries = [...map.entries()];
     if (watchGroupBy === "ref") {
       entries.sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+    } else if (watchGroupBy === "date") {
+      entries.sort((a, b) => (dateBucketOrder[a[0]] ?? 9) - (dateBucketOrder[b[0]] ?? 9));
     } else {
       entries.sort((a, b) => a[0].localeCompare(b[0]));
     }
@@ -458,7 +467,6 @@ export function WatchlistTab(props) {
           )}
           </>)}
 
-              Watchlist tab so all per-user content lives in one place. */}
           {watchTopTab === "searches" && searchesTabJSX}
         </>
       )}
