@@ -262,13 +262,9 @@ export function WatchlistTab(props) {
     "Save searches and run them with one tap. Your list syncs across every device you use."
   ) : (
     <div style={{ paddingTop: 4 }}>
-      <div style={primaryActionRowStyle}>
-        <div style={subtabHeaderTextStyle}>Saved searches</div>
-        {!searchEditor && (
-          <button onClick={startAddSearch} style={primaryActionButtonStyle}>+ Add search</button>
-        )}
-      </div>
-
+      {/* (Subtitle "Saved searches" + inline + Add search button
+          removed 2026-04-30 — Add search moved into the sub-tab
+          strip; the tab pill itself carries the section identity.) */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {searchEditor && searchEditor.id === "new" && renderSearchEditor()}
 
@@ -331,13 +327,16 @@ export function WatchlistTab(props) {
       ) : (
         <>
           {/* Sub-tabs: Listings + Searches + Auction Calendar.
-              Pill-style with rounded background — visibly separate
-              tabs per Mark's 2026-04-30 ask. The previous underline
-              treatment looked too similar to a heading row; pills
-              read as actual tabs at a glance. Sticky so the bar
-              stays reachable as the user scrolls. */}
+              Pill-style, visibly separate. Contextual primary action
+              ("+ Track new item" / "+ Add search") sits inline on
+              the right of the same row — saves a vertical strip and
+              the button label tracks the active sub-tab so users
+              don't context-switch between the tab bar and a
+              header below it. Calendar sub-tab has no inline action
+              (no add affordance there). */}
           <div style={{
             display: "flex", gap: 6, marginBottom: 14,
+            alignItems: "center", flexWrap: "wrap",
             position: "sticky",
             top: isMobile ? 92 : 0,
             background: "var(--bg)",
@@ -350,11 +349,6 @@ export function WatchlistTab(props) {
               ["calendar", `Auction Calendar${(auctions || []).length > 0 ? ` · ${auctions.length}` : ""}`],
             ].map(([key, label]) => {
               const active = watchTopTab === key;
-              // Canonical pill style — same shape as the desktop main
-              // tab strip (border-radius 20, surface fallback bg,
-              // active = inverted dark). Sub-tabs and main tabs reading
-              // identically lets users learn the pill = "tab" pattern
-              // once and apply it everywhere.
               return (
                 <button key={key} onClick={() => setWatchTopTab(key)} style={{
                   padding: "6px 14px", borderRadius: 20,
@@ -366,20 +360,28 @@ export function WatchlistTab(props) {
                 }}>{label}</button>
               );
             })}
+            {/* Inline contextual action — label + handler change with
+                the active sub-tab. Hidden on Calendar (no action) and
+                hidden on Searches when an editor row is already open
+                (avoid two parallel "add" affordances). */}
+            {watchTopTab === "listings" && (
+              <button onClick={() => { setTrackOpen(true); setTrackError(""); }}
+                style={{ ...primaryActionButtonStyle, marginLeft: "auto" }}>
+                + Track new item
+              </button>
+            )}
+            {watchTopTab === "searches" && !searchEditor && user && (
+              <button onClick={startAddSearch}
+                style={{ ...primaryActionButtonStyle, marginLeft: "auto" }}>
+                + Add search
+              </button>
+            )}
           </div>
 
           {watchTopTab === "listings" && (<>
-          <div style={primaryActionRowStyle}>
-            <div style={subtabHeaderTextStyle}>Watchlist</div>
-            {/* Track New Item — opens modal that accepts auction-house
-                lot URLs, eBay item URLs, etc. Styling matches the
-                "+ Add search" button on the Searches sub-tab so primary
-                actions read consistently across sub-tabs. */}
-            <button onClick={() => { setTrackOpen(true); setTrackError(""); }}
-              style={primaryActionButtonStyle}>
-              + Track new item
-            </button>
-          </div>
+          {/* (Subtitle "Watchlist" + inline Track button removed
+              2026-04-30 — Track moved into the sub-tab strip; the
+              tab pill itself carries the section identity.) */}
           {watchCount === 0 ? (
             <div style={{ padding: "48px 20px", textAlign: "center" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>
