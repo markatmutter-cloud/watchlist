@@ -74,7 +74,7 @@ function PreviewOverlay({ refW, refH, cmpW, cmpH, gMaxW, gMaxH, refColor, cmpCol
   );
 }
 
-function PrintSheet({ refW, refH, cmpW, cmpH, refName, cmpName }) {
+function PrintSheet({ refW, refH, cmpW, cmpH, refName, cmpName, refImage, cmpImage }) {
   // Print stage sizing: 7.5in × 5.6in to fit comfortably within the
   // letter-page printable area after default margins. Both watches
   // are rendered at 1:1 scale via mmToPx so a 50mm reference watch
@@ -122,7 +122,7 @@ function PrintSheet({ refW, refH, cmpW, cmpH, refName, cmpName }) {
       color: "#000", background: "#fff",
       fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
     }}>
-      <div style={{ textAlign: "center", marginBottom: "0.2in" }}>
+      <div style={{ textAlign: "center", marginBottom: "0.15in" }}>
         <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 4 }}>
           Watch size comparison
         </div>
@@ -130,6 +130,42 @@ function PrintSheet({ refW, refH, cmpW, cmpH, refName, cmpName }) {
           {refName} ({refW.toFixed(1)} × {refH.toFixed(1)} mm) vs {cmpName} ({cmpW.toFixed(1)} × {cmpH.toFixed(1)} mm)
         </div>
       </div>
+      {(refImage || cmpImage) && (
+        // Reference photos at the top of the print sheet so a stack of
+        // printouts is identifiable at a glance — particularly useful
+        // when the comparison watch's case shape differs significantly
+        // from the rectangle the SVG draws.
+        <div style={{
+          display: "flex", justifyContent: "center", gap: "0.4in",
+          marginBottom: "0.15in",
+        }}>
+          {[
+            [refImage, refName, "(owned)"],
+            [cmpImage, cmpName, ""],
+          ].map(([src, name, suffix], i) => (
+            <div key={i} style={{ textAlign: "center", minWidth: "1.4in" }}>
+              {src ? (
+                <img src={src} alt={name}
+                  style={{
+                    maxWidth: "1.6in", maxHeight: "1.2in",
+                    objectFit: "contain", display: "block", margin: "0 auto",
+                    border: "0.5px solid #ccc",
+                  }} />
+              ) : (
+                <div style={{
+                  width: "1.6in", height: "1.2in", margin: "0 auto",
+                  border: "0.5px dashed #ccc",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 9, color: "#999",
+                }}>(no photo)</div>
+              )}
+              <div style={{ fontSize: 10, marginTop: 4, color: "#000", fontWeight: 500 }}>
+                {name} <span style={{ color: "#666", fontWeight: 400 }}>{suffix}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       <div style={{ display: "flex", justifyContent: "center", margin: "0.1in 0" }}>
         <svg width={stagePxW} height={stagePxH} viewBox={`0 0 ${stagePxW} ${stagePxH}`}>
           <line x1={panelPxW} y1={40} x2={panelPxW} y2={stagePxH - 32}
@@ -219,7 +255,23 @@ export function SizeCompare({ onBack }) {
   const [cmpName, setCmpName] = useState("Tank Cintrée");
   const [cmpW, setCmpW]       = useState("20.5");
   const [cmpH, setCmpH]       = useState("42.5");
+  // Photo data URLs. Session-only — never persisted to Supabase or
+  // localStorage; cleared on tab close or component unmount. Useful
+  // mainly so a stack of printouts is identifiable at a glance.
+  const [refImage, setRefImage] = useState(null);
+  const [cmpImage, setCmpImage] = useState(null);
   const [printActive, setPrintActive] = useState(false);
+
+  const handleImageUpload = (setter) => (e) => {
+    const file = e.target.files && e.target.files[0];
+    // Reset the input so the same filename can be re-uploaded after
+    // a clear (the change event won't fire otherwise).
+    e.target.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setter(reader.result);
+    reader.readAsDataURL(file);
+  };
 
   const refWN = parseFloat(refW) || 0;
   const refHN = parseFloat(refH) || 0;
@@ -271,6 +323,45 @@ export function SizeCompare({ onBack }) {
     borderRadius: 8, padding: "14px 16px",
   };
 
+  // Photo upload row component. Renders either the upload pill (when
+  // no image is loaded) or a small thumbnail with a clear button.
+  const PhotoSlot = ({ image, onUpload, onClear, watchLabel }) => (
+    <div style={{ marginTop: 10 }}>
+      {image ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <img src={image} alt={`${watchLabel} photo`}
+            style={{
+              width: 56, height: 56, objectFit: "cover",
+              borderRadius: 6, border: "0.5px solid var(--border)",
+            }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <span style={{ fontSize: 11, color: "var(--text2)" }}>
+              Photo loaded · session only
+            </span>
+            <button onClick={onClear} style={{
+              background: "transparent", border: "none",
+              color: "var(--text3)", fontSize: 12, fontFamily: "inherit",
+              cursor: "pointer", padding: 0, textAlign: "left",
+            }}>Remove</button>
+          </div>
+        </div>
+      ) : (
+        <label style={{
+          display: "inline-block",
+          padding: "6px 12px", borderRadius: 18,
+          border: "0.5px solid var(--border)",
+          background: "var(--card-bg)", color: "var(--text1)",
+          fontSize: 12, fontFamily: "inherit", cursor: "pointer",
+        }}>
+          + Add photo
+          <input type="file" accept="image/*,.tif,.tiff"
+            onChange={onUpload}
+            style={{ display: "none" }} />
+        </label>
+      )}
+    </div>
+  );
+
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 4px" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 4 }}>
@@ -313,6 +404,9 @@ export function SizeCompare({ onBack }) {
                 style={{ ...inp, width: 80 }} />
               <span style={{ fontSize: 13, color: "var(--text2)" }}>mm</span>
             </div>
+            <PhotoSlot image={refImage} watchLabel={refName || "Owned"}
+              onUpload={handleImageUpload(setRefImage)}
+              onClear={() => setRefImage(null)} />
           </div>
           <div>
             <p style={labelStyle}>Comparison watch</p>
@@ -333,6 +427,9 @@ export function SizeCompare({ onBack }) {
                 style={{ ...inp, width: 80 }} />
               <span style={{ fontSize: 13, color: "var(--text2)" }}>mm</span>
             </div>
+            <PhotoSlot image={cmpImage} watchLabel={cmpName || "Comparison"}
+              onUpload={handleImageUpload(setCmpImage)}
+              onClear={() => setCmpImage(null)} />
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
@@ -414,7 +511,8 @@ export function SizeCompare({ onBack }) {
 
       {printActive && createPortal(
         <PrintSheet refW={refWN} refH={refHN} cmpW={cmpWN} cmpH={cmpHN}
-          refName={refName || "Owned"} cmpName={cmpName || "Comparison"} />,
+          refName={refName || "Owned"} cmpName={cmpName || "Comparison"}
+          refImage={refImage} cmpImage={cmpImage} />,
         document.body
       )}
     </div>
