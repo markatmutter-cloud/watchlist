@@ -125,15 +125,15 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
               2026-04-30 so it sits with the other state badges
               instead of crowding the heart/hide buttons on the right. */}
           {item.sold ? (
-            <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>
+            <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 10, padding: "2px 7px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>
           ) : isHidden ? (
-            <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>
+            <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 10, padding: "2px 7px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>
           ) : countdownLabel ? (
             <div style={{
               position: "absolute", top: 6, left: 6,
               background: countdownIsPast ? "rgba(0,0,0,0.55)" : "rgba(24,95,165,0.92)",
-              color: "#fff", fontSize: 8,
-              padding: "2px 6px", borderRadius: 8,
+              color: "#fff", fontSize: 10,
+              padding: "2px 7px", borderRadius: 8,
               letterSpacing: "0.04em", fontWeight: 600,
               textTransform: "uppercase",
             }}>{countdownLabel}</div>
@@ -144,7 +144,7 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
             <div style={{
               position: "absolute", top: 6, left: 6,
               background: "rgba(24,95,165,0.92)", color: "#fff",
-              fontSize: 8, padding: "2px 6px", borderRadius: 8,
+              fontSize: 10, padding: "2px 7px", borderRadius: 8,
               letterSpacing: "0.06em", fontWeight: 600,
             }}>AUCTION</div>
           ) : null}
@@ -157,7 +157,7 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
           <div style={{ fontSize: compact ? 10 : 12, fontWeight: 500, lineHeight: 1.3, marginBottom: 4, color: "var(--text1)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: compact ? 26 : 32 }}>{item.ref || " "}</div>
           {isLot ? (
             <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <span style={{ fontSize: 8, color: "var(--text3)", letterSpacing: "0.05em", fontWeight: 600 }}>
+              <span style={{ fontSize: 10, color: "var(--text3)", letterSpacing: "0.05em", fontWeight: 600 }}>
                 {lotLabel}
               </span>
               <span style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: item.sold ? "#1b8f3a" : "var(--text1)" }}>

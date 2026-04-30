@@ -125,7 +125,7 @@ export function AuctionCalendar({ auctions = [] }) {
         <div key={group.key} style={{ marginBottom: 28 }}>
           <div style={{
             display: "flex", alignItems: "baseline", gap: 12,
-            padding: idx === 0 ? "14px 14px 12px" : "24px 14px 12px",
+            padding: idx === 0 ? "14px 14px 12px" : "28px 14px 12px",
             borderBottom: "0.5px solid var(--border)",
             marginBottom: 4,
           }}>
@@ -160,13 +160,13 @@ export function AuctionCalendar({ auctions = [] }) {
                         {a.house}
                       </span>
                       {isLive && (
-                        <span style={{ fontSize: 9, fontWeight: 600, color: "#fff", background: "#c43", borderRadius: 3, padding: "1px 6px", letterSpacing: "0.06em" }}>LIVE</span>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#c43", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>LIVE</span>
                       )}
                       {isClosed && (
-                        <span style={{ fontSize: 9, fontWeight: 600, color: "#fff", background: "#666", borderRadius: 3, padding: "1px 6px", letterSpacing: "0.06em" }}>CLOSED</span>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#666", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>CLOSED</span>
                       )}
                       {catalogJustOpened && (
-                        <span style={{ fontSize: 9, fontWeight: 600, color: "#fff", background: "#185FA5", borderRadius: 3, padding: "1px 6px", letterSpacing: "0.06em" }}>NEW CATALOG</span>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#185FA5", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>NEW CATALOG</span>
                       )}
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)",

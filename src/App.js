@@ -1123,7 +1123,7 @@ export default function Watchlist() {
   // so a reference before declaration would crash mobile (which renders
   // first). That's exactly the regression that hit 2026-04-27.
   const statusSegmentJSX = (
-    <div style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 18, overflow: "hidden" }}>
+    <div style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 20, overflow: "hidden" }}>
       {[
         ["live", `Live · ${liveCountForPill}`],
         ["sold", `Sold · ${soldCountForPill}`],
@@ -1628,7 +1628,7 @@ export default function Watchlist() {
   // One popover open at a time, click-outside to close. Style matches
   // the mobile sticky sort row so the experience is consistent.
   const pillBase = (active) => ({
-    fontSize: 13, padding: "6px 12px", borderRadius: 18, cursor: "pointer",
+    fontSize: 13, padding: "6px 12px", borderRadius: 20, cursor: "pointer",
     fontFamily: "inherit", whiteSpace: "nowrap", border: "none", outline: "none",
     background: active ? "var(--text1)" : "transparent",
     color: active ? "var(--bg)" : "var(--text2)",
@@ -1859,7 +1859,7 @@ export default function Watchlist() {
       {hasFilters && (
         <button onClick={resetFilters} style={{
           marginLeft: "auto",
-          fontSize: 13, padding: "6px 12px", borderRadius: 18, cursor: "pointer",
+          fontSize: 13, padding: "6px 12px", borderRadius: 20, cursor: "pointer",
           fontFamily: "inherit", whiteSpace: "nowrap",
           border: "none", outline: "none",
           background: "transparent", color: "#185FA5",
@@ -2058,7 +2058,7 @@ export default function Watchlist() {
               // + pill-sized child so the watchlist sub-tabs don't jump
               // when switching to Searches.
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-                <span style={{ fontSize: 13, padding: "6px 12px", borderRadius: 18, visibility: "hidden" }}>placeholder</span>
+                <span style={{ fontSize: 13, padding: "6px 12px", borderRadius: 20, visibility: "hidden" }}>placeholder</span>
               </div>
             )
             : null)}
