@@ -139,6 +139,10 @@ export default function Watchlist() {
   const [tab, setTab] = useState("listings");
   const [filterSources, setFilterSources] = useState([]);
   const [filterBrands, setFilterBrands] = useState([]);
+  // Auctions-only toggle. Filters to items where _isAuctionFormat is
+  // true (auction-house lots + eBay AUCTION). Orthogonal to the
+  // Live/Sold/All status segment per Mark's spec.
+  const [filterAuctionsOnly, setFilterAuctionsOnly] = useState(false);
   const [sort, setSort] = useState("date");
   const [search, setSearch] = useState("");
   const [minPriceText, setMinPriceText] = useState("");
@@ -463,6 +467,7 @@ export default function Watchlist() {
     if (newDays > 0) its = its.filter(i => daysAgo(freshDate(i)) <= newDays && !i.backfilled);
     if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
     if (filterBrands.length > 0) its = its.filter(i => filterBrands.includes(displayBrand(i)));
+    if (filterAuctionsOnly) its = its.filter(i => i._isAuctionFormat);
     if (search.trim()) {
       const q = search.toLowerCase();
       its = its.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q));
@@ -491,7 +496,7 @@ export default function Watchlist() {
       });
     }
     return its;
-  }, [items, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, statusMode]);
+  }, [items, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, statusMode, filterAuctionsOnly]);
 
   const visible = useMemo(() => allFiltered.slice(0, page * PAGE_SIZE), [allFiltered, page]);
   const hasMore = visible.length < allFiltered.length;
@@ -620,6 +625,7 @@ export default function Watchlist() {
     // predicates work here.
     if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
     if (filterBrands.length > 0)  its = its.filter(i => filterBrands.includes(displayBrand(i)));
+    if (filterAuctionsOnly)       its = its.filter(i => i._isAuctionFormat);
     if (filterRefs.length > 0) {
       its = its.filter(i => {
         const ref = (i.ref || "").toLowerCase();
@@ -639,7 +645,7 @@ export default function Watchlist() {
     else its.sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
     return its;
   }, [watchlist, liveStateById, sort, filterSources, filterBrands, filterRefs, search,
-      trackedLotUrls, trackedLotsState, trackedLotAddedAt]);
+      filterAuctionsOnly, trackedLotUrls, trackedLotsState, trackedLotAddedAt]);
 
   const watchLive = useMemo(() => watchItems.filter(i => !i._isSold), [watchItems]);
   const watchSold = useMemo(() => watchItems.filter(i =>  i._isSold), [watchItems]);
@@ -1740,6 +1746,18 @@ export default function Watchlist() {
         )}
       </div>
 
+      {/* Auctions-only toggle pill — orthogonal to the Live/Sold/All
+          status segment. When on, filters down to auction-format
+          tracked lots (auction houses + eBay AUCTION); leaves dealer
+          listings + BIN tracked items hidden. Most useful on the
+          Watchlist tab where both kinds coexist. Lives at the end of
+          the filter row so the layout doesn't shift on toggle. */}
+      <div style={{ position: "relative" }}>
+        <button onClick={() => setFilterAuctionsOnly(v => !v)} style={pillBase(filterAuctionsOnly)}>
+          {filterAuctionsOnly ? "✓ Auctions" : "Auctions"}
+        </button>
+      </div>
+
       {/* Reference filter dropped from the top filter row — auto-extracted
           ref numbers were noisy, especially for sources whose titles use
           model names instead of ref digits (Hairspring, etc.). The
@@ -1784,11 +1802,11 @@ export default function Watchlist() {
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
           {[["listings", "Listings"], ["watchlist", "Watchlist"], ["references", "Reference"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
-              padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer",
+              padding: "6px 14px", borderRadius: 20, border: "0.5px solid var(--border)", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,
               background: tab === key ? "var(--text1)" : "var(--surface)",
               color: tab === key ? "var(--bg)" : "var(--text2)",
-              fontWeight: tab === key ? 500 : 400,
+              fontWeight: tab === key ? 600 : 500,
               display: "flex", alignItems: "center", gap: 6,
             }}>
               <TabIcon kind={key} />

@@ -350,12 +350,17 @@ export function WatchlistTab(props) {
               ["calendar", `Auction Calendar${(auctions || []).length > 0 ? ` · ${auctions.length}` : ""}`],
             ].map(([key, label]) => {
               const active = watchTopTab === key;
+              // Canonical pill style — same shape as the desktop main
+              // tab strip (border-radius 20, surface fallback bg,
+              // active = inverted dark). Sub-tabs and main tabs reading
+              // identically lets users learn the pill = "tab" pattern
+              // once and apply it everywhere.
               return (
                 <button key={key} onClick={() => setWatchTopTab(key)} style={{
-                  padding: "7px 14px", borderRadius: 999,
+                  padding: "6px 14px", borderRadius: 20,
                   border: "0.5px solid var(--border)",
                   cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-                  background: active ? "var(--text1)" : "var(--card-bg)",
+                  background: active ? "var(--text1)" : "var(--surface)",
                   color:      active ? "var(--bg)"    : "var(--text2)",
                   fontWeight: active ? 600 : 500,
                 }}>{label}</button>
@@ -435,16 +440,26 @@ export function WatchlistTab(props) {
 
                 return (
                   <>
-                    {watchGroups.map(([groupKey, groupItems]) => (
+                    {watchGroups.map(([groupKey, groupItems], idx) => (
                       <div key={groupKey || "_flat"} style={{ marginBottom: groupKey ? 18 : 0 }}>
                         {groupKey && (
+                          // Group section header — same shape as the
+                          // Listings tab's divider (fontSize 14 title +
+                          // fontSize 12 count, borderBottom, baseline-
+                          // aligned). Keeps the visual rhythm consistent
+                          // across all grouped surfaces.
                           <div style={{
-                            fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
-                            textTransform: "uppercase", color: "var(--text2)",
-                            padding: "10px 0 6px",
-                            borderTop: "0.5px solid var(--border)", marginTop: 4,
+                            display: "flex", alignItems: "baseline", gap: 12,
+                            padding: idx === 0 ? "4px 4px 12px" : "24px 4px 12px",
+                            borderBottom: "0.5px solid var(--border)",
+                            marginBottom: 4,
                           }}>
-                            {groupKey} <span style={{ color: "var(--text3)", fontWeight: 400 }}>· {groupItems.length}</span>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
+                              {groupKey}
+                            </span>
+                            <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
+                              {groupItems.length.toLocaleString()}
+                            </span>
                           </div>
                         )}
                         <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>

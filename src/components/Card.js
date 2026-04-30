@@ -1,5 +1,5 @@
 import React, { useState, memo } from "react";
-import { fmt, fmtUSD, imgSrc, fmtCountdown, fmtLotPrice } from "../utils";
+import { fmt, fmtUSD, imgSrc, fmtCountdown, fmtLotPrice, fmtSoldDate } from "../utils";
 import { HeartIcon } from "./icons";
 
 // Wrapped in React.memo so an unrelated state change in App (heart toggle
@@ -175,16 +175,28 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
               )}
             </div>
           )}
-          {/* Secondary line carries the native price for non-USD items
-              (since primary is now the USD-converted figure), or the
-              auction estimate range, or an invisible spacer to keep
-              row heights uniform. */}
+          {/* Secondary line carries (in priority order):
+                1. Sold date — when the item is sold, surface when the
+                   price was recorded. Mark wanted this front-and-center
+                   for archive browsing.
+                2. Native price for non-USD items (since primary is now
+                   the USD-converted figure).
+                3. Auction estimate range (active auction-format lots).
+                4. Invisible spacer to keep row heights uniform. */}
           <div style={{ fontSize: 9, color: "var(--text3)", minHeight: 12 }}>
-            {isLot
-              ? (lotShowNative
-                  ? fmtLotPrice(lotNativeValue, item.currency)
-                  : (estimateLine || " "))
-              : (showNative ? fmt(item.price, item.currency) : " ")}
+            {(() => {
+              if (item.sold) {
+                const soldDateStr = item.soldAt || item.lastSeen
+                  || (isLot ? item.auction_end : null);
+                const label = fmtSoldDate(soldDateStr);
+                if (label) return label;
+              }
+              if (isLot) {
+                if (lotShowNative) return fmtLotPrice(lotNativeValue, item.currency);
+                return estimateLine || " ";
+              }
+              return showNative ? fmt(item.price, item.currency) : " ";
+            })()}
           </div>
         </div>
       </a>

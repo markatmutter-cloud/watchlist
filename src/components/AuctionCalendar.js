@@ -121,18 +121,19 @@ export function AuctionCalendar({ auctions = [] }) {
           : `${auctions.length} upcoming`}
       </div>
 
-      {auctionGroups.map(group => (
+      {auctionGroups.map((group, idx) => (
         <div key={group.key} style={{ marginBottom: 28 }}>
           <div style={{
             display: "flex", alignItems: "baseline", gap: 12,
-            padding: "0 4px 10px", marginBottom: 10,
+            padding: idx === 0 ? "4px 4px 12px" : "24px 4px 12px",
             borderBottom: "0.5px solid var(--border)",
+            marginBottom: 4,
           }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
               {fmtMonthBand(group.key)}
             </span>
-            <span style={{ fontSize: 11, color: "var(--text3)", marginLeft: "auto" }}>
-              {group.items.length}
+            <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
+              {group.items.length.toLocaleString()}
             </span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

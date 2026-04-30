@@ -97,6 +97,20 @@ export function detectBrandFromTitle(title) {
   return "Other";
 }
 
+// Friendly "Sold today" / "Sold 5 days ago" / "Sold 2026-03-12" label
+// for the secondary line on sold cards. Recent → relative; older →
+// absolute date so the value reads clearly without arithmetic.
+export function fmtSoldDate(dateStr) {
+  if (!dateStr) return null;
+  const date = String(dateStr).slice(0, 10);
+  const days = daysAgo(date);
+  if (days < 0 || days === 9999) return null;
+  if (days === 0) return "Sold today";
+  if (days === 1) return "Sold yesterday";
+  if (days < 30) return `Sold ${days} days ago`;
+  return `Sold ${date}`;
+}
+
 // Friendly "X days left" / "ended Y hours ago" countdown for auction
 // cards. Mirrors AuctionsTab's render style so the chip looks the
 // same wherever auction-format items appear (Watchlist, Calendar,
