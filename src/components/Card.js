@@ -20,8 +20,17 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
   // the image surface lets the image itself read.)
   // priceOnRequest items have price=0 — show "Price on request" instead
   // of "$0". Set by the WV scraper for INQUIRE / ON HOLD-no-price pages.
-  const displayPrice = item.priceOnRequest ? "Price on request" : fmt(item.price, item.currency || "USD");
-  const showUSD = item.currency && item.currency !== "USD" && item.priceUSD && !item.priceOnRequest;
+  // Currency display rule (2026-04-30): USD-priced listings show their
+  // native price as primary; non-USD listings show USD-converted as
+  // primary ("~$11,300") with the native price on the secondary line
+  // ("£8,900"). Mark prefers USD as the consistent comparison anchor.
+  const isUSD = !item.currency || item.currency.toUpperCase() === "USD";
+  const displayPrice = item.priceOnRequest
+    ? "Price on request"
+    : isUSD
+      ? fmt(item.price, "USD")
+      : `~${fmtUSD(item.priceUSD || item.price)}`;
+  const showNative = !isUSD && !item.priceOnRequest && item.price;
   // Show CUMULATIVE drop from peak (priceDropTotal) — so two
   // consecutive $400 cuts read as "↓ $800" rather than just the
   // latest step. Falls back to the last-step `priceChange` for items
@@ -43,15 +52,23 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
   const lotLabel = !isLot ? null
     : isBinLot ? (item.sold ? "SOLD" : "BUY NOW")
     : (item.sold ? "HAMMER" : "CURRENT");
-  const lotNativePrice = !isLot ? null
+  const lotNativeValue = !isLot ? null
     : item.sold
-        ? fmtLotPrice(item.sold_price ?? item.price, item.currency)
-        : fmtLotPrice(item.current_bid ?? item.starting_price ?? item.price, item.currency);
-  const lotUsdPrice = !isLot ? null
-    : item.sold ? item.sold_price_usd
-    : item.current_bid_usd;
-  const showLotUsd = isLot && lotUsdPrice
-    && item.currency && item.currency.toUpperCase() !== "USD";
+        ? (item.sold_price ?? item.price)
+        : (item.current_bid ?? item.starting_price ?? item.price);
+  const lotUsdValue = !isLot ? null
+    : item.sold ? (item.sold_price_usd ?? lotNativeValue)
+    : (item.current_bid_usd ?? lotNativeValue);
+  // Same currency rule as dealer cards: USD-native lots show native
+  // primary; non-USD lots show "~$X,XXX" primary + native secondary.
+  const lotIsUSD = !item.currency || item.currency.toUpperCase() === "USD";
+  const lotPrimaryDisplay = !isLot ? null
+    : lotIsUSD
+      ? fmtLotPrice(lotNativeValue, "USD") || "—"
+      : (lotUsdValue
+          ? `~$${Math.round(lotUsdValue).toLocaleString()}`
+          : fmtLotPrice(lotNativeValue, item.currency) || "—");
+  const lotShowNative = isLot && !lotIsUSD && lotNativeValue;
   // Estimate line — only shows on active auction-format lots when
   // both bounds are known. Drops once hammered (the HAMMER price
   // tells the story by then).
@@ -92,37 +109,36 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
               </span>
             </div>
           )}
-          {item.sold && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>}
-          {!item.sold && isHidden && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>}
-          {/* Countdown chip on auction-format tracked lots. Reads
-              "3 DAYS LEFT" / "6 HOURS LEFT" / "ENDED N DAYS AGO".
-              Replaces the prior generic AUCTION chip — Mark wanted
-              the time remaining surfaced directly. Right side so it
-              doesn't collide with SOLD/HIDDEN on the left. Hidden
-              once the auction has fully ended and a SOLD chip is
-              showing (the SOLD chip carries the state from there). */}
-          {countdownLabel && !item.sold && (
+          {/* Top-left chip stack — only one of these renders at a
+              time. SOLD wins (terminal state), then HIDDEN, then the
+              auction countdown / fallback AUCTION pill. Mark moved
+              the countdown from the right corner to the left
+              2026-04-30 so it sits with the other state badges
+              instead of crowding the heart/hide buttons on the right. */}
+          {item.sold ? (
+            <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>
+          ) : isHidden ? (
+            <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>
+          ) : countdownLabel ? (
             <div style={{
-              position: "absolute", top: 6, right: 38,
+              position: "absolute", top: 6, left: 6,
               background: countdownIsPast ? "rgba(0,0,0,0.55)" : "rgba(24,95,165,0.92)",
               color: "#fff", fontSize: 8,
               padding: "2px 6px", borderRadius: 8,
               letterSpacing: "0.04em", fontWeight: 600,
               textTransform: "uppercase",
             }}>{countdownLabel}</div>
-          )}
-          {/* Auction-format lot without a known auction_end (e.g. a
-              Phillips lot before the calendar lookup populated it):
-              still mark it as an auction so users can tell at a glance.
-              Plain pill, no countdown. */}
-          {isAuctionLot && !countdownLabel && !item.sold && (
+          ) : isAuctionLot ? (
+            // Auction-format lot without a known auction_end (e.g. a
+            // Phillips lot before the calendar lookup populated it):
+            // still mark it as an auction so users can tell at a glance.
             <div style={{
-              position: "absolute", top: 6, right: 38,
+              position: "absolute", top: 6, left: 6,
               background: "rgba(24,95,165,0.92)", color: "#fff",
               fontSize: 8, padding: "2px 6px", borderRadius: 8,
               letterSpacing: "0.06em", fontWeight: 600,
             }}>AUCTION</div>
-          )}
+          ) : null}
         </div>
         <div style={{ padding: compact ? "5px 7px 8px" : "7px 9px 10px" }}>
           <div style={{ fontSize: compact ? 8 : 9, color: "var(--text3)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.source}</div>
@@ -136,7 +152,7 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
                 {lotLabel}
               </span>
               <span style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: item.sold ? "#1b8f3a" : "var(--text1)" }}>
-                {lotNativePrice || "—"}
+                {lotPrimaryDisplay}
               </span>
             </div>
           ) : (
@@ -150,11 +166,16 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
               )}
             </div>
           )}
-          {/* Always render this line (even invisibly) so GBP cards stay the same height as USD cards — avoids the mixed-size grid on mobile. */}
+          {/* Secondary line carries the native price for non-USD items
+              (since primary is now the USD-converted figure), or the
+              auction estimate range, or an invisible spacer to keep
+              row heights uniform. */}
           <div style={{ fontSize: 9, color: "var(--text3)", minHeight: 12 }}>
             {isLot
-              ? (showLotUsd ? `~$${Math.round(lotUsdPrice).toLocaleString()}` : (estimateLine || " "))
-              : (showUSD ? `~${fmtUSD(item.priceUSD)}` : " ")}
+              ? (lotShowNative
+                  ? fmtLotPrice(lotNativeValue, item.currency)
+                  : (estimateLine || " "))
+              : (showNative ? fmt(item.price, item.currency) : " ")}
           </div>
         </div>
       </a>
