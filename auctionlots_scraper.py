@@ -965,6 +965,13 @@ def main():
         print(f"[{i}/{len(urls)}] {url[:80]}...", end=" ", flush=True)
         try:
             data = scrape(url)
+            # Preserve the Vercel Blob cached image URL across re-scrapes.
+            # cache_watchlist_images.mjs writes this field after we run;
+            # if we let our re-scrape overwrite it, every cron run would
+            # re-cache + re-upload. Carrying the field forward keeps the
+            # blob stable until the source image actually changes.
+            if url in prev and prev[url].get("cached_img_url") is not None:
+                data["cached_img_url"] = prev[url]["cached_img_url"]
             out[url] = data
             bid = data.get("sold_price") or data.get("current_bid") or "—"
             print(f"OK ({data.get('status')}, {data.get('currency')} {bid})")

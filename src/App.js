@@ -243,11 +243,13 @@ export default function Watchlist() {
     return any ? "available" : "none";  // available → done (after success) → none
   });
   const [brandsExpanded, setBrandsExpanded] = useState(false);
+  const [sourcesExpanded, setSourcesExpanded] = useState(false);
   const [refsExpanded, setRefsExpanded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
   const observerRef = useRef(null);
   const BRANDS_SHOW = 8;
+  const SOURCES_SHOW = 8;
 
   const onDragStart = useCallback((e) => {
     isDragging.current = true;
@@ -595,7 +597,13 @@ export default function Watchlist() {
         savedPriceUSD: priceUsd || price || 0,
         source: data.house || "—",
         url,
-        img: data.image || "",
+        // Prefer Blob-cached image when present (survives the dealer
+        // / auction-house deleting their original); fall back to the
+        // scraper's native image URL otherwise. Empty cached_img_url
+        // === "" means "processed by the cache module but no source
+        // image was available" — fall through to whatever data.image
+        // has (probably also empty).
+        img: data.cached_img_url || data.image || "",
         sold: isEnded,
         _isSold: isEnded,
         _isTrackedLot: true,
@@ -753,6 +761,7 @@ export default function Watchlist() {
   const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setFilterRefs([]); setSearch(""); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
 
   const visibleBrands = brandsExpanded ? BRANDS : BRANDS.slice(0, BRANDS_SHOW);
+  const visibleSources = sourcesExpanded ? SOURCES : SOURCES.slice(0, SOURCES_SHOW);
   const REFS_SHOW = 12;
   const visibleRefs = refsExpanded ? REFS : REFS.slice(0, REFS_SHOW);
   const NEW_OPTS = [{ label: "Today", days: 1 }, { label: "3 days", days: 3 }, { label: "This week", days: 7 }];
@@ -1356,20 +1365,10 @@ export default function Watchlist() {
               }}>{label}</button>
             );
           })()}
-          {/* Source pill */}
-          {(() => {
-            const active = filterSources.length > 0;
-            const label = active ? `Source · ${filterSources.length}` : "Source";
-            return (
-              <button onClick={() => setSourcePickerOpen(!sourcePickerOpen)} style={{
-                fontSize: 13, padding: "7px 14px", borderRadius: 20, cursor: "pointer",
-                fontFamily: "inherit", whiteSpace: "nowrap", border: "none", outline: "none",
-                background: active ? "var(--text1)" : "transparent",
-                color: active ? "var(--bg)" : "var(--text2)",
-                boxShadow: active ? "none" : "inset 0 0 0 0.5px var(--border)",
-              }}>{label} {sourcePickerOpen ? "↑" : "↓"}</button>
-            );
-          })()}
+          {/* Source pill removed from inline mobile row 2026-04-30 —
+              source filtering lives in the filter tray on mobile so
+              the sticky bar doesn't compete with date / price / status
+              for finger room. */}
           {/* Status segment lives inside the mobile filter drawer
               (see drawerOpen block) — too wide for the sticky sort row
               once it became three buttons. Desktop still renders it
@@ -1391,22 +1390,8 @@ export default function Watchlist() {
           )}
         </div>
         )}
-        {/* Source picker dropdown */}
-        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar")) && sourcePickerOpen && (
-          <div style={{ borderBottom: "0.5px solid var(--border)", padding: "8px 14px 10px", background: "var(--surface)" }}>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {SOURCES.map(s => (
-                <button key={s} onClick={() => toggleSource(s)} style={{
-                  fontSize: 13, padding: "6px 14px", borderRadius: 20, cursor: "pointer",
-                  fontFamily: "inherit", border: "none", outline: "none",
-                  background: filterSources.includes(s) ? "var(--text1)" : "var(--bg)",
-                  color: filterSources.includes(s) ? "var(--bg)" : "var(--text2)",
-                  boxShadow: filterSources.includes(s) ? "none" : "inset 0 0 0 0.5px var(--border)",
-                }}>{s}</button>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Source picker dropdown removed 2026-04-30 — source
+            filtering moved to the mobile filter tray drawer. */}
         </div>
         {/* Top padding 0 on Watchlist so the sub-tab strip sits flush
             against the sticky filter pills above (otherwise a ~12px gap
@@ -1459,7 +1444,8 @@ export default function Watchlist() {
                 <div style={{ padding: "10px 16px 10px" }}>
                   <div style={sectionHeadingStyle}>Source</div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {SOURCES.map(s => <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
+                    {visibleSources.map(s => <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
+                    {SOURCES.length > SOURCES_SHOW && <Chip label={sourcesExpanded ? "Less ↑" : `+${SOURCES.length - SOURCES_SHOW} more`} active={false} onClick={() => setSourcesExpanded(!sourcesExpanded)} blue />}
                   </div>
                 </div>
                 <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
@@ -1483,26 +1469,11 @@ export default function Watchlist() {
                 </div>
               </div>
 
-              {/* Fixed bottom actions */}
+              {/* Fixed bottom actions. Sort + Group moved to desktop-
+                  only on 2026-04-30 — mobile uses the inline sort
+                  pill in the sticky search row, and grouping is a
+                  desktop-rail decision. */}
               <div style={{ borderTop: "0.5px solid var(--border)", padding: "12px 16px", background: "var(--bg)" }}>
-                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ ...sectionHeadingStyle, marginBottom: 6 }}>Sort</div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {[["date", "Newest"], ["price-asc", "Price ↑"], ["price-desc", "Price ↓"]].map(([val, label]) => (
-                        <Chip key={val} label={label} active={sort === val} onClick={() => setSort(val)} />
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ ...sectionHeadingStyle, marginBottom: 6 }}>Group by</div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {[["none", "None"], ["brand", "Brand"], ["source", "Source"]].map(([val, label]) => (
-                        <Chip key={val} label={label} active={groupBy === val} onClick={() => setGroupBy(val)} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   {hasFilters && (
                     <button onClick={resetFilters} style={{ padding: "12px 16px", borderRadius: 12, border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)", fontSize: 14, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
@@ -1663,31 +1634,52 @@ export default function Watchlist() {
         )}
       </div>
 
-      {/* Price */}
-      <div style={{ position: "relative" }}>
-        <button onClick={() => setActiveFilterPop(p => p === "price" ? null : "price")} style={pillBase(!!minPriceText || !!maxPriceText)}>
-          Price{(minPriceText || maxPriceText) ? ` · ${minPriceText || "0"}–${maxPriceText || "∞"}` : ""} ▾
-        </button>
-        {activeFilterPop === "price" && popShell(
-          <div>
-            <div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>Price (USD)</div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input value={minPriceText} onChange={e => setMinPriceText(e.target.value)} placeholder="Min" inputMode="numeric"
-                style={{ ...inp, fontSize: 13, padding: "6px 8px", flex: 1 }} />
-              <span style={{ fontSize: 11, color: "var(--text3)" }}>–</span>
-              <input value={maxPriceText} onChange={e => setMaxPriceText(e.target.value)} placeholder="Max" inputMode="numeric"
-                style={{ ...inp, fontSize: 13, padding: "6px 8px", flex: 1 }} />
-            </div>
-            {(minPriceText || maxPriceText) && (
-              <button onClick={() => { setMinPriceText(""); setMaxPriceText(""); }} style={{
-                marginTop: 8, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
-                background: "transparent", color: "var(--text2)", cursor: "pointer",
-                fontFamily: "inherit", fontSize: 12, width: "100%",
-              }}>Clear price</button>
-            )}
-          </div>
+      {/* Price — inline mini/max inputs (was a popover; replaced
+          2026-04-30 per Mark's ask). Always visible in the filter
+          row so a price filter is one tap from any state, not two
+          (open popover → type). USD-only labels because the feed is
+          USD-normalized; native-currency filtering would need a
+          separate axis. */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 6,
+        background: "var(--surface)",
+        border: "0.5px solid var(--border)",
+        borderRadius: 20, padding: "0 6px 0 12px", height: 30,
+      }}>
+        <span style={{ fontSize: 11, color: "var(--text3)" }}>$</span>
+        <input value={minPriceText}
+          onChange={e => setMinPriceText(e.target.value)}
+          placeholder="Min" inputMode="numeric"
+          aria-label="Minimum price USD"
+          style={{
+            border: "none", background: "transparent",
+            color: "var(--text1)", outline: "none",
+            fontFamily: "inherit", fontSize: 13,
+            width: 56, padding: "4px 0",
+          }} />
+        <span style={{ fontSize: 11, color: "var(--text3)" }}>–</span>
+        <input value={maxPriceText}
+          onChange={e => setMaxPriceText(e.target.value)}
+          placeholder="Max" inputMode="numeric"
+          aria-label="Maximum price USD"
+          style={{
+            border: "none", background: "transparent",
+            color: "var(--text1)", outline: "none",
+            fontFamily: "inherit", fontSize: 13,
+            width: 60, padding: "4px 0",
+          }} />
+        {(minPriceText || maxPriceText) && (
+          <button onClick={() => { setMinPriceText(""); setMaxPriceText(""); }}
+            aria-label="Clear price filter"
+            style={{
+              border: "none", background: "transparent",
+              color: "var(--text3)", cursor: "pointer",
+              fontFamily: "inherit", fontSize: 14,
+              padding: "0 4px", lineHeight: 1,
+            }}>×</button>
         )}
       </div>
+
 
       {/* Source — dealer sources from the listings catalogue. The
           house-filter variant for tracked lots was retired when lot
