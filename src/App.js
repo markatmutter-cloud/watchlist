@@ -644,6 +644,13 @@ export default function Watchlist() {
       const q = search.toLowerCase();
       its = its.filter(i => (i.ref || "").toLowerCase().includes(q) || (i.brand || "").toLowerCase().includes(q));
     }
+    // Price filter — was missing on Watchlist (Mark surfaced
+    // 2026-04-30: divider counts didn't react to the price boxes).
+    // Watchlist items carry savedPriceUSD / savedPrice; project
+    // tracked-lots populate the same fields. Use whichever is set
+    // for comparison, falling back to plain price if neither.
+    if (minPrice > 0)  its = its.filter(i => (i.savedPriceUSD || i.savedPrice || i.priceUSD || i.price) >= minPrice);
+    if (maxPrice < GLOBAL_MAX) its = its.filter(i => (i.savedPriceUSD || i.savedPrice || i.priceUSD || i.price) <= maxPrice);
     // Drive the watchlist sort off the same `sort` state the sidebar uses,
     // so "Newest first" / "Price low to high" / "Price high to low" applies
     // here too. "Newest first" maps to most-recently-saved (savedAt desc).
@@ -653,7 +660,8 @@ export default function Watchlist() {
     else its.sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
     return its;
   }, [watchlist, liveStateById, sort, filterSources, filterBrands, filterRefs, search,
-      filterAuctionsOnly, trackedLotUrls, trackedLotsState, trackedLotAddedAt]);
+      filterAuctionsOnly, minPrice, maxPrice,
+      trackedLotUrls, trackedLotsState, trackedLotAddedAt]);
 
   const watchLive = useMemo(() => watchItems.filter(i => !i._isSold), [watchItems]);
   const watchSold = useMemo(() => watchItems.filter(i =>  i._isSold), [watchItems]);
@@ -961,10 +969,20 @@ export default function Watchlist() {
     return null;
   };
 
-  // Bucket-order for date so Today shows first, then Last 3 days,
-  // then This week, then Older. Used wherever we sort grouped output
-  // for the date dimension.
-  const dateBucketOrder = { "Today": 0, "Last 3 days": 1, "This week": 2, "Older": 3 };
+  // Date-bucket ordering. Labels are now weekday-based (Today /
+  // Yesterday / Wednesday / Tuesday / ... / Last week / Older), so
+  // the static rank table from the old fixed-bucket model doesn't
+  // work. Instead, sort grouped entries by the most-recent date
+  // present in each group's items — that orders chronologically
+  // regardless of label set.
+  const groupRecency = (items) => {
+    let max = 0;
+    for (const it of items) {
+      const t = new Date(effectiveAgeDate(it) || 0).getTime();
+      if (t > max) max = t;
+    }
+    return max;
+  };
 
   const visibleWithDividers = (() => {
     if (visible.length === 0) {

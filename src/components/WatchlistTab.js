@@ -97,15 +97,24 @@ export function WatchlistTab(props) {
   // Group acts first; sort applies within (watchView arrives already
   // sorted by the global sort state). When `groupBy === "none"` AND
   // sort is by date (newest/oldest), we additionally surface implicit
-  // age-bucket dividers (Today / Last 3 days / This week / Older)
-  // using savedAt — Mark wants the date-axis grouping to be a
+  // weekday-named dividers (Today / Yesterday / Wednesday / ...
+  // / Last week / Older) using savedAt. Date-axis grouping is a
   // *side-effect* of the date sort rather than its own chip.
-  const dateBucketOrder = { "Today": 0, "Last 3 days": 1, "This week": 2, "Older": 3 };
   const isDateSort = sort === "date" || sort === "date-asc";
+  // Sort grouped entries by the most-recent date in each group's
+  // items. Works regardless of label set — replaces the old static
+  // bucket-rank table now that labels are weekday-based.
+  const groupRecency = (items) => {
+    let max = 0;
+    for (const it of items) {
+      const t = new Date(it.savedAt || 0).getTime();
+      if (t > max) max = t;
+    }
+    return max;
+  };
   const watchGroups = useMemo(() => {
     if (watchGroupBy === "none") {
       if (isDateSort && statusMode !== "sold") {
-        // Implicit date dividers when sorted by date.
         const map = new Map();
         for (const item of watchView) {
           const key = ageBucketFromDate((item.savedAt || "").slice(0, 10));
@@ -113,7 +122,7 @@ export function WatchlistTab(props) {
           map.get(key).push(item);
         }
         const entries = [...map.entries()].sort(
-          (a, b) => (dateBucketOrder[a[0]] ?? 9) - (dateBucketOrder[b[0]] ?? 9)
+          (a, b) => groupRecency(b[1]) - groupRecency(a[1])
         );
         return entries;
       }
@@ -440,35 +449,45 @@ export function WatchlistTab(props) {
                   );
                 }
 
+                // Flatten all groups + dividers into a single CSS grid
+                // (matches the Listings tab structure: dividers live
+                // INSIDE the grid via `gridColumn: 1/-1`, sharing the
+                // exact same edge treatment as the cards below). Earlier
+                // version used a sibling div per group with its own
+                // grid — visually similar but the alignment + rounding
+                // diverged from Listings.
+                const flat = [];
+                watchGroups.forEach(([groupKey, groupItems], gi) => {
+                  if (groupKey) flat.push({
+                    kind: "divider", label: groupKey,
+                    total: groupItems.length, idx: gi,
+                  });
+                  for (const it of groupItems) flat.push({ kind: "card", item: it });
+                });
                 return (
                   <>
-                    {watchGroups.map(([groupKey, groupItems], idx) => (
-                      <div key={groupKey || "_flat"} style={{ marginBottom: groupKey ? 18 : 0 }}>
-                        {groupKey && (
-                          // Group section header — same shape as the
-                          // Listings tab's divider (fontSize 14 title +
-                          // fontSize 12 count, borderBottom, baseline-
-                          // aligned). Keeps the visual rhythm consistent
-                          // across all grouped surfaces.
-                          <div style={{
+                    <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+                      {flat.map((entry, idx) => (
+                        entry.kind === "divider" ? (
+                          <div key={`div-${idx}-${entry.label}`} style={{
+                            gridColumn: "1/-1",
+                            padding: entry.idx === 0 ? "4px 4px 12px" : "28px 4px 12px",
                             display: "flex", alignItems: "baseline", gap: 12,
-                            padding: idx === 0 ? "4px 4px 12px" : "24px 4px 12px",
                             borderBottom: "0.5px solid var(--border)",
                             marginBottom: 4,
                           }}>
                             <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
-                              {groupKey}
+                              {entry.label}
                             </span>
                             <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
-                              {groupItems.length.toLocaleString()}
+                              {entry.total.toLocaleString()}
                             </span>
                           </div>
-                        )}
-                        <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-                          {groupItems.map(renderItem)}
-                        </div>
-                      </div>
-                    ))}
+                        ) : (
+                          <div key={entry.item.id}>{renderItem(entry.item)}</div>
+                        )
+                      ))}
+                    </div>
                     <div style={{ padding: "14px 0 0", fontSize: 11, color: "var(--text3)", textAlign: "center" }}>
                       Prices shown are from the moment you saved each listing.
                     </div>

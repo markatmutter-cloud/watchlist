@@ -187,16 +187,34 @@ export function freshDate(item) {
   return item.firstSeen || item.date;
 }
 
-// Age-bucket label for date-grouped views. Same buckets used on the
-// Available feed and the Watchlist tab so the chip set + group key
-// labels read identically across surfaces. Caller decides which
-// date field to feed in (firstSeen for live listings, savedAt for
-// watchlist snapshots, etc.).
+// Age-bucket label for date-grouped views (Available + Watchlist).
+// Weekday-based for the last week so the labels feel natural in
+// daily browsing — Mark's mental model is "what came in on
+// Wednesday" rather than "what came in 2-3 days ago". Buckets:
+//   - Today                   (0 days ago)
+//   - Yesterday                (1)
+//   - <weekday name>           (2-6 days ago — Monday / Tuesday / ...)
+//   - Last week                (7-13)
+//   - Older                    (14+)
+// Caller decides which date field to feed in (firstSeen for live
+// listings, savedAt for watchlist snapshots, etc.).
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 export function ageBucketFromDate(dateStr) {
   const d = daysAgo(dateStr);
-  if (d <= 1) return "Today";
-  if (d <= 3) return "Last 3 days";
-  if (d <= 7) return "This week";
+  if (d < 0 || d === 9999) return "Older";
+  if (d === 0) return "Today";
+  if (d === 1) return "Yesterday";
+  if (d <= 6) {
+    // Look up the actual weekday for this item's date so the label
+    // is stable as today rolls forward.
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr);
+    if (m) {
+      const dt = new Date(+m[1], +m[2] - 1, +m[3]);
+      return WEEKDAYS[dt.getDay()];
+    }
+    return "Older";
+  }
+  if (d <= 13) return "Last week";
   return "Older";
 }
 
