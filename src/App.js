@@ -959,13 +959,10 @@ export default function Watchlist() {
     const d = (i.priceDropTotal && i.priceDropTotal > 0) ? (i.priceDropAt || "") : "";
     return d > f ? d : f;
   };
-  const ageBucketLabel = (i) => {
-    const d = daysAgo(effectiveAgeDate(i));
-    if (d <= 1) return "Today";
-    if (d <= 3) return "Last 3 days";
-    if (d <= 7) return "This week";
-    return "Older";
-  };
+  // Same weekday-aware bucketing as the Watchlist surface — uses
+  // ageBucketFromDate from utils.js so both tabs read identically
+  // (Today / Yesterday / weekday-name / Last week / Older).
+  const ageBucketLabel = (i) => ageBucketFromDate(effectiveAgeDate(i));
   // (Group-by helpers removed with the feature. Date dividers under
   // a date-sort are produced inline in `visibleWithDividers` below.)
 
