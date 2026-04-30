@@ -1193,6 +1193,122 @@ export default function Watchlist() {
   );
 
   // ── MOBILE ────────────────────────────────────────────────────────────────
+  // Watchlist sub-tab strip — lifted out of WatchlistTab.js on
+  // 2026-04-30 so it sits between the main tab strip and the filter
+  // row rather than below the filter row. Sits in the layout flow
+  // only when tab === "watchlist". Inline contextual buttons:
+  // "+ Track new item" on Listings, "+ Add search" on Searches,
+  // none on Auction Calendar.
+  const watchSubTabsJSX = tab !== "watchlist" ? null : (
+    <div style={{
+      display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
+      padding: "10px 16px",
+      background: "var(--bg)",
+      borderBottom: "0.5px solid var(--border)",
+      flexShrink: 0,
+    }}>
+      {[
+        ["listings", `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
+        ["searches", `Searches${savedSearchStats.length > 0 ? ` · ${savedSearchStats.length}` : ""}`],
+        ["calendar", `Auction Calendar${(auctions || []).length > 0 ? ` · ${auctions.length}` : ""}`],
+      ].map(([key, label]) => {
+        const active = watchTopTab === key;
+        return (
+          <button key={key} onClick={() => setWatchTopTab(key)} style={{
+            padding: "6px 14px", borderRadius: 20,
+            border: "0.5px solid var(--border)",
+            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+            background: active ? "var(--text1)" : "var(--surface)",
+            color:      active ? "var(--bg)"    : "var(--text2)",
+            fontWeight: active ? 600 : 500,
+          }}>{label}</button>
+        );
+      })}
+      {watchTopTab === "listings" && user && (
+        <button onClick={() => { setTrackOpen(true); setTrackError(""); }} style={{
+          marginLeft: "auto",
+          fontSize: 13, fontWeight: 500,
+          padding: "7px 14px", borderRadius: 8,
+          border: "0.5px solid var(--border)",
+          background: "var(--surface)", color: "var(--text1)",
+          cursor: "pointer", fontFamily: "inherit",
+        }}>+ Track new item</button>
+      )}
+      {watchTopTab === "searches" && user && !searchEditor && (
+        <button onClick={startAddSearch} style={{
+          marginLeft: "auto",
+          fontSize: 13, fontWeight: 500,
+          padding: "7px 14px", borderRadius: 8,
+          border: "0.5px solid var(--border)",
+          background: "var(--surface)", color: "var(--text1)",
+          cursor: "pointer", fontFamily: "inherit",
+        }}>+ Add search</button>
+      )}
+    </div>
+  );
+
+  // Track new item modal — single-URL paste flow with source-list
+  // instructions. Lifted up from WatchlistTab so the trigger button
+  // can live in the watchSubTabsJSX strip above the filter row.
+  const trackNewItemModalJSX = !trackOpen ? null : (
+    <div onClick={() => setTrackOpen(false)} style={{
+      position: "fixed", inset: 0, zIndex: 200,
+      background: "rgba(0,0,0,0.5)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 20,
+    }}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        background: "var(--card-bg)",
+        border: "0.5px solid var(--border)",
+        borderRadius: 14,
+        padding: "20px 22px",
+        width: "100%", maxWidth: 520,
+        color: "var(--text1)", fontFamily: "inherit",
+      }}>
+        <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Track new item</div>
+        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5 }}>
+          Paste an auction lot URL or marketplace listing URL. The
+          tracked item appears in your Watchlist and refreshes on
+          the next scrape (current bid, hammer price, end time).
+        </div>
+        <input
+          autoFocus
+          value={trackUrl}
+          onChange={e => { setTrackUrl(e.target.value); setTrackError(""); }}
+          onKeyDown={e => { if (e.key === "Enter") submitTrack(); }}
+          placeholder="https://..."
+          style={{ ...inp, width: "100%", fontSize: 13, marginBottom: 8 }}
+        />
+        {trackError && (
+          <div style={{ fontSize: 11, color: "#c0392b", marginBottom: 8 }}>{trackError}</div>
+        )}
+        <div style={{ fontSize: 10, color: "var(--text3)", lineHeight: 1.55, marginBottom: 14 }}>
+          Supported sources:
+          {" "}Antiquorum (live + catalog),
+          {" "}Christie's,
+          {" "}Sotheby's,
+          {" "}Monaco Legend,
+          {" "}Phillips,
+          {" "}eBay (auction or Buy-It-Now).
+          {" "}Bonhams + Chrono24 are blocked by their bot walls and need Mac mini infra (deferred).
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button onClick={() => setTrackOpen(false)} style={{
+            border: "0.5px solid var(--border)", background: "transparent",
+            color: "var(--text2)", padding: "8px 16px", borderRadius: 8,
+            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+          }}>Cancel</button>
+          <button onClick={submitTrack} disabled={trackBusy || !trackUrl.trim()} style={{
+            border: "none", background: "#185FA5", color: "#fff",
+            padding: "8px 16px", borderRadius: 8, cursor: "pointer",
+            fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+            opacity: (trackBusy || !trackUrl.trim()) ? 0.5 : 1,
+          }}>{trackBusy ? "Tracking…" : "Track"}</button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (isMobile) {
     return (
       <div style={baseStyle}>
@@ -1567,122 +1683,6 @@ export default function Watchlist() {
     background: "transparent", color: "var(--text2)", cursor: "pointer",
     fontFamily: "inherit", fontSize: 12, width: "100%",
   };
-
-  // Watchlist sub-tab strip — lifted out of WatchlistTab.js on
-  // 2026-04-30 so it sits between the main tab strip and the filter
-  // row rather than below the filter row. Sits in the layout flow
-  // only when tab === "watchlist". Inline contextual buttons:
-  // "+ Track new item" on Listings, "+ Add search" on Searches,
-  // none on Auction Calendar.
-  const watchSubTabsJSX = tab !== "watchlist" ? null : (
-    <div style={{
-      display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
-      padding: "10px 16px",
-      background: "var(--bg)",
-      borderBottom: "0.5px solid var(--border)",
-      flexShrink: 0,
-    }}>
-      {[
-        ["listings", `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
-        ["searches", `Searches${savedSearchStats.length > 0 ? ` · ${savedSearchStats.length}` : ""}`],
-        ["calendar", `Auction Calendar${(auctions || []).length > 0 ? ` · ${auctions.length}` : ""}`],
-      ].map(([key, label]) => {
-        const active = watchTopTab === key;
-        return (
-          <button key={key} onClick={() => setWatchTopTab(key)} style={{
-            padding: "6px 14px", borderRadius: 20,
-            border: "0.5px solid var(--border)",
-            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-            background: active ? "var(--text1)" : "var(--surface)",
-            color:      active ? "var(--bg)"    : "var(--text2)",
-            fontWeight: active ? 600 : 500,
-          }}>{label}</button>
-        );
-      })}
-      {watchTopTab === "listings" && user && (
-        <button onClick={() => { setTrackOpen(true); setTrackError(""); }} style={{
-          marginLeft: "auto",
-          fontSize: 13, fontWeight: 500,
-          padding: "7px 14px", borderRadius: 8,
-          border: "0.5px solid var(--border)",
-          background: "var(--surface)", color: "var(--text1)",
-          cursor: "pointer", fontFamily: "inherit",
-        }}>+ Track new item</button>
-      )}
-      {watchTopTab === "searches" && user && !searchEditor && (
-        <button onClick={startAddSearch} style={{
-          marginLeft: "auto",
-          fontSize: 13, fontWeight: 500,
-          padding: "7px 14px", borderRadius: 8,
-          border: "0.5px solid var(--border)",
-          background: "var(--surface)", color: "var(--text1)",
-          cursor: "pointer", fontFamily: "inherit",
-        }}>+ Add search</button>
-      )}
-    </div>
-  );
-
-  // Track new item modal — single-URL paste flow with source-list
-  // instructions. Lifted up from WatchlistTab so the trigger button
-  // can live in the watchSubTabsJSX strip above the filter row.
-  const trackNewItemModalJSX = !trackOpen ? null : (
-    <div onClick={() => setTrackOpen(false)} style={{
-      position: "fixed", inset: 0, zIndex: 200,
-      background: "rgba(0,0,0,0.5)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 20,
-    }}>
-      <div onClick={(e) => e.stopPropagation()} style={{
-        background: "var(--card-bg)",
-        border: "0.5px solid var(--border)",
-        borderRadius: 14,
-        padding: "20px 22px",
-        width: "100%", maxWidth: 520,
-        color: "var(--text1)", fontFamily: "inherit",
-      }}>
-        <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Track new item</div>
-        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5 }}>
-          Paste an auction lot URL or marketplace listing URL. The
-          tracked item appears in your Watchlist and refreshes on
-          the next scrape (current bid, hammer price, end time).
-        </div>
-        <input
-          autoFocus
-          value={trackUrl}
-          onChange={e => { setTrackUrl(e.target.value); setTrackError(""); }}
-          onKeyDown={e => { if (e.key === "Enter") submitTrack(); }}
-          placeholder="https://..."
-          style={{ ...inp, width: "100%", fontSize: 13, marginBottom: 8 }}
-        />
-        {trackError && (
-          <div style={{ fontSize: 11, color: "#c0392b", marginBottom: 8 }}>{trackError}</div>
-        )}
-        <div style={{ fontSize: 10, color: "var(--text3)", lineHeight: 1.55, marginBottom: 14 }}>
-          Supported sources:
-          {" "}Antiquorum (live + catalog),
-          {" "}Christie's,
-          {" "}Sotheby's,
-          {" "}Monaco Legend,
-          {" "}Phillips,
-          {" "}eBay (auction or Buy-It-Now).
-          {" "}Bonhams + Chrono24 are blocked by their bot walls and need Mac mini infra (deferred).
-        </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button onClick={() => setTrackOpen(false)} style={{
-            border: "0.5px solid var(--border)", background: "transparent",
-            color: "var(--text2)", padding: "8px 16px", borderRadius: 8,
-            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-          }}>Cancel</button>
-          <button onClick={submitTrack} disabled={trackBusy || !trackUrl.trim()} style={{
-            border: "none", background: "#185FA5", color: "#fff",
-            padding: "8px 16px", borderRadius: 8, cursor: "pointer",
-            fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-            opacity: (trackBusy || !trackUrl.trim()) ? 0.5 : 1,
-          }}>{trackBusy ? "Tracking…" : "Track"}</button>
-        </div>
-      </div>
-    </div>
-  );
 
   const filterRowJSX = (() => {
     return (
