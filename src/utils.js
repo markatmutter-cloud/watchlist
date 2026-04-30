@@ -97,6 +97,35 @@ export function detectBrandFromTitle(title) {
   return "Other";
 }
 
+// Friendly "X days left" / "ended Y hours ago" countdown for auction
+// cards. Mirrors AuctionsTab's render style so the chip looks the
+// same wherever auction-format items appear (Watchlist, Calendar,
+// future surfaces).
+export function fmtCountdown(endIso) {
+  if (!endIso) return "";
+  const ms = new Date(endIso).getTime() - Date.now();
+  if (Number.isNaN(ms)) return "";
+  const past = ms < 0;
+  const abs = Math.abs(ms);
+  const days = Math.floor(abs / 86400000);
+  const hours = Math.floor((abs % 86400000) / 3600000);
+  const mins = Math.floor((abs % 3600000) / 60000);
+  let label;
+  if (days >= 1) label = `${days} day${days === 1 ? "" : "s"}`;
+  else if (hours >= 1) label = `${hours} hour${hours === 1 ? "" : "s"}`;
+  else label = `${mins} min${mins === 1 ? "" : "s"}`;
+  return past ? `ended ${label} ago` : `${label} left`;
+}
+
+// Format an auction-currency price ("CHF 30,000"). Returns null if
+// value is missing so callers can branch on truthy.
+export function fmtLotPrice(val, currency) {
+  if (val === null || val === undefined || val === "") return null;
+  const n = typeof val === "number" ? val : parseFloat(val);
+  if (Number.isNaN(n)) return null;
+  return `${currency || ""} ${Math.round(n).toLocaleString()}`.trim();
+}
+
 // Tiny deterministic hash → 12-char hex. Used to mint stable item
 // IDs from URLs so projected tracked-lot items share the dedup key
 // with anything that reaches the same URL via another path. NOT

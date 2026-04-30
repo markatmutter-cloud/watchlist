@@ -1,5 +1,5 @@
 import React, { useState, memo } from "react";
-import { fmt, fmtUSD, daysAgo, freshDate, imgSrc } from "../utils";
+import { fmt, fmtUSD, imgSrc, fmtCountdown, fmtLotPrice } from "../utils";
 import { HeartIcon } from "./icons";
 
 // Wrapped in React.memo so an unrelated state change in App (heart toggle
@@ -14,12 +14,10 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
   // for a sold listing), the browser shows an ugly broken-image icon.
   // Track the failure and render a clean placeholder instead.
   const [imgFailed, setImgFailed] = useState(false);
-  // `backfilled` is set by merge.py when a single source contributes 10+
-  // listings whose firstSeen == today — that pattern is almost always a
-  // scraper change retroactively picking up listings that were already on
-  // the dealer's site, not real new inventory. Suppress the NEW badge for
-  // those so the signal stays useful.
-  const isNew = daysAgo(freshDate(item)) <= 1 && !item.sold && !item.backfilled;
+  // (Previously had a NEW chip on cards <= 1 day old. Removed
+  // 2026-04-30 — was firing inconsistently due to the backfill rule
+  // and the date-order sort already conveys recency. Less chrome on
+  // the image surface lets the image itself read.)
   // priceOnRequest items have price=0 — show "Price on request" instead
   // of "$0". Set by the WV scraper for INQUIRE / ON HOLD-no-price pages.
   const displayPrice = item.priceOnRequest ? "Price on request" : fmt(item.price, item.currency || "USD");
@@ -33,6 +31,40 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
     : ((item.priceChange || 0) < 0 ? -item.priceChange : 0);
   const priceDropped = !item.priceOnRequest && cumulativeDrop > 0;
   const peakPrice = item.pricePeak || (item.price + cumulativeDrop);
+
+  // Tracked-lot render switch. When the item is projected from
+  // `tracked_lots` (auction-house lot, eBay item, future marketplace
+  // URL), the Card surfaces auction-specific data: bid label, current
+  // bid OR hammer, estimate range, and a countdown chip on the image.
+  // Dealer items take the existing render path.
+  const isLot = !!item._isTrackedLot;
+  const isAuctionLot = isLot && item._isAuctionFormat;
+  const isBinLot = isLot && !item._isAuctionFormat;
+  const lotLabel = !isLot ? null
+    : isBinLot ? (item.sold ? "SOLD" : "BUY NOW")
+    : (item.sold ? "HAMMER" : "CURRENT");
+  const lotNativePrice = !isLot ? null
+    : item.sold
+        ? fmtLotPrice(item.sold_price ?? item.price, item.currency)
+        : fmtLotPrice(item.current_bid ?? item.starting_price ?? item.price, item.currency);
+  const lotUsdPrice = !isLot ? null
+    : item.sold ? item.sold_price_usd
+    : item.current_bid_usd;
+  const showLotUsd = isLot && lotUsdPrice
+    && item.currency && item.currency.toUpperCase() !== "USD";
+  // Estimate line — only shows on active auction-format lots when
+  // both bounds are known. Drops once hammered (the HAMMER price
+  // tells the story by then).
+  const estimateLine = (isAuctionLot && !item.sold
+    && item.estimate_low && item.estimate_high)
+    ? `Est. ${fmtLotPrice(item.estimate_low, item.currency)}–${
+        fmtLotPrice(item.estimate_high, "")?.trim() || ""
+      }`
+    : null;
+  const countdownLabel = (isAuctionLot && !item.sold && item.auction_end)
+    ? fmtCountdown(item.auction_end)
+    : null;
+  const countdownIsPast = countdownLabel && countdownLabel.startsWith("ended");
   return (
     <div style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative", minWidth: 0, overflow: "hidden" }}>
       <a href={item.url} target="_blank" rel="noopener noreferrer"
@@ -62,16 +94,34 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
           )}
           {item.sold && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>}
           {!item.sold && isHidden && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>}
-          {isNew && !isHidden && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(24,95,165,0.92)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em", fontWeight: 600 }}>NEW</div>}
-          {/* AUCTION chip — surfaces auction-format tracked lots (auction
-              houses + eBay AUCTION) in the unified Watchlist render so
-              users can tell at a glance what's up for bid vs what's a
-              fixed-price marketplace listing. Right side so it doesn't
-              collide with SOLD/NEW/HIDDEN on the left. Hidden once the
-              lot has ended (the SOLD chip on the left carries the state
-              from there). */}
-          {item._isAuctionFormat && !item.sold && (
-            <div style={{ position: "absolute", top: 6, right: 38, background: "rgba(196,68,68,0.92)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em", fontWeight: 600 }}>AUCTION</div>
+          {/* Countdown chip on auction-format tracked lots. Reads
+              "3 DAYS LEFT" / "6 HOURS LEFT" / "ENDED N DAYS AGO".
+              Replaces the prior generic AUCTION chip — Mark wanted
+              the time remaining surfaced directly. Right side so it
+              doesn't collide with SOLD/HIDDEN on the left. Hidden
+              once the auction has fully ended and a SOLD chip is
+              showing (the SOLD chip carries the state from there). */}
+          {countdownLabel && !item.sold && (
+            <div style={{
+              position: "absolute", top: 6, right: 38,
+              background: countdownIsPast ? "rgba(0,0,0,0.55)" : "rgba(24,95,165,0.92)",
+              color: "#fff", fontSize: 8,
+              padding: "2px 6px", borderRadius: 8,
+              letterSpacing: "0.04em", fontWeight: 600,
+              textTransform: "uppercase",
+            }}>{countdownLabel}</div>
+          )}
+          {/* Auction-format lot without a known auction_end (e.g. a
+              Phillips lot before the calendar lookup populated it):
+              still mark it as an auction so users can tell at a glance.
+              Plain pill, no countdown. */}
+          {isAuctionLot && !countdownLabel && !item.sold && (
+            <div style={{
+              position: "absolute", top: 6, right: 38,
+              background: "rgba(24,95,165,0.92)", color: "#fff",
+              fontSize: 8, padding: "2px 6px", borderRadius: 8,
+              letterSpacing: "0.06em", fontWeight: 600,
+            }}>AUCTION</div>
           )}
         </div>
         <div style={{ padding: compact ? "5px 7px 8px" : "7px 9px 10px" }}>
@@ -80,17 +130,32 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
               line up regardless of whether the title wraps. Empty title gets
               a space so the line-height still renders. */}
           <div style={{ fontSize: compact ? 10 : 12, fontWeight: 500, lineHeight: 1.3, marginBottom: 4, color: "var(--text1)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: compact ? 26 : 32 }}>{item.ref || " "}</div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-            <div style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: item.sold ? "var(--text2)" : "var(--text1)" }}>{displayPrice}</div>
-            {priceDropped && (
-              <span title={`Peak ${fmt(peakPrice, item.currency || "USD")} → ${fmt(item.price, item.currency || "USD")}`}
-                style={{ fontSize: 9, color: "#1b8f3a", fontWeight: 600 }}>
-                ↓ {fmt(cumulativeDrop, item.currency || "USD")}
+          {isLot ? (
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <span style={{ fontSize: 8, color: "var(--text3)", letterSpacing: "0.05em", fontWeight: 600 }}>
+                {lotLabel}
               </span>
-            )}
-          </div>
+              <span style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: item.sold ? "#1b8f3a" : "var(--text1)" }}>
+                {lotNativePrice || "—"}
+              </span>
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <div style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: item.sold ? "var(--text2)" : "var(--text1)" }}>{displayPrice}</div>
+              {priceDropped && (
+                <span title={`Peak ${fmt(peakPrice, item.currency || "USD")} → ${fmt(item.price, item.currency || "USD")}`}
+                  style={{ fontSize: 9, color: "#1b8f3a", fontWeight: 600 }}>
+                  ↓ {fmt(cumulativeDrop, item.currency || "USD")}
+                </span>
+              )}
+            </div>
+          )}
           {/* Always render this line (even invisibly) so GBP cards stay the same height as USD cards — avoids the mixed-size grid on mobile. */}
-          <div style={{ fontSize: 9, color: "var(--text3)", minHeight: 12 }}>{showUSD ? `~${fmtUSD(item.priceUSD)}` : " "}</div>
+          <div style={{ fontSize: 9, color: "var(--text3)", minHeight: 12 }}>
+            {isLot
+              ? (showLotUsd ? `~$${Math.round(lotUsdPrice).toLocaleString()}` : (estimateLine || " "))
+              : (showUSD ? `~${fmtUSD(item.priceUSD)}` : " ")}
+          </div>
         </div>
       </a>
       <div style={{ position: "absolute", top: 6, right: 6, display: "flex", flexDirection: "column", gap: 6 }}>

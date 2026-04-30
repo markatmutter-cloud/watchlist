@@ -593,12 +593,17 @@ export default function Watchlist() {
         _isTrackedLot: true,
         _isAuctionFormat: isAuctionFormat,
         // Pass through auction-specific fields the Card needs to
-        // render bid label / countdown / etc. when known.
+        // render bid label / countdown / estimate range / etc.
         buying_option: data.buying_option,
         current_bid: data.current_bid,
         current_bid_usd: data.current_bid_usd,
         sold_price: data.sold_price,
         sold_price_usd: data.sold_price_usd,
+        estimate_low: data.estimate_low,
+        estimate_high: data.estimate_high,
+        estimate_low_usd: data.estimate_low_usd,
+        estimate_high_usd: data.estimate_high_usd,
+        starting_price: data.starting_price,
         auction_end: data.auction_end,
         auction_title: data.auction_title,
         lot_number: data.lot_number,
@@ -1481,7 +1486,7 @@ export default function Watchlist() {
                   <div style={{ flex: 1 }}>
                     <div style={{ ...sectionHeadingStyle, marginBottom: 6 }}>Group by</div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {[["date", "Date"], ["brand", "Brand"], ["source", "Source"], ["ref", "Ref"], ["none", "None"]].map(([val, label]) => (
+                      {[["date", "Date"], ["brand", "Brand"], ["source", "Source"], ["none", "None"]].map(([val, label]) => (
                         <Chip key={val} label={label} active={groupBy === val} onClick={() => setGroupBy(val)} />
                       ))}
                     </div>
@@ -1625,7 +1630,6 @@ export default function Watchlist() {
         {(() => {
           const label = groupBy === "brand" ? "Brand"
                       : groupBy === "source" ? "Source"
-                      : groupBy === "ref" ? "Reference"
                       : groupBy === "date" ? "Date"
                       : "None";
           return (
@@ -1637,7 +1641,7 @@ export default function Watchlist() {
         {activeFilterPop === "group" && popShell(
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {[["date", "Date"], ["brand", "Brand"],
-              ["source", "Source"], ["ref", "Reference"], ["none", "No grouping"]
+              ["source", "Source"], ["none", "No grouping"]
             ].map(([val, lbl]) => (
               <button key={val} onClick={() => { setGroupBy(val); setActiveFilterPop(null); }} style={{
                 textAlign: "left", padding: "8px 10px", borderRadius: 6, border: "none",
