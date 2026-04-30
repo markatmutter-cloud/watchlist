@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Card } from "./Card";
+import { AuctionCalendar } from "./AuctionCalendar";
 import { extractRef, ageBucketFromDate } from "../utils";
 import { importLocalData } from "../supabase";
 
@@ -23,6 +24,10 @@ export function WatchlistTab(props) {
     handleWish,
     // UI shared
     compact, gridStyle, inp, isMobile, statusMode,
+    // Group + sort state from the global filter bar
+    groupBy, sort,
+    // Auction calendar (3rd sub-tab) and tracked-URL flow
+    auctions, addTrackedLot, removeTrackedLot,
     // Sub-tab routing — controlled by parent because the surrounding
     // chrome (sidebar, filter bar) gates on it too.
     watchTopTab, setWatchTopTab,
@@ -31,6 +36,25 @@ export function WatchlistTab(props) {
     // Navigation
     setTab, setPage,
   } = props;
+
+  // ── TRACK NEW ITEM MODAL ───────────────────────────────────────────────
+  // Replaces the previous inline-expand "Track lot" form on the
+  // Auctions tab. Lifted to a modal here per Mark's 2026-04-30 ask:
+  // dedicated overlay, full-width input, room for source-list
+  // instructions. Same single-URL-paste flow underneath.
+  const [trackOpen, setTrackOpen] = useState(false);
+  const [trackUrl, setTrackUrl]   = useState("");
+  const [trackBusy, setTrackBusy] = useState(false);
+  const [trackError, setTrackError] = useState("");
+  const submitTrack = async () => {
+    if (!trackUrl.trim() || !addTrackedLot) return;
+    setTrackBusy(true);
+    setTrackError("");
+    const { error } = await addTrackedLot(trackUrl);
+    setTrackBusy(false);
+    if (error) setTrackError(error);
+    else { setTrackUrl(""); setTrackOpen(false); }
+  };
 
   const [watchSelectMode, setWatchSelectMode] = useState(false);
   const [watchSelectedIds, setWatchSelectedIds] = useState(() => new Set());
@@ -62,20 +86,36 @@ export function WatchlistTab(props) {
     return watchLive;
   }, [statusMode, watchItems, watchLive, watchSold]);
 
-  // Watchlist date-grouping uses savedAt (when the user hearted the
-  // item) rather than the dealer's firstSeen, since "Today / Last 3
-  // days / etc." is more meaningful per-user-action on this surface.
-  // Group acts first, sort applies within (watchView arrives already
-  // sorted by the global sort state).
+  // Group acts first; sort applies within (watchView arrives already
+  // sorted by the global sort state). When `groupBy === "none"` AND
+  // sort is by date (newest/oldest), we additionally surface implicit
+  // age-bucket dividers (Today / Last 3 days / This week / Older)
+  // using savedAt — Mark wants the date-axis grouping to be a
+  // *side-effect* of the date sort rather than its own chip.
   const dateBucketOrder = { "Today": 0, "Last 3 days": 1, "This week": 2, "Older": 3 };
+  const isDateSort = sort === "date" || sort === "date-asc";
   const watchGroups = useMemo(() => {
-    if (watchGroupBy === "none") return [["", watchView]];
+    if (watchGroupBy === "none") {
+      if (isDateSort && statusMode !== "sold") {
+        // Implicit date dividers when sorted by date.
+        const map = new Map();
+        for (const item of watchView) {
+          const key = ageBucketFromDate((item.savedAt || "").slice(0, 10));
+          if (!map.has(key)) map.set(key, []);
+          map.get(key).push(item);
+        }
+        const entries = [...map.entries()].sort(
+          (a, b) => (dateBucketOrder[a[0]] ?? 9) - (dateBucketOrder[b[0]] ?? 9)
+        );
+        return entries;
+      }
+      return [["", watchView]];
+    }
     const map = new Map();
     for (const item of watchView) {
       let key;
       if (watchGroupBy === "brand")       key = item.brand || "Other";
       else if (watchGroupBy === "source") key = item.source || "Other";
-      else if (watchGroupBy === "date")   key = ageBucketFromDate((item.savedAt || "").slice(0, 10));
       else /* ref */                      key = extractRef(item.ref) || "Other";
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(item);
@@ -83,13 +123,11 @@ export function WatchlistTab(props) {
     const entries = [...map.entries()];
     if (watchGroupBy === "ref") {
       entries.sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
-    } else if (watchGroupBy === "date") {
-      entries.sort((a, b) => (dateBucketOrder[a[0]] ?? 9) - (dateBucketOrder[b[0]] ?? 9));
     } else {
       entries.sort((a, b) => a[0].localeCompare(b[0]));
     }
     return entries;
-  }, [watchView, watchGroupBy]);
+  }, [watchView, watchGroupBy, isDateSort, statusMode]);
 
 
   const legacyCounts = {
@@ -288,10 +326,10 @@ export function WatchlistTab(props) {
         "Heart any listing to save it here. Saved items sync across every device you use."
       ) : (
         <>
-          {/* Sub-tabs: Listings + Searches. The Lots sub-tab moved to
-              the Auctions tab — auction tracking lives next to the
-              auction calendar now, not under the Watchlist umbrella.
-              Sticky so the bar stays reachable as the user scrolls. */}
+          {/* Sub-tabs: Listings + Searches + Auction Calendar. The
+              Auctions main tab was retired 2026-04-30; tracked lots
+              now flow into Listings (alongside hearted dealer items)
+              and the calendar lives here as a 3rd sub-tab. */}
           <div style={{
             display: "flex", marginBottom: 14,
             position: "sticky",
@@ -304,6 +342,7 @@ export function WatchlistTab(props) {
             {[
               ["listings", `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
               ["searches", `Searches${savedSearchStats.length > 0 ? ` · ${savedSearchStats.length}` : ""}`],
+              ["calendar", `Auction Calendar${(auctions || []).length > 0 ? ` · ${auctions.length}` : ""}`],
             ].map(([key, label]) => (
               <button key={key} onClick={() => setWatchTopTab(key)} style={{
                 padding: "6px 0", marginRight: 18, border: "none", cursor: "pointer",
@@ -318,16 +357,24 @@ export function WatchlistTab(props) {
           {watchTopTab === "listings" && (<>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 8, flexWrap: "wrap" }}>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>Watchlist</div>
-            {watchCount > 0 && !watchSelectMode && (
+            {!watchSelectMode && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                {/* Status + Group are both driven by the global filter
-                    bar now — same controls, same state, consistent
-                    across Available + Watchlist. */}
-                <button onClick={() => setWatchSelectMode(true)} style={{
+                {/* Track New Item — opens modal that accepts auction-
+                    house lot URLs, eBay item URLs, etc. Replaces the
+                    prior inline form on the (now-retired) Auctions tab. */}
+                <button onClick={() => { setTrackOpen(true); setTrackError(""); }} style={{
                   fontSize: 11, padding: "4px 10px", borderRadius: 6,
-                  border: "0.5px solid var(--border)", background: "transparent",
-                  color: "var(--text2)", cursor: "pointer", fontFamily: "inherit",
-                }}>Select</button>
+                  border: "0.5px solid var(--border)",
+                  background: "var(--card-bg)",
+                  color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                }}>+ Track new item</button>
+                {watchCount > 0 && (
+                  <button onClick={() => setWatchSelectMode(true)} style={{
+                    fontSize: 11, padding: "4px 10px", borderRadius: 6,
+                    border: "0.5px solid var(--border)", background: "transparent",
+                    color: "var(--text2)", cursor: "pointer", fontFamily: "inherit",
+                  }}>Select</button>
+                )}
               </div>
             )}
             {watchSelectMode && (
@@ -468,7 +515,78 @@ export function WatchlistTab(props) {
           </>)}
 
           {watchTopTab === "searches" && searchesTabJSX}
+          {watchTopTab === "calendar" && (
+            <div style={{ paddingTop: 4 }}>
+              <AuctionCalendar auctions={auctions || []} />
+            </div>
+          )}
         </>
+      )}
+
+      {/* Track new item modal — single-URL paste flow with source-list
+          instructions. Mounts on demand so the input is focused +
+          centered without competing with the cards behind it. Backdrop
+          click closes; escape would too if we wired keydown but the
+          existing site modals don't bother. */}
+      {trackOpen && (
+        <div onClick={() => setTrackOpen(false)} style={{
+          position: "fixed", inset: 0, zIndex: 200,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 20,
+        }}>
+          <div onClick={(e) => e.stopPropagation()} style={{
+            background: "var(--card-bg)",
+            border: "0.5px solid var(--border)",
+            borderRadius: 14,
+            padding: "20px 22px",
+            width: "100%", maxWidth: 520,
+            color: "var(--text1)", fontFamily: "inherit",
+          }}>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
+              Track new item
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5 }}>
+              Paste an auction lot URL or marketplace listing URL. The
+              tracked item appears in your Watchlist and refreshes on
+              the next scrape (current bid, hammer price, end time).
+            </div>
+            <input
+              autoFocus
+              value={trackUrl}
+              onChange={e => { setTrackUrl(e.target.value); setTrackError(""); }}
+              onKeyDown={e => { if (e.key === "Enter") submitTrack(); }}
+              placeholder="https://..."
+              style={{ ...inp, width: "100%", fontSize: 13, marginBottom: 8 }}
+            />
+            {trackError && (
+              <div style={{ fontSize: 11, color: "#c0392b", marginBottom: 8 }}>{trackError}</div>
+            )}
+            <div style={{ fontSize: 10, color: "var(--text3)", lineHeight: 1.55, marginBottom: 14 }}>
+              Supported sources:
+              {" "}Antiquorum (live + catalog),
+              {" "}Christie's,
+              {" "}Sotheby's,
+              {" "}Monaco Legend,
+              {" "}Phillips,
+              {" "}eBay (auction or Buy-It-Now).
+              {" "}Bonhams + Chrono24 are blocked by their bot walls right now and need Mac mini infra (deferred).
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setTrackOpen(false)} style={{
+                border: "0.5px solid var(--border)", background: "transparent",
+                color: "var(--text2)", padding: "8px 16px", borderRadius: 8,
+                cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+              }}>Cancel</button>
+              <button onClick={submitTrack} disabled={trackBusy || !trackUrl.trim()} style={{
+                border: "none", background: "#185FA5", color: "#fff",
+                padding: "8px 16px", borderRadius: 8, cursor: "pointer",
+                fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+                opacity: (trackBusy || !trackUrl.trim()) ? 0.5 : 1,
+              }}>{trackBusy ? "Tracking…" : "Track"}</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

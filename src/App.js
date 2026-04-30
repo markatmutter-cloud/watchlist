@@ -9,7 +9,10 @@ import { useWidth, useSystemDark } from "./hooks";
 import { FilterIcon, SearchIcon, TabIcon } from "./components/icons";
 import { Card } from "./components/Card";
 import { Chip, SidebarChip } from "./components/Chip";
-import { AuctionsTab } from "./components/AuctionsTab";
+// AuctionsTab retired 2026-04-30 — Tracked lots merged into Watchlist
+// Listings; calendar moved to Watchlist > Auction Calendar sub-tab via
+// the new AuctionCalendar component. AuctionsTab.js still exists in
+// the tree for reference but is not imported or rendered anywhere.
 import { ReferencesTab } from "./components/ReferencesTab";
 import { AboutModal } from "./components/AboutModal";
 import { HiddenModal } from "./components/HiddenModal";
@@ -159,14 +162,14 @@ export default function Watchlist() {
     try {
       const v = localStorage.getItem("dial_group_v1")
         || localStorage.getItem("watchlist_group_v1");
-      // 2026-04-30: "none" used to be the default and produced
-      // implicit date dividers when sort=date. Now "date" is its own
-      // explicit chip and "none" means flat-no-dividers. Migrate any
-      // user still on the old default so date buckets still appear
-      // out of the box.
-      if (!v || v === "none") return "date";
+      // 2026-04-30 (PM): briefly promoted "date" to its own explicit
+      // chip; reverted same day per Mark — date dividers now fire
+      // implicitly when sort is newest/oldest and no other group is
+      // selected. Migrate any user who got bumped to "date" back
+      // to "none" so the chip set stays in sync with the UI.
+      if (!v || v === "date") return "none";
       return v;
-    } catch { return "date"; }
+    } catch { return "none"; }
   });
   useEffect(() => {
     try { localStorage.setItem("dial_group_v1", groupBy); } catch {}
@@ -932,14 +935,14 @@ export default function Watchlist() {
     return "Older";
   };
   // Derive the group key for a single item under the current `groupBy`.
-  // "date" buckets by age (Today / Last 3 days / This week / Older);
   // brand/source/ref bucket by their respective fields; "none" returns
-  // null (flat, no dividers).
+  // null (flat, no explicit dividers). Date dividers under "none" are
+  // produced implicitly in `visibleWithDividers` when the sort is by
+  // date — see the fall-through branch there.
   const groupKeyOf = (it) => {
     if (groupBy === "brand")  return displayBrand(it);
     if (groupBy === "source") return it.source || "Other";
     if (groupBy === "ref")    return extractRef(it.ref) || "Other";
-    if (groupBy === "date")   return ageBucketLabel(it);
     return null;
   };
 
@@ -966,9 +969,6 @@ export default function Watchlist() {
       if (groupBy === "ref") {
         // References: most-populous first so the dense buckets read first.
         entries.sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
-      } else if (groupBy === "date") {
-        // Date buckets: chronological (Today → Older), not alphabetical.
-        entries.sort((a, b) => (dateBucketOrder[a[0]] ?? 9) - (dateBucketOrder[b[0]] ?? 9));
       } else {
         entries.sort((a, b) => a[0].localeCompare(b[0]));
       }
@@ -980,8 +980,26 @@ export default function Watchlist() {
       }
       return out;
     }
-    // groupBy === "none": flat, no dividers, regardless of sort.
-    return visible.map(it => ({ kind: "card", item: it }));
+    // groupBy === "none". When the user has sorted by date (newest or
+    // oldest first) and isn't viewing the sold archive, surface
+    // implicit age-bucket dividers (Today / Last 3 days / This week /
+    // Older). Other sorts (price) get a flat grid since date headings
+    // wouldn't align with the row order.
+    if (statusMode === "sold" || !(sort === "date" || sort === "date-asc")) {
+      return visible.map(it => ({ kind: "card", item: it }));
+    }
+    const out = [];
+    let last = null;
+    for (const it of visible) {
+      const bucket = ageBucketLabel(it);
+      if (bucket !== last) {
+        const total = allFiltered.filter(x => ageBucketLabel(x) === bucket).length;
+        out.push({ kind: "divider", label: bucket, total });
+        last = bucket;
+      }
+      out.push({ kind: "card", item: it });
+    }
+    return out;
   })();
 
   // Built once per render as a JSX expression (NOT a nested component).
@@ -1117,25 +1135,9 @@ export default function Watchlist() {
     </div>
   );
 
-  // Auctions tab JSX. Built once so mobile + desktop returns can share
-  // the same element. Now includes tracked-lots functionality (moved
-  // here from the Watchlist tab — auction tracking belongs next to
-  // the auction calendar).
-  const auctionsTabJSX = (
-    <AuctionsTab
-      auctions={auctions}
-      user={user}
-      signInWithGoogle={signInWithGoogle}
-      isAuthConfigured={isAuthConfigured}
-      trackedLots={trackedLots}
-      addTrackedLot={addTrackedLot}
-      removeTrackedLot={removeTrackedLot}
-      statusMode={statusMode}
-      compact={compact}
-      gridStyle={gridStyle}
-      inp={inp}
-    />
-  );
+  // (Retired 2026-04-30) AuctionsTab JSX was built here. Tracked lots
+  // now flow into Watchlist > Listings; calendar lives at Watchlist >
+  // Auction Calendar via AuctionCalendar.js.
 
   // Watchlist tab JSX. Built once so both mobile + desktop returns can
   // reference the same instance without re-spelling the long prop list.
@@ -1167,6 +1169,10 @@ export default function Watchlist() {
       isMobile={isMobile}
       statusMode={statusMode}
       groupBy={groupBy}
+      sort={sort}
+      auctions={auctions}
+      addTrackedLot={addTrackedLot}
+      removeTrackedLot={removeTrackedLot}
       watchTopTab={watchTopTab}
       setWatchTopTab={setWatchTopTab}
       legacyLocal={legacyLocal}
@@ -1401,7 +1407,6 @@ export default function Watchlist() {
             at scroll-top shows cards peeking through). */}
         <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
           {tab === "listings" ? listingsGridJSX
-            : tab === "auctions" ? auctionsTabJSX
             : tab === "references" ? <ReferencesTab />
             : watchlistTabJSX}
         </div>
@@ -1414,7 +1419,7 @@ export default function Watchlist() {
               tabs to keep mobile labels readable. References tools
               are still reachable on mobile by deep link if anyone
               shares one, but the nav surface stays compact. */}
-          {[["listings", "Available"], ["auctions", "Auctions"], ["watchlist", "Watchlist"]].map(([key, label]) => (
+          {[["listings", "Available"], ["watchlist", "Watchlist"]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "8px 0 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               {tab === key
                 ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5" }} />
@@ -1486,7 +1491,7 @@ export default function Watchlist() {
                   <div style={{ flex: 1 }}>
                     <div style={{ ...sectionHeadingStyle, marginBottom: 6 }}>Group by</div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {[["date", "Date"], ["brand", "Brand"], ["source", "Source"], ["none", "None"]].map(([val, label]) => (
+                      {[["none", "None"], ["brand", "Brand"], ["source", "Source"]].map(([val, label]) => (
                         <Chip key={val} label={label} active={groupBy === val} onClick={() => setGroupBy(val)} />
                       ))}
                     </div>
@@ -1630,7 +1635,6 @@ export default function Watchlist() {
         {(() => {
           const label = groupBy === "brand" ? "Brand"
                       : groupBy === "source" ? "Source"
-                      : groupBy === "date" ? "Date"
                       : "None";
           return (
             <button onClick={() => setActiveFilterPop(p => p === "group" ? null : "group")} style={pillBase(groupBy !== "none")}>
@@ -1640,8 +1644,8 @@ export default function Watchlist() {
         })()}
         {activeFilterPop === "group" && popShell(
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {[["date", "Date"], ["brand", "Brand"],
-              ["source", "Source"], ["none", "No grouping"]
+            {[["none", "No grouping"], ["brand", "Brand"],
+              ["source", "Source"]
             ].map(([val, lbl]) => (
               <button key={val} onClick={() => { setGroupBy(val); setActiveFilterPop(null); }} style={{
                 textAlign: "left", padding: "8px 10px", borderRadius: 6, border: "none",
@@ -1778,7 +1782,7 @@ export default function Watchlist() {
           Watchlist
         </button>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
-          {[["listings", "Available"], ["auctions", "Auctions"], ["watchlist", "Watchlist"], ["references", "References"]].map(([key, label]) => (
+          {[["listings", "Available"], ["watchlist", "Watchlist"], ["references", "References"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,
@@ -1921,7 +1925,6 @@ export default function Watchlist() {
             peek through. Listings + Auctions keep the breathing room. */}
         <div data-desktop-main style={{ flex: 1, overflowY: "auto", padding: `${tab === "watchlist" ? 0 : 14}px 16px 32px` }}>
           {tab === "listings" ? listingsGridJSX
-            : tab === "auctions" ? auctionsTabJSX
             : tab === "references" ? <ReferencesTab />
             : watchlistTabJSX}
         </div>
