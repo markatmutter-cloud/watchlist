@@ -148,6 +148,48 @@ def parse_results(task):
             'date': str(date.today()), 'sold': False,
         })
 
+    # Sold-state sweep. The Browse AI robot's output schema covers
+    # title / price / url / image but not sold-status. Tropical Watch
+    # marks sold listings with `<h3 class="watch-main-price color-red"
+    # ...>Sold</h3>` on the detail page; without this follow-up
+    # fetch, sold listings come through as active because Browse AI
+    # captured the historical price elsewhere on the page.
+    #
+    # Per-listing GET, polite 0.25s delay → ~30s for ~120 listings.
+    # Plain requests + Safari UA passes the dealer's response without
+    # a Cloudflare challenge (verified 2026-04-29). If that ever
+    # changes, fall back to capturing a Status field in the Browse AI
+    # robot config and reading it from the item dict above.
+    sold_marker = re.compile(
+        r'class="watch-main-price[^"]*color-red[^"]*"[^>]*>\s*Sold',
+        re.IGNORECASE,
+    )
+    sold_headers = {
+        "User-Agent": ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                       "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+                       "Version/17.0 Safari/605.1.15"),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+    print(f"  Sold-state sweep over {len(results)} listing(s)...")
+    sold_count = 0
+    for i, row in enumerate(results, 1):
+        if not row.get('url'):
+            continue
+        try:
+            resp = requests.get(row['url'], headers=sold_headers, timeout=15)
+            if resp.status_code == 200 and sold_marker.search(resp.text):
+                row['sold'] = True
+                sold_count += 1
+        except requests.RequestException:
+            # Don't fail the scrape on a single transient error —
+            # leave sold as default (False) and let the merge layer's
+            # disappeared-from-scrape archive logic catch it next run
+            # if needed.
+            pass
+        time.sleep(0.25)
+    print(f"  Sold-state sweep done: {sold_count} sold / {len(results)} total")
+
     return results
 
 def main():
