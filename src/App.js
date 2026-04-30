@@ -1682,10 +1682,24 @@ export default function Watchlist() {
   };
 
   const filterRowJSX = (() => {
+    // Source + Brand expansion panel — chip cluster shown directly
+    // below the filter row when either pill is active. Inline-expand
+    // pattern (vs the prior floating popover) so all filter controls
+    // share the same "tap a pill" interaction. Brand uses the same
+    // condense + "+N more" treatment as the mobile drawer.
+    const expansionPanelStyle = {
+      padding: "8px 16px 12px",
+      borderBottom: "0.5px solid var(--border)",
+      background: "var(--surface)",
+      display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center",
+    };
+    const expandedSource = activeFilterPop === "source";
+    const expandedBrand  = activeFilterPop === "brand";
     return (
+    <>
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
-                  borderBottom: "0.5px solid var(--border)", flexShrink: 0,
-                  flexWrap: "wrap", position: "relative" }}>
+                  borderBottom: expandedSource || expandedBrand ? "none" : "0.5px solid var(--border)",
+                  flexShrink: 0, flexWrap: "wrap", position: "relative" }}>
       {/* Tri-state Status segment — Live / Sold / All. Always first in
           the row. Counts reflect what's available in each state. */}
       {statusSegmentJSX}
@@ -1797,58 +1811,23 @@ export default function Watchlist() {
           house-filter variant for tracked lots was retired when lot
           tracking moved into the Auctions tab; if needed later it'd
           live there as an internal control. */}
-      <div style={{ position: "relative" }}>
-        <button onClick={() => setActiveFilterPop(p => p === "source" ? null : "source")} style={pillBase(filterSources.length > 0)}>
-          Source{filterSources.length > 0 ? ` · ${filterSources.length}` : ""} ▾
-        </button>
-        {activeFilterPop === "source" && popShell(
-          <div>
-            {SOURCES.length === 0 ? (
-              <div style={{ fontSize: 12, color: "var(--text3)", padding: "8px 4px" }}>
-                No sources yet.
-              </div>
-            ) : (
-              <div style={popGridStyle}>
-                {SOURCES.map(s => (
-                  <button key={s} onClick={() => toggleSource(s)} style={multiSelectRowStyle(filterSources.includes(s))}>
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s}</span>
-                    {filterSources.includes(s) && <span style={tickStyle}>✓</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-            {filterSources.length > 0 && (
-              <button onClick={() => setFilterSources([])} style={popClearStyle}>
-                Clear sources
-              </button>
-            )}
-          </div>,
-          { wide: true }
-        )}
-      </div>
-
-      {/* Brand */}
-      <div style={{ position: "relative" }}>
-        <button onClick={() => setActiveFilterPop(p => p === "brand" ? null : "brand")} style={pillBase(filterBrands.length > 0)}>
-          Brand{filterBrands.length > 0 ? ` · ${filterBrands.length}` : ""} ▾
-        </button>
-        {activeFilterPop === "brand" && popShell(
-          <div>
-            <div style={popGridStyle}>
-              {BRANDS.map(b => (
-                <button key={b} onClick={() => toggleBrand(b)} style={multiSelectRowStyle(filterBrands.includes(b))}>
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b}</span>
-                  {filterBrands.includes(b) && <span style={tickStyle}>✓</span>}
-                </button>
-              ))}
-            </div>
-            {filterBrands.length > 0 && (
-              <button onClick={() => setFilterBrands([])} style={popClearStyle}>Clear brands</button>
-            )}
-          </div>,
-          { wide: true }
-        )}
-      </div>
+      {/* Source + Brand pills are inline-expand toggles now (was
+          popover dropdowns). Tap → the pill bar's chip cluster
+          appears in a panel below the filter row. Tap again or
+          another expander to close. Same activeFilterPop state
+          drives both — only one panel open at a time. The chip
+          cluster itself is rendered after the filter-row close
+          tag, below. Removing the ▾ marker brings these in line
+          with the rest of the inline pills (Sort / Status /
+          Auctions / Price). */}
+      <button onClick={() => setActiveFilterPop(p => p === "source" ? null : "source")}
+        style={pillBase(filterSources.length > 0 || activeFilterPop === "source")}>
+        Source{filterSources.length > 0 ? ` · ${filterSources.length}` : ""}
+      </button>
+      <button onClick={() => setActiveFilterPop(p => p === "brand" ? null : "brand")}
+        style={pillBase(filterBrands.length > 0 || activeFilterPop === "brand")}>
+        Brand{filterBrands.length > 0 ? ` · ${filterBrands.length}` : ""}
+      </button>
 
       {/* Auctions-only toggle pill — orthogonal to the Live/Sold/All
           status segment. When on, filters down to auction-format
@@ -1888,6 +1867,45 @@ export default function Watchlist() {
         }}>× Clear all</button>
       )}
     </div>
+    {expandedSource && (
+      <div style={expansionPanelStyle}>
+        {SOURCES.length === 0 ? (
+          <span style={{ fontSize: 12, color: "var(--text3)" }}>No sources yet.</span>
+        ) : (
+          <>
+            {SOURCES.map(s => (
+              <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />
+            ))}
+            {filterSources.length > 0 && (
+              <button onClick={() => setFilterSources([])} style={{
+                marginLeft: "auto", fontSize: 12, padding: "5px 10px", borderRadius: 6,
+                border: "0.5px solid var(--border)", background: "transparent",
+                color: "var(--text2)", cursor: "pointer", fontFamily: "inherit",
+              }}>Clear</button>
+            )}
+          </>
+        )}
+      </div>
+    )}
+    {expandedBrand && (
+      <div style={expansionPanelStyle}>
+        {visibleBrands.map(b => (
+          <Chip key={b} label={b} active={filterBrands.includes(b)} onClick={() => toggleBrand(b)} />
+        ))}
+        {BRANDS.length > BRANDS_SHOW && (
+          <Chip label={brandsExpanded ? "Less ↑" : `+${BRANDS.length - BRANDS_SHOW} more`}
+            active={false} onClick={() => setBrandsExpanded(!brandsExpanded)} blue />
+        )}
+        {filterBrands.length > 0 && (
+          <button onClick={() => setFilterBrands([])} style={{
+            marginLeft: "auto", fontSize: 12, padding: "5px 10px", borderRadius: 6,
+            border: "0.5px solid var(--border)", background: "transparent",
+            color: "var(--text2)", cursor: "pointer", fontFamily: "inherit",
+          }}>Clear</button>
+        )}
+      </div>
+    )}
+    </>
     );
   })();
 
