@@ -285,8 +285,17 @@ export function WatchlistTab(props) {
         ))}
 
         {savedSearchStats.length === 0 && !searchEditor && (
-          <div style={{ padding: "40px 0", textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
-            No saved searches yet. Tap <b>+ Add search</b> to create one.
+          // Same shell as the Watchlist + Calendar empty states —
+          // icon + heading + blurb. Was a single line of muted text;
+          // now matches the rest so empty surfaces feel native.
+          <div style={{ padding: "48px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
+            <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
+              No saved searches yet
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 320, margin: "0 auto" }}>
+              Save a search and run it with one tap. Useful for tracking specific references across every dealer in the feed.
+            </div>
           </div>
         )}
       </div>

@@ -1052,7 +1052,7 @@ export default function Watchlist() {
   const favSearchModalJSX = favPromptOpen ? (
     <div onClick={() => setFavPromptOpen(false)} style={{
       position: "fixed", inset: 0, zIndex: 200,
-      background: "rgba(0,0,0,0.45)",
+      background: "rgba(0,0,0,0.5)",
       display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
     }}>
       <div onClick={e => e.stopPropagation()} style={{
@@ -1262,7 +1262,11 @@ export default function Watchlist() {
         width: "100%", maxWidth: 520,
         color: "var(--text1)", fontFamily: "inherit",
       }}>
-        <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Track new item</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Track new item</div>
+          <button onClick={() => setTrackOpen(false)} aria-label="Close"
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 22, lineHeight: 1, padding: 4 }}>×</button>
+        </div>
         <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5 }}>
           Paste an auction lot URL or marketplace listing URL. The
           tracked item appears in your Watchlist and refreshes on
@@ -1535,7 +1539,7 @@ export default function Watchlist() {
         {/* Mobile drawer */}
         {drawerOpen && (
           <div style={{ position: "fixed", inset: 0, zIndex: 100 }}>
-            <div onClick={() => setDrawerOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)" }} />
+            <div onClick={() => setDrawerOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }} />
             <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--bg)", borderRadius: "16px 16px 0 0", maxHeight: "88vh", display: "flex", flexDirection: "column" }}>
 
               {/* Drawer handle */}

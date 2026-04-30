@@ -5,7 +5,7 @@ export function AboutModal({ open, onClose }) {
   return (
     <div onClick={onClose} style={{
       position: "fixed", inset: 0, zIndex: 200,
-      background: "rgba(0,0,0,0.45)",
+      background: "rgba(0,0,0,0.5)",
       display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
     }}>
       <div onClick={e => e.stopPropagation()} style={{
