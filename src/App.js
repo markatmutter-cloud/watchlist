@@ -1744,11 +1744,16 @@ export default function Watchlist() {
           listings + BIN tracked items hidden. Most useful on the
           Watchlist tab where both kinds coexist. Lives at the end of
           the filter row so the layout doesn't shift on toggle. */}
-      <div style={{ position: "relative" }}>
-        <button onClick={() => setFilterAuctionsOnly(v => !v)} style={pillBase(filterAuctionsOnly)}>
-          {filterAuctionsOnly ? "✓ Auctions" : "Auctions"}
-        </button>
-      </div>
+      {/* Watchlist-only — Listings tab has no auction-format items
+          (those are tracked URLs, all of which live in Watchlist) so
+          the toggle would do nothing there. */}
+      {tab === "watchlist" && (
+        <div style={{ position: "relative" }}>
+          <button onClick={() => setFilterAuctionsOnly(v => !v)} style={pillBase(filterAuctionsOnly)}>
+            {filterAuctionsOnly ? "✓ Auctions" : "Auctions"}
+          </button>
+        </div>
+      )}
 
       {/* Reference filter dropped from the top filter row — auto-extracted
           ref numbers were noisy, especially for sources whose titles use
