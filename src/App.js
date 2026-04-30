@@ -1693,26 +1693,58 @@ export default function Watchlist() {
           the row. Counts reflect what's available in each state. */}
       {statusSegmentJSX}
 
-      {/* Sort — pills, not a dropdown. Matches the mobile sticky
-          sort row treatment so users learn one Sort interaction
-          across surfaces. Active option = inverted dark pill. */}
-      <div style={{ display: "flex", gap: 4 }}>
-        {[
-          ["date", "Newest"],
-          ["date-asc", "Oldest"],
-          ["price-asc", "Price ↑"],
-          ["price-desc", "Price ↓"],
-        ].map(([val, lbl]) => (
-          <button key={val} onClick={() => setSort(val)} style={{
-            padding: "6px 12px", borderRadius: 20,
-            border: "0.5px solid var(--border)",
-            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-            background: sort === val ? "var(--text1)" : "var(--surface)",
-            color:      sort === val ? "var(--bg)"    : "var(--text2)",
-            fontWeight: sort === val ? 600 : 500,
-            whiteSpace: "nowrap",
-          }}>{lbl}</button>
-        ))}
+      {/* Sort — two toggle pills (Date + Price), each flips its
+          direction on tap. Mirrors the mobile sticky sort row
+          treatment so users learn one Sort interaction across
+          surfaces. Arrow indicates direction:
+            ↓ = newest first / high first (descending)
+            ↑ = oldest first / low first (ascending)
+          Active option = inverted dark pill. */}
+      <div style={{ display: "flex", gap: 6 }}>
+        {(() => {
+          const isDate = sort === "date" || sort === "date-asc";
+          const label = sort === "date" ? "Date ↓"
+                      : sort === "date-asc" ? "Date ↑"
+                      : "Date";
+          return (
+            <button onClick={() => {
+              // Tap-cycle within the date axis. First tap from a
+              // non-date sort lands on newest (the most useful default).
+              if (sort === "date") setSort("date-asc");
+              else if (sort === "date-asc") setSort("date");
+              else setSort("date");
+            }} style={{
+              padding: "6px 12px", borderRadius: 20,
+              border: "0.5px solid var(--border)",
+              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+              background: isDate ? "var(--text1)" : "var(--surface)",
+              color:      isDate ? "var(--bg)"    : "var(--text2)",
+              fontWeight: isDate ? 600 : 500,
+              whiteSpace: "nowrap",
+            }}>{label}</button>
+          );
+        })()}
+        {(() => {
+          const isPrice = sort === "price-asc" || sort === "price-desc";
+          const label = sort === "price-desc" ? "Price ↓"
+                      : sort === "price-asc" ? "Price ↑"
+                      : "Price";
+          return (
+            <button onClick={() => {
+              if (sort === "price-desc") setSort("price-asc");
+              else if (sort === "price-asc") setSort("price-desc");
+              else setSort("price-desc");
+            }} style={{
+              padding: "6px 12px", borderRadius: 20,
+              border: "0.5px solid var(--border)",
+              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+              background: isPrice ? "var(--text1)" : "var(--surface)",
+              color:      isPrice ? "var(--bg)"    : "var(--text2)",
+              fontWeight: isPrice ? 600 : 500,
+              whiteSpace: "nowrap",
+            }}>{label}</button>
+          );
+        })()}
       </div>
 
       {/* (Group-by pill + popover removed 2026-04-30.) */}
