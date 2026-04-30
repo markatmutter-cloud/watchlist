@@ -24,12 +24,21 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
   // native price as primary; non-USD listings show USD-converted as
   // primary ("~$11,300") with the native price on the secondary line
   // ("£8,900"). Mark prefers USD as the consistent comparison anchor.
+  // Sold-without-price-history fallback: a listing that disappears
+  // from the dealer's site as priceOnRequest reads "Price on request"
+  // even when sold — misleading because the dealer never showed a
+  // price OR sold the item silently. If sold AND price is missing
+  // AND there's no historic price record, show "—" instead.
+  const hasHistoricPrice = (item.priceHistory || []).some(h => (h?.price ?? 0) > 0)
+    || (item.price && item.price > 0);
   const isUSD = !item.currency || item.currency.toUpperCase() === "USD";
-  const displayPrice = item.priceOnRequest
-    ? "Price on request"
-    : isUSD
-      ? fmt(item.price, "USD")
-      : `~${fmtUSD(item.priceUSD || item.price)}`;
+  const displayPrice = (item.sold && item.priceOnRequest && !hasHistoricPrice)
+    ? "—"
+    : item.priceOnRequest
+      ? "Price on request"
+      : isUSD
+        ? fmt(item.price, "USD")
+        : `~${fmtUSD(item.priceUSD || item.price)}`;
   const showNative = !isUSD && !item.priceOnRequest && item.price;
   // Show CUMULATIVE drop from peak (priceDropTotal) — so two
   // consecutive $400 cuts read as "↓ $800" rather than just the

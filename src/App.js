@@ -1235,7 +1235,7 @@ export default function Watchlist() {
               </button>
             )}
           </div>
-          {!(tab === "watchlist" && watchTopTab === "searches") && (
+          {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar")) && (
             <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} aria-label="Filters" style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <FilterIcon />
             </button>
@@ -1299,7 +1299,7 @@ export default function Watchlist() {
             have a list to filter. On Searches sub-tab we still render an
             empty placeholder of the same height so the content below
             doesn't jump up when switching sub-tabs. */}
-        {tab === "watchlist" && watchTopTab === "searches" && (
+        {tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar") && (
           // Spacer row — matches the active filter row's padding +
           // pill-shaped child so the height is identical to the real row.
           // Avoids a layout shift when switching to Searches sub-tab.
@@ -1307,7 +1307,7 @@ export default function Watchlist() {
             <span style={{ fontSize: 13, padding: "7px 14px", borderRadius: 20, border: "0.5px solid transparent", visibility: "hidden" }}>placeholder</span>
           </div>
         )}
-        {!(tab === "watchlist" && watchTopTab === "searches") && (
+        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar")) && (
         <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center" }}>
           <span style={{ fontSize: 11, color: "var(--text3)", marginRight: 2 }}>{allFiltered.length}</span>
           {/* Date sort pill */}
@@ -1386,7 +1386,7 @@ export default function Watchlist() {
         </div>
         )}
         {/* Source picker dropdown */}
-        {!(tab === "watchlist" && watchTopTab === "searches") && sourcePickerOpen && (
+        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar")) && sourcePickerOpen && (
           <div style={{ borderBottom: "0.5px solid var(--border)", padding: "8px 14px 10px", background: "var(--surface)" }}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {SOURCES.map(s => (
@@ -1419,7 +1419,7 @@ export default function Watchlist() {
               tabs to keep mobile labels readable. References tools
               are still reachable on mobile by deep link if anyone
               shares one, but the nav surface stays compact. */}
-          {[["listings", "Available"], ["watchlist", "Watchlist"]].map(([key, label]) => (
+          {[["listings", "Listings"], ["watchlist", "Watchlist"]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "8px 0 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               {tab === key
                 ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5" }} />
@@ -1771,7 +1771,7 @@ export default function Watchlist() {
           sidebar and the content area so the title is always visible
           even when the sidebar is collapsed. */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-        {!(tab === "watchlist" && watchTopTab === "searches") && sidebarToggleJSX}
+        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar")) && sidebarToggleJSX}
         {/* Watchlist title doubles as a "home" link — click to jump to
             Available. */}
         <button onClick={() => { setTab("listings"); setPage(1); }}
@@ -1782,7 +1782,7 @@ export default function Watchlist() {
           Watchlist
         </button>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
-          {[["listings", "Available"], ["watchlist", "Watchlist"], ["references", "References"]].map(([key, label]) => (
+          {[["listings", "Listings"], ["watchlist", "Watchlist"], ["references", "Reference"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,
@@ -1900,7 +1900,7 @@ export default function Watchlist() {
           • Watchlist > Searches — render an empty placeholder of the
             same height so the content area doesn't jump up when
             switching sub-tabs. */}
-      {(tab === "listings" || (tab === "watchlist" && watchTopTab !== "searches"))
+      {(tab === "listings" || (tab === "watchlist" && watchTopTab !== "searches" && watchTopTab !== "calendar"))
         ? filterRowJSX
         : (tab === "watchlist"
             ? (

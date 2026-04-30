@@ -56,21 +56,29 @@ export function WatchlistTab(props) {
     else { setTrackUrl(""); setTrackOpen(false); }
   };
 
-  const [watchSelectMode, setWatchSelectMode] = useState(false);
-  const [watchSelectedIds, setWatchSelectedIds] = useState(() => new Set());
-  const toggleWatchSelected = (id) => setWatchSelectedIds(prev => {
-    const n = new Set(prev);
-    if (n.has(id)) n.delete(id); else n.add(id);
-    return n;
-  });
-  const exitWatchSelect = () => { setWatchSelectMode(false); setWatchSelectedIds(new Set()); };
-  const removeSelectedFromWatchlist = async () => {
-    const ids = Array.from(watchSelectedIds);
-    for (const id of ids) {
-      const item = watchlist[id];
-      if (item) await toggleWatchlist(item);
-    }
-    exitWatchSelect();
+  // (Multi-select bulk-remove was removed 2026-04-30 — heart-on-card
+  // is the sufficient untrack affordance per Mark.)
+
+  // Shared styling for the Listings + Searches sub-tab headers so the
+  // Watchlist subtabs read consistently. Both have a "title left,
+  // primary action right" layout with the same button visual rhythm.
+  // Tweaks to one belong here so both update in lock-step.
+  const primaryActionRowStyle = {
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    marginBottom: 14, gap: 8, flexWrap: "wrap",
+  };
+  const subtabHeaderTextStyle = {
+    fontSize: 12, color: "var(--text2)",
+    letterSpacing: "0.04em", textTransform: "uppercase",
+    fontWeight: 600,
+  };
+  const primaryActionButtonStyle = {
+    fontSize: 13, fontWeight: 500,
+    padding: "7px 14px", borderRadius: 8,
+    border: "0.5px solid var(--border)",
+    background: "var(--surface)",
+    color: "var(--text1)",
+    cursor: "pointer", fontFamily: "inherit",
   };
 
 
@@ -254,14 +262,10 @@ export function WatchlistTab(props) {
     "Save searches and run them with one tap. Your list syncs across every device you use."
   ) : (
     <div style={{ paddingTop: 4 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 8 }}>
-        <div style={{ fontSize: 12, color: "var(--text3)" }}>Tap to run · pencil to edit</div>
+      <div style={primaryActionRowStyle}>
+        <div style={subtabHeaderTextStyle}>Saved searches</div>
         {!searchEditor && (
-          <button onClick={startAddSearch} style={{
-            border: "0.5px solid var(--border)", background: "var(--card-bg)", color: "var(--text1)",
-            padding: "5px 12px", borderRadius: 8, cursor: "pointer",
-            fontFamily: "inherit", fontSize: 12,
-          }}>+ Add search</button>
+          <button onClick={startAddSearch} style={primaryActionButtonStyle}>+ Add search</button>
         )}
       </div>
 
@@ -326,78 +330,50 @@ export function WatchlistTab(props) {
         "Heart any listing to save it here. Saved items sync across every device you use."
       ) : (
         <>
-          {/* Sub-tabs: Listings + Searches + Auction Calendar. The
-              Auctions main tab was retired 2026-04-30; tracked lots
-              now flow into Listings (alongside hearted dealer items)
-              and the calendar lives here as a 3rd sub-tab. */}
+          {/* Sub-tabs: Listings + Searches + Auction Calendar.
+              Pill-style with rounded background — visibly separate
+              tabs per Mark's 2026-04-30 ask. The previous underline
+              treatment looked too similar to a heading row; pills
+              read as actual tabs at a glance. Sticky so the bar
+              stays reachable as the user scrolls. */}
           <div style={{
-            display: "flex", marginBottom: 14,
+            display: "flex", gap: 6, marginBottom: 14,
             position: "sticky",
             top: isMobile ? 92 : 0,
             background: "var(--bg)",
             zIndex: 15,
-            paddingBottom: 4,
-            borderBottom: "0.5px solid var(--border)",
+            paddingBottom: 8, paddingTop: 2,
           }}>
             {[
               ["listings", `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
               ["searches", `Searches${savedSearchStats.length > 0 ? ` · ${savedSearchStats.length}` : ""}`],
               ["calendar", `Auction Calendar${(auctions || []).length > 0 ? ` · ${auctions.length}` : ""}`],
-            ].map(([key, label]) => (
-              <button key={key} onClick={() => setWatchTopTab(key)} style={{
-                padding: "6px 0", marginRight: 18, border: "none", cursor: "pointer",
-                background: "transparent", fontFamily: "inherit", fontSize: 14,
-                color: watchTopTab === key ? "var(--text1)" : "var(--text3)",
-                fontWeight: watchTopTab === key ? 600 : 400,
-                borderBottom: watchTopTab === key ? "2px solid var(--text1)" : "2px solid transparent",
-              }}>{label}</button>
-            ))}
+            ].map(([key, label]) => {
+              const active = watchTopTab === key;
+              return (
+                <button key={key} onClick={() => setWatchTopTab(key)} style={{
+                  padding: "7px 14px", borderRadius: 999,
+                  border: "0.5px solid var(--border)",
+                  cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+                  background: active ? "var(--text1)" : "var(--card-bg)",
+                  color:      active ? "var(--bg)"    : "var(--text2)",
+                  fontWeight: active ? 600 : 500,
+                }}>{label}</button>
+              );
+            })}
           </div>
 
           {watchTopTab === "listings" && (<>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 8, flexWrap: "wrap" }}>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text2)" }}>Watchlist</div>
-            {!watchSelectMode && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                {/* Track New Item — opens modal that accepts auction-
-                    house lot URLs, eBay item URLs, etc. Replaces the
-                    prior inline form on the (now-retired) Auctions tab. */}
-                <button onClick={() => { setTrackOpen(true); setTrackError(""); }} style={{
-                  fontSize: 11, padding: "4px 10px", borderRadius: 6,
-                  border: "0.5px solid var(--border)",
-                  background: "var(--card-bg)",
-                  color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                }}>+ Track new item</button>
-                {watchCount > 0 && (
-                  <button onClick={() => setWatchSelectMode(true)} style={{
-                    fontSize: 11, padding: "4px 10px", borderRadius: 6,
-                    border: "0.5px solid var(--border)", background: "transparent",
-                    color: "var(--text2)", cursor: "pointer", fontFamily: "inherit",
-                  }}>Select</button>
-                )}
-              </div>
-            )}
-            {watchSelectMode && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 11, color: "var(--text3)" }}>
-                  {watchSelectedIds.size} selected
-                </span>
-                <button onClick={exitWatchSelect} style={{
-                  fontSize: 11, padding: "4px 10px", borderRadius: 6,
-                  border: "0.5px solid var(--border)", background: "transparent",
-                  color: "var(--text2)", cursor: "pointer", fontFamily: "inherit",
-                }}>Cancel</button>
-                <button onClick={removeSelectedFromWatchlist}
-                  disabled={watchSelectedIds.size === 0}
-                  style={{
-                    fontSize: 11, padding: "4px 10px", borderRadius: 6,
-                    border: "none", background: watchSelectedIds.size ? "#c43" : "var(--surface)",
-                    color: watchSelectedIds.size ? "#fff" : "var(--text3)",
-                    cursor: watchSelectedIds.size ? "pointer" : "default",
-                    fontFamily: "inherit",
-                  }}>Remove</button>
-              </div>
-            )}
+          <div style={primaryActionRowStyle}>
+            <div style={subtabHeaderTextStyle}>Watchlist</div>
+            {/* Track New Item — opens modal that accepts auction-house
+                lot URLs, eBay item URLs, etc. Styling matches the
+                "+ Add search" button on the Searches sub-tab so primary
+                actions read consistently across sub-tabs. */}
+            <button onClick={() => { setTrackOpen(true); setTrackError(""); }}
+              style={primaryActionButtonStyle}>
+              + Track new item
+            </button>
           </div>
           {watchCount === 0 ? (
             <div style={{ padding: "48px 20px", textAlign: "center" }}>
@@ -415,51 +391,23 @@ export function WatchlistTab(props) {
           ) : (
             <>
               {(() => {
-                const renderItem = (item) => {
-                  const selected = watchSelectedIds.has(item.id);
-                  const cardJSX = (
-                    <Card
-                      item={{
-                        ...item,
-                        price: item.savedPrice,
-                        currency: item.savedCurrency || "USD",
-                        priceUSD: item.savedPriceUSD || item.savedPrice,
-                        // SOLD badge follows current state, not the
-                        // snapshot's at-save-time `sold` field.
-                        sold: item._isSold,
-                      }}
-                      wished={true}
-                      onWish={handleWish}
-                      compact={compact}
-                    />
-                  );
-                  if (!watchSelectMode) return <div key={item.id}>{cardJSX}</div>;
-                  return (
-                    <div key={item.id} style={{ position: "relative", opacity: selected ? 0.55 : 1 }}>
-                      {cardJSX}
-                      <div onClick={() => toggleWatchSelected(item.id)}
-                        role="button" aria-pressed={selected}
-                        style={{
-                          position: "absolute", inset: 0, cursor: "pointer",
-                          background: selected ? "rgba(24,95,165,0.18)" : "transparent",
-                          outline: selected ? "2px solid #185FA5" : "none",
-                          outlineOffset: -2,
-                        }}>
-                        <div style={{
-                          position: "absolute", top: 8, right: 8,
-                          width: 24, height: 24, borderRadius: "50%",
-                          background: selected ? "#185FA5" : "rgba(255,255,255,0.92)",
-                          color: selected ? "#fff" : "var(--text2)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 14, fontWeight: 700, lineHeight: 1,
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.18)",
-                        }}>
-                          {selected ? "✓" : ""}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                };
+                const renderItem = (item) => (
+                  <Card
+                    key={item.id}
+                    item={{
+                      ...item,
+                      price: item.savedPrice,
+                      currency: item.savedCurrency || "USD",
+                      priceUSD: item.savedPriceUSD || item.savedPrice,
+                      // SOLD badge follows current state, not the
+                      // snapshot's at-save-time `sold` field.
+                      sold: item._isSold,
+                    }}
+                    wished={true}
+                    onWish={handleWish}
+                    compact={compact}
+                  />
+                );
 
                 if (watchView.length === 0) {
                   const rawSold = Object.values(watchlist).filter(it => {

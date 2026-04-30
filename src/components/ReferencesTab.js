@@ -33,7 +33,7 @@ export function ReferencesTab() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "4px 4px 24px" }}>
       <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 4px", color: "var(--text1)" }}>
-        References
+        Reference
       </h1>
       <p style={{ fontSize: 13, color: "var(--text2)", margin: "0 0 20px" }}>
         Tools, calculators, and reference material for vintage-watch collectors.
