@@ -125,7 +125,7 @@ export function AuctionCalendar({ auctions = [] }) {
         <div key={group.key} style={{ marginBottom: 28 }}>
           <div style={{
             display: "flex", alignItems: "baseline", gap: 12,
-            padding: idx === 0 ? "4px 4px 12px" : "24px 4px 12px",
+            padding: idx === 0 ? "14px 14px 12px" : "24px 14px 12px",
             borderBottom: "0.5px solid var(--border)",
             marginBottom: 4,
           }}>

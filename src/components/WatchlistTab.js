@@ -393,7 +393,7 @@ export function WatchlistTab(props) {
                         entry.kind === "divider" ? (
                           <div key={`div-${idx}-${entry.label}`} style={{
                             gridColumn: "1/-1",
-                            padding: entry.idx === 0 ? "4px 4px 12px" : "28px 4px 12px",
+                            padding: entry.idx === 0 ? "14px 14px 12px" : "28px 14px 12px",
                             display: "flex", alignItems: "baseline", gap: 12,
                             borderBottom: "0.5px solid var(--border)",
                             marginBottom: 4,
