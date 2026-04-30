@@ -227,6 +227,23 @@ export default function Watchlist() {
     return userSearches.some(s => (s.query || "").toLowerCase() === q);
   }, [search, userSearches]);
   const { urls: trackedLotUrls, add: addTrackedLot, remove: removeTrackedLot, addedAt: trackedLotAddedAt } = useTrackedLots(user);
+
+  // Track-new-item modal — lifted up from WatchlistTab on 2026-04-30
+  // so the sub-tab strip in App.js (which carries the trigger button)
+  // can open the modal directly. Same single-URL paste flow as
+  // before.
+  const [trackOpen, setTrackOpen] = useState(false);
+  const [trackUrl, setTrackUrl] = useState("");
+  const [trackBusy, setTrackBusy] = useState(false);
+  const [trackError, setTrackError] = useState("");
+  const submitTrack = async () => {
+    if (!trackUrl.trim() || !addTrackedLot) return;
+    setTrackBusy(true); setTrackError("");
+    const { error } = await addTrackedLot(trackUrl);
+    setTrackBusy(false);
+    if (error) setTrackError(error);
+    else { setTrackUrl(""); setTrackOpen(false); }
+  };
   // If there's leftover localStorage data from the pre-Supabase era, we
   // offer to import it after sign-in. Read once at mount so we can tell
   // the user *how many* items we'd import ("N saved, M hidden").
@@ -1414,11 +1431,16 @@ export default function Watchlist() {
         {/* Top padding 0 on Watchlist so the sub-tab strip sits flush
             against the sticky filter pills above (otherwise a ~12px gap
             at scroll-top shows cards peeking through). */}
+        {/* Mobile sub-tab strip — same content as the desktop one,
+            placed between the sticky search/sort row and the page
+            content. Shown only on Watchlist tab. */}
+        {watchSubTabsJSX}
         <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
           {tab === "listings" ? listingsGridJSX
             : tab === "references" ? <ReferencesTab />
             : watchlistTabJSX}
         </div>
+        {trackNewItemModalJSX}
         {/* Bottom tab bar. The container reserves the iOS home-indicator
             safe area PLUS a fixed extra padding, so the buttons aren't
             hugging the home bar when the app is launched standalone from
@@ -1588,6 +1610,122 @@ export default function Watchlist() {
     fontFamily: "inherit", fontSize: 12, width: "100%",
   };
 
+  // Watchlist sub-tab strip — lifted out of WatchlistTab.js on
+  // 2026-04-30 so it sits between the main tab strip and the filter
+  // row rather than below the filter row. Sits in the layout flow
+  // only when tab === "watchlist". Inline contextual buttons:
+  // "+ Track new item" on Listings, "+ Add search" on Searches,
+  // none on Auction Calendar.
+  const watchSubTabsJSX = tab !== "watchlist" ? null : (
+    <div style={{
+      display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
+      padding: "10px 16px",
+      background: "var(--bg)",
+      borderBottom: "0.5px solid var(--border)",
+      flexShrink: 0,
+    }}>
+      {[
+        ["listings", `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
+        ["searches", `Searches${savedSearchStats.length > 0 ? ` · ${savedSearchStats.length}` : ""}`],
+        ["calendar", `Auction Calendar${(auctions || []).length > 0 ? ` · ${auctions.length}` : ""}`],
+      ].map(([key, label]) => {
+        const active = watchTopTab === key;
+        return (
+          <button key={key} onClick={() => setWatchTopTab(key)} style={{
+            padding: "6px 14px", borderRadius: 20,
+            border: "0.5px solid var(--border)",
+            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+            background: active ? "var(--text1)" : "var(--surface)",
+            color:      active ? "var(--bg)"    : "var(--text2)",
+            fontWeight: active ? 600 : 500,
+          }}>{label}</button>
+        );
+      })}
+      {watchTopTab === "listings" && user && (
+        <button onClick={() => { setTrackOpen(true); setTrackError(""); }} style={{
+          marginLeft: "auto",
+          fontSize: 13, fontWeight: 500,
+          padding: "7px 14px", borderRadius: 8,
+          border: "0.5px solid var(--border)",
+          background: "var(--surface)", color: "var(--text1)",
+          cursor: "pointer", fontFamily: "inherit",
+        }}>+ Track new item</button>
+      )}
+      {watchTopTab === "searches" && user && !searchEditor && (
+        <button onClick={startAddSearch} style={{
+          marginLeft: "auto",
+          fontSize: 13, fontWeight: 500,
+          padding: "7px 14px", borderRadius: 8,
+          border: "0.5px solid var(--border)",
+          background: "var(--surface)", color: "var(--text1)",
+          cursor: "pointer", fontFamily: "inherit",
+        }}>+ Add search</button>
+      )}
+    </div>
+  );
+
+  // Track new item modal — single-URL paste flow with source-list
+  // instructions. Lifted up from WatchlistTab so the trigger button
+  // can live in the watchSubTabsJSX strip above the filter row.
+  const trackNewItemModalJSX = !trackOpen ? null : (
+    <div onClick={() => setTrackOpen(false)} style={{
+      position: "fixed", inset: 0, zIndex: 200,
+      background: "rgba(0,0,0,0.5)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 20,
+    }}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        background: "var(--card-bg)",
+        border: "0.5px solid var(--border)",
+        borderRadius: 14,
+        padding: "20px 22px",
+        width: "100%", maxWidth: 520,
+        color: "var(--text1)", fontFamily: "inherit",
+      }}>
+        <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Track new item</div>
+        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5 }}>
+          Paste an auction lot URL or marketplace listing URL. The
+          tracked item appears in your Watchlist and refreshes on
+          the next scrape (current bid, hammer price, end time).
+        </div>
+        <input
+          autoFocus
+          value={trackUrl}
+          onChange={e => { setTrackUrl(e.target.value); setTrackError(""); }}
+          onKeyDown={e => { if (e.key === "Enter") submitTrack(); }}
+          placeholder="https://..."
+          style={{ ...inp, width: "100%", fontSize: 13, marginBottom: 8 }}
+        />
+        {trackError && (
+          <div style={{ fontSize: 11, color: "#c0392b", marginBottom: 8 }}>{trackError}</div>
+        )}
+        <div style={{ fontSize: 10, color: "var(--text3)", lineHeight: 1.55, marginBottom: 14 }}>
+          Supported sources:
+          {" "}Antiquorum (live + catalog),
+          {" "}Christie's,
+          {" "}Sotheby's,
+          {" "}Monaco Legend,
+          {" "}Phillips,
+          {" "}eBay (auction or Buy-It-Now).
+          {" "}Bonhams + Chrono24 are blocked by their bot walls and need Mac mini infra (deferred).
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button onClick={() => setTrackOpen(false)} style={{
+            border: "0.5px solid var(--border)", background: "transparent",
+            color: "var(--text2)", padding: "8px 16px", borderRadius: 8,
+            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+          }}>Cancel</button>
+          <button onClick={submitTrack} disabled={trackBusy || !trackUrl.trim()} style={{
+            border: "none", background: "#185FA5", color: "#fff",
+            padding: "8px 16px", borderRadius: 8, cursor: "pointer",
+            fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+            opacity: (trackBusy || !trackUrl.trim()) ? 0.5 : 1,
+          }}>{trackBusy ? "Tracking…" : "Track"}</button>
+        </div>
+      </div>
+    </div>
+  );
+
   const filterRowJSX = (() => {
     return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
@@ -1597,32 +1735,26 @@ export default function Watchlist() {
           the row. Counts reflect what's available in each state. */}
       {statusSegmentJSX}
 
-      {/* Sort */}
-      <div style={{ position: "relative" }}>
-        {(() => {
-          const label = sort === "price-asc" ? "Price ↑"
-                      : sort === "price-desc" ? "Price ↓"
-                      : sort === "date-asc" ? "Oldest first"
-                      : "Newest first";
-          return (
-            <button onClick={() => setActiveFilterPop(p => p === "sort" ? null : "sort")} style={pillBase(false)}>
-              Sort: {label} ▾
-            </button>
-          );
-        })()}
-        {activeFilterPop === "sort" && popShell(
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {[["date", "Newest first"], ["date-asc", "Oldest first"],
-              ["price-asc", "Price: low to high"], ["price-desc", "Price: high to low"]
-            ].map(([val, lbl]) => (
-              <button key={val} onClick={() => { setSort(val); setActiveFilterPop(null); }} style={{
-                textAlign: "left", padding: "8px 10px", borderRadius: 6, border: "none",
-                background: sort === val ? "var(--surface)" : "transparent",
-                color: "var(--text1)", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              }}>{lbl}{sort === val ? "  ✓" : ""}</button>
-            ))}
-          </div>
-        )}
+      {/* Sort — pills, not a dropdown. Matches the mobile sticky
+          sort row treatment so users learn one Sort interaction
+          across surfaces. Active option = inverted dark pill. */}
+      <div style={{ display: "flex", gap: 4 }}>
+        {[
+          ["date", "Newest"],
+          ["date-asc", "Oldest"],
+          ["price-asc", "Price ↑"],
+          ["price-desc", "Price ↓"],
+        ].map(([val, lbl]) => (
+          <button key={val} onClick={() => setSort(val)} style={{
+            padding: "6px 12px", borderRadius: 20,
+            border: "0.5px solid var(--border)",
+            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+            background: sort === val ? "var(--text1)" : "var(--surface)",
+            color:      sort === val ? "var(--bg)"    : "var(--text2)",
+            fontWeight: sort === val ? 600 : 500,
+            whiteSpace: "nowrap",
+          }}>{lbl}</button>
+        ))}
       </div>
 
       {/* Group */}
@@ -1933,6 +2065,11 @@ export default function Watchlist() {
           • Watchlist > Searches — render an empty placeholder of the
             same height so the content area doesn't jump up when
             switching sub-tabs. */}
+      {/* Watchlist sub-tab strip sits between main tabs and the
+          filter row per Mark's 2026-04-30 ask — surfaces the
+          contextual Track / Add-search action above the filter
+          pills. */}
+      {watchSubTabsJSX}
       {(tab === "listings" || (tab === "watchlist" && watchTopTab !== "searches" && watchTopTab !== "calendar"))
         ? filterRowJSX
         : (tab === "watchlist"
@@ -1962,6 +2099,7 @@ export default function Watchlist() {
             : watchlistTabJSX}
         </div>
       </div>
+      {trackNewItemModalJSX}
       <HiddenModal
           open={hiddenModalOpen}
           onClose={() => setHiddenModalOpen(false)}
