@@ -3,6 +3,7 @@ import { useAuth, useWatchlist, useHidden, useSearches, useTrackedLots, importLo
 import {
   GLOBAL_MAX, CURRENCY_SYM,
   fmt, fmtUSD, daysAgo, freshDate, imgSrc, logToPrice, extractRef,
+  ageBucketFromDate, canonicalizeBrand, detectBrandFromTitle, shortHash,
 } from "./utils";
 import { useWidth, useSystemDark } from "./hooks";
 import { FilterIcon, SearchIcon, TabIcon } from "./components/icons";
@@ -218,7 +219,7 @@ export default function Watchlist() {
     if (!q) return false;
     return userSearches.some(s => (s.query || "").toLowerCase() === q);
   }, [search, userSearches]);
-  const { urls: trackedLotUrls, add: addTrackedLot, remove: removeTrackedLot } = useTrackedLots(user);
+  const { urls: trackedLotUrls, add: addTrackedLot, remove: removeTrackedLot, addedAt: trackedLotAddedAt } = useTrackedLots(user);
   // If there's leftover localStorage data from the pre-Supabase era, we
   // offer to import it after sign-in. Read once at mount so we can tell
   // the user *how many* items we'd import ("N saved, M hidden").
@@ -513,6 +514,7 @@ export default function Watchlist() {
   }, [items]);
 
   const watchItems = useMemo(() => {
+    // Hearted dealer items from `watchlist_items`.
     let its = Object.values(watchlist);
     // Tag each entry with its current liveness so we can split into
     // Live/Sold sub-views below. An item is "sold" if the live scrape
@@ -524,6 +526,86 @@ export default function Watchlist() {
       const isSold = !live || !!live.sold;
       return { ...it, _isSold: isSold };
     });
+    // Project tracked lots (auction-house lots, eBay items, future
+    // marketplace URLs) into the same shape so the Watchlist surface
+    // is the single "things I care about" list. Tracked-lot URLs are
+    // ALWAYS treated as user-saved (the URL paste itself counts as a
+    // heart per Mark's spec on 2026-04-30). Item IDs use sha1(url) so
+    // the union dedupes if the same URL ever ends up in both tables.
+    for (const url of trackedLotUrls) {
+      const data = trackedLotsState[url];
+      if (!data) {
+        // Pending: scraper hasn't populated tracked_lots.json yet.
+        // Render a placeholder card.
+        its.push({
+          id: shortHash(url),
+          brand: "Other",
+          ref: "Fetching…",
+          price: 0,
+          currency: "USD",
+          priceUSD: 0,
+          savedPrice: 0,
+          savedCurrency: "USD",
+          savedPriceUSD: 0,
+          source: "—",
+          url,
+          img: "",
+          sold: false,
+          _isSold: false,
+          _isTrackedLot: true,
+          _isAuctionFormat: false,
+          savedAt: trackedLotAddedAt[url] || "",
+        });
+        continue;
+      }
+      const isEnded = data.status === "ended";
+      const price = (isEnded ? data.sold_price : data.current_bid)
+        || data.starting_price || data.estimate_low || 0;
+      const priceUsd = (isEnded ? data.sold_price_usd : data.current_bid_usd)
+        || data.starting_price_usd || data.estimate_low_usd || price;
+      // eBay AUCTION + every traditional auction house = auction
+      // format. eBay BIN + Chrono24 + Watchcollecting etc. = fixed
+      // price. The chip + filter use this distinction; status text
+      // ("CURRENT" vs "BUY NOW" vs "HAMMER" vs "SOLD") is set by the
+      // Card render off `data.buying_option`.
+      const isFixedPrice = data.buying_option === "BUY_IT_NOW"
+                        || data.buying_option === "FIXED_PRICE";
+      const isAuctionFormat = !isFixedPrice;
+      its.push({
+        id: shortHash(url),
+        brand: canonicalizeBrand(detectBrandFromTitle(data.title || "")),
+        ref: data.title || "—",
+        price: price || 0,
+        currency: data.currency || "USD",
+        priceUSD: priceUsd || price || 0,
+        // savedPrice family populated so the WatchlistTab Card-render
+        // overrides (which read savedPrice/savedCurrency/savedPriceUSD
+        // for hearted dealer items) work for tracked-lot projections
+        // too without a separate code path.
+        savedPrice: price || 0,
+        savedCurrency: data.currency || "USD",
+        savedPriceUSD: priceUsd || price || 0,
+        source: data.house || "—",
+        url,
+        img: data.image || "",
+        sold: isEnded,
+        _isSold: isEnded,
+        _isTrackedLot: true,
+        _isAuctionFormat: isAuctionFormat,
+        // Pass through auction-specific fields the Card needs to
+        // render bid label / countdown / etc. when known.
+        buying_option: data.buying_option,
+        current_bid: data.current_bid,
+        current_bid_usd: data.current_bid_usd,
+        sold_price: data.sold_price,
+        sold_price_usd: data.sold_price_usd,
+        auction_end: data.auction_end,
+        auction_title: data.auction_title,
+        lot_number: data.lot_number,
+        savedAt: trackedLotAddedAt[url] || "",
+        soldAt: isEnded ? (data.auction_end || data.scraped_at || "") : null,
+      });
+    }
     // Apply the same source/brand/ref/search filters as Available and Archive,
     // so the sidebar drawer narrows down the watchlist too. Saved entries
     // carry the listing_snapshot fields (source, brand, ref), so the same
@@ -548,7 +630,8 @@ export default function Watchlist() {
     else if (sort === "date-asc") its.sort((a, b) => (a.savedAt || "").localeCompare(b.savedAt || ""));
     else its.sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
     return its;
-  }, [watchlist, liveStateById, sort, filterSources, filterBrands, filterRefs, search]);
+  }, [watchlist, liveStateById, sort, filterSources, filterBrands, filterRefs, search,
+      trackedLotUrls, trackedLotsState, trackedLotAddedAt]);
 
   const watchLive = useMemo(() => watchItems.filter(i => !i._isSold), [watchItems]);
   const watchSold = useMemo(() => watchItems.filter(i =>  i._isSold), [watchItems]);

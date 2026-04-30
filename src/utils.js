@@ -67,6 +67,55 @@ export function canonicalizeBrand(brand) {
   return BRAND_ALIASES[key] || brand;
 }
 
+// Lightweight brand detector for surfaces that have a title but no
+// scraper-set brand field — e.g. tracked auction lots projected into
+// the unified Watchlist render. Mirrors merge.py BRANDS in spirit;
+// kept narrower since the frontend just needs basic substring
+// matching to hand off to the existing brand chip logic. Order
+// matters where one brand is a substring of another (Grand Seiko
+// before Seiko, TAG Heuer before Heuer, Patek Philippe before
+// Philippe).
+const FRONTEND_BRANDS = [
+  "Patek Philippe", "Audemars Piguet", "Vacheron Constantin",
+  "Jaeger-LeCoultre", "A. Lange & Söhne", "A. Lange",
+  "Grand Seiko", "Seiko", "TAG Heuer", "Tag Heuer", "Heuer",
+  "Universal Genève", "Universal Geneve", "Girard-Perregaux",
+  "Tiffany & Co.", "F.P. Journe", "Baume & Mercier", "Daniel Roth",
+  "Ulysse Nardin", "Ralph Lauren", "Roger Dubuis",
+  "Rolex", "Omega", "Tudor", "Breitling", "IWC", "Cartier",
+  "Panerai", "Longines", "Movado", "Czapek", "Urwerk", "Zenith",
+  "Breguet", "Blancpain", "Tissot", "Eberhard", "Aquastar",
+  "Hermès", "Hermes", "Bvlgari", "Doxa", "Piaget", "Ebel",
+  "Vulcain", "Favre-Leuba", "Lemania", "Yema", "Glycine",
+];
+export function detectBrandFromTitle(title) {
+  if (!title) return "Other";
+  const lower = title.toLowerCase();
+  for (const b of FRONTEND_BRANDS) {
+    if (lower.includes(b.toLowerCase())) return b;
+  }
+  return "Other";
+}
+
+// Tiny deterministic hash → 12-char hex. Used to mint stable item
+// IDs from URLs so projected tracked-lot items share the dedup key
+// with anything that reaches the same URL via another path. NOT
+// a cryptographic hash; sufficient for "same URL → same id" within
+// the app.
+export function shortHash(str) {
+  if (!str) return "";
+  let h1 = 0x811c9dc5 | 0;       // FNV-ish, two hashes interleaved
+  let h2 = 0x9e3779b9 | 0;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 0x01000193);
+    h2 = Math.imul((h2 ^ c) + ((h2 << 5) | 0), 0x85ebca6b);
+  }
+  const a = (h1 >>> 0).toString(16).padStart(8, "0");
+  const b = (h2 >>> 0).toString(16).padStart(8, "0");
+  return (a + b).slice(0, 12);
+}
+
 export function fmt(price, currency) {
   return (CURRENCY_SYM[currency] || "$") + price.toLocaleString();
 }

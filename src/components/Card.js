@@ -63,6 +63,16 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
           {item.sold && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>}
           {!item.sold && isHidden && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>}
           {isNew && !isHidden && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(24,95,165,0.92)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em", fontWeight: 600 }}>NEW</div>}
+          {/* AUCTION chip — surfaces auction-format tracked lots (auction
+              houses + eBay AUCTION) in the unified Watchlist render so
+              users can tell at a glance what's up for bid vs what's a
+              fixed-price marketplace listing. Right side so it doesn't
+              collide with SOLD/NEW/HIDDEN on the left. Hidden once the
+              lot has ended (the SOLD chip on the left carries the state
+              from there). */}
+          {item._isAuctionFormat && !item.sold && (
+            <div style={{ position: "absolute", top: 6, right: 38, background: "rgba(196,68,68,0.92)", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 8, letterSpacing: "0.06em", fontWeight: 600 }}>AUCTION</div>
+          )}
         </div>
         <div style={{ padding: compact ? "5px 7px 8px" : "7px 9px 10px" }}>
           <div style={{ fontSize: compact ? 8 : 9, color: "var(--text3)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.source}</div>

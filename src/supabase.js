@@ -326,16 +326,21 @@ export function useSearches(user) {
 
 export function useTrackedLots(user) {
   const [urls, setUrls] = useState([]);
+  // url → added_at ISO string. Used by App.js to populate `savedAt`
+  // when projecting tracked lots into the unified Watchlist render.
+  const [addedAt, setAddedAt] = useState({});
 
   useEffect(() => {
-    if (!user || !supabase) { setUrls([]); return; }
+    if (!user || !supabase) { setUrls([]); setAddedAt({}); return; }
     let cancelled = false;
     supabase.from('tracked_lots').select('lot_url, added_at')
       .order('added_at', { ascending: false })
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) { console.warn('tracked lots load failed', error); return; }
-        setUrls((data || []).map(r => r.lot_url));
+        const rows = data || [];
+        setUrls(rows.map(r => r.lot_url));
+        setAddedAt(Object.fromEntries(rows.map(r => [r.lot_url, r.added_at])));
       });
     return () => { cancelled = true; };
   }, [user?.id]);
@@ -368,15 +373,18 @@ export function useTrackedLots(user) {
       return { error: 'Supported lot URLs: Antiquorum, Christie\'s (christies.com/.../lot/lot-NNN), Sotheby\'s (sothebys.com/en/buy/auction/YYYY/.../...), Monaco Legend (monacolegendauctions.com/auction/<slug>/lot-NNN), Phillips (phillips.com/detail/<brand>/<id>), or eBay (ebay.com/itm/<id>).' };
     }
     if (urls.includes(url)) return { error: 'Already tracking this lot.' };
+    const ts = new Date().toISOString();
     setUrls(prev => [url, ...prev]);
+    setAddedAt(prev => ({ ...prev, [url]: ts }));
     const { error } = await supabase.from('tracked_lots').insert({
       user_id: user.id,
       lot_url: url,
-      added_at: new Date().toISOString(),
+      added_at: ts,
     });
     if (error) {
       // Roll back optimistic add on failure.
       setUrls(prev => prev.filter(u => u !== url));
+      setAddedAt(prev => { const n = { ...prev }; delete n[url]; return n; });
       console.warn('tracked lot add', error);
       return { error: error.message };
     }
@@ -386,12 +394,13 @@ export function useTrackedLots(user) {
   const remove = useCallback(async (url) => {
     if (!user || !supabase) return;
     setUrls(prev => prev.filter(u => u !== url));
+    setAddedAt(prev => { const n = { ...prev }; delete n[url]; return n; });
     const { error } = await supabase.from('tracked_lots').delete()
       .match({ user_id: user.id, lot_url: url });
     if (error) console.warn('tracked lot remove', error);
   }, [user]);
 
-  return { urls, add, remove };
+  return { urls, add, remove, addedAt };
 }
 
 
