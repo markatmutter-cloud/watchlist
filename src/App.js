@@ -1322,8 +1322,14 @@ export default function Watchlist() {
     </div>
   );
 
-  if (isMobile) {
-    return (
+  // Mobile and desktop JSX as named consts — both built unconditionally
+  // so a single `return` at the bottom picks between them. This pattern
+  // replaces an early-return-on-mobile that bit us with a TDZ
+  // ReferenceError when a JSX const used by mobile was declared after
+  // the early-return (white screen on mobile, desktop unaffected because
+  // it fell through past the declarations). Single bottom return makes
+  // the class of bug structurally impossible.
+  const mobileJSX = (
       <div style={baseStyle}>
         {/* "Watchlist" title sits OUTSIDE the sticky wrapper — it scrolls
             off screen as you pan down, leaving just the sticky search +
@@ -1639,8 +1645,7 @@ export default function Watchlist() {
         />
         {favSearchModalJSX}
       </div>
-    );
-  }
+  );
 
   // ── DESKTOP ───────────────────────────────────────────────────────────────
   // The desktop sidebar is gone. Filters live in a pill row below the top
@@ -1934,7 +1939,7 @@ export default function Watchlist() {
     );
   })();
 
-  return (
+  const desktopJSX = (
     <div style={{ ...baseStyle, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* Full-width top bar: hamburger | Watchlist title | tabs |
           centered search | count | dark | auth. Sits above both the
@@ -2120,4 +2125,6 @@ export default function Watchlist() {
         {favSearchModalJSX}
     </div>
   );
+
+  return isMobile ? mobileJSX : desktopJSX;
 }
