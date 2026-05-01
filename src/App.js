@@ -4,6 +4,7 @@ import {
   GLOBAL_MAX, CURRENCY_SYM,
   fmt, fmtUSD, daysAgo, freshDate, imgSrc, logToPrice, extractRef,
   ageBucketFromDate, canonicalizeBrand, detectBrandFromTitle, shortHash,
+  matchesSearch,
 } from "./utils";
 import { useWidth, useSystemDark } from "./hooks";
 import { useTrackModal } from "./hooks/useTrackModal";
@@ -446,8 +447,7 @@ export default function Watchlist() {
     if (filterBrands.length > 0) its = its.filter(i => filterBrands.includes(displayBrand(i)));
     if (filterAuctionsOnly) its = its.filter(i => i._isAuctionFormat);
     if (search.trim()) {
-      const q = search.toLowerCase();
-      its = its.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q));
+      its = its.filter(i => matchesSearch(i, search));
     }
     if (minPrice > 0) its = its.filter(i => (i.priceUSD || i.price) >= minPrice);
     if (maxPrice < GLOBAL_MAX) its = its.filter(i => (i.priceUSD || i.price) <= maxPrice);
@@ -616,8 +616,7 @@ export default function Watchlist() {
       });
     }
     if (search.trim()) {
-      const q = search.toLowerCase();
-      its = its.filter(i => (i.ref || "").toLowerCase().includes(q) || (i.brand || "").toLowerCase().includes(q));
+      its = its.filter(i => matchesSearch(i, search));
     }
     // Price filter — was missing on Watchlist (Mark surfaced
     // 2026-04-30: divider counts didn't react to the price boxes).
@@ -731,10 +730,8 @@ export default function Watchlist() {
   const savedSearchStats = useMemo(() => {
     const forSale = items.filter(i => !i.sold);
     return userSearches.map(({ id, label, query }) => {
-      const q = (query || "").toLowerCase();
-      const matches = q
-        ? forSale.filter(i => i.ref.toLowerCase().includes(q) || i.brand.toLowerCase().includes(q))
-        : [];
+      const q = (query || "").trim();
+      const matches = q ? forSale.filter(i => matchesSearch(i, q)) : [];
       const newCount = matches.filter(i => daysAgo(freshDate(i)) <= 7 && !i.backfilled).length;
       return { id, label, query, count: matches.length, newCount };
     });

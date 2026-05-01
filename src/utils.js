@@ -4,6 +4,26 @@
 export const GLOBAL_MAX = 600000;
 export const CURRENCY_SYM = { USD: "$", GBP: "£", EUR: "€", CHF: "CHF " };
 
+// Free-text search match. Splits the query into whitespace tokens and
+// requires every token to appear (case-insensitively) somewhere in the
+// item's brand+ref haystack. Word ORDER is irrelevant — "rolex gold"
+// and "gold rolex" match the same listings.
+//
+// Pre-2026-04-30 this was an inline `.includes(q)` that treated the
+// whole query as one substring; "rolex gold" would miss the listing
+// "1978 Rolex 1675/8 Yellow Gold Tropical GMT" because "rolex" and
+// "gold" aren't adjacent.
+//
+// Returns true on empty/whitespace-only queries (the search input
+// being empty isn't a filter).
+export function matchesSearch(item, query) {
+  if (!query) return true;
+  const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+  const haystack = `${item.brand || ""} ${item.ref || ""}`.toLowerCase();
+  return tokens.every(t => haystack.includes(t));
+}
+
 // Watchfid hot-link-protects their images (returns 404 to cross-origin
 // browser fetches that include image/webp in Accept). Routing through
 // /api/img — a small Vercel function that fetches with stripped headers
