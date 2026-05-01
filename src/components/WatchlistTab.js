@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Card } from "./Card";
 import { AuctionCalendar } from "./AuctionCalendar";
 import { ageBucketFromDate } from "../utils";
+import { useEBaySearches, EBAY_SEARCHES_EDIT_URL } from "../hooks/useEBaySearches";
 import { importLocalData } from "../supabase";
 
 
@@ -36,6 +37,13 @@ export function WatchlistTab(props) {
     // Navigation
     setTab, setPage,
   } = props;
+
+  // eBay source-search config (read-only display in the Searches
+  // sub-tab). Surfaces what the scraper is currently pulling from
+  // eBay; edits go through the GitHub editor link in the section
+  // header. Loading state is non-blocking — the saved-searches list
+  // below still renders normally.
+  const { searches: ebaySearches, loading: ebayLoading, error: ebayError } = useEBaySearches();
 
   // (Track New Item modal lifted to App.js on 2026-04-30 — its
   // trigger button now lives in the watchSubTabsJSX strip above
@@ -246,9 +254,90 @@ export function WatchlistTab(props) {
     "Save searches and run them with one tap. Your list syncs across every device you use."
   ) : (
     <div style={{ paddingTop: 4 }}>
-      {/* (Subtitle "Saved searches" + inline + Add search button
-          removed 2026-04-30 — Add search moved into the sub-tab
-          strip; the tab pill itself carries the section identity.) */}
+      {/* eBay source-searches — read-only view of data/ebay_searches.json.
+          These configure what the scraper pulls into the feed (vs the
+          saved searches below, which filter what's already in the feed).
+          Edits go through GitHub. */}
+      {(ebaySearches.length > 0 || ebayLoading || ebayError) && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{
+            display: "flex", alignItems: "baseline", justifyContent: "space-between",
+            padding: "0 2px 8px", marginBottom: 8,
+            borderBottom: "0.5px solid var(--border)",
+          }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
+                Source · eBay
+              </div>
+              <div style={{ fontSize: 12, color: "var(--text2)" }}>
+                {ebayLoading ? "Loading…"
+                  : ebayError ? `Couldn't load (${ebayError})`
+                  : `${ebaySearches.length} search${ebaySearches.length === 1 ? "" : "es"} feeding the Available feed.`}
+              </div>
+            </div>
+            <a href={EBAY_SEARCHES_EDIT_URL} target="_blank" rel="noopener noreferrer"
+               style={{
+                 fontSize: 12, color: "#185FA5", textDecoration: "none",
+                 padding: "6px 10px", borderRadius: 6,
+                 border: "0.5px solid var(--border)", background: "var(--card-bg)",
+                 fontFamily: "inherit", whiteSpace: "nowrap", flexShrink: 0,
+               }}>
+              Edit on GitHub ↗
+            </a>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {ebaySearches.map(s => (
+              <div key={s.label} style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "10px 14px", borderRadius: 10,
+                border: "0.5px solid var(--border)",
+                background: "var(--card-bg)",
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text1)", marginBottom: 2,
+                                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {s.label}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text2)",
+                                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {s.query
+                      ? <>"{s.query}" · {s.country}</>
+                      : <>seller: <code>{s.seller}</code> · {s.country}</>}
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0, textAlign: "right" }}>
+                  {s.count} listing{s.count === 1 ? "" : "s"}
+                </div>
+                {s.ebayUrl && (
+                  <a href={s.ebayUrl} target="_blank" rel="noopener noreferrer"
+                     title="Run this search on eBay"
+                     style={{
+                       color: "var(--text3)", textDecoration: "none", flexShrink: 0,
+                       padding: 4, lineHeight: 0,
+                     }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      <polyline points="15 3 21 3 21 9"/>
+                      <line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Saved searches — user-defined filters over the existing feed.
+          Different from eBay source-searches above (which add to the
+          feed). Same UI affordance is fine since both are
+          "named queries you run with one tap." */}
+      {savedSearchStats.length > 0 && (
+        <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", padding: "0 2px 8px", marginBottom: 8 }}>
+          Saved searches
+        </div>
+      )}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {/* New-search creation moved to AddSearchModal 2026-04-30
             (parity with Track New Item). Inline editor still
