@@ -1139,13 +1139,14 @@ export default function Watchlist() {
         // Mobile drops the trailing count chips and shortens
         // "Auction Calendar" → "Calendar" so all three pills + the
         // trailing "+ Track new item" / "+ Add search" action button
-        // fit on one row at 375px viewport. Counts are still visible
-        // inside each sub-tab's content header.
+        // fit on one row at 375px viewport. Listings keeps its count
+        // (signals "how many things am I tracking?" — a real piece of
+        // info). Searches + Calendar dropped their counts 2026-05-01:
+        // the count there was just "rows below" rather than
+        // "outstanding work" so it added noise without informing.
         ["listings", isMobile ? "Listings" : `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
-        ["searches", isMobile ? "Searches" : `Searches${savedSearchStats.length > 0 ? ` · ${savedSearchStats.length}` : ""}`],
-        ["calendar", isMobile
-          ? "Calendar"
-          : `Auction Calendar${(auctions || []).length > 0 ? ` · ${auctions.length}` : ""}`],
+        ["searches", "Searches"],
+        ["calendar", isMobile ? "Calendar" : "Auction Calendar"],
       ].map(([key, label]) => {
         const active = watchTopTab === key;
         return (
