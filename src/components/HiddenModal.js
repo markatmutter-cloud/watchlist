@@ -20,7 +20,7 @@ export function HiddenModal({ open, onClose, items, watchlist, onWish, onHide })
             Hidden listings · {items.length}
           </div>
           <button onClick={onClose} aria-label="Close"
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 22, lineHeight: 1, padding: 4 }}>
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 22, lineHeight: 1, padding: 0, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", marginRight: -8 }}>
             ×
           </button>
         </div>

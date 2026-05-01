@@ -17,7 +17,7 @@ export function AboutModal({ open, onClose }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)" }}>About Watchlist</div>
           <button onClick={onClose} aria-label="Close"
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 22, lineHeight: 1, padding: 4 }}>×</button>
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 22, lineHeight: 1, padding: 0, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", marginRight: -8 }}>×</button>
         </div>
         <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6, marginBottom: 18 }}>
           A personal aggregator for vintage watch listings from a handful of dealers I follow,

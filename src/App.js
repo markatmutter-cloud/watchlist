@@ -1064,7 +1064,7 @@ export default function Watchlist() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text1)" }}>Save search</div>
           <button onClick={() => setFavPromptOpen(false)} aria-label="Close"
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 22, lineHeight: 1, padding: 4 }}>×</button>
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 22, lineHeight: 1, padding: 0, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", marginRight: -8 }}>×</button>
         </div>
         <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 10 }}>
           Saving "<b>{search}</b>" — find it again from Watchlist → Searches.
@@ -1205,19 +1205,27 @@ export default function Watchlist() {
       flexShrink: 0,
     }}>
       {[
-        ["listings", `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
-        ["searches", `Searches${savedSearchStats.length > 0 ? ` · ${savedSearchStats.length}` : ""}`],
-        ["calendar", `Auction Calendar${(auctions || []).length > 0 ? ` · ${auctions.length}` : ""}`],
+        // Mobile drops the trailing count chips and shortens
+        // "Auction Calendar" → "Calendar" so all three pills + the
+        // trailing "+ Track new item" / "+ Add search" action button
+        // fit on one row at 375px viewport. Counts are still visible
+        // inside each sub-tab's content header.
+        ["listings", isMobile ? "Listings" : `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
+        ["searches", isMobile ? "Searches" : `Searches${savedSearchStats.length > 0 ? ` · ${savedSearchStats.length}` : ""}`],
+        ["calendar", isMobile
+          ? "Calendar"
+          : `Auction Calendar${(auctions || []).length > 0 ? ` · ${auctions.length}` : ""}`],
       ].map(([key, label]) => {
         const active = watchTopTab === key;
         return (
-          <button key={key} onClick={() => setWatchTopTab(key)} style={{
-            padding: "6px 14px", borderRadius: 20,
-            border: "0.5px solid var(--border)",
+          <button key={key} onClick={() => { setWatchTopTab(key); setDrawerOpen(false); }} style={{
+            padding: "8px 14px", borderRadius: 20,
+            border: "none", outline: "none",
             cursor: "pointer", fontFamily: "inherit", fontSize: 13,
             background: active ? "var(--text1)" : "var(--surface)",
-            color:      active ? "var(--bg)"    : "var(--text2)",
+            color:      active ? "var(--bg)"    : "var(--text1)",
             fontWeight: active ? 600 : 500,
+            boxShadow: active ? "none" : "inset 0 0 0 0.5px var(--border)",
           }}>{label}</button>
         );
       })}
@@ -1225,7 +1233,7 @@ export default function Watchlist() {
         <button onClick={() => { setTrackOpen(true); setTrackError(""); }} style={{
           marginLeft: "auto",
           fontSize: 13, fontWeight: 500,
-          padding: "7px 14px", borderRadius: 8,
+          padding: "9px 14px", borderRadius: 8,
           border: "0.5px solid var(--border)",
           background: "var(--surface)", color: "var(--text1)",
           cursor: "pointer", fontFamily: "inherit",
@@ -1235,7 +1243,7 @@ export default function Watchlist() {
         <button onClick={startAddSearch} style={{
           marginLeft: "auto",
           fontSize: 13, fontWeight: 500,
-          padding: "7px 14px", borderRadius: 8,
+          padding: "9px 14px", borderRadius: 8,
           border: "0.5px solid var(--border)",
           background: "var(--surface)", color: "var(--text1)",
           cursor: "pointer", fontFamily: "inherit",
@@ -1265,7 +1273,7 @@ export default function Watchlist() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
           <div style={{ fontSize: 16, fontWeight: 600 }}>Track new item</div>
           <button onClick={() => setTrackOpen(false)} aria-label="Close"
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 22, lineHeight: 1, padding: 4 }}>×</button>
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 22, lineHeight: 1, padding: 0, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", marginRight: -8 }}>×</button>
         </div>
         <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5 }}>
           Paste an auction lot URL or marketplace listing URL. The
@@ -1278,6 +1286,11 @@ export default function Watchlist() {
           onChange={e => { setTrackUrl(e.target.value); setTrackError(""); }}
           onKeyDown={e => { if (e.key === "Enter") submitTrack(); }}
           placeholder="https://..."
+          type="url"
+          inputMode="url"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
           style={{ ...inp, width: "100%", fontSize: 13, marginBottom: 8 }}
         />
         {trackError && (
@@ -1361,7 +1374,7 @@ export default function Watchlist() {
             )}
           </div>
           {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar")) && (
-            <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} aria-label="Filters" style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} aria-label="Filters" style={{ flexShrink: 0, width: 40, height: 40, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <FilterIcon />
             </button>
           )}
@@ -1369,7 +1382,7 @@ export default function Watchlist() {
               doesn't have to grow as we add per-device display settings. */}
           <div style={{ position: "relative", flexShrink: 0 }}>
             <button onClick={() => { setViewMenuOpen(o => !o); setShowUserMenu(false); }} aria-label="View options"
-              style={{ width: 36, height: 36, borderRadius: "50%", border: "0.5px solid var(--border)", background: viewMenuOpen ? "var(--text1)" : "var(--surface)", color: viewMenuOpen ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              style={{ width: 40, height: 40, borderRadius: "50%", border: "0.5px solid var(--border)", background: viewMenuOpen ? "var(--text1)" : "var(--surface)", color: viewMenuOpen ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               {/* Eye icon — feels right for "view settings" (theme + column
                   count). Mark's call: cog read like "settings", eye reads
                   like "how the page looks". */}
@@ -1379,7 +1392,7 @@ export default function Watchlist() {
               </svg>
             </button>
             {viewMenuOpen && (
-              <div style={{ position: "absolute", right: 0, top: 42, zIndex: 50,
+              <div style={{ position: "absolute", right: 0, top: 46, zIndex: 50,
                            background: "var(--bg)", border: "0.5px solid var(--border)",
                            borderRadius: 10, padding: 12, minWidth: 180,
                            boxShadow: "0 6px 20px rgba(0,0,0,0.18)" }}>
@@ -1409,9 +1422,18 @@ export default function Watchlist() {
                   ))}
                 </div>
                 <div style={{ height: "0.5px", background: "var(--border)", margin: "12px -12px 8px" }} />
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4, padding: "0 8px" }}>Other</div>
+                {user && (
+                  <button onClick={() => { setViewMenuOpen(false); setHiddenModalOpen(true); }} style={{
+                    width: "100%", textAlign: "left",
+                    padding: "8px 8px", border: "none", background: "transparent",
+                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                    fontSize: 13, borderRadius: 6,
+                  }}>Hidden listings{hiddenItems.length > 0 ? ` · ${hiddenItems.length}` : ""}</button>
+                )}
                 <button onClick={() => { setViewMenuOpen(false); setAboutModalOpen(true); }} style={{
                   width: "100%", textAlign: "left",
-                  padding: "6px 8px", border: "none", background: "transparent",
+                  padding: "8px 8px", border: "none", background: "transparent",
                   color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
                   fontSize: 13, borderRadius: 6,
                 }}>About & Contact</button>
@@ -1429,12 +1451,12 @@ export default function Watchlist() {
           // pill-shaped child so the height is identical to the real row.
           // Avoids a layout shift when switching to Searches sub-tab.
           <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", alignItems: "center" }}>
-            <span style={{ fontSize: 13, padding: "7px 14px", borderRadius: 20, border: "0.5px solid transparent", visibility: "hidden" }}>placeholder</span>
+            <span style={{ fontSize: 13, padding: "9px 14px", borderRadius: 20, border: "0.5px solid transparent", visibility: "hidden" }}>placeholder</span>
           </div>
         )}
         {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar")) && (
         <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center" }}>
-          <span style={{ fontSize: 11, color: "var(--text3)", marginRight: 2 }}>{allFiltered.length}</span>
+          <span style={{ fontSize: 12, color: "var(--text3)", marginRight: 2 }}>{allFiltered.length}</span>
           {/* Date sort pill */}
           {(() => {
             const isDateSort = sort === "date" || sort === "date-asc";
@@ -1446,7 +1468,7 @@ export default function Watchlist() {
                 else if (sort === "date-asc") setSort("date");
                 else setSort("date");
               }} style={{
-                fontSize: 13, padding: "7px 14px", borderRadius: 20, cursor: "pointer",
+                fontSize: 13, padding: "9px 14px", borderRadius: 20, cursor: "pointer",
                 fontFamily: "inherit", whiteSpace: "nowrap", border: "none", outline: "none",
                 background: active ? "var(--text1)" : "transparent",
                 color: active ? "var(--bg)" : "var(--text2)",
@@ -1467,7 +1489,7 @@ export default function Watchlist() {
                 else if (sort === "price-desc") setSort("price-asc");
                 else setSort("price-asc");
               }} style={{
-                fontSize: 13, padding: "7px 14px", borderRadius: 20, cursor: "pointer",
+                fontSize: 13, padding: "9px 14px", borderRadius: 20, cursor: "pointer",
                 fontFamily: "inherit", whiteSpace: "nowrap", border: "none", outline: "none",
                 background: active ? "var(--text1)" : "transparent",
                 color: active ? "var(--bg)" : "var(--text2)",
@@ -1490,9 +1512,9 @@ export default function Watchlist() {
             <button onClick={resetFilters} aria-label="Clear all filters" title="Clear all filters"
               style={{
                 marginLeft: "auto", flexShrink: 0,
-                width: 32, height: 32, borderRadius: "50%",
+                width: 40, height: 40, borderRadius: "50%",
                 border: "none", outline: "none", cursor: "pointer",
-                fontFamily: "inherit", fontSize: 16, lineHeight: 1, padding: 0,
+                fontFamily: "inherit", fontSize: 18, lineHeight: 1, padding: 0,
                 background: "transparent", color: "#185FA5",
                 boxShadow: "inset 0 0 0 0.5px #185FA5",
                 display: "flex", alignItems: "center", justifyContent: "center",
@@ -1502,14 +1524,14 @@ export default function Watchlist() {
         )}
         {/* Source picker dropdown removed 2026-04-30 — source
             filtering moved to the mobile filter tray drawer. */}
-        </div>
-        {/* Top padding 0 on Watchlist so the sub-tab strip sits flush
-            against the sticky filter pills above (otherwise a ~12px gap
-            at scroll-top shows cards peeking through). */}
-        {/* Mobile sub-tab strip — same content as the desktop one,
-            placed between the sticky search/sort row and the page
-            content. Shown only on Watchlist tab. */}
+        {/* Mobile sub-tab strip — lifted into the sticky stack on
+            2026-04-30 so it survives scroll. Previously the strip
+            scrolled away with the page content, which meant tapping
+            between Listings/Searches/Calendar required scrolling
+            back to the top first. Sits last in the sticky stack so
+            it abuts the page content directly. */}
         {watchSubTabsJSX}
+        </div>
         <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
           {tab === "listings" ? listingsGridJSX
             : tab === "references" ? <ReferencesTab />
@@ -1520,7 +1542,7 @@ export default function Watchlist() {
             safe area PLUS a fixed extra padding, so the buttons aren't
             hugging the home bar when the app is launched standalone from
             the home screen. */}
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}>
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)" }}>
           {/* References is desktop-only — bottom tab bar stays at 3
               tabs to keep mobile labels readable. References tools
               are still reachable on mobile by deep link if anyone

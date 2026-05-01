@@ -124,15 +124,19 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
               the countdown from the right corner to the left
               2026-04-30 so it sits with the other state badges
               instead of crowding the heart/hide buttons on the right. */}
+          {/* Top-left state chip — fontSize bumped down to 9 (was 10)
+              2026-04-30 so it doesn't eat ~40% of card width at narrow
+              mobile widths (2-col view = ~165px cards). Stays legible
+              and gives chip more breathing room on every density. */}
           {item.sold ? (
-            <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 10, padding: "2px 7px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>
+            <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 9, padding: "2px 7px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>
           ) : isHidden ? (
-            <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 10, padding: "2px 7px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>
+            <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 9, padding: "2px 7px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>
           ) : countdownLabel ? (
             <div style={{
               position: "absolute", top: 6, left: 6,
               background: countdownIsPast ? "rgba(0,0,0,0.55)" : "rgba(24,95,165,0.92)",
-              color: "#fff", fontSize: 10,
+              color: "#fff", fontSize: 9,
               padding: "2px 7px", borderRadius: 8,
               letterSpacing: "0.04em", fontWeight: 600,
               textTransform: "uppercase",
@@ -144,7 +148,7 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
             <div style={{
               position: "absolute", top: 6, left: 6,
               background: "rgba(24,95,165,0.92)", color: "#fff",
-              fontSize: 10, padding: "2px 7px", borderRadius: 8,
+              fontSize: 9, padding: "2px 7px", borderRadius: 8,
               letterSpacing: "0.06em", fontWeight: 600,
             }}>AUCTION</div>
           ) : null}
