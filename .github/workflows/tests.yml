@@ -1,8 +1,10 @@
 name: Tests
 
-# Runs the pytest suite on every push to main and every PR. The suite
-# is small (state-transition tests for merge.py) and fast — sub-second
-# locally — so running on every push is cheap.
+# Two suites: pytest for the Python merge/scraper logic, jest for the
+# React shells. Both are small and fast (sub-second pytest + a few
+# seconds for jest after install) so running on every push to main and
+# every PR is cheap. Catching a render-time crash in CI beats finding
+# it from a white screen on production.
 
 on:
   push:
@@ -27,3 +29,24 @@ jobs:
 
       - name: Run pytest
         run: pytest
+
+  jest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        # No lockfile committed — fresh install each run. Fine at our
+        # scale; takes ~30s on a clean runner.
+        run: npm install
+
+      - name: Run jest (CI mode — single run, no watch)
+        run: npm run test:ci
