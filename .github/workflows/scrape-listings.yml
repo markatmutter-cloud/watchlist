@@ -135,6 +135,10 @@ jobs:
         continue-on-error: true
         run: python shucktheoyster_scraper.py
 
+      - name: Run Central Watch scraper (custom PHP, paginated HTML)
+        continue-on-error: true
+        run: python centralwatch_scraper.py
+
       # eBay runs in its own workflow (.github/workflows/scrape-ebay.yml)
       # so a slow Browse API response or token blip doesn't slow the
       # dealer-listings cron. eBay can iterate on its own cadence and
@@ -170,6 +174,7 @@ jobs:
           [ -f chronoholic_listings.csv ]         && mv chronoholic_listings.csv         data/chronoholic.csv         || echo "chronoholic missing"
           [ -f vintagewatchfam_listings.csv ]     && mv vintagewatchfam_listings.csv     data/vintagewatchfam.csv     || echo "vintagewatchfam missing"
           [ -f shucktheoyster_listings.csv ]      && mv shucktheoyster_listings.csv      data/shucktheoyster.csv      || echo "shucktheoyster missing"
+          [ -f centralwatch_listings.csv ]        && mv centralwatch_listings.csv        data/centralwatch.csv        || echo "centralwatch missing"
 
       - name: Merge into listings.json
         run: python merge.py --listings-only
