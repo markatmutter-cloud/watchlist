@@ -242,7 +242,9 @@ export function WatchlistTab(props) {
           removed 2026-04-30 — Add search moved into the sub-tab
           strip; the tab pill itself carries the section identity.) */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {searchEditor && searchEditor.id === "new" && renderSearchEditor()}
+        {/* New-search creation moved to AddSearchModal 2026-04-30
+            (parity with Track New Item). Inline editor still
+            handles edits to existing searches below. */}
 
         {savedSearchStats.map((s) => (
           searchEditor && searchEditor.id === s.id ? (

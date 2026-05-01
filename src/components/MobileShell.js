@@ -38,6 +38,7 @@ export function MobileShell(props) {
     setTab, setViewMenuOpen,
     toggleBrand, toggleHide, toggleSource,
     // Style tokens / pre-built JSX
+    addSearchModalJSX,
     authJSX, baseStyle, favSearchModalJSX, inp,
     listingsGridJSX, sectionHeadingStyle, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
@@ -230,6 +231,7 @@ export function MobileShell(props) {
             : watchlistTabJSX}
         </div>
         {trackNewItemModalJSX}
+        {addSearchModalJSX}
         {/* Bottom tab bar. The container reserves the iOS home-indicator
             safe area PLUS a fixed extra padding, so the buttons aren't
             hugging the home bar when the app is launched standalone from

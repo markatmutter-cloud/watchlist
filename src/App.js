@@ -17,6 +17,7 @@ import { AboutModal } from "./components/AboutModal";
 import { HiddenModal } from "./components/HiddenModal";
 import { TrackNewItemModal } from "./components/TrackNewItemModal";
 import { FavSearchModal } from "./components/FavSearchModal";
+import { AddSearchModal } from "./components/AddSearchModal";
 import { WatchlistTab } from "./components/WatchlistTab";
 import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
@@ -1165,9 +1166,13 @@ export default function Watchlist() {
   // "+ Track new item" on Listings, "+ Add search" on Searches,
   // none on Auction Calendar.
   const watchSubTabsJSX = tab !== "watchlist" ? null : (
+    // Sub-tab strip uses underline-style buttons (see tabPill in
+    // styles.js) so it sits visually below the main pill tabs in the
+    // hierarchy. gap: 20 between sub-tabs, since they're text-only
+    // they need horizontal breathing room.
     <div style={{
-      display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
-      padding: "10px 16px",
+      display: "flex", gap: 20, alignItems: "center",
+      padding: "0 16px",
       background: "var(--bg)",
       borderBottom: "0.5px solid var(--border)",
       flexShrink: 0,
@@ -1230,6 +1235,23 @@ export default function Watchlist() {
     />
   );
 
+  // Add-search modal — fires when searchEditor.id === "new" (i.e. user
+  // tapped "+ Add search" in the sub-tab strip). Edits to existing
+  // searches stay in the inline editor inside WatchlistTab; only the
+  // "new" case routes through the modal so + Add and + Track behave
+  // identically across the strip.
+  const addSearchModalOpen = !!searchEditor && searchEditor.id === "new";
+  const addSearchModalJSX = (
+    <AddSearchModal
+      open={addSearchModalOpen}
+      onClose={cancelSearchEdit}
+      searchEditor={searchEditor || { id: "", label: "", query: "" }}
+      setSearchEditor={setSearchEditor}
+      commitSearch={commitSearch}
+      inp={inp}
+    />
+  );
+
   // Both shells consume the same props bag. App.js owns state and the
   // top-level JSX consts (authJSX, listingsGridJSX, watchSubTabsJSX,
   // statusSegmentJSX, watchlistTabJSX, plus the modal JSX consts) — the
@@ -1259,6 +1281,7 @@ export default function Watchlist() {
     setTab, setViewMenuOpen,
     toggleBrand, toggleHide, toggleSource,
     // Style tokens / pre-built JSX
+    addSearchModalJSX,
     authJSX, baseStyle, favSearchModalJSX, inp,
     listingsGridJSX, sectionHeadingStyle, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,

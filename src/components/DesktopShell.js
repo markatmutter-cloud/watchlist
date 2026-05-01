@@ -38,6 +38,7 @@ export function DesktopShell(props) {
     setTab, setViewMenuOpen,
     toggleBrand, toggleHide, toggleSource,
     // Pre-built JSX
+    addSearchModalJSX,
     authJSX, baseStyle, favSearchModalJSX,
     listingsGridJSX, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
@@ -375,6 +376,7 @@ export function DesktopShell(props) {
         </div>
       </div>
       {trackNewItemModalJSX}
+      {addSearchModalJSX}
       <HiddenModal
           open={hiddenModalOpen}
           onClose={() => setHiddenModalOpen(false)}

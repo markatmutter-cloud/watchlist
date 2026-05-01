@@ -28,18 +28,25 @@ export const pillBase = (active, { compact = false } = {}) => ({
   boxShadow:  active ? "none" : "inset 0 0 0 0.5px var(--border)",
 });
 
-// Sub-tab strip pills (Listings / Searches / Calendar). Inactive uses
-// the surface fill instead of transparent so the active/inactive
-// contrast pops more — these pills sit in their own strip, not in a
-// sea of other pills like pillBase.
+// Sub-tab strip (Listings / Searches / Calendar). Underline pattern,
+// intentionally NOT pill-shaped — sub-tabs sit beneath the main tabs in
+// the visual hierarchy and need to look secondary. Active = bold +
+// 2px underline, inactive = lighter colour, no chrome. Vertical padding
+// stays generous (10px) so tap targets remain ~40px tall on mobile.
+//
+// `marginBottom: -1` pulls the underline down to overlap the strip's
+// 0.5px borderBottom, so the active indicator pierces the divider
+// cleanly instead of floating above it.
 export const tabPill = (active) => ({
-  padding: "8px 14px", borderRadius: 20,
-  border: "none", outline: "none", cursor: "pointer",
-  fontFamily: "inherit", fontSize: 13,
-  background: active ? "var(--text1)" : "var(--surface)",
-  color:      active ? "var(--bg)"    : "var(--text1)",
+  padding: "10px 4px",
+  border: "none", outline: "none",
+  background: "transparent",
+  cursor: "pointer", fontFamily: "inherit", fontSize: 13,
   fontWeight: active ? 600 : 500,
-  boxShadow:  active ? "none" : "inset 0 0 0 0.5px var(--border)",
+  color: active ? "var(--text1)" : "var(--text3)",
+  borderBottom: active ? "2px solid var(--text1)" : "2px solid transparent",
+  borderRadius: 0,
+  marginBottom: -1,
 });
 
 // ── ICON BUTTONS ──────────────────────────────────────────────────────
