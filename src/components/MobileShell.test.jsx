@@ -14,9 +14,11 @@ import { buildMockShellProps } from "./__fixtures__/mockShellProps";
 describe("MobileShell", () => {
   test("renders without crashing on a default empty session", () => {
     render(<MobileShell {...buildMockShellProps()} />);
-    // The "Watchlist" title button is the most stable anchor — it sits
-    // outside the sticky stack and renders for every tab + sub-tab combo.
-    expect(screen.getByRole("button", { name: /watchlist/i })).toBeInTheDocument();
+    // "Watchlist" appears twice on the default Watchlist tab — once as
+    // the title-bar button at top, once as the active bottom-tab label.
+    // getAllByRole + length assertion captures both without picking one.
+    const watchlistButtons = screen.getAllByRole("button", { name: /watchlist/i });
+    expect(watchlistButtons.length).toBeGreaterThanOrEqual(2);
   });
 
   test("renders the Filters icon button when not on Searches/Calendar sub-tabs", () => {
