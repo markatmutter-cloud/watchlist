@@ -45,18 +45,35 @@ Full diagram + folder layout in [README.md](README.md). One-paragraph summary:
 Scrapers (Python `requests`, GitHub Actions 3×/day PT) write per-source
 CSVs into `data/`. `merge.py` enriches into `public/listings.json` +
 `public/state.json` (cross-run memory via stable URL-hash IDs).
-Frontend is React (CRA, inline styles). `App.js` is ~1,250 lines —
-the orchestrator that owns state and JSX consts; render is delegated
-to `src/components/MobileShell.js` + `DesktopShell.js`, each receiving
+Frontend is React (CRA, inline styles). `App.js` is the orchestrator
+that owns state and JSX consts; render is delegated to
+`src/components/MobileShell.js` + `DesktopShell.js`, each receiving
 a single `shellProps` bag. Domain state hooks live under `src/hooks/`
 (useTrackModal, useFavSearchModal, useViewSettings, useFilters,
 useEBaySearches); shared style tokens in `src/styles.js`; pure
 helpers in `src/utils.js`. Per-user data (watchlist, hidden, saved
-searches, tracked lots) is in Supabase with RLS. One serverless
-function: `api/img.js` (image proxy for hot-link-protected dealers).
-Vercel Blob caches dealer images for hearted items **only** — see
-`cache_watchlist_images.mjs`; **don't extend the blob cache to the
-full feed**.
+searches, tracked lots, **collections + collection_items**) is in
+Supabase with RLS. One serverless function: `api/img.js` (image
+proxy for hot-link-protected dealers). Vercel Blob caches dealer
+images for hearted items **only** — see `cache_watchlist_images.mjs`;
+**don't extend the blob cache to the full feed**.
+
+**Watchlist data model (post-Collections, 2026-05-01).** Approach A:
+the user's default Favorites collection (the heart-on-card flow) is
+implicit and remains backed by the existing `watchlist_items` table.
+The `collections` + `collection_items` tables only store
+user-created collections + the auto Shared-with-me inbox. The
+asymmetry — default in one table, additional in another — is
+intentional: it limits code churn and keeps `useWatchlist` /
+heart-on-Card working without a migration. Schema lives in
+`supabase/schema/2026-05-01_collections.sql`.
+
+**Share URL format.** Inbound share links use
+`?listing=<id>&shared=1` on the root URL — no `react-router`, no
+`/share/*` route. App.js parses on mount and renders a non-modal
+banner + the listing's Card above `listingsGridJSX` in both shells.
+URL is rewritten via `history.replaceState` after action so a
+refresh doesn't re-trigger.
 
 ## Scraper conventions
 
@@ -161,6 +178,22 @@ To add a new printable tool: render its sheet via `createPortal` to
 - **Don't skip Vercel verification** after a JS change. Use the bundle
   hash in `index.html` to confirm the new build is serving before
   reporting done.
+- **Don't reintroduce in-app messaging, reactions, replies, sender
+  identity exposure, or notifications for shares.** The user's chosen
+  messaging tool (iMessage / WhatsApp / email / Slack / AirDrop)
+  handles all of that. Watchlist's share primitive is a one-tap export
+  to the native share sheet + a recipient banner. Adding any kind of
+  in-app social layer was explicitly rejected in the v1 design and
+  belongs in ROADMAP's "Explicitly NOT" list.
+- **Don't auto-redirect shared listing links** to a separate landing
+  page or to the dealer's site. The recipient sees the listing in the
+  same UI they'd browse to themselves, with an additive banner. The
+  dealer link is one tap on the Card.
+- **Don't migrate `watchlist_items` into `collection_items`** without
+  a deliberate decision. Approach A (default-Favorites-stays-implicit)
+  is the agreed shape; flipping to a fuller migration would touch
+  every read path that hits `useWatchlist`. Revisit only if the
+  asymmetry causes real pain.
 
 ## When in doubt
 

@@ -23,8 +23,9 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 Three top-level tabs:
 
 - **Listings** — aggregates 27 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
-- **Watchlist** — three sub-tabs:
-  - **Listings** — items you've hearted, with price-at-save preserved.
+- **Watchlist** — four sub-tabs:
+  - **Favorites** — items you've hearted (your default collection), with price-at-save preserved.
+  - **Collections** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you.
   - **Searches** — saved queries you can re-run with one tap, plus a read-only view of the eBay source-searches feeding the main feed.
   - **Auction Calendar** — upcoming + recently-closed sales from 6 houses, grouped by month.
 - **References** — collector resource tools (currently: a print-to-scale watch size comparison tool; encyclopedia and curated-link aggregator are roadmap'd).
@@ -34,6 +35,7 @@ Plus:
 - Cross-device sync via Google sign-in (Supabase auth + tables, RLS-protected).
 - Per-user **saved searches** — add/edit/delete your own queries, with live counts of matching listings.
 - Per-user **tracked lots** — paste an auction-house lot URL to follow it through to hammer (Antiquorum, Christie's, Sotheby's, eBay).
+- Per-user **collections** + **share** — organise hearted watches into named collections, share any listing with anyone via the native share sheet. Recipients see the listing in the same UI with a Save / Dismiss banner; signed-in saves auto-populate a "Shared with me" inbox. No in-app messaging — the user's chosen messaging tool handles replies.
 - **Hide** any listing with the × button — it stays out of the live feed but its history is preserved.
 - Runs a Python scrape pipeline daily via GitHub Actions — no server to babysit.
 - Tracks listings across runs with **stable URL-hash IDs**, so:
@@ -205,6 +207,9 @@ watchlist/
 │   ├─ apple-touch-icon.png        # iOS home-screen icon
 │   ├─ favicon-32.png              # browser tab favicon
 │   └─ index.html
+├─ supabase/
+│   └─ schema/                     # SQL migrations — paste into Supabase SQL editor
+│       └─ 2026-05-01_collections.sql  # collections + collection_items tables
 ├─ src/
 │   ├─ App.js                      # orchestrator — owns state, builds shellProps, delegates to shells
 │   ├─ supabase.js                 # auth + per-user data hooks
@@ -237,7 +242,10 @@ watchlist/
 │       ├─ HiddenModal.js          # hidden-listings modal
 │       ├─ TrackNewItemModal.js    # paste-a-URL flow for tracked lots
 │       ├─ FavSearchModal.js       # save-search prompt
-│       └─ AddSearchModal.js       # add-search modal (parity with Track new item)
+│       ├─ AddSearchModal.js       # add-search modal (parity with Track new item)
+│       ├─ CollectionEditModal.js  # create + rename collections
+│       ├─ CollectionPickerModal.js # add a listing to a collection
+│       └─ ShareBanner.js          # in-app banner for ?listing=<id>&shared=1 receive flow
 └─ package.json
 ```
 

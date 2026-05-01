@@ -1,6 +1,6 @@
 # Watchlist Roadmap
 
-Last updated: 2026-04-30
+Last updated: 2026-05-01
 Living document. Updated as priorities shift.
 
 For project context and architecture, see [README.md](README.md). For
@@ -77,6 +77,18 @@ Cross-cutting infrastructure. Several later epics depend on this.
   the "which sources earn their keep" decision.
 - **Maintenance rhythm.** Every 4th-5th session is hygiene only: bug fixes,
   dependency updates, source pruning. No new features.
+- **User settings / currency preference (near-term).** New
+  `user_settings` table — for now a single column
+  (`primary_currency`: USD / GBP / EUR / CHF / JPY / native), but
+  designed as a kitchen-sink user-prefs surface so future settings
+  (notification opt-ins, default sort, etc.) co-locate. New
+  Settings route from the user dropdown. Frontend: replace the
+  hardcoded "USD primary" decision in Card with a lookup against
+  the user's preference; default to "native" for users with nothing
+  set (matches behavior pre-2026-04-30). Half-session of infra +
+  half-session of Card refactor. Goes under Epic 0 because the
+  table will outgrow currency to be the home for every user-prefs
+  field.
 
 ## Epic 1: Sources
 
@@ -182,36 +194,82 @@ Turns Watchlist from a browse tool into a daily-open tool. Built after
 eBay so it covers both dealer matches AND eBay matches in the same
 notification.
 
-### Three-tier save model
-Replaces the current single-heart system:
-- **Heart (Favorite):** "I love this watch." High bar. Powers AI taste features.
-- **Watch (Track):** "Tell me if the price drops or it sells." Medium bar.
-- **Note (Save for later):** "I want to come back to this." Low bar. Folder
-  system for research/comparison.
+### Collections + Sharing v1 (shipped 2026-05-01)
 
-### Reference-level grouping
-Three saved 5548BAs collapse into one card with "3 listings, click to expand."
-Depends on Epic 0 references.
+Three-session feature pair. Made collections the underlying data
+model for Watchlist content (see CLAUDE.md "Watchlist data model");
+introduced the first user-to-user primitive (sharing) deliberately
+without any in-app messaging, reactions, or sender-identity surface.
 
-### Build-a-collection (promoted, near-term after references)
+What landed:
+- `collections` + `collection_items` Supabase tables (Approach A —
+  default Favorites stays in `watchlist_items`; new tables hold
+  user-created collections + the auto Shared-with-me inbox).
+- Watchlist sub-tab structure: **Favorites / Collections / Searches
+  / Auction Calendar** (4-up). Favorites is the renamed Listings
+  sub-tab; default heart-flow unchanged.
+- New `"..."` menu on every Card: Share, Add to collection…, Hide
+  (or Remove from collection inside a drill-in).
+- Share via Web Share API → clipboard fallback. Deep link is
+  `?listing=<id>&shared=1` on root (no `react-router`). Recipient
+  sees a non-modal banner above the listing's Card with Save /
+  Dismiss; anonymous gets a passive Sign-in CTA, no nag.
+- "Shared with me" auto-collection lazy-created on first received
+  share. Items tagged `source_of_entry='shared_with_me'`.
 
-User-defined hypothetical collections. Specifications:
+The collections primitive is forward-compatible with the next two
+v2 surfaces below — both gated on Epic 0 references for full
+power, but the `type` marker (free-form / shared-inbox / challenge
+/ watchbox) is already in the schema.
+
+### Build-a-collection v2 (deferred — reuses the Collections primitive)
+
+The interactive challenge layer on top of collections — pick a
+target count + budget + theme, source from past + present
+listings, track value over time. The plumbing (collections table
+with `type='challenge'`) already exists; this is purely UI + a few
+extra columns (target_count, budget, theme).
 
 - **User picks:** number of watches, challenge headline ("3 watches for
   business"), budget.
 - **Source:** picks from current AND past listings (sold archive becomes
   a query-able source, not just an archive tab).
-- **Multiple collections per user.** Named collections you maintain over time.
 - **Send as challenge:** invite another user to build a collection responding
   to your spec.
-- **Share later:** public read-only link to a collection.
+- **Share later:** public read-only link to a collection (extends the
+  v1 single-listing share primitive — a future "share collection"
+  surface).
 - **Value-over-time tracking:** show how the cost of assembling that
   collection has shifted since you built it. Powerful only after enough price
   history accumulates.
 
 Depends on: Epic 0 (references), past listings being browseable as a query-
-able set rather than just an archive tab. Once references land, this is fast
-to build.
+able set rather than just an archive tab.
+
+### Watchbox v2 (deferred — also reuses Collections)
+
+Owned-watch tracking — a Watchbox is a collection with
+`type='watchbox'`. Per-item ownership status, purchase price,
+purchase date, sold price + date, photos. Historical-cost vs
+current-comp delta. Future session.
+
+### Sharing collections (deferred — extends v1 share primitive)
+
+Share an entire collection by link, not just a single listing.
+URL shape will mirror v1: `?collection=<id>&shared=1`. Recipient
+banner gives "Save copy to my collections" / "Just browsing".
+Public read-only collection links also live here.
+
+### Three-tier save model (rejected — Collections supersedes)
+
+Was: heart / watch / note as separate save tiers. Collections
+(any name, any number) covers the same UX surface with more
+flexibility, so the tiered model is no longer needed. Archived in
+the change log for historical reference.
+
+### Reference-level grouping
+Three saved 5548BAs collapse into one card with "3 listings, click to expand."
+Depends on Epic 0 references.
 
 ### AI-powered serendipity (admin / household only initially)
 
@@ -353,18 +411,30 @@ Hardware: M4 Mac mini base, 16GB RAM, ~$600.
 
 Current best-guess sequence. Will shift; update this doc when it does.
 
-1. **Epic 0 foundations.** References + verification script before adding
-   more sources. Without this, everything downstream is shaky.
-2. **Epic 6 Phase A** when a specific blocked source needs it OR when ready
-   to start Epic 5 generation work.
-3. **Epic 1 source list** to target end state, then close it.
-4. **Build-a-collection (Epic 3)** as soon as references land. Showcase
-   feature that proves references were worth doing.
-5. **Epic 2 auction history**, reference-led, open houses first.
-6. **Epic 5 encyclopedia** built incrementally as descriptions accumulate.
-7. **Epic 3 discovery features** (embeddings, weekly email) once references
-   and Mac mini are in place.
-8. **Epic 4 admin analytics** built incrementally throughout.
+1. **User settings / currency preference (Epic 0).** Near-term and
+   small. UK friend's GBP-primary case is real and the fix is half
+   a session of infra + half of Card refactor.
+2. **Epic 0 foundations** (references, verification script,
+   source-quality dashboard). Without these, everything downstream
+   is shaky.
+3. **Epic 6 Phase A** when a specific blocked source needs it OR
+   when ready to start Epic 5 generation work.
+4. **Build-a-collection v2 (Epic 3).** The Collections primitive
+   shipped 2026-05-01; v2 = challenge mechanics on top
+   (target_count, budget, theme, value-over-time). Reuses
+   `type='challenge'` on the existing collections table. Strongest
+   showcase feature once references land.
+5. **Epic 1 source list** to target end state, then close it.
+6. **Epic 2 auction history**, reference-led, open houses first.
+7. **Epic 5 encyclopedia** built incrementally as descriptions
+   accumulate.
+8. **Epic 3 discovery features** (embeddings, weekly email) once
+   references and Mac mini are in place.
+9. **Watchbox v2 (Epic 3).** `type='watchbox'` collections — the
+   ownership-tracking surface. Lower priority than
+   build-a-collection because it's personal-collection-first vs
+   discovery-first.
+10. **Epic 4 admin analytics** built incrementally throughout.
 
 ## Explicitly NOT on the roadmap
 
@@ -381,9 +451,18 @@ Saying no is part of the roadmap. These have been considered and rejected
 - **Birthday/anniversary mode.** Not interesting to me.
 - **Taste arcs as a near-term feature.** Embeddings cover most of this;
   revisit only if embeddings disappoint.
-- **Generic public social features** (comments, ratings, profiles). Build-a-
-  collection sharing is the only social primitive on the roadmap. Keep it
-  small.
+- **In-app messaging / reactions / replies / sender-identity exposure
+  / share notifications.** Watchlist's share primitive (2026-05-01) is
+  one-tap export to the native share sheet + a recipient banner.
+  Replies happen in iMessage / WhatsApp / wherever the link came in.
+  Adding any in-app social layer was explicitly designed against in
+  the v1 spec.
+- **Generic public social features** (comments, ratings, profiles).
+  Listing-share + future collection-share are the only social
+  primitives on the roadmap. Keep it small.
+- **Three-tier save model** (heart / watch / note as separate save
+  tiers). Superseded by Collections — any name, any number. More
+  flexible than fixed tiers.
 
 ## Fun ideas, parked
 
@@ -399,6 +478,27 @@ Not active. Worth keeping a list because some might graduate.
 
 ## Update log
 
+- 2026-05-01: **Collections + Sharing v1 shipped** (3 sessions —
+  commits `212d89a`, `c2aeabd`, `ca49fa2`). Made collections the
+  underlying data model for Watchlist content via Approach A:
+  default Favorites stays in `watchlist_items`, additional
+  collections + the auto Shared-with-me inbox live in new
+  `collections` + `collection_items` tables. Sub-tab structure
+  reshaped: Watchlist > Listings → Watchlist > **Favorites** +
+  new **Collections** sub-tab. Card gained a `"..."` menu housing
+  Share / Add to collection / Hide. Share uses Web Share API →
+  clipboard fallback. Recipient banner is non-modal, renders above
+  the active tab content, signed-in gets Save / Dismiss, anonymous
+  gets a passive Sign-in CTA. URL format
+  `?listing=<id>&shared=1` on root — no `react-router`. Roadmap
+  restructure: build-a-collection and watchbox demoted from
+  near-term to v2 (both reuse the new collections primitive via
+  the `type` marker already in the schema); three-tier save model
+  rejected in favor of Collections. Open question on sender-
+  identity exposure resolved as "no in v1" — the messaging app
+  the link came in handles sender attribution. User Settings /
+  Currency Preference added under Epic 0 as the next near-term
+  item.
 - 2026-05-01: **Source added — Central Watch** (Grand Central Watch
   Repair, NYC). 27th dealer; custom PHP catalogue, HTML-parsed,
   USD-priced. ~180 listings, mostly Rolex / Cartier / Breitling /

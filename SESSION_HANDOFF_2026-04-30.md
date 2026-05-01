@@ -161,19 +161,37 @@ empty for everyone.
 - Filter row gating extended to hide on Collections (collections
   aren't filtered the same way listings are).
 
-**Session 3 — Share (next):**
+**Session 3 — Share (shipped 2026-05-01, commit ca49fa2):**
 
-**Session 3 — Share (after Session 2):**
+- `"..."` menu gains **Share** (third item, alongside Add to
+  collection… + Hide). Outbound: Web Share API →
+  `navigator.clipboard.writeText` fallback → `window.prompt`
+  last-resort. AbortError on the native sheet is silent (user
+  cancelled, no clipboard fallback). Card menu label briefly flips
+  to "Copied!" for 1.2s on the clipboard path.
+- URL format: `?listing=<id>&shared=1` on root, parsed on mount.
+- Receive surface: non-modal `ShareBanner` + the listing's Card,
+  rendered by both shells above `listingsGridJSX`. Visible
+  regardless of the recipient's filters.
+- Two banner variants:
+   - **Signed-in**: Save / Dismiss. Save adds to default Favorites
+     (toggleWatchlist) + Shared-with-me; Dismiss skips the heart
+     toggle but still records to Shared-with-me. Both clear the
+     URL params.
+   - **Anonymous**: Dismiss + optional "Sign in to save" CTA when
+     auth is configured. No data written until sign-in.
+- URL rewritten via `history.replaceState` after action so refresh
+  doesn't re-trigger.
+- Edge case: a listing purged from `listings.json` shows a "no
+  longer available" placeholder under the banner. Banner still
+  works — user isn't trapped.
+- Wired through every Card render site (Listings grid, Watchlist >
+  Favorites, Collection drill-ins). HiddenModal cards skip Share
+  since the surface is for restoring hidden items.
 
-- `"..."` menu gains Share. Web Share API on mobile, Copy link
-  fallback on desktop.
-- URL format: `?listing=<id>&shared=1` on root.
-- Receive handler in App.js: parse share param on mount, render a
-  banner above the listing card. Save / Dismiss for signed-in users
-  (both populate Shared-with-me; Save also adds to default).
-  Anonymous: passive sign-in CTA, no nag.
-- URL gets rewritten to drop the share param after action so refresh
-  isn't sticky.
+**Tested on:** macOS Safari (clipboard fallback). **Untested:** iOS
+Safari (Web Share API), Android Chrome, desktop Chrome's native
+share sheet (when enabled).
 
 ## Mid-flight / immediate-next
 
