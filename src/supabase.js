@@ -666,7 +666,7 @@ export function useTrackedLots(user) {
 // Optimistic UI — local state flips immediately, DB write logs on
 // failure but doesn't block the change.
 
-const ALLOWED_CURRENCIES = ['USD', 'GBP', 'EUR', 'HKD'];
+const ALLOWED_CURRENCIES = ['USD', 'GBP', 'EUR'];
 const DEFAULT_CURRENCY = 'USD';
 
 export function useUserSettings(user) {

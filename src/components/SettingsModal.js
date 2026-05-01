@@ -13,7 +13,6 @@ const CURRENCIES = [
   { code: "USD", label: "USD", symbol: "$" },
   { code: "GBP", label: "GBP", symbol: "£" },
   { code: "EUR", label: "EUR", symbol: "€" },
-  { code: "HKD", label: "HKD", symbol: "HK$" },
 ];
 
 export function SettingsModal({ open, onClose, primaryCurrency, setPrimaryCurrency }) {
@@ -33,7 +32,7 @@ export function SettingsModal({ open, onClose, primaryCurrency, setPrimaryCurren
         </div>
         <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 12, lineHeight: 1.5 }}>
           Listings will show in this currency first, with the dealer's native price below.
-          Synced across all your devices.
+          Synced across all your devices (you're welcome George Longfoot).
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {CURRENCIES.map(c => {

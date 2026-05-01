@@ -14,11 +14,11 @@
 
 create table if not exists public.user_settings (
   user_id           uuid primary key references auth.users(id) on delete cascade,
-  -- ISO 4217 codes. v1 surface is EUR / GBP / USD / HKD (Mark's
-  -- friend coverage). The check constraint keeps drift in check; add
-  -- new codes here as more currencies surface.
+  -- ISO 4217 codes. v1 surface is USD / GBP / EUR. The check
+  -- constraint keeps drift in check; add new codes here as more
+  -- currencies surface.
   primary_currency  text not null default 'USD'
-                    check (primary_currency in ('USD', 'GBP', 'EUR', 'HKD')),
+                    check (primary_currency in ('USD', 'GBP', 'EUR')),
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now()
 );
