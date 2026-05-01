@@ -83,6 +83,8 @@ export function buildMockShellProps(overrides = {}) {
     addSearchModalJSX: null,
     authJSX: null,
     baseStyle: { background: "var(--bg)", color: "var(--text1)" },
+    collectionEditModalJSX: null,
+    collectionPickerModalJSX: null,
     favSearchModalJSX: null,
     inp: { border: "none", padding: "8px 10px" },
     listingsGridJSX: <div data-testid="listings-grid" />,

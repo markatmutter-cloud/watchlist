@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { useAuth, useWatchlist, useHidden, useSearches, useTrackedLots, importLocalData, isAuthConfigured } from "./supabase";
+import { useAuth, useWatchlist, useHidden, useSearches, useTrackedLots, useCollections, importLocalData, isAuthConfigured } from "./supabase";
 import {
   GLOBAL_MAX, CURRENCY_SYM,
   fmt, fmtUSD, daysAgo, freshDate, imgSrc, logToPrice, extractRef,
@@ -23,6 +23,8 @@ import { HiddenModal } from "./components/HiddenModal";
 import { TrackNewItemModal } from "./components/TrackNewItemModal";
 import { FavSearchModal } from "./components/FavSearchModal";
 import { AddSearchModal } from "./components/AddSearchModal";
+import { CollectionEditModal } from "./components/CollectionEditModal";
+import { CollectionPickerModal } from "./components/CollectionPickerModal";
 import { WatchlistTab } from "./components/WatchlistTab";
 import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
@@ -199,6 +201,29 @@ export default function Watchlist() {
     return userSearches.some(s => (s.query || "").toLowerCase() === q);
   }, [search, userSearches]);
   const { urls: trackedLotUrls, add: addTrackedLot, remove: removeTrackedLot, addedAt: trackedLotAddedAt } = useTrackedLots(user);
+
+  // Collections — user-created beyond the default Watchlist (which is
+  // still backed by useWatchlist above). Approach A: this hook only
+  // manages additional collections + the auto Shared-with-me inbox.
+  // The full API is passed through to WatchlistTab for the Collections
+  // sub-tab UI; the picker modal (lifted to App.js below) reuses it
+  // when adding a listing from any Card anywhere.
+  const collectionsApi = useCollections(user);
+
+  // Picker modal state — lifted here so any Card across the app (in
+  // Listings, Watchlist > Listings, or a Collection drill-in) can open
+  // the same picker. Holds the item being added; null = closed.
+  const [pickerTarget, setPickerTarget] = useState(null);
+  const openCollectionPicker = useCallback((item) => setPickerTarget(item), []);
+
+  // Edit modal state — used for both Create new collection (id='new')
+  // and Rename existing (id=<uuid>). Lifted here because the sub-tab
+  // strip's "+ New collection" trigger lives in App.js while WatchlistTab
+  // also fires Rename from a row's actions.
+  const [editingCollection, setEditingCollection] = useState(null);
+  const startCreateCollection = useCallback(() => {
+    setEditingCollection({ id: "new", name: "" });
+  }, []);
 
   // Track-new-item modal — state machine lives in useTrackModal;
   // aliases below preserve the previous trackOpen/trackUrl/etc.
@@ -997,7 +1022,7 @@ export default function Watchlist() {
               </span>
             </div>
           ) : (
-            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} />
+            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} />
           )
         ))}
         {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>
@@ -1113,6 +1138,9 @@ export default function Watchlist() {
       legacyKeys={{ watchlist: LEGACY_WATCHLIST_KEY, hidden: LEGACY_HIDDEN_KEY }}
       setTab={setTab}
       setPage={setPage}
+      collectionsApi={collectionsApi}
+      setEditingCollection={setEditingCollection}
+      openCollectionPicker={openCollectionPicker}
     />
   );
 
@@ -1145,6 +1173,7 @@ export default function Watchlist() {
         // the count there was just "rows below" rather than
         // "outstanding work" so it added noise without informing.
         ["listings", isMobile ? "Listings" : `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
+        ["collections", "Collections"],
         ["searches", "Searches"],
         ["calendar", isMobile ? "Calendar" : "Auction Calendar"],
       ].map(([key, label]) => {
@@ -1172,6 +1201,16 @@ export default function Watchlist() {
           background: "var(--surface)", color: "var(--text1)",
           cursor: "pointer", fontFamily: "inherit",
         }}>+ Add search</button>
+      )}
+      {watchTopTab === "collections" && user && (
+        <button onClick={startCreateCollection} style={{
+          marginLeft: "auto",
+          fontSize: 13, fontWeight: 500,
+          padding: "9px 14px", borderRadius: 8,
+          border: "0.5px solid var(--border)",
+          background: "var(--surface)", color: "var(--text1)",
+          cursor: "pointer", fontFamily: "inherit",
+        }}>+ New collection</button>
       )}
     </div>
   );
@@ -1211,6 +1250,30 @@ export default function Watchlist() {
     />
   );
 
+  // Collections — create/rename modal + add-to-collection picker.
+  // Both render globally so any Card across the app can trigger the
+  // picker, and the sub-tab strip + WatchlistTab share the edit modal.
+  const collectionEditModalJSX = (
+    <CollectionEditModal
+      editing={editingCollection}
+      setEditing={setEditingCollection}
+      createCollection={collectionsApi.createCollection}
+      renameCollection={collectionsApi.renameCollection}
+      inp={inp}
+    />
+  );
+  const collectionPickerModalJSX = (
+    <CollectionPickerModal
+      target={pickerTarget}
+      setTarget={setPickerTarget}
+      collections={collectionsApi.collections}
+      itemsByCollection={collectionsApi.itemsByCollection}
+      addItemToCollection={collectionsApi.addItemToCollection}
+      createCollection={collectionsApi.createCollection}
+      inp={inp}
+    />
+  );
+
   // Both shells consume the same props bag. App.js owns state and the
   // top-level JSX consts (authJSX, listingsGridJSX, watchSubTabsJSX,
   // statusSegmentJSX, watchlistTabJSX, plus the modal JSX consts) — the
@@ -1241,7 +1304,9 @@ export default function Watchlist() {
     toggleBrand, toggleHide, toggleSource,
     // Style tokens / pre-built JSX
     addSearchModalJSX,
-    authJSX, baseStyle, favSearchModalJSX, inp,
+    authJSX, baseStyle,
+    collectionEditModalJSX, collectionPickerModalJSX,
+    favSearchModalJSX, inp,
     listingsGridJSX, sectionHeadingStyle, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
   };

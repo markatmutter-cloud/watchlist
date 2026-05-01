@@ -36,6 +36,12 @@ export function WatchlistTab(props) {
     legacyLocal, importState, setImportState, legacyKeys,
     // Navigation
     setTab, setPage,
+    // Collections (Session 2). collectionsApi is the full
+    // useCollections return value; setEditingCollection opens the
+    // create/rename modal (rendered in the parent shell);
+    // openCollectionPicker opens the add-to-collection modal for a
+    // listing.
+    collectionsApi, setEditingCollection, openCollectionPicker,
   } = props;
 
   // eBay source-search config (read-only display in the Searches
@@ -44,6 +50,15 @@ export function WatchlistTab(props) {
   // header. Loading state is non-blocking — the saved-searches list
   // below still renders normally.
   const { searches: ebaySearches, loading: ebayLoading, error: ebayError } = useEBaySearches();
+
+  // Collections sub-tab drill-in selection. null = list view; <uuid>
+  // = drilled into that specific collection. Reset when the user
+  // navigates away from the Collections sub-tab so a stale id doesn't
+  // surface a deleted collection on return.
+  const [selectedCollectionId, setSelectedCollectionId] = useState(null);
+  useEffect(() => {
+    if (watchTopTab !== "collections") setSelectedCollectionId(null);
+  }, [watchTopTab]);
 
   // (Track New Item modal lifted to App.js on 2026-04-30 — its
   // trigger button now lives in the watchSubTabsJSX strip above
@@ -447,6 +462,148 @@ export function WatchlistTab(props) {
     </div>
   );
 
+  // ── COLLECTIONS SUB-TAB ────────────────────────────────────────────────
+  // Two views, controlled by local `selectedCollectionId` state:
+  //   null         → list of collections (each row = name + count)
+  //   <uuid>       → drill-in view of that collection's items as Cards
+  //
+  // The default Watchlist (backed by watchlist_items) is NOT a row in
+  // collectionsApi.collections — that's Approach A's intentional
+  // asymmetry. Default lives in the existing Watchlist > Listings
+  // sub-tab; this Collections sub-tab is for additional collections
+  // only.
+  const collectionsTabJSX = !user ? signInPromptJSX(
+    "Sign in to use collections",
+    "Group watches by intent — \"For wife\", \"Reference comps\", anything you want. Collections sync across every device you use."
+  ) : (() => {
+    const cols = (collectionsApi?.collections || []);
+    const itemsByColl = collectionsApi?.itemsByCollection || {};
+    // Hide the shared-inbox here in v1; it appears as its own card
+    // surface once Session 3 ships its UI. Keeping it out of the
+    // generic collections list avoids confusing it with user-created
+    // ones.
+    const visibleCols = cols.filter(c => !c.isSharedInbox);
+    const selected = selectedCollectionId
+      ? cols.find(c => c.id === selectedCollectionId)
+      : null;
+
+    if (selected) {
+      const items = itemsByColl[selected.id] || [];
+      return (
+        <div style={{ paddingTop: 4 }}>
+          <div style={{
+            display: "flex", alignItems: "baseline", gap: 12,
+            padding: "14px 14px 12px",
+            borderBottom: "0.5px solid var(--border)",
+            marginBottom: 12,
+          }}>
+            <button onClick={() => setSelectedCollectionId(null)} style={{
+              border: "none", background: "transparent", cursor: "pointer",
+              color: "#185FA5", fontFamily: "inherit", fontSize: 13, padding: 0,
+            }}>← All collections</button>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
+              {selected.name}
+            </span>
+            <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
+              {items.length}
+            </span>
+            <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
+              title="Rename collection"
+              style={{
+                border: "0.5px solid var(--border)", background: "transparent",
+                color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
+                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+              }}>Rename</button>
+            <button onClick={async () => {
+                if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this collection.`)) return;
+                await collectionsApi.deleteCollection(selected.id);
+                setSelectedCollectionId(null);
+              }}
+              style={{
+                border: "0.5px solid var(--border)", background: "transparent",
+                color: "#c0392b", padding: "4px 10px", borderRadius: 6,
+                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+              }}>Delete</button>
+          </div>
+          {items.length === 0 ? (
+            <div style={{ padding: "48px 20px", textAlign: "center" }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>📂</div>
+              <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
+                Empty collection
+              </div>
+              <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 320, margin: "0 auto" }}>
+                Add watches via the "…" menu on any listing card → "Add to collection…".
+              </div>
+            </div>
+          ) : (
+            <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+              {items.map(item => (
+                <Card
+                  key={item.id}
+                  item={item}
+                  wished={!!watchlist[item.id]}
+                  onWish={handleWish}
+                  compact={compact}
+                  // Inside a collection, the Hide menu item swaps to
+                  // "Remove from collection" — single Card surface,
+                  // different action wiring per context.
+                  onHide={() => collectionsApi.removeItemFromCollection(selected.id, item.id)}
+                  hideLabel="Remove from collection"
+                  isHidden={false}
+                  onAddToCollection={openCollectionPicker}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // List view.
+    return (
+      <div style={{ paddingTop: 4 }}>
+        {visibleCols.length === 0 ? (
+          <div style={{ padding: "48px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📂</div>
+            <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
+              No collections yet
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto" }}>
+              Group watches by intent — "For wife", "Reference comps - 5512", anything. Use "+ New collection" above to create one, then add listings via the "…" menu on any card.
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {visibleCols.map(c => {
+              const count = (itemsByColl[c.id] || []).length;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCollectionId(c.id)}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "14px 16px", borderRadius: 12,
+                    border: "0.5px solid var(--border)",
+                    background: "var(--card-bg)",
+                    color: "var(--text1)", cursor: "pointer",
+                    fontFamily: "inherit", textAlign: "left",
+                  }}>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 2 }}>{c.name}</div>
+                    <div style={{ fontSize: 12, color: "var(--text2)" }}>
+                      {count} item{count === 1 ? "" : "s"}
+                    </div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  })();
+
   // ── RENDER ─────────────────────────────────────────────────────────────
   return (
     <div>
@@ -498,6 +655,7 @@ export function WatchlistTab(props) {
                     wished={true}
                     onWish={handleWish}
                     compact={compact}
+                    onAddToCollection={openCollectionPicker}
                   />
                 );
 
@@ -574,6 +732,7 @@ export function WatchlistTab(props) {
           )}
           </>)}
 
+          {watchTopTab === "collections" && collectionsTabJSX}
           {watchTopTab === "searches" && searchesTabJSX}
           {watchTopTab === "calendar" && (
             <div style={{ paddingTop: 4 }}>

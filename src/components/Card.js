@@ -1,6 +1,17 @@
-import React, { useState, memo } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import { fmt, fmtUSD, imgSrc, fmtCountdown, fmtLotPrice, fmtSoldDate } from "../utils";
 import { HeartIcon } from "./icons";
+
+// Shared style for action-menu rows. Module-scope so it's not
+// re-created per Card render. Uses var(--text1) explicitly so the
+// dropdown reads in both light and dark mode against var(--bg).
+const menuItemStyle = {
+  display: "block", width: "100%", textAlign: "left",
+  padding: "8px 10px", border: "none", background: "transparent",
+  color: "var(--text1)", cursor: "pointer",
+  fontFamily: "inherit", fontSize: 13, borderRadius: 6,
+  whiteSpace: "nowrap",
+};
 
 // Wrapped in React.memo so an unrelated state change in App (heart toggle
 // on a different card, scroll-triggered page bump, filter tweak) doesn't
@@ -9,11 +20,44 @@ import { HeartIcon } from "./icons";
 // across renders for the listings feed. Watchlist tab spreads item to
 // override snapshot fields, so its cards still re-render — that's fine,
 // re-render ≠ image remount.
-export const Card = memo(function Card({ item, wished, onWish, compact, onHide, isHidden }) {
+export const Card = memo(function Card({
+  item, wished, onWish, compact, onHide, isHidden,
+  // Optional: opens the collection picker for this item. When omitted
+  // (e.g. signed-out browsing), the menu omits the "Add to collection"
+  // entry and falls back to just Hide. When the menu has zero items,
+  // the trigger button itself doesn't render.
+  onAddToCollection,
+  // Optional: override the default Hide menu label. The collection
+  // drill-in view passes "Remove from collection" + an onHide that
+  // actually calls removeItemFromCollection — single menu surface,
+  // different action wiring per context.
+  hideLabel, hideAriaLabel,
+}) {
   // When the dealer's image URL goes 404 (e.g. they cleaned up their CDN
   // for a sold listing), the browser shows an ugly broken-image icon.
   // Track the failure and render a clean placeholder instead.
   const [imgFailed, setImgFailed] = useState(false);
+  // Action menu open/close. Click-outside + Escape closes.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
+    // Defer one tick so the click that opened the menu doesn't
+    // immediately close it.
+    const t = setTimeout(() => {
+      document.addEventListener("mousedown", onDown);
+      document.addEventListener("keydown", onKey);
+    }, 0);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
   // (Previously had a NEW chip on cards <= 1 day old. Removed
   // 2026-04-30 — was firing inconsistently due to the backfill rule
   // and the date-order sort already conveys recency. Less chrome on
@@ -212,20 +256,43 @@ export const Card = memo(function Card({ item, wished, onWish, compact, onHide, 
                   color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <HeartIcon filled={wished} size={12} />
         </button>
-        {onHide && (
-          <button onClick={e => { e.preventDefault(); e.stopPropagation(); onHide(item); }}
-            aria-label={isHidden ? "Unhide" : "Hide"}
-            title={isHidden ? "Unhide" : "Hide from feed"}
-            style={{ width: 26, height: 26, borderRadius: "50%", border: "none", cursor: "pointer",
-                    background: isHidden ? "rgba(24,95,165,0.88)" : "rgba(0,0,0,0.28)",
-                    color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontFamily: "inherit" }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              {isHidden
-                ? <><path d="M4 12h16"/><path d="M12 4v16"/></> /* + sign = restore */
-                : <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></> /* X = hide */
-              }
-            </svg>
-          </button>
+        {/* "..." menu — replaces the standalone × hide button as of
+            2026-05-01. Houses Add-to-collection + Hide; Session 3
+            adds Share. Renders only if at least one menu item is
+            available (so signed-out browsing keeps the card clean).
+            Anchored top-right with the dropdown opening down-and-left
+            so it doesn't fall off the screen on rightmost cards. */}
+        {(onAddToCollection || onHide) && (
+          <div ref={menuRef} style={{ position: "relative" }}>
+            <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(o => !o); }}
+              aria-label="More actions"
+              style={{ width: 26, height: 26, borderRadius: "50%", border: "none", cursor: "pointer",
+                      background: menuOpen ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.28)",
+                      color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                      padding: 0, fontFamily: "inherit", fontSize: 16, lineHeight: 1 }}>
+              ⋯
+            </button>
+            {menuOpen && (
+              <div onClick={e => e.preventDefault()}
+                style={{
+                  position: "absolute", top: 30, right: 0, zIndex: 30,
+                  background: "var(--bg)", border: "0.5px solid var(--border)",
+                  borderRadius: 8, padding: 4, minWidth: 168,
+                  boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
+                }}>
+                {onAddToCollection && (
+                  <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onAddToCollection(item); }}
+                    style={menuItemStyle}>Add to collection…</button>
+                )}
+                {onHide && (
+                  <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onHide(item); }}
+                    style={menuItemStyle}>
+                    {hideLabel || (isHidden ? "Unhide" : "Hide from feed")}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

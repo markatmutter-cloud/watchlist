@@ -39,7 +39,9 @@ export function MobileShell(props) {
     toggleBrand, toggleHide, toggleSource,
     // Style tokens / pre-built JSX
     addSearchModalJSX,
-    authJSX, baseStyle, favSearchModalJSX, inp,
+    authJSX, baseStyle,
+    collectionEditModalJSX, collectionPickerModalJSX,
+    favSearchModalJSX, inp,
     listingsGridJSX, sectionHeadingStyle, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
   } = props;
@@ -93,7 +95,7 @@ export function MobileShell(props) {
               </button>
             )}
           </div>
-          {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar")) && (
+          {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar" || watchTopTab === "collections")) && (
             <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} aria-label="Filters" style={iconButton({ active: hasFilters })}>
               <FilterIcon />
             </button>
@@ -166,7 +168,7 @@ export function MobileShell(props) {
             have a list to filter. On Searches sub-tab we still render an
             empty placeholder of the same height so the content below
             doesn't jump up when switching sub-tabs. */}
-        {tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar") && (
+        {tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar" || watchTopTab === "collections") && (
           // Spacer row — matches the active filter row's padding +
           // pill-shaped child so the height is identical to the real row.
           // Avoids a layout shift when switching to Searches sub-tab.
@@ -174,7 +176,7 @@ export function MobileShell(props) {
             <span style={{ fontSize: 13, padding: "9px 14px", borderRadius: 20, border: "0.5px solid transparent", visibility: "hidden" }}>placeholder</span>
           </div>
         )}
-        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar")) && (
+        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar" || watchTopTab === "collections")) && (
         <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center" }}>
           <span style={{ fontSize: 12, color: "var(--text3)", marginRight: 2 }}>{allFiltered.length}</span>
           {/* Date sort pill */}
@@ -232,6 +234,8 @@ export function MobileShell(props) {
         </div>
         {trackNewItemModalJSX}
         {addSearchModalJSX}
+        {collectionEditModalJSX}
+        {collectionPickerModalJSX}
         {/* Bottom tab bar. The container reserves the iOS home-indicator
             safe area PLUS a fixed extra padding, so the buttons aren't
             hugging the home bar when the app is launched standalone from
