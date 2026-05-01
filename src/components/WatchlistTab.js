@@ -486,11 +486,15 @@ export function WatchlistTab(props) {
   ) : (() => {
     const cols = (collectionsApi?.collections || []);
     const itemsByColl = collectionsApi?.itemsByCollection || {};
-    // Hide the shared-inbox here in v1; it appears as its own card
-    // surface once Session 3 ships its UI. Keeping it out of the
-    // generic collections list avoids confusing it with user-created
-    // ones.
-    const visibleCols = cols.filter(c => !c.isSharedInbox);
+    // Surface the shared-inbox alongside user-created collections
+    // 2026-05-01 — was hidden in v2 of the spec, but with Session 3
+    // shipped that left received items invisible. Now pinned to the
+    // TOP of the list with an inbox icon so it reads as a different
+    // surface from "I made this collection." Still excluded from
+    // CollectionPickerModal (manual adds shouldn't go to the inbox).
+    const sharedInbox  = cols.find(c => c.isSharedInbox) || null;
+    const userCols     = cols.filter(c => !c.isSharedInbox);
+    const visibleCols  = sharedInbox ? [sharedInbox, ...userCols] : userCols;
     const selected = selectedCollectionId
       ? cols.find(c => c.id === selectedCollectionId)
       : null;
@@ -515,23 +519,31 @@ export function WatchlistTab(props) {
             <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
               {items.length}
             </span>
-            <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
-              title="Rename collection"
-              style={{
-                border: "0.5px solid var(--border)", background: "transparent",
-                color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
-                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-              }}>Rename</button>
-            <button onClick={async () => {
-                if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this collection.`)) return;
-                await collectionsApi.deleteCollection(selected.id);
-                setSelectedCollectionId(null);
-              }}
-              style={{
-                border: "0.5px solid var(--border)", background: "transparent",
-                color: "#c0392b", padding: "4px 10px", borderRadius: 6,
-                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-              }}>Delete</button>
+            {/* Rename + Delete hidden for the shared-inbox collection
+                — spec says it's perma in v1; the user can clear items
+                via Remove-from-collection on each card but the
+                collection itself stays. */}
+            {!selected.isSharedInbox && (
+              <>
+                <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
+                  title="Rename collection"
+                  style={{
+                    border: "0.5px solid var(--border)", background: "transparent",
+                    color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
+                    cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                  }}>Rename</button>
+                <button onClick={async () => {
+                    if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this collection.`)) return;
+                    await collectionsApi.deleteCollection(selected.id);
+                    setSelectedCollectionId(null);
+                  }}
+                  style={{
+                    border: "0.5px solid var(--border)", background: "transparent",
+                    color: "#c0392b", padding: "4px 10px", borderRadius: 6,
+                    cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                  }}>Delete</button>
+              </>
+            )}
           </div>
           {items.length === 0 ? (
             <div style={{ padding: "48px 20px", textAlign: "center" }}>
@@ -586,6 +598,7 @@ export function WatchlistTab(props) {
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {visibleCols.map(c => {
               const count = (itemsByColl[c.id] || []).length;
+              const isInbox = c.isSharedInbox;
               return (
                 <button
                   key={c.id}
@@ -594,14 +607,29 @@ export function WatchlistTab(props) {
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     padding: "14px 16px", borderRadius: 12,
                     border: "0.5px solid var(--border)",
+                    // Inbox row gets a left accent so it reads as a
+                    // different surface from user-created collections.
+                    borderLeft: isInbox ? "3px solid #185FA5" : "0.5px solid var(--border)",
                     background: "var(--card-bg)",
                     color: "var(--text1)", cursor: "pointer",
                     fontFamily: "inherit", textAlign: "left",
                   }}>
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 2 }}>{c.name}</div>
-                    <div style={{ fontSize: 12, color: "var(--text2)" }}>
-                      {count} item{count === 1 ? "" : "s"}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {isInbox && (
+                      // Inbox icon — small tray glyph in the same blue
+                      // as the borderLeft accent.
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+                        <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+                      </svg>
+                    )}
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 2 }}>{c.name}</div>
+                      <div style={{ fontSize: 12, color: "var(--text2)" }}>
+                        {isInbox
+                          ? `${count} listing${count === 1 ? "" : "s"} shared with you`
+                          : `${count} item${count === 1 ? "" : "s"}`}
+                      </div>
                     </div>
                   </div>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>

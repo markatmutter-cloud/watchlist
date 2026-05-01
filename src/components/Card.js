@@ -171,7 +171,13 @@ export const Card = memo(function Card({
     : null;
   const countdownIsPast = countdownLabel && countdownLabel.startsWith("ended");
   return (
-    <div style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative", minWidth: 0, overflow: "hidden" }}>
+    {/* No overflow: hidden on the Card root — image-clip lives on
+        the inner img-wrapper div below (paddingTop: 100% trick).
+        Letting the action menu spill out of the card boundary keeps
+        it readable on narrow mobile cards (2-col @ 375px = ~165px
+        wide; the menu is ~140px and would otherwise get clipped on
+        the left side). */}
+    <div style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative", minWidth: 0 }}>
       <a href={item.url} target="_blank" rel="noopener noreferrer"
         style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
         <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
@@ -312,7 +318,12 @@ export const Card = memo(function Card({
                 style={{
                   position: "absolute", top: 30, right: 0, zIndex: 30,
                   background: "var(--bg)", border: "0.5px solid var(--border)",
-                  borderRadius: 8, padding: 4, minWidth: 168,
+                  borderRadius: 8, padding: 4,
+                  // No minWidth — menu sizes to its widest item.
+                  // Pre-2026-05-01 had minWidth: 168 which extended past
+                  // the right edge of cards on 2-col mobile (~165px wide)
+                  // and got clipped by the Card root's overflow: hidden.
+                  whiteSpace: "nowrap",
                   boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
                 }}>
                 {onShare && (

@@ -240,7 +240,13 @@ export default function Watchlist() {
     }
     const title = item.brand ? `${item.brand} on Watchlist` : "Watch on Watchlist";
     const text  = [item.brand, item.ref].filter(Boolean).join(" · ") || "Watch on Watchlist";
-    if (typeof navigator !== "undefined" && navigator.share) {
+    // Desktop: always copy the link to the clipboard. Web Share API
+    // is supported on Chrome/Edge desktop now but the native sheet
+    // there is awkward (full-page modal listing your installed apps),
+    // and Mark prefers the predictable "link is on your clipboard"
+    // affordance. Mobile keeps the native sheet — that's where
+    // routing-to-iMessage/WhatsApp/etc actually shines.
+    if (isMobile && typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ title, text, url: shareUrl });
         return { copied: false };
