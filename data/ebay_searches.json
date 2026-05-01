@@ -1,33 +1,11 @@
 [
   {
-    "label": "Omega Railmaster CK2914 — USA",
-    "query": "Omega Railmaster CK2914",
-    "country": "US"
+    "label": "Omega Railmaster CK2914",
+    "query": "Omega Railmaster CK2914"
   },
   {
-    "label": "Omega Railmaster CK2914 — UK",
-    "query": "Omega Railmaster CK2914",
-    "country": "GB"
-  },
-  {
-    "label": "Omega Railmaster CK2914 — Europe",
-    "query": "Omega Railmaster CK2914",
-    "country": ["DE", "IT", "FR", "CH", "AT", "NL", "BE", "ES"]
-  },
-  {
-    "label": "Heuer Autavia GMT — USA",
-    "query": "heuer autavia gmt",
-    "country": "US"
-  },
-  {
-    "label": "Heuer Autavia GMT — UK",
-    "query": "heuer autavia gmt",
-    "country": "GB"
-  },
-  {
-    "label": "Heuer Autavia GMT — Europe",
-    "query": "heuer autavia gmt",
-    "country": ["DE", "IT", "FR", "CH", "AT", "NL", "BE", "ES"]
+    "label": "Heuer Autavia GMT",
+    "query": "heuer autavia gmt"
   },
   {
     "_note": "Seller-only example (filtered out at runtime). Add real sellers like { 'label': 'Wind Vintage on eBay', 'seller': 'windvintage' } — when seller is set without a query, the scraper pulls that seller's full Wristwatches inventory. Combine seller + query to filter that seller's listings by keyword. country still applies.",
