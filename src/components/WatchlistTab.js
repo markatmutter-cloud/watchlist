@@ -271,30 +271,37 @@ export function WatchlistTab(props) {
           Edits go through GitHub. */}
       {(ebaySearches.length > 0 || ebayLoading || ebayError) && (
         <div style={{ marginBottom: 24 }}>
+          {/* Section divider — matches the Listings + Calendar treatment
+              (fontSize 14, fontWeight 600, borderBottom 0.5px). The
+              earlier small-uppercase header read as a different
+              visual system from the bold "Today" / "April 2026"
+              dividers in the sibling sub-tabs. Right side carries the
+              count + the Edit-on-GitHub link, replacing the old
+              two-line "N searches feeding..." subtitle. */}
           <div style={{
-            display: "flex", alignItems: "baseline", justifyContent: "space-between",
-            padding: "0 2px 8px", marginBottom: 8,
+            display: "flex", alignItems: "baseline", gap: 12,
+            padding: "14px 14px 12px",
             borderBottom: "0.5px solid var(--border)",
+            marginBottom: 4,
           }}>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
-                Source · eBay
-              </div>
-              <div style={{ fontSize: 12, color: "var(--text2)" }}>
-                {ebayLoading ? "Loading…"
-                  : ebayError ? `Couldn't load (${ebayError})`
-                  : `${ebaySearches.length} search${ebaySearches.length === 1 ? "" : "es"} feeding the Available feed.`}
-              </div>
-            </div>
-            <a href={EBAY_SEARCHES_EDIT_URL} target="_blank" rel="noopener noreferrer"
-               style={{
-                 fontSize: 12, color: "#185FA5", textDecoration: "none",
-                 padding: "6px 10px", borderRadius: 6,
-                 border: "0.5px solid var(--border)", background: "var(--card-bg)",
-                 fontFamily: "inherit", whiteSpace: "nowrap", flexShrink: 0,
-               }}>
-              Edit on GitHub ↗
-            </a>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
+              Source · eBay
+            </span>
+            <span style={{ fontSize: 12, color: "var(--text3)" }}>
+              {ebayLoading ? "loading…"
+                : ebayError ? "couldn't load"
+                : `feeding the Available feed`}
+            </span>
+            <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
+              {!ebayLoading && !ebayError && ebaySearches.length}
+              <a href={EBAY_SEARCHES_EDIT_URL} target="_blank" rel="noopener noreferrer"
+                 style={{
+                   fontSize: 12, color: "#185FA5", textDecoration: "none",
+                   fontFamily: "inherit", whiteSpace: "nowrap",
+                 }}>
+                Edit on GitHub ↗
+              </a>
+            </span>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -345,8 +352,22 @@ export function WatchlistTab(props) {
           feed). Same UI affordance is fine since both are
           "named queries you run with one tap." */}
       {savedSearchStats.length > 0 && (
-        <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", padding: "0 2px 8px", marginBottom: 8 }}>
-          Saved searches
+        // Same divider treatment as the Source · eBay header above
+        // and the Listings / Calendar sub-tab dividers — fontSize 14,
+        // fontWeight 600, borderBottom. Trailing count on the right
+        // mirrors the "Today (14)" pattern.
+        <div style={{
+          display: "flex", alignItems: "baseline", gap: 12,
+          padding: "14px 14px 12px",
+          borderBottom: "0.5px solid var(--border)",
+          marginBottom: 4,
+        }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
+            Saved searches
+          </span>
+          <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
+            {savedSearchStats.length}
+          </span>
         </div>
       )}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
