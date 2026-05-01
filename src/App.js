@@ -238,17 +238,22 @@ export default function Watchlist() {
     } catch {
       return { copied: false };
     }
-    const title = item.brand ? `${item.brand} on Watchlist` : "Watch on Watchlist";
-    const text  = [item.brand, item.ref].filter(Boolean).join(" · ") || "Watch on Watchlist";
     // Desktop: always copy the link to the clipboard. Web Share API
     // is supported on Chrome/Edge desktop now but the native sheet
     // there is awkward (full-page modal listing your installed apps),
     // and Mark prefers the predictable "link is on your clipboard"
     // affordance. Mobile keeps the native sheet — that's where
     // routing-to-iMessage/WhatsApp/etc actually shines.
+    //
+    // Share payload is URL-only. Pre-2026-05-01 we passed { title,
+    // text, url } but iMessage / WhatsApp render the title + text
+    // alongside the link, which Mark didn't want. Just the URL
+    // gives the recipient's messaging app room to render its own
+    // rich-link preview (parsed from the page's OG tags) without
+    // an extra "Watch on Watchlist" line above it.
     if (isMobile && typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title, text, url: shareUrl });
+        await navigator.share({ url: shareUrl });
         return { copied: false };
       } catch (e) {
         if (e?.name === "AbortError") return { copied: false };
