@@ -318,6 +318,258 @@ export function useSearches(user) {
 }
 
 
+// ── COLLECTIONS ─────────────────────────────────────────────────────────────
+// User-created collections beyond the default "Watchlist" — "For Wife",
+// "Reference comps - 5512", etc. — plus the auto "Shared with me"
+// inbox.
+//
+// Approach A (minimal): the user's default Watchlist collection is
+// implicit and continues to be backed by the existing watchlist_items
+// table (see useWatchlist above). This hook ONLY manages additional
+// collections + items. The asymmetry is intentional — keeps the
+// existing heart-on-card flow unchanged and avoids a full migration of
+// historic watchlist_items rows.
+//
+// Schema lives in supabase/schema/2026-05-01_collections.sql. Two
+// tables: `collections` (one row per user-created or shared-inbox
+// collection; nothing for the default Watchlist) and
+// `collection_items` (denormalized listing snapshot per collection
+// membership).
+//
+// The hook returns:
+//   collections — array of { id, name, type, isSharedInbox, ... }
+//   itemsByCollection — { [collection_id]: array of items }
+//   Plus mutators: createCollection, renameCollection, deleteCollection,
+//   addItemToCollection, removeItemFromCollection, ensureSharedInbox,
+//   addToSharedInbox.
+//
+// All mutators are no-ops when signed out — they return { error } so
+// the caller can surface a sign-in prompt if appropriate.
+
+export function useCollections(user) {
+  const [collections, setCollections]           = useState([]);
+  const [itemsByCollection, setItemsByCollection] = useState({});
+
+  // Initial fetch — collections + their items in two queries.
+  useEffect(() => {
+    if (!user || !supabase) {
+      setCollections([]);
+      setItemsByCollection({});
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const [colRes, itemRes] = await Promise.all([
+        supabase.from('collections').select('*').order('created_at', { ascending: true }),
+        // RLS filters items to ones in collections the user owns, so
+        // we don't need to join here — the filter is implicit.
+        supabase.from('collection_items').select('*').order('added_at', { ascending: false }),
+      ]);
+      if (cancelled) return;
+      if (colRes.error)  { console.warn('collections load failed', colRes.error); return; }
+      if (itemRes.error) { console.warn('collection_items load failed', itemRes.error); return; }
+      const cols = (colRes.data || []).map(r => ({
+        id:             r.id,
+        name:           r.name,
+        description:    r.description,
+        type:           r.type,
+        isSharedInbox:  r.is_shared_inbox,
+        createdAt:      r.created_at,
+        updatedAt:      r.updated_at,
+      }));
+      const grouped = {};
+      for (const row of (itemRes.data || [])) {
+        const snap = row.listing_snapshot || {};
+        const item = {
+          rowId:           row.id,                 // collection_items.id (for delete)
+          id:              row.listing_id,
+          savedPrice:      row.saved_price,
+          savedCurrency:   row.saved_currency,
+          savedPriceUSD:   row.saved_price_usd,
+          sourceOfEntry:   row.source_of_entry,
+          sharedByHandle:  row.shared_by_handle,
+          savedAt:         row.added_at,
+          ...snap,
+        };
+        (grouped[row.collection_id] ||= []).push(item);
+      }
+      setCollections(cols);
+      setItemsByCollection(grouped);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  // ── Collection CRUD ──────────────────────────────────────────
+  const createCollection = useCallback(async (name, opts = {}) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const cleanName = (name || '').trim();
+    if (!cleanName) return { error: 'name required' };
+    const payload = {
+      user_id:          user.id,
+      name:             cleanName,
+      description:      opts.description || null,
+      type:             opts.type || 'free-form',
+      is_shared_inbox:  !!opts.isSharedInbox,
+    };
+    const { data, error } = await supabase.from('collections').insert(payload).select().single();
+    if (error) return { error: error.message };
+    setCollections(prev => [...prev, {
+      id: data.id, name: data.name, description: data.description,
+      type: data.type, isSharedInbox: data.is_shared_inbox,
+      createdAt: data.created_at, updatedAt: data.updated_at,
+    }]);
+    return { error: null, id: data.id };
+  }, [user]);
+
+  const renameCollection = useCallback(async (id, name) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const cleanName = (name || '').trim();
+    if (!cleanName) return { error: 'name required' };
+    const { error } = await supabase.from('collections')
+      .update({ name: cleanName, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) return { error: error.message };
+    setCollections(prev => prev.map(c => c.id === id ? { ...c, name: cleanName } : c));
+    return { error: null };
+  }, [user]);
+
+  const deleteCollection = useCallback(async (id) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    // Don't let the user delete the shared-inbox; spec says it's
+    // perma. Clearing items inside it is allowed.
+    const target = collections.find(c => c.id === id);
+    if (target?.isSharedInbox) return { error: 'cannot delete shared inbox' };
+    const { error } = await supabase.from('collections').delete().eq('id', id);
+    if (error) return { error: error.message };
+    setCollections(prev => prev.filter(c => c.id !== id));
+    setItemsByCollection(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    return { error: null };
+  }, [user, collections]);
+
+  // ── Item CRUD ────────────────────────────────────────────────
+  const addItemToCollection = useCallback(async (collectionId, listing, opts = {}) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    if (!collectionId || !listing?.id) return { error: 'collection and listing required' };
+    const payload = {
+      collection_id:    collectionId,
+      listing_id:       listing.id,
+      saved_price:      listing.price ?? null,
+      saved_currency:   listing.currency || 'USD',
+      saved_price_usd:  listing.priceUSD ?? null,
+      listing_snapshot: listing,
+      source_of_entry:  opts.sourceOfEntry || 'manual',
+      shared_by_handle: opts.sharedByHandle || null,
+    };
+    const { data, error } = await supabase.from('collection_items')
+      .insert(payload)
+      .select().single();
+    // 23505 is Postgres' unique_violation — same listing already in
+    // collection. Spec calls for idempotent re-shares; surface as
+    // success rather than error so callers don't have to special-case.
+    if (error && error.code !== '23505') return { error: error.message };
+    if (data) {
+      setItemsByCollection(prev => ({
+        ...prev,
+        [collectionId]: [
+          {
+            rowId:           data.id,
+            id:              data.listing_id,
+            savedPrice:      data.saved_price,
+            savedCurrency:   data.saved_currency,
+            savedPriceUSD:   data.saved_price_usd,
+            sourceOfEntry:   data.source_of_entry,
+            sharedByHandle:  data.shared_by_handle,
+            savedAt:         data.added_at,
+            ...listing,
+          },
+          ...(prev[collectionId] || []),
+        ],
+      }));
+    }
+    return { error: null };
+  }, [user]);
+
+  const removeItemFromCollection = useCallback(async (collectionId, listingId) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const { error } = await supabase.from('collection_items')
+      .delete()
+      .match({ collection_id: collectionId, listing_id: listingId });
+    if (error) return { error: error.message };
+    setItemsByCollection(prev => ({
+      ...prev,
+      [collectionId]: (prev[collectionId] || []).filter(it => it.id !== listingId),
+    }));
+    return { error: null };
+  }, [user]);
+
+  // ── Shared-inbox helpers ─────────────────────────────────────
+  // The Shared-with-me collection is created lazily on first received
+  // share. ensureSharedInbox returns its id (creating it if missing).
+  // Concurrent calls are safe — the partial unique index on
+  // is_shared_inbox=true serializes inserts, and we re-fetch after a
+  // 23505 conflict.
+  const ensureSharedInbox = useCallback(async () => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const existing = collections.find(c => c.isSharedInbox);
+    if (existing) return { error: null, id: existing.id };
+    const { data, error } = await supabase.from('collections').insert({
+      user_id:          user.id,
+      name:             'Shared with me',
+      type:             'shared-inbox',
+      is_shared_inbox:  true,
+    }).select().single();
+    if (error && error.code === '23505') {
+      // Race — another tab/window created it. Re-fetch.
+      const { data: row } = await supabase.from('collections')
+        .select('*').eq('user_id', user.id).eq('is_shared_inbox', true).single();
+      if (row) {
+        setCollections(prev => prev.find(c => c.id === row.id) ? prev : [...prev, {
+          id: row.id, name: row.name, description: row.description,
+          type: row.type, isSharedInbox: row.is_shared_inbox,
+          createdAt: row.created_at, updatedAt: row.updated_at,
+        }]);
+        return { error: null, id: row.id };
+      }
+    }
+    if (error) return { error: error.message };
+    setCollections(prev => [...prev, {
+      id: data.id, name: data.name, description: data.description,
+      type: data.type, isSharedInbox: data.is_shared_inbox,
+      createdAt: data.created_at, updatedAt: data.updated_at,
+    }]);
+    return { error: null, id: data.id };
+  }, [user, collections]);
+
+  // Convenience for the share-receive flow — finds-or-creates the
+  // Shared-with-me collection, then adds the listing with
+  // source_of_entry='shared_with_me'. Idempotent on re-shares.
+  const addToSharedInbox = useCallback(async (listing, opts = {}) => {
+    const ensured = await ensureSharedInbox();
+    if (ensured.error) return ensured;
+    return addItemToCollection(ensured.id, listing, {
+      sourceOfEntry: 'shared_with_me',
+      sharedByHandle: opts.sharedByHandle || null,
+    });
+  }, [ensureSharedInbox, addItemToCollection]);
+
+  return {
+    collections,
+    itemsByCollection,
+    createCollection,
+    renameCollection,
+    deleteCollection,
+    addItemToCollection,
+    removeItemFromCollection,
+    ensureSharedInbox,
+    addToSharedInbox,
+  };
+}
+
+
 // ── TRACKED AUCTION LOTS ────────────────────────────────────────────────────
 // Per-user. Each row is just a (user_id, lot_url) pairing — the lot's
 // scraped data (image, title, estimate, current bid, sold price, auction

@@ -102,6 +102,69 @@ In rough order:
 - `cache: 'npm'` was tried but errors when no lockfile is committed —
   removed (commit `18bc563`).
 
+## Ongoing — Collections + Sharing v1 (Session 1 of 3)
+
+Three-session feature pair underway (collections data model →
+collections UI → share). Approach A (minimal migration) + query-param
+URL routing for the share flow, both confirmed by Mark before start.
+
+**Session 1 — what just shipped (this commit only adds the data
+layer; no user-visible change):**
+
+- New SQL schema file: `supabase/schema/2026-05-01_collections.sql`.
+  Two tables: `collections` (free-form / shared-inbox / type-marker
+  fields for future challenge / watchbox surfaces) and
+  `collection_items` (denormalized listing snapshot + source-of-entry
+  tag + future shared_by_handle hook). RLS via auth.uid() on
+  collections; collection_items inherits via the parent's user_id.
+  Idempotent — run once in the Supabase SQL editor; subsequent runs
+  no-op. Partial unique index enforces one shared-inbox per user.
+- New `useCollections(user)` hook in `src/supabase.js`. Returns
+  `{ collections, itemsByCollection, createCollection,
+  renameCollection, deleteCollection, addItemToCollection,
+  removeItemFromCollection, ensureSharedInbox, addToSharedInbox }`.
+  All mutators are no-ops when signed out (return `{ error }` so
+  callers can prompt for sign-in).
+- The existing `useWatchlist(user)` hook is unchanged. The user's
+  default "Watchlist" collection remains backed by the
+  `watchlist_items` table — Approach A's intentional asymmetry. New
+  user-created collections + the auto Shared-with-me inbox live in
+  the new tables.
+- Hook is NOT wired into App.js yet. Session 2 is the first consumer
+  (the new Collections sub-tab); avoiding the import now keeps
+  CI=true builds clean (CRA treats unused-var warnings as errors).
+
+**Mark — manual step required before Session 2:**
+
+Run `supabase/schema/2026-05-01_collections.sql` in the Supabase
+SQL editor. Until that runs, the hook will fail-soft (errors logged,
+no UI breakage) but the Collections sub-tab in Session 2 will appear
+empty for everyone.
+
+**Session 2 — Collections UI (next):**
+
+- 4th sub-tab in Watchlist: **Collections**, alongside Listings /
+  Searches / Auction Calendar. Same `tabPill` underline treatment.
+- Click a collection → list of items rendered with the existing Card
+  component.
+- New `"..."` menu on every Card. Replaces the standalone `×` (hide)
+  — menu houses Share (Session 3), Add to collection…, and Hide.
+  Heart stays as the primary save affordance.
+- Add/rename/delete collections via simple modals reusing the
+  shared `modalShell` / `modalCloseButton` tokens.
+
+**Session 3 — Share (after Session 2):**
+
+- `"..."` menu gains Share. Web Share API on mobile, Copy link
+  fallback on desktop.
+- URL format: `?listing=<id>&shared=1` on root.
+- Receive handler in App.js: parse share param on mount, render a
+  banner above the listing card. Save / Dismiss for signed-in users
+  (both populate Shared-with-me; Save also adds to default).
+  Anonymous: passive sign-in CTA, no nag.
+- URL gets rewritten to drop the share param after action so refresh
+  isn't sticky.
+
 ## Mid-flight / immediate-next
 
 - **Verify on production** — Mark already reported the date-header
