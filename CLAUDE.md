@@ -9,7 +9,7 @@ how to behave for the rest of it.
 - [README.md](README.md) — what the project is + architecture. Public-facing.
 - [ROADMAP.md](ROADMAP.md) — priorities, epics, what's explicitly out of scope.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
-  The current one is [SESSION_HANDOFF_2026-04-29.md](SESSION_HANDOFF_2026-04-29.md);
+  The current one is [SESSION_HANDOFF_2026-04-30.md](SESSION_HANDOFF_2026-04-30.md);
   older ones live in `archive/`.
 
 If a gotcha or convention is durable (still true next session), graduate
@@ -45,13 +45,18 @@ Full diagram + folder layout in [README.md](README.md). One-paragraph summary:
 Scrapers (Python `requests`, GitHub Actions 3×/day PT) write per-source
 CSVs into `data/`. `merge.py` enriches into `public/listings.json` +
 `public/state.json` (cross-run memory via stable URL-hash IDs).
-Frontend is React (CRA, inline styles), root `App.js` ~1,700 lines plus
-`src/components/` and `src/utils.js`/`src/hooks.js`. Per-user data
-(watchlist, hidden, saved searches, tracked lots) is in Supabase with
-RLS. One serverless function: `api/img.js` (image proxy for hot-link-
-protected dealers). Vercel Blob caches dealer images for hearted items
-**only** — see `cache_watchlist_images.mjs`; **don't extend the blob
-cache to the full feed**.
+Frontend is React (CRA, inline styles). `App.js` is ~1,250 lines —
+the orchestrator that owns state and JSX consts; render is delegated
+to `src/components/MobileShell.js` + `DesktopShell.js`, each receiving
+a single `shellProps` bag. Domain state hooks live under `src/hooks/`
+(useTrackModal, useFavSearchModal, useViewSettings, useFilters,
+useEBaySearches); shared style tokens in `src/styles.js`; pure
+helpers in `src/utils.js`. Per-user data (watchlist, hidden, saved
+searches, tracked lots) is in Supabase with RLS. One serverless
+function: `api/img.js` (image proxy for hot-link-protected dealers).
+Vercel Blob caches dealer images for hearted items **only** — see
+`cache_watchlist_images.mjs`; **don't extend the blob cache to the
+full feed**.
 
 ## Scraper conventions
 
@@ -70,26 +75,38 @@ cache to the full feed**.
 
 ## Tests
 
-`tests/test_merge_state.py` covers state-transition logic in
-`merge.update_state` — the cross-run memory layer where regressions
-would be costly and silent. Synthetic input dicts only (no CSV files,
-no scraper output, no frontend). Driven by pytest. Each test name
-describes the transition it covers so a failure points straight at the
-broken case.
+Two suites, both run on every push to main and every PR via
+`.github/workflows/tests.yml`:
+
+- **pytest** (`tests/test_merge_state.py`) — state-transition logic in
+  `merge.update_state`. Cross-run memory layer where regressions would
+  be costly and silent. Synthetic input dicts only.
+- **jest** (`src/components/*.test.jsx`) — render-without-crash + key
+  visibility assertions for `MobileShell` + `DesktopShell`. Catches
+  the TDZ class of bug that shipped a white screen on mobile in late
+  April 2026. Single mock fixture in
+  `src/components/__fixtures__/mockShellProps.js`; tests override
+  individual fields rather than rebuilding the ~60-prop bag.
 
 Run locally:
 
 ```
 pip install -r requirements-dev.txt    # one-time setup
-pytest                                  # runs the suite
+pytest                                  # Python suite
+
+npm install                             # one-time setup
+npm test                                # jest watch mode
+npm run test:ci                         # jest single-run (CI mode)
 ```
 
-The suite also runs in CI on every push to main and every PR
-(`.github/workflows/tests.yml`). When adding new state-transition
-behavior to `merge.py`, add a corresponding test in the same file.
-Currently-documented bugs (e.g. silent currency switches) live as
-behavior-documenting tests rather than expected-failures — when those
-bugs are fixed, the relevant test needs an update too.
+When adding new state-transition behavior to `merge.py`, add a
+corresponding test in `tests/test_merge_state.py`. When adding a new
+prop to either shell, mirror it in `mockShellProps.js` so the smoke
+tests keep covering missing-prop regressions.
+
+Currently-documented bugs in pytest (e.g. silent currency switches)
+live as behavior-documenting tests rather than expected-failures —
+when those bugs are fixed, the relevant test needs an update too.
 
 ## Print scoping for in-app tools
 

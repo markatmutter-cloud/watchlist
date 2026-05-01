@@ -1,6 +1,6 @@
 # Watchlist Roadmap
 
-Last updated: 2026-04-28
+Last updated: 2026-04-30
 Living document. Updated as priorities shift.
 
 For project context and architecture, see [README.md](README.md). For
@@ -128,56 +128,53 @@ but "what has come up for this reference, when, and what did it sell for."
 
 The features that make Watchlist tell me things, not just show me things.
 
-### eBay integration (in design, 2026-04-28)
+### eBay integration (mostly shipped, 2026-04-30)
 
-Highest-impact single feature on this list. eBay has a stable Browse API
-(free tier 5k calls/day, OAuth). **Decisions made 2026-04-28:**
+Highest-impact single feature on the list when it landed. eBay has a
+stable Browse API (free tier 5k calls/day, OAuth).
 
-- **Two surfaces, single integration:**
-  1. Timed auctions → new **eBay sub-tab inside the Auctions tab**
-     (third sub-tab alongside Tracked lots / Calendar). Card format
-     matches the existing tracked-lots cards (image, title, current
-     bid, time-remaining badge, seller). Data kept in a separate
-     table from auction-house tracked lots — different schema, same
-     visual language.
-  2. Buy-It-Now → mixed into the **Available feed** alongside dealer
-     listings, with `source = "eBay"`. Same Card component, same
-     filters. Source filter lets users hide eBay if they want
-     dealer-only.
-- **Targeted searches only.** Users define searches as
-  reference/keyword strings (e.g. "Railmaster CK2914"). Country filter
-  per search: USA / UK / Europe (where Europe = a multi-country list,
-  not a single ISO code — eBay's API takes one country at a time, so
-  "Europe" means the search runs N times and merges).
-- **Manual single-item URL tracking.** Paste an eBay URL → track that
-  specific listing's current price + time-remaining. Same flow as the
-  existing Christie's/Sotheby's/Antiquorum tracked-lot URL paste.
-- **NOT in scope:** re-listing detection (originally considered;
-  dropped 2026-04-28 — too speculative for v1).
-- **NOT in scope:** broad keyword searches like "vintage Rolex". Only
-  targeted reference-level searches to avoid drowning the curated
-  dealer feed.
+**What shipped:**
 
-**Setup required from Mark before code starts:**
-1. Create an eBay developer account at developer.ebay.com (free).
-2. Create a "Production" keyset to get Client ID + Client Secret.
-3. Add both as GitHub Actions secrets: `EBAY_CLIENT_ID` /
-   `EBAY_CLIENT_SECRET`. Also add to Vercel env (for the eventual
-   per-user search panel).
-4. Share one example search URL (e.g. the Railmaster CK2914 search on
-   ebay.com filtered to USA) so the first scraper can be validated
-   against real data.
+- `ebay_oauth.py` — OAuth client-credentials token refresh.
+- `ebay_search_scraper.py` — reads `data/ebay_searches.json`, calls
+  Browse API per (search × country), writes `data/ebay.csv`.
+- `.github/workflows/scrape-ebay.yml` — runs 3×/day at 6:30am /
+  12:30pm / 6:30pm PT, offset 30 minutes from the dealer scrape.
+- `data/ebay_searches.json` — config file. Each entry has `label`,
+  `query`, optional `country` (ISO-2 string or array), optional
+  `seller` (filter to a specific seller's listings).
+- Buy-It-Now eBay items show up in the main Listings feed with
+  `source = "eBay"`. Same Card, same filters.
+- Watchlist > Searches sub-tab now surfaces the contents of
+  `data/ebay_searches.json` read-only, with an "Edit on GitHub" link
+  to the file's in-browser editor. Counts come from `data/ebay.csv`'s
+  `_search_label` column.
+- Manual single-item URL tracking — paste an eBay item URL into Track
+  new item; the auctionlots scraper handles eBay alongside auction
+  houses.
 
-**Architecture sketch:**
-- `ebay_search_scraper.py` — runs each saved search via Browse API,
-  writes one CSV per search to `data/ebay/<search-slug>.csv`.
-- `ebay_tracked_scraper.py` — polls each manually tracked URL for
-  price + time. Writes to `data/ebay_tracked.csv`.
-- Both feed `merge.py` extensions that route Buy-It-Now items into
-  `listings.json` and timed-auction items into a new
-  `ebay_auctions.json`.
-- New file: `ebay_oauth.py` — OAuth client-credentials token refresh
-  shared by both scrapers.
+**What changed from the original 2026-04-28 design:**
+
+- **No separate Auctions tab for timed auctions.** That tab was
+  retired before eBay landed (calendar moved into Watchlist >
+  Auction Calendar). Timed eBay auctions surface as tracked lots
+  inside Watchlist > Listings via the Track new item flow.
+- **No region split in the live config.** Country was input-side only
+  — never plumbed through to the UI — so the original USA/UK/Europe
+  per-query split was collapsed to single global queries on
+  2026-04-30. Two queries today (Omega Railmaster CK2914, Heuer
+  Autavia GMT). Re-add country filter per query if a future search
+  is noisy enough to fill 50 results in one country.
+
+**Future work:**
+
+- **In-app CRUD for eBay searches.** Currently option 1 of 3:
+  read-only display + GitHub edit link. Option 2 (Supabase migration
+  + admin form) deferred until Mark hits the GitHub-edit friction.
+- **NOT in scope:** re-listing detection (dropped 2026-04-28 — too
+  speculative).
+- **NOT in scope:** broad keyword searches like "vintage Rolex".
+  Targeted reference-level searches only.
 
 ### Alerts (email or push) on saved-search matches
 
@@ -402,6 +399,23 @@ Not active. Worth keeping a list because some might graduate.
 
 ## Update log
 
+- 2026-04-30: **Structural cleanup pass.** App.js dropped from 2,130 →
+  ~1,250 lines (-41%). Mobile + Desktop render branches extracted
+  into `src/components/MobileShell.js` + `DesktopShell.js`. Domain
+  state moved into hooks (`useTrackModal`, `useFavSearchModal`,
+  `useViewSettings`, `useFilters`). Modals broken out into their own
+  files (`TrackNewItemModal`, `FavSearchModal`, `AddSearchModal`).
+  Shared style tokens consolidated in `src/styles.js` (4 copies of
+  the modal × button → 1; 3 copies of pill style → 1). Dead
+  `AuctionsTab.js` (504 lines) deleted. **Tests:** new jest job
+  runs RTL smoke tests for both shells on every push — would have
+  caught the TDZ class of bug that shipped a white screen on mobile
+  in late April. **Search tokenization:** word order no longer
+  matters ("rolex gold" = "gold rolex"). **Watchlist bucket order:**
+  Date↓ now puts Today first (was always-Today-last regardless of
+  direction). **eBay searches:** surfaced read-only in Watchlist >
+  Searches sub-tab with an Edit-on-GitHub link; collapsed 6 region-
+  split entries to 2 global queries.
 - 2026-04-29 (AM): **Shipped:** new top-level **References** section
   with the Watch size comparison tool as its first feature. Two case
   dimensions in → preview + stat boxes + print-to-scale sheet for US

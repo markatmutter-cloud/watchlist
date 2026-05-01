@@ -20,25 +20,33 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 ## What it does
 
-- **Available** — aggregates 26 curated dealer sources into one feed (see table below)
-- **Auctions** — tracks upcoming auctions from 4 houses, grouped by month
-- **Archive** — sold/delisted items (kept around so you can search reference history) and hidden listings
-- **Watchlist** — heart any listing to save it; price-at-save is preserved so you can see drops
-- Cross-device sync via Google sign-in (Supabase auth + tables, RLS-protected)
-- Per-user **saved searches** — add/edit/delete your own queries, with live counts of matching listings
-- **Hide** any listing with the X button — it stays out of Available but lives in the Archive in case you change your mind
-- Runs a Python scrape pipeline daily via GitHub Actions — no server to babysit
+Three top-level tabs:
+
+- **Listings** — aggregates 26 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
+- **Watchlist** — three sub-tabs:
+  - **Listings** — items you've hearted, with price-at-save preserved.
+  - **Searches** — saved queries you can re-run with one tap, plus a read-only view of the eBay source-searches feeding the main feed.
+  - **Auction Calendar** — upcoming + recently-closed sales from 6 houses, grouped by month.
+- **References** — collector resource tools (currently: a print-to-scale watch size comparison tool; encyclopedia and curated-link aggregator are roadmap'd).
+
+Plus:
+
+- Cross-device sync via Google sign-in (Supabase auth + tables, RLS-protected).
+- Per-user **saved searches** — add/edit/delete your own queries, with live counts of matching listings.
+- Per-user **tracked lots** — paste an auction-house lot URL to follow it through to hammer (Antiquorum, Christie's, Sotheby's, eBay).
+- **Hide** any listing with the × button — it stays out of the live feed but its history is preserved.
+- Runs a Python scrape pipeline daily via GitHub Actions — no server to babysit.
 - Tracks listings across runs with **stable URL-hash IDs**, so:
-  - "NEW" badges only show for listings actually new in the last 24 hours
-  - Price drops get a green ↓ chip
-  - Watchlist stays glued to the right listing even as dealers add new inventory
-  - Listings that disappear from the scrape are flipped to inactive and slide into the Archive
-- Client-side search, filter (by source / brand / price / recency / Live-Sold-All status), sort
-- Group-by control (Brand / Source / Reference) replaces the date-bucket dividers when active — works on Available, Archive, and Watchlist Listings
-- Dark/light mode following system preference, with manual override
-- GBP→USD conversion for UK dealers, shown alongside the native price
-- Mobile: 3-col grid with a slide-up filter drawer and bottom-tab nav
-- Desktop: full-width top bar with collapsible filter sidebar; resizable, fluid column count
+  - "NEW" badges only show for listings actually new in the last 24 hours.
+  - Price drops get a green ↓ chip.
+  - Watchlist stays glued to the right listing even as dealers add new inventory.
+  - Listings that disappear from the scrape are flipped to inactive and surface in the sold/archive view.
+- Client-side search (whitespace-tokenized — word order doesn't matter), filter (by source / brand / price / recency / Live-Sold-All / auctions-only), sort.
+- Implicit weekday-based date dividers (Today / Yesterday / weekday / Last week / Older) when sorted by date.
+- Dark/light mode following system preference, with manual override.
+- GBP→USD conversion for UK dealers, shown alongside the native price.
+- Mobile: configurable 1-3 col grid with a slide-up filter drawer, sticky search/sort row, and a 2-tab bottom-nav (Listings / Watchlist).
+- Desktop: full-width top bar with three main tab pills, an inline pill-style filter row, and configurable 3-7 col grid (or auto fluid).
 
 ---
 
@@ -160,7 +168,7 @@ This means the pipeline is **self-healing**: if a single run misses listings (sc
 
 - **Scrapers:** Python 3.11 with `requests`. No Playwright, no Selenium — Browse AI fills the gap for JS-rendered sources.
 - **Pipeline:** GitHub Actions (ubuntu-latest). Each scraper step uses `continue-on-error: true` so one failing source doesn't kill the batch.
-- **Frontend:** React (Create React App), inline styles only, no UI libraries. The root `App.js` was a 2,700-line single file; now ~1,700 lines after a three-phase split, with the rest in `src/components/` (Card, Chip, icons, AuctionsTab, AboutModal, HiddenModal, WatchlistTab) plus `src/utils.js` and `src/hooks.js`.
+- **Frontend:** React (Create React App), inline styles only, no UI libraries. `App.js` is the orchestrator (~1,250 lines — owns state and JSX consts); render is delegated to `src/components/MobileShell.js` + `DesktopShell.js`, each receiving a single `shellProps` bag. Domain-state hooks live under `src/hooks/` (`useTrackModal`, `useFavSearchModal`, `useViewSettings`, `useFilters`, `useEBaySearches`); shared style tokens in `src/styles.js`. Pure helpers in `src/utils.js`.
 - **Per-user image persistence:** Hearted listings get their dealer image cached to **Vercel Blob** by `cache_watchlist_images.mjs` (runs once a day inside the auctions workflow). The frontend prefers the cached URL, so favorited cards survive a dealer deleting the original. Listings/auction images aren't cached — auction houses keep theirs up long-term, and caching the full feed isn't worth the storage cost.
 - **Auth + per-user data:** [Supabase](https://supabase.com) — Postgres with row-level security, Google OAuth provider. Free tier; no backend code of my own.
 - **Hosting:** Vercel free tier, auto-deploy from `main`.
@@ -173,36 +181,62 @@ This means the pipeline is **self-healing**: if a single run misses listings (sc
 ```
 watchlist/
 ├─ .github/workflows/
-│   ├─ scrape-listings.yml         # daily dealer listings pipeline
+│   ├─ scrape-listings.yml         # 3×/day dealer listings pipeline
 │   ├─ scrape-auctions.yml         # daily auctions + tracked-lots + watchlist-image cache
-│   └─ scrape-tropicalwatch.yml    # higher-cadence Browse AI run (TW only)
+│   ├─ scrape-ebay.yml             # 3×/day eBay Browse API run
+│   ├─ scrape-tropicalwatch.yml    # higher-cadence Browse AI run (TW only)
+│   └─ tests.yml                   # pytest + jest, run on push + PR
 ├─ *_scraper.py                    # one file per dealer + auction house
+├─ ebay_oauth.py                   # eBay Browse API token refresh
+├─ ebay_search_scraper.py          # reads data/ebay_searches.json, calls Browse API
 ├─ merge.py                        # state + listings + auctions enrichment
 ├─ cache_watchlist_images.mjs      # Vercel Blob image persistence for hearted items
 ├─ api/img.js                      # serverless image proxy for hot-link-protected dealers
-├─ data/                           # generated CSVs, one per source
+├─ data/
+│   ├─ <source>.csv                # one CSV per dealer / auction house
+│   └─ ebay_searches.json          # eBay search config (label, query, country, seller)
 ├─ public/
-│   ├─ listings.json               # what the Available/Watchlist/Archive tabs read
-│   ├─ auctions.json               # what the Auctions tab reads
+│   ├─ listings.json               # what the Listings + Watchlist tabs read
+│   ├─ auctions.json               # what the Auction Calendar sub-tab reads
+│   ├─ tracked_lots.json           # scraped state for tracked auction lots
 │   ├─ state.json                  # cross-run memory for listings
 │   ├─ auctions_state.json         # cross-run memory for auctions
 │   ├─ apple-touch-icon.png        # iOS home-screen icon
 │   ├─ favicon-32.png              # browser tab favicon
 │   └─ index.html
 ├─ src/
-│   ├─ App.js                      # root component, tab routing, sidebar, listings grid
+│   ├─ App.js                      # orchestrator — owns state, builds shellProps, delegates to shells
 │   ├─ supabase.js                 # auth + per-user data hooks
-│   ├─ utils.js                    # pure helpers + constants
-│   ├─ hooks.js                    # useWidth, useSystemDark
+│   ├─ styles.js                   # shared inline-style tokens (pillBase, modalShell, ...)
+│   ├─ utils.js                    # pure helpers + constants (matchesSearch, ageBucketFromDate, ...)
+│   ├─ hooks.js                    # useWidth, useSystemDark (DOM-tracker hooks)
+│   ├─ setupTests.js               # jest setup — auto-loaded
 │   ├─ index.js                    # bootstrap + service-worker registration
+│   ├─ hooks/                      # domain-state hooks
+│   │   ├─ useTrackModal.js        #   Track new item modal state + submit
+│   │   ├─ useFavSearchModal.js    #   Save-search prompt state + submit
+│   │   ├─ useViewSettings.js      #   theme + column count + view-menu open flag
+│   │   ├─ useFilters.js           #   the filter row's full input state
+│   │   └─ useEBaySearches.js      #   read-only fetch of data/ebay_searches.json + counts
 │   └─ components/
-│       ├─ Card.js                 # listing card
-│       ├─ Chip.js                 # filter pills
-│       ├─ icons.js                # Heart, Filter, Search, Tab icons
-│       ├─ AuctionsTab.js          # auction calendar
+│       ├─ MobileShell.js          # mobile render path (sticky stack, drawer, bottom nav)
+│       ├─ DesktopShell.js         # desktop render path (top bar, filter row, fluid grid)
+│       ├─ MobileShell.test.jsx    # render-without-crash + key visibility smoke tests
+│       ├─ DesktopShell.test.jsx   # symmetric smoke tests for desktop
+│       ├─ __fixtures__/
+│       │   └─ mockShellProps.js   # default props bag used by both test files
+│       ├─ WatchlistTab.js         # Watchlist tab body (Listings/Searches/Calendar sub-tabs)
+│       ├─ AuctionCalendar.js      # month-banded auction calendar (used inside WatchlistTab)
+│       ├─ ReferencesTab.js        # References-section landing list
+│       ├─ SizeCompare.js          # print-to-scale watch size comparison tool
+│       ├─ Card.js                 # listing card (also used for tracked lots)
+│       ├─ Chip.js                 # filter pills (Chip + SidebarChip)
+│       ├─ icons.js                # Filter, Search, Tab icons
 │       ├─ AboutModal.js           # about modal
 │       ├─ HiddenModal.js          # hidden-listings modal
-│       └─ WatchlistTab.js         # Watchlist tab (Listings/Lots/Searches sub-tabs)
+│       ├─ TrackNewItemModal.js    # paste-a-URL flow for tracked lots
+│       ├─ FavSearchModal.js       # save-search prompt
+│       └─ AddSearchModal.js       # add-search modal (parity with Track new item)
 └─ package.json
 ```
 
@@ -259,7 +293,12 @@ The pushed `state.json` / `auctions_state.json` will be updated on completion an
 
 Direction, priorities, and what's explicitly off the roadmap live in [ROADMAP.md](ROADMAP.md). Short version: foundations (references as first-class entities, verification script) come before more sources or features.
 
-Test coverage is intentionally scoped to `merge.py`'s state-transition layer — the one place where a regression would silently corrupt the cross-run memory that drives "NEW" badges, price-drop detection, and the Archive. The suite lives in `tests/` and runs in CI on every push and PR (`pytest`, ~10 tests). Scrapers and the frontend aren't tested — most breakage there comes from external page changes that unit tests don't catch.
+Test coverage is two suites, both in CI on every push and PR (`.github/workflows/tests.yml`):
+
+- **pytest** — `merge.update_state` state transitions, the layer where a regression would silently corrupt the cross-run memory that drives "NEW" badges, price-drop detection, and the sold/archive view.
+- **jest** — render-without-crash + key visibility smoke tests for `MobileShell` and `DesktopShell`. Catches the TDZ class of bug that shipped a white screen on mobile in late April 2026.
+
+Scrapers aren't tested — most breakage there comes from external page changes that unit tests don't catch.
 
 ---
 
