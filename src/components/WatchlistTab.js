@@ -304,45 +304,59 @@ export function WatchlistTab(props) {
             </span>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {ebaySearches.map(s => (
-              <div key={s.label} style={{
-                display: "flex", alignItems: "center", gap: 12,
-                padding: "10px 14px", borderRadius: 10,
-                border: "0.5px solid var(--border)",
-                background: "var(--card-bg)",
-              }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text1)", marginBottom: 2,
-                                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {s.label}
+          {/* eBay rows mirror the saved-search row visual below (same
+              border-radius, padding, type scale) so the two lists
+              read as siblings. eBay rows are read-only — primary
+              click opens the search on eBay's site (whole row is the
+              link target). Saved-search rows have the same outer
+              shell but split into a left button (run search) + right
+              edit/delete column. */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {ebaySearches.map(s => {
+              const RowInner = (
+                <>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 2,
+                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {s.label}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--text2)",
+                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {s.query
+                        ? `${s.count} on eBay${s.query !== s.label ? ` · "${s.query}"` : ""}`
+                        : `${s.count} on eBay · seller: ${s.seller}`}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--text2)",
-                                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {s.query
-                      ? <>"{s.query}" · {s.country}</>
-                      : <>seller: <code>{s.seller}</code> · {s.country}</>}
-                  </div>
-                </div>
-                <div style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0, textAlign: "right" }}>
-                  {s.count} listing{s.count === 1 ? "" : "s"}
-                </div>
-                {s.ebayUrl && (
-                  <a href={s.ebayUrl} target="_blank" rel="noopener noreferrer"
-                     title="Run this search on eBay"
-                     style={{
-                       color: "var(--text3)", textDecoration: "none", flexShrink: 0,
-                       padding: 4, lineHeight: 0,
-                     }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    {/* External-link arrow as the affordance — the
+                        whole row is clickable, this is just the
+                        wayfinder. */}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
                       <polyline points="15 3 21 3 21 9"/>
                       <line x1="10" y1="14" x2="21" y2="3"/>
                     </svg>
-                  </a>
-                )}
-              </div>
-            ))}
+                  </div>
+                </>
+              );
+              const sharedShell = {
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "14px 16px",
+                borderRadius: 12,
+                border: "0.5px solid var(--border)",
+                background: "var(--card-bg)",
+                color: "inherit", textDecoration: "none",
+                fontFamily: "inherit",
+              };
+              return s.ebayUrl ? (
+                <a key={s.label} href={s.ebayUrl} target="_blank" rel="noopener noreferrer"
+                   style={sharedShell}>
+                  {RowInner}
+                </a>
+              ) : (
+                <div key={s.label} style={sharedShell}>{RowInner}</div>
+              );
+            })}
           </div>
         </div>
       )}
