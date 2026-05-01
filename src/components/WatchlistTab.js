@@ -106,12 +106,20 @@ export function WatchlistTab(props) {
         if (!map.has(key)) map.set(key, []);
         map.get(key).push(item);
       }
-      return [...map.entries()].sort(
-        (a, b) => groupRecency(b[1]) - groupRecency(a[1])
-      );
+      // Bucket order tracks the sort direction. Date↓ (newest first)
+      // → Today before Older; Date↑ (oldest first) → Older before
+      // Today. Pre-2026-05-01 the buckets were always descending,
+      // so toggling Date direction flipped the items within each
+      // bucket but kept Older above Today either way (visible bug).
+      const ascending = sort === "date-asc";
+      return [...map.entries()].sort((a, b) => {
+        const ra = groupRecency(a[1]);
+        const rb = groupRecency(b[1]);
+        return ascending ? ra - rb : rb - ra;
+      });
     }
     return [["", watchView]];
-  }, [watchView, isDateSort, statusMode]);
+  }, [watchView, isDateSort, sort, statusMode]);
 
 
   const legacyCounts = {
