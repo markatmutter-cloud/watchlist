@@ -9,7 +9,7 @@ how to behave for the rest of it.
 - [README.md](README.md) — what the project is + architecture. Public-facing.
 - [ROADMAP.md](ROADMAP.md) — priorities, epics, what's explicitly out of scope.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
-  The current one is [SESSION_HANDOFF_2026-04-30.md](SESSION_HANDOFF_2026-04-30.md);
+  The current one is [SESSION_HANDOFF_2026-05-01.md](SESSION_HANDOFF_2026-05-01.md);
   older ones live in `archive/`.
 
 If a gotcha or convention is durable (still true next session), graduate
@@ -194,6 +194,14 @@ To add a new printable tool: render its sheet via `createPortal` to
   is the agreed shape; flipping to a fuller migration would touch
   every read path that hits `useWatchlist`. Revisit only if the
   asymmetry causes real pain.
+- **Don't add new `useState`/`useMemo`/`useCallback` deep into App.js**
+  near render-conditional code paths. Adding hooks to the back of
+  App.js's already-large hook list triggered React error #310
+  ("rendered more hooks than during the previous render") TWICE during
+  the Collections + Sharing build. New rule: if a feature needs new
+  hooks, put them in a self-contained component App.js mounts
+  unconditionally. `<ShareReceiver/>` (commit b6cb57b) is the
+  reference pattern.
 
 ## When in doubt
 

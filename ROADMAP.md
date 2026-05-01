@@ -478,6 +478,12 @@ Not active. Worth keeping a list because some might graduate.
 
 ## Update log
 
+- 2026-05-01 (PM): **User settings / currency picker shipped**
+  (Epic 0 near-term item, completed same day it was scoped). New
+  `user_settings` Supabase table; primary_currency picker (USD /
+  GBP / EUR) in the user-dropdown menu. Card render reads the
+  preference and shows it as primary, native as secondary. UK-friend
+  case (George Longfoot) resolved with an easter-egg credit line.
 - 2026-05-01: **Collections + Sharing v1 shipped** (3 sessions —
   commits `212d89a`, `c2aeabd`, `ca49fa2`). Made collections the
   underlying data model for Watchlist content via Approach A:
