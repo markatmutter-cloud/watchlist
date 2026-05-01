@@ -1222,14 +1222,28 @@ export default function Watchlist() {
   const watchSubTabsJSX = tab !== "watchlist" ? null : (
     // Sub-tab strip uses underline-style buttons (see tabPill in
     // styles.js) so it sits visually below the main pill tabs in the
-    // hierarchy. gap: 20 between sub-tabs, since they're text-only
-    // they need horizontal breathing room.
+    // hierarchy. 4 sub-tabs (Listings/Collections/Searches/Calendar)
+    // plus a trailing action button overflow 375px viewports — strip
+    // becomes horizontally scrollable on mobile to keep everything
+    // reachable without wrapping. flexShrink: 0 on every child so
+    // they don't squish; the user swipes if needed. WebkitOverflow-
+    // Scrolling: touch keeps iOS native momentum.
     <div style={{
       display: "flex", gap: 20, alignItems: "center",
       padding: "0 16px",
       background: "var(--bg)",
       borderBottom: "0.5px solid var(--border)",
       flexShrink: 0,
+      overflowX: "auto",
+      overflowY: "hidden",
+      WebkitOverflowScrolling: "touch",
+      // Hide scrollbar — the underline indicator already signals
+      // which sub-tab is active; a visible scrollbar would just be
+      // chrome noise. scrollbarWidth: none is Firefox; the
+      // ::-webkit-scrollbar selector lives in index.html for Safari/
+      // Chrome (added 2026-05-01).
+      scrollbarWidth: "none",
+      msOverflowStyle: "none",
     }}>
       {[
         // Mobile drops the trailing count chips and shortens
@@ -1253,37 +1267,45 @@ export default function Watchlist() {
       ].map(([key, label]) => {
         const active = watchTopTab === key;
         return (
-          <button key={key} onClick={() => { setWatchTopTab(key); setDrawerOpen(false); }} style={tabPill(active)}>{label}</button>
+          // flexShrink: 0 prevents the underline-style sub-tabs
+          // from squishing in the now-scrollable strip.
+          <button key={key} onClick={() => { setWatchTopTab(key); setDrawerOpen(false); }} style={{ ...tabPill(active), flexShrink: 0 }}>{label}</button>
         );
       })}
+      {/* Trailing action button. marginLeft: auto is gone — with
+          overflow-x scroll on the parent, "auto" pushes the button to
+          the far end of the SCROLLABLE area (off-screen) which made
+          it unreachable. Now it sits immediately after the last
+          sub-tab; gap: 20 inherits from the parent so visual rhythm
+          stays consistent. flexShrink: 0 so it doesn't compress. */}
       {watchTopTab === "listings" && user && (
         <button onClick={() => { setTrackOpen(true); setTrackError(""); }} style={{
-          marginLeft: "auto",
           fontSize: 13, fontWeight: 500,
           padding: "9px 14px", borderRadius: 8,
           border: "0.5px solid var(--border)",
           background: "var(--surface)", color: "var(--text1)",
           cursor: "pointer", fontFamily: "inherit",
+          flexShrink: 0, whiteSpace: "nowrap",
         }}>+ Track new item</button>
       )}
       {watchTopTab === "searches" && user && !searchEditor && (
         <button onClick={startAddSearch} style={{
-          marginLeft: "auto",
           fontSize: 13, fontWeight: 500,
           padding: "9px 14px", borderRadius: 8,
           border: "0.5px solid var(--border)",
           background: "var(--surface)", color: "var(--text1)",
           cursor: "pointer", fontFamily: "inherit",
+          flexShrink: 0, whiteSpace: "nowrap",
         }}>+ Add search</button>
       )}
       {watchTopTab === "collections" && user && (
         <button onClick={startCreateCollection} style={{
-          marginLeft: "auto",
           fontSize: 13, fontWeight: 500,
           padding: "9px 14px", borderRadius: 8,
           border: "0.5px solid var(--border)",
           background: "var(--surface)", color: "var(--text1)",
           cursor: "pointer", fontFamily: "inherit",
+          flexShrink: 0, whiteSpace: "nowrap",
         }}>+ New collection</button>
       )}
     </div>
