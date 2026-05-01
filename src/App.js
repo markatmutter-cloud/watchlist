@@ -15,7 +15,10 @@ import { Chip, SidebarChip } from "./components/Chip";
 import { ReferencesTab } from "./components/ReferencesTab";
 import { AboutModal } from "./components/AboutModal";
 import { HiddenModal } from "./components/HiddenModal";
+import { TrackNewItemModal } from "./components/TrackNewItemModal";
+import { FavSearchModal } from "./components/FavSearchModal";
 import { WatchlistTab } from "./components/WatchlistTab";
+import { pillBase, tabPill, iconButton } from "./styles";
 
 const LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/listings.json";
 const AUCTIONS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/auctions.json";
@@ -1048,53 +1051,20 @@ export default function Watchlist() {
 
   // Save-current-search modal. Opened by the heart in the search input.
   // Single-field form (label) — query comes from the live search field.
-  const favSearchModalJSX = favPromptOpen ? (
-    <div onClick={() => setFavPromptOpen(false)} style={{
-      position: "fixed", inset: 0, zIndex: 200,
-      background: "rgba(0,0,0,0.5)",
-      display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
-    }}>
-      <div onClick={e => e.stopPropagation()} style={{
-        background: "var(--bg)", borderRadius: 14,
-        border: "0.5px solid var(--border)",
-        padding: 22, maxWidth: 380, width: "100%",
-        boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text1)" }}>Save search</div>
-          <button onClick={() => setFavPromptOpen(false)} aria-label="Close"
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 22, lineHeight: 1, padding: 0, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", marginRight: -8 }}>×</button>
-        </div>
-        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 10 }}>
-          Saving "<b>{search}</b>" — find it again from Watchlist → Searches.
-        </div>
-        <input
-          autoFocus
-          value={favPromptLabel}
-          onChange={e => { setFavPromptLabel(e.target.value); setFavPromptError(""); }}
-          onKeyDown={e => { if (e.key === "Enter") submitFavSearch(); }}
-          placeholder="Name (e.g. Speedmaster pro)"
-          style={{ ...inp, fontSize: 14, marginBottom: 8 }}
-        />
-        {favPromptError && (
-          <div style={{ fontSize: 12, color: "#c0392b", marginBottom: 8 }}>{favPromptError}</div>
-        )}
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button onClick={() => setFavPromptOpen(false)} style={{
-            border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)",
-            padding: "8px 14px", borderRadius: 8, cursor: "pointer",
-            fontFamily: "inherit", fontSize: 13,
-          }}>Cancel</button>
-          <button onClick={submitFavSearch} disabled={!favPromptLabel.trim()} style={{
-            border: "none", background: "#185FA5", color: "#fff",
-            padding: "8px 14px", borderRadius: 8, cursor: "pointer",
-            fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-            opacity: favPromptLabel.trim() ? 1 : 0.5,
-          }}>Save</button>
-        </div>
-      </div>
-    </div>
-  ) : null;
+  // Component lives in ./components/FavSearchModal.js as of 2026-04-30.
+  const favSearchModalJSX = (
+    <FavSearchModal
+      open={favPromptOpen}
+      setOpen={setFavPromptOpen}
+      search={search}
+      label={favPromptLabel}
+      setLabel={setFavPromptLabel}
+      error={favPromptError}
+      setError={setFavPromptError}
+      submit={submitFavSearch}
+      inp={inp}
+    />
+  );
 
   // Live/Sold/All counts for the global tri-state pill. Computed
   // BEFORE the status filter is applied so flipping segments doesn't
@@ -1217,15 +1187,7 @@ export default function Watchlist() {
       ].map(([key, label]) => {
         const active = watchTopTab === key;
         return (
-          <button key={key} onClick={() => { setWatchTopTab(key); setDrawerOpen(false); }} style={{
-            padding: "8px 14px", borderRadius: 20,
-            border: "none", outline: "none",
-            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-            background: active ? "var(--text1)" : "var(--surface)",
-            color:      active ? "var(--bg)"    : "var(--text1)",
-            fontWeight: active ? 600 : 500,
-            boxShadow: active ? "none" : "inset 0 0 0 0.5px var(--border)",
-          }}>{label}</button>
+          <button key={key} onClick={() => { setWatchTopTab(key); setDrawerOpen(false); }} style={tabPill(active)}>{label}</button>
         );
       })}
       {watchTopTab === "listings" && user && (
@@ -1252,74 +1214,21 @@ export default function Watchlist() {
   );
 
   // Track new item modal — single-URL paste flow with source-list
-  // instructions. Lifted up from WatchlistTab so the trigger button
-  // can live in the watchSubTabsJSX strip above the filter row.
-  const trackNewItemModalJSX = !trackOpen ? null : (
-    <div onClick={() => setTrackOpen(false)} style={{
-      position: "fixed", inset: 0, zIndex: 200,
-      background: "rgba(0,0,0,0.5)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 20,
-    }}>
-      <div onClick={(e) => e.stopPropagation()} style={{
-        background: "var(--card-bg)",
-        border: "0.5px solid var(--border)",
-        borderRadius: 14,
-        padding: "20px 22px",
-        width: "100%", maxWidth: 520,
-        color: "var(--text1)", fontFamily: "inherit",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-          <div style={{ fontSize: 16, fontWeight: 600 }}>Track new item</div>
-          <button onClick={() => setTrackOpen(false)} aria-label="Close"
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text2)", fontSize: 22, lineHeight: 1, padding: 0, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", marginRight: -8 }}>×</button>
-        </div>
-        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5 }}>
-          Paste an auction lot URL or marketplace listing URL. The
-          tracked item appears in your Watchlist and refreshes on
-          the next scrape (current bid, hammer price, end time).
-        </div>
-        <input
-          autoFocus
-          value={trackUrl}
-          onChange={e => { setTrackUrl(e.target.value); setTrackError(""); }}
-          onKeyDown={e => { if (e.key === "Enter") submitTrack(); }}
-          placeholder="https://..."
-          type="url"
-          inputMode="url"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          style={{ ...inp, width: "100%", fontSize: 13, marginBottom: 8 }}
-        />
-        {trackError && (
-          <div style={{ fontSize: 11, color: "#c0392b", marginBottom: 8 }}>{trackError}</div>
-        )}
-        <div style={{ fontSize: 10, color: "var(--text3)", lineHeight: 1.55, marginBottom: 14 }}>
-          Supported sources:
-          {" "}Antiquorum (live + catalog),
-          {" "}Christie's,
-          {" "}Sotheby's,
-          {" "}Monaco Legend,
-          {" "}Phillips,
-          {" "}eBay (auction or Buy-It-Now).
-          {" "}Bonhams + Chrono24 are blocked by their bot walls and need Mac mini infra (deferred).
-        </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button onClick={() => setTrackOpen(false)} style={{
-            border: "0.5px solid var(--border)", background: "transparent",
-            color: "var(--text2)", padding: "8px 16px", borderRadius: 8,
-            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-          }}>Cancel</button>
-          <button onClick={submitTrack} disabled={trackBusy || !trackUrl.trim()} style={{
-            border: "none", background: "#185FA5", color: "#fff",
-            padding: "8px 16px", borderRadius: 8, cursor: "pointer",
-            fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-            opacity: (trackBusy || !trackUrl.trim()) ? 0.5 : 1,
-          }}>{trackBusy ? "Tracking…" : "Track"}</button>
-        </div>
-      </div>
-    </div>
+  // instructions. Trigger lives in the watchSubTabsJSX strip above the
+  // filter row. Component lives in ./components/TrackNewItemModal.js
+  // as of 2026-04-30.
+  const trackNewItemModalJSX = (
+    <TrackNewItemModal
+      open={trackOpen}
+      setOpen={setTrackOpen}
+      trackUrl={trackUrl}
+      setTrackUrl={setTrackUrl}
+      trackError={trackError}
+      setTrackError={setTrackError}
+      submitTrack={submitTrack}
+      trackBusy={trackBusy}
+      inp={inp}
+    />
   );
 
   // Mobile and desktop JSX as named consts — both built unconditionally
@@ -1379,7 +1288,7 @@ export default function Watchlist() {
             )}
           </div>
           {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar")) && (
-            <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} aria-label="Filters" style={{ flexShrink: 0, width: 40, height: 40, borderRadius: "50%", border: "0.5px solid var(--border)", background: hasFilters ? "var(--text1)" : "var(--surface)", color: hasFilters ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} aria-label="Filters" style={iconButton({ active: hasFilters })}>
               <FilterIcon />
             </button>
           )}
@@ -1387,7 +1296,7 @@ export default function Watchlist() {
               doesn't have to grow as we add per-device display settings. */}
           <div style={{ position: "relative", flexShrink: 0 }}>
             <button onClick={() => { setViewMenuOpen(o => !o); setShowUserMenu(false); }} aria-label="View options"
-              style={{ width: 40, height: 40, borderRadius: "50%", border: "0.5px solid var(--border)", background: viewMenuOpen ? "var(--text1)" : "var(--surface)", color: viewMenuOpen ? "var(--bg)" : "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              style={iconButton({ active: viewMenuOpen })}>
               {/* Eye icon — feels right for "view settings" (theme + column
                   count). Mark's call: cog read like "settings", eye reads
                   like "how the page looks". */}
@@ -1472,13 +1381,7 @@ export default function Watchlist() {
                 if (sort === "date") setSort("date-asc");
                 else if (sort === "date-asc") setSort("date");
                 else setSort("date");
-              }} style={{
-                fontSize: 13, padding: "9px 14px", borderRadius: 20, cursor: "pointer",
-                fontFamily: "inherit", whiteSpace: "nowrap", border: "none", outline: "none",
-                background: active ? "var(--text1)" : "transparent",
-                color: active ? "var(--bg)" : "var(--text2)",
-                boxShadow: active ? "none" : "inset 0 0 0 0.5px var(--border)",
-              }}>{label}</button>
+              }} style={pillBase(active)}>{label}</button>
             );
           })()}
           {/* Price sort pill */}
@@ -1493,13 +1396,7 @@ export default function Watchlist() {
                 if (sort === "price-asc") setSort("price-desc");
                 else if (sort === "price-desc") setSort("price-asc");
                 else setSort("price-asc");
-              }} style={{
-                fontSize: 13, padding: "9px 14px", borderRadius: 20, cursor: "pointer",
-                fontFamily: "inherit", whiteSpace: "nowrap", border: "none", outline: "none",
-                background: active ? "var(--text1)" : "transparent",
-                color: active ? "var(--bg)" : "var(--text2)",
-                boxShadow: active ? "none" : "inset 0 0 0 0.5px var(--border)",
-              }}>{label}</button>
+              }} style={pillBase(active)}>{label}</button>
             );
           })()}
           {/* Source pill removed from inline mobile row 2026-04-30 —
@@ -1656,14 +1553,10 @@ export default function Watchlist() {
 
   // Pill-style filter row. Each pill opens a popover anchored below it.
   // One popover open at a time, click-outside to close. Style matches
-  // the mobile sticky sort row so the experience is consistent.
-  const pillBase = (active) => ({
-    fontSize: 13, padding: "6px 12px", borderRadius: 20, cursor: "pointer",
-    fontFamily: "inherit", whiteSpace: "nowrap", border: "none", outline: "none",
-    background: active ? "var(--text1)" : "transparent",
-    color: active ? "var(--bg)" : "var(--text2)",
-    boxShadow: active ? "none" : "inset 0 0 0 0.5px var(--border)",
-  });
+  // the mobile sticky sort row so the experience is consistent. Token
+  // imported from src/styles.js with `compact: true` for the denser
+  // desktop layout (mobile uses default 9/14 padding for tap targets).
+  const dtPill = (active) => pillBase(active, { compact: true });
 
   // Generic popover shell. Pass `wide` for the multi-select pickers
   // (Source / Brand / Reference) where the option list wants to flow
@@ -1851,11 +1744,11 @@ export default function Watchlist() {
           with the rest of the inline pills (Sort / Status /
           Auctions / Price). */}
       <button onClick={() => setActiveFilterPop(p => p === "source" ? null : "source")}
-        style={pillBase(filterSources.length > 0 || activeFilterPop === "source")}>
+        style={dtPill(filterSources.length > 0 || activeFilterPop === "source")}>
         Source{filterSources.length > 0 ? ` · ${filterSources.length}` : ""}
       </button>
       <button onClick={() => setActiveFilterPop(p => p === "brand" ? null : "brand")}
-        style={pillBase(filterBrands.length > 0 || activeFilterPop === "brand")}>
+        style={dtPill(filterBrands.length > 0 || activeFilterPop === "brand")}>
         Brand{filterBrands.length > 0 ? ` · ${filterBrands.length}` : ""}
       </button>
 
@@ -1870,7 +1763,7 @@ export default function Watchlist() {
           the toggle would do nothing there. */}
       {tab === "watchlist" && (
         <div style={{ position: "relative" }}>
-          <button onClick={() => setFilterAuctionsOnly(v => !v)} style={pillBase(filterAuctionsOnly)}>
+          <button onClick={() => setFilterAuctionsOnly(v => !v)} style={dtPill(filterAuctionsOnly)}>
             {filterAuctionsOnly ? "✓ Auctions" : "Auctions"}
           </button>
         </div>
