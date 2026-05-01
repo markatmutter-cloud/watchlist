@@ -6,6 +6,12 @@ name: Tests
 # every PR is cheap. Catching a render-time crash in CI beats finding
 # it from a white screen on production.
 
+# Workflow-level env: opt actions running on Node 20 into Node 24 now,
+# silencing the deprecation warning ahead of June 2026 when runners
+# force the upgrade anyway. Cheap future-proofing.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   push:
     branches: [main]
@@ -41,11 +47,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          # No `cache: 'npm'` — we don't commit a lockfile, and
+          # setup-node's npm cache mode hard-requires one. Fresh
+          # install each run is fine at our scale (~30s).
 
       - name: Install dependencies
-        # No lockfile committed — fresh install each run. Fine at our
-        # scale; takes ~30s on a clean runner.
         run: npm install
 
       - name: Run jest (CI mode — single run, no watch)
