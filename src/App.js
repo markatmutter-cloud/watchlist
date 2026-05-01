@@ -238,25 +238,32 @@ export default function Watchlist() {
     } catch {
       return { copied: false };
     }
-    // Touch devices (phones/tablets) get the native share sheet —
-    // that's where routing-to-iMessage/WhatsApp/AirDrop/etc actually
-    // shines. Mouse-driven devices (desktops, laptops) always copy
-    // the link to the clipboard regardless — Web Share API on
-    // desktop opens an awkward full-page modal that's worse than a
-    // predictable "link is on your clipboard."
+    // Mobile OS (iPhone / iPad / Android phone) gets the native
+    // share sheet — routing to iMessage/WhatsApp/AirDrop is where
+    // it shines. Everything else (macOS, Windows, Linux desktop +
+    // their browsers) copies to clipboard regardless of whether
+    // navigator.share is available.
     //
-    // Detection uses (pointer: coarse) which is true only on touch
-    // devices. Pre-2026-05-01 used isMobile (viewport width < 640)
-    // which mis-fired when a desktop browser was resized narrow.
+    // Detection: User Agent string. Yes, UA sniffing is fragile in
+    // theory; in practice the iPhone/iPad/Android substring is
+    // stable and gives the right answer. Pre-2026-05-01 attempts
+    // with viewport-width, (pointer: coarse), and (any-hover: none)
+    // all triggered false positives on macOS (each has its own
+    // wrinkle: trackpad input, retina display reporting, accessibility
+    // features). UA isn't perfect either but it's empirically the
+    // most reliable signal we have without server-side sniffing.
     //
-    // Share payload is URL-only. Pre-2026-05-01 we passed { title,
-    // text, url } but iMessage / WhatsApp render those as preamble
-    // lines. URL alone lets the recipient's app render its own
+    // Share payload is URL-only. iMessage/WhatsApp render their own
     // rich-link preview from the page's OG tags.
-    const isTouchDevice = typeof window !== "undefined"
-      && window.matchMedia
-      && window.matchMedia("(pointer: coarse)").matches;
-    if (isTouchDevice && typeof navigator !== "undefined" && navigator.share) {
+    const ua = (typeof navigator !== "undefined" && navigator.userAgent) || "";
+    const isMobileOS =
+      /iPhone|iPod/.test(ua)
+      || /Android/.test(ua)
+      // iPad on iOS 13+ reports as Macintosh; the maxTouchPoints
+      // check disambiguates: real Macs have 0 touch points, iPads
+      // have 5+.
+      || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1);
+    if (isMobileOS && typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ url: shareUrl });
         return { copied: false };
