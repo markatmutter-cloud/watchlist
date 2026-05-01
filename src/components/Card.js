@@ -31,7 +31,7 @@ export const Card = memo(function Card({
   // drill-in view passes "Remove from collection" + an onHide that
   // actually calls removeItemFromCollection — single menu surface,
   // different action wiring per context.
-  hideLabel, hideAriaLabel,
+  hideLabel,
 }) {
   // When the dealer's image URL goes 404 (e.g. they cleaned up their CDN
   // for a sold listing), the browser shows an ugly broken-image icon.
