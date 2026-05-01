@@ -9,6 +9,7 @@ import { useWidth, useSystemDark } from "./hooks";
 import { useTrackModal } from "./hooks/useTrackModal";
 import { useFavSearchModal } from "./hooks/useFavSearchModal";
 import { useViewSettings } from "./hooks/useViewSettings";
+import { useFilters } from "./hooks/useFilters";
 import { FilterIcon, SearchIcon, TabIcon } from "./components/icons";
 import { Card } from "./components/Card";
 import { Chip, SidebarChip } from "./components/Chip";
@@ -70,24 +71,30 @@ export default function Watchlist() {
   // gets the full window width. Mobile already opens filters in a separate
   // drawer, so this is irrelevant there.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  // Desktop filter consolidation: the sidebar's role is taken over by a
-  // row of pill-style filter dropdowns below the top header. Only one
-  // popover open at a time. `null` = nothing open.
-  const [activeFilterPop, setActiveFilterPop] = useState(null);
-  const filterPopRef = useRef(null);
-  // Close the active popover when user clicks anywhere outside it.
-  useEffect(() => {
-    if (!activeFilterPop) return;
-    const handler = (e) => {
-      if (filterPopRef.current && !filterPopRef.current.contains(e.target)) {
-        setActiveFilterPop(null);
-      }
-    };
-    // Defer to next tick so the click that opened the popover doesn't
-    // immediately close it.
-    const t = setTimeout(() => document.addEventListener("mousedown", handler), 0);
-    return () => { clearTimeout(t); document.removeEventListener("mousedown", handler); };
-  }, [activeFilterPop]);
+  // All filter-row state lives in useFilters — search/sources/brands/
+  // refs/auctions-only/sort/price/status/expansion-toggles/popover.
+  // Destructured into the existing names so the rest of App.js doesn't
+  // need to know the state moved.
+  const {
+    filterSources, setFilterSources,
+    filterBrands,  setFilterBrands,
+    filterRefs,    setFilterRefs,
+    filterAuctionsOnly, setFilterAuctionsOnly,
+    toggleSource, toggleBrand,
+    sort, setSort,
+    search, setSearch,
+    minPriceText, setMinPriceText,
+    maxPriceText, setMaxPriceText,
+    minPrice, maxPrice,
+    newDays, setNewDays,
+    statusMode, setStatusMode,
+    brandsExpanded,  setBrandsExpanded,
+    sourcesExpanded, setSourcesExpanded,
+    refsExpanded,    setRefsExpanded,
+    activeFilterPop, setActiveFilterPop,
+    filterPopRef,
+    hasFilters, resetFilters,
+  } = useFilters();
   const isDragging = useRef(false);
   const dragStart = useRef(0);
   const widthStart = useRef(0);
@@ -132,27 +139,10 @@ export default function Watchlist() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [tab, setTab] = useState("listings");
-  const [filterSources, setFilterSources] = useState([]);
-  const [filterBrands, setFilterBrands] = useState([]);
-  // Auctions-only toggle. Filters to items where _isAuctionFormat is
-  // true (auction-house lots + eBay AUCTION). Orthogonal to the
-  // Live/Sold/All status segment per Mark's spec.
-  const [filterAuctionsOnly, setFilterAuctionsOnly] = useState(false);
-  const [sort, setSort] = useState("date");
-  const [search, setSearch] = useState("");
-  const [minPriceText, setMinPriceText] = useState("");
-  const [maxPriceText, setMaxPriceText] = useState("");
-  const [newDays, setNewDays] = useState(0);
   const [page, setPage] = useState(1);
-  const [filterRefs, setFilterRefs] = useState([]);
-  // Tri-state status filter shared globally: "live" (default), "sold",
-  // or "all" (both combined). Applies to:
-  //   - Available feed: filter to live, sold, or no filter (all).
-  //   - Watchlist > Listings: same semantics on saved items.
-  //   - Watchlist > Lots: live = upcoming, sold = past, all = combined.
-  // One source of truth for "what status am I looking at" so the user
-  // doesn't have to set it per tab.
-  const [statusMode, setStatusMode] = useState("live");
+  // (filterSources, filterBrands, filterRefs, filterAuctionsOnly, sort,
+  // search, minPriceText, maxPriceText, newDays, statusMode all moved
+  // to useFilters at the top of this component.)
   // Global Group-by control. Replaces age-bucket dividers in the
   // Available/Archive feed AND drives the Watchlist > Listings sub-tab.
   // Persisted under `dial_group_v1`; falls back to the legacy
@@ -235,9 +225,7 @@ export default function Watchlist() {
     const any = Object.keys(legacyLocal.watchlist).length + Object.keys(legacyLocal.hidden).length;
     return any ? "available" : "none";  // available → done (after success) → none
   });
-  const [brandsExpanded, setBrandsExpanded] = useState(false);
-  const [sourcesExpanded, setSourcesExpanded] = useState(false);
-  const [refsExpanded, setRefsExpanded] = useState(false);
+  // (brandsExpanded / sourcesExpanded / refsExpanded moved to useFilters.)
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
   const observerRef = useRef(null);
@@ -369,13 +357,8 @@ export default function Watchlist() {
       .map(([r]) => r);
   }, [items, filterBrands]);
 
-  // Desktop and mobile both use the same text-input model for price filtering
-  // now (sliders kept breaking mid-drag because SidebarFilterPanel remounts
-  // on every parent render — a refactor-to-top-level is the real fix and
-  // lives on the open-issues list).
-  const minPrice = minPriceText ? (parseInt(minPriceText.replace(/[^0-9]/g, "")) || 0) : 0;
-  const maxPrice = maxPriceText ? (parseInt(maxPriceText.replace(/[^0-9]/g, "")) || GLOBAL_MAX) : GLOBAL_MAX;
-
+  // (minPrice / maxPrice — int-parsed bounds — now derived inside
+  // useFilters from the raw text inputs.)
   useEffect(() => { setPage(1); }, [filterSources, filterBrands, filterRefs, search, sort, newDays, minPriceText, maxPriceText]);
 
   // Sign-in gate for save actions. Tapping the heart or X while signed
@@ -429,8 +412,7 @@ export default function Watchlist() {
     if (intent.kind === "hide" && !hidden[target.id])    toggleHidden(target);
   }, [user, items, watchlist, hidden, toggleWatchlist, toggleHidden]);
 
-  const toggleSource = s => setFilterSources(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
-  const toggleBrand = b => setFilterBrands(p => p.includes(b) ? p.filter(x => x !== b) : [...p, b]);
+  // (toggleSource / toggleBrand moved to useFilters.)
 
   const newCounts = useMemo(() => {
     // Exclude backfilled items so the Today/3-day/Week counts reflect
@@ -744,7 +726,7 @@ export default function Watchlist() {
   }, [items, hidden]);
 
   const watchCount = Object.keys(watchlist).length;
-  const hasFilters = filterSources.length > 0 || filterBrands.length > 0 || filterRefs.length > 0 || search || newDays > 0 || minPriceText || maxPriceText;
+  // (hasFilters now derived inside useFilters.)
 
   const savedSearchStats = useMemo(() => {
     const forSale = items.filter(i => !i.sold);
@@ -759,7 +741,7 @@ export default function Watchlist() {
   }, [items, userSearches]);
 
 
-  const resetFilters = () => { setFilterSources([]); setFilterBrands([]); setFilterRefs([]); setSearch(""); setNewDays(0); setMinPriceText(""); setMaxPriceText(""); };
+  // (resetFilters now provided by useFilters.)
 
   const visibleBrands = brandsExpanded ? BRANDS : BRANDS.slice(0, BRANDS_SHOW);
   const visibleSources = sourcesExpanded ? SOURCES : SOURCES.slice(0, SOURCES_SHOW);
