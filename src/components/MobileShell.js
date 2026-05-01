@@ -42,7 +42,7 @@ export function MobileShell(props) {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX, inp,
-    listingsGridJSX, sectionHeadingStyle, sharedListingJSX, statusSegmentJSX,
+    listingsGridJSX, sectionHeadingStyle, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
   } = props;
 
@@ -227,12 +227,6 @@ export function MobileShell(props) {
             2026-04-30 so it survives scroll. */}
         {watchSubTabsJSX}
         </div>
-        {/* Shared-listing surface (banner + Card) — only when a
-            ?listing=<id>&shared=1 link was opened. Sits above the
-            normal tab content so the recipient sees what was shared
-            regardless of their current filters. Cleared on
-            Save/Dismiss. */}
-        {sharedListingJSX}
         <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
           {tab === "listings" ? listingsGridJSX
             : tab === "references" ? <ReferencesTab />

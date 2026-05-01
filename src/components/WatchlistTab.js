@@ -42,10 +42,6 @@ export function WatchlistTab(props) {
     // openCollectionPicker opens the add-to-collection modal for a
     // listing.
     collectionsApi, setEditingCollection, openCollectionPicker,
-    // Share handler from App.js — wired to every Card render below
-    // so the "..." menu's Share item works in Watchlist > Favorites
-    // and inside Collection drill-ins, not just Listings.
-    handleShare,
   } = props;
 
   // eBay source-search config (read-only display in the Searches
@@ -555,7 +551,6 @@ export function WatchlistTab(props) {
                   hideLabel="Remove from collection"
                   isHidden={false}
                   onAddToCollection={openCollectionPicker}
-                  onShare={handleShare}
                 />
               ))}
             </div>
@@ -661,7 +656,6 @@ export function WatchlistTab(props) {
                     onWish={handleWish}
                     compact={compact}
                     onAddToCollection={openCollectionPicker}
-                    onShare={handleShare}
                   />
                 );
 

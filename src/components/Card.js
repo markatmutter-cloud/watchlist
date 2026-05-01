@@ -31,11 +31,7 @@ export const Card = memo(function Card({
   // drill-in view passes "Remove from collection" + an onHide that
   // actually calls removeItemFromCollection — single menu surface,
   // different action wiring per context.
-  hideLabel,
-  // Optional: Share is enabled on every Card surface in v1. The
-  // handler builds the share URL and routes through Web Share API or
-  // the clipboard fallback. Always available — no signed-in gate.
-  onShare,
+  hideLabel, hideAriaLabel,
 }) {
   // When the dealer's image URL goes 404 (e.g. they cleaned up their CDN
   // for a sold listing), the browser shows an ugly broken-image icon.
@@ -43,9 +39,6 @@ export const Card = memo(function Card({
   const [imgFailed, setImgFailed] = useState(false);
   // Action menu open/close. Click-outside + Escape closes.
   const [menuOpen, setMenuOpen] = useState(false);
-  // Brief "Copied!" feedback when Web Share API isn't available and
-  // we fall back to the clipboard. 1.5s timeout, no toast component.
-  const [shareFeedback, setShareFeedback] = useState("");
   const menuRef = useRef(null);
   useEffect(() => {
     if (!menuOpen) return;
@@ -269,7 +262,7 @@ export const Card = memo(function Card({
             available (so signed-out browsing keeps the card clean).
             Anchored top-right with the dropdown opening down-and-left
             so it doesn't fall off the screen on rightmost cards. */}
-        {(onAddToCollection || onHide || onShare) && (
+        {(onAddToCollection || onHide) && (
           <div ref={menuRef} style={{ position: "relative" }}>
             <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(o => !o); }}
               aria-label="More actions"
@@ -287,23 +280,6 @@ export const Card = memo(function Card({
                   borderRadius: 8, padding: 4, minWidth: 168,
                   boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
                 }}>
-                {onShare && (
-                  <button onClick={async e => {
-                    e.preventDefault(); e.stopPropagation();
-                    // Don't auto-close on share — we want the
-                    // "Copied!" feedback to be visible after the
-                    // clipboard fallback fires. The native share
-                    // sheet (when available) will swallow focus
-                    // anyway; we close after it returns.
-                    const result = await onShare(item);
-                    if (result?.copied) {
-                      setShareFeedback("Copied!");
-                      setTimeout(() => { setShareFeedback(""); setMenuOpen(false); }, 1200);
-                    } else {
-                      setMenuOpen(false);
-                    }
-                  }} style={menuItemStyle}>{shareFeedback || "Share"}</button>
-                )}
                 {onAddToCollection && (
                   <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onAddToCollection(item); }}
                     style={menuItemStyle}>Add to collection…</button>

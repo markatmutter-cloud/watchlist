@@ -89,7 +89,6 @@ export function buildMockShellProps(overrides = {}) {
     inp: { border: "none", padding: "8px 10px" },
     listingsGridJSX: <div data-testid="listings-grid" />,
     sectionHeadingStyle: { fontSize: 11, fontWeight: 600 },
-    sharedListingJSX: null,
     statusSegmentJSX: <div data-testid="status-segment" />,
     trackNewItemModalJSX: null,
     watchSubTabsJSX: <div data-testid="watch-sub-tabs" />,

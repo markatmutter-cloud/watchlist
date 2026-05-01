@@ -25,7 +25,6 @@ import { FavSearchModal } from "./components/FavSearchModal";
 import { AddSearchModal } from "./components/AddSearchModal";
 import { CollectionEditModal } from "./components/CollectionEditModal";
 import { CollectionPickerModal } from "./components/CollectionPickerModal";
-import { ShareBanner } from "./components/ShareBanner";
 import { WatchlistTab } from "./components/WatchlistTab";
 import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
@@ -224,72 +223,6 @@ export default function Watchlist() {
   const [editingCollection, setEditingCollection] = useState(null);
   const startCreateCollection = useCallback(() => {
     setEditingCollection({ id: "new", name: "" });
-  }, []);
-
-  // ── SHARE (Session 3) ────────────────────────────────────────────
-  // Two halves: outbound (the share button on Card) and inbound (the
-  // banner that appears when a recipient opens a share link).
-  //
-  // Outbound: handleShare(item) builds a deep link
-  // (?listing=<id>&shared=1 on root) and invokes Web Share API where
-  // available, falling back to clipboard. Returns { copied: bool } so
-  // the caller can show a "Copied!" feedback hint when the clipboard
-  // path was taken.
-  const handleShare = useCallback(async (item) => {
-    if (!item) return { copied: false };
-    const url = new URL(window.location.origin);
-    url.searchParams.set("listing", item.id);
-    url.searchParams.set("shared", "1");
-    const shareUrl = url.toString();
-    const title = item.brand ? `${item.brand} on Watchlist` : "Watch on Watchlist";
-    const text = [item.brand, item.ref].filter(Boolean).join(" · ") || "Watch on Watchlist";
-    // Web Share API path — present on iOS Safari, Chrome
-    // (Android + recent desktop), Edge. Native sheet handles UX.
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title, text, url: shareUrl });
-        return { copied: false };
-      } catch (e) {
-        // AbortError = user cancelled the sheet; not an error from
-        // our side. Don't fall back to clipboard — they explicitly
-        // chose not to share.
-        if (e?.name === "AbortError") return { copied: false };
-        // Other errors (permission, etc.) → fall through to clipboard.
-      }
-    }
-    // Clipboard fallback — most desktop browsers without Web Share API.
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      return { copied: true };
-    } catch {
-      // Last-resort: open a window.prompt so the user can copy by hand.
-      try { window.prompt("Copy this link:", shareUrl); } catch {}
-      return { copied: false };
-    }
-  }, []);
-
-  // Inbound: parse ?listing=<id>&shared=1 on mount. Stays as-is until
-  // the user takes Save or Dismiss; once acted-on, clear state AND
-  // rewrite the URL so a refresh doesn't re-trigger.
-  const [shareIntent, setShareIntent] = useState(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("shared") !== "1") return null;
-      const id = params.get("listing");
-      return id ? { id } : null;
-    } catch { return null; }
-  });
-  const [shareBusy, setShareBusy] = useState(false);
-
-  const clearShareIntent = useCallback(() => {
-    setShareIntent(null);
-    try {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("listing");
-      url.searchParams.delete("shared");
-      window.history.replaceState({}, "", url.toString());
-    } catch {}
   }, []);
 
   // Track-new-item modal — state machine lives in useTrackModal;
@@ -1089,7 +1022,7 @@ export default function Watchlist() {
               </span>
             </div>
           ) : (
-            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} onShare={handleShare} />
+            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} />
           )
         ))}
         {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>
@@ -1208,7 +1141,6 @@ export default function Watchlist() {
       collectionsApi={collectionsApi}
       setEditingCollection={setEditingCollection}
       openCollectionPicker={openCollectionPicker}
-      handleShare={handleShare}
     />
   );
 
@@ -1348,80 +1280,6 @@ export default function Watchlist() {
     />
   );
 
-  // Shared-listing surface — banner + Card stack. Renders only when
-  // a share intent is present (user opened a ?listing=<id>&shared=1
-  // URL). Sits above the active tab content; non-modal so the user
-  // can scroll past it to keep browsing. Cleared on Save/Dismiss.
-  //
-  // Lookup against the live items array. If the listing has gone
-  // fully out of listings.json (rare — sold items still surface
-  // there), fall back to a "no longer available" message with the
-  // original dealer URL where possible. v1 doesn't carry a snapshot
-  // in the URL itself, per Q1 default.
-  const sharedItem = shareIntent
-    ? items.find(i => i.id === shareIntent.id) || null
-    : null;
-  const sharedSave = useCallback(async () => {
-    if (!sharedItem || !user) return;
-    setShareBusy(true);
-    // Save = add to default Favorites (toggle if not already wished)
-    // AND record in Shared with me. Dismiss skips the heart but
-    // still records — both paths populate the inbox per the spec
-    // (Q4 default: explicit-action-only, signed-in-only).
-    if (!watchlist[sharedItem.id]) toggleWatchlist(sharedItem);
-    await collectionsApi.addToSharedInbox(sharedItem);
-    setShareBusy(false);
-    clearShareIntent();
-  }, [sharedItem, user, watchlist, toggleWatchlist, collectionsApi, clearShareIntent]);
-  const sharedDismiss = useCallback(async () => {
-    if (sharedItem && user) {
-      // Anonymous Dismiss is a pure UI close — no inbox record.
-      setShareBusy(true);
-      await collectionsApi.addToSharedInbox(sharedItem);
-      setShareBusy(false);
-    }
-    clearShareIntent();
-  }, [sharedItem, user, collectionsApi, clearShareIntent]);
-
-  const sharedListingJSX = !shareIntent ? null : (
-    <div style={{ padding: "12px 16px 0" }}>
-      <ShareBanner
-        signedIn={!!user}
-        busy={shareBusy}
-        onSave={sharedSave}
-        onDismiss={sharedDismiss}
-        onSignIn={!user && isAuthConfigured ? signInWithGoogle : undefined}
-      />
-      {sharedItem ? (
-        <div style={{
-          maxWidth: 320, marginBottom: 8,
-          borderRadius: 10, overflow: "hidden",
-          border: "0.5px solid var(--border)",
-        }}>
-          <Card
-            item={sharedItem}
-            wished={!!watchlist[sharedItem.id]}
-            onWish={handleWish}
-            compact={false}
-            onShare={handleShare}
-          />
-        </div>
-      ) : (
-        // Listing missing from the live feed (purged / never indexed
-        // / typo'd ID). Don't break the page — just say so. The
-        // banner above still works (Dismiss clears it).
-        <div style={{
-          padding: "20px 16px", borderRadius: 10,
-          border: "0.5px solid var(--border)", background: "var(--card-bg)",
-          fontSize: 13, color: "var(--text2)", lineHeight: 1.5, marginBottom: 8,
-        }}>
-          The shared listing isn't in the feed right now — the dealer
-          may have removed it, or it scrolled off the active list.
-        </div>
-      )}
-    </div>
-  );
-
   // Both shells consume the same props bag. App.js owns state and the
   // top-level JSX consts (authJSX, listingsGridJSX, watchSubTabsJSX,
   // statusSegmentJSX, watchlistTabJSX, plus the modal JSX consts) — the
@@ -1455,7 +1313,7 @@ export default function Watchlist() {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX, inp,
-    listingsGridJSX, sectionHeadingStyle, sharedListingJSX, statusSegmentJSX,
+    listingsGridJSX, sectionHeadingStyle, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
   };
 
