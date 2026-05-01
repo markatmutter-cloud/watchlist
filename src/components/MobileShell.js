@@ -22,7 +22,7 @@ export function MobileShell(props) {
     // State
     aboutModalOpen, allFiltered, brandsExpanded,
     currentIsSaved, dark, drawerOpen,
-    filterBrands, filterSources,
+    filterAuctionsOnly, filterBrands, filterSources,
     hasFilters, hiddenItems, hiddenModalOpen,
     maxPriceText, minPriceText, mobileCols,
     search, sort, sourcesExpanded,
@@ -31,7 +31,7 @@ export function MobileShell(props) {
     // Setters / handlers
     handleWish, openFavPrompt, resetFilters,
     setAboutModalOpen, setBrandsExpanded, setDarkOverride,
-    setDrawerOpen, setHiddenModalOpen,
+    setDrawerOpen, setFilterAuctionsOnly, setHiddenModalOpen,
     setMaxPriceText, setMinPriceText, setMobileCols,
     setPage, setSearch, setShowUserMenu, setSort,
     setSourcePickerOpen, setSourcesExpanded,
@@ -269,6 +269,29 @@ export function MobileShell(props) {
                   {statusSegmentJSX}
                 </div>
                 <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
+
+                {/* Auctions-only toggle. Orthogonal to the Live/Sold/All
+                    status segment above — when on, narrows to auction-
+                    format items (auction-house lots + eBay AUCTION).
+                    Watchlist-only because Listings doesn't have any
+                    auction-format items (those are tracked URLs that
+                    live in Watchlist). Mirrors the desktop pill that
+                    only renders on `tab === "watchlist"`. */}
+                {tab === "watchlist" && (
+                  <>
+                    <div style={{ padding: "10px 16px 10px" }}>
+                      <div style={sectionHeadingStyle}>Auctions only</div>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        <Chip
+                          label={filterAuctionsOnly ? "✓ Auctions only" : "Auctions only"}
+                          active={filterAuctionsOnly}
+                          onClick={() => setFilterAuctionsOnly(v => !v)}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
+                  </>
+                )}
 
                 <div style={{ padding: "10px 16px 10px" }}>
                   <div style={sectionHeadingStyle}>Source</div>
