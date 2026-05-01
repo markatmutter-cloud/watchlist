@@ -2,7 +2,45 @@
 // to import from anywhere including non-component code.
 
 export const GLOBAL_MAX = 600000;
-export const CURRENCY_SYM = { USD: "$", GBP: "£", EUR: "€", CHF: "CHF " };
+export const CURRENCY_SYM = { USD: "$", GBP: "£", EUR: "€", CHF: "CHF ", HKD: "HK$", JPY: "¥" };
+
+// USD-per-unit rates for client-side conversion to the user's primary
+// display currency. Mirrors merge.py's FX dict (line 144) so backend
+// + frontend agree on direction. Only the 4 currencies in v1's user
+// picker (USD/GBP/EUR/HKD) need to be lookup-able as TARGETS;
+// listings can arrive in any currency, but priceUSD is the canonical
+// anchor — to convert, divide priceUSD by RATES[target].
+//
+// Rates are approximate; vintage-watch prices don't need fx-trader
+// precision. Update this dict when the merge.py one moves.
+export const FX_RATES_USD_PER = {
+  USD: 1.0,
+  GBP: 1.27,
+  EUR: 1.08,
+  HKD: 0.128,
+  CHF: 1.13,
+  JPY: 0.0067,
+  CNY: 0.14,
+};
+
+// Convert an item's price to a target display currency using priceUSD
+// as the bridge. Returns the integer price in the target currency, or
+// null if we can't compute it (priceUSD missing AND currency mismatch).
+//
+//   - If item.currency === target → return item.price (exact native).
+//   - Else if priceUSD is set → priceUSD / RATES[target].
+//   - Else → null (caller falls back to native).
+export function priceIn(item, target) {
+  if (!item || !target) return null;
+  if (item.currency && item.currency.toUpperCase() === target) {
+    return item.price ?? null;
+  }
+  if (item.priceUSD == null) return null;
+  const rate = FX_RATES_USD_PER[target];
+  if (!rate) return null;
+  if (target === "USD") return Math.round(item.priceUSD);
+  return Math.round(item.priceUSD / rate);
+}
 
 // Free-text search match. Splits the query into whitespace tokens and
 // requires every token to appear (case-insensitively) somewhere in the

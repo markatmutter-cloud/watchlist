@@ -42,7 +42,7 @@ export function DesktopShell(props) {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
-    listingsGridJSX, statusSegmentJSX,
+    listingsGridJSX, primaryCurrency, settingsModalJSX, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
   } = props;
 
@@ -381,6 +381,7 @@ export function DesktopShell(props) {
       {addSearchModalJSX}
       {collectionEditModalJSX}
       {collectionPickerModalJSX}
+      {settingsModalJSX}
       <HiddenModal
           open={hiddenModalOpen}
           onClose={() => setHiddenModalOpen(false)}
@@ -388,6 +389,7 @@ export function DesktopShell(props) {
           watchlist={watchlist}
           onWish={handleWish}
           onHide={toggleHide}
+          primaryCurrency={primaryCurrency}
         />
         <AboutModal
           open={aboutModalOpen}

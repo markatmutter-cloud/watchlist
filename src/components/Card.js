@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, memo } from "react";
-import { fmt, fmtUSD, imgSrc, fmtCountdown, fmtLotPrice, fmtSoldDate } from "../utils";
+import { fmt, imgSrc, fmtCountdown, fmtLotPrice, fmtSoldDate, priceIn, CURRENCY_SYM, FX_RATES_USD_PER } from "../utils";
 import { HeartIcon } from "./icons";
 
 // Shared style for action-menu rows. Module-scope so it's not
@@ -32,6 +32,10 @@ export const Card = memo(function Card({
   // actually calls removeItemFromCollection — single menu surface,
   // different action wiring per context.
   hideLabel,
+  // User's primary display currency (USD/GBP/EUR/HKD). Falls back to
+  // 'USD' for signed-out browsing or before useUserSettings has
+  // loaded — matches the pre-2026-05-01 hardcoded behaviour.
+  primaryCurrency = "USD",
 }) {
   // When the dealer's image URL goes 404 (e.g. they cleaned up their CDN
   // for a sold listing), the browser shows an ugly broken-image icon.
@@ -64,10 +68,12 @@ export const Card = memo(function Card({
   // the image surface lets the image itself read.)
   // priceOnRequest items have price=0 — show "Price on request" instead
   // of "$0". Set by the WV scraper for INQUIRE / ON HOLD-no-price pages.
-  // Currency display rule (2026-04-30): USD-priced listings show their
-  // native price as primary; non-USD listings show USD-converted as
-  // primary ("~$11,300") with the native price on the secondary line
-  // ("£8,900"). Mark prefers USD as the consistent comparison anchor.
+  // Currency display rule (2026-05-01): user's primary currency
+  // (set in Settings; defaults to USD) is the primary line; if that
+  // differs from the listing's native currency, the native price
+  // shows on the secondary line. The conversion uses priceUSD as the
+  // bridge via priceIn() in utils — exact native when match, ~approx
+  // otherwise.
   // Sold-without-price-history fallback: a listing that disappears
   // from the dealer's site as priceOnRequest reads "Price on request"
   // even when sold — misleading because the dealer never showed a
@@ -75,15 +81,26 @@ export const Card = memo(function Card({
   // AND there's no historic price record, show "—" instead.
   const hasHistoricPrice = (item.priceHistory || []).some(h => (h?.price ?? 0) > 0)
     || (item.price && item.price > 0);
-  const isUSD = !item.currency || item.currency.toUpperCase() === "USD";
+  const itemCurrency = (item.currency || "USD").toUpperCase();
+  const matchesPrimary = itemCurrency === primaryCurrency;
+  // Compute the primary-currency display value. Exact when listing
+  // is already in user's primary currency; ~approx otherwise.
+  const primaryAmount = priceIn(item, primaryCurrency);
+  const primarySym = CURRENCY_SYM[primaryCurrency] || "$";
   const displayPrice = (item.sold && item.priceOnRequest && !hasHistoricPrice)
     ? "—"
     : item.priceOnRequest
       ? "Price on request"
-      : isUSD
-        ? fmt(item.price, "USD")
-        : `~${fmtUSD(item.priceUSD || item.price)}`;
-  const showNative = !isUSD && !item.priceOnRequest && item.price;
+      : matchesPrimary
+        ? fmt(item.price, primaryCurrency)
+        : (primaryAmount != null
+            ? `~${primarySym}${primaryAmount.toLocaleString()}`
+            // No conversion possible (no priceUSD bridge): fall back
+            // to native so the user still sees a price rather than "—".
+            : fmt(item.price, itemCurrency));
+  // Show the native price on the secondary line whenever it's not
+  // already the primary line and we have a real price.
+  const showNative = !matchesPrimary && !item.priceOnRequest && item.price;
   // Show CUMULATIVE drop from peak (priceDropTotal) — so two
   // consecutive $400 cuts read as "↓ $800" rather than just the
   // latest step. Falls back to the last-step `priceChange` for items
@@ -112,16 +129,26 @@ export const Card = memo(function Card({
   const lotUsdValue = !isLot ? null
     : item.sold ? (item.sold_price_usd ?? lotNativeValue)
     : (item.current_bid_usd ?? lotNativeValue);
-  // Same currency rule as dealer cards: USD-native lots show native
-  // primary; non-USD lots show "~$X,XXX" primary + native secondary.
-  const lotIsUSD = !item.currency || item.currency.toUpperCase() === "USD";
+  // Same currency rule as dealer cards: lot's native shows as primary
+  // when it matches user's primaryCurrency; otherwise convert via
+  // lotUsdValue → primaryCurrency (FX rates in utils). Native price
+  // moves to the secondary line when it differs from primary.
+  const lotPrimaryAmount = (() => {
+    if (!isLot) return null;
+    if (matchesPrimary) return lotNativeValue;
+    if (primaryCurrency === "USD") return lotUsdValue;
+    if (lotUsdValue == null) return null;
+    const rate = FX_RATES_USD_PER[primaryCurrency];
+    if (!rate) return null;
+    return Math.round(lotUsdValue / rate);
+  })();
   const lotPrimaryDisplay = !isLot ? null
-    : lotIsUSD
-      ? fmtLotPrice(lotNativeValue, "USD") || "—"
-      : (lotUsdValue
-          ? `~$${Math.round(lotUsdValue).toLocaleString()}`
-          : fmtLotPrice(lotNativeValue, item.currency) || "—");
-  const lotShowNative = isLot && !lotIsUSD && lotNativeValue;
+    : lotPrimaryAmount != null
+      ? (matchesPrimary
+          ? fmtLotPrice(lotPrimaryAmount, primaryCurrency) || "—"
+          : `~${primarySym}${Math.round(lotPrimaryAmount).toLocaleString()}`)
+      : fmtLotPrice(lotNativeValue, item.currency) || "—";
+  const lotShowNative = isLot && !matchesPrimary && lotNativeValue;
   // Estimate line — only shows on active auction-format lots when
   // both bounds are known. Drops once hammered (the HAMMER price
   // tells the story by then).

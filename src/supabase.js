@@ -656,6 +656,63 @@ export function useTrackedLots(user) {
 }
 
 
+// ── USER SETTINGS ───────────────────────────────────────────────────────────
+// Cross-device user-level preferences (vs theme/columns which are
+// per-device + localStorage). v1 holds primary_currency only; future
+// fields land here too so we don't proliferate one-off tables.
+//
+// Lazy-create: a missing row is fine. The hook returns the default
+// ('USD') until the user changes something, at which point we upsert.
+// Optimistic UI — local state flips immediately, DB write logs on
+// failure but doesn't block the change.
+
+const ALLOWED_CURRENCIES = ['USD', 'GBP', 'EUR', 'HKD'];
+const DEFAULT_CURRENCY = 'USD';
+
+export function useUserSettings(user) {
+  const [primaryCurrency, setPrimaryCurrencyLocal] = useState(DEFAULT_CURRENCY);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!user || !supabase) {
+      setPrimaryCurrencyLocal(DEFAULT_CURRENCY);
+      setLoaded(true);
+      return;
+    }
+    let cancelled = false;
+    supabase.from('user_settings')
+      .select('primary_currency')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) console.warn('user_settings load failed', error);
+        const v = data?.primary_currency;
+        setPrimaryCurrencyLocal(
+          ALLOWED_CURRENCIES.includes(v) ? v : DEFAULT_CURRENCY
+        );
+        setLoaded(true);
+      });
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const setPrimaryCurrency = useCallback(async (next) => {
+    if (!ALLOWED_CURRENCIES.includes(next)) return { error: 'invalid currency' };
+    setPrimaryCurrencyLocal(next);
+    if (!user || !supabase) return { error: null };
+    const { error } = await supabase.from('user_settings').upsert({
+      user_id:          user.id,
+      primary_currency: next,
+      updated_at:       new Date().toISOString(),
+    }, { onConflict: 'user_id' });
+    if (error) console.warn('user_settings save failed', error);
+    return { error: error?.message || null };
+  }, [user]);
+
+  return { primaryCurrency, setPrimaryCurrency, loaded };
+}
+
+
 // ── IMPORT FROM LOCALSTORAGE ────────────────────────────────────────────────
 // One-shot helper: bulk-upload whatever's in the user's browser localStorage
 // (watchlist + hidden) into their Supabase account. `ignoreDuplicates` means

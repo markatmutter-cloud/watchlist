@@ -2,7 +2,7 @@ import React from "react";
 import { Card } from "./Card";
 import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle } from "../styles";
 
-export function HiddenModal({ open, onClose, items, watchlist, onWish, onHide }) {
+export function HiddenModal({ open, onClose, items, watchlist, onWish, onHide, primaryCurrency }) {
   if (!open) return null;
   return (
     <div onClick={onClose} style={modalBackdrop}>
@@ -33,6 +33,7 @@ export function HiddenModal({ open, onClose, items, watchlist, onWish, onHide })
                 compact={true}
                 onHide={onHide}
                 isHidden={true}
+                primaryCurrency={primaryCurrency}
               />
             ))}
           </div>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { useAuth, useWatchlist, useHidden, useSearches, useTrackedLots, useCollections, importLocalData, isAuthConfigured } from "./supabase";
+import { useAuth, useWatchlist, useHidden, useSearches, useTrackedLots, useCollections, useUserSettings, importLocalData, isAuthConfigured } from "./supabase";
 import {
   GLOBAL_MAX, CURRENCY_SYM,
   fmt, fmtUSD, daysAgo, freshDate, imgSrc, logToPrice, extractRef,
@@ -25,6 +25,7 @@ import { FavSearchModal } from "./components/FavSearchModal";
 import { AddSearchModal } from "./components/AddSearchModal";
 import { CollectionEditModal } from "./components/CollectionEditModal";
 import { CollectionPickerModal } from "./components/CollectionPickerModal";
+import { SettingsModal } from "./components/SettingsModal";
 import { WatchlistTab } from "./components/WatchlistTab";
 import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
@@ -209,6 +210,14 @@ export default function Watchlist() {
   // sub-tab UI; the picker modal (lifted to App.js below) reuses it
   // when adding a listing from any Card anywhere.
   const collectionsApi = useCollections(user);
+
+  // User-level settings — currently just primary display currency.
+  // Cross-device (Supabase user_settings table) vs theme/columns
+  // which are per-device localStorage. Default 'USD' until the user
+  // changes it. Plumbs through shellProps → Card so every card
+  // surface honours the preference.
+  const { primaryCurrency, setPrimaryCurrency } = useUserSettings(user);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   // Picker modal state — lifted here so any Card across the app (in
   // Listings, Watchlist > Listings, or a Collection drill-in) can open
@@ -847,6 +856,13 @@ export default function Watchlist() {
                     fontSize: 13, borderRadius: 6 }}>
             Manage hidden{hiddenItems.length > 0 ? ` · ${hiddenItems.length}` : ""}
           </button>
+          <button onClick={() => { setShowUserMenu(false); setSettingsModalOpen(true); }}
+            style={{ display: "block", width: "100%", textAlign: "left",
+                    padding: "6px 8px", border: "none", background: "transparent",
+                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                    fontSize: 13, borderRadius: 6 }}>
+            Settings · {primaryCurrency}
+          </button>
           <button onClick={() => { setShowUserMenu(false); signOut(); }}
             style={{ display: "block", width: "100%", textAlign: "left",
                     padding: "6px 8px", border: "none", background: "transparent",
@@ -1022,7 +1038,7 @@ export default function Watchlist() {
               </span>
             </div>
           ) : (
-            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} />
+            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} primaryCurrency={primaryCurrency} />
           )
         ))}
         {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>
@@ -1141,6 +1157,7 @@ export default function Watchlist() {
       collectionsApi={collectionsApi}
       setEditingCollection={setEditingCollection}
       openCollectionPicker={openCollectionPicker}
+      primaryCurrency={primaryCurrency}
     />
   );
 
@@ -1280,6 +1297,18 @@ export default function Watchlist() {
     />
   );
 
+  // Settings modal — opened from the user dropdown menu. Currently
+  // just the primary-currency picker; future user-prefs land in this
+  // same surface as the user_settings table grows.
+  const settingsModalJSX = (
+    <SettingsModal
+      open={settingsModalOpen}
+      onClose={() => setSettingsModalOpen(false)}
+      primaryCurrency={primaryCurrency}
+      setPrimaryCurrency={setPrimaryCurrency}
+    />
+  );
+
   // Both shells consume the same props bag. App.js owns state and the
   // top-level JSX consts (authJSX, listingsGridJSX, watchSubTabsJSX,
   // statusSegmentJSX, watchlistTabJSX, plus the modal JSX consts) — the
@@ -1313,7 +1342,8 @@ export default function Watchlist() {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX, inp,
-    listingsGridJSX, sectionHeadingStyle, statusSegmentJSX,
+    listingsGridJSX, primaryCurrency, sectionHeadingStyle,
+    settingsModalJSX, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
   };
 
