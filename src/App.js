@@ -6,6 +6,8 @@ import {
   ageBucketFromDate, canonicalizeBrand, detectBrandFromTitle, shortHash,
 } from "./utils";
 import { useWidth, useSystemDark } from "./hooks";
+import { useTrackModal } from "./hooks/useTrackModal";
+import { useFavSearchModal } from "./hooks/useFavSearchModal";
 import { FilterIcon, SearchIcon, TabIcon } from "./components/icons";
 import { Card } from "./components/Card";
 import { Chip, SidebarChip } from "./components/Chip";
@@ -201,22 +203,16 @@ export default function Watchlist() {
     quickAdd: quickAddSearch,
   } = useSearches(user);
   // "Save current search as a favorite" prompt — opened by the heart
-  // button inside the search input. State is just the label being
-  // typed; the query comes from the live search field.
-  const [favPromptOpen, setFavPromptOpen] = useState(false);
-  const [favPromptLabel, setFavPromptLabel] = useState("");
-  const [favPromptError, setFavPromptError] = useState("");
-  const openFavPrompt = useCallback(() => {
-    setFavPromptLabel(search.trim());
-    setFavPromptError("");
-    setFavPromptOpen(true);
-  }, [search]);
-  const submitFavSearch = useCallback(async () => {
-    const { error } = await quickAddSearch(favPromptLabel, search);
-    if (error) { setFavPromptError(error); return; }
-    setFavPromptOpen(false);
-    setFavPromptLabel("");
-  }, [favPromptLabel, search, quickAddSearch]);
+  // button inside the search input. The state machine lives in
+  // useFavSearchModal; aliases below keep the rest of App.js's
+  // references stable.
+  const {
+    open: favPromptOpen,    setOpen:    setFavPromptOpen,
+    label: favPromptLabel,  setLabel:   setFavPromptLabel,
+    error: favPromptError,  setError:   setFavPromptError,
+    openPrompt:             openFavPrompt,
+    submit:                 submitFavSearch,
+  } = useFavSearchModal({ search, quickAddSearch });
   // Whether the current search is already a saved favourite.
   const currentIsSaved = useMemo(() => {
     const q = (search || "").trim().toLowerCase();
@@ -225,22 +221,17 @@ export default function Watchlist() {
   }, [search, userSearches]);
   const { urls: trackedLotUrls, add: addTrackedLot, remove: removeTrackedLot, addedAt: trackedLotAddedAt } = useTrackedLots(user);
 
-  // Track-new-item modal — lifted up from WatchlistTab on 2026-04-30
-  // so the sub-tab strip in App.js (which carries the trigger button)
-  // can open the modal directly. Same single-URL paste flow as
-  // before.
-  const [trackOpen, setTrackOpen] = useState(false);
-  const [trackUrl, setTrackUrl] = useState("");
-  const [trackBusy, setTrackBusy] = useState(false);
-  const [trackError, setTrackError] = useState("");
-  const submitTrack = async () => {
-    if (!trackUrl.trim() || !addTrackedLot) return;
-    setTrackBusy(true); setTrackError("");
-    const { error } = await addTrackedLot(trackUrl);
-    setTrackBusy(false);
-    if (error) setTrackError(error);
-    else { setTrackUrl(""); setTrackOpen(false); }
-  };
+  // Track-new-item modal — state machine lives in useTrackModal;
+  // aliases below preserve the previous trackOpen/trackUrl/etc.
+  // naming so the JSX consts and the sub-tab trigger button below
+  // don't need to change.
+  const {
+    open: trackOpen,   setOpen:  setTrackOpen,
+    url: trackUrl,     setUrl:   setTrackUrl,
+    busy: trackBusy,
+    error: trackError, setError: setTrackError,
+    submit:                      submitTrack,
+  } = useTrackModal({ addTrackedLot });
   // If there's leftover localStorage data from the pre-Supabase era, we
   // offer to import it after sign-in. Read once at mount so we can tell
   // the user *how many* items we'd import ("N saved, M hidden").
