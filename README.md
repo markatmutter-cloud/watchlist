@@ -22,7 +22,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 Three top-level tabs:
 
-- **Listings** — aggregates 26 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
+- **Listings** — aggregates 27 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
 - **Watchlist** — three sub-tabs:
   - **Listings** — items you've hearted, with price-at-save preserved.
   - **Searches** — saved queries you can re-run with one tap, plus a read-only view of the eBay source-searches feeding the main feed.
@@ -93,7 +93,7 @@ Listings/auctions are static JSON committed to the repo. The only thing behind a
 
 ## Data sources
 
-### Dealers (26)
+### Dealers (27)
 
 All scrapers hit each dealer's existing public endpoint — no credential-protected APIs, no headless browsers where it can be avoided.
 
@@ -125,6 +125,7 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 | Chronoholic (Omega only) | Wix | `productsWithMetaData.list[]` JSON embedded in HTML | USD |
 | Vintage Watch Fam | Shopify | collection-scoped `/products.json` | USD |
 | Shuck the Oyster | Custom (WordPress) | `/portfolio/` listing pages + per-item detail-page price extraction (`PRICE NNNN€`) | EUR |
+| Central Watch | Custom (PHP) | HTML parse of `prod_result_item` cards + `/R{offset}` pagination | USD |
 
 Tropical Watch is the only source still routed through Browse AI — their site actively blocks scrapers. Every other source is scraped with vanilla `requests`. Browse AI robot ID and API key live in GitHub Secrets, never in the repo.
 

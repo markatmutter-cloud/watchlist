@@ -81,7 +81,7 @@ Cross-cutting infrastructure. Several later epics depend on this.
 ## Epic 1: Sources
 
 Target end state: ~30 dealers + 6 auction houses, all earning their keep.
-Currently at 26 dealers + 6 auction houses.
+Currently at 27 dealers + 6 auction houses.
 
 - **Active candidates** (evaluated, not all guaranteed):
 
@@ -399,6 +399,14 @@ Not active. Worth keeping a list because some might graduate.
 
 ## Update log
 
+- 2026-05-01: **Source added — Central Watch** (Grand Central Watch
+  Repair, NYC). 27th dealer; custom PHP catalogue, HTML-parsed,
+  USD-priced. ~180 listings, mostly Rolex / Cartier / Breitling /
+  Omega / Patek with a long tail of vintage one-offs (Concord,
+  Zodiac, Waltham, ...). Two dealers from the Active candidates
+  table (Vintage Watch Collective, Wrist Icons, Vision Vintage,
+  Vintage Heuer) still open; Stop rule says audit + prune to 25
+  once the active count hits ~30.
 - 2026-04-30: **Structural cleanup pass.** App.js dropped from 2,130 →
   ~1,250 lines (-41%). Mobile + Desktop render branches extracted
   into `src/components/MobileShell.js` + `DesktopShell.js`. Domain
