@@ -1172,7 +1172,13 @@ export default function Watchlist() {
         // info). Searches + Calendar dropped their counts 2026-05-01:
         // the count there was just "rows below" rather than
         // "outstanding work" so it added noise without informing.
-        ["listings", isMobile ? "Listings" : `Listings${watchCount > 0 ? ` · ${watchCount}` : ""}`],
+        // The "listings" key is preserved for localStorage compat
+        // (dial_watch_top_tab) so users coming back keep their last
+        // sub-tab. Display label changed to "Favorites" 2026-05-01 —
+        // signals the heart's role more directly than "Listings" did,
+        // and creates breathing room for Collections as the
+        // organizational layer above.
+        ["listings", isMobile ? "Favorites" : `Favorites${watchCount > 0 ? ` · ${watchCount}` : ""}`],
         ["collections", "Collections"],
         ["searches", "Searches"],
         ["calendar", isMobile ? "Calendar" : "Auction Calendar"],

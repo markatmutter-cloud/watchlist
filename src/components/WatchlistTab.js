@@ -474,7 +474,7 @@ export function WatchlistTab(props) {
   // only.
   const collectionsTabJSX = !user ? signInPromptJSX(
     "Sign in to use collections",
-    "Group watches by intent — \"For wife\", \"Reference comps\", anything you want. Collections sync across every device you use."
+    "Group watches by reference, theme, or research thread — \"Rolex 5513s\", \"Vintage divers\", \"Reference comps\". Collections sync across every device you use."
   ) : (() => {
     const cols = (collectionsApi?.collections || []);
     const itemsByColl = collectionsApi?.itemsByCollection || {};
@@ -569,7 +569,7 @@ export function WatchlistTab(props) {
               No collections yet
             </div>
             <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto" }}>
-              Group watches by intent — "For wife", "Reference comps - 5512", anything. Use "+ New collection" above to create one, then add listings via the "…" menu on any card.
+              Group watches by reference, theme, or research thread — "Rolex 5513s", "Vintage divers", "Reference comps - 5512". Use "+ New collection" above to create one, then add listings via the "…" menu on any card.
             </div>
           </div>
         ) : (
