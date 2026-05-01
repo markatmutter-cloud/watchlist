@@ -238,20 +238,25 @@ export default function Watchlist() {
     } catch {
       return { copied: false };
     }
-    // Desktop: always copy the link to the clipboard. Web Share API
-    // is supported on Chrome/Edge desktop now but the native sheet
-    // there is awkward (full-page modal listing your installed apps),
-    // and Mark prefers the predictable "link is on your clipboard"
-    // affordance. Mobile keeps the native sheet — that's where
-    // routing-to-iMessage/WhatsApp/etc actually shines.
+    // Touch devices (phones/tablets) get the native share sheet —
+    // that's where routing-to-iMessage/WhatsApp/AirDrop/etc actually
+    // shines. Mouse-driven devices (desktops, laptops) always copy
+    // the link to the clipboard regardless — Web Share API on
+    // desktop opens an awkward full-page modal that's worse than a
+    // predictable "link is on your clipboard."
+    //
+    // Detection uses (pointer: coarse) which is true only on touch
+    // devices. Pre-2026-05-01 used isMobile (viewport width < 640)
+    // which mis-fired when a desktop browser was resized narrow.
     //
     // Share payload is URL-only. Pre-2026-05-01 we passed { title,
-    // text, url } but iMessage / WhatsApp render the title + text
-    // alongside the link, which Mark didn't want. Just the URL
-    // gives the recipient's messaging app room to render its own
-    // rich-link preview (parsed from the page's OG tags) without
-    // an extra "Watch on Watchlist" line above it.
-    if (isMobile && typeof navigator !== "undefined" && navigator.share) {
+    // text, url } but iMessage / WhatsApp render those as preamble
+    // lines. URL alone lets the recipient's app render its own
+    // rich-link preview from the page's OG tags.
+    const isTouchDevice = typeof window !== "undefined"
+      && window.matchMedia
+      && window.matchMedia("(pointer: coarse)").matches;
+    if (isTouchDevice && typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ url: shareUrl });
         return { copied: false };

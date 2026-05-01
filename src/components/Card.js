@@ -171,13 +171,16 @@ export const Card = memo(function Card({
     : null;
   const countdownIsPast = countdownLabel && countdownLabel.startsWith("ended");
   return (
-    {/* No overflow: hidden on the Card root — image-clip lives on
-        the inner img-wrapper div below (paddingTop: 100% trick).
-        Letting the action menu spill out of the card boundary keeps
-        it readable on narrow mobile cards (2-col @ 375px = ~165px
-        wide; the menu is ~140px and would otherwise get clipped on
-        the left side). */}
-    <div style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative", minWidth: 0 }}>
+    {/* overflow: hidden restored 2026-05-01 — its removal in commit
+        aea9c93 fixed mobile menu clipping but had a worse side effect:
+        long single-line content (titles like "1970's Heuer Autavia GMT
+        2446C") could push the card's intrinsic width past its grid
+        track, expanding the whole grid past the viewport and clipping
+        the rightmost column instead. Re-clipping the card root keeps
+        each card constrained to its 1fr allocation. The menu's now
+        SHORTER (see menu items below) so it fits within the card on
+        a 3-col mobile layout instead of needing to spill out. */}
+    <div style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative", minWidth: 0, overflow: "hidden" }}>
       <a href={item.url} target="_blank" rel="noopener noreferrer"
         style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
         <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
@@ -340,14 +343,23 @@ export const Card = memo(function Card({
                     }
                   }} style={menuItemStyle}>{shareFeedback || "Share"}</button>
                 )}
+                {/* Menu labels are intentionally short so the menu
+                    fits inside a 3-col-mobile card (~114px wide).
+                    Longer labels ("Add to collection…", "Hide from
+                    feed", "Remove from collection") would push the
+                    menu past the card's overflow:hidden edge and
+                    get clipped. The "…" on "Add to" hints at the
+                    second-step picker modal. */}
                 {onAddToCollection && (
                   <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onAddToCollection(item); }}
-                    style={menuItemStyle}>Add to collection…</button>
+                    style={menuItemStyle}>Add to…</button>
                 )}
                 {onHide && (
                   <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onHide(item); }}
                     style={menuItemStyle}>
-                    {hideLabel || (isHidden ? "Unhide" : "Hide from feed")}
+                    {hideLabel === "Remove from collection"
+                      ? "Remove"
+                      : (hideLabel || (isHidden ? "Unhide" : "Hide"))}
                   </button>
                 )}
               </div>
