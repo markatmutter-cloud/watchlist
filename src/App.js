@@ -26,6 +26,7 @@ import { AddSearchModal } from "./components/AddSearchModal";
 import { CollectionEditModal } from "./components/CollectionEditModal";
 import { CollectionPickerModal } from "./components/CollectionPickerModal";
 import { SettingsModal } from "./components/SettingsModal";
+import { ShareReceiver } from "./components/ShareReceiver";
 import { WatchlistTab } from "./components/WatchlistTab";
 import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
@@ -218,6 +219,44 @@ export default function Watchlist() {
   // surface honours the preference.
   const { primaryCurrency, setPrimaryCurrency } = useUserSettings(user);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+
+  // Outbound share handler. Pure function (no useState/useMemo
+  // closures), so it doesn't add a hook to App.js's count. The
+  // RECEIVE side lives entirely inside <ShareReceiver/> so its
+  // hooks isolate cleanly — that was the v3 architectural choice
+  // after v2's React error #310 in production.
+  // Returns { copied } so Card can flash "Copied!" on the
+  // clipboard fallback path.
+  const handleShare = async (item) => {
+    if (!item || !item.id) return { copied: false };
+    let shareUrl;
+    try {
+      const url = new URL(window.location.origin);
+      url.searchParams.set("listing", item.id);
+      url.searchParams.set("shared", "1");
+      shareUrl = url.toString();
+    } catch {
+      return { copied: false };
+    }
+    const title = item.brand ? `${item.brand} on Watchlist` : "Watch on Watchlist";
+    const text  = [item.brand, item.ref].filter(Boolean).join(" · ") || "Watch on Watchlist";
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title, text, url: shareUrl });
+        return { copied: false };
+      } catch (e) {
+        if (e?.name === "AbortError") return { copied: false };
+        // Other errors fall through to clipboard.
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      return { copied: true };
+    } catch {
+      try { window.prompt("Copy this link:", shareUrl); } catch {}
+      return { copied: false };
+    }
+  };
 
   // Picker modal state — lifted here so any Card across the app (in
   // Listings, Watchlist > Listings, or a Collection drill-in) can open
@@ -1038,7 +1077,7 @@ export default function Watchlist() {
               </span>
             </div>
           ) : (
-            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} primaryCurrency={primaryCurrency} />
+            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} primaryCurrency={primaryCurrency} onShare={handleShare} />
           )
         ))}
         {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>
@@ -1158,6 +1197,7 @@ export default function Watchlist() {
       setEditingCollection={setEditingCollection}
       openCollectionPicker={openCollectionPicker}
       primaryCurrency={primaryCurrency}
+      handleShare={handleShare}
     />
   );
 
@@ -1309,6 +1349,26 @@ export default function Watchlist() {
     />
   );
 
+  // Share-receive surface. ALL share-related hooks live inside
+  // <ShareReceiver/> — App.js's hook count stays unchanged regardless
+  // of share state. That's the v3 architectural choice after v2's
+  // React #310 in production. Receiver renders null when no share
+  // intent is present, so it's effectively free in the common path.
+  const shareReceiverJSX = (
+    <ShareReceiver
+      items={items}
+      user={user}
+      watchlist={watchlist}
+      toggleWatchlist={toggleWatchlist}
+      addToSharedInbox={collectionsApi?.addToSharedInbox}
+      handleWish={handleWish}
+      handleShare={handleShare}
+      isAuthConfigured={isAuthConfigured}
+      signInWithGoogle={signInWithGoogle}
+      primaryCurrency={primaryCurrency}
+    />
+  );
+
   // Both shells consume the same props bag. App.js owns state and the
   // top-level JSX consts (authJSX, listingsGridJSX, watchSubTabsJSX,
   // statusSegmentJSX, watchlistTabJSX, plus the modal JSX consts) — the
@@ -1343,7 +1403,7 @@ export default function Watchlist() {
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX, inp,
     listingsGridJSX, primaryCurrency, sectionHeadingStyle,
-    settingsModalJSX, statusSegmentJSX,
+    settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
   };
 

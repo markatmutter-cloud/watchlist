@@ -42,7 +42,7 @@ export function DesktopShell(props) {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
-    listingsGridJSX, primaryCurrency, settingsModalJSX, statusSegmentJSX,
+    listingsGridJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
   } = props;
 
@@ -372,6 +372,8 @@ export function DesktopShell(props) {
         {/* Top padding is 0 on Watchlist so the sub-tab strip sits flush
             against the filter pill row. Listings keeps the breathing room. */}
         <div data-desktop-main style={{ flex: 1, overflowY: "auto", padding: `${tab === "watchlist" ? 0 : 14}px 16px 32px` }}>
+          {/* Share-receive surface — self-contained component. */}
+          {shareReceiverJSX}
           {tab === "listings" ? listingsGridJSX
             : tab === "references" ? <ReferencesTab />
             : watchlistTabJSX}

@@ -32,10 +32,15 @@ export const Card = memo(function Card({
   // actually calls removeItemFromCollection — single menu surface,
   // different action wiring per context.
   hideLabel,
-  // User's primary display currency (USD/GBP/EUR/HKD). Falls back to
+  // User's primary display currency (USD/GBP/EUR). Falls back to
   // 'USD' for signed-out browsing or before useUserSettings has
   // loaded — matches the pre-2026-05-01 hardcoded behaviour.
   primaryCurrency = "USD",
+  // Share — every Card surface in v1. Handler builds the share URL
+  // and routes through Web Share API or clipboard fallback. Returns
+  // { copied: bool } so we can show a brief "Copied!" hint after the
+  // clipboard path. Optional — when omitted the menu omits the row.
+  onShare,
 }) {
   // When the dealer's image URL goes 404 (e.g. they cleaned up their CDN
   // for a sold listing), the browser shows an ugly broken-image icon.
@@ -43,6 +48,9 @@ export const Card = memo(function Card({
   const [imgFailed, setImgFailed] = useState(false);
   // Action menu open/close. Click-outside + Escape closes.
   const [menuOpen, setMenuOpen] = useState(false);
+  // Brief "Copied!" feedback when Web Share API isn't available and
+  // we fall back to the clipboard. 1.2s timeout, no toast component.
+  const [shareFeedback, setShareFeedback] = useState("");
   const menuRef = useRef(null);
   useEffect(() => {
     if (!menuOpen) return;
@@ -289,7 +297,7 @@ export const Card = memo(function Card({
             available (so signed-out browsing keeps the card clean).
             Anchored top-right with the dropdown opening down-and-left
             so it doesn't fall off the screen on rightmost cards. */}
-        {(onAddToCollection || onHide) && (
+        {(onAddToCollection || onHide || onShare) && (
           <div ref={menuRef} style={{ position: "relative" }}>
             <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(o => !o); }}
               aria-label="More actions"
@@ -307,6 +315,20 @@ export const Card = memo(function Card({
                   borderRadius: 8, padding: 4, minWidth: 168,
                   boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
                 }}>
+                {onShare && (
+                  <button onClick={async e => {
+                    e.preventDefault(); e.stopPropagation();
+                    let result;
+                    try { result = await onShare(item); }
+                    catch (err) { console.warn("share failed", err); result = null; }
+                    if (result?.copied) {
+                      setShareFeedback("Copied!");
+                      setTimeout(() => { setShareFeedback(""); setMenuOpen(false); }, 1200);
+                    } else {
+                      setMenuOpen(false);
+                    }
+                  }} style={menuItemStyle}>{shareFeedback || "Share"}</button>
+                )}
                 {onAddToCollection && (
                   <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onAddToCollection(item); }}
                     style={menuItemStyle}>Add to collection…</button>

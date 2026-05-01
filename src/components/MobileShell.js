@@ -43,7 +43,7 @@ export function MobileShell(props) {
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX, inp,
     listingsGridJSX, primaryCurrency, sectionHeadingStyle,
-    settingsModalJSX, statusSegmentJSX,
+    settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
   } = props;
 
@@ -228,6 +228,9 @@ export function MobileShell(props) {
             2026-04-30 so it survives scroll. */}
         {watchSubTabsJSX}
         </div>
+        {/* Share-receive surface — self-contained component, hooks
+            isolated. Renders null when no share intent in URL. */}
+        {shareReceiverJSX}
         <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
           {tab === "listings" ? listingsGridJSX
             : tab === "references" ? <ReferencesTab />
