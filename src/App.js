@@ -8,6 +8,7 @@ import {
 import { useWidth, useSystemDark } from "./hooks";
 import { useTrackModal } from "./hooks/useTrackModal";
 import { useFavSearchModal } from "./hooks/useFavSearchModal";
+import { useViewSettings } from "./hooks/useViewSettings";
 import { FilterIcon, SearchIcon, TabIcon } from "./components/icons";
 import { Card } from "./components/Card";
 import { Chip, SidebarChip } from "./components/Chip";
@@ -47,7 +48,15 @@ export default function Watchlist() {
   const screenWidth = useWidth();
   const sysDark = useSystemDark();
   const isMobile = screenWidth < 640;
-  const [darkOverride, setDarkOverride] = useState(null);
+  // Per-device display chrome (theme override, column counts, view-menu
+  // open flag). Lives in useViewSettings so localStorage persistence +
+  // option validation stay co-located with the state itself.
+  const {
+    darkOverride, setDarkOverride,
+    mobileCols, setMobileCols,
+    desktopCols, setDesktopCols,
+    viewMenuOpen, setViewMenuOpen,
+  } = useViewSettings();
   // Auth. `user` is null when signed out; non-null with `.email` etc. when
   // signed in via Google. `ready` gates UI from flickering "Sign in" for a
   // returning user while we check the session. `showUserMenu` toggles the
@@ -82,29 +91,8 @@ export default function Watchlist() {
   const isDragging = useRef(false);
   const dragStart = useRef(0);
   const widthStart = useRef(0);
-  // Per-device column override. Mobile picks 1-3, desktop picks 3-7 or
-  // "auto". Persisted in localStorage so the choice sticks across visits.
-  const [mobileCols, setMobileCols] = useState(() => {
-    try {
-      const v = parseInt(localStorage.getItem("dial_mobile_cols") || "3", 10);
-      return [1, 2, 3].includes(v) ? v : 3;
-    } catch { return 3; }
-  });
-  const [desktopCols, setDesktopCols] = useState(() => {
-    try {
-      const v = localStorage.getItem("dial_desktop_cols");
-      if (v === "auto" || v === null) return "auto";
-      const n = parseInt(v, 10);
-      return [3, 4, 5, 6, 7].includes(n) ? n : "auto";
-    } catch { return "auto"; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem("dial_mobile_cols", String(mobileCols)); } catch {}
-  }, [mobileCols]);
-  useEffect(() => {
-    try { localStorage.setItem("dial_desktop_cols", String(desktopCols)); } catch {}
-  }, [desktopCols]);
-  const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  // (Per-device column override + viewMenuOpen now live in
+  // useViewSettings, see the destructure at the top of this component.)
   // Desktop column count: user override wins; otherwise the fluid default
   // based on viewport width with a sensible minimum.
   const desktopAutoCols = Math.max(3, Math.round(screenWidth / 240));
