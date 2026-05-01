@@ -141,17 +141,27 @@ SQL editor. Until that runs, the hook will fail-soft (errors logged,
 no UI breakage) but the Collections sub-tab in Session 2 will appear
 empty for everyone.
 
-**Session 2 — Collections UI (next):**
+**Session 2 — Collections UI (shipped 2026-05-01, commit c2aeabd):**
 
-- 4th sub-tab in Watchlist: **Collections**, alongside Listings /
-  Searches / Auction Calendar. Same `tabPill` underline treatment.
-- Click a collection → list of items rendered with the existing Card
-  component.
-- New `"..."` menu on every Card. Replaces the standalone `×` (hide)
-  — menu houses Share (Session 3), Add to collection…, and Hide.
-  Heart stays as the primary save affordance.
-- Add/rename/delete collections via simple modals reusing the
-  shared `modalShell` / `modalCloseButton` tokens.
+- 4th sub-tab in Watchlist: **Collections** (Listings / Collections /
+  Searches / Auction Calendar). Sub-tab strip gained a "+ New
+  collection" trailing button when active. List view → drill-in view
+  of items as Cards using the Watchlist > Listings visual treatment.
+- New `"..."` menu on every Card replaces the standalone `×` (hide).
+  Houses **Add to collection…** + **Hide from feed** (or "Unhide",
+  or context-overridden "Remove from collection" inside a drill-in
+  via the new `hideLabel` prop). Click-outside + Escape close.
+- New `CollectionEditModal` (single name field, used for both create
+  and rename) and `CollectionPickerModal` (collection list + inline
+  "+ Create new" that creates+adds in one go; greys out collections
+  the item already belongs to; hides the shared-inbox).
+- State ownership: `editingCollection` + `pickerTarget` lifted to
+  App.js so any Card anywhere can fire them. `selectedCollectionId`
+  stays local to WatchlistTab.
+- Filter row gating extended to hide on Collections (collections
+  aren't filtered the same way listings are).
+
+**Session 3 — Share (next):**
 
 **Session 3 — Share (after Session 2):**
 
