@@ -91,6 +91,7 @@ export function buildMockShellProps(overrides = {}) {
     primaryCurrency: "USD",
     sectionHeadingStyle: { fontSize: 11, fontWeight: 600 },
     settingsModalJSX: null,
+    sharedListingJSX: null,
     statusSegmentJSX: <div data-testid="status-segment" />,
     trackNewItemModalJSX: null,
     watchSubTabsJSX: <div data-testid="watch-sub-tabs" />,
