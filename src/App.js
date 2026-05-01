@@ -11,8 +11,7 @@ import { Card } from "./components/Card";
 import { Chip, SidebarChip } from "./components/Chip";
 // AuctionsTab retired 2026-04-30 — Tracked lots merged into Watchlist
 // Listings; calendar moved to Watchlist > Auction Calendar sub-tab via
-// the new AuctionCalendar component. AuctionsTab.js still exists in
-// the tree for reference but is not imported or rendered anywhere.
+// the new AuctionCalendar component (AuctionsTab.js deleted 2026-04-30).
 import { ReferencesTab } from "./components/ReferencesTab";
 import { AboutModal } from "./components/AboutModal";
 import { HiddenModal } from "./components/HiddenModal";
