@@ -42,14 +42,10 @@ export function WatchlistTab(props) {
     // openCollectionPicker opens the add-to-collection modal for a
     // listing.
     collectionsApi, setEditingCollection, openCollectionPicker,
-    // User's primary display currency (USD/GBP/EUR), forwarded
+    // User's primary display currency (USD/GBP/EUR/HKD), forwarded
     // to every Card render so the new currency rule applies in the
     // Watchlist > Favorites and Collection drill-in surfaces too.
     primaryCurrency,
-    // Share handler from App.js — wired to every Card render below
-    // so the "..." menu's Share item works in Watchlist > Favorites
-    // and inside Collection drill-ins, not just Listings.
-    handleShare,
   } = props;
 
   // eBay source-search config (read-only display in the Searches
@@ -560,7 +556,6 @@ export function WatchlistTab(props) {
                   isHidden={false}
                   onAddToCollection={openCollectionPicker}
                   primaryCurrency={primaryCurrency}
-                  onShare={handleShare}
                 />
               ))}
             </div>
@@ -667,7 +662,6 @@ export function WatchlistTab(props) {
                     compact={compact}
                     onAddToCollection={openCollectionPicker}
                     primaryCurrency={primaryCurrency}
-                    onShare={handleShare}
                   />
                 );
 

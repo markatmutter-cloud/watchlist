@@ -26,7 +26,6 @@ import { AddSearchModal } from "./components/AddSearchModal";
 import { CollectionEditModal } from "./components/CollectionEditModal";
 import { CollectionPickerModal } from "./components/CollectionPickerModal";
 import { SettingsModal } from "./components/SettingsModal";
-import { ShareBanner } from "./components/ShareBanner";
 import { WatchlistTab } from "./components/WatchlistTab";
 import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
@@ -219,89 +218,6 @@ export default function Watchlist() {
   // surface honours the preference.
   const { primaryCurrency, setPrimaryCurrency } = useUserSettings(user);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
-
-  // ── SHARE (Session 3 v2 — defensive rebuild) ──────────────────────
-  // v1 (commit ca49fa2, reverted) parsed the URL inside a useState
-  // lazy initializer, looked up the shared item against `items` on
-  // every render, and rendered the receive surface from inside the
-  // shells. v1 white-screened in production — exact root cause
-  // unconfirmed. v2 hardens every step:
-  //
-  //   - URL parse moves into useEffect (post-mount, never blocks
-  //     first render or runs during SSR/strict-mode pre-mount).
-  //   - sharedItem lookup gated on items.length > 0 (no find against
-  //     an empty array).
-  //   - Banner render wrapped in try/catch via a module-scope helper.
-  //   - Save/Dismiss callbacks read collectionsApi.addToSharedInbox
-  //     defensively in case the hook isn't ready.
-  //   - Receive surface rendered inline in App.js render (above
-  //     listingsGridJSX) — single insertion point, simpler wiring,
-  //     no shellProps dependency.
-
-  // Outbound: build a deep link, route through Web Share API → clipboard
-  // → window.prompt fallback. Returns { copied } so Card can flash
-  // "Copied!" on the clipboard path.
-  const handleShare = useCallback(async (item) => {
-    if (!item || !item.id) return { copied: false };
-    let shareUrl;
-    try {
-      const url = new URL(window.location.origin);
-      url.searchParams.set("listing", item.id);
-      url.searchParams.set("shared", "1");
-      shareUrl = url.toString();
-    } catch {
-      return { copied: false };
-    }
-    const title = item.brand ? `${item.brand} on Watchlist` : "Watch on Watchlist";
-    const text = [item.brand, item.ref].filter(Boolean).join(" · ") || "Watch on Watchlist";
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title, text, url: shareUrl });
-        return { copied: false };
-      } catch (e) {
-        // User cancelled the native sheet — silent. Other errors fall
-        // through to clipboard.
-        if (e?.name === "AbortError") return { copied: false };
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      return { copied: true };
-    } catch {
-      try { window.prompt("Copy this link:", shareUrl); } catch {}
-      return { copied: false };
-    }
-  }, []);
-
-  // Inbound: parse URL after mount (NOT in useState init).
-  const [shareIntent, setShareIntent] = useState(null);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("shared") !== "1") return;
-      const id = params.get("listing");
-      if (id) setShareIntent({ id });
-    } catch (e) {
-      console.warn("share URL parse failed", e);
-    }
-  }, []);
-  const [shareBusy, setShareBusy] = useState(false);
-
-  // Clear intent + rewrite URL so refresh doesn't re-trigger.
-  const clearShareIntent = useCallback(() => {
-    setShareIntent(null);
-    try {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("listing");
-      url.searchParams.delete("shared");
-      window.history.replaceState({}, "", url.toString());
-    } catch {}
-  }, []);
-
-  // Destructure the inbox helper up-front so the callbacks below
-  // don't depend on the (unstable) collectionsApi reference.
-  const addToSharedInbox = collectionsApi?.addToSharedInbox;
 
   // Picker modal state — lifted here so any Card across the app (in
   // Listings, Watchlist > Listings, or a Collection drill-in) can open
@@ -1122,7 +1038,7 @@ export default function Watchlist() {
               </span>
             </div>
           ) : (
-            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} primaryCurrency={primaryCurrency} onShare={handleShare} />
+            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} primaryCurrency={primaryCurrency} />
           )
         ))}
         {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>
@@ -1242,7 +1158,6 @@ export default function Watchlist() {
       setEditingCollection={setEditingCollection}
       openCollectionPicker={openCollectionPicker}
       primaryCurrency={primaryCurrency}
-      handleShare={handleShare}
     />
   );
 
@@ -1394,99 +1309,6 @@ export default function Watchlist() {
     />
   );
 
-  // Shared-listing lookup. Gated on items being loaded — never call
-  // .find against an empty array. Returns null when:
-  //   - no share intent
-  //   - items haven't loaded yet (banner deferred)
-  //   - intent's id doesn't match any current listing (banner shows
-  //     "no longer available" placeholder; user can still Dismiss)
-  const sharedItem = useMemo(() => {
-    if (!shareIntent || !shareIntent.id) return null;
-    if (!Array.isArray(items) || items.length === 0) return null;
-    return items.find(i => i && i.id === shareIntent.id) || null;
-  }, [shareIntent, items]);
-
-  const sharedSave = useCallback(async () => {
-    if (!sharedItem || !user) { clearShareIntent(); return; }
-    setShareBusy(true);
-    try {
-      if (!watchlist[sharedItem.id]) toggleWatchlist(sharedItem);
-      if (typeof addToSharedInbox === "function") {
-        await addToSharedInbox(sharedItem);
-      }
-    } catch (e) {
-      console.warn("sharedSave failed", e);
-    }
-    setShareBusy(false);
-    clearShareIntent();
-  }, [sharedItem, user, watchlist, toggleWatchlist, addToSharedInbox, clearShareIntent]);
-
-  const sharedDismiss = useCallback(async () => {
-    if (sharedItem && user) {
-      setShareBusy(true);
-      try {
-        if (typeof addToSharedInbox === "function") {
-          await addToSharedInbox(sharedItem);
-        }
-      } catch (e) {
-        console.warn("sharedDismiss failed", e);
-      }
-      setShareBusy(false);
-    }
-    clearShareIntent();
-  }, [sharedItem, user, addToSharedInbox, clearShareIntent]);
-
-  // Receive surface JSX — banner + the shared listing rendered as a
-  // small Card. Renders only when items have loaded (so we never
-  // try to display before listings.json arrives) AND a share intent
-  // is present. Wrapped in a try in case anything in the JSX
-  // construction throws — falls back to a minimal banner that at
-  // least lets the user dismiss.
-  let sharedListingJSX = null;
-  try {
-    if (shareIntent && Array.isArray(items) && items.length > 0) {
-      sharedListingJSX = (
-        <div style={{ padding: "12px 16px 0" }}>
-          <ShareBanner
-            signedIn={!!user}
-            busy={shareBusy}
-            onSave={sharedSave}
-            onDismiss={sharedDismiss}
-            onSignIn={!user && isAuthConfigured ? signInWithGoogle : undefined}
-          />
-          {sharedItem ? (
-            <div style={{
-              maxWidth: 320, marginBottom: 8,
-              borderRadius: 10, overflow: "hidden",
-              border: "0.5px solid var(--border)",
-            }}>
-              <Card
-                item={sharedItem}
-                wished={!!watchlist[sharedItem.id]}
-                onWish={handleWish}
-                compact={false}
-                onShare={handleShare}
-                primaryCurrency={primaryCurrency}
-              />
-            </div>
-          ) : (
-            <div style={{
-              padding: "20px 16px", borderRadius: 10,
-              border: "0.5px solid var(--border)", background: "var(--card-bg)",
-              fontSize: 13, color: "var(--text2)", lineHeight: 1.5, marginBottom: 8,
-            }}>
-              The shared listing isn't in the feed right now — the dealer
-              may have removed it, or it scrolled off the active list.
-            </div>
-          )}
-        </div>
-      );
-    }
-  } catch (e) {
-    console.warn("sharedListingJSX render failed", e);
-    sharedListingJSX = null;
-  }
-
   // Both shells consume the same props bag. App.js owns state and the
   // top-level JSX consts (authJSX, listingsGridJSX, watchSubTabsJSX,
   // statusSegmentJSX, watchlistTabJSX, plus the modal JSX consts) — the
@@ -1521,7 +1343,7 @@ export default function Watchlist() {
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX, inp,
     listingsGridJSX, primaryCurrency, sectionHeadingStyle,
-    settingsModalJSX, sharedListingJSX, statusSegmentJSX,
+    settingsModalJSX, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
   };
 
