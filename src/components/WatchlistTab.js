@@ -92,17 +92,31 @@ export function WatchlistTab(props) {
   // / Last week / Older) using savedAt. Date-axis grouping is a
   // *side-effect* of the date sort rather than its own chip.
   const isDateSort = sort === "date" || sort === "date-asc";
-  // Sort grouped entries by the most-recent date in each group's
-  // items. Works regardless of label set — replaces the old static
-  // bucket-rank table now that labels are weekday-based.
-  const groupRecency = (items) => {
-    let max = 0;
-    for (const it of items) {
-      const t = new Date(it.savedAt || 0).getTime();
-      if (t > max) max = t;
-    }
-    return max;
+
+  // Bucket rank — smaller = more recent. Date↓ sorts buckets ascending
+  // by rank (Today first); Date↑ sorts descending (Older first).
+  //
+  // Earlier versions (pre-2026-05-01) used a max-savedAt-per-group
+  // comparator. That fell over when tracked-lot rows had empty
+  // `savedAt` — every group's "max" collapsed to 0 (epoch) and the
+  // sort became unstable, putting Older above Today even on Date↓.
+  // An explicit rank table is deterministic regardless of timestamp
+  // gaps. Weekday names come from ageBucketFromDate, which only emits
+  // them for d ∈ [2..6], so we just need a single weekday tier (the
+  // labels are mutually exclusive on any given day) — they all rank
+  // between "Yesterday" and "Last week".
+  const bucketRank = (label) => {
+    if (label === "Today")     return 0;
+    if (label === "Yesterday") return 1;
+    if (label === "Last week") return 8;
+    if (label === "Older")     return 9;
+    // Anything else is a weekday (Mon..Sun) emitted only for 2-6 days
+    // ago. Rank them all together at 4; ageBucketFromDate guarantees
+    // there's at most ONE such weekday bucket on any given day, so a
+    // single rank is enough.
+    return 4;
   };
+
   // Group-by feature removed 2026-04-30 — only implicit weekday-
   // named dividers remain when sort is by date and status isn't
   // sold-archive. Other sorts get a single flat bucket.
@@ -114,16 +128,13 @@ export function WatchlistTab(props) {
         if (!map.has(key)) map.set(key, []);
         map.get(key).push(item);
       }
-      // Bucket order tracks the sort direction. Date↓ (newest first)
-      // → Today before Older; Date↑ (oldest first) → Older before
-      // Today. Pre-2026-05-01 the buckets were always descending,
-      // so toggling Date direction flipped the items within each
-      // bucket but kept Older above Today either way (visible bug).
       const ascending = sort === "date-asc";
       return [...map.entries()].sort((a, b) => {
-        const ra = groupRecency(a[1]);
-        const rb = groupRecency(b[1]);
-        return ascending ? ra - rb : rb - ra;
+        const ra = bucketRank(a[0]);
+        const rb = bucketRank(b[0]);
+        // Date↓ (descending = newest first) wants smaller rank first
+        // → ra - rb. Date↑ flips that.
+        return ascending ? rb - ra : ra - rb;
       });
     }
     return [["", watchView]];
