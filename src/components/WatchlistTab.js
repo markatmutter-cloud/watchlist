@@ -607,9 +607,7 @@ export function WatchlistTab(props) {
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     padding: "14px 16px", borderRadius: 12,
                     border: "0.5px solid var(--border)",
-                    // Inbox row gets a left accent so it reads as a
-                    // different surface from user-created collections.
-                    borderLeft: isInbox ? "3px solid #185FA5" : "0.5px solid var(--border)",
+                    borderLeft: "3px solid #185FA5",
                     background: "var(--card-bg)",
                     color: "var(--text1)", cursor: "pointer",
                     fontFamily: "inherit", textAlign: "left",

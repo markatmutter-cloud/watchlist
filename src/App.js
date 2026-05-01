@@ -61,7 +61,6 @@ export default function Watchlist() {
     darkOverride, setDarkOverride,
     mobileCols, setMobileCols,
     desktopCols, setDesktopCols,
-    viewMenuOpen, setViewMenuOpen,
   } = useViewSettings();
   // Auth. `user` is null when signed out; non-null with `.email` etc. when
   // signed in via Google. `ready` gates UI from flickering "Sign in" for a
@@ -103,8 +102,6 @@ export default function Watchlist() {
   const isDragging = useRef(false);
   const dragStart = useRef(0);
   const widthStart = useRef(0);
-  // (Per-device column override + viewMenuOpen now live in
-  // useViewSettings, see the destructure at the top of this component.)
   // Desktop column count: user override wins; otherwise the fluid default
   // based on viewport width with a sensible minimum.
   const desktopAutoCols = Math.max(3, Math.round(screenWidth / 240));
@@ -885,19 +882,20 @@ export default function Watchlist() {
     </button>
   ) : (
     <div style={{ position: "relative" }}>
-      <button onClick={() => { setShowUserMenu(o => !o); setViewMenuOpen(false); }} aria-label="Account menu"
+      <button onClick={() => setShowUserMenu(o => !o)} aria-label="Account menu"
         style={{
-          width: 30, height: 30, borderRadius: "50%",
+          width: isMobile ? 40 : 32, height: isMobile ? 40 : 32, borderRadius: "50%",
           border: "0.5px solid var(--border)", background: "var(--surface)",
           color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-          fontSize: 13, fontWeight: 600,
+          fontSize: isMobile ? 14 : 13, fontWeight: 600,
           display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0,
         }}>
         {userInitial.toUpperCase()}
       </button>
       {showUserMenu && (
         <div style={{
-          position: "absolute", right: 0, top: 36, zIndex: 50,
+          position: "absolute", right: 0, top: isMobile ? 46 : 38, zIndex: 50,
           // Always open downward — both desktop and mobile buttons live in
           // the top header now, so opening up would push the menu off the
           // top of the viewport.
@@ -1298,6 +1296,7 @@ export default function Watchlist() {
           background: "var(--surface)", color: "var(--text1)",
           cursor: "pointer", fontFamily: "inherit",
           flexShrink: 0, whiteSpace: "nowrap",
+          marginLeft: isMobile ? 0 : "auto",
         }}>+ Track new item</button>
       )}
       {watchTopTab === "searches" && user && !searchEditor && (
@@ -1308,6 +1307,7 @@ export default function Watchlist() {
           background: "var(--surface)", color: "var(--text1)",
           cursor: "pointer", fontFamily: "inherit",
           flexShrink: 0, whiteSpace: "nowrap",
+          marginLeft: isMobile ? 0 : "auto",
         }}>+ Add search</button>
       )}
       {watchTopTab === "collections" && user && (
@@ -1318,6 +1318,7 @@ export default function Watchlist() {
           background: "var(--surface)", color: "var(--text1)",
           cursor: "pointer", fontFamily: "inherit",
           flexShrink: 0, whiteSpace: "nowrap",
+          marginLeft: isMobile ? 0 : "auto",
         }}>+ New collection</button>
       )}
     </div>
@@ -1382,15 +1383,24 @@ export default function Watchlist() {
     />
   );
 
-  // Settings modal — opened from the user dropdown menu. Currently
-  // just the primary-currency picker; future user-prefs land in this
-  // same surface as the user_settings table grows.
+  // Settings modal — currency (cross-device) plus theme + columns
+  // (per-device, was the standalone View popover before 2026-05-01)
+  // and the About entry. Opened from the user dropdown.
   const settingsModalJSX = (
     <SettingsModal
       open={settingsModalOpen}
       onClose={() => setSettingsModalOpen(false)}
       primaryCurrency={primaryCurrency}
       setPrimaryCurrency={setPrimaryCurrency}
+      isMobile={isMobile}
+      dark={dark}
+      setDarkOverride={setDarkOverride}
+      mobileCols={mobileCols}
+      setMobileCols={setMobileCols}
+      desktopCols={desktopCols}
+      setDesktopCols={setDesktopCols}
+      desktopAutoCols={desktopAutoCols}
+      setAboutModalOpen={setAboutModalOpen}
     />
   );
 
@@ -1424,23 +1434,23 @@ export default function Watchlist() {
     BRANDS, BRANDS_SHOW, SOURCES, SOURCES_SHOW,
     // State
     aboutModalOpen, activeFilterPop, allFiltered,
-    brandsExpanded, currentIsSaved, dark,
-    desktopAutoCols, desktopCols, drawerOpen,
+    brandsExpanded, currentIsSaved,
+    drawerOpen,
     filterAuctionsOnly, filterBrands, filterSources,
     hasFilters, hiddenItems, hiddenModalOpen,
-    maxPriceText, minPriceText, mobileCols,
+    maxPriceText, minPriceText,
     search, sort, sourcesExpanded, tab, user,
-    viewMenuOpen, visibleBrands, visibleSources,
+    visibleBrands, visibleSources,
     watchTopTab, watchlist,
     // Setters / handlers
     handleWish, openFavPrompt, resetFilters,
     setAboutModalOpen, setActiveFilterPop, setBrandsExpanded,
-    setDarkOverride, setDesktopCols, setDrawerOpen,
+    setDrawerOpen,
     setFilterAuctionsOnly, setFilterBrands, setFilterSources,
     setHiddenModalOpen, setMaxPriceText, setMinPriceText,
-    setMobileCols, setPage, setSearch, setShowUserMenu,
+    setPage, setSearch, setShowUserMenu,
     setSort, setSourcePickerOpen, setSourcesExpanded,
-    setTab, setViewMenuOpen,
+    setTab,
     toggleBrand, toggleHide, toggleSource,
     // Style tokens / pre-built JSX
     addSearchModalJSX,

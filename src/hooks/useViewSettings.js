@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 // Per-device display settings: theme override + column counts.
 // Persists mobileCols and desktopCols to localStorage so the choice
 // sticks across visits. Theme override (null | true | false) drives
-// the dark/light toggle in the View menu — null means "follow system".
+// the dark/light toggle in Settings — null means "follow system".
 //
 // Extracted from App.js 2026-04-30 (#6 hooks). The legacy localStorage
 // keys are preserved to avoid resetting users' saved column choices.
@@ -33,7 +33,6 @@ export function useViewSettings() {
   const [darkOverride, setDarkOverride] = useState(null);
   const [mobileCols, setMobileCols]   = useState(readMobileCols);
   const [desktopCols, setDesktopCols] = useState(readDesktopCols);
-  const [viewMenuOpen, setViewMenuOpen] = useState(false);
 
   useEffect(() => {
     try { localStorage.setItem(MOBILE_COLS_KEY, String(mobileCols)); } catch {}
@@ -47,6 +46,5 @@ export function useViewSettings() {
     darkOverride, setDarkOverride,
     mobileCols, setMobileCols,
     desktopCols, setDesktopCols,
-    viewMenuOpen, setViewMenuOpen,
   };
 }

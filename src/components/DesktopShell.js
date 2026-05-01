@@ -21,21 +21,20 @@ export function DesktopShell(props) {
     // State
     aboutModalOpen, activeFilterPop,
     brandsExpanded,
-    currentIsSaved, dark, desktopAutoCols, desktopCols,
+    currentIsSaved,
     filterAuctionsOnly, filterBrands, filterSources,
     hasFilters, hiddenItems, hiddenModalOpen,
     maxPriceText, minPriceText,
     search, sort,
-    tab, user, viewMenuOpen, visibleBrands,
+    tab, user, visibleBrands,
     watchTopTab, watchlist,
     // Setters / handlers
     handleWish, openFavPrompt, resetFilters,
     setAboutModalOpen, setActiveFilterPop, setBrandsExpanded,
-    setDarkOverride, setDesktopCols,
     setFilterAuctionsOnly, setFilterBrands, setFilterSources,
     setHiddenModalOpen, setMaxPriceText, setMinPriceText,
-    setPage, setSearch, setShowUserMenu, setSort,
-    setTab, setViewMenuOpen,
+    setPage, setSearch, setSort,
+    setTab,
     toggleBrand, toggleHide, toggleSource,
     // Pre-built JSX
     addSearchModalJSX,
@@ -292,65 +291,6 @@ export function DesktopShell(props) {
               </button>
             )}
           </div>
-        </div>
-        {/* Desktop View popover: theme + column count. */}
-        <div style={{ position: "relative", flexShrink: 0 }}>
-          <button onClick={() => { setViewMenuOpen(o => !o); setShowUserMenu(false); }} aria-label="View options"
-            style={{
-              width: 32, height: 32, borderRadius: 8,
-              border: "0.5px solid var(--border)",
-              background: viewMenuOpen ? "var(--text1)" : "var(--surface)",
-              color: viewMenuOpen ? "var(--bg)" : "var(--text2)", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-          </button>
-          {viewMenuOpen && (
-            <div style={{ position: "absolute", right: 0, top: 38, zIndex: 50,
-                         background: "var(--bg)", border: "0.5px solid var(--border)",
-                         borderRadius: 10, padding: 12, minWidth: 220,
-                         boxShadow: "0 6px 20px rgba(0,0,0,0.18)" }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Theme</div>
-              <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                {[["light", "Light"], ["dark", "Dark"]].map(([key, lbl]) => {
-                  const active = (key === "dark") === dark;
-                  return (
-                    <button key={key} onClick={() => setDarkOverride(key === "dark")} style={{
-                      flex: 1, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
-                      background: active ? "var(--text1)" : "transparent",
-                      color: active ? "var(--bg)" : "var(--text2)",
-                      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                    }}>{lbl}</button>
-                  );
-                })}
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Columns</div>
-              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                {["auto", 3, 4, 5, 6, 7].map(n => (
-                  <button key={n} onClick={() => setDesktopCols(n)} style={{
-                    flex: "1 1 auto", minWidth: 36, padding: "6px 10px", borderRadius: 6,
-                    border: "0.5px solid var(--border)",
-                    background: desktopCols === n ? "var(--text1)" : "transparent",
-                    color: desktopCols === n ? "var(--bg)" : "var(--text2)",
-                    cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                  }}>{n === "auto" ? "Auto" : n}</button>
-                ))}
-              </div>
-              <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 6 }}>
-                Auto = {desktopAutoCols} columns at this width.
-              </div>
-              <div style={{ height: "0.5px", background: "var(--border)", margin: "12px -12px 8px" }} />
-              <button onClick={() => { setViewMenuOpen(false); setAboutModalOpen(true); }} style={{
-                width: "100%", textAlign: "left",
-                padding: "6px 8px", border: "none", background: "transparent",
-                color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                fontSize: 13, borderRadius: 6,
-              }}>About & Contact</button>
-            </div>
-          )}
         </div>
         {authJSX}
       </div>

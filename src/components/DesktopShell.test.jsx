@@ -38,11 +38,6 @@ describe("DesktopShell", () => {
     expect(screen.queryByRole("button", { name: /^Source/ })).not.toBeInTheDocument();
   });
 
-  test("renders the desktop View button (theme + columns)", () => {
-    render(<DesktopShell {...buildMockShellProps()} />);
-    expect(screen.getByLabelText("View options")).toBeInTheDocument();
-  });
-
   test("renders the listings grid on the Listings tab", () => {
     render(<DesktopShell {...buildMockShellProps({ tab: "listings" })} />);
     expect(screen.getByTestId("listings-grid")).toBeInTheDocument();

@@ -21,21 +21,21 @@ export function MobileShell(props) {
     BRANDS, BRANDS_SHOW, SOURCES, SOURCES_SHOW,
     // State
     aboutModalOpen, allFiltered, brandsExpanded,
-    currentIsSaved, dark, drawerOpen,
+    currentIsSaved, drawerOpen,
     filterAuctionsOnly, filterBrands, filterSources,
     hasFilters, hiddenItems, hiddenModalOpen,
-    maxPriceText, minPriceText, mobileCols,
+    maxPriceText, minPriceText,
     search, sort, sourcesExpanded,
-    tab, user, viewMenuOpen, visibleBrands, visibleSources,
+    tab, user, visibleBrands, visibleSources,
     watchTopTab, watchlist,
     // Setters / handlers
     handleWish, openFavPrompt, resetFilters,
-    setAboutModalOpen, setBrandsExpanded, setDarkOverride,
+    setAboutModalOpen, setBrandsExpanded,
     setDrawerOpen, setFilterAuctionsOnly, setHiddenModalOpen,
-    setMaxPriceText, setMinPriceText, setMobileCols,
-    setPage, setSearch, setShowUserMenu, setSort,
+    setMaxPriceText, setMinPriceText,
+    setPage, setSearch, setSort,
     setSourcePickerOpen, setSourcesExpanded,
-    setTab, setViewMenuOpen,
+    setTab,
     toggleBrand, toggleHide, toggleSource,
     // Style tokens / pre-built JSX
     addSearchModalJSX,
@@ -101,68 +101,6 @@ export function MobileShell(props) {
               <FilterIcon />
             </button>
           )}
-          {/* "View" button consolidates theme + column count so the top bar
-              doesn't have to grow as we add per-device display settings. */}
-          <div style={{ position: "relative", flexShrink: 0 }}>
-            <button onClick={() => { setViewMenuOpen(o => !o); setShowUserMenu(false); }} aria-label="View options"
-              style={iconButton({ active: viewMenuOpen })}>
-              {/* Eye icon — feels right for "view settings" (theme + column
-                  count). Mark's call: cog read like "settings", eye reads
-                  like "how the page looks". */}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-            </button>
-            {viewMenuOpen && (
-              <div style={{ position: "absolute", right: 0, top: 46, zIndex: 50,
-                           background: "var(--bg)", border: "0.5px solid var(--border)",
-                           borderRadius: 10, padding: 12, minWidth: 180,
-                           boxShadow: "0 6px 20px rgba(0,0,0,0.18)" }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Theme</div>
-                <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                  {[["light", "Light"], ["dark", "Dark"]].map(([key, lbl]) => {
-                    const active = (key === "dark") === dark;
-                    return (
-                      <button key={key} onClick={() => setDarkOverride(key === "dark")} style={{
-                        flex: 1, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
-                        background: active ? "var(--text1)" : "transparent",
-                        color: active ? "var(--bg)" : "var(--text2)",
-                        cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                      }}>{lbl}</button>
-                    );
-                  })}
-                </div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Columns</div>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {[1, 2, 3].map(n => (
-                    <button key={n} onClick={() => setMobileCols(n)} style={{
-                      flex: 1, padding: "6px 10px", borderRadius: 6, border: "0.5px solid var(--border)",
-                      background: mobileCols === n ? "var(--text1)" : "transparent",
-                      color: mobileCols === n ? "var(--bg)" : "var(--text2)",
-                      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                    }}>{n}</button>
-                  ))}
-                </div>
-                <div style={{ height: "0.5px", background: "var(--border)", margin: "12px -12px 8px" }} />
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4, padding: "0 8px" }}>Other</div>
-                {user && (
-                  <button onClick={() => { setViewMenuOpen(false); setHiddenModalOpen(true); }} style={{
-                    width: "100%", textAlign: "left",
-                    padding: "8px 8px", border: "none", background: "transparent",
-                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 13, borderRadius: 6,
-                  }}>Hidden listings{hiddenItems.length > 0 ? ` · ${hiddenItems.length}` : ""}</button>
-                )}
-                <button onClick={() => { setViewMenuOpen(false); setAboutModalOpen(true); }} style={{
-                  width: "100%", textAlign: "left",
-                  padding: "8px 8px", border: "none", background: "transparent",
-                  color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                  fontSize: 13, borderRadius: 6,
-                }}>About & Contact</button>
-              </div>
-            )}
-          </div>
           {authJSX}
         </div>
         {/* Sort/source/sold/clear pill row — only relevant for tabs that

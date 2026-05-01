@@ -1,6 +1,5 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { MobileShell } from "./MobileShell";
 import { buildMockShellProps } from "./__fixtures__/mockShellProps";
 
@@ -32,17 +31,6 @@ describe("MobileShell", () => {
       watchTopTab: "searches",
     })} />);
     expect(screen.queryByLabelText("Filters")).not.toBeInTheDocument();
-  });
-
-  test("opens the View menu when the eye button is tapped", async () => {
-    const setViewMenuOpen = jest.fn();
-    render(<MobileShell {...buildMockShellProps({ setViewMenuOpen })} />);
-    const viewBtn = screen.getByLabelText("View options");
-    await userEvent.click(viewBtn);
-    // The first arg passed to setViewMenuOpen is the updater function
-    // (`o => !o`) — invoke it against `false` to confirm it flips.
-    const updater = setViewMenuOpen.mock.calls[0][0];
-    expect(updater(false)).toBe(true);
   });
 
   test("renders the bottom tab bar with Listings + Watchlist", () => {
