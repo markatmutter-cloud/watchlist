@@ -478,6 +478,24 @@ Not active. Worth keeping a list because some might graduate.
 
 ## Update log
 
+- 2026-05-01 (PM late): **View menu → Settings consolidation +
+  Vercel wedge resolved.** View popover (theme + columns + about)
+  folded into the Settings modal as new sections (`25adbbf`); header
+  carries filter button + avatar only now. Avatar sized 40 mobile /
+  32 desktop to match the filter button. Desktop sub-tab "+ Track /
+  + Add search / + New collection" buttons pushed right via
+  `marginLeft: auto`; mobile keeps inline-after-tabs because the
+  strip is horizontally scrollable. Collections list left-accent
+  extended from shared-inbox-only to every collection row. Drops
+  the now-unused `viewMenuOpen` state from `useViewSettings`.
+  Separately: the 8-deploy Vercel wedge that piled up over the
+  share-polish chain (`aea9c93` onward) was diagnosed and fixed in
+  `01104d6` — root cause was a `{/* ... */}` JSX comment placed
+  between `return (` and the root `<div>` in `Card.js`; CRA's
+  parser reads that as an object literal and `CI=true` turns the
+  parse error into a build failure. Lesson graduated to CLAUDE.md
+  "Things to never do".
+
 - 2026-05-01 (PM): **User settings / currency picker shipped**
   (Epic 0 near-term item, completed same day it was scoped). New
   `user_settings` Supabase table; primary_currency picker (USD /
