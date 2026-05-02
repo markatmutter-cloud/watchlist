@@ -89,6 +89,18 @@ banner + the listing's Card above `listingsGridJSX` in both shells.
 URL is rewritten via `history.replaceState` after action so a
 refresh doesn't re-trigger.
 
+**Location URL params (2026-05-02).** `tab` (listings | watchlist |
+references), `sub` (listings | collections | searches | calendar —
+only meaningful when tab=watchlist) and `col` (collection UUID, or
+`__hidden__` for the synthetic Hidden collection) get reflected in
+the URL via `history.replaceState`. App.js owns `tab` + `sub`;
+WatchlistTab owns `col`. App.js's effect also clears `col` when
+leaving the watchlist tab so the URL stays clean. Both effects skip
+when share-receive params (`shared=1`) are present so the share
+flow controls URL until it acts. Refresh on any of these lands the
+user back where they were. Stay on this query-param pattern — it's
+deliberate that we don't bring in `react-router`.
+
 ## Scraper conventions
 
 - Each dealer / auction house has its own `*_scraper.py` at repo root.

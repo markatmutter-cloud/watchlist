@@ -65,13 +65,38 @@ export function WatchlistTab(props) {
   const { searches: ebaySearches, loading: ebayLoading, error: ebayError } = useEBaySearches();
 
   // Collections sub-tab drill-in selection. null = list view; <uuid>
-  // = drilled into that specific collection. Reset when the user
-  // navigates away from the Collections sub-tab so a stale id doesn't
-  // surface a deleted collection on return.
-  const [selectedCollectionId, setSelectedCollectionId] = useState(null);
+  // = drilled into that specific collection. Initial value reads
+  // from `?col=<id>` so a refresh on a drilled-in collection lands
+  // back on it. Reset when the user navigates away from the
+  // Collections sub-tab so a stale id doesn't surface a deleted
+  // collection on return.
+  const [selectedCollectionId, setSelectedCollectionId] = useState(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("col") || null;
+  });
   useEffect(() => {
     if (watchTopTab !== "collections") setSelectedCollectionId(null);
   }, [watchTopTab]);
+  // URL sync for the drill-in id. App.js handles `tab` + `sub`; we
+  // only own `col`. Skipped when share-receive params are present
+  // (the share flow controls URL until it acts). App.js also clears
+  // `col` when tab leaves "watchlist", so we don't need to mirror
+  // that case here.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("shared") === "1") return;
+    if (selectedCollectionId && watchTopTab === "collections") {
+      params.set("col", selectedCollectionId);
+    } else {
+      params.delete("col");
+    }
+    const qs = params.toString();
+    const newUrl = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
+    if (newUrl !== window.location.pathname + window.location.search + window.location.hash) {
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [selectedCollectionId, watchTopTab]);
 
   // (Track New Item modal lifted to App.js on 2026-04-30 — its
   // trigger button now lives in the watchSubTabsJSX strip above
