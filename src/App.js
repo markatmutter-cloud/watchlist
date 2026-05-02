@@ -560,6 +560,14 @@ export default function Watchlist() {
       };
       const ascending = sort === "date-asc";
       its.sort((a, b) => {
+        // Backfilled items always sort below non-backfilled in either
+        // direction. firstSeen on a backfilled batch is "the day the
+        // source was added", not "the day the listing appeared", so
+        // letting them compete on date crowds the top of the feed
+        // (and the bottom of date-asc) every time a new source lands.
+        const ba = a.backfilled ? 1 : 0;
+        const bb = b.backfilled ? 1 : 0;
+        if (ba !== bb) return ba - bb;
         const ea = effectiveDate(a), eb = effectiveDate(b);
         if (ea === eb) return 0;
         return ascending ? (ea < eb ? -1 : 1) : (ea < eb ? 1 : -1);
