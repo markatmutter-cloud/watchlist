@@ -2,7 +2,6 @@ import React from "react";
 import { SearchIcon, TabIcon } from "./icons";
 import { Chip } from "./Chip";
 import { ReferencesTab } from "./ReferencesTab";
-import { HiddenModal } from "./HiddenModal";
 import { AboutModal } from "./AboutModal";
 import { pillBase } from "../styles";
 
@@ -23,7 +22,7 @@ export function DesktopShell(props) {
     brandsExpanded,
     currentIsSaved,
     filterAuctionsOnly, filterBrands, filterSources,
-    hasFilters, hiddenItems, hiddenModalOpen,
+    hasFilters, hiddenItems,
     maxPriceText, minPriceText,
     search, sort,
     tab, user, visibleBrands,
@@ -32,7 +31,7 @@ export function DesktopShell(props) {
     handleWish, openFavPrompt, resetFilters,
     setAboutModalOpen, setActiveFilterPop, setBrandsExpanded,
     setFilterAuctionsOnly, setFilterBrands, setFilterSources,
-    setHiddenModalOpen, setMaxPriceText, setMinPriceText,
+    setMaxPriceText, setMinPriceText,
     setPage, setSearch, setSort,
     setTab,
     toggleBrand, toggleHide, toggleSource,
@@ -324,16 +323,7 @@ export function DesktopShell(props) {
       {collectionEditModalJSX}
       {collectionPickerModalJSX}
       {settingsModalJSX}
-      <HiddenModal
-          open={hiddenModalOpen}
-          onClose={() => setHiddenModalOpen(false)}
-          items={hiddenItems}
-          watchlist={watchlist}
-          onWish={handleWish}
-          onHide={toggleHide}
-          primaryCurrency={primaryCurrency}
-        />
-        <AboutModal
+      <AboutModal
           open={aboutModalOpen}
           onClose={() => setAboutModalOpen(false)}
         />

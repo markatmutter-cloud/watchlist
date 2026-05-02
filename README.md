@@ -239,7 +239,6 @@ watchlist/
 │       ├─ Chip.js                 # filter pills (Chip + SidebarChip)
 │       ├─ icons.js                # Filter, Search, Tab icons
 │       ├─ AboutModal.js           # about modal
-│       ├─ HiddenModal.js          # hidden-listings modal
 │       ├─ TrackNewItemModal.js    # paste-a-URL flow for tracked lots
 │       ├─ FavSearchModal.js       # save-search prompt
 │       ├─ AddSearchModal.js       # add-search modal (parity with Track new item)

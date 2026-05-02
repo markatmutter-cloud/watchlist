@@ -2,7 +2,6 @@ import React from "react";
 import { SearchIcon, FilterIcon, TabIcon } from "./icons";
 import { Chip } from "./Chip";
 import { ReferencesTab } from "./ReferencesTab";
-import { HiddenModal } from "./HiddenModal";
 import { AboutModal } from "./AboutModal";
 import { iconButton, pillBase } from "../styles";
 
@@ -23,7 +22,7 @@ export function MobileShell(props) {
     aboutModalOpen, allFiltered, brandsExpanded,
     currentIsSaved, drawerOpen,
     filterAuctionsOnly, filterBrands, filterSources,
-    hasFilters, hiddenItems, hiddenModalOpen,
+    hasFilters, hiddenItems,
     maxPriceText, minPriceText,
     search, sort, sourcesExpanded,
     tab, user, visibleBrands, visibleSources,
@@ -31,7 +30,7 @@ export function MobileShell(props) {
     // Setters / handlers
     handleWish, openFavPrompt, resetFilters,
     setAboutModalOpen, setBrandsExpanded,
-    setDrawerOpen, setFilterAuctionsOnly, setHiddenModalOpen,
+    setDrawerOpen, setFilterAuctionsOnly,
     setMaxPriceText, setMinPriceText,
     setPage, setSearch, setSort,
     setSourcePickerOpen, setSourcesExpanded,
@@ -285,15 +284,6 @@ export function MobileShell(props) {
             </div>
           </div>
         )}
-        <HiddenModal
-          open={hiddenModalOpen}
-          onClose={() => setHiddenModalOpen(false)}
-          items={hiddenItems}
-          watchlist={watchlist}
-          onWish={handleWish}
-          onHide={toggleHide}
-          primaryCurrency={primaryCurrency}
-        />
         <AboutModal
           open={aboutModalOpen}
           onClose={() => setAboutModalOpen(false)}

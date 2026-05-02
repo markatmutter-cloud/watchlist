@@ -19,7 +19,6 @@ import { Chip, SidebarChip } from "./components/Chip";
 // the new AuctionCalendar component (AuctionsTab.js deleted 2026-04-30).
 import { ReferencesTab } from "./components/ReferencesTab";
 import { AboutModal } from "./components/AboutModal";
-import { HiddenModal } from "./components/HiddenModal";
 import { TrackNewItemModal } from "./components/TrackNewItemModal";
 import { FavSearchModal } from "./components/FavSearchModal";
 import { AddSearchModal } from "./components/AddSearchModal";
@@ -157,9 +156,10 @@ export default function Watchlist() {
   // current scope. localStorage key dial_group_v1 is left untouched
   // for any users who might roll back.)
 
-  // Hidden listings manager (was the Archive tab's hidden-section, now
-  // a modal opened from the user dropdown).
-  const [hiddenModalOpen, setHiddenModalOpen] = useState(false);
+  // Hidden listings surface as a synthetic "Hidden" collection inside
+  // Watchlist > Collections (replaced the old user-dropdown modal on
+  // 2026-05-01). Drill-in lives in WatchlistTab.js — App.js just owns
+  // the data via useWatchlist's hiddenItems + toggleHide.
   // available to signed-out visitors too. Contact = Instagram link;
   // no email or form (keeps email out of the bundle and avoids spam).
   const [aboutModalOpen, setAboutModalOpen] = useState(false);
@@ -924,13 +924,6 @@ export default function Watchlist() {
                     fontSize: 13, borderRadius: 6 }}>
             Settings
           </button>
-          <button onClick={() => { setShowUserMenu(false); setHiddenModalOpen(true); }}
-            style={{ display: "block", width: "100%", textAlign: "left",
-                    padding: "6px 8px", border: "none", background: "transparent",
-                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 13, borderRadius: 6 }}>
-            Manage hidden{hiddenItems.length > 0 ? ` · ${hiddenItems.length}` : ""}
-          </button>
           <button onClick={() => { setShowUserMenu(false); signOut(); }}
             style={{ display: "block", width: "100%", textAlign: "left",
                     padding: "6px 8px", border: "none", background: "transparent",
@@ -1227,6 +1220,8 @@ export default function Watchlist() {
       openCollectionPicker={openCollectionPicker}
       primaryCurrency={primaryCurrency}
       handleShare={handleShare}
+      hiddenItems={hiddenItems}
+      toggleHide={toggleHide}
     />
   );
 
@@ -1445,7 +1440,7 @@ export default function Watchlist() {
     brandsExpanded, currentIsSaved,
     drawerOpen,
     filterAuctionsOnly, filterBrands, filterSources,
-    hasFilters, hiddenItems, hiddenModalOpen,
+    hasFilters, hiddenItems,
     maxPriceText, minPriceText,
     search, sort, sourcesExpanded, tab, user,
     visibleBrands, visibleSources,
@@ -1455,7 +1450,7 @@ export default function Watchlist() {
     setAboutModalOpen, setActiveFilterPop, setBrandsExpanded,
     setDrawerOpen,
     setFilterAuctionsOnly, setFilterBrands, setFilterSources,
-    setHiddenModalOpen, setMaxPriceText, setMinPriceText,
+    setMaxPriceText, setMinPriceText,
     setPage, setSearch, setShowUserMenu,
     setSort, setSourcePickerOpen, setSourcesExpanded,
     setTab,
