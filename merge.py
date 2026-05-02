@@ -503,6 +503,7 @@ def process_listings():
         ('data/vintagewatchfam.csv',      'Vintage Watch Fam',     'USD'),
         ('data/shucktheoyster.csv',       'Shuck the Oyster',      'EUR'),
         ('data/centralwatch.csv',         'Central Watch',         'USD'),
+        ('data/europeanwatch.csv',        'European Watch',        'USD'),
         # eBay is multi-currency by design — the source-default 'USD'
         # is just a fallback for rows where the per-row `currency`
         # column is missing or unrecognized. Each Browse API result

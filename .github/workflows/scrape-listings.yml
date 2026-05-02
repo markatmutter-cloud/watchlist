@@ -139,6 +139,13 @@ jobs:
         continue-on-error: true
         run: python centralwatch_scraper.py
 
+      - name: Run European Watch scraper (Next.js / RSC, pre-2000 filter)
+        # Inventory is mostly modern Patek/AP/Rolex; the scraper applies
+        # a Circa-based pre-year-2000 filter so only the vintage slice
+        # (~26-30 listings) lands in the feed.
+        continue-on-error: true
+        run: python europeanwatch_scraper.py
+
       # eBay runs in its own workflow (.github/workflows/scrape-ebay.yml)
       # so a slow Browse API response or token blip doesn't slow the
       # dealer-listings cron. eBay can iterate on its own cadence and
@@ -175,6 +182,7 @@ jobs:
           [ -f vintagewatchfam_listings.csv ]     && mv vintagewatchfam_listings.csv     data/vintagewatchfam.csv     || echo "vintagewatchfam missing"
           [ -f shucktheoyster_listings.csv ]      && mv shucktheoyster_listings.csv      data/shucktheoyster.csv      || echo "shucktheoyster missing"
           [ -f centralwatch_listings.csv ]        && mv centralwatch_listings.csv        data/centralwatch.csv        || echo "centralwatch missing"
+          [ -f europeanwatch_listings.csv ]       && mv europeanwatch_listings.csv       data/europeanwatch.csv       || echo "europeanwatch missing"
 
       - name: Merge into listings.json
         run: python merge.py --listings-only

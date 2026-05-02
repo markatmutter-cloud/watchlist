@@ -22,7 +22,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 Three top-level tabs:
 
-- **Listings** — aggregates 27 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
+- **Listings** — aggregates 28 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
 - **Watchlist** — four sub-tabs:
   - **Favorites** — items you've hearted (your default collection), with price-at-save preserved.
   - **Collections** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you. Anything you've hidden from the Available feed surfaces here too as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
@@ -58,7 +58,7 @@ Plus:
   ┌─────────────────────────────────────────────────────────────┐
   │                  GitHub Actions (cron, daily)               │
   │                                                             │
-  │   27× listing scrapers + 6× auction scrapers (Python)       │
+  │   28× listing scrapers + 6× auction scrapers (Python)       │
   │            │                              │                 │
   │            ▼                              ▼                 │
   │     *_listings.csv               *_auctions.csv             │
@@ -95,7 +95,7 @@ Listings/auctions are static JSON committed to the repo. The only thing behind a
 
 ## Data sources
 
-### Dealers (27)
+### Dealers (28)
 
 All scrapers hit each dealer's existing public endpoint — no credential-protected APIs, no headless browsers where it can be avoided.
 
@@ -128,6 +128,7 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 | Vintage Watch Fam | Shopify | collection-scoped `/products.json` | USD |
 | Shuck the Oyster | Custom (WordPress) | `/portfolio/` listing pages + per-item detail-page price extraction (`PRICE NNNN€`) | EUR |
 | Central Watch | Custom (PHP) | HTML parse of `prod_result_item` cards + `/R{offset}` pagination | USD |
+| European Watch | Next.js (RSC) | Inline `__next_f.push` chunks, regex-extracted product objects; **pre-2000 filter** via `Circa. YYYY` in model | USD |
 
 Tropical Watch is the only source still routed through Browse AI — their site actively blocks scrapers. Every other source is scraped with vanilla `requests`. Browse AI robot ID and API key live in GitHub Secrets, never in the repo.
 
