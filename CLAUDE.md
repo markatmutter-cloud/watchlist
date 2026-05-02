@@ -68,6 +68,20 @@ intentional: it limits code churn and keeps `useWatchlist` /
 heart-on-Card working without a migration. Schema lives in
 `supabase/schema/2026-05-01_collections.sql`.
 
+**Hidden listings as a virtual collection (2026-05-01).** Hidden
+follows the same Approach A pattern as Favorites: data stays in the
+existing `hidden_listings` table, but the UI surface is a synthetic
+"Hidden" row inside Watchlist > Collections (rendered by
+WatchlistTab.js, not a real DB row). Sentinel id `__hidden__` keeps
+the synthetic row from colliding with real collection UUIDs. The
+drill-in renders the items grid with `isHidden={true}` so each
+Card's "..." menu Hide entry flips to "Unhide" automatically. There
+is no `HiddenModal` anymore — the old user-dropdown "Manage hidden"
+item was removed and the file deleted. Don't migrate
+`hidden_listings` into `collection_items` for the same reason as
+Favorites: the migration would touch every read path that already
+uses `useWatchlist().hidden`.
+
 **Share URL format.** Inbound share links use
 `?listing=<id>&shared=1` on the root URL — no `react-router`, no
 `/share/*` route. App.js parses on mount and renders a non-modal

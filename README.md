@@ -25,7 +25,7 @@ Three top-level tabs:
 - **Listings** — aggregates 27 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
 - **Watchlist** — four sub-tabs:
   - **Favorites** — items you've hearted (your default collection), with price-at-save preserved.
-  - **Collections** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you.
+  - **Collections** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you. Anything you've hidden from the Available feed surfaces here too as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
   - **Searches** — saved queries you can re-run with one tap, plus a read-only view of the eBay source-searches feeding the main feed.
   - **Auction Calendar** — upcoming + recently-closed sales from 6 houses, grouped by month.
 - **References** — collector resource tools (currently: a print-to-scale watch size comparison tool; encyclopedia and curated-link aggregator are roadmap'd).
@@ -36,7 +36,7 @@ Plus:
 - Per-user **saved searches** — add/edit/delete your own queries, with live counts of matching listings.
 - Per-user **tracked lots** — paste an auction-house lot URL to follow it through to hammer (Antiquorum, Christie's, Sotheby's, eBay).
 - Per-user **collections** + **share** — organise hearted watches into named collections, share any listing with anyone via the native share sheet. Recipients see the listing in the same UI with a Save / Dismiss banner; signed-in saves auto-populate a "Shared with me" inbox. No in-app messaging — the user's chosen messaging tool handles replies.
-- **Hide** any listing with the × button — it stays out of the live feed but its history is preserved.
+- **Hide** any listing with the × button — it stays out of the live feed but its history is preserved. Hidden items show up in Watchlist > Collections > Hidden so you can unhide them later.
 - Runs a Python scrape pipeline daily via GitHub Actions — no server to babysit.
 - Tracks listings across runs with **stable URL-hash IDs**, so:
   - "NEW" badges only show for listings actually new in the last 24 hours.

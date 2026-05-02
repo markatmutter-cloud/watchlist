@@ -7,12 +7,39 @@ only.
 ## TL;DR
 
 Big session: Collections + Sharing v1 shipped, currency picker shipped,
-Central Watch source added, View menu folded into Settings, and the
-Vercel deploy wedge that briefly held everything off prod was resolved.
-Production is **green**, currently serving `main.46a05c7d.js`. All the
-share/menu/sub-tab fixes that piled up behind the wedge are now live.
+Central Watch source added (27th dealer), View menu folded into Settings,
+the Vercel deploy wedge resolved, **a backfilled-aware date sort fix to
+keep newly-added sources from dominating the feed**, and **Hidden
+listings surfaced as a synthetic Watchlist > Collections row** (the
+"Manage hidden" user-dropdown item is gone). Production is **green**,
+currently serving `main.b97a2421.js`.
 
 ## What shipped this session (newest first)
+
+- **Hidden listings → synthetic Watchlist > Collections row**
+  (`039bb8c`). Replaces the user-dropdown "Manage hidden" modal.
+  The Hidden row only appears when the user has ≥1 hidden listing;
+  drill-in shows the items grid with `isHidden=true` so the Card
+  "..." menu's Hide entry reads as "Unhide". `HiddenModal.js`
+  deleted (no longer reachable). CLAUDE.md updated with the
+  Hidden-as-virtual-collection rule (Approach A pattern, parallel
+  to Favorites — data stays in `hidden_listings`, UI surface is
+  synthetic). User dropdown is now just **Settings / Sign out**.
+
+- **Backfilled-aware date sort** (`cb1e3ca`). `merge.py` already
+  flags items in newly-added sources as `backfilled:true` when ≥10
+  appear in one run, but the default date-desc sort still treated
+  `firstSeen` as authoritative — Central Watch's 180 listings,
+  all stamped today, dominated the top of the feed pre-fix. New
+  two-tier comparator: non-backfilled items always sort above
+  backfilled in either direction; existing `effectiveDate` logic
+  unchanged within each tier. Future sources benefit automatically.
+
+- **User menu reorganize** (`e6de1c7`). Settings moved above
+  "Manage hidden" + dropped the "· USD/GBP/EUR" suffix. Was
+  superseded by `039bb8c` removing the Manage hidden item entirely;
+  the commit is still on the branch's history but its UX impact is
+  zero on the deployed build.
 
 - **View menu → Settings consolidation** (`25adbbf`) — theme + column
   count + about folded into the Settings modal. Header now carries
@@ -165,9 +192,13 @@ when convenient.
 ## Commits worth knowing for future me
 
 ```
-25adbbf   View menu → Settings consolidation (HEAD)
+039bb8c   Hidden → Watchlist > Collections row (HEAD-ish; merge of branch)
+cb1e3ca   Demote backfilled items in date-sort comparator
+e6de1c7   User menu: Settings above Manage hidden + drop · USD (since superseded)
+898347a   Refresh post-session docs after Vercel wedge resolution
+25adbbf   View menu → Settings consolidation
 01104d6   Fix Vercel build (drop misplaced JSX comment in Card.js)
-fff15fb   Handoff + doc touchups (this doc, then superseded by 25adbbf)
+fff15fb   Handoff + doc touchups (this doc, since updated)
 c7f7aba   Share detection: UA-based
 3bdda18   Card menu fixes
 49966cc   Sub-tab horiz scroll
