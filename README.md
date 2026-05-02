@@ -58,7 +58,7 @@ Plus:
   ┌─────────────────────────────────────────────────────────────┐
   │                  GitHub Actions (cron, daily)               │
   │                                                             │
-  │   26× listing scrapers + 6× auction scrapers (Python)       │
+  │   27× listing scrapers + 6× auction scrapers (Python)       │
   │            │                              │                 │
   │            ▼                              ▼                 │
   │     *_listings.csv               *_auctions.csv             │
@@ -171,7 +171,7 @@ This means the pipeline is **self-healing**: if a single run misses listings (sc
 
 - **Scrapers:** Python 3.11 with `requests`. No Playwright, no Selenium — Browse AI fills the gap for JS-rendered sources.
 - **Pipeline:** GitHub Actions (ubuntu-latest). Each scraper step uses `continue-on-error: true` so one failing source doesn't kill the batch.
-- **Frontend:** React (Create React App), inline styles only, no UI libraries. `App.js` is the orchestrator (~1,250 lines — owns state and JSX consts); render is delegated to `src/components/MobileShell.js` + `DesktopShell.js`, each receiving a single `shellProps` bag. Domain-state hooks live under `src/hooks/` (`useTrackModal`, `useFavSearchModal`, `useViewSettings`, `useFilters`, `useEBaySearches`); shared style tokens in `src/styles.js`. Pure helpers in `src/utils.js`.
+- **Frontend:** React (Create React App), inline styles only, no UI libraries. `App.js` is the orchestrator (~1,470 lines — owns state and JSX consts); render is delegated to `src/components/MobileShell.js` + `DesktopShell.js`, each receiving a single `shellProps` bag. Domain-state hooks live under `src/hooks/` (`useTrackModal`, `useFavSearchModal`, `useViewSettings`, `useFilters`, `useEBaySearches`); shared style tokens in `src/styles.js`. Pure helpers in `src/utils.js`.
 - **Per-user image persistence:** Hearted listings get their dealer image cached to **Vercel Blob** by `cache_watchlist_images.mjs` (runs once a day inside the auctions workflow). The frontend prefers the cached URL, so favorited cards survive a dealer deleting the original. Listings/auction images aren't cached — auction houses keep theirs up long-term, and caching the full feed isn't worth the storage cost.
 - **Auth + per-user data:** [Supabase](https://supabase.com) — Postgres with row-level security, Google OAuth provider. Free tier; no backend code of my own.
 - **Hosting:** Vercel free tier, auto-deploy from `main`.
@@ -221,7 +221,7 @@ watchlist/
 │   ├─ hooks/                      # domain-state hooks
 │   │   ├─ useTrackModal.js        #   Track new item modal state + submit
 │   │   ├─ useFavSearchModal.js    #   Save-search prompt state + submit
-│   │   ├─ useViewSettings.js      #   theme + column count + view-menu open flag
+│   │   ├─ useViewSettings.js      #   theme + column count (View popover folded into Settings)
 │   │   ├─ useFilters.js           #   the filter row's full input state
 │   │   └─ useEBaySearches.js      #   read-only fetch of data/ebay_searches.json + counts
 │   └─ components/
@@ -239,13 +239,14 @@ watchlist/
 │       ├─ Chip.js                 # filter pills (Chip + SidebarChip)
 │       ├─ icons.js                # Filter, Search, Tab icons
 │       ├─ AboutModal.js           # about modal
-│       ├─ HiddenModal.js          # hidden-listings modal
 │       ├─ TrackNewItemModal.js    # paste-a-URL flow for tracked lots
 │       ├─ FavSearchModal.js       # save-search prompt
 │       ├─ AddSearchModal.js       # add-search modal (parity with Track new item)
 │       ├─ CollectionEditModal.js  # create + rename collections
 │       ├─ CollectionPickerModal.js # add a listing to a collection
-│       └─ ShareBanner.js          # in-app banner for ?listing=<id>&shared=1 receive flow
+│       ├─ SettingsModal.js        # currency picker + theme + columns + about (View menu lives here)
+│       ├─ ShareBanner.js          # in-app banner for ?listing=<id>&shared=1 receive flow
+│       └─ ShareReceiver.js        # hook-isolated mount for share-receive logic (avoids App.js hook bloat)
 └─ package.json
 ```
 

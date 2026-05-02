@@ -50,6 +50,11 @@ export function WatchlistTab(props) {
     // so the "..." menu's Share item works in Watchlist > Favorites
     // and inside Collection drill-ins too.
     handleShare,
+    // Hidden listings — surfaced as a synthetic collection in the
+    // Collections list (replacing the old user-dropdown "Manage
+    // hidden" modal). toggleHide unhides on the drill-in's "..."
+    // menu via the Card's existing isHidden semantics.
+    hiddenItems, toggleHide,
   } = props;
 
   // eBay source-search config (read-only display in the Searches
@@ -494,13 +499,27 @@ export function WatchlistTab(props) {
     // CollectionPickerModal (manual adds shouldn't go to the inbox).
     const sharedInbox  = cols.find(c => c.isSharedInbox) || null;
     const userCols     = cols.filter(c => !c.isSharedInbox);
-    const visibleCols  = sharedInbox ? [sharedInbox, ...userCols] : userCols;
-    const selected = selectedCollectionId
-      ? cols.find(c => c.id === selectedCollectionId)
-      : null;
+    // Synthetic "Hidden" collection — surfaced in the list when the
+    // user has any hidden listings. Drill-in renders the items grid
+    // with isHidden so the "..." menu's Hide entry reads as "Unhide"
+    // (Card already handles that label flip). Sentinel id avoids
+    // collision with real collection UUIDs.
+    const HIDDEN_COLLECTION_ID = "__hidden__";
+    const hiddenCol = (hiddenItems && hiddenItems.length > 0) ? {
+      id: HIDDEN_COLLECTION_ID, name: "Hidden", isHidden: true,
+    } : null;
+    const visibleCols  = [
+      ...(sharedInbox ? [sharedInbox] : []),
+      ...userCols,
+      ...(hiddenCol ? [hiddenCol] : []),
+    ];
+    const selected = selectedCollectionId === HIDDEN_COLLECTION_ID
+      ? hiddenCol
+      : (selectedCollectionId ? cols.find(c => c.id === selectedCollectionId) : null);
 
     if (selected) {
-      const items = itemsByColl[selected.id] || [];
+      const isHiddenColl = selected.id === HIDDEN_COLLECTION_ID;
+      const items = isHiddenColl ? hiddenItems : (itemsByColl[selected.id] || []);
       return (
         <div style={{ paddingTop: 4 }}>
           <div style={{
@@ -519,11 +538,12 @@ export function WatchlistTab(props) {
             <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
               {items.length}
             </span>
-            {/* Rename + Delete hidden for the shared-inbox collection
-                — spec says it's perma in v1; the user can clear items
-                via Remove-from-collection on each card but the
-                collection itself stays. */}
-            {!selected.isSharedInbox && (
+            {/* Rename + Delete hidden for the shared-inbox + Hidden
+                collections — both are managed surfaces, not user-named.
+                The user can empty Hidden by unhiding individual items
+                via the "..." menu, just as they empty the shared inbox
+                by removing items individually. */}
+            {!selected.isSharedInbox && !isHiddenColl && (
               <>
                 <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
                   title="Rename collection"
@@ -547,12 +567,14 @@ export function WatchlistTab(props) {
           </div>
           {items.length === 0 ? (
             <div style={{ padding: "48px 20px", textAlign: "center" }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>📂</div>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>{isHiddenColl ? "👁" : "📂"}</div>
               <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-                Empty collection
+                {isHiddenColl ? "Nothing hidden" : "Empty collection"}
               </div>
               <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 320, margin: "0 auto" }}>
-                Add watches via the "…" menu on any listing card → "Add to collection…".
+                {isHiddenColl
+                  ? "Listings you hide from the Available feed land here. Use the \"…\" menu on any card to unhide it."
+                  : "Add watches via the \"…\" menu on any listing card → \"Add to collection…\"."}
               </div>
             </div>
           ) : (
@@ -564,12 +586,16 @@ export function WatchlistTab(props) {
                   wished={!!watchlist[item.id]}
                   onWish={handleWish}
                   compact={compact}
-                  // Inside a collection, the Hide menu item swaps to
-                  // "Remove from collection" — single Card surface,
-                  // different action wiring per context.
-                  onHide={() => collectionsApi.removeItemFromCollection(selected.id, item.id)}
-                  hideLabel="Remove from collection"
-                  isHidden={false}
+                  // Card flips the Hide menu label based on isHidden:
+                  // - Hidden drill-in: isHidden=true → label "Unhide",
+                  //   onHide toggles the row off the hidden_listings table.
+                  // - Regular collection: hideLabel forces "Remove from
+                  //   collection" semantics.
+                  onHide={isHiddenColl
+                    ? toggleHide
+                    : () => collectionsApi.removeItemFromCollection(selected.id, item.id)}
+                  hideLabel={isHiddenColl ? undefined : "Remove from collection"}
+                  isHidden={isHiddenColl}
                   onAddToCollection={openCollectionPicker}
                   primaryCurrency={primaryCurrency}
                   onShare={handleShare}
@@ -597,8 +623,11 @@ export function WatchlistTab(props) {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {visibleCols.map(c => {
-              const count = (itemsByColl[c.id] || []).length;
               const isInbox = c.isSharedInbox;
+              const isHiddenRow = c.id === HIDDEN_COLLECTION_ID;
+              const count = isHiddenRow
+                ? hiddenItems.length
+                : (itemsByColl[c.id] || []).length;
               return (
                 <button
                   key={c.id}
@@ -621,12 +650,24 @@ export function WatchlistTab(props) {
                         <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
                       </svg>
                     )}
+                    {isHiddenRow && (
+                      // Eye-slash icon for the synthetic Hidden collection
+                      // — same accent treatment as the inbox icon.
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                        <path d="M17.94 17.94A10.06 10.06 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                        <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                    )}
                     <div>
                       <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 2 }}>{c.name}</div>
                       <div style={{ fontSize: 12, color: "var(--text2)" }}>
                         {isInbox
                           ? `${count} listing${count === 1 ? "" : "s"} shared with you`
-                          : `${count} item${count === 1 ? "" : "s"}`}
+                          : isHiddenRow
+                            ? `${count} listing${count === 1 ? "" : "s"} hidden from feed`
+                            : `${count} item${count === 1 ? "" : "s"}`}
                       </div>
                     </div>
                   </div>

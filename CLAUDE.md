@@ -202,6 +202,15 @@ To add a new printable tool: render its sheet via `createPortal` to
   hooks, put them in a self-contained component App.js mounts
   unconditionally. `<ShareReceiver/>` (commit b6cb57b) is the
   reference pattern.
+- **Don't put a `{/* ... */}` JSX comment between `return (` and the
+  root JSX element.** CRA's parser reads it as a stray object literal
+  → "Unexpected token, expected ','" → CRA's `CI=true` upgrades the
+  parse error to a build failure → Vercel ships eight consecutive red
+  Production deploys before anyone notices. Cost us a session on
+  2026-05-01 (commit `01104d6` was the fix). Comments belong INSIDE
+  the JSX tree (`<div>{/* ... */}</div>`) or above the `return`. Same
+  trap exists for any expression that isn't a single JSX element in
+  that slot.
 
 ## When in doubt
 
