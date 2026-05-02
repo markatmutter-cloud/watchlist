@@ -917,19 +917,19 @@ export default function Watchlist() {
             {userName}
           </div>
           <div style={{ height: "0.5px", background: "var(--border)", margin: "4px -8px 4px" }} />
+          <button onClick={() => { setShowUserMenu(false); setSettingsModalOpen(true); }}
+            style={{ display: "block", width: "100%", textAlign: "left",
+                    padding: "6px 8px", border: "none", background: "transparent",
+                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                    fontSize: 13, borderRadius: 6 }}>
+            Settings
+          </button>
           <button onClick={() => { setShowUserMenu(false); setHiddenModalOpen(true); }}
             style={{ display: "block", width: "100%", textAlign: "left",
                     padding: "6px 8px", border: "none", background: "transparent",
                     color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
                     fontSize: 13, borderRadius: 6 }}>
             Manage hidden{hiddenItems.length > 0 ? ` · ${hiddenItems.length}` : ""}
-          </button>
-          <button onClick={() => { setShowUserMenu(false); setSettingsModalOpen(true); }}
-            style={{ display: "block", width: "100%", textAlign: "left",
-                    padding: "6px 8px", border: "none", background: "transparent",
-                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 13, borderRadius: 6 }}>
-            Settings · {primaryCurrency}
           </button>
           <button onClick={() => { setShowUserMenu(false); signOut(); }}
             style={{ display: "block", width: "100%", textAlign: "left",
