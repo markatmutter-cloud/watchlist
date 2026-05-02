@@ -478,6 +478,28 @@ Not active. Worth keeping a list because some might graduate.
 
 ## Update log
 
+- 2026-05-01 (evening): **Backfilled-aware date sort + Hidden
+  surfaced as a Watchlist > Collections row.** New-source
+  ergonomics + cleanup of the user dropdown. Triggered by a
+  same-day demo where Central Watch's 180 fresh listings (all
+  stamped firstSeen=today, all backfilled:true) crowded the top
+  of the date-desc feed despite the existing backfilled flag.
+  Two-tier comparator added in App.js: non-backfilled items
+  always sort above backfilled in either direction, with the
+  existing effectiveDate logic unchanged within each tier. Future
+  newly-added sources (ROADMAP Epic 1 still wants ~30 dealers)
+  benefit automatically. Separately, the user-dropdown "Manage
+  hidden" item was removed and Hidden listings now surface as a
+  synthetic row in Watchlist > Collections (eye-slash icon, only
+  appears when the user has ≥1 hidden listing). Drill-in renders
+  the items grid with isHidden=true so the Card "..." menu's Hide
+  entry flips to "Unhide" via existing semantics. Followed
+  Approach A (same as Favorites): data still lives in the
+  existing `hidden_listings` table, no schema change. The
+  HiddenModal component file was deleted. CLAUDE.md picked up the
+  Hidden-as-virtual-collection note alongside the existing
+  Favorites-as-virtual-collection guidance.
+
 - 2026-05-01 (PM late): **View menu → Settings consolidation +
   Vercel wedge resolved.** View popover (theme + columns + about)
   folded into the Settings modal as new sections (`25adbbf`); header

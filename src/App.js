@@ -199,7 +199,7 @@ export default function Watchlist() {
     if (!q) return false;
     return userSearches.some(s => (s.query || "").toLowerCase() === q);
   }, [search, userSearches]);
-  const { urls: trackedLotUrls, add: addTrackedLot, remove: removeTrackedLot, addedAt: trackedLotAddedAt } = useTrackedLots(user);
+  const { urls: trackedLotUrls, add: addTrackedLot, addedAt: trackedLotAddedAt } = useTrackedLots(user);
 
   // Collections — user-created beyond the default Watchlist (which is
   // still backed by useWatchlist above). Approach A: this hook only
@@ -1205,8 +1205,6 @@ export default function Watchlist() {
       statusMode={statusMode}
       sort={sort}
       auctions={auctions}
-      addTrackedLot={addTrackedLot}
-      removeTrackedLot={removeTrackedLot}
       watchTopTab={watchTopTab}
       setWatchTopTab={setWatchTopTab}
       legacyLocal={legacyLocal}
