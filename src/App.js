@@ -123,10 +123,19 @@ export default function Watchlist() {
   // Lives here (not inside WatchlistTab) because the surrounding chrome
   // — sidebar, filter bar, mobile drawer — gates on it too. Persisted
   // across visits.
+  // Watchlist sub-tab. URL takes precedence over localStorage so a
+  // refresh on `?tab=watchlist&sub=collections` lands you back where
+  // you were. Otherwise fall back to the persisted preference; final
+  // fallback is "listings" (Favorites).
+  const SUB_VALUES = ["listings", "collections", "searches", "calendar"];
   const [watchTopTab, setWatchTopTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const sub = new URLSearchParams(window.location.search).get("sub");
+      if (SUB_VALUES.includes(sub)) return sub;
+    }
     try {
       const v = localStorage.getItem("dial_watch_top_tab");
-      return v === "searches" ? "searches" : "listings";
+      return SUB_VALUES.includes(v) ? v : "listings";
     } catch { return "listings"; }
   });
   useEffect(() => {
@@ -139,7 +148,35 @@ export default function Watchlist() {
   }, [watchTopTab]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [tab, setTab] = useState("listings");
+  // Main tab. Same URL-first init as watchTopTab — refresh on
+  // `?tab=watchlist` lands on Watchlist, etc.
+  const TAB_VALUES = ["listings", "watchlist", "references"];
+  const [tab, setTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const t = new URLSearchParams(window.location.search).get("tab");
+      if (TAB_VALUES.includes(t)) return t;
+    }
+    return "listings";
+  });
+  // URL sync — reflect tab + sub-tab in the query string so refresh
+  // preserves location and direct links work. Skipped when share-
+  // receive params (`shared=1`) are present so the share flow
+  // controls the URL until it acts. Uses replaceState so browser
+  // history isn't polluted on every tab click.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("shared") === "1") return;
+    if (tab === "listings") params.delete("tab"); else params.set("tab", tab);
+    if (tab !== "watchlist" || watchTopTab === "listings") params.delete("sub");
+    else params.set("sub", watchTopTab);
+    if (tab !== "watchlist") params.delete("col");
+    const qs = params.toString();
+    const newUrl = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
+    if (newUrl !== window.location.pathname + window.location.search + window.location.hash) {
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [tab, watchTopTab]);
   const [page, setPage] = useState(1);
   // (filterSources, filterBrands, filterRefs, filterAuctionsOnly, sort,
   // search, minPriceText, maxPriceText, newDays, statusMode all moved

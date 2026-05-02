@@ -478,6 +478,25 @@ Not active. Worth keeping a list because some might graduate.
 
 ## Update log
 
+- 2026-05-02: **Refresh preserves location + European Watch source
+  added (28th dealer, pre-2000 only).** `tab` / `sub` / `col` query
+  params get written via `history.replaceState` as the user
+  navigates and read on mount, so a refresh on
+  `?tab=watchlist&sub=collections&col=<id>` lands the user back
+  where they were instead of the default Listings tab. Pattern
+  documented in CLAUDE.md alongside the existing Share URL note;
+  no `react-router` brought in. Separately, European Watch Co.
+  (Boston) added as the 28th dealer source — Next.js site,
+  product data extracted from the inline `__next_f.push` RSC
+  chunks. The dealer's inventory is mostly modern; the scraper
+  applies a **scraper-side pre-year-2000 filter** (matching the
+  dealer's "Circa. YYYY" model-title convention) to keep the feed
+  focused on the vintage slice that fits the rest of Watchlist's
+  curation. ~26 listings pass the filter (out of ~780 total).
+  Standalone-year fallback was tried and rejected — it
+  false-positived on model-line names like "Luminor 1950" and
+  "Speedmaster 1957 Trilogy".
+
 - 2026-05-01 (evening): **Backfilled-aware date sort + Hidden
   surfaced as a Watchlist > Collections row.** New-source
   ergonomics + cleanup of the user dropdown. Triggered by a
