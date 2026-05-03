@@ -43,7 +43,7 @@ export function MobileShell(props) {
     favSearchModalJSX, inp,
     adminTabJSX, listingsGridJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
-    trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
+    trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX, watchlistTabJSX,
   } = props;
 
   return (
@@ -144,6 +144,17 @@ export function MobileShell(props) {
               }} style={pillBase(active)}>{label}</button>
             );
           })()}
+          {/* Ending-soonest sort pill — single-state (auto-defaults
+              when the auctions-only filter goes on; user can also tap
+              to set it manually). Tapping while active flips back to
+              date-desc so there's an off-switch from the same control. */}
+          {(() => {
+            const active = sort === "ending";
+            return (
+              <button onClick={() => setSort(active ? "date" : "ending")}
+                style={pillBase(active)}>Ending</button>
+            );
+          })()}
           {/* Compact "clear filters" — just a small × icon to keep the
               row from wrapping when filters are set. The text version
               ("× Clear") got cropped at narrow widths. */}
@@ -169,6 +180,13 @@ export function MobileShell(props) {
             isolated. Renders null when no share intent in URL. */}
         {shareReceiverJSX}
         <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
+          {/* Ending-soon pinned section. Mounted INSIDE the scroll
+              area (not the sticky stack) so it scrolls away with
+              content rather than eating viewport when pinned. Sits
+              above the sub-tab content so it's the first thing the
+              user sees when they hit Watchlist. Returns null when
+              the user has no qualifying tracked lots. */}
+          {tab === "watchlist" && endingSoonJSX}
           {tab === "listings" ? listingsGridJSX
             : tab === "references" ? <ReferencesTab />
             : tab === "admin" ? adminTabJSX

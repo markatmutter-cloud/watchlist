@@ -26,6 +26,7 @@ import { CollectionEditModal } from "./components/CollectionEditModal";
 import { CollectionPickerModal } from "./components/CollectionPickerModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { ShareReceiver } from "./components/ShareReceiver";
+import { EndingSoon } from "./components/EndingSoon";
 import { WatchlistTab } from "./components/WatchlistTab";
 import { AdminTab } from "./components/AdminTab";
 import { MobileShell } from "./components/MobileShell";
@@ -47,6 +48,39 @@ const SIDEBAR_DEFAULT_FRACTION = 0.25;   // start at 25% of window width
 function initialSidebarWidth() {
   if (typeof window === "undefined") return 280;
   return Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(window.innerWidth * SIDEBAR_DEFAULT_FRACTION)));
+}
+
+// "Ending soonest" comparator. Tiers items so urgency wins over raw
+// date order:
+//   tier 0 — currently live (auction_start <= now < auction_end)
+//   tier 1 — upcoming auction (auction_end > now), sorted by end asc
+//   tier 2 — ended auction (auction_end <= now), sorted by end desc
+//             (most-recently-ended first, since they're past)
+//   tier 3 — non-auction items (no auction_end)
+// Used by both the Watchlist watchItems sort and the Available
+// allFiltered sort so a saved "Ending soonest" preference applies
+// everywhere the sort selector reaches.
+function endingSoonComparator(a, b) {
+  const now = Date.now();
+  const tier = (it) => {
+    const end = it.auction_end ? new Date(it.auction_end).getTime() : NaN;
+    if (Number.isNaN(end)) return 3;
+    if (end <= now) return 2;
+    if (it.auction_start) {
+      const start = new Date(it.auction_start).getTime();
+      if (!Number.isNaN(start) && start <= now) return 0;
+    }
+    return 1;
+  };
+  const ta = tier(a), tb = tier(b);
+  if (ta !== tb) return ta - tb;
+  // Within tier: live + upcoming sort soonest-end first; ended sorts
+  // most-recent-end first; non-auction is unordered (stable).
+  if (ta === 3) return 0;
+  const ae = a.auction_end || "";
+  const be = b.auction_end || "";
+  if (ta === 2) return be.localeCompare(ae);
+  return ae.localeCompare(be);
 }
 
 
@@ -392,6 +426,20 @@ export default function Watchlist() {
     return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
   }, []);
 
+  // When the auctions-only filter toggles, swap the sort axis to match
+  // the user's likely intent: "Ending soonest" when filtering to
+  // auctions, "Newest first" otherwise. Only runs on filter change so
+  // a user manually picking a different sort while the filter is on
+  // sticks until they toggle the filter again. Lives at the top with
+  // the other effects (NOT deep in render-conditional code) per the
+  // CLAUDE.md "don't add hooks deep in App.js" rule.
+  useEffect(() => {
+    // setSort is the useState setter (stable identity), so leaving it
+    // out of deps doesn't risk a stale closure — this effect runs
+    // purely in response to filter toggles.
+    setSort(filterAuctionsOnly ? "ending" : "date");
+  }, [filterAuctionsOnly]);
+
   useEffect(() => {
     // `cache: 'no-cache'` forces the browser/PWA to revalidate with the
     // origin on every load (sends If-None-Match, gets 304 if unchanged
@@ -588,6 +636,7 @@ export default function Watchlist() {
     if (maxPrice < GLOBAL_MAX) its = its.filter(i => (i.priceUSD || i.price) <= maxPrice);
     if (sort === "price-asc") its.sort((a, b) => (a.priceUSD || a.price) - (b.priceUSD || b.price));
     else if (sort === "price-desc") its.sort((a, b) => (b.priceUSD || b.price) - (a.priceUSD || a.price));
+    else if (sort === "ending") its.sort(endingSoonComparator);
     else {
       // Date sorts use the LATER of firstSeen and priceDropAt as the
       // effective "freshness" date, so a re-cut item bubbles back to
@@ -771,9 +820,13 @@ export default function Watchlist() {
     // Drive the watchlist sort off the same `sort` state the sidebar uses,
     // so "Newest first" / "Price low to high" / "Price high to low" applies
     // here too. "Newest first" maps to most-recently-saved (savedAt desc).
+    // "Ending soonest" tiers items by auction urgency: live now → upcoming
+    // (asc) → ended (last) → not-an-auction (last). Defaults on when the
+    // user toggles the auctions-only filter.
     if (sort === "price-asc") its.sort((a, b) => (a.savedPriceUSD || a.savedPrice) - (b.savedPriceUSD || b.savedPrice));
     else if (sort === "price-desc") its.sort((a, b) => (b.savedPriceUSD || b.savedPrice) - (a.savedPriceUSD || a.savedPrice));
     else if (sort === "date-asc") its.sort((a, b) => (a.savedAt || "").localeCompare(b.savedAt || ""));
+    else if (sort === "ending") its.sort(endingSoonComparator);
     else its.sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
     return its;
   }, [watchlist, liveStateById, sort, filterSources, filterBrands, filterRefs, search,
@@ -1300,6 +1353,25 @@ export default function Watchlist() {
   );
 
   // ── MOBILE ────────────────────────────────────────────────────────────────
+  // "Ending soon" pinned section — sits ABOVE the sub-tab strip so
+  // it's visible across every Watchlist sub-tab (Favorites /
+  // Collections / Searches / Calendar). Component returns null when
+  // there are no qualifying items, so we mount it unconditionally on
+  // the Watchlist tab. EndingSoon does its own filtering against
+  // watchItems (auction-format + auction_end within 7 days OR live).
+  const endingSoonJSX = tab !== "watchlist" ? null : (
+    <EndingSoon
+      items={watchItems}
+      watchlist={watchlist}
+      handleWish={handleWish}
+      compact={compact}
+      primaryCurrency={primaryCurrency}
+      handleShare={handleShare}
+      openCollectionPicker={user ? openCollectionPicker : undefined}
+      user={user}
+    />
+  );
+
   // Watchlist sub-tab strip — lifted out of WatchlistTab.js on
   // 2026-04-30 so it sits between the main tab strip and the filter
   // row rather than below the filter row. Sits in the layout flow
@@ -1536,7 +1608,8 @@ export default function Watchlist() {
     favSearchModalJSX, inp,
     listingsGridJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
-    trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX, adminTabJSX,
+    trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX,
+    watchlistTabJSX, adminTabJSX,
   };
 
   return isMobile
