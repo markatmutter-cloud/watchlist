@@ -123,7 +123,7 @@ Cross-cutting infrastructure. Several later epics depend on this.
 ## Epic 1: Sources
 
 Target end state: ~30 dealers + 6 auction houses, all earning their keep.
-Currently at 29 dealers + 6 auction houses.
+Currently at 30 dealers + 6 auction houses.
 
 - **Active candidates** (evaluated, not all guaranteed):
 
@@ -557,6 +557,24 @@ Not active. Worth keeping a list because some might graduate.
   snapshot at hide time); heart/hide rates use a max(live,
   hearts+hides) proxy for "ever seen" to avoid loading the
   ~2MB state.json. Both noted in code as v1 caveats.
+
+- 2026-05-02 (afternoon): **Watchurbia source (30th dealer) +
+  Epic 0 verification script shipped.** Watchurbia is a small
+  German vintage dealer running WooCommerce. Scraper filters at
+  the Store API to `category=watches-in-stock` so the sold archive
+  doesn't surface (~7 active items today, EUR; vintage Heuer-heavy).
+  Hits the dealer-count target end-state: 30 dealers, 6 auction
+  houses. The Stop rule (audit + prune to 25) becomes the next
+  Epic 1 decision. Separately, **`verify_sources.py` ships as the
+  Epic 0 verification script** — runs after merge.py, counts live
+  listings per source, compares each to its rolling 7-day median,
+  flags drops to zero or <30% of median. Outputs
+  `public/verification.json` (today's report) +
+  `public/verification_history.json` (rolling 14-day baseline).
+  Wired as a `|| true` step in scrape-listings.yml so a glitch
+  never blocks the cron. Alerts surface in GitHub Actions logs +
+  the committed report; future admin UI / status banner can render
+  the JSON.
 
 - 2026-05-02 (afternoon): **Roadmap structure expansion: Strategic
   bets + User journeys + three v2 deferrals.** New "Strategic bets"

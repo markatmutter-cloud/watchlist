@@ -22,7 +22,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 Three top-level tabs:
 
-- **Listings** — aggregates 29 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
+- **Listings** — aggregates 30 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
 - **Watchlist** — four sub-tabs:
   - **Favorites** — items you've hearted (your default collection), with price-at-save preserved.
   - **Collections** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you. Anything you've hidden from the Available feed surfaces here too as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
@@ -59,7 +59,7 @@ Plus:
   ┌─────────────────────────────────────────────────────────────┐
   │                  GitHub Actions (cron, daily)               │
   │                                                             │
-  │   29× listing scrapers + 6× auction scrapers (Python)       │
+  │   30× listing scrapers + 6× auction scrapers (Python)       │
   │            │                              │                 │
   │            ▼                              ▼                 │
   │     *_listings.csv               *_auctions.csv             │
@@ -96,7 +96,7 @@ Listings/auctions are static JSON committed to the repo. The only thing behind a
 
 ## Data sources
 
-### Dealers (29)
+### Dealers (30)
 
 All scrapers hit each dealer's existing public endpoint — no credential-protected APIs, no headless browsers where it can be avoided.
 
@@ -131,6 +131,7 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 | Central Watch | Custom (PHP) | HTML parse of `prod_result_item` cards + `/R{offset}` pagination | USD |
 | European Watch | Next.js (RSC) | Inline `__next_f.push` chunks, regex-extracted product objects; **pre-2000 filter** via `Circa. YYYY` in model | USD |
 | Vintage Watch Collective | Wix | `productsWithMetaData.list[]` JSON embedded in HTML (same as Chronoholic) | EUR |
+| Watchurbia | WooCommerce | Store API; filtered to `category=watches-in-stock` so the sold archive doesn't surface | EUR |
 
 Tropical Watch is the only source still routed through Browse AI — their site actively blocks scrapers. Every other source is scraped with vanilla `requests`. Browse AI robot ID and API key live in GitHub Secrets, never in the repo.
 
@@ -196,6 +197,7 @@ watchlist/
 ├─ ebay_oauth.py                   # eBay Browse API token refresh
 ├─ ebay_search_scraper.py          # reads data/ebay_searches.json, calls Browse API
 ├─ merge.py                        # state + listings + auctions enrichment
+├─ verify_sources.py               # post-merge scrape-health check (rolling-median anomaly detection)
 ├─ cache_watchlist_images.mjs      # Vercel Blob image persistence for hearted items
 ├─ api/img.js                      # serverless image proxy for hot-link-protected dealers
 ├─ data/
@@ -207,6 +209,8 @@ watchlist/
 │   ├─ tracked_lots.json           # scraped state for tracked auction lots
 │   ├─ state.json                  # cross-run memory for listings
 │   ├─ auctions_state.json         # cross-run memory for auctions
+│   ├─ verification.json           # latest source-health report (per-source counts + alerts)
+│   ├─ verification_history.json   # rolling 14-day per-source counts (baseline for anomaly detection)
 │   ├─ apple-touch-icon.png        # iOS home-screen icon
 │   ├─ favicon-32.png              # browser tab favicon
 │   └─ index.html

@@ -152,6 +152,13 @@ jobs:
         continue-on-error: true
         run: python vintagewatchcollective_scraper.py
 
+      - name: Run Watchurbia scraper (WooCommerce Store API, in-stock filter)
+        # Watchurbia is a small German vintage dealer. WooCommerce site;
+        # the scraper filters to the "Watches in Stock" category at the
+        # API level so the sold archive doesn't pollute the feed.
+        continue-on-error: true
+        run: python watchurbia_scraper.py
+
       # eBay runs in its own workflow (.github/workflows/scrape-ebay.yml)
       # so a slow Browse API response or token blip doesn't slow the
       # dealer-listings cron. eBay can iterate on its own cadence and
@@ -190,9 +197,18 @@ jobs:
           [ -f centralwatch_listings.csv ]        && mv centralwatch_listings.csv        data/centralwatch.csv        || echo "centralwatch missing"
           [ -f europeanwatch_listings.csv ]       && mv europeanwatch_listings.csv       data/europeanwatch.csv       || echo "europeanwatch missing"
           [ -f vintagewatchcollective_listings.csv ] && mv vintagewatchcollective_listings.csv data/vintagewatchcollective.csv || echo "vintagewatchcollective missing"
+          [ -f watchurbia_listings.csv ]          && mv watchurbia_listings.csv          data/watchurbia.csv          || echo "watchurbia missing"
 
       - name: Merge into listings.json
         run: python merge.py --listings-only
+
+      - name: Verify scrape health
+        # Runs after merge.py. Compares each source's live count to its
+        # rolling 7-day median; flags drops to zero or <30% of median.
+        # `|| true` so a glitch never blocks the commit step — alerts
+        # surface via stdout (visible in Actions logs) and the
+        # committed public/verification.json.
+        run: python verify_sources.py || true
 
       - name: Commit and push
         # Push race-resilient: if main has moved while we were scraping
