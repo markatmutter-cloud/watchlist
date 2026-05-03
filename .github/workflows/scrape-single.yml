@@ -1,0 +1,118 @@
+name: Scrape single source (manual)
+
+# Manual-only workflow — pick any one scraper to refresh on demand
+# without waiting for the next cron. Useful for verifying a newly-
+# added source, re-running after a parser fix, or just getting fresh
+# data from one dealer without paying the ~20 min full-batch cost.
+#
+# Inputs:
+#   scraper — basename of the scraper file, no path or suffix.
+#             For tropicalwatch_scraper.py → enter "tropicalwatch".
+#             For vintagewatchcollective_scraper.py → "vintagewatchcollective".
+#
+# What it does:
+#   1. Runs python <scraper>_scraper.py
+#   2. Moves <scraper>_listings.csv → data/<scraper>.csv
+#   3. Runs merge.py --listings-only (regenerates listings.json with the
+#      fresh CSV + every existing CSV)
+#   4. Runs verify_sources.py (refreshes verification.json so the admin
+#      dashboard sees up-to-date counts; non-blocking)
+#   5. Commits + pushes whatever changed
+#
+# How to run: GitHub → Actions tab → "Scrape single source (manual)"
+# in the left sidebar → "Run workflow" → enter the scraper basename →
+# "Run workflow" green button.
+
+on:
+  workflow_dispatch:
+    inputs:
+      scraper:
+        description: 'Scraper basename (e.g. watchurbia, vintagewatchcollective, europeanwatch)'
+        required: true
+        type: string
+
+jobs:
+  scrape-one:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Validate scraper exists
+        # Bail early with a clear error if the basename is wrong, rather
+        # than letting `python <missing>_scraper.py` produce a confusing
+        # ImportError. Also rejects path-traversal attempts.
+        run: |
+          name="${{ inputs.scraper }}"
+          if [[ "$name" =~ [^a-z0-9_-] ]]; then
+            echo "Invalid scraper name: $name (only lowercase letters, digits, hyphens, underscores allowed)"
+            exit 1
+          fi
+          if [ ! -f "${name}_scraper.py" ]; then
+            echo "No file named ${name}_scraper.py at repo root"
+            echo "Available scrapers:"
+            ls *_scraper.py | sed 's/_scraper.py//'
+            exit 1
+          fi
+
+      - name: Run the scraper
+        # Browse-AI key only matters for tropicalwatch; harmless to set
+        # for other scrapers (they ignore it).
+        env:
+          BROWSE_AI_API_KEY: ${{ secrets.BROWSE_AI_API_KEY }}
+        run: python ${{ inputs.scraper }}_scraper.py
+
+      - name: Move CSV to data folder
+        run: |
+          mkdir -p data
+          src="${{ inputs.scraper }}_listings.csv"
+          dst="data/${{ inputs.scraper }}.csv"
+          if [ -f "$src" ]; then
+            mv "$src" "$dst"
+            echo "Moved $src → $dst"
+          else
+            echo "$src missing — scraper produced no output"
+            exit 1
+          fi
+
+      - name: Merge into listings.json
+        run: python merge.py --listings-only
+
+      - name: Verify scrape health
+        # Refresh verification.json so the admin dashboard sees the
+        # latest source counts. Non-blocking — alert glitches shouldn't
+        # block a single-source refresh.
+        run: python verify_sources.py || true
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ public/
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Refresh ${{ inputs.scraper }} $(date -u '+%Y-%m-%d %H:%M UTC')"
+          # Race-resilient push, mirroring the pattern in scrape-listings.yml
+          # in case the cron is mid-flight.
+          for i in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected, rebasing and retrying ($i/3)..."
+            if ! git pull --rebase --strategy-option=theirs; then
+              echo "Rebase failed, aborting and retrying push"
+              git rebase --abort 2>/dev/null || true
+            fi
+          done
+          echo "Push still failing after 3 retries"
+          exit 1
