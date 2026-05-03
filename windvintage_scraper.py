@@ -105,10 +105,17 @@ def get_price_and_status(url):
             r'(on hold|under offer|pending|reserved)\s*\(item\b',
             text_lower
         )) or bool(re.search(r'\bsold\s*\(item\b', text_lower))
-        # Fallback: also catch the older PRICE-area pattern in case some
-        # pages use a different format we haven't seen.
+        # Fallback: catch a sold/on-hold marker that appears RIGHT AFTER
+        # "PRICE" without the (Item …) parenthetical. The earlier version
+        # looked at 150 chars BEFORE "PRICE" too, which generated false
+        # positives on any description mentioning the word "sold" in
+        # passing ("This example was sold in 2020", "originally sold in
+        # 1987" etc.) — catching the Cartier Tank Asymétrique WGTA0043
+        # in May 2026. Anchoring forward-only from PRICE keeps the
+        # fallback useful for "PRICE: SOLD" / "PRICE: ON HOLD" formats
+        # without dragging in surrounding prose.
         if not sold and not inquire:
-            price_area = re.search(r'.{0,150}PRICE.{0,150}', text, re.IGNORECASE)
+            price_area = re.search(r'PRICE.{0,60}', text, re.IGNORECASE)
             if price_area:
                 area_lower = price_area.group(0).lower()
                 for pattern in ON_HOLD_PATTERNS:
