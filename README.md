@@ -29,6 +29,7 @@ Three top-level tabs:
   - **Searches** — saved queries you can re-run with one tap, plus a read-only view of the eBay source-searches feeding the main feed.
   - **Auction Calendar** — upcoming + recently-closed sales from 6 houses, grouped by month.
 - **References** — collector resource tools (currently: a print-to-scale watch size comparison tool; encyclopedia and curated-link aggregator are roadmap'd).
+- **Source quality** *(admin only — invisible to other users)* — dense per-source dashboard at `?tab=admin`: live count, new-per-week, hearts/hides, avg price, top brand, scraper health, and an "earning its keep" suggestion. Reachable via the user dropdown for users whose email is in `REACT_APP_ADMIN_EMAILS`.
 
 Plus:
 
@@ -248,7 +249,8 @@ watchlist/
 │       ├─ CollectionPickerModal.js # add a listing to a collection
 │       ├─ SettingsModal.js        # currency picker + theme + columns + about (View menu lives here)
 │       ├─ ShareBanner.js          # in-app banner for ?listing=<id>&shared=1 receive flow
-│       └─ ShareReceiver.js        # hook-isolated mount for share-receive logic (avoids App.js hook bloat)
+│       ├─ ShareReceiver.js        # hook-isolated mount for share-receive logic (avoids App.js hook bloat)
+│       └─ AdminTab.js             # source-quality dashboard at ?tab=admin (gated by REACT_APP_ADMIN_EMAILS)
 └─ package.json
 ```
 
@@ -281,6 +283,10 @@ npm start
 ```
 REACT_APP_SUPABASE_URL=https://<your-project>.supabase.co
 REACT_APP_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+# Optional — comma-separated emails for the admin dashboard at ?tab=admin.
+# Leave empty (or omit) and the dashboard is unreachable. See "Admin
+# dashboard" below.
+REACT_APP_ADMIN_EMAILS=you@example.com
 ```
 
 The app no-ops auth gracefully if these aren't set — you just can't sign in. Useful for running locally without a Supabase project of your own.

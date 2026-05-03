@@ -27,6 +27,7 @@ import { CollectionPickerModal } from "./components/CollectionPickerModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { ShareReceiver } from "./components/ShareReceiver";
 import { WatchlistTab } from "./components/WatchlistTab";
+import { AdminTab } from "./components/AdminTab";
 import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
 import { tabPill } from "./styles";
@@ -149,8 +150,12 @@ export default function Watchlist() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   // Main tab. Same URL-first init as watchTopTab — refresh on
-  // `?tab=watchlist` lands on Watchlist, etc.
-  const TAB_VALUES = ["listings", "watchlist", "references"];
+  // `?tab=watchlist` lands on Watchlist, etc. The "admin" value is
+  // only reachable for users whose email is in REACT_APP_ADMIN_EMAILS;
+  // a non-admin hitting `?tab=admin` silently falls back to listings
+  // (the admin gate fires below in a useEffect once user resolves —
+  // doing it here would break for users who haven't auth-loaded yet).
+  const TAB_VALUES = ["listings", "watchlist", "references", "admin"];
   const [tab, setTab] = useState(() => {
     if (typeof window !== "undefined") {
       const t = new URLSearchParams(window.location.search).get("tab");
@@ -908,6 +913,23 @@ export default function Watchlist() {
     || user?.email
     || "";
 
+  // Admin gate. Comma-separated emails in REACT_APP_ADMIN_EMAILS env var
+  // (set in Vercel + .env.local). Empty default = nobody is admin and
+  // the source-quality dashboard is unreachable. Stays out of the main
+  // tab strip; access is via user-dropdown link or direct URL.
+  const ADMIN_EMAILS = (process.env.REACT_APP_ADMIN_EMAILS || "")
+    .split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+  const isAdmin = !!user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
+
+  // If the URL says ?tab=admin but the resolved user isn't an admin,
+  // bounce to listings. Defer this until user has resolved (authReady)
+  // so signed-in users don't get bumped during the initial auth flicker.
+  useEffect(() => {
+    if (authReady && tab === "admin" && !isAdmin) {
+      setTab("listings");
+    }
+  }, [authReady, tab, isAdmin]);
+
   const authJSX = !isAuthConfigured ? null : !authReady ? (
     <div style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--surface)" }} />
   ) : !user ? (
@@ -961,6 +983,15 @@ export default function Watchlist() {
                     fontSize: 13, borderRadius: 6 }}>
             Settings
           </button>
+          {isAdmin && (
+            <button onClick={() => { setShowUserMenu(false); setTab("admin"); setPage(1); }}
+              style={{ display: "block", width: "100%", textAlign: "left",
+                      padding: "6px 8px", border: "none", background: "transparent",
+                      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                      fontSize: 13, borderRadius: 6 }}>
+              Source quality →
+            </button>
+          )}
           <button onClick={() => { setShowUserMenu(false); signOut(); }}
             style={{ display: "block", width: "100%", textAlign: "left",
                     padding: "6px 8px", border: "none", background: "transparent",
@@ -1260,6 +1291,14 @@ export default function Watchlist() {
     />
   );
 
+  // Admin tab JSX — only rendered by the shells when tab === "admin".
+  // The component itself fetches its own data (verification.json,
+  // verification_history.json, listings.json); we pass in-memory hearts
+  // and hides because those come from Supabase via App.js hooks.
+  const adminTabJSX = (
+    <AdminTab watchItems={watchItems} hiddenItems={hiddenItems} />
+  );
+
   // ── MOBILE ────────────────────────────────────────────────────────────────
   // Watchlist sub-tab strip — lifted out of WatchlistTab.js on
   // 2026-04-30 so it sits between the main tab strip and the filter
@@ -1497,7 +1536,7 @@ export default function Watchlist() {
     favSearchModalJSX, inp,
     listingsGridJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
-    trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
+    trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX, adminTabJSX,
   };
 
   return isMobile

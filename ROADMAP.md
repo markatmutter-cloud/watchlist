@@ -538,6 +538,26 @@ Not active. Worth keeping a list because some might graduate.
 
 ## Update log
 
+- 2026-05-02 (evening): **Source quality dashboard shipped (Epic 0
+  + Epic 4 admin-only).** New `?tab=admin` route gated by
+  `REACT_APP_ADMIN_EMAILS` env var (empty = nobody is admin).
+  Hidden in the user-dropdown only for matching emails — not
+  surfaced in the main tab strip per the "don't telegraph
+  commercial intent" constraint. Dense table view, one row per
+  source, sortable: Live / New per week / 14-day trend
+  sparkline / Days stale / Hearts / Heart% / Hides / Hide% /
+  Avg $ / Top brand% / Health (from verification.json alerts) /
+  Earning-its-keep chip (🟢🟡🔴 derived from heart-rate, hide-
+  rate, throughput, staleness — tunable in one place). Default
+  sort by Earning so prune candidates surface first. Reads
+  verification.json + verification_history.json + listings.json
+  (all public static); hearts and hides come from Supabase via
+  existing watchItems / hiddenItems hooks. Hide-by-source is
+  bounded to currently-active listings (the schema doesn't
+  snapshot at hide time); heart/hide rates use a max(live,
+  hearts+hides) proxy for "ever seen" to avoid loading the
+  ~2MB state.json. Both noted in code as v1 caveats.
+
 - 2026-05-02 (afternoon): **Roadmap structure expansion: Strategic
   bets + User journeys + three v2 deferrals.** New "Strategic bets"
   section captures the reflective-vs-transactional positioning lens

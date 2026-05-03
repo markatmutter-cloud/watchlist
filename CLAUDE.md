@@ -90,16 +90,29 @@ URL is rewritten via `history.replaceState` after action so a
 refresh doesn't re-trigger.
 
 **Location URL params (2026-05-02).** `tab` (listings | watchlist |
-references), `sub` (listings | collections | searches | calendar —
-only meaningful when tab=watchlist) and `col` (collection UUID, or
-`__hidden__` for the synthetic Hidden collection) get reflected in
-the URL via `history.replaceState`. App.js owns `tab` + `sub`;
-WatchlistTab owns `col`. App.js's effect also clears `col` when
-leaving the watchlist tab so the URL stays clean. Both effects skip
-when share-receive params (`shared=1`) are present so the share
+references | admin), `sub` (listings | collections | searches |
+calendar — only meaningful when tab=watchlist) and `col` (collection
+UUID, or `__hidden__` for the synthetic Hidden collection) get
+reflected in the URL via `history.replaceState`. App.js owns `tab`
++ `sub`; WatchlistTab owns `col`. App.js's effect also clears `col`
+when leaving the watchlist tab so the URL stays clean. Both effects
+skip when share-receive params (`shared=1`) are present so the share
 flow controls URL until it acts. Refresh on any of these lands the
 user back where they were. Stay on this query-param pattern — it's
 deliberate that we don't bring in `react-router`.
+
+**Admin tab (2026-05-02).** `tab=admin` is gated by
+`REACT_APP_ADMIN_EMAILS` (comma-separated, set in Vercel + .env.local).
+Empty / unset = nobody is admin and the tab is unreachable. The
+"Source quality" entry in the user dropdown is the only navigation
+affordance — intentionally NOT in the main tab strip per ROADMAP
+"Don't telegraph commercial intent publicly". Non-admins hitting
+`?tab=admin` get silently redirected to listings (App.js useEffect
+guards once `authReady` resolves, so signed-in admin users don't
+flicker). Admin data: verification.json + verification_history.json
++ listings.json (all public on the static site) + Supabase
+watchlist_items / hidden_listings (RLS-gated to the user's own rows).
+Don't surface admin existence to non-admin users in any UI text.
 
 ## Scraper conventions
 

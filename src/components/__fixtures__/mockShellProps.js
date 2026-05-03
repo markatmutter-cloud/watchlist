@@ -85,6 +85,7 @@ export function buildMockShellProps(overrides = {}) {
     trackNewItemModalJSX: null,
     watchSubTabsJSX: <div data-testid="watch-sub-tabs" />,
     watchlistTabJSX: <div data-testid="watchlist-tab" />,
+    adminTabJSX: <div data-testid="admin-tab" />,
 
     ...overrides,
   };
