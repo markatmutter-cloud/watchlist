@@ -40,7 +40,7 @@ export function DesktopShell(props) {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
-    listingsGridJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
+    adminTabJSX, listingsGridJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
   } = props;
 
@@ -315,6 +315,7 @@ export function DesktopShell(props) {
           {shareReceiverJSX}
           {tab === "listings" ? listingsGridJSX
             : tab === "references" ? <ReferencesTab />
+            : tab === "admin" ? adminTabJSX
             : watchlistTabJSX}
         </div>
       </div>

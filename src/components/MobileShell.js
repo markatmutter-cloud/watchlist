@@ -41,7 +41,7 @@ export function MobileShell(props) {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX, inp,
-    listingsGridJSX, primaryCurrency, sectionHeadingStyle,
+    adminTabJSX, listingsGridJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
   } = props;
@@ -171,6 +171,7 @@ export function MobileShell(props) {
         <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
           {tab === "listings" ? listingsGridJSX
             : tab === "references" ? <ReferencesTab />
+            : tab === "admin" ? adminTabJSX
             : watchlistTabJSX}
         </div>
         {trackNewItemModalJSX}
