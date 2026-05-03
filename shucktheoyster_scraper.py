@@ -20,9 +20,16 @@ and Watchfid use). SOLD items are filtered out — the merge.py state
 tracker will retain them in the Archive tab anyway because their stable
 ID survives across scrapes.
 
-Cap on listing pages: configurable via MAX_LISTING_PAGES. A value of
-10 covers ~220 items which comfortably exceeds current inventory; older
-pages are mostly already-sold archives.
+Cap on listing pages: configurable via MAX_LISTING_PAGES. The portfolio
+is sorted newest-by-post-date, NOT newest-by-activity — Shuck keeps
+active inventory live indefinitely without re-dating, so a listing
+posted 6+ months ago can still be current stock. The earlier 10-page
+cap missed real inventory (e.g. a 2025-10 JLC Polaris Tribute was on
+page 33). Active inventory currently lives across roughly the first
+50 pages; 50 also picks up the long-tail active listings while still
+cutting out the deepest sold-archive pages. Detail-page parsing
+filters SOLD anyway, so a few extra pages cost runtime but never
+pollute the feed.
 
 Run: python3 shucktheoyster_scraper.py
 Output: shucktheoyster_listings.csv
@@ -37,8 +44,8 @@ import requests
 BASE = "https://www.shucktheoyster.com"
 LISTING_PATH = "/portfolio"
 SOURCE_NAME = "Shuck the Oyster"
-MAX_LISTING_PAGES = 10
-DETAIL_SLEEP = 0.25
+MAX_LISTING_PAGES = 50
+DETAIL_SLEEP = 0.2
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
