@@ -41,7 +41,7 @@ export function DesktopShell(props) {
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
     adminTabJSX, listingsGridJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
-    trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
+    trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX, watchlistTabJSX,
   } = props;
 
   // Desktop sidebar retired in the April '26 filter-consolidation pass.
@@ -115,6 +115,25 @@ export function DesktopShell(props) {
               fontWeight: isPrice ? 600 : 500,
               whiteSpace: "nowrap",
             }}>{label}</button>
+          );
+        })()}
+        {/* Ending-soonest sort pill — third option alongside Date /
+            Price. Single state; auto-defaults when the user toggles
+            auctions-only on, also selectable manually. Active tap
+            reverts to date-desc so there's an off-switch from the
+            same control. */}
+        {(() => {
+          const isEnding = sort === "ending";
+          return (
+            <button onClick={() => setSort(isEnding ? "date" : "ending")} style={{
+              padding: "6px 12px", borderRadius: 20,
+              border: "0.5px solid var(--border)",
+              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+              background: isEnding ? "var(--text1)" : "var(--surface)",
+              color:      isEnding ? "var(--bg)"    : "var(--text2)",
+              fontWeight: isEnding ? 600 : 500,
+              whiteSpace: "nowrap",
+            }}>Ending</button>
           );
         })()}
       </div>
@@ -313,6 +332,12 @@ export function DesktopShell(props) {
         <div data-desktop-main style={{ flex: 1, overflowY: "auto", padding: `${tab === "watchlist" ? 0 : 14}px 16px 32px` }}>
           {/* Share-receive surface — self-contained component. */}
           {shareReceiverJSX}
+          {/* Ending-soon pinned section. Mounted at the top of the
+              scroll area so it's the first thing the user sees when
+              they hit Watchlist; sub-tab strip stays sticky above
+              via the chrome rendered outside this scroll container.
+              Returns null when no qualifying tracked lots. */}
+          {tab === "watchlist" && endingSoonJSX}
           {tab === "listings" ? listingsGridJSX
             : tab === "references" ? <ReferencesTab />
             : tab === "admin" ? adminTabJSX
