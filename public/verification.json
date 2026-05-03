@@ -2,14 +2,14 @@
   "date": "2026-05-03",
   "alerts": [],
   "counts": {
-    "Wind Vintage": 151,
+    "Wind Vintage": 149,
     "Tropical Watch": 102,
     "Menta Watches": 43,
     "Collectors Corner NY": 55,
     "Falco Watches": 110,
     "Grey & Patina": 47,
     "Oliver & Clarke": 91,
-    "Craft & Tailored": 86,
+    "Craft & Tailored": 85,
     "Watch Brothers London": 17,
     "MVV Watches": 42,
     "DB1983": 24,
@@ -21,7 +21,7 @@
     "Bob's Watches": 59,
     "Watchfid": 68,
     "Bulang & Sons": 187,
-    "Moonphase": 23,
+    "Moonphase": 21,
     "Huntington Company": 80,
     "The Vintage Watch": 26,
     "Avocado Vintage": 58,
@@ -30,10 +30,10 @@
     "Shuck the Oyster": 132,
     "Central Watch": 180,
     "European Watch": 25,
-    "Vintage Watch Collective": 41,
+    "Vintage Watch Collective": 42,
     "Watchurbia": 7,
-    "eBay": 43
+    "eBay": 41
   },
-  "total_listings": 3099,
+  "total_listings": 3093,
   "sources_tracked": 31
 }
