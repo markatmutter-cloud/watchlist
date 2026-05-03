@@ -129,7 +129,9 @@ Cross-cutting infrastructure. Several later epics depend on this.
 ## Epic 1: Sources
 
 Target end state: ~30 dealers + 6 auction houses, all earning their keep.
-Currently at 30 dealers + 6 auction houses.
+Currently at 34 dealers + 6 auction houses (past the 30-dealer
+end-state target — **Stop rule pruning is now the next Epic 1
+priority**).
 
 - **Active candidates** (evaluated, not all guaranteed):
 
@@ -138,7 +140,7 @@ Currently at 30 dealers + 6 auction houses.
   | Vintage Watch Collective | **shipped 2026-05-02** — Wix, productsWithMetaData pattern (Chronoholic clone), EUR, ~40 active listings |
   | Wrist Icons | WordPress; `/wp-json/wc/store/v1/products` returned 301 — follow redirect to confirm WooCommerce |
   | Vision Vintage Watches | Wix (not Squarespace despite the URL trick); needs custom HTML parsing |
-  | Vintage Heuer | WordPress; would need a Shuck-style detail-page walker |
+  | Vintage Heuer | **shipped 2026-05-03 as "Vintage Watch Shop"** — WordPress custom-post + detail-page walker for the "Our price: £NNNN" pattern; ~20 active items |
   | Specific pushers.io dealers | reuse the Moonphase pattern (~30 lines per dealer) |
 
 - **Auction houses still to add:** Heritage. DataDome-blocked at the
@@ -681,6 +683,33 @@ moved, priorities drift. A quarterly pass catches that before it
 becomes confusion.
 
 ## Update log
+
+- 2026-05-03 (later): **Four UK dealer sources added (34th total),
+  + eBay tracked-lot URL fix.** Mark added Maunder Watches
+  (WooCommerce, GBP, ~95 items), Watch Club (custom TaffyDB JS
+  catalog at /upload/js/watches2018_bis.js, GBP, ~57 active items
+  out of 4365 in the file — most are sold archive with status≠"1"),
+  Vintage Watch Shop / Vintage Heuer (WordPress custom-post + per-
+  item detail walk for "Our price: £NNNN", GBP, ~20 items), and
+  Watches of Lancashire (WooCommerce, GBP, ~73 items). All four are
+  UK-based — the feed gets meaningfully more GBP-priced inventory.
+  Three patterns surfaced: (1) Maunder's WC API ignores `page` —
+  pagination is `offset` only; (2) Maunder + WoL bot-protection
+  returns 403 to long Chrome UAs but is fine with short
+  `Mozilla/5.0` (counterintuitive); (3) Watch Club paginates
+  client-side via TaffyDB queries against an in-memory JSON, so
+  there's no server-side pagination and naive ?n=N walks return the
+  same 20 items. **34 dealers is past the 30-dealer end-state
+  target**: Stop-rule pruning to 25 is now the next Epic 1 decision.
+  Separately, **eBay short-URL fix in auctionlots_scraper.py**:
+  Mark's `ebay.us/m/<token>` share-link URL didn't track because (a)
+  the dispatcher only matched `ebay.com` / `*.ebay.com` / `*.ebay.*`
+  patterns, and (b) `scrape_ebay_lot` extracts the legacy item ID
+  via `/itm/(\d+)` regex — `ebay.us/m/PpFLll` has neither. Fixed by
+  recognising `ebay.us` / `ebay.gg` / `ebay.to` as eBay domains in
+  the dispatcher, and following the first redirect (Location header
+  only, not the full eBay item page which times out at 15s) to
+  resolve to canonical `ebay.com/itm/<id>` before parsing.
 
 - 2026-05-03: **Roadmap consolidation pass (additions / reinstatements
   / edits from a parallel design conversation).** Multi-tier save

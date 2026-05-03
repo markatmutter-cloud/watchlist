@@ -9,7 +9,7 @@ how to behave for the rest of it.
 - [README.md](README.md) — what the project is + architecture. Public-facing.
 - [ROADMAP.md](ROADMAP.md) — priorities, epics, what's explicitly out of scope.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
-  The current one is [SESSION_HANDOFF_2026-05-01.md](SESSION_HANDOFF_2026-05-01.md);
+  The current one is [SESSION_HANDOFF_2026-05-03.md](SESSION_HANDOFF_2026-05-03.md);
   older ones live in `archive/`.
 
 If a gotcha or convention is durable (still true next session), graduate

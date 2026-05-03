@@ -816,7 +816,22 @@ def scrape_ebay_lot(url):
         )
 
     # Pull the trailing numeric ID from any of eBay's URL shapes.
+    # If we can't find it, the URL is probably a mobile share-link
+    # shortener (ebay.us/m/<token>, ebay.gg/m/<token>, etc.). Follow
+    # the FIRST redirect only — its Location header carries the
+    # canonical /itm/<id> URL. Following the full redirect chain to
+    # eBay's actual item page is slow (eBay's product HTML times out
+    # at 15s) and unnecessary; the Browse API call below uses the
+    # numeric ID, not the page.
     m = re.search(r"/itm/(?:[^/]+/)?(\d{6,})", url)
+    if not m:
+        try:
+            redir = requests.get(url, allow_redirects=False, timeout=15,
+                                 headers={"User-Agent": "Mozilla/5.0"})
+            location = redir.headers.get("Location") or ""
+            m = re.search(r"/itm/(?:[^/]+/)?(\d{6,})", location)
+        except requests.RequestException:
+            pass
     if not m:
         raise RuntimeError(f"could not parse eBay item ID from URL: {url}")
     item_id = m.group(1)
@@ -941,8 +956,14 @@ def scrape(url):
         return scrape_monaco_legend_lot(url)
     if host.endswith("phillips.com"):
         return scrape_phillips_lot(url)
-    # eBay regional TLDs all live under ebay.<cc> — match any.
-    if host == "ebay.com" or host.endswith(".ebay.com") or ".ebay." in host:
+    # eBay regional TLDs all live under ebay.<cc> — match any. Also
+    # recognise eBay's mobile share-link shorteners (ebay.us, ebay.gg,
+    # ebay.to, etc. — `/m/<token>` redirects to the canonical
+    # ebay.com/itm/<id>); scrape_ebay_lot follows the redirect when
+    # the URL doesn't already carry the legacy item ID.
+    if (host == "ebay.com" or host.endswith(".ebay.com") or ".ebay." in host
+            or host == "ebay.us" or host == "ebay.gg" or host == "ebay.to"
+            or host.endswith(".ebay.us") or host.endswith(".ebay.gg") or host.endswith(".ebay.to")):
         return scrape_ebay_lot(url)
     raise NotImplementedError(f"No scraper for host: {host}")
 
