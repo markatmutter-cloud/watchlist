@@ -46,6 +46,36 @@ discovery, learning, and personal-collection-as-play are the next chapters.
 Watchlist is not trying to be Watchcharts. Don't compete on historical
 price-per-reference; build what they don't.
 
+## Strategic bets
+
+Watchlist's distinctive role is as a **reflective tool for serious
+collectors, not a transactional one**. Features that deepen reflection
+(collecting journeys, per-watch context, reference learning) earn
+priority over features that optimize for transaction speed (faster
+price lookups, more inventory, lower latency). The collecting community
+has plenty of transactional tools; reflective ones are rare.
+
+This is the lens for prioritization tradeoffs: when two features compete
+for a session and both make sense, pick the one that helps the user
+*think about* their collecting more, not the one that helps them *act
+faster* on it.
+
+## User journeys
+
+Selected journeys grounding the design. Journeys 1-9 live in the
+product brief; 10-11 added here as speculative-until-shipped to keep
+forward-looking features grounded in concrete user intent.
+
+- **Journey 10 — The Returning Reflection.** Mark opens his watchbox
+  three years from now. Reads what he wrote about his first Heuer.
+  Realizes how his taste has shifted. Adds a note to his journey
+  narrative. *(Depends on Watchbox v2 + per-watch reflections.)*
+- **Journey 11 — The Source Suggestion.** A friend in Italy emails
+  Mark: "you should add Italian Vintage Watch Co. to Watchlist;
+  great dealer." Friend goes to Watchlist's "Suggest a source" form,
+  fills it in. Mark reviews, agrees, adds the source. Friend is
+  notified. *(Depends on Epic 1 v2 open-submission flow.)*
+
 ## Constraints
 
 - Solo non-technical builder, co-authoring with Claude.
@@ -119,6 +149,15 @@ Currently at 29 dealers + 6 auction houses.
 - **Stop rule.** At ~30 dealers, audit and prune to 25. Don't add a source
   unless it brings inventory not already covered or unique to a reference
   category I care about.
+
+### Open submission v2 (deferred — needs users)
+
+Open submission with moderation. Users suggest sources via a
+"Suggest a source" form; Mark approves or declines. Criteria for
+accepting sources documented separately. Probably 6+ months out —
+worth shipping when the platform has more than just Mark and his
+wife as users; until then, there's nobody to suggest. Grounded by
+Journey 11.
 
 ## Epic 2: Auction history
 
@@ -253,6 +292,17 @@ Owned-watch tracking — a Watchbox is a collection with
 purchase date, sold price + date, photos. Historical-cost vs
 current-comp delta. Future session.
 
+**Per-watch reflection + collecting journey narrative** ships with
+the same Watchbox feature: optional, free-text, private by default
+fields per watch capturing why bought, expectations vs reality, what
+the watch came to mean. Plus a separate "journey narrative" surface
+on the watchbox itself for the broader arc — taste shifts, lessons,
+the throughline. Highest personal value of any item on the roadmap;
+low platform risk and low implementation cost on top of the watchbox
+data model. Grounded by Journey 10. This is the kind of feature that
+makes Watchlist a reflective tool rather than a transactional one
+(see "Strategic bets").
+
 ### Sharing collections (deferred — extends v1 share primitive)
 
 Share an entire collection by link, not just a single listing.
@@ -378,6 +428,16 @@ Storage decision: full dealer descriptions for tracked reference numbers
 stored locally on Mac mini and synced to Supabase, rather than bloating
 `listings.json` for everyone.
 
+**Moderated user contributions v2 (deferred — Epic 5 ships first).**
+Users can suggest corrections to entries and propose additional links
+via a contribution form. Submissions queue for moderation; Mark
+approves or declines. Not wiki-editable — every change goes through
+review. The intent is to leverage community knowledge while preserving
+editorial integrity, so the encyclopedia keeps reading like a curated
+resource rather than a free-for-all. Probably a year+ out: the
+encyclopedia has to exist and have enough entries that contributions
+become useful.
+
 ### Sub-area: Curated link aggregator
 
 Hand-picked outbound resources that are useful but don't fit the
@@ -477,6 +537,23 @@ Not active. Worth keeping a list because some might graduate.
   browsed-most, biggest price drops caught.
 
 ## Update log
+
+- 2026-05-02 (afternoon): **Roadmap structure expansion: Strategic
+  bets + User journeys + three v2 deferrals.** New "Strategic bets"
+  section captures the reflective-vs-transactional positioning lens
+  that resolves prioritization ties (reflective wins). New "User
+  journeys" section seeds Journey 10 (returning to a watchbox
+  reflection three years out) and Journey 11 (friend suggests a
+  source) — speculative-until-shipped, but useful to ground future
+  feature design. Three v2 items added: per-watch reflection +
+  collecting-journey narrative under Watchbox v2 (Epic 3, ships
+  with the watchbox surface — highest personal value, low platform
+  risk); open submission with moderation under Epic 1 (deferred
+  6+ months until users beyond Mark's household exist); moderated
+  user contributions under Epic 5 reference encyclopedia (deferred
+  a year+, gated on the encyclopedia existing first). All three
+  fold into existing priority slots rather than disrupting the
+  order.
 
 - 2026-05-02: **Refresh preserves location + European Watch source
   added (28th dealer, pre-2000 only).** `tab` / `sub` / `col` query
