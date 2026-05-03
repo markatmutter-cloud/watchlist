@@ -159,6 +159,36 @@ jobs:
         continue-on-error: true
         run: python watchurbia_scraper.py
 
+      - name: Run Maunder Watches scraper (WooCommerce Store API, offset pagination)
+        # UK dealer; Store API ignores `page` parameter so the scraper
+        # walks via `offset` instead. Long Chrome UAs return 403 from
+        # their bot-protection — short Mozilla/5.0 UA is fine.
+        continue-on-error: true
+        run: python maunderwatches_scraper.py
+
+      - name: Run Watch Club scraper (TaffyDB JSON catalog)
+        # UK dealer (Cardiff). Entire catalogue in a single 5MB JS file
+        # at /upload/js/watches2018_bis.js wrapped as TAFFY([...]). No
+        # detail-page fetches needed; ~57 active items today out of 4365
+        # total (rest are sold archive with status != "1").
+        continue-on-error: true
+        run: python watchclub_scraper.py
+
+      - name: Run Vintage Watch Shop scraper (WP custom-post + detail walk)
+        # UK dealer (Vintage Heuer). WordPress with custom 'product'
+        # post type but no WooCommerce — price isn't in the WP REST
+        # response, so we walk the /watches-accessories/ index pages
+        # for URL+title+image, then fetch each detail page for the
+        # "Our price: £NNNN" pattern.
+        continue-on-error: true
+        run: python vintagewatchshop_scraper.py
+
+      - name: Run Watches of Lancashire scraper (WooCommerce Store API)
+        # UK dealer. Store API at category=watches; same short-UA
+        # quirk as Maunder.
+        continue-on-error: true
+        run: python watchesoflancashire_scraper.py
+
       # eBay runs in its own workflow (.github/workflows/scrape-ebay.yml)
       # so a slow Browse API response or token blip doesn't slow the
       # dealer-listings cron. eBay can iterate on its own cadence and
@@ -198,6 +228,10 @@ jobs:
           [ -f europeanwatch_listings.csv ]       && mv europeanwatch_listings.csv       data/europeanwatch.csv       || echo "europeanwatch missing"
           [ -f vintagewatchcollective_listings.csv ] && mv vintagewatchcollective_listings.csv data/vintagewatchcollective.csv || echo "vintagewatchcollective missing"
           [ -f watchurbia_listings.csv ]          && mv watchurbia_listings.csv          data/watchurbia.csv          || echo "watchurbia missing"
+          [ -f maunderwatches_listings.csv ]      && mv maunderwatches_listings.csv      data/maunderwatches.csv      || echo "maunderwatches missing"
+          [ -f watchclub_listings.csv ]           && mv watchclub_listings.csv           data/watchclub.csv           || echo "watchclub missing"
+          [ -f vintagewatchshop_listings.csv ]    && mv vintagewatchshop_listings.csv    data/vintagewatchshop.csv    || echo "vintagewatchshop missing"
+          [ -f watchesoflancashire_listings.csv ] && mv watchesoflancashire_listings.csv data/watchesoflancashire.csv || echo "watchesoflancashire missing"
 
       - name: Merge into listings.json
         run: python merge.py --listings-only

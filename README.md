@@ -22,7 +22,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 Three top-level tabs:
 
-- **Listings** — aggregates 30 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
+- **Listings** — aggregates 34 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
 - **Watchlist** — four sub-tabs:
   - **Favorites** — items you've hearted (your default collection), with price-at-save preserved.
   - **Collections** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you. Anything you've hidden from the Available feed surfaces here too as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
@@ -59,7 +59,7 @@ Plus:
   ┌─────────────────────────────────────────────────────────────┐
   │                  GitHub Actions (cron, daily)               │
   │                                                             │
-  │   30× listing scrapers + 6× auction scrapers (Python)       │
+  │   34× listing scrapers + 6× auction scrapers (Python)       │
   │            │                              │                 │
   │            ▼                              ▼                 │
   │     *_listings.csv               *_auctions.csv             │
@@ -96,7 +96,7 @@ Listings/auctions are static JSON committed to the repo. The only thing behind a
 
 ## Data sources
 
-### Dealers (30)
+### Dealers (34)
 
 All scrapers hit each dealer's existing public endpoint — no credential-protected APIs, no headless browsers where it can be avoided.
 
@@ -132,6 +132,10 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 | European Watch | Next.js (RSC) | Inline `__next_f.push` chunks, regex-extracted product objects; **pre-2000 filter** via `Circa. YYYY` in model | USD |
 | Vintage Watch Collective | Wix | `productsWithMetaData.list[]` JSON embedded in HTML (same as Chronoholic) | EUR |
 | Watchurbia | WooCommerce | Store API; filtered to `category=watches-in-stock` so the sold archive doesn't surface | EUR |
+| Maunder Watches | WooCommerce | Store API; uses `offset` (not `page`) since their build ignores `page` | GBP |
+| Watch Club | Custom (TaffyDB) | Single 5MB JS catalog at `/upload/js/watches2018_bis.js` wrapped as `TAFFY([…])`; status="1" filter for active items | GBP |
+| Vintage Watch Shop | WordPress (custom CPT) | `/watches-accessories/` index walk + per-item detail page for "Our price: £NNNN" | GBP |
+| Watches of Lancashire | WooCommerce | Store API; `category=watches` | GBP |
 
 Tropical Watch is the only source still routed through Browse AI — their site actively blocks scrapers. Every other source is scraped with vanilla `requests`. Browse AI robot ID and API key live in GitHub Secrets, never in the repo.
 
