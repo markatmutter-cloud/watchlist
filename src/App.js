@@ -434,10 +434,10 @@ export default function Watchlist() {
   // the other effects (NOT deep in render-conditional code) per the
   // CLAUDE.md "don't add hooks deep in App.js" rule.
   useEffect(() => {
+    // setSort is the useState setter (stable identity), so leaving it
+    // out of deps doesn't risk a stale closure — this effect runs
+    // purely in response to filter toggles.
     setSort(filterAuctionsOnly ? "ending" : "date");
-    // setSort is stable (useState setter); explicitly omitted from
-    // deps to keep this a pure response-to-filter-toggle effect.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterAuctionsOnly]);
 
   useEffect(() => {
