@@ -175,6 +175,22 @@ houses); (2) **reference-led realized-price capture** of past results;
 (3) **comprehensive lot archive** as the data foundation that powers
 both serendipitous discovery and reference research.
 
+### Auction urgency surfacing ✓ shipped 2026-05-03
+
+"Ending soon" pinned section at the top of the Watchlist tab:
+auction-format tracked lots whose `auction_end` falls within 7 days
+(or are currently live) appear in a horizontal-scroll strip with
+three urgency tiers (LIVE NOW red / TODAY-TOMORROW amber /
+upcoming standard). Visible across every Watchlist sub-tab; returns
+null when empty. Plus a new "Ending soonest" sort option, third
+pill alongside Date and Price — auto-defaults on when the
+auctions-only filter is toggled, reverts to date-desc when off.
+Comparator tiers: live → upcoming asc → ended (most-recent first)
+→ non-auction last; same comparator drives both the Watchlist and
+Available sorts. Comprehensive auction inventory capture below is
+still future work; this is just the surfacing layer over what's
+already tracked.
+
 ### Reference-led realized-prices
 
 Not "every auction forever" but "what has come up for this reference,
@@ -683,6 +699,26 @@ moved, priorities drift. A quarterly pass catches that before it
 becomes confusion.
 
 ## Update log
+
+- 2026-05-03 (evening): **Auction urgency surfacing shipped (Epic 2).**
+  Two complementary changes: (1) "Ending soon" pinned section at the
+  top of the Watchlist tab — auction-format tracked lots ending
+  within 7 days OR currently live, three urgency tiers (LIVE NOW
+  red / TODAY-TOMORROW amber / upcoming standard), horizontal-scroll
+  strip, visible across every Watchlist sub-tab. Returns null when
+  empty per spec (no empty state). (2) "Ending soonest" sort, third
+  pill alongside Date and Price; auto-defaults on when the
+  auctions-only filter is toggled, reverts to date-desc when off.
+  Comparator tiers items live → upcoming asc → ended (most-recent
+  first) → non-auction last, used by both the Watchlist watchItems
+  sort and the Available allFiltered sort. EndingSoon component
+  exports `classifyEndingSoon` + `selectEndingSoonItems` so future
+  work (alerts on the same window, etc.) can reuse the windowing
+  logic. Auto-default useEffect lives at the top of App.js with the
+  other top-level effects per CLAUDE.md "don't add hooks deep in
+  App.js." Comprehensive auction inventory capture (the bigger Epic
+  2 substrate item) is still future work — this is purely the
+  surfacing layer over what's already tracked.
 
 - 2026-05-03 (later): **Four UK dealer sources added (34th total),
   + eBay tracked-lot URL fix.** Mark added Maunder Watches

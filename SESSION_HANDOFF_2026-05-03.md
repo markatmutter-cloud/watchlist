@@ -23,6 +23,42 @@ main once the open PRs land — see "Open PRs" below.
 
 ## What shipped (newest first)
 
+- **Auction urgency surfacing** (PR #14, merged 2026-05-03 evening,
+  bundle `cc73e77d`). Two complementary surfaces for time-sensitive
+  tracked auction lots in Watchlist:
+  - **"Ending soon" pinned section** at the top of the Watchlist
+    tab. Auction-format tracked lots ending within 7 days OR
+    currently live appear in a horizontal-scroll strip with three
+    urgency tiers (LIVE NOW red / TODAY-TOMORROW amber / upcoming
+    standard). Visible across every Watchlist sub-tab. Returns null
+    when empty (no empty state per spec).
+  - **"Ending soonest" sort** as a third pill alongside Date and
+    Price. Auto-defaults on when the auctions-only filter is
+    toggled; reverts to date-desc when off. Comparator: live now →
+    upcoming asc → ended (most-recent first) → non-auction last.
+    Same comparator drives both the Watchlist watchItems sort and
+    the Available allFiltered sort.
+  - New file: `src/components/EndingSoon.js` (exports
+    `classifyEndingSoon` + `selectEndingSoonItems` so future alert
+    triggers on the same window can reuse the windowing logic).
+  - Auto-default `useEffect` lives at the top of App.js next to
+    other top-level effects (NOT deep in render-conditional code)
+    per CLAUDE.md "don't add hooks deep in App.js".
+  - **One placement deviation worth knowing:** spec said "above the
+    existing sub-tab navigation," but on mobile the sub-tab strip
+    sits inside the sticky stack and pinning the section there would
+    eat ~half the viewport. Mounted instead inside the scroll area
+    above the sub-tab content — visually below the sticky strip but
+    the first thing in scrollable content. Easy to flip if Mark
+    wants strict above-the-strip placement.
+  - **Lint trap, repeating:** the initial commit used
+    `// eslint-disable-next-line react-hooks/exhaustive-deps`. CRA's
+    eslint config doesn't enable that rule, so the disable comment
+    failed `CI=true` linting and Vercel red-flagged the deploy.
+    Worth remembering for future hook deps work in this repo: only
+    use eslint-disable comments for rules that are actually
+    configured.
+
 - **Four UK dealer sources** (`9d28029` lineage on
   `claude/four-new-sources`): Maunder Watches (WooCommerce, ~95
   items, GBP), Watch Club (TaffyDB JS catalog, ~57 active items,

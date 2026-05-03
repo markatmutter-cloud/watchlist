@@ -241,6 +241,14 @@ To add a new printable tool: render its sheet via `createPortal` to
   hooks, put them in a self-contained component App.js mounts
   unconditionally. `<ShareReceiver/>` (commit b6cb57b) is the
   reference pattern.
+- **Don't write `// eslint-disable-next-line <rule>` for a rule that
+  isn't configured in this CRA project.** The setup doesn't enable
+  `react-hooks/exhaustive-deps` (and several others), so an unknown-
+  rule disable comment fails as "Definition for rule 'X' was not
+  found" → `CI=true` upgrades it to a build failure → Vercel red.
+  Cost one rebuild on 2026-05-03 (PR #14). If you intentionally
+  omit a hook dep, just leave a plain comment explaining why
+  (no eslint-disable needed because no rule is firing).
 - **Don't put a `{/* ... */}` JSX comment between `return (` and the
   root JSX element.** CRA's parser reads it as a stray object literal
   → "Unexpected token, expected ','" → CRA's `CI=true` upgrades the
