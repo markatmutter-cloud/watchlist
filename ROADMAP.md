@@ -1,6 +1,6 @@
 # Watchlist Roadmap
 
-Last updated: 2026-05-01
+Last updated: 2026-05-03
 Living document. Updated as priorities shift.
 
 For project context and architecture, see [README.md](README.md). For
@@ -99,26 +99,32 @@ Cross-cutting infrastructure. Several later epics depend on this.
   to references. Detection via per-source structured fields, regex on
   title/description, and LLM fallback for the long tail. Manual curation
   for what slips through.
-- **Verification script.** Daily check on each source: count listings vs.
-  rolling baseline, flag scraper breakage (count to zero, count drop >70%,
-  HTTP errors, parse failures). Email or status banner.
-- **Source quality dashboard (admin only).** Per-source: total listings,
-  hearted-by-me count, scraper health, days since last new listing. Drives
-  the "which sources earn their keep" decision.
+- **Verification script ✓ shipped 2026-05-02.** `verify_sources.py`
+  runs after merge.py, counts live listings per source, compares each
+  to its rolling 7-day median, and flags drops to zero or <30% of
+  median. Outputs `public/verification.json` (today's report) +
+  `public/verification_history.json` (rolling 14-day baseline). Wired
+  as a non-blocking step in scrape-listings.yml.
+- **Source quality dashboard ✓ shipped 2026-05-02.** Admin-only view
+  at `?tab=admin`, gated by `REACT_APP_ADMIN_EMAILS`. Per-source
+  table with live count, new-per-week, sparkline trend, days stale,
+  hearts/heart-rate, hides/hide-rate, avg price, top brand %, health
+  (from verification alerts), earning-keep chip (🟢🟡🔴). Drives the
+  "which sources earn their keep" decision; folded into Epic 4 too.
+- **Site discoverability and welcome page (pending).** robots.txt,
+  sitemap.xml, og:image refresh, meta-tag pass, Schema.org markup,
+  plus a welcome/about page for first-time visitors. Foundation for
+  organic discovery (not promotion in the marketing sense). The
+  welcome page addresses the "what is this and how do I use it" gap
+  a first-time visitor hits when landing on the Available feed cold.
+  Half-session of work; mostly content + a few public/ files.
 - **Maintenance rhythm.** Every 4th-5th session is hygiene only: bug fixes,
   dependency updates, source pruning. No new features.
-- **User settings / currency preference (near-term).** New
-  `user_settings` table — for now a single column
-  (`primary_currency`: USD / GBP / EUR / CHF / JPY / native), but
-  designed as a kitchen-sink user-prefs surface so future settings
-  (notification opt-ins, default sort, etc.) co-locate. New
-  Settings route from the user dropdown. Frontend: replace the
-  hardcoded "USD primary" decision in Card with a lookup against
-  the user's preference; default to "native" for users with nothing
-  set (matches behavior pre-2026-04-30). Half-session of infra +
-  half-session of Card refactor. Goes under Epic 0 because the
-  table will outgrow currency to be the home for every user-prefs
-  field.
+- **User settings / currency preference ✓ shipped 2026-05-01.** New
+  `user_settings` Supabase table; primary_currency picker (USD /
+  GBP / EUR) in the Settings modal. Card render reads the
+  preference and shows it as primary, native as secondary. Designed
+  as a kitchen-sink user-prefs surface so future settings co-locate.
 
 ## Epic 1: Sources
 
@@ -161,8 +167,16 @@ Journey 11.
 
 ## Epic 2: Auction history
 
-Reference-led capture of past auction results. Not "every auction forever"
-but "what has come up for this reference, when, and what did it sell for."
+Two complementary surfaces: (1) **calendar-level tracking** of upcoming
+sales (already shipped — Watchlist > Auction Calendar surfaces 6
+houses); (2) **reference-led realized-price capture** of past results;
+(3) **comprehensive lot archive** as the data foundation that powers
+both serendipitous discovery and reference research.
+
+### Reference-led realized-prices
+
+Not "every auction forever" but "what has come up for this reference,
+when, and what did it sell for."
 
 - **Open houses (Antiquorum, Phillips, Bonhams):** scrape realized prices
   where publicly available.
@@ -174,6 +188,24 @@ but "what has come up for this reference, when, and what did it sell for."
   auction" with prices, dates, photos, links.
 - **Data shape:** auctions are events that happen to references, not the
   primary unit. Reference-first, auction-second.
+
+### Comprehensive auction inventory capture
+
+Currently Watchlist tracks auction calendars (when a sale is happening)
+but doesn't capture all the lots that come through. Expand to scrape
+every auction lot from supported houses and keep them as a permanent
+historical archive after the sale. Filter out: clocks, pocket watches,
+loose dials, watch parts, jewellery. Keep: complete wristwatches.
+
+Sold lots become a search-able back catalog ("show me every Heuer
+Carrera that's been to auction in the last 5 years"). High value for
+serendipitous discovery and reference research — the use case Mark
+experienced going through old auction catalogs with his mum.
+
+Bigger than the reference-led capture above (which is selective). This
+is comprehensive historical capture; data volume + scraping work is
+meaningfully larger. The two work together: reference-led is the lens,
+comprehensive is the substrate.
 
 ## Epic 3: Lovable features (organized around discovery and play)
 
@@ -261,47 +293,59 @@ v2 surfaces below — both gated on Epic 0 references for full
 power, but the `type` marker (free-form / shared-inbox / challenge
 / watchbox) is already in the schema.
 
-### Build-a-collection v2 (deferred — reuses the Collections primitive)
+### Build-a-collection / Watch Challenges v2 (deferred — reuses the Collections primitive)
 
-The interactive challenge layer on top of collections — pick a
-target count + budget + theme, source from past + present
-listings, track value over time. The plumbing (collections table
-with `type='challenge'`) already exists; this is purely UI + a few
-extra columns (target_count, budget, theme).
+Constrained hypothetical collections: "3 watches for $50k", "5-watch
+starter collection", "3 watches for business", etc. User picks from
+current AND past listings (sold archive becomes a query-able source,
+not just an archive tab). Multiple challenges per user.
 
-- **User picks:** number of watches, challenge headline ("3 watches for
-  business"), budget.
-- **Source:** picks from current AND past listings (sold archive becomes
-  a query-able source, not just an archive tab).
-- **Send as challenge:** invite another user to build a collection responding
+Workflow surfaces (currently in design exploration in a separate chat;
+UI/workflow not yet resolved):
+- **Send-as-completed.** Share a finished collection with a friend.
+- **Send-as-empty.** Challenge a friend to build their own response
   to your spec.
-- **Share later:** public read-only link to a collection (extends the
-  v1 single-listing share primitive — a future "share collection"
-  surface).
-- **Value-over-time tracking:** show how the cost of assembling that
-  collection has shifted since you built it. Powerful only after enough price
-  history accumulates.
+- **Public read-only link.** Extends the v1 single-listing share
+  primitive into a future "share collection" surface.
+- **Value-over-time tracking.** Show how the cost of assembling that
+  collection has shifted since you built it. Powerful only after
+  enough price history accumulates.
 
-Depends on: Epic 0 (references), past listings being browseable as a query-
-able set rather than just an archive tab.
+The plumbing (collections table with `type='challenge'`) already
+exists; this is purely UI + a few extra columns (target_count,
+budget, theme).
 
-### Watchbox v2 (deferred — also reuses Collections)
+Not a near-term build target; revisit when design questions in the
+exploration thread are answered. Depends on Epic 0 (references) +
+past listings being browseable as a query-able set.
 
-Owned-watch tracking — a Watchbox is a collection with
-`type='watchbox'`. Per-item ownership status, purchase price,
-purchase date, sold price + date, photos. Historical-cost vs
-current-comp delta. Future session.
+### Watchbox v2 — real ownership tracking (deferred)
 
-**Per-watch reflection + collecting journey narrative** ships with
-the same Watchbox feature: optional, free-text, private by default
-fields per watch capturing why bought, expectations vs reality, what
-the watch came to mean. Plus a separate "journey narrative" surface
-on the watchbox itself for the broader arc — taste shifts, lessons,
-the throughline. Highest personal value of any item on the roadmap;
-low platform risk and low implementation cost on top of the watchbox
-data model. Grounded by Journey 10. This is the kind of feature that
-makes Watchlist a reflective tool rather than a transactional one
-(see "Strategic bets").
+Track watches Mark and other users actually own and have owned. A
+Watchbox is a collection with `type='watchbox'`.
+
+Per-item ownership data:
+- Purchase price + date acquired
+- Sold price + date sold (if disposed)
+- Photos (user uploads, optional)
+- Historical-cost vs current-comp delta
+
+Per-watch **reflection** layer (the differentiator):
+- Why bought
+- Expectations going in
+- How reality compared
+- Would-buy-again
+
+Per-user **collecting journey narrative**:
+- A single editable story about the user's collecting arc — started
+  with vintage Heuer, moved to Rolex, exploring obscure brands now.
+- Strictly private by default; optionally shareable later.
+- Compounds in value over time as the reflection layer accumulates.
+
+Grounded by Journey 10 (the returning reflection). This is the
+exemplar of the **Strategic bets** "reflective tool, not transactional
+tool" lens — highest personal value of any roadmap item; low platform
+risk; low implementation cost on top of the watchbox data model.
 
 ### Sharing collections (deferred — extends v1 share primitive)
 
@@ -310,29 +354,90 @@ URL shape will mirror v1: `?collection=<id>&shared=1`. Recipient
 banner gives "Save copy to my collections" / "Just browsing".
 Public read-only collection links also live here.
 
-### Three-tier save model (rejected — Collections supersedes)
+### Strength-of-save model (reinstated 2026-05-03)
 
-Was: heart / watch / note as separate save tiers. Collections
-(any name, any number) covers the same UX surface with more
-flexibility, so the tiered model is no longer needed. Archived in
-the change log for historical reference.
+Replace single-tier hearts with two levels of save signal: **"Love"**
+(strong, definitive) and **"Watch"** (lighter, "keep an eye on this").
+
+**Critical constraint:** must not add UI clutter or extra friction.
+Likely a single tap that cycles through three states (none → watch
+→ love → none), or a long-press to escalate. Bad UX kills the
+feature; the simpler the gesture, the better.
+
+Was rejected during Collections + Sharing v1 because it added
+complexity. Reinstated because the underlying need (distinguishing "I
+love this" from "I'm tracking this lightly") is real, especially as
+input for the AI taste features below. The challenge is the UI, not
+the concept.
+
+This is the entry-level shape of the broader **Multi-signal taste
+capture** below — start here, expand later.
+
+### Multi-signal taste capture
+
+Beyond binary heart/no-heart, capture calibrated taste signals along
+a spectrum:
+
+- **Love** — strong positive
+- **Watch** — light positive (covered by Strength-of-save above)
+- **Keep but don't recommend** — neutral; don't surface in suggestions
+  but don't actively reject
+- **Not for me but show others** — mild negative for me only
+- **Never recommend this kind of thing** — strong negative
+
+Hide is currently doing too many jobs (clutter removal, taste signal,
+"I don't want this"); this disambiguates them.
+
+Powers the AI taste model with calibrated signals. Implementation can
+be progressive: start with the strongest signals (Love, Never), add
+finer-grained ones as the UI for capturing them gets easier.
+
+### Discover mode (with serendipity)
+
+Single-card swipe interface as alternative to feed browsing. Two
+streams woven together:
+
+- **High-precision stream** — watches similar to what you've loved.
+  Low surprise; reliable hits.
+- **Serendipity stream** — watches *adjacent* to your taste but
+  outside your usual patterns. Lower precision, higher surprise.
+  Answers "show me something I wouldn't have looked at on my own
+  but might love."
+
+The serendipity element is what makes the feature worth building.
+Discover mode without it is just a swipe-version of the feed.
+
+Mobile-first. Doubles as a calibration mode for fast taste-signal
+generation. Ships after Multi-signal taste capture so the underlying
+signals are rich enough to drive both streams.
+
+### AI recommendation surfaces
+
+Specific recommendation views inside the app, distinct from Discover
+mode's swipe interface:
+
+- **"Things you might have missed"** — weekly digest of watches
+  matching your taste that you didn't see in the feed. Sunday-morning
+  ritual.
+- **"More like this"** — on any listing, surfaces similar watches.
+- **"For [name]"** — recommendations for someone else based on what
+  *they've* reacted to in shared listings. The killer feature for
+  couples who share watches with each other; makes Watchlist
+  bidirectionally useful for shared collecting interests. Mark sees
+  a watch Jackie would like; the system already knows Jackie's taste
+  from her own use; Mark can ask "what does Jackie's taste model say
+  about this?" before sharing.
+
+Restricted initially to Mark's household. Can extend to friends later,
+or remain admin/household only indefinitely. Cost estimate: pennies
+per month at current scale.
+
+Depends on Multi-signal taste capture + embeddings infrastructure
+(Supabase pgvector, computed once per listing on first sight).
 
 ### Reference-level grouping
 Three saved 5548BAs collapse into one card with "3 listings, click to expand."
 Depends on Epic 0 references.
-
-### AI-powered serendipity (admin / household only initially)
-
-- **Text embeddings** on listings from top dealers (Wind Vintage, Tropical
-  Watch, Bob's vintage Omega, Hairspring, others I actually browse). Stored in
-  Supabase pgvector. Computed once per listing on first sight.
-- **"More like this"** on any listing.
-- **Weekly "things you might have missed" email.** 5 listings from this week
-  matching my taste based on hearted history. Sunday morning ritual.
-- **Restricted initially** to my household. Can extend to friends later, or
-  remain admin-only indefinitely.
-- **Cost** estimate: pennies per month at current scale. Comfortable in
-  budget.
 
 ### Deferred under this epic
 - **Taste arcs** ("you love Rolex, fall out, return"). Defer until
@@ -376,6 +481,17 @@ docs and code the two coexist with the disambiguating qualifier.
 
 ### Sub-area: Tools and calculators
 
+**Tools section is intentionally narrow.** The Watch size comparison
+tool is the seed. Future tools should solve specific *tactile* or
+*calculation* problems collectors actually have — e.g. "lay this watch
+on my wrist before I buy it" — not a generic toolbox.
+
+Resist building lug-to-lug calculators, strap-size calculators, etc.
+as separate tools. Most of that calculation is better surfaced
+**within reference guides themselves** (the 1675's reference guide
+can include lug-to-lug context for that specific reference, where
+the data is actually meaningful). Keep Tools tiny.
+
 Shipped:
 
 - **2026-04-29: Watch size comparison.** Two case dimensions (width ×
@@ -384,16 +500,6 @@ Shipped:
   to lay on your wrist. First feature in the References section. Print
   scoping uses a React Portal pattern (see CLAUDE.md "Print scoping for
   in-app tools" — pattern is reusable for future printable tools).
-
-Parking lot of future ideas (none promised, surface as Mark's interest
-allows):
-
-- Lug-to-lug calculator (wrist size + max lug-to-lug fit)
-- Strap size calculator (lug width + wrist size → strap length)
-- Round-watch variant of size comparison (case diameter input)
-- Serial number decoder (per brand, vintage Rolex / Omega / Heuer / etc.)
-- Service interval tracker
-- Crystal / case material reference chart
 
 ### Sub-area: Reference-number encyclopedia (the headline feature)
 
@@ -471,30 +577,32 @@ Hardware: M4 Mac mini base, 16GB RAM, ~$600.
 
 Current best-guess sequence. Will shift; update this doc when it does.
 
-1. **User settings / currency preference (Epic 0).** Near-term and
-   small. UK friend's GBP-primary case is real and the fix is half
-   a session of infra + half of Card refactor.
-2. **Epic 0 foundations** (references, verification script,
-   source-quality dashboard). Without these, everything downstream
-   is shaky.
-3. **Epic 6 Phase A** when a specific blocked source needs it OR
+1. **References as first-class entities (Epic 0).** The remaining
+   foundation. Several downstream features (encyclopedia, comparison
+   view, auction lot grouping, Discover mode quality) gate on this.
+2. **Site discoverability + welcome page (Epic 0).** Half-session;
+   robots / sitemap / og / Schema.org / first-time-visitor page.
+   Foundation for organic discovery.
+3. **Strength-of-save model (Epic 3).** Two-tier (Love / Watch) is
+   the entry point to the broader Multi-signal taste capture. Small
+   UI lift; the feature is *the gesture*, not the underlying data.
+4. **Epic 6 Phase A** when a specific blocked source needs it OR
    when ready to start Epic 5 generation work.
-4. **Build-a-collection v2 (Epic 3).** The Collections primitive
-   shipped 2026-05-01; v2 = challenge mechanics on top
-   (target_count, budget, theme, value-over-time). Reuses
-   `type='challenge'` on the existing collections table. Strongest
-   showcase feature once references land.
-5. **Epic 1 source list** to target end state, then close it.
-6. **Epic 2 auction history**, reference-led, open houses first.
-7. **Epic 5 encyclopedia** built incrementally as descriptions
+5. **Watchbox v2 — reflection layer (Epic 3).** Highest personal
+   value of any roadmap item. Reflective-tool exemplar per Strategic
+   bets. Unlocks Journey 10.
+6. **Epic 1 source pruning** under the Stop rule. At 30 dealers,
+   audit + prune to 25.
+7. **Epic 2 comprehensive auction inventory capture.** Substrate for
+   serendipitous discovery and reference research.
+8. **Epic 5 encyclopedia** built incrementally as dealer descriptions
    accumulate.
-8. **Epic 3 discovery features** (embeddings, weekly email) once
-   references and Mac mini are in place.
-9. **Watchbox v2 (Epic 3).** `type='watchbox'` collections — the
-   ownership-tracking surface. Lower priority than
-   build-a-collection because it's personal-collection-first vs
-   discovery-first.
-10. **Epic 4 admin analytics** built incrementally throughout.
+9. **Multi-signal taste capture + Discover mode + AI recommendation
+   surfaces (Epic 3).** Stack progressively. Multi-signal first;
+   Discover and recommendations layer on top once signals are rich.
+10. **Build-a-collection / Watch Challenges v2 (Epic 3).** Resume
+    once design exploration in the separate chat resolves.
+11. **Epic 4 admin analytics** built incrementally throughout.
 
 ## Explicitly NOT on the roadmap
 
@@ -520,9 +628,31 @@ Saying no is part of the roadmap. These have been considered and rejected
 - **Generic public social features** (comments, ratings, profiles).
   Listing-share + future collection-share are the only social
   primitives on the roadmap. Keep it small.
-- **Three-tier save model** (heart / watch / note as separate save
-  tiers). Superseded by Collections — any name, any number. More
-  flexible than fixed tiers.
+
+(Note: an earlier "three-tier save" rejection was reinstated
+2026-05-03 as **Strength-of-save** under Epic 3. The earlier
+rejection was framed around UI clutter, which is still the binding
+constraint — but a single-gesture cycle through three states
+addresses that constraint while preserving the calibrated-signal
+value. The reinstated version explicitly supersedes the earlier
+"Collections covers it" framing: Collections answers *organisation*,
+strength-of-save answers *signal*, and they're complementary.)
+
+## Parked, strategy needed
+
+Not "explicitly NOT" — these are real ideas that need a dedicated
+strategic session before they can be scoped, because the design
+questions are foundational rather than tactical.
+
+- **Featured selling section (Mark's own watches).** A surface where
+  Mark could sell from his own collection through Watchlist. Strategic
+  questions to answer first: hobbyist vs dealer line; conflict of
+  interest with curatorial features (e.g. personal-taste-relative
+  pricing if Mark is also a seller); dealer relationship implications
+  (existing dealers may chill on cooperation if Mark becomes one
+  himself); tax / legal questions; UI separation needed so users can
+  trust the curatorial signals. Capture so it doesn't get lost; do
+  the strategy session before the build session.
 
 ## Fun ideas, parked
 
@@ -536,7 +666,56 @@ Not active. Worth keeping a list because some might graduate.
 - **Year-in-review.** Once a year of data exists: hearted-most, dealers-
   browsed-most, biggest price drops caught.
 
+## Quarterly roadmap review
+
+A recurring discipline to keep the doc honest as the product evolves.
+
+**First Sunday of each quarter:** re-read this roadmap end-to-end,
+mark what shipped, update the priority order, and surface anything
+parked too long for an explicit ship-or-drop call. Same cadence
+applied to user-journeys and metrics docs when they exist.
+
+Not formal — just a calendar reminder to do the pass. The risk this
+addresses: roadmap rot. Items get added, shipped items don't get
+moved, priorities drift. A quarterly pass catches that before it
+becomes confusion.
+
 ## Update log
+
+- 2026-05-03: **Roadmap consolidation pass (additions / reinstatements
+  / edits from a parallel design conversation).** Multi-tier save
+  reinstated as Strength-of-save under Epic 3, with strict UI
+  constraints (single-gesture three-state cycle); the earlier
+  rejection note in "Explicitly NOT" updated with the reinstatement
+  reasoning. Multi-signal taste capture added as the richer five-tier
+  evolution that subsumes "hide as negative signal." Discover mode
+  added with explicit serendipity stream (the high-precision +
+  serendipity weave is what differentiates it from a swipe-version
+  of the feed). AI recommendation surfaces added as a separate Epic
+  3 item — "Things you might have missed", "More like this", and the
+  "For [name]" view that closes the loop on couples sharing tastes.
+  Watchbox v2 expanded with explicit reflection-layer + journey-
+  narrative framing (the Strategic-bets exemplar). Build-a-collection
+  v2 reframed as "Watch Challenges" with send-as-completed and
+  send-as-empty flows; flagged as gated on a separate design
+  exploration. Comprehensive auction inventory capture added to
+  Epic 2 as a distinct surface from the calendar-level tracking and
+  reference-led realized prices already there. Site discoverability
+  + welcome page added under Epic 0 (robots / sitemap / og /
+  Schema.org / first-time-visitor page). Tools section under Epic 5
+  narrowed — most tool-like content belongs *inside* reference
+  guides, not as a generic toolbox; lug-to-lug etc. parking lot
+  removed. Selling-Mark's-own-watches captured in a new "Parked,
+  strategy needed" section between "Explicitly NOT" and "Fun ideas,
+  parked" so the strategic questions are surfaced before the build.
+  Quarterly review section added at the end as a recurring
+  discipline. Verification script + Source quality dashboard moved
+  from active items to "shipped 2026-05-02" alongside the existing
+  User-settings shipped marker; the Epic 0 foundations layer is
+  meaningfully more solid than three sessions ago. Priority order
+  refreshed accordingly — references-as-first-class is now the lone
+  remaining Epic 0 foundation; Strength-of-save promoted because
+  it's small, gates other Epic 3 work, and is high-leverage.
 
 - 2026-05-02 (evening): **Source quality dashboard shipped (Epic 0
   + Epic 4 admin-only).** New `?tab=admin` route gated by
