@@ -146,6 +146,12 @@ jobs:
         continue-on-error: true
         run: python europeanwatch_scraper.py
 
+      - name: Run Vintage Watch Collective scraper (Wix, productsWithMetaData)
+        # Same Wix pattern as Chronoholic — productsWithMetaData.list[]
+        # JSON blob embedded in /shop HTML, multi-brand. EUR-priced.
+        continue-on-error: true
+        run: python vintagewatchcollective_scraper.py
+
       # eBay runs in its own workflow (.github/workflows/scrape-ebay.yml)
       # so a slow Browse API response or token blip doesn't slow the
       # dealer-listings cron. eBay can iterate on its own cadence and
@@ -183,6 +189,7 @@ jobs:
           [ -f shucktheoyster_listings.csv ]      && mv shucktheoyster_listings.csv      data/shucktheoyster.csv      || echo "shucktheoyster missing"
           [ -f centralwatch_listings.csv ]        && mv centralwatch_listings.csv        data/centralwatch.csv        || echo "centralwatch missing"
           [ -f europeanwatch_listings.csv ]       && mv europeanwatch_listings.csv       data/europeanwatch.csv       || echo "europeanwatch missing"
+          [ -f vintagewatchcollective_listings.csv ] && mv vintagewatchcollective_listings.csv data/vintagewatchcollective.csv || echo "vintagewatchcollective missing"
 
       - name: Merge into listings.json
         run: python merge.py --listings-only

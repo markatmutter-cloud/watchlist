@@ -93,13 +93,13 @@ Cross-cutting infrastructure. Several later epics depend on this.
 ## Epic 1: Sources
 
 Target end state: ~30 dealers + 6 auction houses, all earning their keep.
-Currently at 27 dealers + 6 auction houses.
+Currently at 29 dealers + 6 auction houses.
 
 - **Active candidates** (evaluated, not all guaranteed):
 
   | Candidate | Status |
   |---|---|
-  | Vintage Watch Collective | not standard Shopify (400 on `/products.json`); needs HTML scrape or different platform |
+  | Vintage Watch Collective | **shipped 2026-05-02** — Wix, productsWithMetaData pattern (Chronoholic clone), EUR, ~40 active listings |
   | Wrist Icons | WordPress; `/wp-json/wc/store/v1/products` returned 301 — follow redirect to confirm WooCommerce |
   | Vision Vintage Watches | Wix (not Squarespace despite the URL trick); needs custom HTML parsing |
   | Vintage Heuer | WordPress; would need a Shuck-style detail-page walker |
