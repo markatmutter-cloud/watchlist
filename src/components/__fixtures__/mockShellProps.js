@@ -86,6 +86,7 @@ export function buildMockShellProps(overrides = {}) {
     listingsTabContentJSX: <div data-testid="listings-tab-content" />,
     feedFilterPillJSX: <div data-testid="feed-filter-pill" />,
     auctionsViewToggleJSX: null,
+    lotMigrationBannerJSX: null,
     primaryCurrency: "USD",
     sectionHeadingStyle: { fontSize: 11, fontWeight: 600 },
     settingsModalJSX: null,

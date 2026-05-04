@@ -44,6 +44,7 @@ export function DesktopShell(props) {
     adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
     feedFilterPillJSX, auctionsViewToggleJSX,
     trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX, watchlistTabJSX,
+    lotMigrationBannerJSX,
   } = props;
 
   // Desktop sidebar retired in the April '26 filter-consolidation pass.
@@ -363,6 +364,8 @@ export function DesktopShell(props) {
         <div data-desktop-main style={{ flex: 1, overflowY: "auto", padding: `${tab === "watchlist" ? 0 : 14}px 16px 32px` }}>
           {/* Share-receive surface — self-contained component. */}
           {shareReceiverJSX}
+          {/* Phase B2 lot-migration banner. */}
+          {lotMigrationBannerJSX}
           {/* Ending-soon pinned section. Mounted at the top of the
               scroll area so it's the first thing the user sees when
               they hit Watchlist; sub-tab strip stays sticky above

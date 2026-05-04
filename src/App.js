@@ -28,6 +28,7 @@ import { SettingsModal } from "./components/SettingsModal";
 import { ShareReceiver } from "./components/ShareReceiver";
 import { EndingSoon } from "./components/EndingSoon";
 import { AuctionCalendar } from "./components/AuctionCalendar";
+import { LotMigrationBanner } from "./components/LotMigrationBanner";
 import { WatchlistTab } from "./components/WatchlistTab";
 import { AdminTab } from "./components/AdminTab";
 import { MobileShell } from "./components/MobileShell";
@@ -337,7 +338,7 @@ export default function Watchlist() {
     if (!q) return false;
     return userSearches.some(s => (s.query || "").toLowerCase() === q);
   }, [search, userSearches]);
-  const { urls: trackedLotUrls, add: addTrackedLot, addedAt: trackedLotAddedAt } = useTrackedLots(user);
+  const { urls: trackedLotUrls, add: addTrackedLot, remove: removeTrackedLot, addedAt: trackedLotAddedAt } = useTrackedLots(user);
 
   // Collections — user-created beyond the default Watchlist (which is
   // still backed by useWatchlist above). Approach A: this hook only
@@ -753,15 +754,12 @@ export default function Watchlist() {
 
   const handleWish = useCallback((item) => {
     if (!user) { requireSignIn({ kind: "wish", id: item.id }); return; }
-    // Tracked auction lots live in `tracked_lots` keyed by URL, not
-    // `watchlist_items` keyed by listing_id. Their projection uses
-    // shortHash(url) as the synthetic id, which collides with nothing
-    // real — so calling toggleWatchlist here would write a phantom
-    // watchlist_items row that the watchItems memo then projects
-    // alongside the original tracked-lot, surfacing as a duplicate
-    // card. Tracked lots are added/removed via the +Track flow;
-    // the heart on a tracked-lot card is purely an indicator.
-    if (item._isTrackedLot) return;
+    // Phase B2 (2026-05-04): the `_isTrackedLot` guard is gone.
+    // Auction-lot cards in the unified feed now write to
+    // watchlist_items via toggleWatchlist, same as dealer listings.
+    // The watchItems memo dedupes when a URL appears in both the
+    // user's hearted set and the trackedLotUrls projection, so the
+    // duplicate-card bug from before Phase B2 doesn't recur.
     toggleWatchlist(item);
   }, [user, toggleWatchlist, requireSignIn]);
 
@@ -928,7 +926,15 @@ export default function Watchlist() {
     // ALWAYS treated as user-saved (the URL paste itself counts as a
     // heart per Mark's spec on 2026-04-30). Item IDs use sha1(url) so
     // the union dedupes if the same URL ever ends up in both tables.
+    //
+    // Phase B2 dedup (2026-05-04): hearts on auction lots now write
+    // to watchlist_items keyed by shortHash(url). If a user has both
+    // a tracked_lots row AND a watchlist_items row for the same URL
+    // (during migration, or transiently), skip the tracked_lots
+    // projection — the watchlist row is the canonical record.
+    const watchedIds = new Set(its.map(it => it.id));
     for (const url of trackedLotUrls) {
+      if (watchedIds.has(shortHash(url))) continue;
       const data = trackedLotsState[url];
       if (!data) {
         // Pending: scraper hasn't populated tracked_lots.json yet.
@@ -1743,7 +1749,7 @@ export default function Watchlist() {
           cursor: "pointer", fontFamily: "inherit",
           flexShrink: 0, whiteSpace: "nowrap",
           marginLeft: isMobile ? 0 : "auto",
-        }}>+ Track new item</button>
+        }}>+ Track eBay item</button>
       )}
       {watchTopTab === "searches" && user && !searchEditor && (
         <button onClick={startAddSearch} style={{
@@ -1870,6 +1876,23 @@ export default function Watchlist() {
     />
   );
 
+  // Phase B2 one-shot per-user migration of tracked auction-house URLs
+  // → watchlist_items. Self-contained component (hooks isolated) so
+  // App.js's hook count stays unchanged. Renders the dismissable
+  // banner only when migration completed with N>0 actually moved;
+  // null in every other state.
+  const lotMigrationBannerJSX = (
+    <LotMigrationBanner
+      user={user}
+      watchlist={watchlist}
+      trackedLotUrls={trackedLotUrls}
+      trackedLotsState={trackedLotsState}
+      auctionLotsState={auctionLotsState}
+      toggleWatchlist={toggleWatchlist}
+      removeTrackedLot={removeTrackedLot}
+    />
+  );
+
   // Both shells consume the same props bag. App.js owns state and the
   // top-level JSX consts (authJSX, listingsGridJSX, watchSubTabsJSX,
   // statusSegmentJSX, watchlistTabJSX, plus the modal JSX consts) — the
@@ -1911,6 +1934,7 @@ export default function Watchlist() {
     feedFilterPillJSX, auctionsViewToggleJSX,
     trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX,
     watchlistTabJSX, adminTabJSX,
+    lotMigrationBannerJSX,
   };
 
   return isMobile

@@ -7,20 +7,39 @@ graduate to ROADMAP.md.
 
 ## TL;DR
 
-Long mostly-bug-fix session across the day. **Net deliverables**,
-latest first: Heuertime template-slug inclusion (24 watches, was 19);
-ClassicHeuer SOLD detection (46 live / 71 sold via per-item detail
-fetch on the `/en/` locale, was incorrectly all-live); ClassicHeuer
-SOLD-detector fix #2 (locale + greedy-regex bugs); Watches of
-Lancashire image proxy (Cloudflare hot-link 403); Heuertime image
-fix v2 (tile thumbnails from homepage, since detail-page gallery
-markup differs between local + GH Actions runner); Ending Soon
-hearts + Favorites-only scope fix; Collections → Lists UI rename
-(data model unchanged); main-branch protection ruleset.
+Two-half day. AM: bug-fix session (8 PRs). PM: **Unified listings/
+auctions feed + comprehensive auction-lot scraping + heart-on-lot**
+shipped across Phases A / B1 / B2 (PRs #30 merged, #31 + #32 awaiting
+merge as of writing).
 
-Production is **green**, latest bundle `e988a172` (post Lists rename;
-nothing visible since changed after that). Dealer count: **36**.
-Branch list on remote: clean except whatever's open right now.
+**PM net deliverables**:
+- **Phase A (PR #30 ✓ merged)**: Listings tab gets a tri-state
+  All / Dealers / Auctions pill. Tracked-lot data projects into the
+  main feed alongside dealers; "All" view sort uses a weighted
+  blend (ending-soon top → dealers/far-out lots middle → recently
+  sold → older sold). Auction houses appear in source filter under
+  sub-header. Calendar moved out of `Watchlist > Calendar` (sub-tab
+  removed) into `Listings > Auctions > Calendar` toggle.
+- **Phase B1 (PR #31 awaiting merge)**: New `auction_lots_scraper.py`
+  walks every active sale in `auctions.json` and pulls per-lot
+  detail for Antiquorum (catalog → per-lot fetch), Christie's
+  (inline `chrComponents.lots` blob), Sotheby's (`__NEXT_DATA__`
+  algoliaJson, paginated), Phillips (page enum → per-lot fetch,
+  capped 60/sale). Output: `public/auction_lots.json`. Per Mark:
+  filter pocket / clocks / dials only at scrape time; keep
+  accessories. **Initial scrape: 296 lots.** Wired into daily
+  auctions cron after merge.py.
+- **Phase B2 (PR #32 awaiting merge, stacked on B1)**: Hearts on
+  auction-lot cards write to watchlist_items (no more `_isTrackedLot`
+  guard). +Track URL validator narrowed to eBay-only. Per-user
+  one-shot migration via `<LotMigrationBanner/>` copies non-eBay
+  tracked URLs into watchlist_items + removes the tracked_lots row.
+  Idempotent via localStorage flag. eBay tracking workflow stays.
+
+Production for **Phase A**: bundle `7efca632`, green. Dealer count:
+**36**. Branch list: PRs #31 + #32 open, awaiting merge.
+
+**AM bug-fix deliverables** (preserved below):
 
 ## What shipped (newest first)
 
@@ -212,28 +231,44 @@ session-handoff-update + dealer count entries (#20)
 
 ## Next session
 
-Per the refreshed [ROADMAP.md](ROADMAP.md) priority order, **Mark
-explicitly noted his next session is auction-inclusion work**.
-After that:
+Auction-inclusion work is **shipped** (PRs #30 merged + #31/#32 in
+flight). Per refreshed priority order:
 
-1. **Auction inclusion change** — Mark's planned next session.
-   Specifics not yet defined here; capture them at session start.
-2. **Listing event capture (Epic 4)** — Mark wants this AFTER the
-   auction work. Click + save events to support "what's hot",
-   "most saved", "most viewed", and a future per-listing
-   click-through-rate signal on the Source Quality dashboard.
-   Anonymous-friendly via localStorage UUID; admin-only RLS for
-   reads; periodic rollup + prune cron to keep the table from
-   growing unbounded. Captured in ROADMAP under Epic 4.
-3. **Watch Challenges v1.5** — close the social loop: implement the
+1. **Listing event capture (Epic 4)** — top of queue. Click + save
+   events feeding "what's hot" / "most saved" / per-listing CTR on
+   the Source Quality dashboard. Anonymous-friendly UUID in
+   localStorage; admin-only RLS for reads; periodic rollup + prune
+   cron.
+2. **Sotheby's lot images** — Phase B1 v1 left these null. Easy
+   30-min addition: per-lot detail-page fetch to extract the
+   brightspotcdn URL.
+3. **Manual historical auction entry (original Phase D, deferred
+   from this session)** — Mark's three target URLs:
+   `https://www.phillips.com/auctions/auction/CH080317`,
+   `https://www.phillips.com/auction/CH080218/browse`,
+   `https://catalog.antiquorum.swiss/en/auctions/geneva-mandarin-oriental-hotel-du-rhone-2007-04-15/lots/`.
+   Phillips + Antiquorum scrapers may need archive-URL extensions.
+   Admin-only form gated by `REACT_APP_ADMIN_EMAILS`.
+4. **Watch Challenges v1.5** — close the social loop: implement the
    `?newchallenge=1` receive flow (auto-prompt a draft response)
    and decide on public read of completed challenges (RLS surgery).
-4. **References as first-class entities (Epic 0).**
-5. **Site discoverability + welcome page (Epic 0).** Half-session.
-6. **Strength-of-save model (Epic 3).**
-7. **Stop-rule prune** — at 36 dealers, audit + prune to 25.
+5. **References as first-class entities (Epic 0).**
+6. **Site discoverability + welcome page (Epic 0).** Half-session.
+7. **Strength-of-save model (Epic 3).**
+8. **Stop-rule prune** — at 36 dealers, audit + prune to 25.
    Source Quality dashboard already exists. ClassicHeuer is at
    60%-sold-as-archive — strong prune candidate.
 
 Plus the maintenance-rhythm beat: every 4th-5th session is hygiene
 only.
+
+## Open questions left from this session
+
+- **Tests workflow not firing on PRs #31 + #32.** Looks like a
+  GitHub Actions glitch — the `tests.yml` `pull_request` trigger
+  didn't fire on either. Vercel + bundle build are green so the
+  app compiles cleanly; Tests will run on the next push to main
+  (after merge). Worth a one-line "is this still happening?"
+  check at the start of next session.
+- **Phase D not started.** Manual historical entry deferred per
+  scope/time. Captured in priority order above.
