@@ -9,8 +9,10 @@ URL slugs all start with `kopie-van-` (Dutch "copy of") because
 each page was duplicated from a master template.
 
 Strategy mirrors vintagewatchshop_scraper:
-  1. Fetch homepage; extract distinct `kopie-van-X` URLs (skipping
-     the `kopie-van-template-for-watches-N` placeholders).
+  1. Fetch homepage; extract every distinct `kopie-van-X` URL,
+     including the `kopie-van-template-for-watches-N` slugs — those
+     look like placeholders but are actually real watches in
+     misleading slots (verified 2026-05-04).
   2. For each, fetch the detail page and parse:
        - title  → first <title> tag (the URL slug doesn't reflect the
          current watch — the dealer reuses pages and only updates the
@@ -79,10 +81,20 @@ def fetch(url, timeout=25):
 
 
 def discover_urls(home_html):
-    """Distinct watch detail URLs from homepage. Skip templates +
-    /shop + /shop-1 + other non-watch pages."""
+    """Distinct watch detail URLs from homepage.
+
+    Heuertime's URL slugs are misleading: pages named
+    `kopie-van-template-for-watches-N` look like leftover scaffolding
+    but are actually real watches the dealer published into a
+    template-named slot (e.g. CHARLES NICOLET TRAMELAN, JLC TRAVEL
+    CLOCK, GIGANDET ROSE GOLD CHRONOGRAPH, JACQUES MONNAT). On
+    2026-05-04 we removed the `template-for-watches` exclusion that
+    was dropping those four — bringing the count from 20 → 24,
+    matching what Mark counts on the site. If a real placeholder
+    page ever surfaces, its title will be empty/generic and Mark can
+    hide it from the feed via the Card "..." menu."""
     urls = set(re.findall(r'href="(https://www\.heuertime\.com/kopie-van-[a-z0-9-]+)"', home_html))
-    return sorted(u for u in urls if "template-for-watches" not in u)
+    return sorted(urls)
 
 
 # Image extraction: pull the COLOR tile thumbnail from the HOMEPAGE,
@@ -144,8 +156,8 @@ def extract_tile_images(home_html):
     mapping = {}
     for m in HOMEPAGE_TILE_RE.finditer(home_html):
         detail = m.group(1)
-        if "template-for-watches" in detail:
-            continue
+        # Note: do NOT filter "template-for-watches" URLs here —
+        # see discover_urls' docstring; those slugs hold real watches.
         if detail not in mapping:
             mapping[detail] = m.group(2)
     return mapping
