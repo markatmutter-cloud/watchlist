@@ -663,16 +663,24 @@ Hardware: M4 Mac mini base, 16GB RAM, ~$600.
 
 Current best-guess sequence. Will shift; update this doc when it does.
 
-1. **Auction inclusion change (Mark's planned next session,
-   2026-05-04).** Specifics not yet defined; capture at session
-   start. Likely touches the auction calendar / tracked-lots flow.
-2. **Listing event capture (Epic 4).** Reinstated to the front of
-   the queue per Mark on 2026-05-04 — wants this right after the
-   auction-inclusion work because click + save data is the input
-   for a "what's hot" / "most saved" signal on the Source Quality
+1. **Listing event capture (Epic 4).** Now top of queue —
+   the auction-inclusion work shipped in PRs #30 / #31 / #32
+   (2026-05-04). Click + save telemetry feeds the "what's hot" /
+   "most saved" / per-listing CTR signals on the Source Quality
    dashboard. Half-session of build + the periodic rollup-and-prune
    so the table doesn't grow unbounded. Anonymous-friendly (UUID
    in `localStorage`); admin-only RLS for reads.
+2. **Sotheby's lot images** — Phase B1 v1 left these null
+   (brightspot CDN URL is hash-prefixed, not derivable from the
+   algoliaJson hit alone). Fix: one-shot detail-page fetch per
+   Sotheby's lot to extract the brightspotcdn URL. ~30-min
+   addition to `auction_lots_scraper.py`. Not blocking; cards
+   render with the no-image placeholder until then.
+3. **Manual historical auction entry (Epic 2 / original Phase D).**
+   Admin-only form for seeding specific past sales. Mark's three
+   target URLs: Phillips CH080317, Phillips CH080218, Antiquorum
+   Geneva 2007-04-15. Phillips + Antiquorum scrapers may need
+   archive-URL extensions.
 3. **Watch Challenges v1.5 (Epic 3).** Close the social loop left
    by v1: implement the `?newchallenge=1` receive flow + public
    read of completed challenges (RLS surgery). Half-session of
@@ -787,6 +795,63 @@ moved, priorities drift. A quarterly pass catches that before it
 becomes confusion.
 
 ## Update log
+
+- 2026-05-04 (PM): **Unified listings/auctions feed + comprehensive
+  auction-lot scrape + heart-on-lot (Phases A / B1 / B2, PRs
+  #30 / #31 / #32).** Net deliverables:
+  - **PR #30 (Phase A):** Listings tab gets a tri-state All /
+    Dealers / Auctions pill in the filter row. Tracked-lot data
+    projects into the main feed alongside dealers; "All" view's
+    default Date sort uses a weighted blend (lots ending within
+    14 days at top, dealers + far-out lots middle by
+    effectiveDate, recently sold next, older sold last). Auction
+    houses appear in the source filter under a sub-header.
+    Calendar of upcoming sales moved out of `Watchlist > Calendar`
+    (sub-tab removed) into `Listings > Auctions > Calendar`
+    toggle. Hearts on auction-lot cards stay no-op via the
+    existing `_isTrackedLot` guard pending Phase B2.
+  - **PR #31 (Phase B1):** New `auction_lots_scraper.py` walks
+    every active sale in `auctions.json` and pulls per-lot detail
+    for the four houses with working access. Antiquorum (catalog
+    page → per-lot fetch), Christie's (inline
+    `window.chrComponents.lots` blob), Sotheby's (`__NEXT_DATA__`
+    algoliaJson.hits, paginated), Phillips (auction-page tile
+    enumeration → per-lot fetch, capped at 60/sale). Output goes
+    to `public/auction_lots.json` (URL-keyed, same shape as
+    tracked_lots.json). Per-house category filter at scrape time
+    excludes pocket watches / clocks / loose dials only — Mark
+    explicitly kept other accessories (boxes, hats, original
+    adverts, equipment, watch parts) in. Bonhams + Monaco Legend
+    still skipped (Cloudflare / SPA). Wired into the daily
+    auctions cron after `merge.py --auctions-only`. **Initial
+    scrape: 296 lots** (AQ 20, CH 82, SO 94, PH 100). Sotheby's
+    images null in v1 (brightspot CDN URL has an unguessable
+    hash; needs a per-lot fetch to extract — easy follow-up).
+    Antiquorum's catalog `?page=N` 301s back to `/lots`, so we
+    get the first 20 lots per sale for now; they typically fill
+    in batches before the sale.
+  - **PR #32 (Phase B2):** Hearts on auction-lot cards now write
+    to `watchlist_items` (no more `_isTrackedLot` no-op guard).
+    `useTrackedLots.add` URL validator narrowed to **eBay only** —
+    auction-house URLs come in via the comprehensive scrape and
+    are saved via hearts. New `<LotMigrationBanner/>` component
+    runs a per-user one-shot migration: each non-eBay tracked URL
+    gets copied into `watchlist_items` keyed by `shortHash(url)`,
+    then the tracked_lots row is removed. eBay rows untouched.
+    Idempotent via `dial_lot_migration_v1_<uid>` localStorage
+    flag. `watchItems` projection dedupes a URL appearing in both
+    surfaces. TrackNewItemModal copy + +Track button label
+    rewritten for eBay-only.
+  - **Epic 2** comprehensive auction inventory capture — partially
+    shipped (PR #31). Antiquorum + Christie's + Sotheby's +
+    Phillips covered for currently-active sales; comprehensive
+    historical archive backfill still future. Bonhams / MLA /
+    Heritage still need Mac mini Phase A.
+  - **Epic 3** Lots tab / explicit-tracking framing retired.
+    Hearting is the unified save gesture for dealer listings AND
+    auction-house lots.
+  - **Things to never do (CLAUDE.md)** updated: don't re-add
+    `_isTrackedLot` guard, don't widen +Track past eBay.
 
 - 2026-05-04: **Bug-fix session + UI rename + scraper sharpening.**
   Net: 8 PRs (#21–#28), all merged. Highlights:

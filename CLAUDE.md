@@ -117,12 +117,66 @@ banner + the listing's Card above `listingsGridJSX` in both shells.
 URL is rewritten via `history.replaceState` after action so a
 refresh doesn't re-trigger.
 
-**Location URL params (2026-05-02).** `tab` (listings | watchlist |
-references | admin), `sub` (listings | collections | challenges |
-searches | calendar — only meaningful when tab=watchlist; note the
-key stays `collections` for the Lists sub-tab — see UI rename note
-above) and `col` (collection UUID, or `__hidden__` for the synthetic
-Hidden list) get
+**Unified listings/auctions feed (2026-05-04, PRs #30 / #31 / #32).**
+The Listings tab is the global "things you might buy" surface — it
+merges dealer items (`public/listings.json`) with auction lots
+(`public/tracked_lots.json` ∪ `public/auction_lots.json`, projected
+by `auctionLotItems` + `mainFeedItems` in App.js). A tri-state pill
+in the filter row (`feedFilter`: all / dealers / auctions) narrows
+the feed; per-session, resets on tab switch. The "All" view's
+default Date sort uses the weighted blend in `blendBucket`: bucket 0
+= auction lots ending within 14 days, bucket 1 = dealers + far-out
+lots by effectiveDate, bucket 2 = sold within 30 days, bucket 3 =
+older sold. Auction houses appear in the source filter under a
+"Auction houses" sub-header alongside dealers. Calendar of upcoming
+sales lives at Listings > Auctions > Calendar (toggle); the
+Watchlist > Calendar sub-tab is gone. Hearts on auction-lot cards
+work like hearts on dealer cards (Phase B2): write to
+`watchlist_items` keyed by `shortHash(url)`, no `_isTrackedLot`
+guard. The +Track button stays for **eBay only** — auction-house
+URLs route through hearts now. The `tracked_lots` table is the
+eBay scraping queue plus a transient migration target; Phase B2's
+`<LotMigrationBanner/>` does a one-shot per-user copy of any
+non-eBay tracked URL into watchlist_items + delete from
+tracked_lots, idempotent via `dial_lot_migration_v1_<uid>`
+localStorage.
+
+**Comprehensive auction-lot scraping (2026-05-04, PR #31).**
+`auction_lots_scraper.py` reads `public/auctions.json` and walks
+every active sale, scraping per-lot detail for the four houses
+with working access: **Antiquorum** (catalog page → per-lot fetch
+of the catalog detail page), **Christie's** (inline
+`window.chrComponents.lots.data.lots` blob — no per-lot fetch),
+**Sotheby's** (`__NEXT_DATA__.props.pageProps.algoliaJson.hits`,
+paginated via &page=N), **Phillips** (auction-page tile
+enumeration → per-lot fetch via `scrape_phillips_lot`, capped at
+60/sale to bound CI time). Output goes to
+`public/auction_lots.json` keyed by URL — same shape as
+`tracked_lots.json` so App.js projects them through one path,
+deduping by URL with the comprehensive scrape winning ties.
+Bonhams + Monaco Legend skipped (CF + SPA respectively). Per-house
+enumeration failures are soft — one breakage doesn't kill the run.
+Wired into `.github/workflows/scrape-auctions.yml` after the
+`merge.py --auctions-only` step so the calendar is fresh when the
+walker runs.
+
+**Auction-lot category exclusion (2026-05-04).** Per Mark: filter
+ONLY pocket watches, clocks, and loose dials at scrape time. KEEP
+every other accessory (boxes, hats, original adverts, equipment,
+watch parts other than dials). Title-based regex in
+`auction_lots_scraper.EXCLUDE_PATTERNS`: bare `\bpocket\b` is broad
+enough to catch "openface pocket", "pocket chronometer", etc.
+without false positives in auction-watch titles. Future
+auction-side scrapers (e.g. when Bonhams/MLA come online) should
+import + apply the same `is_excluded_title` predicate so the
+display layer can keep assuming inputs are pre-filtered.
+
+**Location URL params (2026-05-02; "calendar" sub-tab retired
+2026-05-04).** `tab` (listings | watchlist | references | admin),
+`sub` (listings | collections | challenges | searches — only
+meaningful when tab=watchlist; note the key stays `collections` for
+the Lists sub-tab — see UI rename note above) and `col` (collection
+UUID, or `__hidden__` for the synthetic Hidden list) get
 reflected in the URL via `history.replaceState`. App.js owns `tab`
 + `sub`; WatchlistTab owns `col`. App.js's effect also clears `col`
 when leaving the watchlist tab so the URL stays clean. Both effects
@@ -303,15 +357,25 @@ To add a new printable tool: render its sheet via `createPortal` to
   is the agreed shape; flipping to a fuller migration would touch
   every read path that hits `useWatchlist`. Revisit only if the
   asymmetry causes real pain.
-- **Don't call `toggleWatchlist` on tracked-lot items.** Tracked
-  auction lots live in `tracked_lots` keyed by URL, with a synthetic
-  `shortHash(url)` id used for the projected watchItems entry. Calling
-  `toggleWatchlist({id: shortHash(url), ...})` writes a phantom row
-  into `watchlist_items` that the watchItems memo then projects
-  alongside the real tracked-lot entry → duplicate cards. `handleWish`
-  in App.js guards on `_isTrackedLot` and early-returns; mirror that
-  guard in any new heart-click handler. Add/remove for tracked lots
-  flows through the +Track / un-track surface, not the heart.
+- **Don't reintroduce the `_isTrackedLot` no-op guard on hearts.**
+  Phase B2 (2026-05-04) intentionally removed it — auction-lot
+  cards now write to `watchlist_items` keyed by `shortHash(url)`
+  via `toggleWatchlist`, the same code path dealer hearts use.
+  Duplicate-card prevention lives in two places now:
+  (a) the `watchItems` projection skips the tracked_lots loop entry
+  when the same shortHash id is already in the user's watchlist;
+  (b) the per-user migration in `<LotMigrationBanner/>` deletes the
+  tracked_lots row after copying it into watchlist_items, so eBay
+  is the only routine source of tracked_lots inserts going forward.
+  If a future change adds a new tracked_lots-shaped surface, mirror
+  the dedup in watchItems rather than reintroducing the guard.
+- **Don't widen the +Track URL validator past eBay.** Auction-house
+  lots come in via the comprehensive scrape (Phase B1) and get
+  hearted from the unified feed. Re-allowing Antiquorum / Christie's
+  / Sotheby's / Phillips URL patterns in `useTrackedLots.add`
+  would create a parallel save path that the comprehensive scraper
+  can't deduplicate. eBay stays because it's not in the
+  comprehensive scrape (different infrastructure).
 - **Don't add new `useState`/`useMemo`/`useCallback` deep into App.js**
   near render-conditional code paths. Adding hooks to the back of
   App.js's already-large hook list triggered React error #310
