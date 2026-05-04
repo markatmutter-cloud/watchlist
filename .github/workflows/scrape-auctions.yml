@@ -100,6 +100,17 @@ jobs:
       - name: Merge into auctions.json
         run: python merge.py --auctions-only
 
+      - name: Run comprehensive auction-lot scraper
+        # Walks every active sale in auctions.json (must run AFTER
+        # merge.py --auctions-only) and scrapes per-lot detail for
+        # Antiquorum / Christie's / Sotheby's / Phillips. Filters
+        # pocket watches / clocks / loose dials at scrape time per
+        # Mark's spec on 2026-05-04. Output: public/auction_lots.json.
+        # Soft-fail so a temporary house-side breakage doesn't kill
+        # the whole auctions run.
+        continue-on-error: true
+        run: python auction_lots_scraper.py
+
       - name: Commit and push
         # Same race-resilient retry as the listings workflow.
         run: |
