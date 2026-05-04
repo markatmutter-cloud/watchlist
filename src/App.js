@@ -27,6 +27,7 @@ import { CollectionPickerModal } from "./components/CollectionPickerModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { ShareReceiver } from "./components/ShareReceiver";
 import { EndingSoon } from "./components/EndingSoon";
+import { AuctionCalendar } from "./components/AuctionCalendar";
 import { WatchlistTab } from "./components/WatchlistTab";
 import { AdminTab } from "./components/AdminTab";
 import { MobileShell } from "./components/MobileShell";
@@ -83,6 +84,44 @@ function endingSoonComparator(a, b) {
   return ae.localeCompare(be);
 }
 
+// "Ending soon" window for the unified-feed blend sort. Auction lots
+// whose auction_end falls inside this window from now bubble to the
+// top of the All view. 14 days picked as the starting threshold —
+// short enough that few lots dominate the front, long enough that
+// the section is rarely empty. Adjustable from one constant.
+const BLEND_ENDING_SOON_DAYS = 14;
+// "Recently sold" window — sold auction lots within this many days
+// of their end date sit in their own bucket above older sold lots.
+const BLEND_RECENT_SOLD_DAYS = 30;
+
+// Bucket number for the unified-feed blend sort. Lower number = higher
+// in the feed.
+//   0 — auction lots ending within BLEND_ENDING_SOON_DAYS or live
+//   1 — dealer listings + auction lots ending more than 14 days out
+//   2 — auction lots sold within the last 30 days
+//   3 — older sold auction lots
+// Dealer items always land in bucket 1; auction items split by status
+// + end date.
+function blendBucket(it) {
+  const now = Date.now();
+  const end = it.auction_end ? new Date(it.auction_end).getTime() : NaN;
+  const isAuctionLot = !!it._isAuctionFormat || Number.isFinite(end);
+  if (!isAuctionLot) return 1;
+  const isSold = !!it.sold || !!it._isSold || (Number.isFinite(end) && end <= now);
+  if (isSold) {
+    const soldRaw = it.soldAt ? new Date(it.soldAt).getTime()
+                  : Number.isFinite(end) ? end : NaN;
+    if (Number.isFinite(soldRaw) && (now - soldRaw) <= BLEND_RECENT_SOLD_DAYS * 86400000) {
+      return 2;
+    }
+    return 3;
+  }
+  if (Number.isFinite(end) && (end - now) <= BLEND_ENDING_SOON_DAYS * 86400000) {
+    return 0;
+  }
+  return 1;
+}
+
 
 export default function Watchlist() {
   const screenWidth = useWidth();
@@ -118,6 +157,8 @@ export default function Watchlist() {
     filterBrands,  setFilterBrands,
     filterRefs,    setFilterRefs,
     filterAuctionsOnly, setFilterAuctionsOnly,
+    feedFilter, setFeedFilter,
+    auctionsView, setAuctionsView,
     toggleSource, toggleBrand,
     sort, setSort,
     search, setSearch,
@@ -162,14 +203,21 @@ export default function Watchlist() {
   // refresh on `?tab=watchlist&sub=collections` lands you back where
   // you were. Otherwise fall back to the persisted preference; final
   // fallback is "listings" (Favorites).
-  const SUB_VALUES = ["listings", "collections", "challenges", "searches", "calendar"];
+  // Watchlist sub-tab values. The "calendar" sub-tab was retired
+  // 2026-05-04 with the unified listings/auctions feed — the auction
+  // calendar now lives inside the Listings tab's Auctions filter as
+  // a "Calendar view" toggle. URL or localStorage values that still
+  // say "calendar" map back to "listings" silently so users who
+  // bookmarked or had it persisted don't land on a missing sub-tab.
+  const SUB_VALUES = ["listings", "collections", "challenges", "searches"];
   const [watchTopTab, setWatchTopTab] = useState(() => {
+    const normalize = (v) => v === "calendar" ? "listings" : v;
     if (typeof window !== "undefined") {
-      const sub = new URLSearchParams(window.location.search).get("sub");
+      const sub = normalize(new URLSearchParams(window.location.search).get("sub"));
       if (SUB_VALUES.includes(sub)) return sub;
     }
     try {
-      const v = localStorage.getItem("dial_watch_top_tab");
+      const v = normalize(localStorage.getItem("dial_watch_top_tab"));
       return SUB_VALUES.includes(v) ? v : "listings";
     } catch { return "listings"; }
   });
@@ -426,19 +474,31 @@ export default function Watchlist() {
     return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
   }, []);
 
-  // When the auctions-only filter toggles, swap the sort axis to match
-  // the user's likely intent: "Ending soonest" when filtering to
-  // auctions, "Newest first" otherwise. Only runs on filter change so
-  // a user manually picking a different sort while the filter is on
-  // sticks until they toggle the filter again. Lives at the top with
-  // the other effects (NOT deep in render-conditional code) per the
-  // CLAUDE.md "don't add hooks deep in App.js" rule.
+  // When the auctions-only filter or feedFilter toggles, swap the sort
+  // axis to match the user's likely intent: "Ending soonest" when
+  // filtering to auctions, "Newest first" otherwise. Only runs on
+  // filter change so a user manually picking a different sort while
+  // the filter is on sticks until they toggle again. Lives at the top
+  // with the other effects (NOT deep in render-conditional code) per
+  // the CLAUDE.md "don't add hooks deep in App.js" rule.
   useEffect(() => {
     // setSort is the useState setter (stable identity), so leaving it
     // out of deps doesn't risk a stale closure — this effect runs
     // purely in response to filter toggles.
-    setSort(filterAuctionsOnly ? "ending" : "date");
-  }, [filterAuctionsOnly]);
+    const wantsEnding = filterAuctionsOnly || feedFilter === "auctions";
+    setSort(wantsEnding ? "ending" : "date");
+  }, [filterAuctionsOnly, feedFilter]);
+
+  // Tri-state pill (feedFilter) is per-session and intentionally
+  // doesn't persist across tab switches. Reset to "all" + lots view
+  // whenever the user navigates away from the Listings tab so they
+  // come back fresh.
+  useEffect(() => {
+    if (tab !== "listings") {
+      setFeedFilter("all");
+      setAuctionsView("lots");
+    }
+  }, [tab]);
 
   useEffect(() => {
     // `cache: 'no-cache'` forces the browser/PWA to revalidate with the
@@ -476,7 +536,99 @@ export default function Watchlist() {
     "--text2": "#6e6e73", "--text3": "#aeaeb2",
   };
 
-  const SOURCES = useMemo(() => [...new Set(items.map(i => i.source))].sort(), [items]);
+  // Auction lots projected into the main listings feed. Same
+  // tracked-lot data the Watchlist's watchItems memo joins — but
+  // here we surface every lot in `tracked_lots.json`, not just the
+  // current user's tracked URLs, because the Listings tab is the
+  // global "everything we know about" feed. Shape mirrors a
+  // dealer-listings.json row close enough that the same Card +
+  // filter predicates work uniformly.
+  //
+  // Phase A note (2026-05-04): hearts on these cards write to
+  // watchlist_items via the existing handleWish path. The
+  // `_isTrackedLot` flag is preserved so handleWish's guard still
+  // fires and a heart click stays a no-op until Phase B unifies
+  // tracked_lots with watchlist_items.
+  const auctionLotItems = useMemo(() => {
+    const arr = [];
+    for (const url of Object.keys(trackedLotsState || {})) {
+      const data = trackedLotsState[url];
+      if (!data) continue;
+      const isEnded = data.status === "ended";
+      const price = (isEnded ? data.sold_price : data.current_bid)
+        || data.starting_price || data.estimate_low || 0;
+      const priceUsd = (isEnded ? data.sold_price_usd : data.current_bid_usd)
+        || data.starting_price_usd || data.estimate_low_usd || price;
+      const isFixedPrice = data.buying_option === "BUY_IT_NOW"
+                        || data.buying_option === "FIXED_PRICE";
+      const isAuctionFormat = !isFixedPrice;
+      arr.push({
+        id: shortHash(url),
+        brand: canonicalizeBrand(detectBrandFromTitle(data.title || "")),
+        ref: data.title || "—",
+        price: price || 0,
+        currency: data.currency || "USD",
+        priceUSD: priceUsd || price || 0,
+        savedPrice: price || 0,
+        savedCurrency: data.currency || "USD",
+        savedPriceUSD: priceUsd || price || 0,
+        source: data.house || "—",
+        url,
+        img: data.cached_img_url || data.image || "",
+        sold: isEnded,
+        _isSold: isEnded,
+        _isTrackedLot: true,
+        _isAuctionFormat: isAuctionFormat,
+        // Use auction_end as the firstSeen surrogate so the date sort
+        // doesn't see a NaN/empty for these rows. The blend sort
+        // dispatches on auction_end + sold flag so this is mostly a
+        // safety net, but keeps "Date" sorts in feedFilter=auctions
+        // behaving sensibly.
+        firstSeen: data.auction_end || data.scraped_at || "",
+        buying_option: data.buying_option,
+        current_bid: data.current_bid,
+        current_bid_usd: data.current_bid_usd,
+        sold_price: data.sold_price,
+        sold_price_usd: data.sold_price_usd,
+        estimate_low: data.estimate_low,
+        estimate_high: data.estimate_high,
+        estimate_low_usd: data.estimate_low_usd,
+        estimate_high_usd: data.estimate_high_usd,
+        starting_price: data.starting_price,
+        auction_end: data.auction_end,
+        auction_start: data.auction_start,
+        auction_title: data.auction_title,
+        lot_number: data.lot_number,
+        soldAt: isEnded ? (data.auction_end || data.scraped_at || "") : null,
+      });
+    }
+    return arr;
+  }, [trackedLotsState]);
+
+  // Main feed = dealer listings ∪ auction lots. Powers the Listings
+  // tab's allFiltered memo; the feedFilter pill (All/Dealers/Auctions)
+  // narrows down via predicate inside allFiltered, not here.
+  const mainFeedItems = useMemo(() => {
+    if (auctionLotItems.length === 0) return items;
+    return [...items, ...auctionLotItems];
+  }, [items, auctionLotItems]);
+
+  // Sources for the filter UI, split by kind so the sidebar/drawer can
+  // group them under Dealers / Auction houses sub-headers. SOURCES is
+  // the union (used everywhere a flat list is convenient — e.g. the
+  // mobile drawer's overflow chip).
+  const DEALER_SOURCES = useMemo(
+    () => [...new Set(items.map(i => i.source).filter(Boolean))].sort(),
+    [items]
+  );
+  const AUCTION_SOURCES = useMemo(
+    () => [...new Set(auctionLotItems.map(i => i.source).filter(s => s && s !== "—"))].sort(),
+    [auctionLotItems]
+  );
+  const SOURCES = useMemo(
+    () => [...DEALER_SOURCES, ...AUCTION_SOURCES.filter(s => !DEALER_SOURCES.includes(s))],
+    [DEALER_SOURCES, AUCTION_SOURCES]
+  );
 
   // Singleton-brand collapse threshold. Brands with FEWER live listings
   // than this get pooled into "Other" rather than getting their own
@@ -619,7 +771,14 @@ export default function Watchlist() {
   }, [items]);
 
   const allFiltered = useMemo(() => {
-    let its = [...items];
+    let its = [...mainFeedItems];
+    // Feed-filter pill (All / Dealers / Auctions) narrows the feed to
+    // the relevant slice before any other predicate. "Dealers" drops
+    // every projected auction lot; "Auctions" drops every dealer
+    // listing. "All" passes both through. Watchlist tab still uses
+    // filterAuctionsOnly (binary) below so its toggle is preserved.
+    if (feedFilter === "dealers") its = its.filter(i => !i._isAuctionFormat && !i._isTrackedLot);
+    else if (feedFilter === "auctions") its = its.filter(i => i._isAuctionFormat || i._isTrackedLot);
     // Tri-state Status filter. "live" = current scraped inventory,
     // "sold" = historical/inactive (analytics view), "all" = both — the
     // useful comparison when paired with a brand+ref filter to see price
@@ -659,22 +818,45 @@ export default function Watchlist() {
         return d > f ? d : f;
       };
       const ascending = sort === "date-asc";
+      // Unified-feed blend sort: when feedFilter === "all" and the
+      // user has the default Date sort, bucket auction lots ending
+      // soon to the top, dealer listings + far-out lots in the
+      // middle, recently-sold lots toward the bottom, older sold
+      // lots last. Falls back to plain effectiveDate sort within
+      // each bucket and on every other feedFilter / sort combo.
+      const useBlend = feedFilter === "all" && sort === "date";
       its.sort((a, b) => {
+        if (useBlend) {
+          const ba = blendBucket(a);
+          const bb = blendBucket(b);
+          if (ba !== bb) return ba - bb;
+          if (ba === 0) {
+            // Ending soon: live first, then upcoming asc by end date.
+            return endingSoonComparator(a, b);
+          }
+          if (ba === 2 || ba === 3) {
+            // Sold lots: most-recent sold first.
+            const sa = a.soldAt || a.auction_end || "";
+            const sb = b.soldAt || b.auction_end || "";
+            return sb.localeCompare(sa);
+          }
+          // Bucket 1 — falls through to the regular date sort below.
+        }
         // Backfilled items always sort below non-backfilled in either
         // direction. firstSeen on a backfilled batch is "the day the
         // source was added", not "the day the listing appeared", so
         // letting them compete on date crowds the top of the feed
         // (and the bottom of date-asc) every time a new source lands.
-        const ba = a.backfilled ? 1 : 0;
-        const bb = b.backfilled ? 1 : 0;
-        if (ba !== bb) return ba - bb;
+        const baBack = a.backfilled ? 1 : 0;
+        const bbBack = b.backfilled ? 1 : 0;
+        if (baBack !== bbBack) return baBack - bbBack;
         const ea = effectiveDate(a), eb = effectiveDate(b);
         if (ea === eb) return 0;
         return ascending ? (ea < eb ? -1 : 1) : (ea < eb ? 1 : -1);
       });
     }
     return its;
-  }, [items, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, statusMode, filterAuctionsOnly]);
+  }, [mainFeedItems, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, statusMode, filterAuctionsOnly, feedFilter]);
 
   const visible = useMemo(() => allFiltered.slice(0, page * PAGE_SIZE), [allFiltered, page]);
   const hasMore = visible.length < allFiltered.length;
@@ -1203,6 +1385,18 @@ export default function Watchlist() {
     return out;
   })();
 
+  // Auction calendar surface — surfaced inside the Listings tab's
+  // Auctions filter via the Lots/Calendar toggle. Same component the
+  // Watchlist > Calendar sub-tab used to render before the
+  // 2026-05-04 unification; it now lives here so the calendar of
+  // upcoming sales sits next to the lot-level cards rather than
+  // hiding under Watchlist.
+  const auctionCalendarJSX = (
+    <div style={{ paddingTop: 4 }}>
+      <AuctionCalendar auctions={auctions || []} />
+    </div>
+  );
+
   // Built once per render as a JSX expression (NOT a nested component).
   // A nested function-component gets a new identity on every App render,
   // which forces React to unmount + remount the entire grid — including
@@ -1241,6 +1435,14 @@ export default function Watchlist() {
     </>
   );
 
+  // What the Listings tab actually renders. The Auctions filter +
+  // Calendar view combo swaps the lot grid for the auction calendar;
+  // every other combo gets the grid. Lifted here so both shells
+  // dispatch via a single prop instead of duplicating the toggle.
+  const listingsTabContentJSX = (feedFilter === "auctions" && auctionsView === "calendar")
+    ? auctionCalendarJSX
+    : listingsGridJSX;
+
 
   // Save-current-search modal. Opened by the heart in the search input.
   // Single-field form (label) — query comes from the live search field.
@@ -1269,14 +1471,64 @@ export default function Watchlist() {
         const live = liveStateById.get(it.id);
         return live && !live.sold;
       }).length
-    : items.filter(i => !i.sold && !hidden[i.id]).length;
+    : mainFeedItems.filter(i => !i.sold && !hidden[i.id]).length;
   const soldCountForPill = isWatchlistTab
     ? Object.values(watchlist).filter(it => {
         const live = liveStateById.get(it.id);
         return !live || !!live.sold;
       }).length
-    : items.filter(i =>  i.sold && !hidden[i.id]).length;
+    : mainFeedItems.filter(i =>  i.sold && !hidden[i.id]).length;
   const allCountForPill = liveCountForPill + soldCountForPill;
+
+  // Unified-feed pill (All / Dealers / Auctions) — listings tab only.
+  // Per-session: the reset effect above wipes feedFilter back to "all"
+  // any time the user leaves Listings. Lives in the same sticky filter
+  // row as Status / Sort so all feed-shape controls cluster together.
+  // Counts shown beside each label use the post-Status, post-hidden
+  // mainFeedItems set so the numbers reflect what actually shows up
+  // when the user picks that mode.
+  const feedFilterPillJSX = tab !== "listings" ? null : (
+    <div style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 20, overflow: "hidden" }}>
+      {[
+        ["all", "All"],
+        ["dealers", "Dealers"],
+        ["auctions", "Auctions"],
+      ].map(([k, label], idx) => (
+        <button key={k} onClick={() => setFeedFilter(k)} style={{
+          border: "none",
+          borderLeft: idx === 0 ? "none" : "0.5px solid var(--border)",
+          padding: "6px 12px", fontSize: 12, cursor: "pointer",
+          background: feedFilter === k ? "var(--text1)" : "transparent",
+          color: feedFilter === k ? "var(--bg)" : "var(--text2)",
+          fontFamily: "inherit", whiteSpace: "nowrap",
+          fontWeight: feedFilter === k ? 600 : 500,
+        }}>{label}</button>
+      ))}
+    </div>
+  );
+
+  // Auctions sub-view toggle (Lots / Calendar). Only meaningful when
+  // feedFilter === "auctions" on the Listings tab; null otherwise. The
+  // shells render this inline with feedFilterPillJSX so the user sees
+  // the calendar toggle appear where it makes sense.
+  const auctionsViewToggleJSX = (tab !== "listings" || feedFilter !== "auctions") ? null : (
+    <div style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 20, overflow: "hidden" }}>
+      {[
+        ["lots", "Lots"],
+        ["calendar", "Calendar"],
+      ].map(([k, label], idx) => (
+        <button key={k} onClick={() => setAuctionsView(k)} style={{
+          border: "none",
+          borderLeft: idx === 0 ? "none" : "0.5px solid var(--border)",
+          padding: "6px 12px", fontSize: 12, cursor: "pointer",
+          background: auctionsView === k ? "var(--text1)" : "transparent",
+          color: auctionsView === k ? "var(--bg)" : "var(--text2)",
+          fontFamily: "inherit", whiteSpace: "nowrap",
+          fontWeight: auctionsView === k ? 600 : 500,
+        }}>{label}</button>
+      ))}
+    </div>
+  );
 
   // Tri-state Status segment, used in BOTH the desktop filter row AND
   // the mobile sticky sort row so the same control drives every view.
@@ -1440,7 +1692,6 @@ export default function Watchlist() {
         ["collections", "Lists"],
         ["challenges", "Challenges"],
         ["searches", "Searches"],
-        ["calendar", isMobile ? "Calendar" : "Auction Calendar"],
       ].map(([key, label]) => {
         const active = watchTopTab === key;
         return (
@@ -1599,11 +1850,13 @@ export default function Watchlist() {
   const shellProps = {
     // Catalog / config
     BRANDS, BRANDS_SHOW, SOURCES, SOURCES_SHOW,
+    DEALER_SOURCES, AUCTION_SOURCES,
     // State
     aboutModalOpen, activeFilterPop, allFiltered,
     brandsExpanded, currentIsSaved,
     drawerOpen,
     filterAuctionsOnly, filterBrands, filterSources,
+    feedFilter, auctionsView,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
     search, sort, sourcesExpanded, tab, user,
@@ -1614,6 +1867,7 @@ export default function Watchlist() {
     setAboutModalOpen, setActiveFilterPop, setBrandsExpanded,
     setDrawerOpen,
     setFilterAuctionsOnly, setFilterBrands, setFilterSources,
+    setFeedFilter, setAuctionsView,
     setMaxPriceText, setMinPriceText,
     setPage, setSearch, setShowUserMenu,
     setSort, setSourcePickerOpen, setSourcesExpanded,
@@ -1624,8 +1878,9 @@ export default function Watchlist() {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX, inp,
-    listingsGridJSX, primaryCurrency, sectionHeadingStyle,
+    listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
+    feedFilterPillJSX, auctionsViewToggleJSX,
     trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX,
     watchlistTabJSX, adminTabJSX,
   };
