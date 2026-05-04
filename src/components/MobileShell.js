@@ -18,6 +18,7 @@ export function MobileShell(props) {
   const {
     // Catalog / aliases
     BRANDS, BRANDS_SHOW, SOURCES, SOURCES_SHOW,
+    DEALER_SOURCES, AUCTION_SOURCES,
     // State
     aboutModalOpen, allFiltered, brandsExpanded,
     currentIsSaved, drawerOpen,
@@ -41,8 +42,9 @@ export function MobileShell(props) {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX, inp,
-    adminTabJSX, listingsGridJSX, primaryCurrency, sectionHeadingStyle,
+    adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
+    feedFilterPillJSX, auctionsViewToggleJSX,
     trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX, watchlistTabJSX,
   } = props;
 
@@ -95,7 +97,7 @@ export function MobileShell(props) {
               </button>
             )}
           </div>
-          {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar" || watchTopTab === "collections" || watchTopTab === "challenges")) && (
+          {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections" || watchTopTab === "challenges")) && (
             <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} aria-label="Filters" style={iconButton({ active: hasFilters })}>
               <FilterIcon />
             </button>
@@ -106,7 +108,7 @@ export function MobileShell(props) {
             have a list to filter. On Searches sub-tab we still render an
             empty placeholder of the same height so the content below
             doesn't jump up when switching sub-tabs. */}
-        {tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar" || watchTopTab === "collections" || watchTopTab === "challenges") && (
+        {tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections" || watchTopTab === "challenges") && (
           // Spacer row — matches the active filter row's padding +
           // pill-shaped child so the height is identical to the real row.
           // Avoids a layout shift when switching to Searches sub-tab.
@@ -114,9 +116,14 @@ export function MobileShell(props) {
             <span style={{ fontSize: 13, padding: "9px 14px", borderRadius: 20, border: "0.5px solid transparent", visibility: "hidden" }}>placeholder</span>
           </div>
         )}
-        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar" || watchTopTab === "collections" || watchTopTab === "challenges")) && (
-        <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center" }}>
-          <span style={{ fontSize: 12, color: "var(--text3)", marginRight: 2 }}>{allFiltered.length}</span>
+        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections" || watchTopTab === "challenges")) && (
+        <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+          {/* Unified-feed pill (All / Dealers / Auctions) — Listings
+              tab only. Sits at the head of the row so the "what am I
+              looking at?" choice precedes Date / Price / Ending. */}
+          {feedFilterPillJSX && <div style={{ flexShrink: 0 }}>{feedFilterPillJSX}</div>}
+          {auctionsViewToggleJSX && <div style={{ flexShrink: 0 }}>{auctionsViewToggleJSX}</div>}
+          <span style={{ fontSize: 12, color: "var(--text3)", marginRight: 2, flexShrink: 0 }}>{allFiltered.length}</span>
           {/* Date sort pill */}
           {(() => {
             const label = sort === "date" ? "Date ↓" : sort === "date-asc" ? "Date ↑" : "Date";
@@ -187,7 +194,7 @@ export function MobileShell(props) {
               user sees when they hit Watchlist. Returns null when
               the user has no qualifying tracked lots. */}
           {tab === "watchlist" && endingSoonJSX}
-          {tab === "listings" ? listingsGridJSX
+          {tab === "listings" ? listingsTabContentJSX
             : tab === "references" ? <ReferencesTab />
             : tab === "admin" ? adminTabJSX
             : watchlistTabJSX}
@@ -260,10 +267,36 @@ export function MobileShell(props) {
 
                 <div style={{ padding: "10px 16px 10px" }}>
                   <div style={sectionHeadingStyle}>Source</div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {visibleSources.map(s => <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
-                    {SOURCES.length > SOURCES_SHOW && <Chip label={sourcesExpanded ? "Less ↑" : `+${SOURCES.length - SOURCES_SHOW} more`} active={false} onClick={() => setSourcesExpanded(!sourcesExpanded)} blue />}
-                  </div>
+                  {/* Sources grouped by Dealers / Auction houses with
+                      sub-headers (2026-05-04). When expanded, every
+                      source in each group is shown; when collapsed,
+                      only the top SOURCES_SHOW from the visible
+                      (already-flat) list are surfaced — keeps the
+                      drawer compact at small viewports. */}
+                  {sourcesExpanded ? (
+                    <>
+                      {(DEALER_SOURCES?.length || 0) > 0 && (
+                        <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text3)", margin: "2px 0 6px" }}>Dealers</div>
+                      )}
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {(DEALER_SOURCES || []).map(s => <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
+                      </div>
+                      {(AUCTION_SOURCES?.length || 0) > 0 && (
+                        <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text3)", margin: "10px 0 6px" }}>Auction houses</div>
+                      )}
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {(AUCTION_SOURCES || []).map(s => <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
+                      </div>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                        <Chip label="Less ↑" active={false} onClick={() => setSourcesExpanded(false)} blue />
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {visibleSources.map(s => <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
+                      {SOURCES.length > SOURCES_SHOW && <Chip label={`+${SOURCES.length - SOURCES_SHOW} more`} active={false} onClick={() => setSourcesExpanded(true)} blue />}
+                    </div>
+                  )}
                 </div>
                 <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
 

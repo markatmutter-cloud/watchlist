@@ -17,6 +17,7 @@ export function DesktopShell(props) {
   const {
     // Catalog
     BRANDS, BRANDS_SHOW, SOURCES,
+    DEALER_SOURCES, AUCTION_SOURCES,
     // State
     aboutModalOpen, activeFilterPop,
     brandsExpanded,
@@ -40,7 +41,8 @@ export function DesktopShell(props) {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
-    adminTabJSX, listingsGridJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
+    adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
+    feedFilterPillJSX, auctionsViewToggleJSX,
     trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX, watchlistTabJSX,
   } = props;
 
@@ -70,6 +72,13 @@ export function DesktopShell(props) {
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
                   borderBottom: expandedSource || expandedBrand ? "none" : "0.5px solid var(--border)",
                   flexShrink: 0, flexWrap: "wrap", position: "relative" }}>
+      {/* Unified-feed pill (All / Dealers / Auctions) — Listings tab
+          only. Sits at the head of the filter row so the "what am I
+          looking at?" choice precedes the narrowing controls. */}
+      {feedFilterPillJSX}
+      {/* Auctions-mode sub-view toggle (Lots / Calendar). Only renders
+          when feedFilter === "auctions"; null otherwise. */}
+      {auctionsViewToggleJSX}
       {/* Tri-state Status segment — Live / Sold / All. */}
       {statusSegmentJSX}
 
@@ -217,7 +226,29 @@ export function DesktopShell(props) {
           <span style={{ fontSize: 12, color: "var(--text3)" }}>No sources yet.</span>
         ) : (
           <>
-            {SOURCES.map(s => (
+            {/* Group dealers and auction houses under sub-headers so
+                the list scans cleanly even at 30+ dealers. Headers are
+                inline pills (full-row width via flex basis) sandwiched
+                between the chip clusters. Both groups are flat
+                alphabetical inside their section. */}
+            {(DEALER_SOURCES?.length || 0) > 0 && (
+              <span style={{
+                flexBasis: "100%", fontSize: 10, fontWeight: 600,
+                textTransform: "uppercase", letterSpacing: "0.08em",
+                color: "var(--text3)", marginBottom: 2,
+              }}>Dealers</span>
+            )}
+            {(DEALER_SOURCES || []).map(s => (
+              <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />
+            ))}
+            {(AUCTION_SOURCES?.length || 0) > 0 && (
+              <span style={{
+                flexBasis: "100%", fontSize: 10, fontWeight: 600,
+                textTransform: "uppercase", letterSpacing: "0.08em",
+                color: "var(--text3)", marginTop: 8, marginBottom: 2,
+              }}>Auction houses</span>
+            )}
+            {(AUCTION_SOURCES || []).map(s => (
               <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />
             ))}
             {filterSources.length > 0 && (
@@ -257,7 +288,7 @@ export function DesktopShell(props) {
     <div style={{ ...baseStyle, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* Full-width top bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar" || watchTopTab === "collections" || watchTopTab === "challenges")) && sidebarToggleJSX}
+        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections" || watchTopTab === "challenges")) && sidebarToggleJSX}
         <button onClick={() => { setTab("listings"); setPage(1); }}
           style={{ background: "none", border: "none", cursor: "pointer",
                   padding: 0, fontFamily: "inherit",
@@ -338,7 +369,7 @@ export function DesktopShell(props) {
               via the chrome rendered outside this scroll container.
               Returns null when no qualifying tracked lots. */}
           {tab === "watchlist" && endingSoonJSX}
-          {tab === "listings" ? listingsGridJSX
+          {tab === "listings" ? listingsTabContentJSX
             : tab === "references" ? <ReferencesTab />
             : tab === "admin" ? adminTabJSX
             : watchlistTabJSX}

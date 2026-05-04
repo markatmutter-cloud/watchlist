@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Card } from "./Card";
-import { AuctionCalendar } from "./AuctionCalendar";
 import { ageBucketFromDate, fmtUSD } from "../utils";
 import { useEBaySearches, EBAY_SEARCHES_EDIT_URL } from "../hooks/useEBaySearches";
 import { importLocalData } from "../supabase";
@@ -28,8 +27,10 @@ export function WatchlistTab(props) {
     compact, gridStyle, inp, isMobile, statusMode,
     // Sort state from the global filter bar
     sort,
-    // Auction calendar (3rd sub-tab) and tracked-URL flow
-    auctions,
+    // (Auction calendar prop removed 2026-05-04 — calendar moved to
+    // the Listings tab's Auctions filter > Calendar view; App.js
+    // still passes `auctions` in the bag but WatchlistTab no
+    // longer reads it.)
     // Sub-tab routing — controlled by parent because the surrounding
     // chrome (sidebar, filter bar) gates on it too.
     watchTopTab, setWatchTopTab,
@@ -1007,11 +1008,10 @@ export function WatchlistTab(props) {
           {watchTopTab === "collections" && collectionsTabJSX}
           {watchTopTab === "challenges" && challengesTabJSX}
           {watchTopTab === "searches" && searchesTabJSX}
-          {watchTopTab === "calendar" && (
-            <div style={{ paddingTop: 4 }}>
-              <AuctionCalendar auctions={auctions || []} />
-            </div>
-          )}
+          {/* Auction calendar sub-tab retired 2026-05-04 — calendar
+              moved into the Listings tab's Auctions filter as a
+              Lots/Calendar toggle. App.js still passes `auctions` in
+              for any future Watchlist-side use; ignored here. */}
         </>
       )}
 
