@@ -75,10 +75,29 @@ HEUER_FAMILY_CATEGORIES = {
 # Detail-page SOLD detector. Anchored on the `is-larger` modifier so
 # we only catch the MAIN product's overlay, not the smaller SOLD
 # badges on related-product thumbnails further down the same page.
-# DOTALL because the >SOLD< text sits in a child div several lines
-# below the badge-container open tag.
+#
+# The structural distinction (verified against Mark's known-live +
+# known-sold URLs):
+#
+#   LIVE → <div class="badge-container is-larger ...">
+#                                                      </div>      (empty container)
+#
+#   SOLD → <div class="badge-container is-larger ...">
+#            <div class="badge ...">
+#              <div class="...new-bubble ...">SOLD</div>
+#            </div>
+#          </div>
+#
+# The first version of this regex was too loose (`...>.*?>SOLD<` with
+# DOTALL) — `.*?` skipped past the empty `</div>` and matched a SOLD
+# badge somewhere later on the page, marking ~all 117 items sold.
+# The tighter form anchors on the immediate nesting: the is-larger
+# container must contain a `<div ...badge...>` which contains a
+# `<div ...new-bubble...>SOLD<`. Optional whitespace between layers.
 SOLD_BADGE_RE = re.compile(
-    r'class="badge-container[^"]*is-larger[^"]*"[^>]*>.*?>SOLD<',
+    r'class="badge-container[^"]*\bis-larger\b[^"]*"[^>]*>\s*'
+    r'<div[^>]*\bbadge\b[^>]*>\s*'
+    r'<div[^>]*\bnew-bubble\b[^>]*>SOLD<',
     re.S,
 )
 
@@ -144,6 +163,29 @@ def get_all_listings():
         page += 1
         time.sleep(0.5)
     return all_items
+
+
+def english_url(api_permalink):
+    """Rewrite the API's permalink (`/chronographs/<slug>/`) to the
+    English-locale variant (`/en/chronographs/<slug>/`).
+
+    The dealer serves DIFFERENT HTML on the two locales, and the
+    English version is the canonical one for sold-state purposes.
+    Concretely: items already sold get the `is-larger` SOLD overlay
+    on the German default page potentially BEFORE it appears on the
+    English page (the dealer updates `/chronographs/` first and
+    `/en/chronographs/` lags), so the German page is over-eager and
+    the English page matches what Mark sees when browsing the site.
+    Verified against Mark's manually-curated live + sold URL sets
+    on 2026-05-04 (8/8 match using /en/, 0/8 on the German default).
+
+    The rewrite also serves a second purpose: the URL we emit in the
+    CSV becomes what the user clicks through to from the card, so it
+    should land on the same page Mark used to validate the listing.
+    """
+    if "/en/chronographs/" in api_permalink:
+        return api_permalink
+    return api_permalink.replace("/chronographs/", "/en/chronographs/", 1)
 
 
 def fetch_detail_html(url):
@@ -212,7 +254,14 @@ def main():
     print(f"\nFetching detail pages for SOLD detection ({len(raw)} pages)...")
     results = []
     for i, it in enumerate(raw, 1):
-        url = it.get("permalink", "")
+        # Rewrite to English-locale URL: it's both the canonical
+        # sold-state page AND what the user should click through
+        # to from the card. Patch the API item in-place so parse_item
+        # writes the /en/ permalink to the CSV.
+        api_url = it.get("permalink", "")
+        url = english_url(api_url) if api_url else ""
+        if url:
+            it = {**it, "permalink": url}
         detail_html = fetch_detail_html(url) if url else None
         row = parse_item(it, detail_html)
         results.append(row)
