@@ -348,7 +348,7 @@ export const Card = memo(function Card({
                 {onHide && (
                   <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onHide(item); }}
                     style={menuItemStyle}>
-                    {hideLabel === "Remove from collection"
+                    {hideLabel === "Remove from list"
                       ? "Remove"
                       : (hideLabel || (isHidden ? "Unhide" : "Hide"))}
                   </button>

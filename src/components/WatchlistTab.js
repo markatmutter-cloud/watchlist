@@ -542,8 +542,8 @@ export function WatchlistTab(props) {
   // sub-tab; this Collections sub-tab is for additional collections
   // only.
   const collectionsTabJSX = !user ? signInPromptJSX(
-    "Sign in to use collections",
-    "Group watches by reference, theme, or research thread — \"Rolex 5513s\", \"Vintage divers\", \"Reference comps\". Collections sync across every device you use."
+    "Sign in to use lists",
+    "Group watches by reference, theme, or research thread — \"Rolex 5513s\", \"Vintage divers\", \"Reference comps\". Lists sync across every device you use."
   ) : (() => {
     const cols = (collectionsApi?.collections || []);
     const itemsByColl = collectionsApi?.itemsByCollection || {};
@@ -587,7 +587,7 @@ export function WatchlistTab(props) {
             <button onClick={() => setSelectedCollectionId(null)} style={{
               border: "none", background: "transparent", cursor: "pointer",
               color: "#185FA5", fontFamily: "inherit", fontSize: 13, padding: 0,
-            }}>← All collections</button>
+            }}>← All lists</button>
             <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
               {selected.name}
             </span>
@@ -602,14 +602,14 @@ export function WatchlistTab(props) {
             {!selected.isSharedInbox && !isHiddenColl && (
               <>
                 <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
-                  title="Rename collection"
+                  title="Rename list"
                   style={{
                     border: "0.5px solid var(--border)", background: "transparent",
                     color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
                     cursor: "pointer", fontFamily: "inherit", fontSize: 12,
                   }}>Rename</button>
                 <button onClick={async () => {
-                    if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this collection.`)) return;
+                    if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
                     await collectionsApi.deleteCollection(selected.id);
                     setSelectedCollectionId(null);
                   }}
@@ -625,12 +625,12 @@ export function WatchlistTab(props) {
             <div style={{ padding: "48px 20px", textAlign: "center" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>{isHiddenColl ? "👁" : "📂"}</div>
               <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-                {isHiddenColl ? "Nothing hidden" : "Empty collection"}
+                {isHiddenColl ? "Nothing hidden" : "Empty list"}
               </div>
               <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 320, margin: "0 auto" }}>
                 {isHiddenColl
                   ? "Listings you hide from the Available feed land here. Use the \"…\" menu on any card to unhide it."
-                  : "Add watches via the \"…\" menu on any listing card → \"Add to collection…\"."}
+                  : "Add watches via the \"…\" menu on any listing card → \"Add to list…\"."}
               </div>
             </div>
           ) : (
@@ -650,7 +650,7 @@ export function WatchlistTab(props) {
                   onHide={isHiddenColl
                     ? toggleHide
                     : () => collectionsApi.removeItemFromCollection(selected.id, item.id)}
-                  hideLabel={isHiddenColl ? undefined : "Remove from collection"}
+                  hideLabel={isHiddenColl ? undefined : "Remove from list"}
                   isHidden={isHiddenColl}
                   onAddToCollection={openCollectionPicker}
                   primaryCurrency={primaryCurrency}
@@ -670,10 +670,10 @@ export function WatchlistTab(props) {
           <div style={{ padding: "48px 20px", textAlign: "center" }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>📂</div>
             <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-              No collections yet
+              No lists yet
             </div>
             <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto" }}>
-              Group watches by reference, theme, or research thread — "Rolex 5513s", "Vintage divers", "Reference comps - 5512". Use "+ New collection" above to create one, then add listings via the "…" menu on any card.
+              Group watches by reference, theme, or research thread — "Rolex 5513s", "Vintage divers", "Reference comps - 5512". Use "+ New list" above to create one, then add listings via the "…" menu on any card.
             </div>
           </div>
         ) : (
@@ -746,7 +746,7 @@ export function WatchlistTab(props) {
   // view handles browse + create.
   const challengesTabJSX = !user ? signInPromptJSX(
     "Sign in to build a challenge",
-    "Constrain a hypothetical collection: pick N watches under a budget. " +
+    "Build a constrained list: pick N watches under a budget. " +
     "Save it, share it, ask a friend to fill in their own answer. Your challenges sync across every device you use."
   ) : (() => {
     const allChallenges = (collectionsApi?.collections || [])
