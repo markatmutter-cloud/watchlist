@@ -22,7 +22,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 Three top-level tabs:
 
-- **Listings** — aggregates 34 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
+- **Listings** — aggregates 36 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
 - **Watchlist** — four sub-tabs:
   - **Favorites** — items you've hearted (your default collection), with price-at-save preserved.
   - **Collections** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you. Anything you've hidden from the Available feed surfaces here too as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
@@ -59,7 +59,7 @@ Plus:
   ┌─────────────────────────────────────────────────────────────┐
   │                  GitHub Actions (cron, daily)               │
   │                                                             │
-  │   34× listing scrapers + 6× auction scrapers (Python)       │
+  │   36× listing scrapers + 6× auction scrapers (Python)       │
   │            │                              │                 │
   │            ▼                              ▼                 │
   │     *_listings.csv               *_auctions.csv             │
@@ -96,7 +96,7 @@ Listings/auctions are static JSON committed to the repo. The only thing behind a
 
 ## Data sources
 
-### Dealers (34)
+### Dealers (36)
 
 All scrapers hit each dealer's existing public endpoint — no credential-protected APIs, no headless browsers where it can be avoided.
 
@@ -136,6 +136,8 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 | Watch Club | Custom (TaffyDB) | Single 5MB JS catalog at `/upload/js/watches2018_bis.js` wrapped as `TAFFY([…])`; status="1" filter for active items | GBP |
 | Vintage Watch Shop | WordPress (custom CPT) | `/watches-accessories/` index walk + per-item detail page for "Our price: £NNNN" | GBP |
 | Watches of Lancashire | WooCommerce | Store API; `category=watches` | GBP |
+| Heuertime | Wix Pages (no Wix Stores) | Homepage links → per-page detail walk for "PRICE" rich-text label (mostly POR) | EUR |
+| ClassicHeuer | WooCommerce | Store API; categories used as Heuer model families, mostly price-on-request | EUR |
 
 Tropical Watch is the only source still routed through Browse AI — their site actively blocks scrapers. Every other source is scraped with vanilla `requests`. Browse AI robot ID and API key live in GitHub Secrets, never in the repo.
 
