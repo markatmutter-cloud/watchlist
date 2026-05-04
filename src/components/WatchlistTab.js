@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Card } from "./Card";
 import { AuctionCalendar } from "./AuctionCalendar";
-import { ageBucketFromDate } from "../utils";
+import { ageBucketFromDate, fmtUSD } from "../utils";
 import { useEBaySearches, EBAY_SEARCHES_EDIT_URL } from "../hooks/useEBaySearches";
 import { importLocalData } from "../supabase";
+import { ChallengeFlow } from "./ChallengeFlow";
 
 
 
@@ -55,6 +56,10 @@ export function WatchlistTab(props) {
     // hidden" modal). toggleHide unhides on the drill-in's "..."
     // menu via the Card's existing isHidden semantics.
     hiddenItems, toggleHide,
+    // Full listings.json content + the user's hidden map. Used by
+    // ChallengeFlow's add-to-shortlist search drawer (filter the
+    // global feed for picks).
+    allListings, hidden,
   } = props;
 
   // eBay source-search config (read-only display in the Searches
@@ -97,6 +102,32 @@ export function WatchlistTab(props) {
       window.history.replaceState({}, "", newUrl);
     }
   }, [selectedCollectionId, watchTopTab]);
+
+  // Challenges sub-tab — drill-in id mirrors the Collections pattern.
+  // URL param `?challenge=<id>` deep-links straight to a challenge
+  // (used by share links and refresh-preserves-location).
+  const [selectedChallengeId, setSelectedChallengeId] = useState(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("challenge") || null;
+  });
+  useEffect(() => {
+    if (watchTopTab !== "challenges") setSelectedChallengeId(null);
+  }, [watchTopTab]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("shared") === "1") return;
+    if (selectedChallengeId && watchTopTab === "challenges") {
+      params.set("challenge", selectedChallengeId);
+    } else {
+      params.delete("challenge");
+    }
+    const qs = params.toString();
+    const newUrl = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
+    if (newUrl !== window.location.pathname + window.location.search + window.location.hash) {
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [selectedChallengeId, watchTopTab]);
 
   // (Track New Item modal lifted to App.js on 2026-04-30 — its
   // trigger button now lives in the watchSubTabsJSX strip above
@@ -706,6 +737,143 @@ export function WatchlistTab(props) {
     );
   })();
 
+  // ── CHALLENGES SUB-TAB ─────────────────────────────────────────────────
+  // Build-a-collection v1. Challenges are collections with type=
+  // 'challenge' (the existing schema's `type` enum already permits this
+  // value). One collection per challenge; shortlist + final picks live
+  // in the same items table with an is_pick boolean. ChallengeFlow.js
+  // owns the multi-stage flow once a challenge is selected; this list
+  // view handles browse + create.
+  const challengesTabJSX = !user ? signInPromptJSX(
+    "Sign in to build a challenge",
+    "Constrain a hypothetical collection: pick N watches under a budget. " +
+    "Save it, share it, ask a friend to fill in their own answer. Your challenges sync across every device you use."
+  ) : (() => {
+    const allChallenges = (collectionsApi?.collections || [])
+      .filter(c => c.type === "challenge");
+    const itemsByColl = collectionsApi?.itemsByCollection || {};
+    const selected = selectedChallengeId
+      ? allChallenges.find(c => c.id === selectedChallengeId)
+      : null;
+
+    if (selected) {
+      const items = itemsByColl[selected.id] || [];
+      return (
+        <div style={{ paddingTop: 4 }}>
+          <ChallengeFlow
+            challenge={selected}
+            items={items}
+            allListings={allListings || []}
+            watchlist={watchlist}
+            hidden={hidden || {}}
+            primaryCurrency={primaryCurrency}
+            collectionsApi={collectionsApi}
+            handleShare={handleShare}
+            onExit={() => setSelectedChallengeId(null)}
+          />
+        </div>
+      );
+    }
+
+    const handleNewChallenge = async () => {
+      // Create with sensible defaults; user fills in target_count +
+      // budget on the Create stage. State='draft'.
+      const res = await collectionsApi.createChallenge({
+        name: "",                  // becomes auto-titled "N watches for $Xk"
+        targetCount: null,         // null targetCount triggers Create stage in ChallengeFlow
+        budget: null,
+      });
+      if (res.error) {
+        window.alert("Couldn't create challenge: " + res.error);
+        return;
+      }
+      setSelectedChallengeId(res.id);
+    };
+
+    // List view
+    return (
+      <div style={{ paddingTop: 4 }}>
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          marginBottom: 14, gap: 8, flexWrap: "wrap",
+        }}>
+          <p style={{
+            fontSize: 12, fontWeight: 600, color: "var(--text2)",
+            textTransform: "uppercase", letterSpacing: "0.04em", margin: 0,
+          }}>
+            Challenges · {allChallenges.length}
+          </p>
+          <button onClick={handleNewChallenge} style={{
+            padding: "7px 14px", borderRadius: 8,
+            border: "0.5px solid var(--border)",
+            background: "var(--surface)", color: "var(--text1)",
+            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+          }}>+ New challenge</button>
+        </div>
+
+        {allChallenges.length === 0 ? (
+          <div style={{ padding: "48px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>🎯</div>
+            <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
+              No challenges yet
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto" }}>
+              Pick N watches under a budget. Useful as a thought experiment, a way to surface taste,
+              or a question to send a friend. Tap "+ New challenge" to start.
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {allChallenges.map(c => {
+              const items = itemsByColl[c.id] || [];
+              const picks = items.filter(it => it.isPick);
+              const totalSpend = picks.reduce((s, p) => s + (p.savedPriceUSD || p.priceUSD || 0), 0);
+              const isDraft = c.state === "draft";
+              return (
+                <button key={c.id}
+                  onClick={() => setSelectedChallengeId(c.id)}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "14px 16px", borderRadius: 12,
+                    border: "0.5px solid var(--border)",
+                    borderLeft: `3px solid ${isDraft ? "#c9a227" : "#185FA5"}`,
+                    background: "var(--card-bg)",
+                    color: "var(--text1)", cursor: "pointer",
+                    fontFamily: "inherit", textAlign: "left", gap: 10,
+                  }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 2,
+                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {c.name}
+                      {isDraft && (
+                        <span style={{
+                          marginLeft: 8, fontSize: 10, fontWeight: 600,
+                          padding: "1px 6px", borderRadius: 3,
+                          background: "rgba(201,162,39,0.15)", color: "#c9a227",
+                          textTransform: "uppercase", letterSpacing: "0.04em",
+                        }}>Draft</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--text2)" }}>
+                      {c.targetCount && c.budget ? (
+                        <>
+                          {picks.length} of {c.targetCount} picks · {fmtUSD(totalSpend)} of {fmtUSD(c.budget)}
+                        </>
+                      ) : (
+                        <>Set the constraints to start</>
+                      )}
+                    </div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  })();
+
   // ── RENDER ─────────────────────────────────────────────────────────────
   return (
     <div>
@@ -837,6 +1005,7 @@ export function WatchlistTab(props) {
           </>)}
 
           {watchTopTab === "collections" && collectionsTabJSX}
+          {watchTopTab === "challenges" && challengesTabJSX}
           {watchTopTab === "searches" && searchesTabJSX}
           {watchTopTab === "calendar" && (
             <div style={{ paddingTop: 4 }}>

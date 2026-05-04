@@ -257,7 +257,7 @@ export function DesktopShell(props) {
     <div style={{ ...baseStyle, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* Full-width top bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar" || watchTopTab === "collections")) && sidebarToggleJSX}
+        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "calendar" || watchTopTab === "collections" || watchTopTab === "challenges")) && sidebarToggleJSX}
         <button onClick={() => { setTab("listings"); setPage(1); }}
           style={{ background: "none", border: "none", cursor: "pointer",
                   padding: 0, fontFamily: "inherit",
@@ -316,7 +316,7 @@ export function DesktopShell(props) {
           filter row — surfaces the contextual Track / Add-search action
           above the filter pills. */}
       {watchSubTabsJSX}
-      {(tab === "listings" || (tab === "watchlist" && watchTopTab !== "searches" && watchTopTab !== "calendar" && watchTopTab !== "collections"))
+      {(tab === "listings" || (tab === "watchlist" && watchTopTab !== "searches" && watchTopTab !== "calendar" && watchTopTab !== "collections" && watchTopTab !== "challenges"))
         ? filterRowJSX
         : (tab === "watchlist"
             ? (
