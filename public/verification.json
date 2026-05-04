@@ -1,14 +1,6 @@
 {
   "date": "2026-05-04",
-  "alerts": [
-    {
-      "source": "ClassicHeuer",
-      "level": "WARN",
-      "today": 1,
-      "median": 117.0,
-      "note": "count is 1% of recent median (1 vs ~117)"
-    }
-  ],
+  "alerts": [],
   "counts": {
     "Wind Vintage": 149,
     "Tropical Watch": 101,
@@ -45,9 +37,9 @@
     "Vintage Watch Shop": 20,
     "Watches of Lancashire": 67,
     "Heuertime": 19,
-    "ClassicHeuer": 1,
+    "ClassicHeuer": 46,
     "eBay": 46
   },
-  "total_listings": 3345,
+  "total_listings": 3390,
   "sources_tracked": 37
 }
