@@ -37,6 +37,11 @@ import { tabPill } from "./styles";
 const LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/listings.json";
 const AUCTIONS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/auctions.json";
 const TRACKED_LOTS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/tracked_lots.json";
+// Comprehensive auction-lot scrape — populated by auction_lots_scraper.py
+// (Antiquorum + Christie's + Sotheby's + Phillips). Same shape as
+// tracked_lots.json (URL-keyed lot detail dicts) so the App.js
+// projection treats them identically.
+const AUCTION_LOTS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/auction_lots.json";
 const PAGE_SIZE = 48;
 // Legacy localStorage keys — kept only for the one-shot import on first
 // sign-in (see importLocalData + the banner in the Watchlist tab). Active
@@ -189,8 +194,17 @@ export default function Watchlist() {
   const [auctions, setAuctions] = useState([]);
   // Scraped state for tracked auction lots, keyed by URL. The user's own
   // tracked URLs come from Supabase (useTrackedLots); we join those URLs
-  // against this object to render lot cards.
+  // against this object to render lot cards. The comprehensive scrape
+  // (auctionLotsState below) shares the same shape; we merge the two
+  // by URL when projecting into the feed so a URL appearing in both
+  // surfaces (e.g. a user-tracked Antiquorum lot that's also in the
+  // auction_lots.json sweep) renders once.
   const [trackedLotsState, setTrackedLotsState] = useState({});
+  // Comprehensive auction-lot scrape (Antiquorum + Christie's +
+  // Sotheby's + Phillips). Populated by auction_lots_scraper.py on
+  // a daily cron. Public — every visitor sees the same set; user-
+  // hearting is layered on top via watchlist_items.
+  const [auctionLotsState, setAuctionLotsState] = useState({});
   // Sub-tab inside Watchlist > Auction lots: upcoming vs past.
   // Sub-tab on the Watchlist tab. Three values: "listings" (dealer
   // items you've hearted) or "searches" (saved searches editor). The
@@ -524,6 +538,14 @@ export default function Watchlist() {
       .then(r => r.ok ? r.json() : {})
       .then(d => setTrackedLotsState(d && typeof d === "object" ? d : {}))
       .catch(() => {});
+    // Comprehensive auction-lot scrape — same shape as tracked_lots.json
+    // but populated by a separate scraper that walks every active sale.
+    // Failing silently is fine on first deployment (file doesn't exist
+    // yet) — the feed just won't have these lots until the cron runs.
+    fetch(AUCTION_LOTS_URL, fetchOpts)
+      .then(r => r.ok ? r.json() : {})
+      .then(d => setAuctionLotsState(d && typeof d === "object" ? d : {}))
+      .catch(() => {});
   }, []);
 
   const c = dark ? {
@@ -536,13 +558,18 @@ export default function Watchlist() {
     "--text2": "#6e6e73", "--text3": "#aeaeb2",
   };
 
-  // Auction lots projected into the main listings feed. Same
-  // tracked-lot data the Watchlist's watchItems memo joins — but
-  // here we surface every lot in `tracked_lots.json`, not just the
-  // current user's tracked URLs, because the Listings tab is the
-  // global "everything we know about" feed. Shape mirrors a
-  // dealer-listings.json row close enough that the same Card +
-  // filter predicates work uniformly.
+  // Auction lots projected into the main listings feed. Two sources
+  // get merged by URL key:
+  //   1. tracked_lots.json — user-tracked URLs (eBay primarily,
+  //      plus any individual auction-house URLs users explicitly
+  //      track via the +Track flow).
+  //   2. auction_lots.json — comprehensive scrape of every lot in
+  //      every currently-active sale on Antiquorum / Christie's /
+  //      Sotheby's / Phillips, refreshed daily.
+  // When the same URL appears in both files, the COMPREHENSIVE entry
+  // wins (it's likely fresher — daily scrape vs whenever-the-user-
+  // pasted-it). Same shape either way so the projection treats them
+  // identically.
   //
   // Phase A note (2026-05-04): hearts on these cards write to
   // watchlist_items via the existing handleWish path. The
@@ -551,8 +578,9 @@ export default function Watchlist() {
   // tracked_lots with watchlist_items.
   const auctionLotItems = useMemo(() => {
     const arr = [];
-    for (const url of Object.keys(trackedLotsState || {})) {
-      const data = trackedLotsState[url];
+    const merged = { ...(trackedLotsState || {}), ...(auctionLotsState || {}) };
+    for (const url of Object.keys(merged)) {
+      const data = merged[url];
       if (!data) continue;
       const isEnded = data.status === "ended";
       const price = (isEnded ? data.sold_price : data.current_bid)
@@ -603,7 +631,7 @@ export default function Watchlist() {
       });
     }
     return arr;
-  }, [trackedLotsState]);
+  }, [trackedLotsState, auctionLotsState]);
 
   // Main feed = dealer listings ∪ auction lots. Powers the Listings
   // tab's allFiltered memo; the feedFilter pill (All/Dealers/Auctions)
