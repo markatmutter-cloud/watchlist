@@ -752,6 +752,26 @@ becomes confusion.
   reflective Watchbox v2 layer (per-pick reasoning stays
   surface-level: rows={2}, "Why this one?" prompt).
 
+- 2026-05-03 (later): **Heuertime + ClassicHeuer added (Epic 1, 35th
+  + 36th dealers, both EUR).** Two vintage-Heuer specialists.
+  Heuertime is a Dutch dealer on a Wix Pages site (no Wix Stores
+  backend) — every watch is a hand-built page with a `kopie-van-X`
+  slug; scraper walks the homepage for URLs then fetches each
+  detail page for title, price ("PRICE" rich-text label → "X.XXX
+  euro" or "On Request"), and image. ~20 active items; mostly
+  Heuer with a few Zenith / Lejour. ClassicHeuer is a German
+  dealer on standard WooCommerce Store API; ~117 items. Brand
+  quirk: most categories are Heuer model FAMILIES (Carrera,
+  Autavia, Camaro, Monaco, Skipper, Silverstone, Monza, Montreal,
+  Calculator, Bundeswehr, Chronosplit, Rallyetimer, "Andere
+  Hersteller") — `detect_brand` checks title for known brands
+  first, then categories for literal Rolex/Omega/Orfina, then
+  falls back to Heuer when any category looks like a Heuer family.
+  ~98% price-on-request → `priceOnRequest=True` so merge.py's
+  500-floor doesn't drop them. **36 dealers now**, six over the
+  30-dealer end-state target — Stop-rule audit + prune to 25 is
+  more urgent, not less, after this.
+
 - 2026-05-03 (evening): **Auction urgency surfacing shipped (Epic 2).**
   Two complementary changes: (1) "Ending soon" pinned section at the
   top of the Watchlist tab — auction-format tracked lots ending
