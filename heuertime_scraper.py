@@ -85,33 +85,31 @@ def discover_urls(home_html):
     return sorted(u for u in urls if "template-for-watches" not in u)
 
 
-# Two image-pattern regexes, used in order:
+# Image extraction: pull the COLOR tile thumbnail from the HOMEPAGE,
+# not from each detail page.
 #
-# 1. PRODUCT_GALLERY_RE — the page's product-photo gallery uses the
-#    HTML5 <picture><source srcSet="..."> pattern with the wixstatic
-#    URL right at the start of the srcSet attribute. This is the
-#    canonical "this is a real product photo" signal.
+# Why not detail pages: every detail page renders a small B&W banner
+# image at the top via a bare `<img src="...">` tag, and a fuller
+# color gallery below via `<picture><source srcSet="...">`. A naive
+# "first wixstatic URL" picker hits the banner. A "first <source
+# srcSet>" picker works locally but Wix's edge serves a different
+# SSR variant to the GitHub Actions runner where the gallery markup
+# isn't present — so the scraper still falls through to the banner.
+# The homepage tile is rendered server-side consistently and gives
+# us the exact thumbnail Mark sees on the dealer's site, which is
+# what should appear on the card.
 #
-# 2. ANY_MEDIA_RE — defensive fallback in case a future page omits
-#    the <picture> markup. We pick the first wixstatic URL that
-#    isn't the generic OG default.
-#
-# Why we need this distinction: the page renders a small B&W banner
-# image at the top of every detail page using a bare `<img src="...">`
-# tag (not <picture>). Before the gallery pattern was added, the
-# scraper picked that banner instead of the product photo. The
-# `<source srcSet="...">` pattern is what actually drives the visible
-# gallery, so it's also what we want as the card thumbnail.
-PRODUCT_GALLERY_RE = re.compile(
-    r'<source\s+srcSet="'
+# HOMEPAGE_TILE_RE matches each `<a href="<detail-url>"... <img
+# srcSet="<wixstatic-url>">` pair. The tile structure is consistent
+# across the homepage gallery and we extract one image per detail URL
+# in a single fetch. Detail pages are still walked for title + price,
+# but their images are no longer used.
+HOMEPAGE_TILE_RE = re.compile(
+    r'href="(https://www\.heuertime\.com/kopie-van-[a-z0-9-]+)"'
+    r'[^<]{0,200}<img[^>]*srcSet="'
     r'(https://static\.wixstatic\.com/media/[a-zA-Z0-9_]+~mv2\.(?:jpg|jpeg|png|webp))',
     re.I,
 )
-ANY_MEDIA_RE = re.compile(
-    r"https://static\.wixstatic\.com/media/[a-zA-Z0-9_]+~mv2\.(?:jpg|jpeg|png|webp)",
-    re.I,
-)
-GENERIC_OG_HASH = "474f71_812506f520ce4521a550a0ff19b036da"
 
 
 def parse_price(price_text):
@@ -137,7 +135,23 @@ def parse_price(price_text):
     return (0, True)
 
 
-def parse_item(url, html):
+def extract_tile_images(home_html):
+    """Build a {detail_url: image_url} map from the homepage gallery.
+
+    The homepage renders each watch as `<a href="<detail-url>"><img
+    srcSet="<color-thumbnail-url>"...>`. One regex sweep picks up
+    every (URL, image) pair in a single pass."""
+    mapping = {}
+    for m in HOMEPAGE_TILE_RE.finditer(home_html):
+        detail = m.group(1)
+        if "template-for-watches" in detail:
+            continue
+        if detail not in mapping:
+            mapping[detail] = m.group(2)
+    return mapping
+
+
+def parse_item(url, html, tile_img):
     title_m = re.search(r"<title>([^<]+)</title>", html)
     title = title_m.group(1).strip() if title_m else ""
     # Strip the " | Heuertime" site suffix.
@@ -159,31 +173,13 @@ def parse_item(url, html):
         price_block = flat[:60]
     price, por = parse_price(price_block)
 
-    # Image — prefer the first product-gallery photo (rendered via
-    # the <picture><source srcSet="..."> pattern). Falls back to the
-    # first non-OG wixstatic media URL on pages that omit the gallery
-    # markup. The fallback is the previous behaviour, which on real
-    # detail pages was picking the small B&W banner at the top —
-    # functional but not visually useful for the card.
-    img = ""
-    gallery = PRODUCT_GALLERY_RE.search(html)
-    if gallery:
-        img = gallery.group(1)
-    else:
-        for m in ANY_MEDIA_RE.finditer(html):
-            candidate = m.group(0)
-            if GENERIC_OG_HASH in candidate:
-                continue
-            img = candidate
-            break
-
     return {
         "title": title,
         "brand": detect_brand(title),
         "price": price,
         "priceOnRequest": por,
         "url": url,
-        "img": img,
+        "img": tile_img or "",
         "description": "",
         "source": "Heuertime",
         "sold": False,
@@ -194,13 +190,14 @@ def main():
     print("Fetching Heuertime homepage...")
     home = fetch(BASE)
     urls = discover_urls(home)
-    print(f"Found {len(urls)} watch URLs")
+    tile_images = extract_tile_images(home)
+    print(f"Found {len(urls)} watch URLs ({len(tile_images)} with tile images)")
 
     results = []
     for i, u in enumerate(urls, 1):
         try:
             html = fetch(u)
-            row = parse_item(u, html)
+            row = parse_item(u, html, tile_images.get(u, ""))
             if not row["title"]:
                 print(f"  [{i}/{len(urls)}] SKIP (no title): {u}")
                 continue
