@@ -23,6 +23,7 @@ export function DesktopShell(props) {
     brandsExpanded,
     currentIsSaved,
     filterAuctionsOnly, filterBrands, filterSources,
+    listingsSubTab,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
     search, sort,
@@ -42,10 +43,21 @@ export function DesktopShell(props) {
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
     adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
-    feedFilterPillJSX, auctionsViewToggleJSX,
+    listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX, watchlistTabJSX,
     lotMigrationBannerJSX,
   } = props;
+
+  // Listings sub-tab gates filter exposure: Live listings hides
+  // auction-house chips (no live dealer items in those sources);
+  // Live auctions hides dealer chips for the same reason. Sold +
+  // Calendar show both. Watchlist tab and other main tabs always
+  // see both groups.
+  const showDealerSources  = !(tab === "listings" && listingsSubTab === "auctions");
+  const showAuctionSources = !(tab === "listings" && listingsSubTab === "live");
+  // Whether the filter row should render at all on this sub-tab.
+  // Calendar sub-tab has no filterable list — hide the row.
+  const showListingsFilterRow = !(tab === "listings" && listingsSubTab === "calendar");
 
   // Desktop sidebar retired in the April '26 filter-consolidation pass.
   // Toggle still hard-coded to null so we can revert quickly if needed.
@@ -73,17 +85,14 @@ export function DesktopShell(props) {
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
                   borderBottom: expandedSource || expandedBrand ? "none" : "0.5px solid var(--border)",
                   flexShrink: 0, flexWrap: "wrap", position: "relative" }}>
-      {/* Unified-feed pill (All / Dealers / Auctions) — Listings tab
-          only. Sits at the head of the filter row so the "what am I
-          looking at?" choice precedes the narrowing controls. */}
-      {feedFilterPillJSX}
-      {/* Auctions-mode sub-view toggle (Lots / Calendar). Only renders
-          when feedFilter === "auctions"; null otherwise. */}
-      {auctionsViewToggleJSX}
-      {/* Tri-state Status segment — Live / Sold / All. */}
-      {statusSegmentJSX}
+      {/* Status segment (Live / Sold / All) is Watchlist-only now —
+          on Listings the sub-tabs cover that role. */}
+      {tab === "watchlist" && statusSegmentJSX}
 
-      {/* Sort — two toggle pills (Date + Price). */}
+      {/* Sort — Date + Price toggle pills. Date pill semantics depend
+          on the active Listings sub-tab (newest firstSeen on Live;
+          ending order on Live auctions; sold-date on All sold) — the
+          dispatch lives in App.js's allFiltered memo. */}
       <div style={{ display: "flex", gap: 6 }}>
         {(() => {
           const isDate = sort === "date" || sort === "date-asc";
@@ -125,25 +134,6 @@ export function DesktopShell(props) {
               fontWeight: isPrice ? 600 : 500,
               whiteSpace: "nowrap",
             }}>{label}</button>
-          );
-        })()}
-        {/* Ending-soonest sort pill — third option alongside Date /
-            Price. Single state; auto-defaults when the user toggles
-            auctions-only on, also selectable manually. Active tap
-            reverts to date-desc so there's an off-switch from the
-            same control. */}
-        {(() => {
-          const isEnding = sort === "ending";
-          return (
-            <button onClick={() => setSort(isEnding ? "date" : "ending")} style={{
-              padding: "6px 12px", borderRadius: 20,
-              border: "0.5px solid var(--border)",
-              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              background: isEnding ? "var(--text1)" : "var(--surface)",
-              color:      isEnding ? "var(--bg)"    : "var(--text2)",
-              fontWeight: isEnding ? 600 : 500,
-              whiteSpace: "nowrap",
-            }}>Ending</button>
           );
         })()}
       </div>
@@ -230,26 +220,27 @@ export function DesktopShell(props) {
             {/* Group dealers and auction houses under sub-headers so
                 the list scans cleanly even at 30+ dealers. Headers are
                 inline pills (full-row width via flex basis) sandwiched
-                between the chip clusters. Both groups are flat
-                alphabetical inside their section. */}
-            {(DEALER_SOURCES?.length || 0) > 0 && (
+                between the chip clusters. Live-listings sub-tab hides
+                the auction-house group; Live-auctions sub-tab hides
+                dealers — neither group is reachable from there anyway. */}
+            {showDealerSources && (DEALER_SOURCES?.length || 0) > 0 && (
               <span style={{
                 flexBasis: "100%", fontSize: 10, fontWeight: 600,
                 textTransform: "uppercase", letterSpacing: "0.08em",
                 color: "var(--text3)", marginBottom: 2,
               }}>Dealers</span>
             )}
-            {(DEALER_SOURCES || []).map(s => (
+            {showDealerSources && (DEALER_SOURCES || []).map(s => (
               <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />
             ))}
-            {(AUCTION_SOURCES?.length || 0) > 0 && (
+            {showAuctionSources && (AUCTION_SOURCES?.length || 0) > 0 && (
               <span style={{
                 flexBasis: "100%", fontSize: 10, fontWeight: 600,
                 textTransform: "uppercase", letterSpacing: "0.08em",
-                color: "var(--text3)", marginTop: 8, marginBottom: 2,
+                color: "var(--text3)", marginTop: showDealerSources ? 8 : 0, marginBottom: 2,
               }}>Auction houses</span>
             )}
-            {(AUCTION_SOURCES || []).map(s => (
+            {showAuctionSources && (AUCTION_SOURCES || []).map(s => (
               <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />
             ))}
             {filterSources.length > 0 && (
@@ -344,20 +335,23 @@ export function DesktopShell(props) {
         </div>
         {authJSX}
       </div>
-      {/* Watchlist sub-tab strip sits between main tabs and the
-          filter row — surfaces the contextual Track / Add-search action
-          above the filter pills. */}
+      {/* Sub-tab strips — Listings on tab=listings, Watchlist on
+          tab=watchlist. Sit between main tabs and the filter row. */}
+      {listingsSubTabsJSX}
       {watchSubTabsJSX}
-      {(tab === "listings" || (tab === "watchlist" && watchTopTab !== "searches" && watchTopTab !== "calendar" && watchTopTab !== "collections" && watchTopTab !== "challenges"))
+      {(
+        (tab === "listings" && showListingsFilterRow) ||
+        (tab === "watchlist" && watchTopTab !== "searches" && watchTopTab !== "collections" && watchTopTab !== "challenges")
+      )
         ? filterRowJSX
-        : (tab === "watchlist"
-            ? (
-              // Spacer row that matches the real filter pill row's height
-              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-                <span style={{ fontSize: 13, padding: "6px 12px", borderRadius: 20, visibility: "hidden" }}>placeholder</span>
-              </div>
-            )
-            : null)}
+        : (
+          // Spacer row that matches the real filter pill row's height,
+          // so switching to a filter-less sub-tab (Calendar / Searches
+          // / Collections / Challenges) doesn't pop content up.
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
+            <span style={{ fontSize: 13, padding: "6px 12px", borderRadius: 20, visibility: "hidden" }}>placeholder</span>
+          </div>
+        )}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
         {/* Top padding is 0 on Watchlist so the sub-tab strip sits flush
             against the filter pill row. Listings keeps the breathing room. */}

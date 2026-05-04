@@ -23,6 +23,7 @@ export function MobileShell(props) {
     aboutModalOpen, allFiltered, brandsExpanded,
     currentIsSaved, drawerOpen,
     filterAuctionsOnly, filterBrands, filterSources,
+    listingsSubTab,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
     search, sort, sourcesExpanded,
@@ -44,10 +45,19 @@ export function MobileShell(props) {
     favSearchModalJSX, inp,
     adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
-    feedFilterPillJSX, auctionsViewToggleJSX,
+    listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX, watchlistTabJSX,
     lotMigrationBannerJSX,
   } = props;
+
+  // Listings sub-tab gates filter exposure (mirror of DesktopShell).
+  const showDealerSources  = !(tab === "listings" && listingsSubTab === "auctions");
+  const showAuctionSources = !(tab === "listings" && listingsSubTab === "live");
+  // Filter button + sort row hidden on Calendar sub-tab and on
+  // Watchlist sub-tabs that don't show a filterable list.
+  const noFilterableList =
+    (tab === "listings" && listingsSubTab === "calendar") ||
+    (tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections" || watchTopTab === "challenges"));
 
   return (
       <div style={baseStyle}>
@@ -98,34 +108,28 @@ export function MobileShell(props) {
               </button>
             )}
           </div>
-          {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections" || watchTopTab === "challenges")) && (
+          {!noFilterableList && (
             <button onClick={() => { setDrawerOpen(true); setSourcePickerOpen(false); }} aria-label="Filters" style={iconButton({ active: hasFilters })}>
               <FilterIcon />
             </button>
           )}
           {authJSX}
         </div>
-        {/* Sort/source/sold/clear pill row — only relevant for tabs that
-            have a list to filter. On Searches sub-tab we still render an
-            empty placeholder of the same height so the content below
-            doesn't jump up when switching sub-tabs. */}
-        {tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections" || watchTopTab === "challenges") && (
-          // Spacer row — matches the active filter row's padding +
-          // pill-shaped child so the height is identical to the real row.
-          // Avoids a layout shift when switching to Searches sub-tab.
+        {/* Sort row — only when the current sub-tab has a filterable
+            list. Otherwise render a spacer of the same height so
+            sub-tab switching doesn't pop content up. */}
+        {noFilterableList && (
           <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", alignItems: "center" }}>
             <span style={{ fontSize: 13, padding: "9px 14px", borderRadius: 20, border: "0.5px solid transparent", visibility: "hidden" }}>placeholder</span>
           </div>
         )}
-        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections" || watchTopTab === "challenges")) && (
+        {!noFilterableList && (
         <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          {/* Unified-feed pill (All / Dealers / Auctions) — Listings
-              tab only. Sits at the head of the row so the "what am I
-              looking at?" choice precedes Date / Price / Ending. */}
-          {feedFilterPillJSX && <div style={{ flexShrink: 0 }}>{feedFilterPillJSX}</div>}
-          {auctionsViewToggleJSX && <div style={{ flexShrink: 0 }}>{auctionsViewToggleJSX}</div>}
           <span style={{ fontSize: 12, color: "var(--text3)", marginRight: 2, flexShrink: 0 }}>{allFiltered.length}</span>
-          {/* Date sort pill */}
+          {/* Date sort pill — semantics depend on the active Listings
+              sub-tab (newest firstSeen on Live; ending order on Live
+              auctions; sold-date on All sold). Dispatch lives in
+              App.js's allFiltered memo. */}
           {(() => {
             const label = sort === "date" ? "Date ↓" : sort === "date-asc" ? "Date ↑" : "Date";
             const active = sort === "date" || sort === "date-asc";
@@ -143,24 +147,10 @@ export function MobileShell(props) {
             const active = sort === "price-asc" || sort === "price-desc";
             return (
               <button onClick={() => {
-                // Tapping Price should stay in price mode — toggles between
-                // asc and desc. Previous version fell back to date on the
-                // third tap, which felt like the button was broken.
                 if (sort === "price-asc") setSort("price-desc");
                 else if (sort === "price-desc") setSort("price-asc");
                 else setSort("price-asc");
               }} style={pillBase(active)}>{label}</button>
-            );
-          })()}
-          {/* Ending-soonest sort pill — single-state (auto-defaults
-              when the auctions-only filter goes on; user can also tap
-              to set it manually). Tapping while active flips back to
-              date-desc so there's an off-switch from the same control. */}
-          {(() => {
-            const active = sort === "ending";
-            return (
-              <button onClick={() => setSort(active ? "date" : "ending")}
-                style={pillBase(active)}>Ending</button>
             );
           })()}
           {/* Compact "clear filters" — just a small × icon to keep the
@@ -180,8 +170,10 @@ export function MobileShell(props) {
           )}
         </div>
         )}
-        {/* Mobile sub-tab strip — lifted into the sticky stack on
-            2026-04-30 so it survives scroll. */}
+        {/* Sub-tab strips — Listings strip on tab=listings, Watchlist
+            strip on tab=watchlist. Both lifted into the sticky stack
+            so they survive scroll. */}
+        {listingsSubTabsJSX}
         {watchSubTabsJSX}
         </div>
         {/* Share-receive surface — self-contained component, hooks
@@ -241,11 +233,17 @@ export function MobileShell(props) {
               {/* Scrollable filter content */}
               <div style={{ flex: 1, overflowY: "auto", padding: "0 0 8px" }}>
 
-                <div style={{ padding: "10px 16px 10px" }}>
-                  <div style={sectionHeadingStyle}>Status</div>
-                  {statusSegmentJSX}
-                </div>
-                <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
+                {/* Status segment — Watchlist tab only (Listings tab
+                    sub-tabs cover Live / Sold). */}
+                {tab === "watchlist" && (
+                  <>
+                    <div style={{ padding: "10px 16px 10px" }}>
+                      <div style={sectionHeadingStyle}>Status</div>
+                      {statusSegmentJSX}
+                    </div>
+                    <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
+                  </>
+                )}
 
                 {/* Auctions-only toggle. Orthogonal to the Live/Sold/All
                     status segment above — when on, narrows to auction-
@@ -280,25 +278,37 @@ export function MobileShell(props) {
                       drawer compact at small viewports. */}
                   {sourcesExpanded ? (
                     <>
-                      {(DEALER_SOURCES?.length || 0) > 0 && (
-                        <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text3)", margin: "2px 0 6px" }}>Dealers</div>
+                      {showDealerSources && (DEALER_SOURCES?.length || 0) > 0 && (
+                        <>
+                          <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text3)", margin: "2px 0 6px" }}>Dealers</div>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {(DEALER_SOURCES || []).map(s => <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
+                          </div>
+                        </>
                       )}
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {(DEALER_SOURCES || []).map(s => <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
-                      </div>
-                      {(AUCTION_SOURCES?.length || 0) > 0 && (
-                        <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text3)", margin: "10px 0 6px" }}>Auction houses</div>
+                      {showAuctionSources && (AUCTION_SOURCES?.length || 0) > 0 && (
+                        <>
+                          <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text3)", margin: showDealerSources ? "10px 0 6px" : "2px 0 6px" }}>Auction houses</div>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {(AUCTION_SOURCES || []).map(s => <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
+                          </div>
+                        </>
                       )}
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {(AUCTION_SOURCES || []).map(s => <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
-                      </div>
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
                         <Chip label="Less ↑" active={false} onClick={() => setSourcesExpanded(false)} blue />
                       </div>
                     </>
                   ) : (
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {visibleSources.map(s => <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
+                      {/* Collapsed view: filter the flat visibleSources
+                          list to only the relevant group. visibleSources
+                          is a slice of SOURCES (dealers + houses unioned)
+                          so we filter inline rather than threading a
+                          per-sub-tab visibleSources from App.js. */}
+                      {visibleSources
+                        .filter(s => (showDealerSources && (DEALER_SOURCES || []).includes(s))
+                                  || (showAuctionSources && (AUCTION_SOURCES || []).includes(s)))
+                        .map(s => <Chip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
                       {SOURCES.length > SOURCES_SHOW && <Chip label={`+${SOURCES.length - SOURCES_SHOW} more`} active={false} onClick={() => setSourcesExpanded(true)} blue />}
                     </div>
                   )}
