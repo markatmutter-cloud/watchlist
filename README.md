@@ -23,7 +23,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 Three top-level tabs:
 
 - **Listings** — aggregates 36 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
-- **Watchlist** — four sub-tabs:
+- **Watchlist** — five sub-tabs:
   - **Favorites** — items you've hearted (your default collection), with price-at-save preserved.
   - **Collections** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you. Anything you've hidden from the Available feed surfaces here too as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
   - **Challenges** — build-a-collection v1. Pick N watches under a budget, write a one-line rationale per pick, share the spec so a friend can build their own answer. Multi-stage flow with a 20% over-budget soft-warn / hard-block guardrail. Drag-drop between shortlist and slots on desktop; tap-to-select on mobile.
@@ -223,7 +223,8 @@ watchlist/
 │   └─ index.html
 ├─ supabase/
 │   └─ schema/                     # SQL migrations — paste into Supabase SQL editor
-│       └─ 2026-05-01_collections.sql  # collections + collection_items tables
+│       ├─ 2026-05-01_collections.sql  # collections + collection_items tables
+│       └─ 2026-05-03_challenges.sql   # Watch Challenges columns (target_count, budget, is_pick, reasoning, …)
 ├─ src/
 │   ├─ App.js                      # orchestrator — owns state, builds shellProps, delegates to shells
 │   ├─ supabase.js                 # auth + per-user data hooks
@@ -261,7 +262,9 @@ watchlist/
 │       ├─ SettingsModal.js        # currency picker + theme + columns + about (View menu lives here)
 │       ├─ ShareBanner.js          # in-app banner for ?listing=<id>&shared=1 receive flow
 │       ├─ ShareReceiver.js        # hook-isolated mount for share-receive logic (avoids App.js hook bloat)
-│       └─ AdminTab.js             # source-quality dashboard at ?tab=admin (gated by REACT_APP_ADMIN_EMAILS)
+│       ├─ EndingSoon.js           # auction-urgency pinned section + ending-soonest comparator
+│       ├─ AdminTab.js             # source-quality dashboard at ?tab=admin (gated by REACT_APP_ADMIN_EMAILS)
+│       └─ ChallengeFlow.js        # Watch Challenges multi-stage flow (Watchlist > Challenges)
 └─ package.json
 ```
 

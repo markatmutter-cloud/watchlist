@@ -8,20 +8,63 @@ graduate to ROADMAP.md.
 ## TL;DR
 
 Long iterative session across 2026-05-02 evening + 2026-05-03. **Net
-deliverables:** Watchurbia + Maunder + Watch Club + Vintage Watch
-Shop + Watches of Lancashire shipped (5 new dealers — count is now
-**34, past the 30-dealer target**); Epic 0 verification script +
-admin source-quality dashboard shipped; refresh-preserves-location
-landed; manual single-source scrape workflow added; Wind Vintage
-sold-detection false-positive fixed; eBay short-URL tracking fixed;
-roadmap restructured (Strategic bets, User journeys, multi-tier
-save reinstated, AI recommendation surfaces, comprehensive auction
-inventory, etc.).
+deliverables**, latest first: **Watch Challenges (Build-a-collection
+v1)** shipped as a new Watchlist > Challenges sub-tab; **Heuertime
++ Classic Heuer** added as the 35th + 36th dealers (via a parallel
+session); auction urgency surfacing; Watchurbia + Maunder + Watch
+Club + Vintage Watch Shop + Watches of Lancashire (5 UK dealers);
+Epic 0 verification script + admin source-quality dashboard;
+refresh-preserves-location; manual single-source scrape workflow;
+Wind Vintage sold-detection false-positive fix; eBay short-URL
+tracking fix; roadmap restructured (Strategic bets, User journeys,
+multi-tier save reinstated, AI recommendation surfaces,
+comprehensive auction inventory, etc.).
 
-Production is **green**. Bundle hash will flip on the next merge to
-main once the open PRs land — see "Open PRs" below.
+Production is **green**, currently serving `main.0f340f6a.js`.
+Dealer count: **36** (target was 30; Stop-rule pruning to 25 is
+the next Epic 1 priority). All open PRs from this session arc are
+merged.
 
 ## What shipped (newest first)
+
+- **Watch Challenges / Build-a-collection v1** (PR #18, merged
+  2026-05-03 late, bundle `0f340f6a`). New Watchlist > Challenges
+  sub-tab — the 5th sub-tab alongside Favorites / Collections /
+  Searches / Auction Calendar. Multi-stage flow: Create (set count
+  + budget + title) → Picking (drag-drop on desktop, tap-to-select
+  on mobile via the SlotPickerModal) → Reasoning (one-line per pick;
+  optional, rows={2}) → Complete (read-only summary + share). Same
+  20% over-budget soft-warn / >20% hard-block as the mockup. Schema
+  in `supabase/schema/2026-05-03_challenges.sql` extends collections
+  (target_count, budget, description_long, state draft|complete,
+  parent_challenge_id) and collection_items (is_pick, reasoning).
+  ONE collection per challenge — picks and shortlist live in the
+  same items table, distinguished by is_pick. Picks snapshot
+  saved_price/saved_currency/saved_price_usd at promotion time so
+  totals are immutable post-share. Drafts persist as you go via
+  the existing useCollections write-through. Drag-drop is gated on
+  `(pointer: fine)` so HTML5 DnD only fires on desktop. Share
+  button generates a URL encoding the spec
+  (`?newchallenge=1&n=N&b=B&t=TITLE&d=DESC`) — recipients build
+  their own response under the same constraints. **v1.5 work
+  deliberately deferred**, captured in commit + ROADMAP comments:
+  the `?newchallenge=1` receive flow that auto-prompts a response
+  challenge from the URL params (currently the URL just opens the
+  app); public read of completed challenges (RLS surgery deferred);
+  per-challenge cap (no cap for v1); photo/custom-watch upload
+  (removed entirely — eliminates the moderation surface and the
+  budget-guardrail loophole). Reasoning stays surface-level by
+  design; long-form journaling is Watchbox v2 territory.
+
+- **Heuertime + Classic Heuer sources** (PR #17, merged
+  2026-05-03 late). Two more EUR-priced dealers, both bringing
+  vintage Heuer inventory. Specifics owned by the parallel session
+  that built them — see commit `5a438bd` for full implementation
+  notes. Dealer count: 34 → 36. Currently at 0 visible items each
+  in listings.json because the dealer-listings cron hasn't run
+  since the merge; auto-populates on next cron cycle (~8h max), or
+  trigger now via Actions tab → "Scrape single source (manual)"
+  with `heuertime` and `classicheuer` as the inputs.
 
 - **Auction urgency surfacing** (PR #14, merged 2026-05-03 evening,
   bundle `cc73e77d`). Two complementary surfaces for time-sensitive
@@ -134,31 +177,22 @@ main once the open PRs land — see "Open PRs" below.
   strategy needed" section for selling-Mark's-watches, quarterly
   review discipline. See ROADMAP.md update log for the full diff.
 
-## Open PRs (as of session end)
+## Open PRs
 
-Five branches with PRs that need merging in this order. Watchurbia
-+ verify, admin dashboard, scrape-single, WV fix, and roadmap
-consolidation may already be merged by the time the next session
-starts — `git log origin/main` is the authoritative check.
+**None as of late 2026-05-03.** All session PRs merged. Two stale
+merged branches still exist on remote (`claude/build-a-collection-v1`,
+`claude/heuertime-classicheuer`) — Mark can trash-icon them via the
+GitHub branches page when convenient. No urgency.
 
-```
-claude/four-new-sources           — 4 dealers + eBay short-URL fix (this branch)
-[merge order earlier:]
-claude/fix-windvintage-sold-detection — WV recovery
-claude/scrape-single-workflow     — manual single-source dispatch
-claude/admin-source-quality       — admin dashboard
-claude/watchurbia-and-verify      — Watchurbia + verify_sources
-claude/roadmap-major-update       — roadmap consolidation pass
-claude/roadmap-strategic-bets     — strategic bets / user journeys
-```
+## Setup steps from Mark — all done ✓
 
-## Setup steps still needed from Mark
-
-- **Set `REACT_APP_ADMIN_EMAILS` in Vercel.** Production + Preview
-  environments. Use the Google email Mark signs in with. Dashboard
-  is unreachable until this is set; nothing else depends on it.
-- **Optional**: same env var in `.env.local` if running `npm start`
-  locally.
+- ✓ `REACT_APP_ADMIN_EMAILS` set in Vercel (Production + Preview).
+  Admin source-quality dashboard at `?tab=admin` now reachable via
+  the user dropdown.
+- ✓ Supabase SQL migration `2026-05-03_challenges.sql` applied.
+  Watch Challenges feature ready to use.
+- *Optional*: same `REACT_APP_ADMIN_EMAILS` in `.env.local` if running
+  `npm start` locally.
 
 ## Open user-reported issues (likely resolved by next-cron pass)
 
@@ -204,15 +238,38 @@ claude/roadmap-strategic-bets     — strategic bets / user journeys
   `Mozilla/5.0`. Counterintuitive. Worth trying both when a Store
   API call inexplicably fails.
 
+- **Challenges = one-collection-per-feature with type marker.**
+  Watch Challenges shipped as `type='challenge'` on the existing
+  collections table — same architectural pattern as the planned
+  Watchbox v2 (`type='watchbox'`). Picks vs shortlist split via
+  an `is_pick` boolean on collection_items rather than two parallel
+  tables — keeps the count of writeable surfaces low and lets the
+  picking flow demote/promote by toggling one field. Snapshot
+  pricing (saved_price/_currency/_price_usd) reused from
+  watchlist_items for immutability post-share. Don't introduce a
+  new table for the next feature in this family unless the data
+  shape genuinely diverges; the type-marker pattern scales.
+
+- **Drag-drop is gated on `(pointer: fine)`, not viewport width.**
+  Mark explicitly asked for tap-to-select on mobile and drag-drop
+  on desktop. Pointer-coarse / pointer-fine is the right axis —
+  large touchscreens still get tap, hybrid laptops with mouse get
+  DnD even at narrow widths. Same primitive the share-detection
+  commit (c7f7aba) uses. If a future feature needs the same
+  binary "interaction tier" decision, reach for this, not viewport.
+
 ## Doc files updated this session
 
 - **CLAUDE.md** — Hidden-as-virtual-collection paragraph; Location
   URL params section; Admin tab section; new "Things to never do"
-  rule about JSX comments before `return (`.
-- **README.md** — dealer count 27 → 34 (architecture diagram +
+  rule about JSX comments before `return (`; **Watch Challenges
+  data model paragraph** (one-collection-per-challenge with is_pick
+  split, snapshot pricing pattern reused from watchlist_items).
+- **README.md** — dealer count 27 → **36** (architecture diagram +
   header + table); Hidden mention in the × bullet; Source quality
-  admin row; verification.json + verification_history.json in folder
-  layout; AdminTab.js + ShareReceiver.js in components layout;
+  admin row; **Challenges sub-tab** added to the Watchlist 4-up;
+  verification.json + verification_history.json in folder layout;
+  AdminTab.js + ShareReceiver.js in components layout;
   REACT_APP_ADMIN_EMAILS docs.
 - **ROADMAP.md** — Strategic bets section; User journeys section
   (J10 + J11); Watchbox + Build-a-collection v2 expanded;
@@ -220,7 +277,8 @@ claude/roadmap-strategic-bets     — strategic bets / user journeys
   recommendation surfaces added; comprehensive auction inventory
   added; site discoverability + welcome page added under Epic 0;
   Tools section narrowed; Parked-strategy-needed section; Quarterly
-  review section; multiple update log entries.
+  review section; multiple update log entries including the
+  **Watch Challenges v1 ship**.
 - **archive/** — old SESSION_HANDOFF_2026-05-01.md moved here. This
   doc is the new in-flight one.
 
@@ -240,15 +298,24 @@ Use `git log origin/main --oneline -30` for the actual merged history.
 
 Per the refreshed [ROADMAP.md](ROADMAP.md) priority order:
 
-1. **References as first-class entities (Epic 0).** The lone
+1. **Watch Challenges v1.5** — close the gap left by v1: implement
+   the `?newchallenge=1` receive flow (auto-prompt a draft response
+   when a recipient lands on a spec URL) and decide whether to ship
+   public read of completed challenges (RLS surgery on collections
+   table to allow anon SELECT on `state='complete'` rows). Half a
+   session. Ship before References if you want the social loop to
+   actually close.
+2. **References as first-class entities (Epic 0).** The lone
    remaining Epic 0 foundation. Several downstream features gate on
    this.
-2. **Site discoverability + welcome page (Epic 0).** Half-session.
+3. **Site discoverability + welcome page (Epic 0).** Half-session.
    robots / sitemap / og:image / Schema.org / first-time-visitor page.
-3. **Strength-of-save model (Epic 3).** Two-tier (Love / Watch).
+4. **Strength-of-save model (Epic 3).** Two-tier (Love / Watch).
    Small UI lift; the feature *is* the gesture.
-4. **Stop-rule prune** under Epic 1 — at 34 dealers we're past the
-   30-dealer end-state. Audit + prune to 25.
+5. **Stop-rule prune** under Epic 1 — at 36 dealers we're past the
+   30-dealer end-state. Audit + prune to 25. Source quality
+   dashboard now exists, so this is a "look at the data and decide"
+   session, not a "build something to inform the decision" session.
 
 Plus the maintenance-rhythm beat: every 4th-5th session is hygiene
 only. We're due.

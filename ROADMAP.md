@@ -311,31 +311,47 @@ v2 surfaces below — both gated on Epic 0 references for full
 power, but the `type` marker (free-form / shared-inbox / challenge
 / watchbox) is already in the schema.
 
-### Build-a-collection / Watch Challenges v2 (deferred — reuses the Collections primitive)
+### Build-a-collection / Watch Challenges (v1 ✓ shipped 2026-05-03; v1.5 + v2 below)
 
-Constrained hypothetical collections: "3 watches for $50k", "5-watch
-starter collection", "3 watches for business", etc. User picks from
-current AND past listings (sold archive becomes a query-able source,
-not just an archive tab). Multiple challenges per user.
+**v1 shipped** as Watchlist > Challenges. Constrained hypothetical
+collections — "3 watches for $50k", "5-watch starter", "3 watches
+for business", etc. Multi-stage flow (Create → Picking → Reasoning
+→ Complete) with a 20% budget guardrail. ONE collection per
+challenge, picks vs shortlist split via `is_pick` boolean. Drag-drop
+on desktop, tap-to-select on mobile. Drafts persist as you go;
+state flips draft → complete on Finish. Picks snapshot
+saved_price/_currency/_price_usd so totals are immutable post-share.
 
-Workflow surfaces (currently in design exploration in a separate chat;
-UI/workflow not yet resolved):
-- **Send-as-completed.** Share a finished collection with a friend.
-- **Send-as-empty.** Challenge a friend to build their own response
-  to your spec.
-- **Public read-only link.** Extends the v1 single-listing share
-  primitive into a future "share collection" surface.
-- **Value-over-time tracking.** Show how the cost of assembling that
-  collection has shifted since you built it. Powerful only after
-  enough price history accumulates.
+Schema: `supabase/schema/2026-05-03_challenges.sql` extends
+collections (target_count, budget, description_long, state,
+parent_challenge_id) and collection_items (is_pick, reasoning).
 
-The plumbing (collections table with `type='challenge'`) already
-exists; this is purely UI + a few extra columns (target_count,
-budget, theme).
+Share generates a spec-encoded URL
+(`?newchallenge=1&n=N&b=B&t=TITLE&d=DESC`) — recipients build their
+own response under the same constraints. The receive surface for
+that URL is **v1.5 work**, plus public read of completed challenges
+for show-my-picks-style sharing.
 
-Not a near-term build target; revisit when design questions in the
-exploration thread are answered. Depends on Epic 0 (references) +
-past listings being browseable as a query-able set.
+**v1.5 (next session):**
+- `?newchallenge=1` receive flow — auto-prompt a draft response when
+  a recipient lands on a spec URL, pre-filling Create-stage fields.
+- Public read of `state='complete'` challenges (RLS surgery on
+  `public.collections` to permit anon SELECT; today everything's
+  RLS-gated to row owner). Lets a recipient see the creator's picks
+  + reasoning without signing in.
+- Open question: should completed challenges be editable? v1 says
+  no (immutable for share-stability). Revisit if usage demands.
+
+**v2 (deferred — design exploration ongoing):**
+- Source from current AND past listings (sold archive becomes a
+  query-able set, not just an archive tab). Depends on Epic 0
+  references being normalized.
+- Value-over-time tracking — show how the cost of assembling the
+  collection has shifted. Powerful only after enough price history
+  accumulates.
+- Per-challenge cap (skipped in v1; revisit if usage patterns
+  demand). Soft suggestion ("you have N challenges, consider
+  archiving older ones") preferred over hard limits.
 
 ### Watchbox v2 — real ownership tracking (deferred)
 
@@ -595,32 +611,39 @@ Hardware: M4 Mac mini base, 16GB RAM, ~$600.
 
 Current best-guess sequence. Will shift; update this doc when it does.
 
-1. **References as first-class entities (Epic 0).** The remaining
+1. **Watch Challenges v1.5 (Epic 3).** Close the social loop left
+   by v1: implement the `?newchallenge=1` receive flow + public
+   read of completed challenges (RLS surgery). Half-session of
+   work. Worth doing before References because the share button
+   exists today but the recipient experience is incomplete.
+2. **References as first-class entities (Epic 0).** The remaining
    foundation. Several downstream features (encyclopedia, comparison
    view, auction lot grouping, Discover mode quality) gate on this.
-2. **Site discoverability + welcome page (Epic 0).** Half-session;
+3. **Site discoverability + welcome page (Epic 0).** Half-session;
    robots / sitemap / og / Schema.org / first-time-visitor page.
    Foundation for organic discovery.
-3. **Strength-of-save model (Epic 3).** Two-tier (Love / Watch) is
+4. **Strength-of-save model (Epic 3).** Two-tier (Love / Watch) is
    the entry point to the broader Multi-signal taste capture. Small
    UI lift; the feature is *the gesture*, not the underlying data.
-4. **Epic 6 Phase A** when a specific blocked source needs it OR
+5. **Epic 1 source pruning** under the Stop rule. At 36 dealers
+   we're past the 30-target. Source quality dashboard exists; this
+   is now a "look at the data and decide" session, not a build.
+6. **Epic 6 Phase A** when a specific blocked source needs it OR
    when ready to start Epic 5 generation work.
-5. **Watchbox v2 — reflection layer (Epic 3).** Highest personal
+7. **Watchbox v2 — reflection layer (Epic 3).** Highest personal
    value of any roadmap item. Reflective-tool exemplar per Strategic
    bets. Unlocks Journey 10.
-6. **Epic 1 source pruning** under the Stop rule. At 30 dealers,
-   audit + prune to 25.
-7. **Epic 2 comprehensive auction inventory capture.** Substrate for
+8. **Epic 2 comprehensive auction inventory capture.** Substrate for
    serendipitous discovery and reference research.
-8. **Epic 5 encyclopedia** built incrementally as dealer descriptions
+9. **Epic 5 encyclopedia** built incrementally as dealer descriptions
    accumulate.
-9. **Multi-signal taste capture + Discover mode + AI recommendation
-   surfaces (Epic 3).** Stack progressively. Multi-signal first;
-   Discover and recommendations layer on top once signals are rich.
-10. **Build-a-collection / Watch Challenges v2 (Epic 3).** Resume
-    once design exploration in the separate chat resolves.
-11. **Epic 4 admin analytics** built incrementally throughout.
+10. **Multi-signal taste capture + Discover mode + AI recommendation
+    surfaces (Epic 3).** Stack progressively. Multi-signal first;
+    Discover and recommendations layer on top once signals are rich.
+11. **Build-a-collection / Watch Challenges v2 (Epic 3).** The deeper
+    extensions — past-listings as a source, value-over-time tracking,
+    challenge response threads — once Epic 0 references land.
+12. **Epic 4 admin analytics** built incrementally throughout.
 
 ## Explicitly NOT on the roadmap
 
