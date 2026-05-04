@@ -78,7 +78,6 @@ const TIER_STYLE = {
 
 export function EndingSoon({
   items,           // raw watchItems (App.js will pass watchItems)
-  watchlist,       // for the heart's wished state
   handleWish,
   compact,
   primaryCurrency,
@@ -146,7 +145,19 @@ export function EndingSoon({
               )}
               <Card
                 item={item}
-                wished={!!(watchlist && watchlist[item.id])}
+                /* Every Ending Soon card is a tracked auction lot
+                   from the user's watchlist by definition (the
+                   selectEndingSoonItems filter requires
+                   _isAuctionFormat + a future auction_end). Looking
+                   up `watchlist[item.id]` returns undefined for
+                   tracked lots because they live in `tracked_lots`
+                   (keyed by URL), not `watchlist_items` (keyed by
+                   listing_id). Hardcoding `wished={true}` mirrors
+                   how WatchlistTab > Favorites renders the same
+                   items. handleWish guards on `_isTrackedLot` so
+                   the heart click stays a no-op rather than writing
+                   a phantom watchlist_items row. */
+                wished={true}
                 onWish={handleWish}
                 compact={compact}
                 primaryCurrency={primaryCurrency}

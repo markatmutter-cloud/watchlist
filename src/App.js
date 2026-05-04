@@ -573,6 +573,15 @@ export default function Watchlist() {
 
   const handleWish = useCallback((item) => {
     if (!user) { requireSignIn({ kind: "wish", id: item.id }); return; }
+    // Tracked auction lots live in `tracked_lots` keyed by URL, not
+    // `watchlist_items` keyed by listing_id. Their projection uses
+    // shortHash(url) as the synthetic id, which collides with nothing
+    // real — so calling toggleWatchlist here would write a phantom
+    // watchlist_items row that the watchItems memo then projects
+    // alongside the original tracked-lot, surfacing as a duplicate
+    // card. Tracked lots are added/removed via the +Track flow;
+    // the heart on a tracked-lot card is purely an indicator.
+    if (item._isTrackedLot) return;
     toggleWatchlist(item);
   }, [user, toggleWatchlist, requireSignIn]);
 
@@ -1355,16 +1364,17 @@ export default function Watchlist() {
   );
 
   // ── MOBILE ────────────────────────────────────────────────────────────────
-  // "Ending soon" pinned section — sits ABOVE the sub-tab strip so
-  // it's visible across every Watchlist sub-tab (Favorites /
-  // Collections / Searches / Calendar). Component returns null when
-  // there are no qualifying items, so we mount it unconditionally on
-  // the Watchlist tab. EndingSoon does its own filtering against
+  // "Ending soon" pinned section — Favorites sub-tab only (2026-05-04).
+  // Originally rendered across every Watchlist sub-tab, but Mark
+  // wanted it scoped to Favorites since the items are part of the
+  // hearted set and showing it on Collections / Searches / Calendar
+  // was just visual noise. Component returns null when there are no
+  // qualifying items so we can mount it unconditionally inside the
+  // Favorites view. EndingSoon does its own filtering against
   // watchItems (auction-format + auction_end within 7 days OR live).
-  const endingSoonJSX = tab !== "watchlist" ? null : (
+  const endingSoonJSX = (tab !== "watchlist" || watchTopTab !== "listings") ? null : (
     <EndingSoon
       items={watchItems}
-      watchlist={watchlist}
       handleWish={handleWish}
       compact={compact}
       primaryCurrency={primaryCurrency}
