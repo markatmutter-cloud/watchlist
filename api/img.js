@@ -1,28 +1,40 @@
 /**
  * Image proxy.
  *
- * Some dealers (Watchfid) hot-link-protect their images: any cross-origin
- * fetch from a browser fails. Browsers always send Accept + Referer
- * headers we can't strip from <img> tags, so the only way around it is
- * a server-side fetch with stripped headers.
+ * Some dealers hot-link-protect their images: any cross-origin browser
+ * fetch fails. Browsers always send Accept + Referer headers we can't
+ * strip from <img> tags, so the only way around it is a server-side
+ * fetch with the headers rewritten.
+ *
+ * Currently proxied:
+ *   - Watchfid — Apache returns 404 to cross-origin browser fetches
+ *     whose Accept includes image/webp.
+ *   - Watches of Lancashire — Cloudflare returns 403 (with `vary:
+ *     referer`) when Referer != watchesoflancashire.com.
  *
  * Usage: `<img src="/api/img?u=https%3A%2F%2Fexample.com%2Fimg.jpg" />`.
  *
  * Allow-listed to specific dealer domains so this can't be abused as
- * an open proxy.
+ * an open proxy. When you add a new host here, mirror the change in
+ * src/utils.js's PROXIED_IMG_HOSTS or the frontend won't route to it.
  */
 
 const ALLOWED_HOSTS = new Set([
   "www.watchfid.com",
   "watchfid.com",
+  "watchesoflancashire.com",
+  "www.watchesoflancashire.com",
 ]);
 
 // Hot-link-protected hosts require their own domain in Referer or the
-// CDN returns 404. Watchfid's .jpg uploads enforce this; their .webp
+// CDN returns 4xx. Watchfid's .jpg uploads enforce this; their .webp
 // uploads happen to be exempt, which masked the bug for a while.
+// Watches of Lancashire enforces it on every image regardless of type.
 const REFERER_BY_HOST = {
   "www.watchfid.com": "https://www.watchfid.com/",
   "watchfid.com": "https://www.watchfid.com/",
+  "watchesoflancashire.com": "https://watchesoflancashire.com/",
+  "www.watchesoflancashire.com": "https://watchesoflancashire.com/",
 };
 
 export default async function handler(req, res) {

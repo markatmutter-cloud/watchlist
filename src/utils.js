@@ -62,11 +62,18 @@ export function matchesSearch(item, query) {
   return tokens.every(t => haystack.includes(t));
 }
 
-// Watchfid hot-link-protects their images (returns 404 to cross-origin
-// browser fetches that include image/webp in Accept). Routing through
-// /api/img — a small Vercel function that fetches with stripped headers
-// — gets around it. Other dealers serve cleanly without the proxy.
-export const PROXIED_IMG_HOSTS = ["watchfid.com"];
+// Hosts whose images we route through `/api/img` because they
+// hot-link-protect (different mechanisms per dealer, but both refuse
+// browser fetches with a cross-origin Referer):
+//   - Watchfid: Apache returns 404 for cross-origin requests whose
+//     Accept header includes image/webp.
+//   - Watches of Lancashire: Cloudflare returns 403 (with `vary:
+//     referer` in the response) when Referer != watchesoflancashire.com.
+// The proxy strips the Accept and substitutes the dealer's own domain
+// as Referer per REFERER_BY_HOST in api/img.js. Add new dealers here
+// AND in api/img.js's ALLOWED_HOSTS together — the host allow-list
+// in the proxy keeps it from being abused.
+export const PROXIED_IMG_HOSTS = ["watchfid.com", "watchesoflancashire.com"];
 
 // Brand-name variants we want to collapse onto a single canonical chip.
 // Mirrors merge.py's BRAND_ALIASES so the frontend can normalize saved
