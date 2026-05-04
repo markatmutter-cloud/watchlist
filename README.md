@@ -24,8 +24,8 @@ Three top-level tabs:
 
 - **Listings** — aggregates 36 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
 - **Watchlist** — five sub-tabs:
-  - **Favorites** — items you've hearted (your default collection), with price-at-save preserved.
-  - **Collections** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you. Anything you've hidden from the Available feed surfaces here too as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
+  - **Favorites** — items you've hearted (your default list), with price-at-save preserved.
+  - **Lists** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you. Anything you've hidden from the Available feed surfaces here too as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
   - **Challenges** — build-a-collection v1. Pick N watches under a budget, write a one-line rationale per pick, share the spec so a friend can build their own answer. Multi-stage flow with a 20% over-budget soft-warn / hard-block guardrail. Drag-drop between shortlist and slots on desktop; tap-to-select on mobile.
   - **Searches** — saved queries you can re-run with one tap, plus a read-only view of the eBay source-searches feeding the main feed.
   - **Auction Calendar** — upcoming + recently-closed sales from 6 houses, grouped by month.
@@ -37,8 +37,8 @@ Plus:
 - Cross-device sync via Google sign-in (Supabase auth + tables, RLS-protected).
 - Per-user **saved searches** — add/edit/delete your own queries, with live counts of matching listings.
 - Per-user **tracked lots** — paste an auction-house lot URL to follow it through to hammer (Antiquorum, Christie's, Sotheby's, eBay).
-- Per-user **collections** + **share** — organise hearted watches into named collections, share any listing with anyone via the native share sheet. Recipients see the listing in the same UI with a Save / Dismiss banner; signed-in saves auto-populate a "Shared with me" inbox. No in-app messaging — the user's chosen messaging tool handles replies.
-- **Hide** any listing with the × button — it stays out of the live feed but its history is preserved. Hidden items show up in Watchlist > Collections > Hidden so you can unhide them later.
+- Per-user **lists** + **share** — organise hearted watches into named lists, share any listing with anyone via the native share sheet. Recipients see the listing in the same UI with a Save / Dismiss banner; signed-in saves auto-populate a "Shared with me" inbox. No in-app messaging — the user's chosen messaging tool handles replies.
+- **Hide** any listing with the × button — it stays out of the live feed but its history is preserved. Hidden items show up in Watchlist > Lists > Hidden so you can unhide them later.
 - Runs a Python scrape pipeline daily via GitHub Actions — no server to babysit.
 - Tracks listings across runs with **stable URL-hash IDs**, so:
   - "NEW" badges only show for listings actually new in the last 24 hours.
@@ -136,7 +136,7 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 | Maunder Watches | WooCommerce | Store API; uses `offset` (not `page`) since their build ignores `page` | GBP |
 | Watch Club | Custom (TaffyDB) | Single 5MB JS catalog at `/upload/js/watches2018_bis.js` wrapped as `TAFFY([…])`; status="1" filter for active items | GBP |
 | Vintage Watch Shop | WordPress (custom CPT) | `/watches-accessories/` index walk + per-item detail page for "Our price: £NNNN" | GBP |
-| Watches of Lancashire | WooCommerce | Store API; `category=watches` | GBP |
+| Watches of Lancashire | WooCommerce | Store API; `category=watches`; images proxied via `/api/img` (Cloudflare hot-link protection) | GBP |
 | Heuertime | Wix Pages (no Wix Stores) | Homepage links → per-page detail walk for "PRICE" rich-text label (mostly POR) | EUR |
 | ClassicHeuer | WooCommerce | Store API; categories used as Heuer model families, mostly price-on-request | EUR |
 

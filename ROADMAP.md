@@ -1,6 +1,6 @@
 # Watchlist Roadmap
 
-Last updated: 2026-05-03
+Last updated: 2026-05-04
 Living document. Updated as priorities shift.
 
 For project context and architecture, see [README.md](README.md). For
@@ -495,6 +495,58 @@ Build incrementally as questions surface:
 - **Auction lot prediction.** "Phillips Geneva has 3 lots that match your
   interests."
 
+### Listing event capture (clicks + saves)
+
+Lightweight per-listing telemetry to power "what's hot", "most
+saved", "most viewed", and per-listing click-through-rate signals
+on the Source Quality dashboard. Mark's framing on 2026-05-04: "a
+click shows potential for good stock" — i.e. what users tap through
+to is signal about which dealer inventory is interesting, not just
+which dealers users save from.
+
+Today, only **saves** (`watchlist_items`) and **hides**
+(`hidden_listings`) get captured, and only for signed-in users. No
+clicks, no views, no anonymous data. The Source Quality dashboard
+aggregates saves/hides at the source level but can't surface
+per-listing or anonymous activity.
+
+**Scope when this lands** (deferred until after the auction-inclusion
+work Mark has planned for the next session):
+
+- New `listing_events` table in Supabase. Columns: `id`,
+  `listing_id`, `event_type` (`view` | `click` | `save` | `hide`),
+  `anon_session_id` (text, nullable — UUID stored in `localStorage`),
+  `user_id` (uuid, nullable), `occurred_at`.
+- RLS: anyone can INSERT (write-only); only admin emails can
+  SELECT. Anonymous events flow in without exposing reads.
+- Three event types to start: `view` (debounced once per listing
+  per session), `click` (when the dealer link is followed from a
+  Card), and mirrors of save/hide for unified querying. The
+  existing `watchlist_items` and `hidden_listings` tables stay as
+  the source of truth for current state; events are the
+  time-series record.
+- Anon session id = `localStorage`-persisted UUID. Same person
+  across visits until storage clears. Borderline tracking; defensible
+  because reads are admin-only and there's no PII, but pair with a
+  one-line note on the welcome page (already on Epic 0).
+- **Periodic rollup + prune** is part of v1, not a follow-up. Cron
+  (daily or weekly) aggregates the event table into a per-listing
+  + per-source materialized view (`listing_events_daily`,
+  `source_events_daily`), then deletes raw events older than N
+  days (e.g. 90). Keeps the raw table from growing unbounded on
+  the Supabase free tier; admin queries hit the rolled-up view
+  for history beyond the window. Volume thinking: ~1k-10k events
+  per day at modest traffic; rollup of ~30 days holds well under
+  Supabase's free row limits, and the 90-day raw window leaves
+  enough fidelity to debug or backfill.
+- Surfaces on the Source Quality dashboard: per-source views,
+  clicks, click-through-rate (clicks ÷ views), saves-per-100-views.
+  Per-listing "most viewed" + "most saved" rows.
+
+**Out of scope for v1**: filter usage telemetry, time-on-listing,
+scroll depth, search analytics. Add only if the per-listing events
+prove useful and Mark wants more granularity.
+
 What Watchcharts already does well: don't compete on historical
 price-per-reference. Use it; build what it doesn't.
 
@@ -611,39 +663,52 @@ Hardware: M4 Mac mini base, 16GB RAM, ~$600.
 
 Current best-guess sequence. Will shift; update this doc when it does.
 
-1. **Watch Challenges v1.5 (Epic 3).** Close the social loop left
+1. **Auction inclusion change (Mark's planned next session,
+   2026-05-04).** Specifics not yet defined; capture at session
+   start. Likely touches the auction calendar / tracked-lots flow.
+2. **Listing event capture (Epic 4).** Reinstated to the front of
+   the queue per Mark on 2026-05-04 — wants this right after the
+   auction-inclusion work because click + save data is the input
+   for a "what's hot" / "most saved" signal on the Source Quality
+   dashboard. Half-session of build + the periodic rollup-and-prune
+   so the table doesn't grow unbounded. Anonymous-friendly (UUID
+   in `localStorage`); admin-only RLS for reads.
+3. **Watch Challenges v1.5 (Epic 3).** Close the social loop left
    by v1: implement the `?newchallenge=1` receive flow + public
    read of completed challenges (RLS surgery). Half-session of
-   work. Worth doing before References because the share button
-   exists today but the recipient experience is incomplete.
-2. **References as first-class entities (Epic 0).** The remaining
+   work.
+4. **References as first-class entities (Epic 0).** The remaining
    foundation. Several downstream features (encyclopedia, comparison
    view, auction lot grouping, Discover mode quality) gate on this.
-3. **Site discoverability + welcome page (Epic 0).** Half-session;
+5. **Site discoverability + welcome page (Epic 0).** Half-session;
    robots / sitemap / og / Schema.org / first-time-visitor page.
    Foundation for organic discovery.
-4. **Strength-of-save model (Epic 3).** Two-tier (Love / Watch) is
+6. **Strength-of-save model (Epic 3).** Two-tier (Love / Watch) is
    the entry point to the broader Multi-signal taste capture. Small
    UI lift; the feature is *the gesture*, not the underlying data.
-5. **Epic 1 source pruning** under the Stop rule. At 36 dealers
+7. **Epic 1 source pruning** under the Stop rule. At 36 dealers
    we're past the 30-target. Source quality dashboard exists; this
    is now a "look at the data and decide" session, not a build.
-6. **Epic 6 Phase A** when a specific blocked source needs it OR
+   Listing event capture (#2) makes the dashboard meaningfully
+   richer for this decision — strong reason to slot the prune
+   after, not before.
+8. **Epic 6 Phase A** when a specific blocked source needs it OR
    when ready to start Epic 5 generation work.
-7. **Watchbox v2 — reflection layer (Epic 3).** Highest personal
+9. **Watchbox v2 — reflection layer (Epic 3).** Highest personal
    value of any roadmap item. Reflective-tool exemplar per Strategic
    bets. Unlocks Journey 10.
-8. **Epic 2 comprehensive auction inventory capture.** Substrate for
-   serendipitous discovery and reference research.
-9. **Epic 5 encyclopedia** built incrementally as dealer descriptions
-   accumulate.
-10. **Multi-signal taste capture + Discover mode + AI recommendation
+10. **Epic 2 comprehensive auction inventory capture.** Substrate for
+    serendipitous discovery and reference research.
+11. **Epic 5 encyclopedia** built incrementally as dealer descriptions
+    accumulate.
+12. **Multi-signal taste capture + Discover mode + AI recommendation
     surfaces (Epic 3).** Stack progressively. Multi-signal first;
     Discover and recommendations layer on top once signals are rich.
-11. **Build-a-collection / Watch Challenges v2 (Epic 3).** The deeper
+13. **Build-a-collection / Watch Challenges v2 (Epic 3).** The deeper
     extensions — past-listings as a source, value-over-time tracking,
     challenge response threads — once Epic 0 references land.
-12. **Epic 4 admin analytics** built incrementally throughout.
+14. **Epic 4 admin analytics** beyond #2 — taste-relative pricing,
+    auction lot prediction, etc. — built incrementally throughout.
 
 ## Explicitly NOT on the roadmap
 
@@ -722,6 +787,54 @@ moved, priorities drift. A quarterly pass catches that before it
 becomes confusion.
 
 ## Update log
+
+- 2026-05-04: **Bug-fix session + UI rename + scraper sharpening.**
+  Net: 8 PRs (#21–#28), all merged. Highlights:
+  - **Collections → Lists UI rename** (#24). User-facing only; data
+    model (DB tables, hooks, URL params, localStorage values, sub-tab
+    keys) unchanged. Documented in CLAUDE.md.
+  - **Ending Soon hearts + scope** (#21). Tracked-lot cards rendered
+    un-filled and clicking duplicated them; root cause was
+    `toggleWatchlist` writing phantom `watchlist_items` rows for
+    tracked-lot synthetic ids. `handleWish` now guards on
+    `_isTrackedLot` and the Ending Soon section is Favorites-only.
+    Same guard also fixes a latent duplicate bug in Favorites.
+  - **Heuertime image fix saga** (#22 → #23). v1's
+    `<source srcSet>` regex on detail pages worked locally but
+    failed on GH Actions runners because Wix serves different SSR
+    markup per edge variant. v2 pivoted to extracting tile
+    thumbnails from the homepage gallery, which Wix renders
+    consistently. Lesson graduated to CLAUDE.md.
+  - **Watches of Lancashire image proxy** (#25). Cloudflare 403 on
+    cross-origin Referer; routed through `/api/img` (third dealer
+    on the proxy after Watchfid).
+  - **ClassicHeuer SOLD detection saga** (#26 → #27). v1 detector
+    was too greedy (DOTALL `.*?` skipped past empty `</div>` and
+    matched the next SOLD badge later on the page) AND fetched the
+    German default permalink instead of the English locale users
+    browse — those two bugs compounded into a 116/117-sold cohort.
+    v2 tightened the regex to require immediate-child structure
+    AND added an `english_url()` rewrite so the CSV stores `/en/`
+    URLs that match what users see when clicking through. 46 live
+    / 71 sold in main. ClassicHeuer is effectively an archive site
+    at 60%-sold; relevant for the eventual Stop-rule prune.
+    Per-locale dealer HTML lesson graduated to CLAUDE.md.
+  - **Heuertime template-slug inclusion** (#28). 4 watches living
+    at `kopie-van-template-for-watches-N` URLs were being skipped
+    as placeholders. They aren't. Removed the slug-pattern filter;
+    feed now matches Mark's manual count of 24 (23 after the
+    $500-floor still drops the €375 Trackstar). "Don't filter
+    dealer URLs by slug pattern alone" lesson graduated to CLAUDE.md.
+  - **Main-branch protection ruleset.** GitHub repo settings →
+    `main protection` (id 15930708): block force-push, block
+    deletion, require linear history. Mark has admin bypass.
+    Skipped status-check requirement so the cron's direct-pushes
+    aren't blocked.
+  - **Listing event capture added to Epic 4.** Mark wants click +
+    save telemetry to power "what's hot" / "most saved" /
+    per-listing CTR signals. Scoped with periodic rollup + prune
+    so the events table doesn't grow unbounded. Slotted as
+    priority #2 after the next session's auction-inclusion work.
 
 - 2026-05-03 (later evening): **Build-a-collection v1 / Watch
   Challenges shipped (Epic 3).** New Watchlist > Challenges sub-tab
