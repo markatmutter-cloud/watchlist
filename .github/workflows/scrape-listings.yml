@@ -189,6 +189,25 @@ jobs:
         continue-on-error: true
         run: python watchesoflancashire_scraper.py
 
+      - name: Run Heuertime scraper (Wix Pages detail walker)
+        # Small Dutch vintage Heuer specialist. Wix Pages site (no Wix
+        # Stores backend); each watch is its own hand-built page with
+        # `kopie-van-` URL slug. Scraper walks the homepage for URLs
+        # then fetches each detail page for title/price/image. ~20
+        # active items, mostly Heuer + occasional Zenith / Lejour.
+        continue-on-error: true
+        run: python heuertime_scraper.py
+
+      - name: Run ClassicHeuer scraper (WooCommerce Store API)
+        # German vintage chronograph dealer. Standard WC Store API.
+        # ~117 items, mostly Heuer model families (Carrera/Autavia/
+        # Camaro/etc.) plus small Rolex/Omega/Orfina sub-collections.
+        # Most items are price-on-request — the scraper emits
+        # priceOnRequest=True so merge.py keeps them through the
+        # 500-floor filter.
+        continue-on-error: true
+        run: python classicheuer_scraper.py
+
       # eBay runs in its own workflow (.github/workflows/scrape-ebay.yml)
       # so a slow Browse API response or token blip doesn't slow the
       # dealer-listings cron. eBay can iterate on its own cadence and
@@ -232,6 +251,8 @@ jobs:
           [ -f watchclub_listings.csv ]           && mv watchclub_listings.csv           data/watchclub.csv           || echo "watchclub missing"
           [ -f vintagewatchshop_listings.csv ]    && mv vintagewatchshop_listings.csv    data/vintagewatchshop.csv    || echo "vintagewatchshop missing"
           [ -f watchesoflancashire_listings.csv ] && mv watchesoflancashire_listings.csv data/watchesoflancashire.csv || echo "watchesoflancashire missing"
+          [ -f heuertime_listings.csv ]           && mv heuertime_listings.csv           data/heuertime.csv           || echo "heuertime missing"
+          [ -f classicheuer_listings.csv ]        && mv classicheuer_listings.csv        data/classicheuer.csv        || echo "classicheuer missing"
 
       - name: Merge into listings.json
         run: python merge.py --listings-only
