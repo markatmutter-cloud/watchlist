@@ -1,14 +1,14 @@
 {
-  "date": "2026-05-03",
+  "date": "2026-05-04",
   "alerts": [],
   "counts": {
     "Wind Vintage": 149,
-    "Tropical Watch": 102,
+    "Tropical Watch": 101,
     "Menta Watches": 43,
-    "Collectors Corner NY": 55,
+    "Collectors Corner NY": 54,
     "Falco Watches": 110,
     "Grey & Patina": 47,
-    "Oliver & Clarke": 91,
+    "Oliver & Clarke": 90,
     "Craft & Tailored": 85,
     "Watch Brothers London": 17,
     "MVV Watches": 42,
@@ -32,8 +32,14 @@
     "European Watch": 25,
     "Vintage Watch Collective": 42,
     "Watchurbia": 7,
-    "eBay": 41
+    "Maunder Watches": 95,
+    "Watch Club": 57,
+    "Vintage Watch Shop": 20,
+    "Watches of Lancashire": 67,
+    "Heuertime": 19,
+    "ClassicHeuer": 117,
+    "eBay": 42
   },
-  "total_listings": 3093,
-  "sources_tracked": 31
+  "total_listings": 3466,
+  "sources_tracked": 37
 }
