@@ -19,6 +19,19 @@ Price quirk: ~98% of items are price-on-request (price=0 from the
 API). We emit `priceOnRequest=True` for those so merge.py's
 500-floor doesn't drop them.
 
+Sold-detection quirk: the WC Store API returns `is_in_stock: True`
+for every product (sold + available alike) — the dealer doesn't
+remove sold items from the catalog. The only reliable SOLD signal
+is a CSS-class badge rendered on each detail page:
+`<div class="badge-container is-larger ..."><div class="badge-inner
+... new-bubble">SOLD</div></div>`. The `is-larger` modifier marks
+the MAIN product's overlay; smaller variants of the same badge
+appear on related-product thumbnails at the bottom of every page,
+so we have to anchor on `is-larger` to avoid false-positives.
+
+This forces a per-item detail-page fetch (~117 GETs, ~50s wall
+time on cron). Acceptable for a dealer this size; runs 3×/day.
+
 Run: python3 classicheuer_scraper.py
 Output: classicheuer_listings.csv
 """
@@ -58,6 +71,16 @@ HEUER_FAMILY_CATEGORIES = {
     "monza", "montreal", "calculator", "bundeswehr", "chronosplit",
     "rallyetimer", "stoppuhren", "andere hersteller",
 }
+
+# Detail-page SOLD detector. Anchored on the `is-larger` modifier so
+# we only catch the MAIN product's overlay, not the smaller SOLD
+# badges on related-product thumbnails further down the same page.
+# DOTALL because the >SOLD< text sits in a child div several lines
+# below the badge-container open tag.
+SOLD_BADGE_RE = re.compile(
+    r'class="badge-container[^"]*is-larger[^"]*"[^>]*>.*?>SOLD<',
+    re.S,
+)
 
 
 def detect_brand(name, categories):
@@ -123,7 +146,33 @@ def get_all_listings():
     return all_items
 
 
-def parse_item(item):
+def fetch_detail_html(url):
+    """Fetch one detail page; return HTML on 200, None on any failure.
+    Failures count as "unknown sold state" → we leave `sold` at the
+    default rather than guessing. A persistent 404 will eventually
+    drop the item via merge.py's "missing from latest scrape →
+    mark sold" path."""
+    for attempt in range(2):
+        try:
+            r = SESSION.get(url, timeout=20)
+            if r.status_code == 200:
+                return r.text
+        except requests.RequestException:
+            pass
+        time.sleep(1 + attempt)
+    return None
+
+
+def is_sold(detail_html):
+    """True iff the page renders the main-product SOLD overlay.
+    Returns False on None (unknown state) so we don't false-positive
+    on transient fetch failures."""
+    if not detail_html:
+        return False
+    return bool(SOLD_BADGE_RE.search(detail_html))
+
+
+def parse_item(item, detail_html):
     prices = item.get("prices") or {}
     price_raw = prices.get("price", "0") or "0"
     minor = int(prices.get("currency_minor_unit", 2) or 0)
@@ -148,7 +197,10 @@ def parse_item(item):
         "img": img,
         "description": strip_html(item.get("short_description") or item.get("description") or "")[:500],
         "source": "ClassicHeuer",
-        "sold": not item.get("is_in_stock", True),
+        # SOLD comes from the detail-page badge, NOT the API's
+        # is_in_stock field (which is True for sold items too — the
+        # dealer keeps sold listings live as catalog entries).
+        "sold": is_sold(detail_html),
     }
 
 
@@ -157,7 +209,19 @@ def main():
     raw = get_all_listings()
     print(f"\nTotal raw items: {len(raw)}")
 
-    results = [parse_item(it) for it in raw]
+    print(f"\nFetching detail pages for SOLD detection ({len(raw)} pages)...")
+    results = []
+    for i, it in enumerate(raw, 1):
+        url = it.get("permalink", "")
+        detail_html = fetch_detail_html(url) if url else None
+        row = parse_item(it, detail_html)
+        results.append(row)
+        if i % 10 == 0 or i == len(raw):
+            sold_so_far = sum(1 for r in results if r["sold"])
+            print(f"  [{i}/{len(raw)}] sold so far: {sold_so_far}")
+        # Light throttle so we don't hammer the dealer's Apache.
+        time.sleep(0.25)
+
     # No price floor — keep POR rows. merge.py honours `priceOnRequest`.
     out_file = "classicheuer_listings.csv"
     with open(out_file, "w", newline="", encoding="utf-8") as f:
@@ -172,7 +236,10 @@ def main():
     if results:
         priced = [r["price"] for r in results if r["price"] > 0]
         por = sum(1 for r in results if r["priceOnRequest"])
+        sold = sum(1 for r in results if r["sold"])
+        live = len(results) - sold
         print(f"\n✓ Saved {len(results)} listings to {out_file} (EUR)")
+        print(f"  Live: {live}  |  Sold: {sold}")
         if priced:
             print(f"  With price ({len(priced)}): "
                   f"min €{min(priced):,} | max €{max(priced):,} | avg €{sum(priced)//len(priced):,}")
