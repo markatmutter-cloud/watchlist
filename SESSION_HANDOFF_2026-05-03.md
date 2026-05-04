@@ -60,11 +60,10 @@ merged.
   2026-05-03 late). Two more EUR-priced dealers, both bringing
   vintage Heuer inventory. Specifics owned by the parallel session
   that built them — see commit `5a438bd` for full implementation
-  notes. Dealer count: 34 → 36. Currently at 0 visible items each
-  in listings.json because the dealer-listings cron hasn't run
-  since the merge; auto-populates on next cron cycle (~8h max), or
-  trigger now via Actions tab → "Scrape single source (manual)"
-  with `heuertime` and `classicheuer` as the inputs.
+  notes. Dealer count: 34 → 36. **Cron has run** (commit `718e0e4`):
+  Heuertime contributes 19 listings, ClassicHeuer 117. Both visible
+  in the Source pill on the Available feed. Backfill flag set on
+  every item per merge.py's first-sight handling.
 
 - **Auction urgency surfacing** (PR #14, merged 2026-05-03 evening,
   bundle `cc73e77d`). Two complementary surfaces for time-sensitive
