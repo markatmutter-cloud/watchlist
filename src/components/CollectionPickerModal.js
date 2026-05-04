@@ -63,7 +63,7 @@ export function CollectionPickerModal({
         ...modalShell, maxWidth: 420, maxHeight: "75vh", overflowY: "auto",
       }}>
         <div style={modalTitleRow}>
-          <div style={modalTitle}>Add to collection</div>
+          <div style={modalTitle}>Add to list</div>
           <button onClick={close} aria-label="Close" style={modalCloseButton}>×</button>
         </div>
         <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 14,
@@ -73,7 +73,7 @@ export function CollectionPickerModal({
 
         {visible.length === 0 && !creating && (
           <div style={{ fontSize: 12, color: "var(--text3)", marginBottom: 12, lineHeight: 1.5 }}>
-            No collections yet. Create one to get started.
+            No lists yet. Create one to get started.
           </div>
         )}
 
@@ -86,7 +86,7 @@ export function CollectionPickerModal({
                 key={c.id}
                 onClick={() => !alreadyHere && addTo(c.id)}
                 disabled={busy || alreadyHere}
-                title={alreadyHere ? "Already in this collection" : ""}
+                title={alreadyHere ? "Already in this list" : ""}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "12px 14px", borderRadius: 10,
@@ -118,7 +118,7 @@ export function CollectionPickerModal({
               value={newName}
               onChange={e => { setNewName(e.target.value); setError(""); }}
               onKeyDown={e => { if (e.key === "Enter") submitNew(); }}
-              placeholder="New collection name"
+              placeholder="New list name"
               autoCapitalize="words" autoCorrect="off" spellCheck={false}
               style={{ ...inp, fontSize: 14 }}
             />
@@ -143,7 +143,7 @@ export function CollectionPickerModal({
             border: "0.5px dashed var(--border)", background: "transparent",
             color: "#185FA5", cursor: "pointer",
             fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-          }}>+ Create new collection</button>
+          }}>+ Create new list</button>
         )}
       </div>
     </div>

@@ -51,7 +51,7 @@ export function CollectionEditModal({ editing, setEditing, createCollection, ren
     <div onClick={close} style={modalBackdrop}>
       <div onClick={e => e.stopPropagation()} style={{ ...modalShell, maxWidth: 380 }}>
         <div style={modalTitleRow}>
-          <div style={modalTitle}>{isNew ? "New collection" : "Rename collection"}</div>
+          <div style={modalTitle}>{isNew ? "New list" : "Rename list"}</div>
           <button onClick={close} aria-label="Close" style={modalCloseButton}>×</button>
         </div>
         <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 10 }}>
@@ -64,7 +64,7 @@ export function CollectionEditModal({ editing, setEditing, createCollection, ren
           value={name}
           onChange={e => { setName(e.target.value); setError(""); }}
           onKeyDown={e => { if (e.key === "Enter" && canSave) submit(); }}
-          placeholder="Collection name"
+          placeholder="List name"
           autoCapitalize="words" autoCorrect="off" spellCheck={false}
           style={{ ...inp, fontSize: 14, marginBottom: 8 }}
         />

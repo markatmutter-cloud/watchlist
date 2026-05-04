@@ -1432,7 +1432,12 @@ export default function Watchlist() {
         // and creates breathing room for Collections as the
         // organizational layer above.
         ["listings", isMobile ? "Favorites" : `Favorites${watchCount > 0 ? ` · ${watchCount}` : ""}`],
-        ["collections", "Collections"],
+        // Sub-tab key stays "collections" — persisted in localStorage
+        // (`dial_watch_top_tab`) and reflected in the URL via `?sub=`.
+        // Only the user-facing label changed to "Lists" on 2026-05-04
+        // (Mark wanted shorter / less precious). DB tables, hooks,
+        // and URL params are unchanged.
+        ["collections", "Lists"],
         ["challenges", "Challenges"],
         ["searches", "Searches"],
         ["calendar", isMobile ? "Calendar" : "Auction Calendar"],
@@ -1481,7 +1486,7 @@ export default function Watchlist() {
           cursor: "pointer", fontFamily: "inherit",
           flexShrink: 0, whiteSpace: "nowrap",
           marginLeft: isMobile ? 0 : "auto",
-        }}>+ New collection</button>
+        }}>+ New list</button>
       )}
     </div>
   );
