@@ -68,6 +68,23 @@ intentional: it limits code churn and keeps `useWatchlist` /
 heart-on-Card working without a migration. Schema lives in
 `supabase/schema/2026-05-01_collections.sql`.
 
+**Watch Challenges (Build-a-collection v1, 2026-05-03).** Challenges
+are collections with `type='challenge'`. Schema additions in
+`supabase/schema/2026-05-03_challenges.sql`: `target_count`, `budget`,
+`description_long`, `state` (draft|complete), `parent_challenge_id`
+on collections; `is_pick` (shortlist vs final pick) + `reasoning`
+on collection_items. ONE collection per challenge — picks and
+shortlist live in the same items table, distinguished by the
+boolean. Picks snapshot `saved_price`/`saved_currency`/
+`saved_price_usd` so the total is immutable once shared. Drafts
+persist as you go via useCollections (no explicit save button).
+Multi-stage UI flow lives in `ChallengeFlow.js`; stage is
+component-local state, derived from data on mount. Drag-drop on
+desktop (HTML5 DnD; gated on `(pointer: fine)`), tap-to-select on
+mobile (SlotPickerModal). Don't reach for react-dnd — the existing
+HTML5 + tap pattern is enough for v1. Mutability after share is
+deferred to v2 (current state ='complete' is meant to be terminal).
+
 **Hidden listings as a virtual collection (2026-05-01).** Hidden
 follows the same Approach A pattern as Favorites: data stays in the
 existing `hidden_listings` table, but the UI surface is a synthetic

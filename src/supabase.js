@@ -369,13 +369,23 @@ export function useCollections(user) {
       if (colRes.error)  { console.warn('collections load failed', colRes.error); return; }
       if (itemRes.error) { console.warn('collection_items load failed', itemRes.error); return; }
       const cols = (colRes.data || []).map(r => ({
-        id:             r.id,
-        name:           r.name,
-        description:    r.description,
-        type:           r.type,
-        isSharedInbox:  r.is_shared_inbox,
-        createdAt:      r.created_at,
-        updatedAt:      r.updated_at,
+        id:                  r.id,
+        name:                r.name,
+        description:         r.description,
+        type:                r.type,
+        isSharedInbox:       r.is_shared_inbox,
+        // Challenge-specific fields (null/undefined for non-challenges).
+        // 2026-05-03_challenges.sql adds these columns; pre-migration
+        // collections come back with `undefined` and the UI code below
+        // treats them as "not a challenge." Keep camelCase in the
+        // app-facing shape, snake_case at the DB boundary.
+        targetCount:         r.target_count,
+        budget:              r.budget,
+        descriptionLong:     r.description_long,
+        state:               r.state || 'complete',
+        parentChallengeId:   r.parent_challenge_id,
+        createdAt:           r.created_at,
+        updatedAt:           r.updated_at,
       }));
       const grouped = {};
       for (const row of (itemRes.data || [])) {
@@ -389,6 +399,9 @@ export function useCollections(user) {
           sourceOfEntry:   row.source_of_entry,
           sharedByHandle:  row.shared_by_handle,
           savedAt:         row.added_at,
+          // Challenge-specific item fields
+          isPick:          !!row.is_pick,
+          reasoning:       row.reasoning || '',
           ...snap,
         };
         (grouped[row.collection_id] ||= []).push(item);
@@ -556,6 +569,144 @@ export function useCollections(user) {
     });
   }, [ensureSharedInbox, addItemToCollection]);
 
+  // ── Challenge mutators (Build-a-collection v1) ───────────────
+  // Challenges are collections with type='challenge'. They use the
+  // same items table as other collections, but the items have an
+  // is_pick boolean distinguishing the shortlist from the final picks
+  // and a `reasoning` text per pick. Drafts (state='draft') aren't
+  // shareable; completing flips state to 'complete'.
+  const createChallenge = useCallback(async ({ name, targetCount, budget, descriptionLong, parentChallengeId } = {}) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const cleanName = (name || '').trim() || `${targetCount || 3} watches for $${Math.round((budget || 50000) / 1000)}k`;
+    const payload = {
+      user_id:               user.id,
+      name:                  cleanName,
+      type:                  'challenge',
+      state:                 'draft',
+      target_count:          targetCount || null,
+      budget:                budget || null,
+      description_long:      descriptionLong || null,
+      parent_challenge_id:   parentChallengeId || null,
+    };
+    const { data, error } = await supabase.from('collections').insert(payload).select().single();
+    if (error) return { error: error.message };
+    setCollections(prev => [...prev, {
+      id: data.id, name: data.name, description: data.description,
+      type: data.type, isSharedInbox: false,
+      targetCount: data.target_count, budget: data.budget,
+      descriptionLong: data.description_long, state: data.state,
+      parentChallengeId: data.parent_challenge_id,
+      createdAt: data.created_at, updatedAt: data.updated_at,
+    }]);
+    return { error: null, id: data.id };
+  }, [user]);
+
+  const updateChallenge = useCallback(async (id, patch) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    // Map camelCase patch keys to the snake_case DB columns.
+    const dbPatch = { updated_at: new Date().toISOString() };
+    if (patch.name !== undefined)              dbPatch.name = patch.name;
+    if (patch.targetCount !== undefined)       dbPatch.target_count = patch.targetCount;
+    if (patch.budget !== undefined)            dbPatch.budget = patch.budget;
+    if (patch.descriptionLong !== undefined)   dbPatch.description_long = patch.descriptionLong;
+    if (patch.state !== undefined)             dbPatch.state = patch.state;
+    const { error } = await supabase.from('collections').update(dbPatch).eq('id', id);
+    if (error) return { error: error.message };
+    setCollections(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c));
+    return { error: null };
+  }, [user]);
+
+  // Add a listing to a challenge's shortlist (is_pick=false). Same
+  // payload shape as addItemToCollection but always shortlist-tier.
+  const addToShortlist = useCallback(async (challengeId, listing) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    if (!challengeId || !listing?.id) return { error: 'challenge and listing required' };
+    const payload = {
+      collection_id:    challengeId,
+      listing_id:       listing.id,
+      saved_price:      null,         // shortlist items don't snapshot price
+      saved_currency:   null,
+      saved_price_usd:  null,
+      listing_snapshot: listing,
+      source_of_entry:  'manual',
+      is_pick:          false,
+      reasoning:        null,
+    };
+    const { data, error } = await supabase.from('collection_items')
+      .insert(payload).select().single();
+    if (error && error.code !== '23505') return { error: error.message };
+    if (data) {
+      setItemsByCollection(prev => ({
+        ...prev,
+        [challengeId]: [
+          {
+            rowId: data.id, id: data.listing_id,
+            savedPrice: null, savedCurrency: null, savedPriceUSD: null,
+            sourceOfEntry: data.source_of_entry, savedAt: data.added_at,
+            isPick: false, reasoning: '',
+            ...listing,
+          },
+          ...(prev[challengeId] || []),
+        ],
+      }));
+    }
+    return { error: null };
+  }, [user]);
+
+  // Promote a shortlist item to a pick (is_pick=true) — snapshots the
+  // current listing price into saved_price/_currency/_price_usd so the
+  // challenge total is immutable once shared. Demoting (isPick=false)
+  // clears the snapshot so the next promotion captures fresh prices.
+  const togglePickStatus = useCallback(async (rowId, isPick, listing) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const dbPatch = { is_pick: !!isPick };
+    if (isPick && listing) {
+      dbPatch.saved_price     = listing.price ?? null;
+      dbPatch.saved_currency  = listing.currency || 'USD';
+      dbPatch.saved_price_usd = listing.priceUSD ?? listing.price ?? null;
+    } else if (!isPick) {
+      dbPatch.saved_price     = null;
+      dbPatch.saved_currency  = null;
+      dbPatch.saved_price_usd = null;
+    }
+    const { error } = await supabase.from('collection_items').update(dbPatch).eq('id', rowId);
+    if (error) return { error: error.message };
+    setItemsByCollection(prev => {
+      const next = { ...prev };
+      for (const [colId, items] of Object.entries(prev)) {
+        if (items.some(it => it.rowId === rowId)) {
+          next[colId] = items.map(it => it.rowId === rowId ? {
+            ...it, isPick: !!isPick,
+            savedPrice: dbPatch.saved_price,
+            savedCurrency: dbPatch.saved_currency,
+            savedPriceUSD: dbPatch.saved_price_usd,
+          } : it);
+        }
+      }
+      return next;
+    });
+    return { error: null };
+  }, [user]);
+
+  // Update the per-pick reasoning text. Debounce at the call site if
+  // needed; this hook just writes through.
+  const updateReasoning = useCallback(async (rowId, reasoning) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const { error } = await supabase.from('collection_items')
+      .update({ reasoning }).eq('id', rowId);
+    if (error) return { error: error.message };
+    setItemsByCollection(prev => {
+      const next = { ...prev };
+      for (const [colId, items] of Object.entries(prev)) {
+        if (items.some(it => it.rowId === rowId)) {
+          next[colId] = items.map(it => it.rowId === rowId ? { ...it, reasoning } : it);
+        }
+      }
+      return next;
+    });
+    return { error: null };
+  }, [user]);
+
   return {
     collections,
     itemsByCollection,
@@ -566,6 +717,12 @@ export function useCollections(user) {
     removeItemFromCollection,
     ensureSharedInbox,
     addToSharedInbox,
+    // Challenge-specific:
+    createChallenge,
+    updateChallenge,
+    addToShortlist,
+    togglePickStatus,
+    updateReasoning,
   };
 }
 

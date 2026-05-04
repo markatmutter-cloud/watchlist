@@ -26,6 +26,7 @@ Three top-level tabs:
 - **Watchlist** — four sub-tabs:
   - **Favorites** — items you've hearted (your default collection), with price-at-save preserved.
   - **Collections** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you. Anything you've hidden from the Available feed surfaces here too as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
+  - **Challenges** — build-a-collection v1. Pick N watches under a budget, write a one-line rationale per pick, share the spec so a friend can build their own answer. Multi-stage flow with a 20% over-budget soft-warn / hard-block guardrail. Drag-drop between shortlist and slots on desktop; tap-to-select on mobile.
   - **Searches** — saved queries you can re-run with one tap, plus a read-only view of the eBay source-searches feeding the main feed.
   - **Auction Calendar** — upcoming + recently-closed sales from 6 houses, grouped by month.
 - **References** — collector resource tools (currently: a print-to-scale watch size comparison tool; encyclopedia and curated-link aggregator are roadmap'd).

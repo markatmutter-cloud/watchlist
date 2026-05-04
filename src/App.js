@@ -162,7 +162,7 @@ export default function Watchlist() {
   // refresh on `?tab=watchlist&sub=collections` lands you back where
   // you were. Otherwise fall back to the persisted preference; final
   // fallback is "listings" (Favorites).
-  const SUB_VALUES = ["listings", "collections", "searches", "calendar"];
+  const SUB_VALUES = ["listings", "collections", "challenges", "searches", "calendar"];
   const [watchTopTab, setWatchTopTab] = useState(() => {
     if (typeof window !== "undefined") {
       const sub = new URLSearchParams(window.location.search).get("sub");
@@ -1341,6 +1341,8 @@ export default function Watchlist() {
       handleShare={handleShare}
       hiddenItems={hiddenItems}
       toggleHide={toggleHide}
+      allListings={items}
+      hidden={hidden}
     />
   );
 
@@ -1421,6 +1423,7 @@ export default function Watchlist() {
         // organizational layer above.
         ["listings", isMobile ? "Favorites" : `Favorites${watchCount > 0 ? ` · ${watchCount}` : ""}`],
         ["collections", "Collections"],
+        ["challenges", "Challenges"],
         ["searches", "Searches"],
         ["calendar", isMobile ? "Calendar" : "Auction Calendar"],
       ].map(([key, label]) => {

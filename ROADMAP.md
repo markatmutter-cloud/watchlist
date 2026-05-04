@@ -700,6 +700,35 @@ becomes confusion.
 
 ## Update log
 
+- 2026-05-03 (later evening): **Build-a-collection v1 / Watch
+  Challenges shipped (Epic 3).** New Watchlist > Challenges sub-tab
+  with the multi-stage flow: Create (set count + budget + title) →
+  Picking (drag-drop on desktop, tap-to-select on mobile via the
+  pointer-coarse media query) → Reasoning (one-line per pick;
+  optional) → Complete (read-only summary + share). Schema lives
+  in `supabase/schema/2026-05-03_challenges.sql`: existing
+  `collections` table extended with `target_count`, `budget`,
+  `description_long`, `state` (draft|complete), `parent_challenge_id`;
+  `collection_items` extended with `is_pick` boolean (shortlist vs
+  final picks) and `reasoning` text. Single-collection-per-challenge
+  (one row in collections, items split by is_pick). Drafts persist
+  as you go via the existing useCollections write-through. Picks
+  snapshot `saved_price`/`saved_currency`/`saved_price_usd` so the
+  challenge total is immutable once shared. Budget guardrail: 20%
+  soft warn, >20% over hard-blocks the Complete button. Share
+  button generates a URL encoding the challenge spec
+  (`?newchallenge=1&n=N&b=BUDGET&t=TITLE&d=DESC`) — recipients
+  build their own response under the same constraints. Out of v1
+  scope, in code comments: photo/custom upload (removed),
+  mutability after share (immutable), version history,
+  per-challenge cap, public read of completed challenges (RLS
+  surgery deferred), and the spec-encoded-URL receive flow itself
+  (currently the URL just opens the app; auto-prompted
+  "build-a-response" lands next session). ROADMAP "Strategic bets"
+  framing applied: this is the *hypothetical* picker, NOT the
+  reflective Watchbox v2 layer (per-pick reasoning stays
+  surface-level: rows={2}, "Why this one?" prompt).
+
 - 2026-05-03 (evening): **Auction urgency surfacing shipped (Epic 2).**
   Two complementary changes: (1) "Ending soon" pinned section at the
   top of the Watchlist tab — auction-format tracked lots ending
