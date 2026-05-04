@@ -9,7 +9,7 @@ how to behave for the rest of it.
 - [README.md](README.md) — what the project is + architecture. Public-facing.
 - [ROADMAP.md](ROADMAP.md) — priorities, epics, what's explicitly out of scope.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
-  The current one is [SESSION_HANDOFF_2026-05-03.md](SESSION_HANDOFF_2026-05-03.md);
+  The current one is [SESSION_HANDOFF_2026-05-04.md](SESSION_HANDOFF_2026-05-04.md);
   older ones live in `archive/`.
 
 If a gotcha or convention is durable (still true next session), graduate
@@ -68,6 +68,18 @@ intentional: it limits code churn and keeps `useWatchlist` /
 heart-on-Card working without a migration. Schema lives in
 `supabase/schema/2026-05-01_collections.sql`.
 
+**UI rename Collections → Lists (2026-05-04, PR #24).** The Watchlist
+sub-tab is now labeled "Lists" in the UI (and "+ New list", "Add to
+list…", "Remove from list", etc. throughout). **Internals stayed
+unchanged**: DB tables (`collections`, `collection_items`), hook
+(`useCollections`), URL params (`?sub=collections`, `?col=<uuid>`),
+localStorage value (`dial_watch_top_tab=collections`), sub-tab key
+in `SUB_VALUES`, mutator names (`addItemToCollection`, etc.). The
+Watch Challenges feature still says "challenge" in copy; only the
+Lists sub-tab + its modals use the new label. When a future doc or
+comment refers to "the Collections sub-tab", read it as "the Lists
+sub-tab"; the UI label moved, the data model didn't.
+
 **Watch Challenges (Build-a-collection v1, 2026-05-03).** Challenges
 are collections with `type='challenge'`. Schema additions in
 `supabase/schema/2026-05-03_challenges.sql`: `target_count`, `budget`,
@@ -85,19 +97,18 @@ mobile (SlotPickerModal). Don't reach for react-dnd — the existing
 HTML5 + tap pattern is enough for v1. Mutability after share is
 deferred to v2 (current state ='complete' is meant to be terminal).
 
-**Hidden listings as a virtual collection (2026-05-01).** Hidden
-follows the same Approach A pattern as Favorites: data stays in the
-existing `hidden_listings` table, but the UI surface is a synthetic
-"Hidden" row inside Watchlist > Collections (rendered by
-WatchlistTab.js, not a real DB row). Sentinel id `__hidden__` keeps
-the synthetic row from colliding with real collection UUIDs. The
-drill-in renders the items grid with `isHidden={true}` so each
-Card's "..." menu Hide entry flips to "Unhide" automatically. There
-is no `HiddenModal` anymore — the old user-dropdown "Manage hidden"
-item was removed and the file deleted. Don't migrate
-`hidden_listings` into `collection_items` for the same reason as
-Favorites: the migration would touch every read path that already
-uses `useWatchlist().hidden`.
+**Hidden listings as a virtual list (2026-05-01).** Hidden follows
+the same Approach A pattern as Favorites: data stays in the existing
+`hidden_listings` table, but the UI surface is a synthetic "Hidden"
+row inside Watchlist > Lists (rendered by WatchlistTab.js, not a
+real DB row). Sentinel id `__hidden__` keeps the synthetic row from
+colliding with real collection UUIDs. The drill-in renders the
+items grid with `isHidden={true}` so each Card's "..." menu Hide
+entry flips to "Unhide" automatically. There is no `HiddenModal`
+anymore — the old user-dropdown "Manage hidden" item was removed
+and the file deleted. Don't migrate `hidden_listings` into
+`collection_items` for the same reason as Favorites: the migration
+would touch every read path that already uses `useWatchlist().hidden`.
 
 **Share URL format.** Inbound share links use
 `?listing=<id>&shared=1` on the root URL — no `react-router`, no
@@ -107,9 +118,11 @@ URL is rewritten via `history.replaceState` after action so a
 refresh doesn't re-trigger.
 
 **Location URL params (2026-05-02).** `tab` (listings | watchlist |
-references | admin), `sub` (listings | collections | searches |
-calendar — only meaningful when tab=watchlist) and `col` (collection
-UUID, or `__hidden__` for the synthetic Hidden collection) get
+references | admin), `sub` (listings | collections | challenges |
+searches | calendar — only meaningful when tab=watchlist; note the
+key stays `collections` for the Lists sub-tab — see UI rename note
+above) and `col` (collection UUID, or `__hidden__` for the synthetic
+Hidden list) get
 reflected in the URL via `history.replaceState`. App.js owns `tab`
 + `sub`; WatchlistTab owns `col`. App.js's effect also clears `col`
 when leaving the watchlist tab so the URL stays clean. Both effects
@@ -145,6 +158,46 @@ Don't surface admin existence to non-admin users in any UI text.
   so adding a new auction scraper doesn't require touching merge.py.
 - `continue-on-error: true` on each scrape step in the workflow so one
   failing source doesn't kill the batch.
+- **Per-locale dealer HTML.** Some multi-locale sites (e.g.
+  ClassicHeuer at `/chronographs/<slug>` vs `/en/chronographs/<slug>`)
+  serve different HTML per locale, with one lagging behind the other on
+  state changes (e.g. SOLD overlay shows on the German page hours
+  before the English page). Fetch from the locale users actually
+  browse, not whatever the API permalink hands back. Write the same
+  locale URL into the CSV so the card click-through lands on the
+  page users would have reached themselves. ClassicHeuer's
+  `english_url()` helper is the reference pattern.
+- **Don't trust URL slug patterns alone for content classification.**
+  Dealers often reuse slot names: Heuertime publishes real watches
+  into pages slugged `kopie-van-template-for-watches-N` that look
+  like leftover scaffolding. Skip URLs only when the rendered detail
+  page genuinely lacks content (empty title, no price). The Heuertime
+  fix on 2026-05-04 (PR #28) reinstated 4 watches that the
+  slug-pattern filter was dropping.
+- **Greedy regex with `re.S` (DOTALL) can leak past closing tags.**
+  Pattern `class="...is-larger...">.*?>SOLD<` with DOTALL skipped
+  past an empty `</div>` and matched the next SOLD badge later on
+  the page — false-positive on every live item. Anchor on
+  immediate-child structural markers (`<div ... badge ...>` directly
+  inside the container, with only `\s*` between layers), not just
+  text. Cost a re-roll on 2026-05-04 (PR #26 → PR #27).
+- **Wix detail pages aren't stable across edge variants.** Wix
+  serves different SSR markup to GitHub Actions runners than to
+  local development machines (likely IP / region / Accept-header
+  driven). The Heuertime image picker hit this twice (PR #22 fix
+  worked locally, broke on cron; PR #23 pivoted to homepage tile
+  thumbnails). Where possible extract from the homepage rendering
+  instead of detail pages, and only fall back to detail pages for
+  fields the home grid doesn't carry (title, price text).
+- **Image-proxy pattern for hot-link-protected dealers.** Three
+  dealers route through `/api/img` (Watchfid, Watches of Lancashire,
+  + a future fourth eventually). When a dealer returns 4xx to
+  cross-origin browser fetches (Cloudflare 403 with `vary: referer`,
+  Apache 404 on `Accept: image/webp`, etc.), add the host to BOTH
+  `src/utils.js` `PROXIED_IMG_HOSTS` AND `api/img.js` `ALLOWED_HOSTS`
+  + `REFERER_BY_HOST` in lockstep. The proxy fetches with the
+  dealer's own domain in Referer and minimal Accept. The CSV's
+  raw image URL stays unchanged; `imgSrc()` rewrites at render time.
 
 ## Tests
 
@@ -250,6 +303,15 @@ To add a new printable tool: render its sheet via `createPortal` to
   is the agreed shape; flipping to a fuller migration would touch
   every read path that hits `useWatchlist`. Revisit only if the
   asymmetry causes real pain.
+- **Don't call `toggleWatchlist` on tracked-lot items.** Tracked
+  auction lots live in `tracked_lots` keyed by URL, with a synthetic
+  `shortHash(url)` id used for the projected watchItems entry. Calling
+  `toggleWatchlist({id: shortHash(url), ...})` writes a phantom row
+  into `watchlist_items` that the watchItems memo then projects
+  alongside the real tracked-lot entry → duplicate cards. `handleWish`
+  in App.js guards on `_isTrackedLot` and early-returns; mirror that
+  guard in any new heart-click handler. Add/remove for tracked lots
+  flows through the +Track / un-track surface, not the heart.
 - **Don't add new `useState`/`useMemo`/`useCallback` deep into App.js**
   near render-conditional code paths. Adding hooks to the back of
   App.js's already-large hook list triggered React error #310
