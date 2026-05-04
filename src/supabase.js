@@ -758,28 +758,24 @@ export function useTrackedLots(user) {
     if (!user || !supabase) return { error: 'not signed in' };
     const url = (rawUrl || '').trim();
     if (!url) return { error: 'empty URL' };
-    // Light validation: scraper supports Antiquorum, Christie's,
-    // Sotheby's, and Monaco Legend lot pages. Anything else gets a
-    // clear rejection rather than a silent insert that the cron would
-    // later choke on.
+    // 2026-05-04: narrowed to eBay-only. Auction-house lots
+    // (Antiquorum / Christie's / Sotheby's / Phillips) are now
+    // discovered via auction_lots_scraper.py's daily comprehensive
+    // sweep and saved via heart-on-lot, not via this modal. The
+    // Antiquorum / Christie's / Sotheby's / Monaco Legend / Phillips
+    // patterns are intentionally retired from the validator — pasting
+    // one of those URLs returns a clear error directing the user to
+    // heart the lot from the unified feed instead.
     const supported = [
-      /^https?:\/\/live\.antiquorum\.swiss\/lots\/view\//i,
-      /^https?:\/\/catalog\.antiquorum\.swiss\/(?:en|fr|it|de)\/lots\/[a-z0-9-]+-lot-\d+-\d+/i,
-      /^https?:\/\/(?:www\.)?christies\.com\/(?:[a-z]{2}\/)?lot\/lot-\d+/i,
-      /^https?:\/\/(?:www\.)?sothebys\.com\/(?:en\/)?buy\/auction\/\d{4}\/[a-z0-9-]+\/[a-z0-9-]+/i,
-      /^https?:\/\/(?:www\.)?monacolegendauctions\.com\/auction\/[a-z0-9-]+\/lot-\d+/i,
-      // Phillips brand slugs can contain dots ("a.-lange-&-söhne"),
-      // ampersands, and Unicode (umlauts, accents). Use a permissive
-      // class that excludes only path/query/fragment delimiters.
-      /^https?:\/\/(?:www\.)?phillips\.com\/detail\/[^/?#]+\/\d+/i,
       // eBay item URLs come in several flavors: canonical
       // /itm/<id>, with title slug /itm/<slug>/<id>, regional TLDs
-      // (ebay.co.uk, ebay.de, ebay.fr, ...). We only need the
-      // numeric legacy item ID; the scraper extracts it.
+      // (ebay.co.uk, ebay.de, ebay.fr, ...) and short share URLs
+      // (ebay.us / ebay.gg / ebay.to that redirect to /itm).
       /^https?:\/\/(?:www\.)?ebay\.(?:com|co\.uk|de|fr|it|es|nl|at|ch|ca|com\.au)\/itm\/(?:[^/]+\/)?\d{6,}/i,
+      /^https?:\/\/(?:www\.)?ebay\.(?:us|gg|to)\/[a-z]\/[A-Za-z0-9]+/i,
     ];
     if (!supported.some(re => re.test(url))) {
-      return { error: 'Supported lot URLs: Antiquorum, Christie\'s (christies.com/.../lot/lot-NNN), Sotheby\'s (sothebys.com/en/buy/auction/YYYY/.../...), Monaco Legend (monacolegendauctions.com/auction/<slug>/lot-NNN), Phillips (phillips.com/detail/<brand>/<id>), or eBay (ebay.com/itm/<id>).' };
+      return { error: 'Only eBay item URLs are supported here. For auction-house lots (Antiquorum / Christie\'s / Sotheby\'s / Phillips) heart them from the main feed — they\'re scraped automatically.' };
     }
     if (urls.includes(url)) return { error: 'Already tracking this lot.' };
     const ts = new Date().toISOString();

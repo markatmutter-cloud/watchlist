@@ -46,6 +46,7 @@ export function MobileShell(props) {
     settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
     feedFilterPillJSX, auctionsViewToggleJSX,
     trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX, watchlistTabJSX,
+    lotMigrationBannerJSX,
   } = props;
 
   return (
@@ -186,6 +187,10 @@ export function MobileShell(props) {
         {/* Share-receive surface — self-contained component, hooks
             isolated. Renders null when no share intent in URL. */}
         {shareReceiverJSX}
+        {/* Phase B2 lot-migration banner. Same isolation pattern as
+            ShareReceiver — renders null until the one-shot migration
+            actually moves at least one tracked URL into Favorites. */}
+        {lotMigrationBannerJSX}
         <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
           {/* Ending-soon pinned section. Mounted INSIDE the scroll
               area (not the sticky stack) so it scrolls away with

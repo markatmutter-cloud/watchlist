@@ -28,13 +28,18 @@ export function TrackNewItemModal({
         color: "var(--text1)", fontFamily: "inherit",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-          <div style={{ fontSize: 16, fontWeight: 600 }}>Track new item</div>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Track eBay item</div>
           <button onClick={() => setOpen(false)} aria-label="Close" style={modalCloseButton}>×</button>
         </div>
         <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5 }}>
-          Paste an auction lot URL or marketplace listing URL. The
-          tracked item appears in your Watchlist and refreshes on
-          the next scrape (current bid, hammer price, end time).
+          Paste an eBay item URL. The tracked item appears in your
+          Favorites and refreshes on the next scrape (current bid,
+          hammer price, end time).
+        </div>
+        <div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 12, lineHeight: 1.5 }}>
+          For auction-house lots (Antiquorum, Christie's, Sotheby's,
+          Phillips), heart them directly from the main feed — they're
+          scraped automatically every day.
         </div>
         <input
           autoFocus
@@ -53,14 +58,10 @@ export function TrackNewItemModal({
           <div style={{ fontSize: 11, color: "#c0392b", marginBottom: 8 }}>{trackError}</div>
         )}
         <div style={{ fontSize: 10, color: "var(--text3)", lineHeight: 1.55, marginBottom: 14 }}>
-          Supported sources:
-          {" "}Antiquorum (live + catalog),
-          {" "}Christie's,
-          {" "}Sotheby's,
-          {" "}Monaco Legend,
-          {" "}Phillips,
-          {" "}eBay (auction or Buy-It-Now).
-          {" "}Bonhams + Chrono24 are blocked by their bot walls and need Mac mini infra (deferred).
+          Supported: eBay item URLs — auction or Buy-It-Now, any region
+          (.com, .co.uk, .de, .fr, .it, .es, .nl, .at, .ch, .ca,
+          .com.au) plus eBay's short share links (ebay.us / ebay.gg /
+          ebay.to).
         </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button onClick={() => setOpen(false)} style={{
