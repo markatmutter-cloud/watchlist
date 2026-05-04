@@ -38,9 +38,9 @@ describe("DesktopShell", () => {
     expect(screen.queryByRole("button", { name: /^Source/ })).not.toBeInTheDocument();
   });
 
-  test("renders the listings grid on the Listings tab", () => {
+  test("renders the listings tab content on the Listings tab", () => {
     render(<DesktopShell {...buildMockShellProps({ tab: "listings" })} />);
-    expect(screen.getByTestId("listings-grid")).toBeInTheDocument();
+    expect(screen.getByTestId("listings-tab-content")).toBeInTheDocument();
   });
 
   test("renders the watchlist tab content on Watchlist tab", () => {

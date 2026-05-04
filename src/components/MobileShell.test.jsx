@@ -53,8 +53,8 @@ describe("MobileShell", () => {
     expect(screen.getByTestId("watchlist-tab")).toBeInTheDocument();
   });
 
-  test("renders the listings grid on the Listings main tab", () => {
+  test("renders the listings tab content on the Listings main tab", () => {
     render(<MobileShell {...buildMockShellProps({ tab: "listings" })} />);
-    expect(screen.getByTestId("listings-grid")).toBeInTheDocument();
+    expect(screen.getByTestId("listings-tab-content")).toBeInTheDocument();
   });
 });
