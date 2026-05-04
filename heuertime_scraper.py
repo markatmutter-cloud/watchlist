@@ -85,11 +85,32 @@ def discover_urls(home_html):
     return sorted(u for u in urls if "template-for-watches" not in u)
 
 
-# Any wixstatic media URL (~mv2.<ext>). The dealer's actual product
-# photos live under the account-folder prefix `b10fd7_`; the OG
-# default lives under `474f71_812506...`. We accept any wixstatic
-# media URL but skip the known generic OG default.
-WIX_MEDIA_RE = re.compile(r"https://static\.wixstatic\.com/media/[a-zA-Z0-9_]+~mv2\.(?:jpg|jpeg|png|webp)", re.I)
+# Two image-pattern regexes, used in order:
+#
+# 1. PRODUCT_GALLERY_RE — the page's product-photo gallery uses the
+#    HTML5 <picture><source srcSet="..."> pattern with the wixstatic
+#    URL right at the start of the srcSet attribute. This is the
+#    canonical "this is a real product photo" signal.
+#
+# 2. ANY_MEDIA_RE — defensive fallback in case a future page omits
+#    the <picture> markup. We pick the first wixstatic URL that
+#    isn't the generic OG default.
+#
+# Why we need this distinction: the page renders a small B&W banner
+# image at the top of every detail page using a bare `<img src="...">`
+# tag (not <picture>). Before the gallery pattern was added, the
+# scraper picked that banner instead of the product photo. The
+# `<source srcSet="...">` pattern is what actually drives the visible
+# gallery, so it's also what we want as the card thumbnail.
+PRODUCT_GALLERY_RE = re.compile(
+    r'<source\s+srcSet="'
+    r'(https://static\.wixstatic\.com/media/[a-zA-Z0-9_]+~mv2\.(?:jpg|jpeg|png|webp))',
+    re.I,
+)
+ANY_MEDIA_RE = re.compile(
+    r"https://static\.wixstatic\.com/media/[a-zA-Z0-9_]+~mv2\.(?:jpg|jpeg|png|webp)",
+    re.I,
+)
 GENERIC_OG_HASH = "474f71_812506f520ce4521a550a0ff19b036da"
 
 
@@ -138,16 +159,23 @@ def parse_item(url, html):
         price_block = flat[:60]
     price, por = parse_price(price_block)
 
-    # Image — first wixstatic media URL that isn't the generic OG
-    # default. The dealer's product photos live under the `b10fd7_`
-    # account folder; the OG default is under `474f71_812506...`.
+    # Image — prefer the first product-gallery photo (rendered via
+    # the <picture><source srcSet="..."> pattern). Falls back to the
+    # first non-OG wixstatic media URL on pages that omit the gallery
+    # markup. The fallback is the previous behaviour, which on real
+    # detail pages was picking the small B&W banner at the top —
+    # functional but not visually useful for the card.
     img = ""
-    for m in WIX_MEDIA_RE.finditer(html):
-        candidate = m.group(0)
-        if GENERIC_OG_HASH in candidate:
-            continue
-        img = candidate
-        break
+    gallery = PRODUCT_GALLERY_RE.search(html)
+    if gallery:
+        img = gallery.group(1)
+    else:
+        for m in ANY_MEDIA_RE.finditer(html):
+            candidate = m.group(0)
+            if GENERIC_OG_HASH in candidate:
+                continue
+            img = candidate
+            break
 
     return {
         "title": title,
