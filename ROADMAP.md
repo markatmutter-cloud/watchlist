@@ -76,8 +76,7 @@ when two features compete, pick the one earlier in the chain.
 5. **Reference learning** — synthesize what's known about a
    reference: dealer descriptions accumulated over time, curated
    external links, hand-written notes, dial variation gallery.
-   Hodinkee-style depth, but built from the dealer market's own
-   writing rather than pure editorial.
+   Hodinkee-style depth, but built from multiple sources books.
 6. **Collection mentality** — support the collecting journey:
    real watchbox tracking (current + parted-with), reflections on
    each piece, a thinking-tool for "why do we collect, what
