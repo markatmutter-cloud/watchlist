@@ -29,7 +29,7 @@ direction, not state.
 - When asked "what's next?", default to the priority order in this doc.
 - When the user wavers on priorities mid-session, point them back here rather
   than just complying. Discipline is part of the value.
-- When suggesting work, name the epic it lives under. ("This is Epic 3 work.")
+- When suggesting work, name the epic it lives under. ("This is Epic 3: Watchlist work.")
 - When work is finished, suggest updating this doc to reflect the change.
 
 
