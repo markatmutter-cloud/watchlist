@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import { SubTabIntro } from "./SubTabIntro";
 
 // Cool Stuff > Links — curated outbound destinations beyond the feed
 // itself. Two kinds of section:
@@ -6,10 +7,16 @@ import React, { useMemo } from "react";
 //      first listing per source, parse the URL host, link to the
 //      homepage). Auto-current as new dealers join the scrape pipeline.
 //      eBay excluded as it's a marketplace, not a curated dealer.
-//   2. References — hand-curated link sets per watch reference
-//      (Rolex GMT 1675, Tudor Sub 7021, etc.). Add a new ref by
-//      appending to REFERENCE_SECTIONS below; sections render in
-//      list order.
+//   2. References + Topics — hand-curated link sets per watch reference
+//      or theme (Rolex GMT 1675, Tudor Sub 7021, Art, Straps, etc.).
+//      Add a new section by appending to REFERENCE_SECTIONS or
+//      TOPIC_SECTIONS below; the render loop picks them up.
+//
+// Sections render as accordions (2026-05-05). Each section header is a
+// tappable button that toggles its body open/closed; default state is
+// all collapsed so the page reads as a clean menu rather than a wall
+// of links. Per Mark — wants to scan section names first, drill in
+// only when interested.
 
 // Topic-themed link sections beyond per-reference research. Each entry
 // is its own LinkSection. Add a new topic by appending here — the
@@ -45,6 +52,13 @@ const TOPIC_SECTIONS = [
       "https://www.ablogtowatch.com/retail-me-not/",
       "https://www.screwdowncrown.com/",
       "https://www.thefourthwheel.co.uk/",
+      "https://monochrome-watches.com/",
+    ],
+  },
+  {
+    title: "Major Auctions",
+    links: [
+      "https://www.phillips.com/auctions/auction/CH080317",
     ],
   },
 ];
@@ -108,6 +122,7 @@ const REFERENCE_SECTIONS = [
     title: "Heuer",
     links: [
       "https://www.fratellowatches.com/tag-heuer-carrera-reissues-from-the-90s-are-huge-value-including-an-18k-gold-grail/#gref",
+      "https://www.fratellowatches.com/vintage-heuer-the-most-predictably-volatile-market-around/",
       "https://www.vintageheuercarrera.com/#models",
       "https://www.hodinkee.com/articles/reference-points-tag-heuer-carrera",
       "https://www.hodinkee.com/articles/understanding-the-earliest-heuer-carreras",
@@ -171,77 +186,134 @@ export function Links({ allListings = [], onBack }) {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [allListings]);
 
+  // Open/closed state for every section, keyed by title. Default: all
+  // collapsed. The user opens whatever they're interested in.
+  const [openSections, setOpenSections] = useState(() => ({}));
+  const toggle = (title) => setOpenSections(prev => ({ ...prev, [title]: !prev[title] }));
+
+  const dealerSection = {
+    title: "Dealers",
+    items: dealers.map(d => ({ kind: "dealer", name: d.name, url: d.url })),
+  };
+  const refSections = REFERENCE_SECTIONS.map(s => ({
+    title: s.title,
+    items: s.links.map(url => ({ kind: "reference", url })),
+  }));
+  const topicSections = TOPIC_SECTIONS.map(s => ({
+    title: s.title,
+    items: s.links.map(url => ({ kind: "reference", url })),
+  }));
+
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "4px 4px 24px" }}>
-      <div style={{ display: "flex", marginBottom: 14 }}>
-        {onBack && (
+    <div style={{ paddingTop: 4 }}>
+      {onBack && (
+        <div style={{ marginBottom: 10 }}>
           <button onClick={onBack} aria-label="Back to Cool Stuff" style={{
             border: "none", background: "transparent", color: "var(--text2)",
             fontFamily: "inherit", fontSize: 13, cursor: "pointer", padding: "4px 0",
           }}>← Cool Stuff</button>
-        )}
-      </div>
-      <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 4px", color: "var(--text1)" }}>
-        Links
-      </h1>
-      <p style={{ fontSize: 13, color: "var(--text2)", margin: "0 0 24px" }}>
-        Outbound links to the dealers and resources behind the feed. More sections coming as the curated set grows.
-      </p>
+        </div>
+      )}
 
-      <LinkSection
-        title="Dealers"
-        desc={`The ${dealers.length} independent dealers we aggregate into Listings. Every link opens the dealer's own site in a new tab — Watchlist is a directory layer, not a marketplace.`}
-        items={dealers.map(d => ({ kind: "dealer", name: d.name, url: d.url }))}
+      <SubTabIntro
+        title="Links"
+        blurb={<>Outbound links — every dealer in the feed, plus per-reference research clusters and curated lists for art, straps, editorial. Tap a section to open it.</>}
       />
 
-      {/* References — hand-curated link clusters per watch reference.
-          Each cluster renders as its own LinkSection so the grouping
-          stays scannable. URL-only items get auto-derived host + path
-          labels via describeLink. */}
-      <h2 style={{
-        fontSize: 11, fontWeight: 600, textTransform: "uppercase",
-        letterSpacing: "0.08em", color: "var(--text3)",
-        margin: "8px 0 12px",
-      }}>
-        References
-      </h2>
-      {REFERENCE_SECTIONS.map(s => (
+      {/* Sections render in order: Dealers (auto-derived), then the
+          curated References list, then thematic Topic sections. Each
+          section is collapsed by default — the user opens what they
+          want. */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <LinkSection
-          key={s.title}
-          title={s.title}
-          items={s.links.map(url => ({ kind: "reference", url }))}
+          {...dealerSection}
+          isOpen={!!openSections[dealerSection.title]}
+          onToggle={() => toggle(dealerSection.title)}
         />
-      ))}
 
-      {TOPIC_SECTIONS.map(s => (
-        <LinkSection
-          key={s.title}
-          title={s.title}
-          items={s.links.map(url => ({ kind: "reference", url }))}
-        />
-      ))}
+        {/* Sub-header for the References cluster. Visual breadcrumb so
+            "Rolex GMT 1675" reads as a sub-row, not a top-level section. */}
+        <div style={{
+          fontSize: 11, fontWeight: 600, textTransform: "uppercase",
+          letterSpacing: "0.08em", color: "var(--text3)",
+          margin: "12px 0 4px",
+        }}>
+          References
+        </div>
+        {refSections.map(s => (
+          <LinkSection
+            key={s.title}
+            title={s.title}
+            items={s.items}
+            isOpen={!!openSections[s.title]}
+            onToggle={() => toggle(s.title)}
+          />
+        ))}
+
+        <div style={{
+          fontSize: 11, fontWeight: 600, textTransform: "uppercase",
+          letterSpacing: "0.08em", color: "var(--text3)",
+          margin: "12px 0 4px",
+        }}>
+          Themes
+        </div>
+        {topicSections.map(s => (
+          <LinkSection
+            key={s.title}
+            title={s.title}
+            items={s.items}
+            isOpen={!!openSections[s.title]}
+            onToggle={() => toggle(s.title)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
 
-function LinkSection({ title, desc, items }) {
+function LinkSection({ title, items, isOpen, onToggle }) {
   return (
-    <section style={{ marginBottom: 28 }}>
-      <div style={{
-        display: "flex", alignItems: "baseline", gap: 12,
-        padding: "0 0 10px",
-        borderBottom: "0.5px solid var(--border)",
-        marginBottom: 12,
-      }}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>{title}</span>
-        <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>{items.length}</span>
-      </div>
-      {desc && (
-        <p style={{ fontSize: 12, color: "var(--text2)", margin: "0 0 12px", lineHeight: 1.5 }}>{desc}</p>
+    <section style={{
+      borderRadius: 12,
+      border: "0.5px solid var(--border)",
+      background: "var(--card-bg)",
+      overflow: "hidden",
+    }}>
+      <button
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          width: "100%", padding: "14px 16px",
+          border: "none", background: "transparent",
+          color: "var(--text1)", cursor: "pointer",
+          fontFamily: "inherit", textAlign: "left",
+        }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)" }}>{title}</span>
+          <span style={{ fontSize: 12, color: "var(--text3)" }}>{items.length}</span>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)"
+             strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+             style={{ transform: isOpen ? "rotate(90deg)" : "rotate(0)", transition: "transform 120ms ease" }}
+             aria-hidden="true">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </button>
+      {isOpen && (
+        <div style={{
+          padding: "0 12px 12px",
+          display: "flex", flexDirection: "column", gap: 6,
+        }}>
+          {items.length === 0 ? (
+            <div style={{ padding: "8px 4px 0", fontSize: 12, color: "var(--text3)" }}>
+              No entries yet.
+            </div>
+          ) : (
+            items.map(item => <LinkRow key={item.url} {...item} />)
+          )}
+        </div>
       )}
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {items.map(item => <LinkRow key={item.url} {...item} />)}
-      </div>
     </section>
   );
 }
@@ -257,23 +329,23 @@ function LinkRow({ kind, name, url }) {
   return (
     <a href={url} target="_blank" rel="noopener noreferrer" title={url} style={{
       display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
-      padding: "12px 14px", borderRadius: 10,
-      border: "0.5px solid var(--border)", background: "var(--card-bg)",
+      padding: "10px 12px", borderRadius: 8,
+      border: "0.5px solid var(--border)", background: "var(--surface)",
       color: "var(--text1)", fontFamily: "inherit", textDecoration: "none",
     }}>
-      <span style={{ fontWeight: 500, fontSize: 14, minWidth: 0,
+      <span style={{ fontWeight: 500, fontSize: 13, minWidth: 0,
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {primary}
       </span>
       <span style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0,
-                    color: "var(--text3)", fontSize: 12 }}>
+                    color: "var(--text3)", fontSize: 11 }}>
         {secondary && (
           <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                          maxWidth: 220 }}>
             {secondary}
           </span>
         )}
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
           <polyline points="15 3 21 3 21 9"/>

@@ -22,7 +22,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 Three top-level tabs:
 
-- **Listings** — aggregates 36 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
+- **Listings** — aggregates 39 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
 - **Watchlist** — five sub-tabs:
   - **Favorites** — items you've hearted (your default list), with price-at-save preserved.
   - **Lists** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you. Anything you've hidden from the Available feed surfaces here too as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
@@ -60,7 +60,7 @@ Plus:
   ┌─────────────────────────────────────────────────────────────┐
   │                  GitHub Actions (cron, daily)               │
   │                                                             │
-  │   36× listing scrapers + 6× auction scrapers (Python)       │
+  │   39× listing scrapers + 6× auction scrapers (Python)       │
   │            │                              │                 │
   │            ▼                              ▼                 │
   │     *_listings.csv               *_auctions.csv             │
@@ -97,7 +97,7 @@ Listings/auctions are static JSON committed to the repo. The only thing behind a
 
 ## Data sources
 
-### Dealers (36)
+### Dealers (39)
 
 All scrapers hit each dealer's existing public endpoint — no credential-protected APIs, no headless browsers where it can be avoided.
 
@@ -139,6 +139,9 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 | Watches of Lancashire | WooCommerce | Store API; `category=watches`; images proxied via `/api/img` (Cloudflare hot-link protection) | GBP |
 | Heuertime | Wix Pages (no Wix Stores) | Homepage links → per-page detail walk for "PRICE" rich-text label (mostly POR) | EUR |
 | ClassicHeuer | WooCommerce | Store API; categories used as Heuer model families, mostly price-on-request | EUR |
+| Luna Royster | WooCommerce | Store API; independent + neo-vintage heavy (F.P. Journe, MB&F); placeholder $1/$0 prices filtered out | USD |
+| S.Song Watches | Shopify | `/collections/vintage/products.json` | USD |
+| Swiss Hours | Shopify | `/collections/watches/products.json` | USD |
 
 Tropical Watch is the only source still routed through Browse AI — their site actively blocks scrapers. Every other source is scraped with vanilla `requests`. Browse AI robot ID and API key live in GitHub Secrets, never in the repo.
 

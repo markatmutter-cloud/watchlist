@@ -208,6 +208,26 @@ jobs:
         continue-on-error: true
         run: python classicheuer_scraper.py
 
+      - name: Run Luna Royster scraper (WooCommerce Store API)
+        # NYC dealer leaning independent + neo-vintage (F.P. Journe,
+        # MB&F, etc.). Standard /wp-json/wc/store/v1/products. Skips
+        # placeholder ($1 / $0) prices that appear when LR has the
+        # piece marked "price on request" in their backend.
+        continue-on-error: true
+        run: python lunaroyster_scraper.py
+
+      - name: Run S.Song Watches scraper (Shopify, vintage collection)
+        # Curated vintage dealer; collection-scoped products.json so
+        # straps + accessories don't leak. USD-priced.
+        continue-on-error: true
+        run: python ssongwatches_scraper.py
+
+      - name: Run Swiss Hours scraper (Shopify, watches collection)
+        # Higher-end vintage dealer; collection-scoped products.json
+        # to skip straps. USD-priced.
+        continue-on-error: true
+        run: python swisshours_scraper.py
+
       # eBay runs in its own workflow (.github/workflows/scrape-ebay.yml)
       # so a slow Browse API response or token blip doesn't slow the
       # dealer-listings cron. eBay can iterate on its own cadence and
@@ -253,6 +273,9 @@ jobs:
           [ -f watchesoflancashire_listings.csv ] && mv watchesoflancashire_listings.csv data/watchesoflancashire.csv || echo "watchesoflancashire missing"
           [ -f heuertime_listings.csv ]           && mv heuertime_listings.csv           data/heuertime.csv           || echo "heuertime missing"
           [ -f classicheuer_listings.csv ]        && mv classicheuer_listings.csv        data/classicheuer.csv        || echo "classicheuer missing"
+          [ -f lunaroyster_listings.csv ]         && mv lunaroyster_listings.csv         data/lunaroyster.csv         || echo "lunaroyster missing"
+          [ -f ssongwatches_listings.csv ]        && mv ssongwatches_listings.csv        data/ssongwatches.csv        || echo "ssongwatches missing"
+          [ -f swisshours_listings.csv ]          && mv swisshours_listings.csv          data/swisshours.csv          || echo "swisshours missing"
 
       - name: Merge into listings.json
         run: python merge.py --listings-only
