@@ -1628,6 +1628,8 @@ export default function Watchlist() {
       collectionsApi={collectionsApi}
       setEditingCollection={setEditingCollection}
       openCollectionPicker={openCollectionPicker}
+      startCreateCollection={startCreateCollection}
+      openTrackModal={() => { setTrackOpen(true); setTrackError(""); }}
       primaryCurrency={primaryCurrency}
       handleShare={handleShare}
       hiddenItems={hiddenItems}
@@ -1686,29 +1688,20 @@ export default function Watchlist() {
   // none on Auction Calendar.
   const watchSubTabsJSX = tab !== "watchlist" ? null : (
     // Sub-tab strip uses underline-style buttons (see tabPill in
-    // styles.js) so it sits visually below the main pill tabs in the
-    // hierarchy. 4 sub-tabs (Listings/Collections/Searches/Calendar)
-    // plus a trailing action button overflow 375px viewports — strip
-    // becomes horizontally scrollable on mobile to keep everything
-    // reachable without wrapping. flexShrink: 0 on every child so
-    // they don't squish; the user swipes if needed. WebkitOverflow-
-    // Scrolling: touch keeps iOS native momentum.
+    // styles.js). Pre-2026-05-04 the strip also carried a trailing
+    // contextual action button (+Track / +Add search / +New list),
+    // which fit on desktop but pushed the strip into a horizontal
+    // scroller on mobile (375px viewports couldn't accommodate five
+    // sub-tabs plus a button without overflow). Action buttons moved
+    // into the body of each sub-tab as part of an intro banner so the
+    // strip stays narrow enough to render without scroll on every
+    // viewport.
     <div style={{
       display: "flex", gap: 20, alignItems: "center",
       padding: "0 16px",
       background: "var(--bg)",
       borderBottom: "0.5px solid var(--border)",
       flexShrink: 0,
-      overflowX: "auto",
-      overflowY: "hidden",
-      WebkitOverflowScrolling: "touch",
-      // Hide scrollbar — the underline indicator already signals
-      // which sub-tab is active; a visible scrollbar would just be
-      // chrome noise. scrollbarWidth: none is Firefox; the
-      // ::-webkit-scrollbar selector lives in index.html for Safari/
-      // Chrome (added 2026-05-01).
-      scrollbarWidth: "none",
-      msOverflowStyle: "none",
     }}>
       {[
         // Sub-tab key "listings" preserved for localStorage compat
@@ -1726,53 +1719,9 @@ export default function Watchlist() {
       ].map(([key, label]) => {
         const active = watchTopTab === key;
         return (
-          // flexShrink: 0 prevents the underline-style sub-tabs
-          // from squishing in the now-scrollable strip.
           <button key={key} onClick={() => { setWatchTopTab(key); setDrawerOpen(false); }} style={{ ...tabPill(active), flexShrink: 0 }}>{label}</button>
         );
       })}
-      {/* Trailing action button. marginLeft: auto is gone — with
-          overflow-x scroll on the parent, "auto" pushes the button to
-          the far end of the SCROLLABLE area (off-screen) which made
-          it unreachable. Now it sits immediately after the last
-          sub-tab; gap: 20 inherits from the parent so visual rhythm
-          stays consistent. flexShrink: 0 so it doesn't compress.
-          +Track button moved from "listings" to "auctions" sub-tab
-          on 2026-05-04 — eBay items always live under Saved auctions
-          regardless of Buy-It-Now vs auction format. */}
-      {watchTopTab === "auctions" && user && (
-        <button onClick={() => { setTrackOpen(true); setTrackError(""); }} style={{
-          fontSize: 13, fontWeight: 500,
-          padding: "9px 14px", borderRadius: 8,
-          border: "0.5px solid var(--border)",
-          background: "var(--surface)", color: "var(--text1)",
-          cursor: "pointer", fontFamily: "inherit",
-          flexShrink: 0, whiteSpace: "nowrap",
-          marginLeft: isMobile ? 0 : "auto",
-        }}>+ Track eBay item</button>
-      )}
-      {watchTopTab === "searches" && user && !searchEditor && (
-        <button onClick={startAddSearch} style={{
-          fontSize: 13, fontWeight: 500,
-          padding: "9px 14px", borderRadius: 8,
-          border: "0.5px solid var(--border)",
-          background: "var(--surface)", color: "var(--text1)",
-          cursor: "pointer", fontFamily: "inherit",
-          flexShrink: 0, whiteSpace: "nowrap",
-          marginLeft: isMobile ? 0 : "auto",
-        }}>+ Add search</button>
-      )}
-      {watchTopTab === "collections" && user && (
-        <button onClick={startCreateCollection} style={{
-          fontSize: 13, fontWeight: 500,
-          padding: "9px 14px", borderRadius: 8,
-          border: "0.5px solid var(--border)",
-          background: "var(--surface)", color: "var(--text1)",
-          cursor: "pointer", fontFamily: "inherit",
-          flexShrink: 0, whiteSpace: "nowrap",
-          marginLeft: isMobile ? 0 : "auto",
-        }}>+ New list</button>
-      )}
     </div>
   );
 
@@ -1898,12 +1847,21 @@ export default function Watchlist() {
   // statusSegmentJSX, watchlistTabJSX, plus the modal JSX consts) — the
   // shells just render. Extracted into MobileShell/DesktopShell as
   // Stage 2 of recommendation #1 on 2026-04-30.
+  // Count shown next to the sort row (mobile) and at the right of the
+  // filter row (desktop). On the Listings tab this is the filtered
+  // dealer-feed length; on Watchlist it's the post-filter length of the
+  // active sub-tab's saved set. Until 2026-05-04 both shells always read
+  // allFiltered.length, which made the badge wildly misleading on the
+  // Watchlist tab when no filters were on (showing the full ~1,800-item
+  // dealer feed count next to a saved set of a few dozen).
+  const displayedCount = tab === "watchlist" ? watchItems.length : allFiltered.length;
+
   const shellProps = {
     // Catalog / config
     BRANDS, BRANDS_SHOW, SOURCES, SOURCES_SHOW,
     DEALER_SOURCES, AUCTION_SOURCES,
     // State
-    aboutModalOpen, activeFilterPop, allFiltered,
+    aboutModalOpen, activeFilterPop, allFiltered, displayedCount,
     brandsExpanded, currentIsSaved,
     drawerOpen,
     filterBrands, filterSources,
