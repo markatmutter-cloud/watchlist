@@ -90,45 +90,6 @@ function endingSoonComparator(a, b) {
   return ae.localeCompare(be);
 }
 
-// "Ending soon" window for the unified-feed blend sort. Auction lots
-// whose auction_end falls inside this window from now bubble to the
-// top of the All view. 14 days picked as the starting threshold —
-// short enough that few lots dominate the front, long enough that
-// the section is rarely empty. Adjustable from one constant.
-const BLEND_ENDING_SOON_DAYS = 14;
-// "Recently sold" window — sold auction lots within this many days
-// of their end date sit in their own bucket above older sold lots.
-const BLEND_RECENT_SOLD_DAYS = 30;
-
-// Bucket number for the unified-feed blend sort. Lower number = higher
-// in the feed.
-//   0 — auction lots ending within BLEND_ENDING_SOON_DAYS or live
-//   1 — dealer listings + auction lots ending more than 14 days out
-//   2 — auction lots sold within the last 30 days
-//   3 — older sold auction lots
-// Dealer items always land in bucket 1; auction items split by status
-// + end date.
-function blendBucket(it) {
-  const now = Date.now();
-  const end = it.auction_end ? new Date(it.auction_end).getTime() : NaN;
-  const isAuctionLot = !!it._isAuctionFormat || Number.isFinite(end);
-  if (!isAuctionLot) return 1;
-  const isSold = !!it.sold || !!it._isSold || (Number.isFinite(end) && end <= now);
-  if (isSold) {
-    const soldRaw = it.soldAt ? new Date(it.soldAt).getTime()
-                  : Number.isFinite(end) ? end : NaN;
-    if (Number.isFinite(soldRaw) && (now - soldRaw) <= BLEND_RECENT_SOLD_DAYS * 86400000) {
-      return 2;
-    }
-    return 3;
-  }
-  if (Number.isFinite(end) && (end - now) <= BLEND_ENDING_SOON_DAYS * 86400000) {
-    return 0;
-  }
-  return 1;
-}
-
-
 export default function Watchlist() {
   const screenWidth = useWidth();
   const sysDark = useSystemDark();
@@ -163,8 +124,6 @@ export default function Watchlist() {
     filterBrands,  setFilterBrands,
     filterRefs,    setFilterRefs,
     filterAuctionsOnly, setFilterAuctionsOnly,
-    feedFilter, setFeedFilter,
-    auctionsView, setAuctionsView,
     toggleSource, toggleBrand,
     sort, setSort,
     search, setSearch,
@@ -244,6 +203,37 @@ export default function Watchlist() {
     const desktopMain = document.querySelector("[data-desktop-main]");
     if (desktopMain) desktopMain.scrollTop = 0;
   }, [watchTopTab]);
+  // Listings tab sub-tabs (2026-05-04 restructure). Four values:
+  //   "live"     — currently-active dealer listings (default)
+  //   "auctions" — currently-active auction lots
+  //   "sold"     — sold dealer items + sold auction lots
+  //   "calendar" — month-banded list of upcoming auction-house sales
+  // URL sync uses the same `?sub=` param the Watchlist tab uses, but
+  // the valid values depend on the active main tab. Persisted under
+  // its own localStorage key so switching between Listings and
+  // Watchlist doesn't reset the user's sub-tab choice on either side.
+  const LISTINGS_SUB_VALUES = ["live", "auctions", "sold", "calendar"];
+  const [listingsSubTab, setListingsSubTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get("tab");
+      const sub = params.get("sub");
+      // Only honour the URL sub on a listings deep link.
+      if ((t === "listings" || !t) && LISTINGS_SUB_VALUES.includes(sub)) {
+        return sub;
+      }
+    }
+    try {
+      const v = localStorage.getItem("dial_listings_sub_tab");
+      return LISTINGS_SUB_VALUES.includes(v) ? v : "live";
+    } catch { return "live"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("dial_listings_sub_tab", listingsSubTab); } catch {}
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" });
+    const desktopMain = document.querySelector("[data-desktop-main]");
+    if (desktopMain) desktopMain.scrollTop = 0;
+  }, [listingsSubTab]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   // Main tab. Same URL-first init as watchTopTab — refresh on
@@ -270,15 +260,23 @@ export default function Watchlist() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("shared") === "1") return;
     if (tab === "listings") params.delete("tab"); else params.set("tab", tab);
-    if (tab !== "watchlist" || watchTopTab === "listings") params.delete("sub");
-    else params.set("sub", watchTopTab);
+    // `sub` is per-active-tab — Listings + Watchlist each have their
+    // own sub-tab set. Default values ("live" for Listings, "listings"
+    // for Watchlist) get omitted from the URL to keep deep links short.
+    if (tab === "listings" && listingsSubTab !== "live") {
+      params.set("sub", listingsSubTab);
+    } else if (tab === "watchlist" && watchTopTab !== "listings") {
+      params.set("sub", watchTopTab);
+    } else {
+      params.delete("sub");
+    }
     if (tab !== "watchlist") params.delete("col");
     const qs = params.toString();
     const newUrl = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
     if (newUrl !== window.location.pathname + window.location.search + window.location.hash) {
       window.history.replaceState({}, "", newUrl);
     }
-  }, [tab, watchTopTab]);
+  }, [tab, watchTopTab, listingsSubTab]);
   const [page, setPage] = useState(1);
   // (filterSources, filterBrands, filterRefs, filterAuctionsOnly, sort,
   // search, minPriceText, maxPriceText, newDays, statusMode all moved
@@ -489,31 +487,16 @@ export default function Watchlist() {
     return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
   }, []);
 
-  // When the auctions-only filter or feedFilter toggles, swap the sort
-  // axis to match the user's likely intent: "Ending soonest" when
-  // filtering to auctions, "Newest first" otherwise. Only runs on
-  // filter change so a user manually picking a different sort while
-  // the filter is on sticks until they toggle again. Lives at the top
-  // with the other effects (NOT deep in render-conditional code) per
+  // Auto-sort: Watchlist's auctions-only toggle still flips sort to
+  // "ending"; the Listings tab now uses sub-tabs and dispatches sort
+  // semantics inside `allFiltered` based on `listingsSubTab` (Date
+  // pill on Live auctions = ending order; Date pill on All sold =
+  // sold-date). setSort runs only on filter change so a manually
+  // picked sort sticks. Lives at the top with the other effects per
   // the CLAUDE.md "don't add hooks deep in App.js" rule.
   useEffect(() => {
-    // setSort is the useState setter (stable identity), so leaving it
-    // out of deps doesn't risk a stale closure — this effect runs
-    // purely in response to filter toggles.
-    const wantsEnding = filterAuctionsOnly || feedFilter === "auctions";
-    setSort(wantsEnding ? "ending" : "date");
-  }, [filterAuctionsOnly, feedFilter]);
-
-  // Tri-state pill (feedFilter) is per-session and intentionally
-  // doesn't persist across tab switches. Reset to "all" + lots view
-  // whenever the user navigates away from the Listings tab so they
-  // come back fresh.
-  useEffect(() => {
-    if (tab !== "listings") {
-      setFeedFilter("all");
-      setAuctionsView("lots");
-    }
-  }, [tab]);
+    if (filterAuctionsOnly) setSort("ending");
+  }, [filterAuctionsOnly]);
 
   useEffect(() => {
     // `cache: 'no-cache'` forces the browser/PWA to revalidate with the
@@ -611,8 +594,7 @@ export default function Watchlist() {
         // Use auction_end as the firstSeen surrogate so the date sort
         // doesn't see a NaN/empty for these rows. The blend sort
         // dispatches on auction_end + sold flag so this is mostly a
-        // safety net, but keeps "Date" sorts in feedFilter=auctions
-        // behaving sensibly.
+        // safety net for date-driven sorts that touch lot rows.
         firstSeen: data.auction_end || data.scraped_at || "",
         buying_option: data.buying_option,
         current_bid: data.current_bid,
@@ -635,8 +617,8 @@ export default function Watchlist() {
   }, [trackedLotsState, auctionLotsState]);
 
   // Main feed = dealer listings ∪ auction lots. Powers the Listings
-  // tab's allFiltered memo; the feedFilter pill (All/Dealers/Auctions)
-  // narrows down via predicate inside allFiltered, not here.
+  // tab's allFiltered memo; the listingsSubTab (live / auctions /
+  // sold / calendar) narrows via predicate inside allFiltered, not here.
   const mainFeedItems = useMemo(() => {
     if (auctionLotItems.length === 0) return items;
     return [...items, ...auctionLotItems];
@@ -797,22 +779,25 @@ export default function Watchlist() {
   }, [items]);
 
   const allFiltered = useMemo(() => {
+    // Listings tab: scope by sub-tab BEFORE any other narrowing.
+    //   live      — currently-active dealer listings only
+    //   auctions  — currently-active auction lots only (live or upcoming)
+    //   sold      — sold dealer listings + sold auction lots, mixed
+    //   calendar  — handled outside this memo (renders the calendar
+    //               component, not a card grid)
+    //
+    // Watchlist tab passes through unchanged here — its filtering
+    // happens in the watchItems memo below.
     let its = [...mainFeedItems];
-    // Feed-filter pill (All / Dealers / Auctions) narrows the feed to
-    // the relevant slice before any other predicate. "Dealers" drops
-    // every projected auction lot; "Auctions" drops every dealer
-    // listing. "All" passes both through. Watchlist tab still uses
-    // filterAuctionsOnly (binary) below so its toggle is preserved.
-    if (feedFilter === "dealers") its = its.filter(i => !i._isAuctionFormat && !i._isTrackedLot);
-    else if (feedFilter === "auctions") its = its.filter(i => i._isAuctionFormat || i._isTrackedLot);
-    // Tri-state Status filter. "live" = current scraped inventory,
-    // "sold" = historical/inactive (analytics view), "all" = both — the
-    // useful comparison when paired with a brand+ref filter to see price
-    // history alongside what's still on the market.
-    if (statusMode === "live") its = its.filter(i => !i.sold);
-    else if (statusMode === "sold") its = its.filter(i => i.sold);
-    // "all" — no status filter
-    its = its.filter(i => !hidden[i.id]);   // drop user-hidden items from Available feed
+    const isLotItem = (i) => !!i._isAuctionFormat || !!i._isTrackedLot;
+    if (listingsSubTab === "live") {
+      its = its.filter(i => !i.sold && !isLotItem(i));
+    } else if (listingsSubTab === "auctions") {
+      its = its.filter(i => isLotItem(i) && !i.sold);
+    } else if (listingsSubTab === "sold") {
+      its = its.filter(i => i.sold);
+    }
+    its = its.filter(i => !hidden[i.id]);   // drop user-hidden items
     if (filterRefs.length > 0) {
       its = its.filter(i => {
         const ref = (i.ref || "").toLowerCase();
@@ -828,51 +813,49 @@ export default function Watchlist() {
     }
     if (minPrice > 0) its = its.filter(i => (i.priceUSD || i.price) >= minPrice);
     if (maxPrice < GLOBAL_MAX) its = its.filter(i => (i.priceUSD || i.price) <= maxPrice);
-    if (sort === "price-asc") its.sort((a, b) => (a.priceUSD || a.price) - (b.priceUSD || b.price));
-    else if (sort === "price-desc") its.sort((a, b) => (b.priceUSD || b.price) - (a.priceUSD || a.price));
-    else if (sort === "ending") its.sort(endingSoonComparator);
-    else {
-      // Date sorts use the LATER of firstSeen and priceDropAt as the
-      // effective "freshness" date, so a re-cut item bubbles back to
-      // the top even if firstSeen is old. priceDropAt only applies
-      // when there's a non-zero cumulative drop — otherwise we'd
-      // promote items whose price went up then back down to the same
-      // amount (priceDropAt set, but no drop visible).
+
+    // Sort dispatch — interpretation of the Date pill depends on
+    // sub-tab. Price pill is uniform.
+    if (sort === "price-asc") {
+      its.sort((a, b) => (a.priceUSD || a.price) - (b.priceUSD || b.price));
+    } else if (sort === "price-desc") {
+      its.sort((a, b) => (b.priceUSD || b.price) - (a.priceUSD || a.price));
+    } else if (listingsSubTab === "auctions") {
+      // Live auctions: Date pill = ending order. date↓ = soonest first
+      // (live → upcoming asc → ended desc → non-auction last). date↑
+      // reverses the same axis so the user has an off-switch in the
+      // same control.
+      its.sort(endingSoonComparator);
+      if (sort === "date-asc") its.reverse();
+    } else if (listingsSubTab === "sold") {
+      // All sold: Date pill = sold-date. Most-recently-sold first by
+      // default; date-asc flips to oldest-sold first. Sold dealer items
+      // carry `soldAt`; sold auction lots carry `soldAt` (set by the
+      // projection to data.auction_end on ended lots) or fall back to
+      // auction_end. Items without either land last.
+      const soldDate = (i) => i.soldAt || i.auction_end || "";
+      const ascending = sort === "date-asc";
+      its.sort((a, b) => {
+        const da = soldDate(a), db = soldDate(b);
+        if (!da && !db) return 0;
+        if (!da) return 1;
+        if (!db) return -1;
+        return ascending ? da.localeCompare(db) : db.localeCompare(da);
+      });
+    } else {
+      // Live listings (or non-listings tab fallthrough): Date pill =
+      // freshness. Same effectiveDate logic as before — later of
+      // firstSeen and priceDropAt (when there's a real cumulative drop).
       const effectiveDate = (i) => {
         const f = freshDate(i) || "";
         const d = (i.priceDropTotal && i.priceDropTotal > 0) ? (i.priceDropAt || "") : "";
         return d > f ? d : f;
       };
       const ascending = sort === "date-asc";
-      // Unified-feed blend sort: when feedFilter === "all" and the
-      // user has the default Date sort, bucket auction lots ending
-      // soon to the top, dealer listings + far-out lots in the
-      // middle, recently-sold lots toward the bottom, older sold
-      // lots last. Falls back to plain effectiveDate sort within
-      // each bucket and on every other feedFilter / sort combo.
-      const useBlend = feedFilter === "all" && sort === "date";
       its.sort((a, b) => {
-        if (useBlend) {
-          const ba = blendBucket(a);
-          const bb = blendBucket(b);
-          if (ba !== bb) return ba - bb;
-          if (ba === 0) {
-            // Ending soon: live first, then upcoming asc by end date.
-            return endingSoonComparator(a, b);
-          }
-          if (ba === 2 || ba === 3) {
-            // Sold lots: most-recent sold first.
-            const sa = a.soldAt || a.auction_end || "";
-            const sb = b.soldAt || b.auction_end || "";
-            return sb.localeCompare(sa);
-          }
-          // Bucket 1 — falls through to the regular date sort below.
-        }
         // Backfilled items always sort below non-backfilled in either
         // direction. firstSeen on a backfilled batch is "the day the
-        // source was added", not "the day the listing appeared", so
-        // letting them compete on date crowds the top of the feed
-        // (and the bottom of date-asc) every time a new source lands.
+        // source was added", not "the day the listing appeared".
         const baBack = a.backfilled ? 1 : 0;
         const bbBack = b.backfilled ? 1 : 0;
         if (baBack !== bbBack) return baBack - bbBack;
@@ -882,7 +865,7 @@ export default function Watchlist() {
       });
     }
     return its;
-  }, [mainFeedItems, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, statusMode, filterAuctionsOnly, feedFilter]);
+  }, [mainFeedItems, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, filterAuctionsOnly, listingsSubTab]);
 
   const visible = useMemo(() => allFiltered.slice(0, page * PAGE_SIZE), [allFiltered, page]);
   const hasMore = visible.length < allFiltered.length;
@@ -1374,6 +1357,23 @@ export default function Watchlist() {
   // ageBucketFromDate from utils.js so both tabs read identically
   // (Today / Yesterday / weekday-name / Last week / Older).
   const ageBucketLabel = (i) => ageBucketFromDate(effectiveAgeDate(i));
+  // All-sold sub-tab uses sold-date buckets instead — recently sold
+  // wants its own This week sold / Last week sold / Older bands so
+  // the user can scan recent results without scrolling. Falls back to
+  // auction_end for sold lots that lack an explicit soldAt.
+  const soldBucketLabel = (i) => {
+    const d = i.soldAt || i.auction_end || "";
+    if (!d) return "Older sold";
+    const label = ageBucketFromDate(d);
+    // Repurpose the existing weekday buckets — append "sold" to make
+    // the meaning unambiguous when the user sees "Tuesday sold" vs
+    // "Tuesday" on a different sub-tab.
+    if (label === "Today") return "Today sold";
+    if (label === "Yesterday") return "Yesterday sold";
+    if (label === "Last week") return "Last week sold";
+    if (label === "Older") return "Older sold";
+    return `${label} sold`;
+  };
   // (Group-by helpers removed with the feature. Date dividers under
   // a date-sort are produced inline in `visibleWithDividers` below.)
 
@@ -1396,21 +1396,25 @@ export default function Watchlist() {
     if (visible.length === 0) {
       return [];
     }
-    // Group-by feature was removed 2026-04-30 — only implicit
-    // date-bucket dividers remain (Today / Yesterday / weekday /
-    // Last week / Older), and only when the user has sorted by
-    // date and isn't viewing the sold archive. Other sorts get
-    // a flat grid since date headings wouldn't align with the row
-    // order.
-    if (statusMode === "sold" || !(sort === "date" || sort === "date-asc")) {
+    // Date dividers fire only on Date-pill sorts (date / date-asc) and
+    // only on sub-tabs where date dividers make sense:
+    //   live  → freshness buckets (Today / Yesterday / weekday / ...)
+    //   sold  → sold-date buckets (Today sold / Last week sold / ...)
+    //   auctions → no dividers (sort is by ending order, not date)
+    //   calendar → renders a calendar component, not this grid
+    const isDateSort = sort === "date" || sort === "date-asc";
+    const useFreshBuckets = isDateSort && tab === "listings" && listingsSubTab === "live";
+    const useSoldBuckets  = isDateSort && tab === "listings" && listingsSubTab === "sold";
+    if (!useFreshBuckets && !useSoldBuckets) {
       return visible.map(it => ({ kind: "card", item: it }));
     }
+    const labelFn = useSoldBuckets ? soldBucketLabel : ageBucketLabel;
     const out = [];
     let last = null;
     for (const it of visible) {
-      const bucket = ageBucketLabel(it);
+      const bucket = labelFn(it);
       if (bucket !== last) {
-        const total = allFiltered.filter(x => ageBucketLabel(x) === bucket).length;
+        const total = allFiltered.filter(x => labelFn(x) === bucket).length;
         out.push({ kind: "divider", label: bucket, total });
         last = bucket;
       }
@@ -1422,9 +1426,8 @@ export default function Watchlist() {
   // Auction calendar surface — surfaced inside the Listings tab's
   // Auctions filter via the Lots/Calendar toggle. Same component the
   // Watchlist > Calendar sub-tab used to render before the
-  // 2026-05-04 unification; it now lives here so the calendar of
-  // upcoming sales sits next to the lot-level cards rather than
-  // hiding under Watchlist.
+  // 2026-05-04 unification; it now lives at Listings > Auction calendar
+  // (its own sub-tab) after the listings sub-tabs restructure.
   const auctionCalendarJSX = (
     <div style={{ paddingTop: 4 }}>
       <AuctionCalendar auctions={auctions || []} />
@@ -1461,7 +1464,11 @@ export default function Watchlist() {
           )
         ))}
         {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>
-          {statusMode === "sold" ? "No sold listings match your filters" : "No watches match your filters"}
+          {tab === "listings" && listingsSubTab === "sold"
+            ? "No sold items match your filters"
+            : tab === "listings" && listingsSubTab === "auctions"
+            ? "No live auction lots match your filters"
+            : "No watches match your filters"}
         </div>}
       </div>
       {hasMore && <div ref={loaderRef} style={{ padding: 24, textAlign: "center", color: "var(--text3)", fontSize: 12 }}>Loading more...</div>}
@@ -1469,11 +1476,10 @@ export default function Watchlist() {
     </>
   );
 
-  // What the Listings tab actually renders. The Auctions filter +
-  // Calendar view combo swaps the lot grid for the auction calendar;
-  // every other combo gets the grid. Lifted here so both shells
-  // dispatch via a single prop instead of duplicating the toggle.
-  const listingsTabContentJSX = (feedFilter === "auctions" && auctionsView === "calendar")
+  // What the Listings tab actually renders. Calendar sub-tab swaps
+  // in the auction calendar; every other sub-tab gets the card grid.
+  // Lifted here so both shells dispatch via a single prop.
+  const listingsTabContentJSX = listingsSubTab === "calendar"
     ? auctionCalendarJSX
     : listingsGridJSX;
 
@@ -1514,53 +1520,40 @@ export default function Watchlist() {
     : mainFeedItems.filter(i =>  i.sold && !hidden[i.id]).length;
   const allCountForPill = liveCountForPill + soldCountForPill;
 
-  // Unified-feed pill (All / Dealers / Auctions) — listings tab only.
-  // Per-session: the reset effect above wipes feedFilter back to "all"
-  // any time the user leaves Listings. Lives in the same sticky filter
-  // row as Status / Sort so all feed-shape controls cluster together.
-  // Counts shown beside each label use the post-Status, post-hidden
-  // mainFeedItems set so the numbers reflect what actually shows up
-  // when the user picks that mode.
-  const feedFilterPillJSX = tab !== "listings" ? null : (
-    <div style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 20, overflow: "hidden" }}>
-      {[
-        ["all", "All"],
-        ["dealers", "Dealers"],
-        ["auctions", "Auctions"],
-      ].map(([k, label], idx) => (
-        <button key={k} onClick={() => setFeedFilter(k)} style={{
-          border: "none",
-          borderLeft: idx === 0 ? "none" : "0.5px solid var(--border)",
-          padding: "6px 12px", fontSize: 12, cursor: "pointer",
-          background: feedFilter === k ? "var(--text1)" : "transparent",
-          color: feedFilter === k ? "var(--bg)" : "var(--text2)",
-          fontFamily: "inherit", whiteSpace: "nowrap",
-          fontWeight: feedFilter === k ? 600 : 500,
-        }}>{label}</button>
-      ))}
-    </div>
-  );
+  // (feedFilterPillJSX + auctionsViewToggleJSX retired 2026-05-04 —
+  // Listings tab now uses sub-tabs. listingsSubTabsJSX below replaces
+  // both controls.)
 
-  // Auctions sub-view toggle (Lots / Calendar). Only meaningful when
-  // feedFilter === "auctions" on the Listings tab; null otherwise. The
-  // shells render this inline with feedFilterPillJSX so the user sees
-  // the calendar toggle appear where it makes sense.
-  const auctionsViewToggleJSX = (tab !== "listings" || feedFilter !== "auctions") ? null : (
-    <div style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 20, overflow: "hidden" }}>
+  // Listings tab sub-tab strip — mirrors the Watchlist sub-tab strip
+  // pattern (tabPill underline buttons, horizontally scrollable).
+  // Live listings | Live auctions | All sold | Auction calendar.
+  const listingsSubTabsJSX = tab !== "listings" ? null : (
+    <div style={{
+      display: "flex", gap: 20, alignItems: "center",
+      padding: "0 16px",
+      background: "var(--bg)",
+      borderBottom: "0.5px solid var(--border)",
+      flexShrink: 0,
+      overflowX: "auto",
+      overflowY: "hidden",
+      WebkitOverflowScrolling: "touch",
+      scrollbarWidth: "none",
+      msOverflowStyle: "none",
+    }}>
       {[
-        ["lots", "Lots"],
-        ["calendar", "Calendar"],
-      ].map(([k, label], idx) => (
-        <button key={k} onClick={() => setAuctionsView(k)} style={{
-          border: "none",
-          borderLeft: idx === 0 ? "none" : "0.5px solid var(--border)",
-          padding: "6px 12px", fontSize: 12, cursor: "pointer",
-          background: auctionsView === k ? "var(--text1)" : "transparent",
-          color: auctionsView === k ? "var(--bg)" : "var(--text2)",
-          fontFamily: "inherit", whiteSpace: "nowrap",
-          fontWeight: auctionsView === k ? 600 : 500,
-        }}>{label}</button>
-      ))}
+        ["live", isMobile ? "Live" : "Live listings"],
+        ["auctions", isMobile ? "Auctions" : "Live auctions"],
+        ["sold", isMobile ? "Sold" : "All sold"],
+        ["calendar", isMobile ? "Calendar" : "Auction calendar"],
+      ].map(([key, label]) => {
+        const active = listingsSubTab === key;
+        return (
+          <button key={key} onClick={() => { setListingsSubTab(key); setDrawerOpen(false); setPage(1); }}
+            style={{ ...tabPill(active), flexShrink: 0 }}>
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 
@@ -1907,7 +1900,7 @@ export default function Watchlist() {
     brandsExpanded, currentIsSaved,
     drawerOpen,
     filterAuctionsOnly, filterBrands, filterSources,
-    feedFilter, auctionsView,
+    listingsSubTab,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
     search, sort, sourcesExpanded, tab, user,
@@ -1918,7 +1911,7 @@ export default function Watchlist() {
     setAboutModalOpen, setActiveFilterPop, setBrandsExpanded,
     setDrawerOpen,
     setFilterAuctionsOnly, setFilterBrands, setFilterSources,
-    setFeedFilter, setAuctionsView,
+    setListingsSubTab,
     setMaxPriceText, setMinPriceText,
     setPage, setSearch, setShowUserMenu,
     setSort, setSourcePickerOpen, setSourcesExpanded,
@@ -1931,7 +1924,7 @@ export default function Watchlist() {
     favSearchModalJSX, inp,
     listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
-    feedFilterPillJSX, auctionsViewToggleJSX,
+    listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX,
     watchlistTabJSX, adminTabJSX,
     lotMigrationBannerJSX,

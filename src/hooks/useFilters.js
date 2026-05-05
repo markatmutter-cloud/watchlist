@@ -25,18 +25,8 @@ export function useFilters() {
   const [filterBrands,  setFilterBrands]  = useState([]);
   const [filterRefs,    setFilterRefs]    = useState([]);
   // Auctions-only is a single toggle, not a multi-select. Used only by
-  // the Watchlist tab now; the Listings tab uses feedFilter (tri-state).
+  // the Watchlist tab now; the Listings tab uses sub-tabs.
   const [filterAuctionsOnly, setFilterAuctionsOnly] = useState(false);
-  // Listings-tab tri-state filter introduced 2026-05-04 with the
-  // unified listings/auctions feed. Values: "all" | "dealers" |
-  // "auctions". Per-session (not localStorage) and intentionally
-  // resets on tab switch — App.js owns the reset effect.
-  const [feedFilter, setFeedFilter] = useState("all");
-  // Sub-view toggle inside the Auctions filter — "lots" (individual
-  // lot cards) vs "calendar" (month-banded sale events from the
-  // calendar-level scrapers). Only meaningful when feedFilter ===
-  // "auctions" on the listings tab.
-  const [auctionsView, setAuctionsView] = useState("lots");
 
   // Sort axis + direction (date / date-asc / price-asc / price-desc).
   const [sort, setSort] = useState("date");
@@ -137,8 +127,6 @@ export function useFilters() {
     filterBrands,  setFilterBrands,
     filterRefs,    setFilterRefs,
     filterAuctionsOnly, setFilterAuctionsOnly,
-    feedFilter, setFeedFilter,
-    auctionsView, setAuctionsView,
     toggleSource, toggleBrand,
     // Sort + search
     sort, setSort,
