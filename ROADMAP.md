@@ -211,6 +211,37 @@ this lands, those epics can't ship cleanly.
   a `useDerivedTaxonomies` hook for the brand / source / refs
   facets (~100 lines), display-style derivation. Could land
   App.js around 1,300–1,400. Not urgent; cleanup-rhythm work.
+- **Internal-naming cleanup pass.** Two UI renames left their
+  internals on the old name. Carrying the divergence indefinitely
+  is a real cost — every new piece of list-related code has to
+  remember "UI says lists, DB says collections."
+  - **Collections → Lists** (PR #24, 2026-05-04). DB tables
+    (`collections`, `collection_items`), hook (`useCollections`),
+    URL params (`?sub=collections`, `?col=<uuid>`), localStorage
+    (`dial_watch_top_tab=collections`), `SUB_VALUES` key, mutator
+    names (`addItemToCollection`, `removeItemFromCollection`,
+    etc.) all still say "collections."
+  - **References → Cool Stuff** (PR #39, 2026-05-04). URL
+    (`?tab=references`), component (`ReferencesTab.js`),
+    `TAB_VALUES` entry, icon kind, schema files all still say
+    "references." (Naming note: "Cool Stuff" is the user-facing
+    label; "references" is fine as an internal name even
+    post-cleanup, since we already need a separate term for "watch
+    reference numbers". Decide at refactor time whether to touch
+    this rename at all.)
+  - **Cleanup work**: Supabase SQL migration to rename tables,
+    update RLS policies + indexes that reference old names, JS
+    code rewrites (`from("collections")` → `from("lists")`,
+    `useCollections` → `useLists`, etc.), URL/localStorage
+    backward-compat (read either form, write the new one) so
+    inbound shared links + existing user prefs survive,
+    schema-file updates.
+  - **Risk**: any miss = a user's lists show empty because the
+    read query hits a non-existent table. Manual smoke-test
+    post-migration mandatory; no automated coverage at this
+    layer today.
+  - **Effort**: half-day to a day. Low urgency. Slot during a
+    maintenance-rhythm session.
 - **Maintenance rhythm.** Every 4th–5th session is hygiene only:
   bug fixes, dependency updates, source pruning, doc cleanup.
   No new features in maintenance sessions.
