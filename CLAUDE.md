@@ -95,14 +95,16 @@ component-local state. Drag-drop on desktop (HTML5 DnD; gated on
 `(pointer: fine)`), tap-to-select on mobile.
 
 **Surface (2026-05-04, PR #36):** Challenges moved from a Watchlist
-sub-tab to a resource under the **References tab** (Mark's framing:
+sub-tab to a resource under the **Cool Stuff tab** (UI label;
+internal route + component name are still `references` /
+`ReferencesTab` per the rename note above). Mark's framing:
 challenges are a reflective collector resource, not a saved-items
-surface). The list + drill-in flow lives in
+surface. The list + drill-in flow lives in
 `src/components/ChallengesView.js`; ReferencesTab adds it as a
-resource card alongside Watch size comparison. Selection state is
-component-local (no URL persistence in this iteration). Stale
-`?sub=challenges` / `dial_watch_top_tab=challenges` values
-silently map to "listings" via the watchTopTab normalize().
+resource card alongside Watch size comparison + Cool Stuff > Links.
+Selection state is component-local (no URL persistence in this
+iteration). Stale `?sub=challenges` / `dial_watch_top_tab=challenges`
+values silently map to "listings" via the watchTopTab normalize().
 
 **Hidden listings as a virtual list (2026-05-01).** Hidden follows
 the same Approach A pattern as Favorites: data stays in the existing
@@ -169,8 +171,11 @@ the Listings tab restructure. Five sub-tabs:
 - **Saved auctions** (key `auctions`) — currently-active auction
   lots + ALL eBay items (BIN included, per Mark — eBay always lives
   here regardless of buying_option). Default sort = ending soonest.
-  No date dividers. **+Track eBay item** button lives in this
-  sub-tab's strip.
+  No date dividers. (The +Track eBay item trigger button briefly
+  lived here in PR #38 + #41, then was removed in PR #52 along with
+  the SubTabIntro banner. The TrackNewItemModal infrastructure +
+  `openTrackModal` prop wiring stay in place — re-adding a trigger
+  anywhere is a one-line change.)
 - **Saved sold** (key `sold`) — saved items that went sold (dealer
   or lot). Default sort = sold-date desc. Sold-date dividers.
 - **Favorite searches** (key `searches`) — saved-search editor.
@@ -192,36 +197,58 @@ call: Saved auctions sub-tab IS the ending-soon view now), the
 (`challenges`, `calendar`) silently map to `listings`.
 
 **Listings → auction-lot data flow.** Tracked-lot data
-(`public/tracked_lots.json` ∪ `public/auction_lots.json`) projects
-into the main feed via `auctionLotItems` + `mainFeedItems` in
-App.js. Hearts on auction-lot cards work like hearts on dealer
-cards (Phase B2, PR #32): write to `watchlist_items` keyed by
-`shortHash(url)`, no `_isTrackedLot` guard. The +Track button
-stays for **eBay only** — auction-house URLs route through hearts
-now. The `tracked_lots` table is the eBay scraping queue plus a
-transient migration target; Phase B2's `<LotMigrationBanner/>`
-does a one-shot per-user copy of any non-eBay tracked URL into
-watchlist_items + delete from tracked_lots, idempotent via
+(`public/tracked_lots.json` ∪ `public/auction_lots.json` ∪
+`public/manual_archive_lots.json`) projects into the main feed via
+`auctionLotItems` + `mainFeedItems` in App.js. Hearts on auction-lot
+cards work like hearts on dealer cards (Phase B2, PR #32): write to
+`watchlist_items` keyed by `shortHash(url)`, no `_isTrackedLot`
+guard. The `tracked_lots` table remains **eBay-only** as a routing
+rule — auction-house URLs flow through hearts on the unified feed
+(no `tracked_lots` insert), eBay items still flow through
+`tracked_lots` because eBay isn't in the comprehensive sweep
+infrastructure. The `+Track eBay item` UI trigger was removed in
+PR #52; the modal + hook stay wired through App.js for re-add.
+Phase B2's `<LotMigrationBanner/>` does a one-shot per-user copy
+of any non-eBay tracked URL into watchlist_items + delete from
+tracked_lots, idempotent via
 `dial_lot_migration_v1_<uid>` localStorage.
 
-**Comprehensive auction-lot scraping (2026-05-04, PR #31).**
-`auction_lots_scraper.py` reads `public/auctions.json` and walks
-every active sale, scraping per-lot detail for the four houses
-with working access: **Antiquorum** (catalog page → per-lot fetch
-of the catalog detail page), **Christie's** (inline
-`window.chrComponents.lots.data.lots` blob — no per-lot fetch),
-**Sotheby's** (`__NEXT_DATA__.props.pageProps.algoliaJson.hits`,
-paginated via &page=N), **Phillips** (auction-page tile
-enumeration → per-lot fetch via `scrape_phillips_lot`, capped at
-60/sale to bound CI time). Output goes to
-`public/auction_lots.json` keyed by URL — same shape as
-`tracked_lots.json` so App.js projects them through one path,
-deduping by URL with the comprehensive scrape winning ties.
-Bonhams + Monaco Legend skipped (CF + SPA respectively). Per-house
-enumeration failures are soft — one breakage doesn't kill the run.
-Wired into `.github/workflows/scrape-auctions.yml` after the
-`merge.py --auctions-only` step so the calendar is fresh when the
-walker runs.
+**Comprehensive auction-lot scraping (2026-05-04, PR #31; significantly
+revised 2026-05-05 PR #48).** `auction_lots_scraper.py` reads
+`public/auctions.json` and walks every active sale, scraping per-lot
+detail for the four houses with working access:
+- **Antiquorum** — `live.antiquorum.swiss/auctions/<id>?limit=1000`
+  single fetch; parses `viewVars.lots.result_page`. Pre-PR #48 used
+  the catalog paginator, which was vendor-broken (?page=N
+  301-redirected). Catalog URL bridge in
+  `_resolve_antiquorum_live_auction_url`. See Scraper conventions
+  below for the full "live page" rule.
+- **Christie's** — inline `window.chrComponents.lots.data.lots` JSON
+  blob on the auction page; no per-lot fetch.
+- **Sotheby's** — `__NEXT_DATA__.props.pageProps.algoliaJson.hits`,
+  paginated via `&page=N`. PR #46 added a per-lot fetch to extract
+  the canonical `og:image` brightspotcdn URL (algoliaJson hit
+  doesn't carry it).
+- **Phillips** — auction-page tile enumeration → per-lot fetch via
+  `scrape_phillips_lot`. Cap raised 60 → 1000 in PR #48. Sold-price
+  extraction uses the rendered "Sold For" panel (PR #42 fix; JSON-LD
+  `price` is the low estimate, not hammer). See Scraper conventions
+  below.
+
+Output goes to `public/auction_lots.json` keyed by URL — same shape
+as `tracked_lots.json` so App.js projects them through one path,
+deduping by URL with the comprehensive scrape winning ties. Bonhams
++ Monaco Legend lot-level scraping skipped (Cloudflare + SPA-no-
+server-rendered-links respectively); calendar-only at the Epic 1
+level. Per-house enumeration failures are soft — one breakage
+doesn't kill the run. Wired into `.github/workflows/scrape-auctions.yml`
+after the `merge.py --auctions-only` step so the calendar is fresh
+when the walker runs.
+
+Manual archive sales feed a separate file
+(`public/manual_archive_lots.json`) via `manual_archive_scraper.py`
+to avoid being clobbered by the daily comprehensive sweep — see the
+"Manual archive-sale pipeline" section below.
 
 **Auction-lot category exclusion (2026-05-04).** Per Mark: filter
 ONLY pocket watches, clocks, and loose dials at scrape time. KEEP
