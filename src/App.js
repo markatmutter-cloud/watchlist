@@ -6,6 +6,7 @@ import {
   ageBucketFromDate, canonicalizeBrand, detectAuctionLotBrand,
   shortHash,
   matchesSearch,
+  FORCE_OTHER_BRANDS, SUPPRESS_AT_SOLD_BRANDS,
 } from "./utils";
 import { useWidth, useSystemDark } from "./hooks";
 import { useTrackModal } from "./hooks/useTrackModal";
@@ -665,19 +666,33 @@ export default function Watchlist() {
   // Bucket label for one item under singleton-collapse rules.
   // "Other" + any brand below the chip threshold all funnel into one
   // "Other" bucket for filter + group-by purposes.
+  // FORCE_OTHER_BRANDS (utils.js) takes precedence — Mark's curation
+  // pool 2026-05-05 for brands that have ≥2 listings (so the chip
+  // threshold would normally surface them) but aren't interesting
+  // enough to occupy a top-level chip.
   const displayBrand = useCallback((it) => {
     const b = it.brand || "Other";
+    if (FORCE_OTHER_BRANDS.has(b)) return "Other";
     return (brandCounts[b] || 0) >= BRAND_CHIP_MIN ? b : "Other";
   }, [brandCounts]);
   const BRANDS = useMemo(() => {
     const visible = Object.entries(brandCounts)
-      .filter(([b, n]) => n >= BRAND_CHIP_MIN && b !== "Other")
+      .filter(([b, n]) =>
+        n >= BRAND_CHIP_MIN
+        && b !== "Other"
+        && !FORCE_OTHER_BRANDS.has(b)
+      )
       .sort((a, b) => b[1] - a[1])
       .map(([b]) => b);
-    // If any singleton or genuinely-Other items exist, expose an
-    // "Other" chip so they remain reachable from the brand filter UI.
+    // If any singleton, genuinely-Other, or force-Other items exist,
+    // expose an "Other" chip so they remain reachable from the brand
+    // filter UI.
     const otherTotal = Object.entries(brandCounts)
-      .filter(([b, n]) => n < BRAND_CHIP_MIN || b === "Other")
+      .filter(([b, n]) =>
+        n < BRAND_CHIP_MIN
+        || b === "Other"
+        || FORCE_OTHER_BRANDS.has(b)
+      )
       .reduce((s, [, n]) => s + n, 0);
     if (otherTotal > 0) visible.push("Other");
     return visible;
@@ -802,6 +817,13 @@ export default function Watchlist() {
       its = its.filter(i => isLotItem(i) && !i.sold);
     } else if (listingsSubTab === "sold") {
       its = its.filter(i => i.sold);
+      // Suppress low-tier brands from the All Sold view UNLESS the
+      // user has hearted the item — in which case the saved entry
+      // takes precedence and stays visible. Mark's curation pass
+      // 2026-05-05; SUPPRESS_AT_SOLD_BRANDS lives in utils.js.
+      its = its.filter(i =>
+        !SUPPRESS_AT_SOLD_BRANDS.has(i.brand) || !!watchlist[i.id]
+      );
     }
     its = its.filter(i => !hidden[i.id]);   // drop user-hidden items
     if (filterRefs.length > 0) {
@@ -870,7 +892,7 @@ export default function Watchlist() {
       });
     }
     return its;
-  }, [mainFeedItems, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, listingsSubTab]);
+  }, [mainFeedItems, filterSources, filterBrands, filterRefs, hidden, watchlist, search, sort, minPrice, maxPrice, newDays, listingsSubTab]);
 
   const visible = useMemo(() => allFiltered.slice(0, page * PAGE_SIZE), [allFiltered, page]);
   const hasMore = visible.length < allFiltered.length;
