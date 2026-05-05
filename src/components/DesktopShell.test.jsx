@@ -15,10 +15,13 @@ describe("DesktopShell", () => {
     expect(watchlistButtons.length).toBeGreaterThanOrEqual(1);
   });
 
-  test("renders all three main tabs (Listings / Watchlist / Reference)", () => {
+  test("renders all three main tabs (Listings / Watchlist / Cool Stuff)", () => {
     render(<DesktopShell {...buildMockShellProps()} />);
     expect(screen.getByText("Listings")).toBeInTheDocument();
-    expect(screen.getByText("Reference")).toBeInTheDocument();
+    // The third top-tab was relabelled "Reference" → "Cool Stuff" on
+    // 2026-05-04. URL key (?tab=references) and component name
+    // (ReferencesTab) stayed unchanged; only the user-facing label moved.
+    expect(screen.getByText("Cool Stuff")).toBeInTheDocument();
   });
 
   test("renders the filter row on Listings tab", () => {

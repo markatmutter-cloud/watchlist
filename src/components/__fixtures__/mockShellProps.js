@@ -26,6 +26,11 @@ export function buildMockShellProps(overrides = {}) {
     aboutModalOpen: false,
     activeFilterPop: null,
     allFiltered: [],
+    // displayedCount drives the "0 watches" badge on the desktop filter
+    // row and the "Show 0 watches" CTA in the mobile drawer. Added to
+    // shellProps in PR #38 (was allFiltered.length until then); mock
+    // mirrors the empty-session value of 0.
+    displayedCount: 0,
     brandsExpanded: false,
     currentIsSaved: false,
     drawerOpen: false,
