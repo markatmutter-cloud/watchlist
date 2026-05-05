@@ -1,0 +1,47 @@
+name: Rollup listing events
+
+# Daily aggregation + prune for the Epic 8 listing_events telemetry
+# table. Calls the rollup_and_prune_listing_events Postgres function
+# (defined in supabase/schema/2026-05-05_listing_events.sql) via the
+# Supabase REST API. The function aggregates raw events into the
+# listing_events_daily rollup table, then deletes raw rows older
+# than the retention window so the free-tier row budget stays sane.
+#
+# Required secrets (already set elsewhere in the repo OR add now):
+#   SUPABASE_URL                 — base URL, e.g. https://abc.supabase.co
+#   SUPABASE_SERVICE_ROLE_KEY    — service-role key (NOT the anon key)
+# The function is granted EXECUTE only to the service_role role, so
+# the anon key wouldn't work here.
+
+on:
+  schedule:
+    - cron: '15 9 * * *'     # 09:15 UTC daily = 02:15 PT (off-peak)
+  workflow_dispatch:
+    inputs:
+      retain_days:
+        description: 'Days of raw events to retain'
+        required: false
+        default: '90'
+
+jobs:
+  rollup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call rollup_and_prune_listing_events RPC
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RETAIN_DAYS:               ${{ inputs.retain_days || '90' }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing in repo secrets"
+            exit 1
+          fi
+          curl -fsSL --show-error -X POST \
+            "$SUPABASE_URL/rest/v1/rpc/rollup_and_prune_listing_events" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"retain_days\": $RETAIN_DAYS}"
+          echo
+          echo "Rollup completed."

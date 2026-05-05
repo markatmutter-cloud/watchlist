@@ -1083,48 +1083,34 @@ brand/model verticals are well-served, where the gaps are.
 
 ### User stats (visitors, clicks, hearts, list-saves, shares)
 
-About *demand* — what users actually engage with. Today only
-**saves** (`watchlist_items`) and **hides** (`hidden_listings`)
-get captured, and only for signed-in users. No clicks, no views,
-no anonymous data, no list-save signal, no share signal.
+About *demand* — what users actually engage with. Pre-2026-05-05
+only **saves** (`watchlist_items`) and **hides** (`hidden_listings`)
+were captured, and only for signed-in users.
 
-The build:
-
-- New `listing_events` table in Supabase. Columns: `id`,
-  `listing_id`, `event_type` (`view` | `click` | `save` | `hide`
-  | `list_add` | `share`), `anon_session_id` (text, nullable —
-  UUID stored in `localStorage`), `user_id` (uuid, nullable),
-  `occurred_at`.
-- RLS: anyone can INSERT (write-only); only admin emails can
-  SELECT. Anonymous events flow in without exposing reads.
-- Six event types to start: `view` (debounced once per listing
-  per session), `click` (dealer link followed from a Card),
-  `save` / `hide` (mirror the existing tables for unified
-  querying), `list_add` (item added to a user list), `share`
-  (Card → Share menu fired). The existing tables stay as the
-  source of truth for current state; events are the time-series
-  record.
-- Anon session id = `localStorage`-persisted UUID. Same person
-  across visits until storage clears. Borderline tracking;
-  defensible because reads are admin-only and there's no PII, but
-  pair with a one-line note on the welcome page (already on
-  Epic 0).
-- **Periodic rollup + prune** is part of v1, not a follow-up. Cron
-  (daily) aggregates the event table into per-listing + per-source
-  materialized views (`listing_events_daily`, `source_events_daily`),
-  then deletes raw events older than N days (e.g. 90). Keeps the
-  raw table from growing unbounded on the Supabase free tier;
-  admin queries hit the rolled-up view for history beyond the
-  window. Volume thinking: ~1k-10k events per day at modest
-  traffic; rollup of ~30 days holds well under free-tier row
-  limits.
-- New admin panels surfaced on the Source Quality dashboard:
-  per-source views, clicks, click-through-rate (clicks ÷ views),
-  saves-per-100-views, list-add-rate, share-rate. Per-listing
-  "most viewed" + "most saved" + "most shared" rows.
-- Public surface (longer-term): a "what's hot this week" strip
-  on the Listings tab, derived from anonymised engagement
-  rollups. Gated behind enough volume to anonymise meaningfully.
+- **v1 shipped 2026-05-05.** `listing_events` raw table + RLS
+  (anyone INSERT, admin-only SELECT via `is_admin()` against an
+  `admin_emails` table) + `listing_events_daily` rollup +
+  `rollup_and_prune_listing_events` Postgres fn + GitHub Actions
+  daily cron at 09:15 UTC + `useEventTelemetry` hook + Card
+  view/click capture via IntersectionObserver + save/hide/list_add/
+  share capture at the toggle/handler call sites + `Views (30d)`
+  / CTR / ♥/100v / +List/100v / Sh/100v columns on the AdminTab
+  Source quality dashboard via the `source_engagement_summary`
+  RPC. See [supabase/schema/2026-05-05_listing_events.sql](supabase/schema/2026-05-05_listing_events.sql)
+  + CLAUDE.md "Listing events telemetry" + Things-to-never-do
+  block. Anon session id is a `localStorage` UUID at key
+  `dial_watch_anon_id` (don't bump it).
+- **Pending — public surface.** A "what's hot this week" strip on
+  the Listings tab, derived from anonymised engagement rollups.
+  Gated behind enough volume to anonymise meaningfully — defer
+  until traffic warrants.
+- **Pending — per-listing top rows.** "Most viewed" / "most saved"
+  / "most shared" lists in AdminTab. Useful once a few weeks of
+  rollup data accumulates; until then, the per-source columns
+  carry the signal.
+- **Pending — privacy disclosure.** A one-line tracking note on
+  the Welcome page (Epic 0). Defensible already (admin-only reads,
+  no PII), but the note is correct etiquette and small to ship.
 
 **Out of scope for v1**: filter usage telemetry, time-on-listing,
 scroll depth, search-query analytics. Add only if the per-listing
@@ -1139,60 +1125,65 @@ price-per-reference. Use it; build what it doesn't.
 Current best-guess sequence. Will shift; update this doc when it does.
 Epic numbers reflect the 2026-05-05 restructure.
 
-1. **Site analytics — User stats half (Epic 8).** Top of queue.
-   Click / save / hide / list-add / share telemetry into a new
-   `listing_events` Supabase table; rollup-and-prune cron; admin
-   panels surfaced on the Source Quality dashboard. Anonymous-
-   friendly (UUID in `localStorage`); admin-only RLS for reads.
-   Gates the Stop-rule prune below — no meaningful demand-side
-   signal until this lands. Half-session to a day.
-2. **Site analytics — Source stats extensions (Epic 8).** Throughput
-   in value, sales by watch type per dealer / per house, cross-source
-   live inventory, listing-quality signals, taste-relative pricing,
-   auction-house quality dashboard. Some panels combine supply (these)
-   and demand (#1) in one view; sequence after #1.
-3. **Watch Challenges v1.5 (Epic 6).** Close the social loop left
+1. **Site analytics — Source stats extensions (Epic 8).** User stats
+   half shipped 2026-05-05. Next: throughput in value, sales by watch
+   type per dealer / per house, cross-source live inventory, listing-
+   quality signals, taste-relative pricing, auction-house quality
+   dashboard. Some panels combine supply with the demand signal that
+   just landed.
+2. **User limits + user-management dashboard (Epic 3 + Epic 8).**
+   500 soft / 2,500 hard cap; admin grants individuals expanded
+   limits. Defensive engineering for an open public site.
+3. **Shared link landing surface (Epic 4).** A first-class welcome
+   surface for recipients who arrive via a `?listing=…&shared=1` URL
+   — currently they get the regular feed with a banner. Improve the
+   "you've just been shared a watch" moment without reintroducing a
+   separate `/share/*` route.
+4. **Watch Challenges UI/workflow polish (Epic 6).** Pre-v1.5
+   refinements: smoother stage transitions in `ChallengeFlow`,
+   clearer add-to-shortlist drawer, drag-drop affordances on
+   desktop, and the rough edges Mark has flagged in use.
+5. **Image cache for List items (Epic 3).** Extend
+   `cache_watchlist_images.mjs` to cover `collection_items`, not
+   just `watchlist_items`. Promoted by Mark 2026-05-05.
+6. **Watch Challenges v1.5 (Epic 6).** Close the social loop left
    by v1: `?newchallenge=1` receive flow + public read of completed
-   challenges (RLS surgery). Half-session.
-4. **References as first-class entities (Epic 0).** The remaining
+   challenges (RLS surgery). Half-session — sequenced after the
+   challenge UX polish in #4.
+7. **References as first-class entities (Epic 0).** The remaining
    foundation. Several downstream features (Epic 5 encyclopedia,
    per-reference comparison views, auction lot grouping, Discover
    mode quality) gate on this.
-5. **Welcome page + og:image (Epic 0).** SEO basics shipped (PRs
+8. **Welcome page + og:image (Epic 0).** SEO basics shipped (PRs
    #39, #43, #51). Still pending: og:image refresh (currently the
    1024×1024 apple-touch-icon as placeholder) + first-time-visitor
    welcome page. Half-session.
-6. **Strength-of-save model (Epic 3 + Epic 7 entry point).** Two-tier
+9. **Strength-of-save model (Epic 3 + Epic 7 entry point).** Two-tier
    (Love / Watch) is the gesture entry point to the broader
    Multi-signal taste capture. Small UI lift; the feature is *the
    gesture*, not the underlying data.
-7. **User limits + user-management dashboard (Epic 3 + Epic 8).**
-   500 soft / 2,500 hard cap; admin grants individuals expanded
-   limits. Defensive engineering for an open public site.
-8. **Image cache for List items (Epic 3).** Extend
-   `cache_watchlist_images.mjs` to cover `collection_items`, not
-   just `watchlist_items`. Soon-ish per Mark.
-9. **Source pruning (Epic 1 Stop rule).** At ~50 dealers, audit
-   with the click + save data from #1 and prune. Currently at 38;
-   adding remains the active mode until we hit threshold.
-10. **Mac mini Phase A (Epic 0).** When Tropical Watch hits a
+10. **Source pruning (Epic 1 Stop rule).** At ~50 dealers, audit
+    with the click + save data from #1 (now flowing) and prune.
+    Currently at 38; adding remains the active mode until we hit
+    threshold.
+11. **Mac mini Phase A (Epic 0).** When Tropical Watch hits a
     Browse AI snag OR when Heritage / Bonhams / Monaco Legend need
     a Playwright runner OR when ready to start Epic 5 encyclopedia
     generation.
-11. **Watchbox v2 — reflection layer (Epic 6).** Highest personal
+12. **Watchbox v2 — reflection layer (Epic 6).** Highest personal
     value of any roadmap item. The collection-mentality flagship.
     Reflection notes + per-watch journey + the AI reflection bot
     delighter.
-12. **Epic 5 encyclopedia.** Built incrementally as dealer
+13. **Epic 5 encyclopedia.** Built incrementally as dealer
     descriptions accumulate. Depends on Epic 0 references + Mac
     mini A.5 for local LLM generation (or cloud LLM access).
-13. **Multi-signal taste capture + Discover mode + AI recommendations
+14. **Multi-signal taste capture + Discover mode + AI recommendations
     (Epic 7).** Stack progressively. Multi-signal first; Discover
     and recommendations layer on top once signals are rich.
-14. **Watch Challenges v2 (Epic 6).** Past-listings as a source,
+15. **Watch Challenges v2 (Epic 6).** Past-listings as a source,
     value-over-time tracking, challenge response threads — once
     Epic 0 references land.
-15. **Comprehensive auction inventory capture beyond active sales
+16. **Comprehensive auction inventory capture beyond active sales
     (Epic 2).** Substrate for serendipitous discovery + reference
     research at scale.
 

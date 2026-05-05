@@ -41,6 +41,15 @@ export const Card = memo(function Card({
   // { copied: bool } so we can show a brief "Copied!" hint after the
   // clipboard path. Optional — when omitted the menu omits the row.
   onShare,
+  // Telemetry hooks (Epic 8 — Site analytics). When provided:
+  //   onView      — registers this card with the App-level
+  //                 IntersectionObserver via observeCard; fires once
+  //                 per session when the card crosses 50% visibility.
+  //   onClickListing — fires when the user follows the dealer link.
+  // Both optional so signed-out browsing or non-Supabase environments
+  // skip telemetry without per-Card guards.
+  onView,
+  onClickListing,
 }) {
   // When the dealer's image URL goes 404 (e.g. they cleaned up their CDN
   // for a sold listing), the browser shows an ugly broken-image icon.
@@ -52,6 +61,15 @@ export const Card = memo(function Card({
   // we fall back to the clipboard. 1.2s timeout, no toast component.
   const [shareFeedback, setShareFeedback] = useState("");
   const menuRef = useRef(null);
+  // View-event observer registration. When onView is supplied, hand
+  // the card's outer node to the App-level IntersectionObserver so it
+  // can fire a `view` once the card crosses 50% visibility. Returns a
+  // cleanup function from the effect for clean unobserve on unmount.
+  const cardRef = useRef(null);
+  useEffect(() => {
+    if (!onView || !cardRef.current) return undefined;
+    return onView(cardRef.current, item);
+  }, [onView, item]);
   useEffect(() => {
     if (!menuOpen) return;
     const onDown = (e) => {
@@ -193,8 +211,9 @@ export const Card = memo(function Card({
     : null;
   const countdownIsPast = countdownLabel && countdownLabel.startsWith("ended");
   return (
-    <div style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative", minWidth: 0, overflow: "hidden" }}>
+    <div ref={cardRef} style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative", minWidth: 0, overflow: "hidden" }}>
       <a href={item.url} target="_blank" rel="noopener noreferrer"
+        onClick={() => { if (onClickListing) onClickListing(item); }}
         style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
         <div style={{ position: "relative", paddingTop: "100%", overflow: "hidden" }}>
           {item.img && !imgFailed ? (
