@@ -12,9 +12,10 @@ Long day. AM: bug-fix session (8 PRs). PM: **Listings unified feed
 sub-tab restructure → tweaks → Watchlist sub-tab restructure +
 Challenges → References → Watchlist UI tweaks → Cool Stuff rename
 + Links + dead-code sweep + SEO basics → test fixes → Cool Stuff
-v2 (shared SubTabIntro + accordion Links + 3 new dealers)**. Twelve
-PRs (#30 → #41), all merged. Production live on bundle
-`main.0a6f14c3.js`. Dealer count: **39** (up from 36).
+v2 (shared SubTabIntro + accordion Links + 3 new dealers) → Phase D
+Phillips archive scrape**. Thirteen PRs (#30 → #42), all merged.
+Production live on bundle `main.0a6f14c3.js`. Dealer count: **39**
+(up from 36).
 
 **PM net deliverables**:
 - **Phase A (PR #30 ✓ merged)**: First pass at unifying dealer
@@ -133,6 +134,27 @@ PRs (#30 → #41), all merged. Production live on bundle
     `/collections/watches`).
   All wired into `merge.py` SOURCES + `scrape-listings.yml` with
   `continue-on-error`.
+- **Phase D — Phillips CH080317 archive scrape (PR #42 ✓ merged)**:
+  First archive sale lands in Listings > All sold — 42 Heuer lots
+  from "The Crosthwaite & Gavin Collection: Exceptional Heuer
+  Chronographs From The Jack Heuer Era" (Phillips Geneva,
+  2017-11-11), hammer range CHF 7,500–137,500. Generalised
+  pipeline: `data/manual_archive_sales.json` is the registry,
+  `manual_archive_scraper.py` reads it and writes
+  `public/manual_archive_lots.json` (separate file from
+  `auction_lots.json` so the daily comprehensive sweep doesn't
+  clobber archive entries on every cron). App.js loads + merges
+  into `auctionLotItems` alongside tracked + comprehensive lots.
+  Two `scrape_phillips_lot` bugs fixed along the way that also
+  benefit the daily sweep:
+  - `sold_price` was the LOW estimate, not the hammer (the
+    existing comment had flagged "provisional until validated
+    against a sold lot"). Now extracts the real hammer from the
+    rendered "Sold For" panel.
+  - `is_excluded_title` was matching "o'clock" inside watch
+    titles ("date aperture at 6 o'clock"), silently dropping 9
+    of 42 lots. Strip "o'clock" / "o'clock" before running the
+    exclusion regex.
 
 Production: bundle `main.0a6f14c3.js`. Dealer count: **39** (up
 from 36 mid-day; LR + S.Song + Swiss Hours added in PR #41).
@@ -331,8 +353,8 @@ session-handoff-update + dealer count entries (#20)
 ## Next session
 
 Auction-inclusion work + Watchlist restructure + Cool Stuff +
-dealer additions all **shipped** across 12 PRs (#30 → #41). Per
-refreshed priority order:
+dealer additions + Phase D first archive sale all **shipped**
+across 13 PRs (#30 → #42). Per refreshed priority order:
 
 1. **Listing event capture (Epic 4)** — top of queue. Click + save
    events feeding "what's hot" / "most saved" / per-listing CTR on
@@ -341,19 +363,20 @@ refreshed priority order:
    cron.
 2. **Sotheby's lot images** — left null in v1. ~30-min addition:
    per-lot detail-page fetch to extract the brightspotcdn URL.
-3. **Phase D — manual historical auction entry.** Mark's three
-   target URLs:
-   `https://www.phillips.com/auctions/auction/CH080317`,
-   `https://www.phillips.com/auction/CH080218/browse`,
-   `https://catalog.antiquorum.swiss/en/auctions/geneva-mandarin-oriental-hotel-du-rhone-2007-04-15/lots/`.
-   The Phillips CH080317 link is already surfaced under Cool Stuff
-   > Links > Major Auctions (PR #41), but the actual lot scrape
-   isn't there yet — `auction_lots_scraper.py` only walks active
-   sales from `auctions.json`. Need an archive-URL extension to the
-   Phillips + Antiquorum per-lot scrapers, plus a one-shot batch
-   path. Short-term workaround in place via
-   `data/manual_lot_urls.json` (PR #35); long-term wants the admin
-   form gated by `REACT_APP_ADMIN_EMAILS`.
+3. **Phase D — next archive sales.** Pipeline shipped via PR #42;
+   the first sale (Phillips CH080317) is live in Listings > All
+   sold. Two more parked URLs:
+   - `https://www.phillips.com/auction/CH080218/browse` — should
+     work as-is on the existing Phillips path; one append to
+     `data/manual_archive_sales.json` + one `manual_archive_scraper.py`
+     run + commit. Sub-30-minute job.
+   - `https://catalog.antiquorum.swiss/en/auctions/geneva-mandarin-oriental-hotel-du-rhone-2007-04-15/lots/`
+     — the Antiquorum side of the manual scraper isn't built yet.
+     `enumerate_phillips_uncapped` works because Phillips renders
+     `/detail/<slug>/<id>` tile paths server-side; Antiquorum's
+     archive URL pattern + per-lot scraper coverage (`scrape_catalog_antiquorum_lot`
+     was built for active catalogs; archives may differ) need a
+     small extension. Half-session.
 4. **merge.py last-known price retention** — frontend fallback in
    PR #35 surfaces last non-zero `priceHistory` entry for sold
    items with priceOnRequest. Durable backend version (preserve
@@ -390,9 +413,10 @@ only.
   changes. Worth a process check next session — maybe a pre-commit
   hook that runs `react-scripts test --watchAll=false` if any
   `src/components/*Shell*` file changed.
-- **Phase D still not started.** Captured above; the surface is
-  there (Major Auctions section in Cool Stuff > Links seeded with
-  Phillips CH080317), the actual lot scrape is the gap.
+- **Phase D first sale shipped (PR #42).** 42 Heuer lots from
+  CH080317 live in Listings > All sold. The other two parked
+  archive URLs (Phillips CH080218 + Antiquorum 2007 Geneva) are
+  next-session work — see priority #3 above.
 - **Sotheby's lot images null in v1.** brightspot CDN URL needs a
   per-lot fetch.
 - **Antiquorum catalog pagination broken at the source** —

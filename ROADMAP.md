@@ -677,11 +677,21 @@ Current best-guess sequence. Will shift; update this doc when it does.
    Sotheby's lot to extract the brightspotcdn URL. ~30-min
    addition to `auction_lots_scraper.py`. Not blocking; cards
    render with the no-image placeholder until then.
-3. **Manual historical auction entry (Epic 2 / original Phase D).**
-   Admin-only form for seeding specific past sales. Mark's three
-   target URLs: Phillips CH080317, Phillips CH080218, Antiquorum
-   Geneva 2007-04-15. Phillips + Antiquorum scrapers may need
-   archive-URL extensions.
+3. **Manual historical auction entry — next archive sales (Epic 2 /
+   Phase D).** First sale shipped 2026-05-04 (PR #42): Phillips
+   CH080317, 42 Heuer lots in Listings > All sold via the new
+   `data/manual_archive_sales.json` registry +
+   `manual_archive_scraper.py` + `public/manual_archive_lots.json`
+   pipeline. Two parked URLs remain:
+   - **Phillips CH080218/browse** — should work as-is on the
+     existing Phillips path; one registry append + one script run
+     + commit. Sub-30-minute job.
+   - **Antiquorum Geneva 2007-04-15** — needs the Antiquorum side
+     of the manual scraper plumbed in (`scrape_catalog_antiquorum_lot`
+     covers active catalogs but archive URL pattern + per-lot
+     coverage may need extending). Half-session.
+   The admin-only seed-form remains a longer-term ambition; for
+   now, registry-edit-and-rerun is the workflow.
 3. **Watch Challenges v1.5 (Epic 3).** Close the social loop left
    by v1: implement the `?newchallenge=1` receive flow + public
    read of completed challenges (RLS surgery). Half-session of
@@ -797,6 +807,28 @@ moved, priorities drift. A quarterly pass catches that before it
 becomes confusion.
 
 ## Update log
+
+- 2026-05-05 (very early AM): **Phase D first archive sale shipped
+  (PR #42).** 42 Heuer lots from "The Crosthwaite & Gavin
+  Collection: Exceptional Heuer Chronographs From The Jack Heuer
+  Era" (Phillips Geneva, 2017-11-11) land in Listings > All sold.
+  Hammer range CHF 7,500–137,500. Generalised pipeline so adding
+  another archive sale is one append to
+  `data/manual_archive_sales.json` + one `manual_archive_scraper.py`
+  run + commit. Output lives in `public/manual_archive_lots.json`
+  (separate file from `auction_lots.json` so the daily comprehensive
+  sweep doesn't clobber archive entries on every cron). App.js
+  loads + merges into `auctionLotItems` alongside the comprehensive
+  + tracked-lot sources. Two `scrape_phillips_lot` bugs fixed
+  along the way (also benefit the daily sweep): `sold_price` was
+  the LOW estimate not the hammer (existing comment had flagged
+  "provisional until validated against a sold lot" — this was the
+  validation; now extracts from the rendered "Sold For" panel),
+  and `is_excluded_title` was matching "o'clock" inside watch
+  titles ("date aperture at 6 o'clock"), silently dropping 9 of
+  42 lots. Next-session: Phillips CH080218 (drop-in append) and
+  Antiquorum 2007 Geneva (needs the Antiquorum side of the manual
+  scraper plumbed in).
 
 - 2026-05-04 (overnight): **Cool Stuff (was References) + Links
   page + Watchlist sub-tab UX tweaks + 3 new dealers (PRs #38 →
