@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Watchlist sitemap. The app is a single-page React build that hydrates
+  client-side, so every route below resolves to the same / index.html
+  bundle and is differentiated by query params (tab + sub). Listing the
+  meaningful tab/sub combinations gives crawlers a navigation map even
+  though the underlying HTML is the same.
+
+  Update lastmod when the entry-point UI structure changes (new tab,
+  new sub-tab, etc.) — not on every scrape run, since per-listing
+  pages aren't crawlable destinations on their own.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://the-watch-list.app/</loc>
+    <lastmod>2026-05-04</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://the-watch-list.app/?tab=listings&amp;sub=live</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://the-watch-list.app/?tab=listings&amp;sub=auctions</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://the-watch-list.app/?tab=listings&amp;sub=sold</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://the-watch-list.app/?tab=listings&amp;sub=calendar</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://the-watch-list.app/?tab=references</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+</urlset>

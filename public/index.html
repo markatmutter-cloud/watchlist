@@ -10,7 +10,25 @@
          indicator. theme-color alone gives the green status-bar tint
          in PWA standalone mode without this side effect. -->
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <title>Watchlist</title>
+    <title>Watchlist — vintage watches from independent dealers, in one feed</title>
+    <meta name="description" content="Watchlist aggregates active inventory from 36 independent vintage-watch dealers and tracks upcoming auctions from 6 houses. One feed, no ads, with cross-run change tracking so new arrivals and price drops surface clearly." />
+    <link rel="canonical" href="https://the-watch-list.app/" />
+
+    <!-- Open Graph / Twitter card. og:image points at the existing
+         apple-touch-icon (1024×1024) — placeholder until a proper
+         1200×630 social preview is generated. Most platforms will
+         centre-crop the square. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Watchlist" />
+    <meta property="og:title" content="Watchlist — vintage watches from independent dealers, in one feed" />
+    <meta property="og:description" content="Active inventory from 36 independent vintage-watch dealers plus upcoming auctions from 6 houses, in one chronological feed. No ads, cross-run change tracking, free." />
+    <meta property="og:url" content="https://the-watch-list.app/" />
+    <meta property="og:image" content="https://the-watch-list.app/apple-touch-icon.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Watchlist — vintage watches from independent dealers, in one feed" />
+    <meta name="twitter:description" content="Active inventory from 36 independent vintage-watch dealers plus upcoming auctions from 6 houses, in one chronological feed." />
+    <meta name="twitter:image" content="https://the-watch-list.app/apple-touch-icon.png" />
+
     <link rel="apple-touch-icon" sizes="1024x1024" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
@@ -31,6 +49,28 @@
     <meta name="theme-color" content="#3b4a36" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#3b4a36" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#3b4a36" />
+
+    <!-- Schema.org JSON-LD. WebSite + minimal Organization so Google can
+         render a sitelinks search box and pull a clean knowledge-graph
+         entry. SearchAction is wired to the in-app search via a
+         query-param target — there's no formal /search route, but the
+         Listings tab consumes ?search= and renders matching items. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Watchlist",
+      "alternateName": "The Watch List",
+      "url": "https://the-watch-list.app/",
+      "description": "Aggregator for vintage watches from independent dealers and auction houses. One feed, cross-run change tracking, no ads.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://the-watch-list.app/?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { -webkit-font-smoothing: antialiased; }

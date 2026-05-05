@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { SizeCompare } from "./SizeCompare";
 import { ChallengesView } from "./ChallengesView";
+import { Links } from "./Links";
 
 // References tab — broader collector resources surface. First tool
 // is the watch size comparison; encyclopedia + curated link
@@ -27,6 +28,11 @@ const RESOURCES = [
     key: "challenges",
     title: "Watch challenges",
     desc: "Pick N watches under a budget. A thought experiment, a way to surface taste, or a question to send a friend.",
+  },
+  {
+    key: "links",
+    title: "Links",
+    desc: "Outbound links — every dealer in the feed, plus per-reference research clusters (Rolex GMT 1675, Tudor Sub 7021, Heuer, …).",
   },
 ];
 
@@ -60,10 +66,18 @@ export function ReferencesTab(props) {
     );
   }
 
+  if (view === "links") {
+    return (
+      <div style={{ paddingTop: 4 }}>
+        <Links allListings={props.allListings || []} onBack={() => setView("list")} />
+      </div>
+    );
+  }
+
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "4px 4px 24px" }}>
       <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 4px", color: "var(--text1)" }}>
-        Reference
+        Cool Stuff
       </h1>
       <p style={{ fontSize: 13, color: "var(--text2)", margin: "0 0 20px" }}>
         Tools, calculators, and reference material for vintage-watch collectors.

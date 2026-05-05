@@ -24,10 +24,6 @@ export function WatchlistTab(props) {
     compact, gridStyle, inp, isMobile,
     // Sort state from the global filter bar
     sort,
-    // (Auction calendar prop removed 2026-05-04 — calendar moved to
-    // the Listings tab's Auctions filter > Calendar view; App.js
-    // still passes `auctions` in the bag but WatchlistTab no
-    // longer reads it.)
     // Sub-tab routing — controlled by parent because the surrounding
     // chrome (sidebar, filter bar) gates on it too.
     watchTopTab, setWatchTopTab,
@@ -239,7 +235,7 @@ export function WatchlistTab(props) {
     <div style={{ padding: "60px 20px", textAlign: "center" }}>
       <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>
       <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>{heading}</div>
-      <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto 18px" }}>
+      <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto 18px" }}>
         {blurb}
       </div>
       {isAuthConfigured && (
@@ -251,6 +247,36 @@ export function WatchlistTab(props) {
       )}
     </div>
   );
+
+  // Per-sub-tab signed-out copy. Until 2026-05-04 every sub-tab fell
+  // through to a single generic "Sign in to see your watchlist" prompt
+  // because an outer !user guard short-circuited before the sub-tab
+  // dispatch — meaning Searches and Lists carried specific copy that
+  // never rendered. The outer guard now picks from this map so each
+  // sub-tab pitches the feature it actually unlocks.
+  const SIGNED_OUT_BY_SUBTAB = {
+    listings: {
+      heading: "Sign in to save listings",
+      blurb: "Heart any dealer listing to save it here. Your saved set syncs across every device you use, and each entry keeps the price you saved at — even after the dealer takes the listing down.",
+    },
+    auctions: {
+      heading: "Sign in to follow auctions",
+      blurb: "Heart any auction-house lot from the Listings feed, or paste an eBay URL with + Track eBay item, to follow it through to hammer. Bids, estimates, and end times stay current as the sale unfolds.",
+    },
+    sold: {
+      heading: "Sign in to track what sold",
+      blurb: "When something in your saved set sells — at a dealer or under the hammer — it lands here with the sold price preserved. A running reference for what comparable watches actually cleared at.",
+    },
+    searches: {
+      heading: "Sign in to use saved searches",
+      blurb: "Save the queries you keep coming back to — a reference, a brand cut, a phrase you scan for. Each one runs across every dealer in the feed and tells you when something new matches.",
+    },
+    collections: {
+      heading: "Sign in to use lists",
+      blurb: "Group watches by reference, theme, or research thread — \"Rolex 5513s\", \"Vintage divers\", \"Reference comps\". Lists sync across every device you use, and you can share any list with one tap.",
+    },
+  };
+  const signedOutCopy = SIGNED_OUT_BY_SUBTAB[watchTopTab] || SIGNED_OUT_BY_SUBTAB.listings;
 
   const renderSearchEditor = () => (
     <div style={{
@@ -345,12 +371,9 @@ export function WatchlistTab(props) {
   ) : null;
 
   // Searches sub-tab content — lives here because Searches was promoted
-  // into the Watchlist tab. Signed-out users see the same prompt the
-  // Watchlist sub-tab uses; signed-in see the editable list.
-  const searchesTabJSX = !user ? signInPromptJSX(
-    "Sign in to use saved searches",
-    "Save searches and run them with one tap. Your list syncs across every device you use."
-  ) : (
+  // into the Watchlist tab. Signed-out fallback handled by the outer
+  // !user branch in render() via SIGNED_OUT_BY_SUBTAB.
+  const searchesTabJSX = (
     <div style={{ paddingTop: 4 }}>
       {/* Intro banner — mirrors the Lists sub-tab pattern (2026-05-04)
           so the two "add a thing" sub-tabs read consistently. The
@@ -556,10 +579,9 @@ export function WatchlistTab(props) {
   // asymmetry. Default lives in the existing Watchlist > Listings
   // sub-tab; this Collections sub-tab is for additional collections
   // only.
-  const collectionsTabJSX = !user ? signInPromptJSX(
-    "Sign in to use lists",
-    "Group watches by reference, theme, or research thread — \"Rolex 5513s\", \"Vintage divers\", \"Reference comps\". Lists sync across every device you use."
-  ) : (() => {
+  // Signed-out fallback handled by the outer !user branch in render()
+  // via SIGNED_OUT_BY_SUBTAB; this body assumes a logged-in user.
+  const collectionsTabJSX = (() => {
     const cols = (collectionsApi?.collections || []);
     const itemsByColl = collectionsApi?.itemsByCollection || {};
     // Surface the shared-inbox alongside user-created collections
@@ -779,10 +801,7 @@ export function WatchlistTab(props) {
   return (
     <div>
       {importBannerJSX}
-      {!user ? signInPromptJSX(
-        "Sign in to see your watchlist",
-        "Heart any listing to save it here. Saved items sync across every device you use."
-      ) : (
+      {!user ? signInPromptJSX(signedOutCopy.heading, signedOutCopy.blurb) : (
         <>
           {/* Sub-tab strip + Track / Add-search trigger lifted to
               App.js (watchSubTabsJSX) so they sit between the main

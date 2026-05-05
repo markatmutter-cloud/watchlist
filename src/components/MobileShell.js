@@ -43,9 +43,9 @@ export function MobileShell(props) {
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX, inp,
     adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
-    settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
+    settingsModalJSX, shareReceiverJSX,
     listingsSubTabsJSX,
-    trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX, watchlistTabJSX,
+    trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
     referencesTabJSX,
     lotMigrationBannerJSX,
   } = props;
@@ -184,13 +184,8 @@ export function MobileShell(props) {
             actually moves at least one tracked URL into Favorites. */}
         {lotMigrationBannerJSX}
         <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
-          {/* Ending-soon pinned section. Mounted INSIDE the scroll
-              area (not the sticky stack) so it scrolls away with
-              content rather than eating viewport when pinned. Sits
-              above the sub-tab content so it's the first thing the
-              user sees when they hit Watchlist. Returns null when
-              the user has no qualifying tracked lots. */}
-          {tab === "watchlist" && endingSoonJSX}
+          {/* (Ending-soon pinned section retired 2026-05-04 — Watchlist
+              > Saved auctions sub-tab IS the ending-soon view now.) */}
           {tab === "listings" ? listingsTabContentJSX
             : tab === "references" ? referencesTabJSX
             : tab === "admin" ? adminTabJSX
