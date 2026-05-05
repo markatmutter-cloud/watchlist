@@ -270,8 +270,17 @@ Don't surface admin existence to non-admin users in any UI text.
 
 - Each dealer / auction house has its own `*_scraper.py` at repo root.
   Per-source structure is intentional — one breaking site means one file
-  to debug. Don't refactor into a shared module unless a class of bug
-  spans many scrapers (this is on ROADMAP.md as explicitly NOT-now).
+  to debug. **Shared helpers ARE allowed (post-2026-05-05)** — Mark
+  signed off on a shared `scraper_lib.py` of opt-in helpers (e.g.
+  `fetch_shopify_products(base, collection)`,
+  `fetch_woocommerce_store_api(base)`, `parse_wix_products_blob(html)`)
+  that scrapers can call into without being forced to. Keep helpers
+  *opt-in*, not driver-style: the per-dealer file should still exist
+  and own its quirks, just delegating the boilerplate. The original
+  guard against driver-collapse (one config-driven script for all
+  Shopify dealers) still stands — Bulang & Sons collection-scoping,
+  Falco's nonstandard fields, etc. are exactly the divergence that
+  argues for keeping per-dealer files.
 - Each scraper writes a CSV to `<name>_listings.csv` in cwd; the workflow
   step then moves it to `data/<name>.csv`. `merge.py`'s SOURCES list maps
   CSV path → display name → currency.
