@@ -117,29 +117,55 @@ banner + the listing's Card above `listingsGridJSX` in both shells.
 URL is rewritten via `history.replaceState` after action so a
 refresh doesn't re-trigger.
 
-**Unified listings/auctions feed (2026-05-04, PRs #30 / #31 / #32).**
-The Listings tab is the global "things you might buy" surface — it
-merges dealer items (`public/listings.json`) with auction lots
-(`public/tracked_lots.json` ∪ `public/auction_lots.json`, projected
-by `auctionLotItems` + `mainFeedItems` in App.js). A tri-state pill
-in the filter row (`feedFilter`: all / dealers / auctions) narrows
-the feed; per-session, resets on tab switch. The "All" view's
-default Date sort uses the weighted blend in `blendBucket`: bucket 0
-= auction lots ending within 14 days, bucket 1 = dealers + far-out
-lots by effectiveDate, bucket 2 = sold within 30 days, bucket 3 =
-older sold. Auction houses appear in the source filter under a
-"Auction houses" sub-header alongside dealers. Calendar of upcoming
-sales lives at Listings > Auctions > Calendar (toggle); the
-Watchlist > Calendar sub-tab is gone. Hearts on auction-lot cards
-work like hearts on dealer cards (Phase B2): write to
-`watchlist_items` keyed by `shortHash(url)`, no `_isTrackedLot`
-guard. The +Track button stays for **eBay only** — auction-house
-URLs route through hearts now. The `tracked_lots` table is the
-eBay scraping queue plus a transient migration target; Phase B2's
-`<LotMigrationBanner/>` does a one-shot per-user copy of any
-non-eBay tracked URL into watchlist_items + delete from
-tracked_lots, idempotent via `dial_lot_migration_v1_<uid>`
-localStorage.
+**Listings tab structure (sub-tabs, 2026-05-04, PR #33).** Four
+sub-tabs replace the earlier blend-sort + tri-state pill experiment:
+- **Live listings** — currently-active dealer items only. Default
+  sort = newest `firstSeen` first; date dividers Today / Yesterday /
+  weekday / Last week / Older.
+- **Live auctions** — currently-active auction lots only. Default
+  sort = ending soonest (live → upcoming asc → ended desc →
+  non-auction last). No date dividers.
+- **All sold** — sold dealers ∪ sold auction lots. Default sort =
+  most-recently-sold first; sold-date dividers Today sold /
+  Yesterday sold / weekday sold / Last week sold / Older sold.
+- **Auction calendar** — month-banded list of upcoming sales
+  (existing AuctionCalendar component, no card grid; filter row
+  hidden).
+
+State: `listingsSubTab` in `useFilters` is no longer there — it
+moved to App.js (own useState since the URL/localStorage init
+needed access to query params). Persisted under
+`dial_listings_sub_tab`. URL: `?tab=listings&sub=<live|auctions|sold|calendar>`,
+default ("live") stripped from URL. Watchlist's own `?sub=` keeps
+working for its sub-tab values; the App.js URL sync writes
+whichever sub-tab matches the active main tab.
+
+Date pill semantics depend on sub-tab — Date↓ means newest
+firstSeen on Live listings, ending-soonest on Live auctions,
+most-recently-sold on All sold. Dispatch lives in App.js's
+`allFiltered` sort branch. Date dividers in `visibleWithDividers`.
+
+Sub-tabs gate filter exposure: Live listings hides the Auction
+houses chip group (no live dealer items in those sources); Live
+auctions hides the Dealers group; Sold + Calendar show both.
+Calendar sub-tab hides the filter row entirely.
+
+The Listings tab no longer has a Status (Live/Sold/All) segment —
+the sub-tabs cover that role. Watchlist still does (Live/Sold/All
+filter applies within saved items).
+
+**Listings → auction-lot data flow.** Tracked-lot data
+(`public/tracked_lots.json` ∪ `public/auction_lots.json`) projects
+into the main feed via `auctionLotItems` + `mainFeedItems` in
+App.js. Hearts on auction-lot cards work like hearts on dealer
+cards (Phase B2, PR #32): write to `watchlist_items` keyed by
+`shortHash(url)`, no `_isTrackedLot` guard. The +Track button
+stays for **eBay only** — auction-house URLs route through hearts
+now. The `tracked_lots` table is the eBay scraping queue plus a
+transient migration target; Phase B2's `<LotMigrationBanner/>`
+does a one-shot per-user copy of any non-eBay tracked URL into
+watchlist_items + delete from tracked_lots, idempotent via
+`dial_lot_migration_v1_<uid>` localStorage.
 
 **Comprehensive auction-lot scraping (2026-05-04, PR #31).**
 `auction_lots_scraper.py` reads `public/auctions.json` and walks
@@ -171,18 +197,22 @@ auction-side scrapers (e.g. when Bonhams/MLA come online) should
 import + apply the same `is_excluded_title` predicate so the
 display layer can keep assuming inputs are pre-filtered.
 
-**Location URL params (2026-05-02; "calendar" sub-tab retired
-2026-05-04).** `tab` (listings | watchlist | references | admin),
-`sub` (listings | collections | challenges | searches — only
-meaningful when tab=watchlist; note the key stays `collections` for
-the Lists sub-tab — see UI rename note above) and `col` (collection
-UUID, or `__hidden__` for the synthetic Hidden list) get
-reflected in the URL via `history.replaceState`. App.js owns `tab`
-+ `sub`; WatchlistTab owns `col`. App.js's effect also clears `col`
-when leaving the watchlist tab so the URL stays clean. Both effects
-skip when share-receive params (`shared=1`) are present so the share
-flow controls URL until it acts. Refresh on any of these lands the
-user back where they were. Stay on this query-param pattern — it's
+**Location URL params.** `tab` (listings | watchlist | references |
+admin) and `sub` (per-active-tab) reflect navigation state via
+`history.replaceState`. `sub` values:
+- `tab=listings` → live | auctions | sold | calendar (default
+  "live" stripped from URL)
+- `tab=watchlist` → listings | collections | challenges | searches
+  (default "listings" stripped from URL; key stays `collections`
+  for the Lists sub-tab — see UI rename note above)
+
+`col` (collection UUID, or `__hidden__` for the synthetic Hidden
+list) is Watchlist-only. App.js owns `tab` + `sub`; WatchlistTab
+owns `col`. App.js's effect clears `col` when leaving the watchlist
+tab so the URL stays clean. All URL-sync effects skip when
+share-receive params (`shared=1`) are present so the share flow
+controls URL until it acts. Refresh on any of these lands the user
+back where they were. Stay on this query-param pattern — it's
 deliberate that we don't bring in `react-router`.
 
 **Admin tab (2026-05-02).** `tab=admin` is gated by
@@ -376,6 +406,19 @@ To add a new printable tool: render its sheet via `createPortal` to
   would create a parallel save path that the comprehensive scraper
   can't deduplicate. eBay stays because it's not in the
   comprehensive scrape (different infrastructure).
+- **Don't bring back the Listings tri-state pill or the blend
+  sort.** PR #33 (2026-05-04) replaced both with explicit sub-tabs
+  (Live / Live auctions / All sold / Auction calendar) because the
+  blend was hard to explain and mixed time-axes. Each sub-tab now
+  has a clear default sort and a clear scope. Adding the pill back
+  would re-introduce a control with overlapping semantics; mixing
+  dealer items + auction lots in one card grid with a single sort
+  axis was the underlying mistake.
+- **Don't add a Status (Live/Sold/All) segment to the Listings tab.**
+  Sub-tabs cover that role now (Live listings + Live auctions vs
+  All sold). Watchlist still has the segment because its question
+  is "what's still live in my saved set vs gone sold" — different
+  from "what kind of inventory am I browsing".
 - **Don't add new `useState`/`useMemo`/`useCallback` deep into App.js**
   near render-conditional code paths. Adding hooks to the back of
   App.js's already-large hook list triggered React error #310
