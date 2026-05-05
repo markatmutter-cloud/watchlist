@@ -1422,10 +1422,19 @@ export default function Watchlist() {
     const labelFn = useSoldBuckets ? soldBucketLabel : ageBucketLabel;
     const out = [];
     let last = null;
-    for (const it of visible) {
+    // Count the contiguous run in `allFiltered`, not the bucket total:
+    // backfilled items keep the firstSeen=today bucket label but always
+    // sort below non-backfilled (see allFiltered sort), so a bucket-total
+    // count would lump 100s of backfilled items into the divider for the
+    // non-backfilled run at the top, while a second "Today" divider
+    // further down the list double-counts them again. Run length is what
+    // the user actually sees between this header and the next.
+    for (let i = 0; i < visible.length; i++) {
+      const it = visible[i];
       const bucket = labelFn(it);
       if (bucket !== last) {
-        const total = allFiltered.filter(x => labelFn(x) === bucket).length;
+        let total = 0;
+        for (let j = i; j < allFiltered.length && labelFn(allFiltered[j]) === bucket; j++) total++;
         out.push({ kind: "divider", label: bucket, total });
         last = bucket;
       }
