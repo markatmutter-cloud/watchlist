@@ -588,6 +588,23 @@ Shipped:
   scoping uses a React Portal pattern (see CLAUDE.md "Print scoping for
   in-app tools" — pattern is reusable for future printable tools).
 
+Pending:
+
+- **Auction total-cost calculator** — every auction house adds buyer's
+  premium, and depending on jurisdiction the buyer also picks up
+  shipping, import duty, and sales / VAT. Hammer × house's BP table +
+  destination-country shipping + duty/tax estimator → "what will this
+  lot actually cost me, all-in." Inputs: hammer, house, ship-to
+  country (+ optional state/region for US sales tax). Outputs:
+  itemised line breakdown + total in user's primary currency.
+  Reference points: BP schedules from the four houses we already
+  scrape (Antiquorum, Christie's, Sotheby's, Phillips); the BP %
+  varies by hammer band and changes ~yearly so the table needs a
+  comment with the as-of date. Anchor under Cool Stuff alongside
+  the size comparison tool. Lands well in the cost-calculator track
+  rather than the encyclopedia track because it's *tactile* —
+  collectors run the math the moment they see a lot they like.
+
 ### Sub-area: Reference-number encyclopedia (the headline feature)
 
 Reference-number-led learning resource — what was previously this epic's
