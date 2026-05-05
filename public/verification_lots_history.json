@@ -26,6 +26,15 @@
         "Phillips": 6,
         "Sotheby's": 94
       }
+    },
+    {
+      "date": "2026-05-05",
+      "counts": {
+        "Antiquorum": 540,
+        "Christie's": 82,
+        "Phillips": 6,
+        "Sotheby's": 94
+      }
     }
   ]
 }
