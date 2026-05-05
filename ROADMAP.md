@@ -32,444 +32,840 @@ direction, not state.
 - When suggesting work, name the epic it lives under. ("This is Epic 3 work.")
 - When work is finished, suggest updating this doc to reflect the change.
 
-## Pending review (input for next session's roadmap walk-through)
-
-Mark flagged 2026-05-05 that the roadmap diverged from how he's actually
-been thinking + building, and asked to do a section-by-section review
-in a fresh Claude Code session. This block captures the items that
-need to land *somewhere* in the roadmap during that walk-through —
-they're not yet integrated into the right epic / phrasing, just queued.
-
-**Maintenance items Mark accepted this session:**
-- **Refactor dealer scrapers via shared helper library** — opt-in
-  `scraper_lib.py` with `fetch_shopify_products`,
-  `fetch_woocommerce_store_api`, `parse_wix_products_blob`, etc.
-  Per-dealer files keep their quirks; just delegate the boilerplate.
-  CLAUDE.md updated this session to allow it (was previously
-  guarded against). Lands under Epic 1 maintenance.
-- **Auction verification expansions.** Today `verify_auction_lots.py`
-  flags drops below median; add: (a) sales that should be flipping
-  to status=ended on time, (b) new sales appearing on each house's
-  calendar getting picked up by the calendar scrapers within N days.
-  Lands under Epic 0 (verification) or Epic 2.
-- **Auction-house quality dashboard** as a parallel to the dealer
-  one — avg lot price, brand mix, total hammer value, sales
-  frequency, saved/clicked lots. Lands under Epic 4 → Site analytics
-  → renamed "Source stats" (covers dealers + houses both).
-- **Listings.json split by status.** Currently 3.5 MB; plan the
-  split (live vs sold vs older-archive) before it crosses 5 MB.
-  Lands under Epic 0 / infrastructure.
-- **Brand/listing curation rules.** Develop me-centric rules Mark
-  can live with for what brands + price-floors stay in. Some
-  shipped this session (Corum out, Scatola Del Tempo out, Mulco
-  pooled to Other, suppress-at-sold list, bracelet filter — see
-  PR #50). More expected as Mark surfaces what he doesn't want.
-  Lands under Epic 1.
-- **Image cache for items in Lists** (not just hearted). Today
-  `cache_watchlist_images.mjs` only caches blobs for
-  `watchlist_items` rows; an item only in a user's list (not
-  hearted) doesn't get its image preserved if the dealer pulls
-  it. Soon-ish per Mark — affects collector-research lists where
-  a dealer like Somlo pulls images post-sale.
-- **User limits.** Soft cap 500 hearted items / 2,500 hard cap
-  with a "request more access" prompt above. Lists themselves
-  unbounded but bounded by the item caps. Lands under Epic 4 +
-  needs Supabase trigger as the hard line of defense.
-- **User management dashboard** — admin view to see how many
-  users, their utilization (heart count, list count, search
-  count, share count, click count), and grant individual users
-  expanded limits (Mark's wife as the seed case). Pairs with
-  user-stats half of Site analytics.
-- **Tropical Watch → Mac mini explicit** in Epic 6 Phase A.
-  Today the only Browse AI dealer; moving to a self-hosted
-  Playwright runner removes the paid-credit dependency.
-- **Vercel Blob TTL** — deferred but keep on the parking lot.
-  Mark wants a clearer description before it lands as a real
-  item (the question is: how often do dealer images change for
-  a watch we've cached, and is it worth detecting?).
-- **App.js extraction pass** — current 1853 lines (down from a
-  high-water of ~2200). Recommended targets in chat: lift the
-  two `auctionLotItems`-shaped projection memos (~140 lines of
-  near-duplication) into a hook, lift the brand/source/refs
-  derivation (~100 lines) into a `useDerivedTaxonomies`, lift
-  display-style derivation. Could take App.js to ~1300-1400.
-  Not urgent. Lands under Epic 0 / refactor track.
-
-**Roadmap-quality items Mark flagged for the review:**
-- **"Reflective tool" framing** — was a side comment from a
-  Claude chat that got promoted into "Strategic bets". Mark wants
-  to demote it: nice-to-have / unique-element, not the primary
-  purpose. The actual North Star is more practical (personal
-  tool first, with the concrete must-do sequence below).
-- **Mark's must-do sequence** (his own words 2026-05-05): "First
-  needs to be a good aggregator with enough stock that you're
-  not wanting to go back to eBay or bezel or chrono24. Then it
-  needs to be good at watch list features — monitoring, filtering,
-  sorting, saving, filing/compartmentalizing, bringing permanency
-  to sold lots. Then it can start to get good at bringing in
-  others with things like sharing." Reference research is the
-  core value, then reference-learning support, then collection
-  mentality. Sequence the roadmap around this.
-- **Threads to develop in review:**
-  - **Mining references from listings** — what does this actually
-    look like? Per-listing → per-reference roll-up, with dealer
-    descriptions accumulating?
-  - **Making the Watch Challenge work** — current state vs what
-    Mark wants to ship for v1.5 / v2.
-  - **Landing page when you click on a shared link** — what does
-    that surface look like in detail? Current ShareReceiver flow
-    vs what Mark imagines.
-  - **eBay model** — what we're pulling, how Mark wants to
-    manage the search topics/references (admin interface, not
-    per-user).
-  - **Should the roadmap have already-shipped features still in
-    it?** Mark's question. My read: mostly no — body of the
-    roadmap describes future state, Update log carries the
-    historical record. Exceptions: items where v2 / v3 evolution
-    is still pending (Watch Challenges v1.5 stays).
-- **Personal-learning agent side track** — Mark accepted both use
-  cases 2026-05-05; defer the build to its own session. Both run
-  through the Claude Agent SDK.
-  - **Brand-watcher agent.** Scrape-diff agent runs every N days
-    against a configured brand (or reference). Re-fetches that
-    brand's listings across every dealer + the auction-lot pool,
-    diffs against the previous snapshot, surfaces "things worth
-    knowing": new tropical-dial 1675 just listed, a Heuer Carrera
-    well below the dealer's median, a sold lot at a notable price.
-    Output: a digest delivered however (email / a Supabase table
-    Mark reads / a daily Slack ping). Useful daily-driver tool +
-    a great learning project — agent loop, scraper-call composition,
-    diff logic, a small notification surface.
-  - **Maintenance assistant agent.** Reads CI failures + the
-    `verification.json` / `verification_lots.json` outputs,
-    classifies what kind of breakage it sees (regex shifted vs
-    page redesign vs auth blip), proposes the patch, drafts the
-    PR. Mark reviews + ships. Pairs naturally with the dealer-
-    scraper-helper refactor (helpers + agent fixes are the same
-    abstraction layer).
-
-The block above gets dissolved into the right epics during the
-review. Don't ship work from here without first landing it
-properly.
 
 ## North star
 
-Watchlist is a personal vintage-watch tool first, a public site second. Built
-for me to discover, track, and understand vintage watches across the dealer
-and auction market. Public access is a secondary benefit, not the primary
-purpose.
+Watchlist is a personal vintage-watch tool first, a public site second.
+Built for me to discover, track, and understand vintage watches across
+the dealer and auction market. Public access is a secondary benefit,
+not the primary purpose.
 
-The long-term value is the accumulated cross-source data and the analytics
-and learning experiences on top of it. Listings are the current surface;
-discovery, learning, and personal-collection-as-play are the next chapters.
+The long-term value compounds in two places: (1) the accumulated
+cross-source data — listings, prices, what sold, what stuck — across
+dealers and auctions, and (2) the analytics and learning experiences
+built on top of that data. Listings are today's surface; reference
+research, reference learning, and collection-as-play are the next
+chapters.
 
 Watchlist is not trying to be Watchcharts. Don't compete on historical
 price-per-reference; build what they don't.
 
+## Jobs to be done
+
+The product solves a chain of jobs, roughly sequenced by the order a
+collector would feel each pain. Each step depends on the previous
+working well. The roadmap's priority ordering follows this sequence —
+when two features compete, pick the one earlier in the chain.
+
+1. **Aggregator** — bring enough vintage stock from independent
+   dealers + auction houses into one feed that the user doesn't
+   need to bounce between Chrono24, eBay, Bezel, and individual
+   dealer sites to scan the market.
+2. **Watchlist features** — monitor, filter, sort, save, file
+   into lists, and bring permanency to sold lots so the saved set
+   is durable even after the dealer pulls the listing.
+3. **Sharing** — bring others in via a one-tap share to the native
+   share sheet; the recipient sees the listing in the same UI with
+   a Save / Dismiss banner. No in-app messaging — chosen messenger
+   handles replies.
+4. **Reference research** — the actual core value. Look across
+   every listing of a given reference (e.g. every Seamaster
+   165.024 currently or recently in market) and answer: is this
+   one priced reasonably? What dial/hand variations come up?
+   What did comparable ones sell for? Cross-source, cross-time.
+5. **Reference learning** — synthesize what's known about a
+   reference: dealer descriptions accumulated over time, curated
+   external links, hand-written notes, dial variation gallery.
+   Hodinkee-style depth, but built from the dealer market's own
+   writing rather than pure editorial.
+6. **Collection mentality** — support the collecting journey:
+   real watchbox tracking (current + parted-with), reflections on
+   each piece, a thinking-tool for "why do we collect, what
+   mistakes have I made", and hypothetical-collection challenges
+   that scratch the collector itch without committing cash.
+7. **Discovery / recommender** — expand the user's awareness
+   beyond what they already know. Surface obscurity relative to
+   their browsing pattern, not absolute. AI recommendation and
+   serendipity layers built on the multi-signal taste capture
+   from #1–#6.
+8. **Commercial signals** — if dealers / marketers / collectors
+   would pay for any of #1–#7, build the test path. Not the
+   driver; an awareness item.
+
 ## Strategic bets
 
-Watchlist's distinctive role is as a **reflective tool for serious
-collectors, not a transactional one**. Features that deepen reflection
-(collecting journeys, per-watch context, reference learning) earn
-priority over features that optimize for transaction speed (faster
-price lookups, more inventory, lower latency). The collecting community
-has plenty of transactional tools; reflective ones are rare.
+A few distinguishing positions Watchlist is willing to hold:
 
-This is the lens for prioritization tradeoffs: when two features compete
-for a session and both make sense, pick the one that helps the user
-*think about* their collecting more, not the one that helps them *act
-faster* on it.
+- **Aggregator that respects the dealer ecosystem.** Every card
+  links straight to the dealer's own site; Watchlist is a
+  directory layer, not a marketplace. No hiding sender identity
+  in shares, no sniping, no replacing dealer relationships.
+  Dealers blocking us is a real risk; staying clearly additive
+  (drives traffic, doesn't capture the transaction) is the
+  hedge.
+- **The accumulated dataset is the moat.** Watchcharts has
+  prices. Hodinkee has editorial. Dealer sites have inventory.
+  Nobody has the cross-source dataset of dealer descriptions +
+  realized auction prices + active inventory + per-user
+  engagement, all stitched together. Job-#4 (reference research)
+  and job-#5 (reference learning) are the headline differentiators
+  that this dataset enables.
+- **Reflective-tool quality is a delighter, not the primary
+  purpose.** Some features (watchbox journey notes, AI reflection
+  bot, the Watch Challenges thought experiment) make Watchlist
+  read as a reflective collector tool rather than a transactional
+  one. That's a real differentiator from Chrono24 et al — and
+  worth investing in once the aggregator + watchlist + research
+  base is solid. Not the lens that decides every priority; one
+  characteristic among several.
+- **Personal-tool-first means me-centric curation is allowed.**
+  Brand exclusions, model exclusions, sold-archive suppression,
+  bracelets-are-not-watches — these are MY rules, baked in. Other
+  users get the same lens. Open-submission paths (Epic 1) are
+  deferred until there are users who'd benefit.
+- **Build with Claude as co-author.** The whole platform is an
+  example of what a non-technical builder can ship in a passion
+  project. That visible-craft angle has its own value: PM-skill
+  honing, vibe-coding learning, a portfolio piece for work, and
+  proof-of-concept for what AI-paired solo builds look like.
 
-## User journeys
-
-Selected journeys grounding the design. Journeys 1-9 live in the
-product brief; 10-11 added here as speculative-until-shipped to keep
-forward-looking features grounded in concrete user intent.
-
-- **Journey 10 — The Returning Reflection.** Mark opens his watchbox
-  three years from now. Reads what he wrote about his first Heuer.
-  Realizes how his taste has shifted. Adds a note to his journey
-  narrative. *(Depends on Watchbox v2 + per-watch reflections.)*
-- **Journey 11 — The Source Suggestion.** A friend in Italy emails
-  Mark: "you should add Italian Vintage Watch Co. to Watchlist;
-  great dealer." Friend goes to Watchlist's "Suggest a source" form,
-  fills it in. Mark reviews, agrees, adds the source. Friend is
-  notified. *(Depends on Epic 1 v2 open-submission flow.)*
+The prioritization lens: when two features compete and both make
+sense, pick the one earlier in the Jobs to be done chain above.
 
 ## Constraints
 
 - Solo non-technical builder, co-authoring with Claude.
 - Budget: under $20/month for hosted services.
-- Free-tier-first: Vercel, Supabase, GitHub Actions. Mac mini at home as a
-  later-phase capability for jobs that don't fit free tiers (Playwright,
-  embeddings, reference-guide generation).
-- Don't telegraph commercial intent publicly. Admin/analytics features stay
-  hidden from regular users to avoid pressure from dealers and auction houses.
-- References will be 70-80% accurate via parsing, with LLM fallback for the
-  long tail and manual curation for the unparseable. Don't let perfect be
-  the enemy of good.
+- Free-tier-first: Vercel, Supabase, GitHub Actions. Mac mini at home
+  as a later-phase capability for jobs that don't fit free tiers
+  (Playwright, embeddings, reference-guide generation).
+- Don't surface admin / analytics features in any UI text reachable
+  by regular users. Dealers blocking us is a real risk; the safer
+  posture is "additive directory layer" not "commercial threat."
+  This is a presentation rule, not a denial of job-#8 — exploring
+  commercial paths happens off-platform until there's something
+  worth showing.
+- References will be 70-80% accurate via parsing, with LLM fallback
+  for the long tail and manual curation for the unparseable. Don't
+  let perfect be the enemy of good.
+
+(*User journeys section deleted 2026-05-05 during the section-by-
+section review. The two forward-looking journeys it carried — the
+Returning Reflection and the Source Suggestion — are folded into
+the relevant epics' descriptions, anchored next to the features
+they depend on rather than as a standalone section.*)
 
 ## Epic 0: Foundations
 
-Cross-cutting infrastructure. Several later epics depend on this.
+Cross-cutting infrastructure. Everything else depends on this layer
+working. Mostly invisible to users; entirely visible to next-session-me
+when something breaks.
 
-- **References as first-class entities.** Normalized references table in
-  Supabase (or wherever it ends up). Each reference has brand, model,
-  era/years, category. Listings, auction lots, and curated content link
-  to references. Detection via per-source structured fields, regex on
-  title/description, and LLM fallback for the long tail. Manual curation
-  for what slips through.
-- **Verification script ✓ shipped 2026-05-02.** `verify_sources.py`
-  runs after merge.py, counts live listings per source, compares each
-  to its rolling 7-day median, and flags drops to zero or <30% of
-  median. Outputs `public/verification.json` (today's report) +
-  `public/verification_history.json` (rolling 14-day baseline). Wired
-  as a non-blocking step in scrape-listings.yml.
-- **Source quality dashboard ✓ shipped 2026-05-02.** Admin-only view
-  at `?tab=admin`, gated by `REACT_APP_ADMIN_EMAILS`. Per-source
-  table with live count, new-per-week, sparkline trend, days stale,
-  hearts/heart-rate, hides/hide-rate, avg price, top brand %, health
-  (from verification alerts), earning-keep chip (🟢🟡🔴). Drives the
-  "which sources earn their keep" decision; folded into Epic 4 too.
-- **Site discoverability and welcome page (partially shipped
-  2026-05-04 PR #39).** SEO basics done: descriptive `<title>`
-  upgraded from bare "Watchlist", `<meta name="description">`
-  added. Still pending: robots.txt, sitemap.xml, og:image refresh,
-  Schema.org markup, plus the welcome/about page for first-time
-  visitors (the "what is this and how do I use it" gap on the
-  cold-landing Listings tab).
-- **Maintenance rhythm.** Every 4th-5th session is hygiene only: bug fixes,
-  dependency updates, source pruning. No new features.
-- **User settings / currency preference ✓ shipped 2026-05-01.** New
-  `user_settings` Supabase table; primary_currency picker (USD /
-  GBP / EUR) in the Settings modal. Card render reads the
-  preference and shows it as primary, native as secondary. Designed
-  as a kitchen-sink user-prefs surface so future settings co-locate.
+### References as first-class entities
+
+The data-layer prerequisite for jobs #4 (reference research) and #5
+(reference learning). Today every listing carries a `ref` field as a
+free-text title; nothing stitches multiple listings of the same
+reference into one entity. Without that stitching, "show me every
+Seamaster 165.024 currently in market" needs string-matching gymnastics.
+
+Build: a normalised `references` table in Supabase (or wherever it
+ends up — could be a JSON file at the static layer if Supabase row
+limits get tight). Each reference has brand, model, era/years,
+category. Listings, auction lots, and curated content all link to a
+reference. Detection runs in three layers: per-source structured
+fields where the dealer surfaces them, regex on title + description
+where the format is predictable, and LLM fallback for the long tail.
+Manual curation for the unparseable.
+
+This is the substrate Epic 5 (research + learning) sits on. Until
+this lands, those epics can't ship cleanly.
+
+### Verification + scrape health
+
+- **`verify_sources.py` ✓ shipped 2026-05-02.** Counts live listings
+  per source, compares each to its rolling 7-day median, flags
+  drops to zero or <30% of median. Outputs `public/verification.json`
+  (today's report) + `public/verification_history.json` (rolling
+  14-day baseline). Non-blocking step in scrape-listings.yml.
+- **`verify_auction_lots.py` ✓ shipped (PR #35).** Same shape, but
+  for `auction_lots.json` per house.
+- **Pending — auction verification expansions.** Two checks that
+  don't exist yet: (a) sales whose `date_end` has passed should
+  flip to status=ended within N days; flag stuck-active sales;
+  (b) new sales appearing on each house's calendar should show up
+  in our calendar scrape within N days; flag misses. Both
+  catch silent breakage modes the count-vs-median check can't.
+
+### Infrastructure / refactor track
+
+- **`listings.json` split by status.** Currently 3.5 MB; users
+  fetch the whole file on every page load. Split into
+  `listings_live.json` (active dealer items) and
+  `listings_sold.json` (archive). Saves ~half the initial fetch.
+  Plan before file crosses 5 MB. Sub-MB target for the live file.
+- **App.js extraction pass.** App.js is 1,853 lines (down from a
+  ~2,200 high-water before the shell extraction). Three concrete
+  targets: a `useAuctionLotProjection` hook (lifts ~140 lines of
+  near-duplication between `auctionLotItems` and `watchItems`),
+  a `useDerivedTaxonomies` hook for the brand / source / refs
+  facets (~100 lines), display-style derivation. Could land
+  App.js around 1,300–1,400. Not urgent; cleanup-rhythm work.
+- **Maintenance rhythm.** Every 4th–5th session is hygiene only:
+  bug fixes, dependency updates, source pruning, doc cleanup.
+  No new features in maintenance sessions.
+- **User settings / currency preference ✓ shipped 2026-05-01.**
+  `user_settings` Supabase table + USD/GBP/EUR picker in
+  Settings. Designed as a kitchen-sink user-prefs surface so
+  future settings co-locate.
+
+### Site discoverability + welcome page
+
+SEO basics shipped (PR #39): descriptive `<title>` upgraded from
+bare "Watchlist", `<meta name="description">` added, OG / Twitter
+card meta, canonical link, Schema.org JSON-LD with SearchAction,
+`public/robots.txt`, `public/sitemap.xml`.
+
+**Pending:** og:image refresh (currently the 1024×1024
+apple-touch-icon as placeholder; want a proper 1200×630), and the
+**welcome/about page** for first-time visitors. The cold-landing
+gap: a stranger hitting `the-watch-list.app` from search currently
+sees the Listings feed with no context for what the site is or
+how to use it. Half-session of mostly-content work.
+
+### Mac mini infrastructure (future hardware tier)
+
+Folded into Foundations 2026-05-05 (was a standalone Epic 6).
+It's infrastructure — the same shape as the verification scripts
+or the listings.json split, just deferred to a future hardware
+tier. Learning project plus capability extension. Phased.
+
+- **Phase A:** Mac mini scrapes hard sources (Cloudflare-protected,
+  JS-heavy) using headed Playwright. Pushes CSVs to repo. Rest of
+  system unchanged. ~1 weekend setup. Concrete and useful. The
+  immediate value is moving Tropical Watch off Browse AI (only
+  paid-credit dependency) and unlocking Heritage / Bonhams /
+  Monaco Legend lot scraping.
+- **Phase A.5 (likely combined with A):** Mac mini stores full
+  dealer descriptions for tracked references. Generates reference
+  guides via local LLM (Llama 3 or similar). Pushes results to
+  Supabase. Powers Epic 5 encyclopedia without burning cloud LLM
+  budget.
+- **Phase B (later, optional):** Mac mini runs Postgres and the
+  API; Vercel still serves frontend.
+- **Phase C (later, optional):** Full self-hosting on Mac mini.
+
+Watch out for: CGNAT on home internet (check before buying),
+power/network reliability, SSL cert renewal, backup strategy.
+
+Hardware: M4 Mac mini base, 16GB RAM, ~$600.
+
+(*Source quality dashboard moved out of this epic and into Epic 8
+during the 2026-05-05 review — it's about analytics, not
+foundations. Cross-reference only.*)
 
 ## Epic 1: Sources
 
-Target end state: ~50 dealers + 6 auction houses, all earning their
-keep. Threshold raised 30 → 50 on 2026-05-05 per Mark — the original
-30 was set before Watchlist had analytics to inform a meaningful
-prune; better to grow first, then audit with click + save data
-(see Epic 4 → Site analytics) once it lands.
+Serves **job-#1 (aggregator)**. Cover the dealer + auction-house
+universe enough that the user doesn't bounce to Chrono24, eBay, Bezel,
+or individual dealer sites to scan the market. Target end state: ~50
+dealers + 6 auction houses, all earning their keep.
 
 Currently at **38 dealers + 6 auction houses** (post Luna Royster +
-S.Song Watches + Swiss Hours added 2026-05-04 PR #41; Avocado
-Vintage removed 2026-05-05 per Mark). Twelve dealers under the new
-50-target, so adding remains the active mode.
+S.Song Watches + Swiss Hours added 2026-05-04 PR #41; Avocado Vintage
+removed 2026-05-05). Twelve dealers under the 50-target, so adding
+remains the active mode.
 
-- **Active candidates** (evaluated, not all guaranteed):
+### Active candidates
 
-  | Candidate | Status |
-  |---|---|
-  | Vintage Watch Collective | **shipped 2026-05-02** — Wix, productsWithMetaData pattern (Chronoholic clone), EUR, ~40 active listings |
-  | Wrist Icons | WordPress; `/wp-json/wc/store/v1/products` returned 301 — follow redirect to confirm WooCommerce |
-  | Vision Vintage Watches | Wix (not Squarespace despite the URL trick); needs custom HTML parsing |
-  | Vintage Heuer | **shipped 2026-05-03 as "Vintage Watch Shop"** — WordPress custom-post + detail-page walker for the "Our price: £NNNN" pattern; ~20 active items |
-  | Specific pushers.io dealers | reuse the Moonphase pattern (~30 lines per dealer) |
+| Candidate | Status |
+|---|---|
+| Vintage Watch Collective | **shipped 2026-05-02** — Wix, productsWithMetaData pattern (Chronoholic clone), EUR, ~40 active listings |
+| Wrist Icons | WordPress; `/wp-json/wc/store/v1/products` returned 301 — follow redirect to confirm WooCommerce |
+| Vision Vintage Watches | Wix (not Squarespace despite the URL trick); needs custom HTML parsing |
+| Vintage Heuer | **shipped 2026-05-03 as "Vintage Watch Shop"** — WordPress custom-post + detail-page walker for the "Our price: £NNNN" pattern; ~20 active items |
+| Specific pushers.io dealers | reuse the Moonphase pattern (~30 lines per dealer) |
 
-- **Auction houses still to add:** Heritage. DataDome-blocked at the
-  TLS/browser level — `requests` won't get past it. Three options when
-  it's worth pursuing:
-  - Browse AI robot (extra paid credits)
-  - Mac mini at home running headed Playwright (Epic 6 Phase A)
-  - Manual entry via `data/manual_auctions.csv`
+### Scraper refactor — shared helper library
 
-- **Lot tracking parked for** Phillips (opaque IDs from JS-rendered
-  catalog), Bonhams (Cloudflare), Monaco Legend (SPA, no server-rendered
-  lot links), Heritage (DataDome). Same three escape hatches as above.
+Per-source structure stays the rule (one breaking site = one file
+to debug). What's now ALLOWED is opt-in helpers: a new `scraper_lib.py`
+exposing `fetch_shopify_products(base, collection)`,
+`fetch_woocommerce_store_api(base, **filters)`, `parse_wix_products_blob(html)`,
+etc. Each dealer keeps its own file and quirks; just stops repeating
+~80 lines of boilerplate.
 
-- **Stop rule.** At ~50 dealers (raised from 30 on 2026-05-05), audit
-  and prune. Pruning informed by Site analytics (Epic 4) — the click
-  + save data tells us which dealer inventory users engage with. Don't
-  add a source unless it brings inventory not already covered or
-  unique to a reference category I care about. Final prune-to count
-  TBD with the data in hand.
+Pre-flight: 38 dealers split roughly into Shopify (~12), WooCommerce
+(~6), Squarespace (~3), Wix (~3), custom HTML (~4), and one-offs
+(eBay, Browse AI, Watch Club's TaffyDB). Helper library would
+collapse the four big platform groups; one-offs stay one-offs.
 
-### Open submission v2 (deferred — needs users)
+CLAUDE.md updated 2026-05-05 to allow this. Half-day refactor with
+low risk if scoped tight.
 
-Open submission with moderation. Users suggest sources via a
-"Suggest a source" form; Mark approves or declines. Criteria for
-accepting sources documented separately. Probably 6+ months out —
-worth shipping when the platform has more than just Mark and his
-wife as users; until then, there's nobody to suggest. Grounded by
-Journey 11.
+### Brand and listing curation
 
-## Epic 2: Auction history
+Mark-as-curator. Watchlist surfaces what Mark wants visible; the
+exclusion + canonicalization rules accumulate in `merge.py` and
+`src/utils.js`. Already shipped (PR #50, partial PR #52):
 
-Two complementary surfaces: (1) **calendar-level tracking** of upcoming
-sales (already shipped — Watchlist > Auction Calendar surfaces 6
-houses); (2) **reference-led realized-price capture** of past results;
-(3) **comprehensive lot archive** as the data foundation that powers
-both serendipitous discovery and reference research.
+- Hard exclusions: Franck Muller, Hublot, Gucci, Harry Winston,
+  Corum, Scatola Del Tempo (watch boxes).
+- Brand consolidations: Vacheron + Vacheron & Constantin →
+  Vacheron Constantin; Nivada / Croton → Nivada Grenchen; etc.
+- Force-Other pooling (UI only): Wittnauer, Mulco, Berd Vay'e,
+  Hanhart, Illinois, Elgin, Marvin, Wakmann, Caravelle, Pro Hunter.
+- Suppress-at-sold (UI only, hearted overrides): Gerald Genta,
+  Panerai, Tissot, Bell & Ross, TAG Heuer (NOT bare Heuer),
+  Girard-Perregaux, Jaquet Droz, Enigma, Ebel.
+- Title-pattern exclusions: standalone bracelets, Royal Oak Offshore.
 
-### Auction urgency surfacing ✓ shipped 2026-05-03
+**Pending:** more curation as Mark spots low-tier inventory.
+Long-term: brand × price-floor rules ("drop Tissot under $500"),
+which is filter-engineering rather than a hard exclusion.
 
-"Ending soon" pinned section at the top of the Watchlist tab:
-auction-format tracked lots whose `auction_end` falls within 7 days
-(or are currently live) appear in a horizontal-scroll strip with
-three urgency tiers (LIVE NOW red / TODAY-TOMORROW amber /
-upcoming standard). Visible across every Watchlist sub-tab; returns
-null when empty. Plus a new "Ending soonest" sort option, third
-pill alongside Date and Price — auto-defaults on when the
-auctions-only filter is toggled, reverts to date-desc when off.
-Comparator tiers: live → upcoming asc → ended (most-recent first)
-→ non-auction last; same comparator drives both the Watchlist and
-Available sorts. Comprehensive auction inventory capture below is
-still future work; this is just the surfacing layer over what's
-already tracked.
+### Stop rule (plain English: when to stop adding new dealers)
+
+The "stop rule" is a simple agreement with myself: once dealer count
+hits ~50, stop adding new ones blindly. Audit the set with click +
+save data from Epic 8 (Site analytics) — figure out which dealers
+users actually engage with — and prune the underperformers down to
+a smaller, higher-quality set. After that, only add a new dealer
+when it brings inventory we don't already cover or covers a
+reference category Mark cares about.
+
+Threshold raised from 30 to 50 on 2026-05-05 — the original 30
+was set before Watchlist had analytics. Better to grow first, then
+audit with real engagement data. Currently at 38, so adding remains
+the active mode.
+
+### Tropical Watch → Mac mini (cross-reference to Epic 0 → Mac mini)
+
+Tropical Watch is the only Browse AI-routed dealer. Their site
+actively blocks `requests`; Browse AI fills the gap on a paid
+subscription. Move to Mac-mini-hosted Playwright when Phase A of
+the Mac mini infrastructure (Epic 0) lands — removes the only
+paid-credit dependency in the scrape pipeline.
+
+### eBay integration ✓ shipped 2026-04-30 (one of the source kinds)
+
+eBay is a source like the dealers, just with a different shape. It
+has a free Browse API (5k calls/day, OAuth); admin configures search
+topics in `data/ebay_searches.json`; the scraper fetches matching
+listings 3×/day. Buy-It-Now eBay items show up in the main Listings
+feed alongside dealer items (`source = "eBay"`).
+
+**What's pulled in.** Each entry in `data/ebay_searches.json` has
+a `label`, a `query` (the eBay search string), an optional
+`country` filter, and an optional `seller` filter. Today we run
+two queries (Omega Railmaster CK2914, Heuer Autavia GMT) globally —
+the original USA/UK/Europe per-region split was collapsed because
+country was input-side only and never made it to the UI.
+
+**Where eBay items show.** Buy-It-Now eBay listings flow into
+Listings > Live listings as regular Cards. Auction-format eBay
+items go through the +Track flow into Saved auctions. Watchlist >
+Searches sub-tab surfaces the contents of `ebay_searches.json`
+read-only with an "Edit on GitHub" link.
+
+**How searches are managed.** Today: option 1 of 3 — JSON config
+file edited via GitHub's in-browser editor by Mark (admin). Pending
+work: option 2 — Supabase migration + admin form so Mark can
+edit search topics in-app from the admin dashboard. Deferred until
+the GitHub-edit friction is real.
+
+**Saved searches vs eBay source-searches.** Two separate concepts
+deliberately:
+- **eBay source-searches** (admin-only) configure what eBay queries
+  the scraper runs. They CHANGE THE FEED.
+- **Saved searches** (per-user) are filters over the existing feed
+  that any user can save. They don't change what's pulled in;
+  they just rerun a filter.
+
+**Things explicitly NOT in scope for eBay:**
+- Re-listing detection (dropped 2026-04-28, too speculative).
+- Broad keyword searches like "vintage Rolex". Targeted
+  reference-level searches only.
+- Per-user eBay search configuration. Search-topic management is
+  admin-only and platform-wide, not user-controlled.
+
+### Open submission v2 — plain English: "Suggest a source" form
+
+The roadmap idea (deferred): a "Suggest a source" form on the public
+site so users can recommend dealers Mark should add. Submissions
+queue for moderation; Mark approves or declines. Not wiki-editable.
+
+Probably 6+ months out — worth shipping only once the platform has
+more than Mark + his wife as users (until then there's nobody to
+suggest). Use case: a friend emails Mark — "you should add Italian
+Vintage Watch Co. to Watchlist, great dealer." Friend goes to the
+form, fills it in, Mark reviews and approves, friend gets notified.
+
+Until then, Mark adds dealers himself in-session.
+
+## Epic 2: Auction houses
+
+Everything related to the six auction houses: calendar, per-lot
+detail, archive sales, verification, future analytics. Distinct from
+Epic 1 (dealers + eBay) because the scraper machinery is different
+(per-house orchestrator, JSON-blob parsers, lot-detail extraction)
+and the cadence + data shape (estimates, sold prices, sale dates)
+have nothing to do with dealer inventory.
+
+Serves **job-#1 (aggregator)** for the auction side, and is the
+substrate that **job-#4 (reference research)** mostly draws from
+once enough lots accumulate. Three layers, increasingly ambitious:
+
+1. **Calendar** — upcoming sales surfaced in Cool Stuff > Auction
+   Calendar. ✓ shipped; six houses (Antiquorum, Bonhams,
+   Christie's, Monaco Legend, Phillips, Sotheby's).
+2. **Live lots** — comprehensive per-lot scraping for active
+   sales. ✓ shipped for the four working houses (Antiquorum,
+   Christie's, Phillips, Sotheby's). Bonhams + Monaco Legend
+   parked at lot level (calendar-only).
+3. **Archive** — historical sales pulled in on demand. Pipeline
+   shipped (PR #42); first sale in (Phillips CH080317, 42 Heuer
+   lots Geneva 2017).
+
+### House coverage gaps
+
+- **Heritage** still to add at the calendar level — DataDome blocks
+  `requests` at the TLS/browser level. Three escape hatches:
+  Browse AI robot (paid credits), Mac mini at home running headed
+  Playwright (Epic 0 → Mac mini), or manual entry via
+  `data/manual_auctions.csv`.
+- **Per-lot tracking parked for** Bonhams (Cloudflare), Monaco
+  Legend (SPA with no server-rendered lot links), Heritage
+  (DataDome). Same three escape hatches.
+
+### Calendar (✓ shipped, with pending UX)
+
+Six house calendars scraped daily into `public/auctions.json`.
+Calendar UI lives at Cool Stuff > Auction Calendar, month-banded.
+
+**Pending — auction date display.** Today the calendar chip shows
+the start date only. Auctions vary in shape: in-room sales run a
+single day; online sales run ~7 days. Need to surface the date
+RANGE (start + end) when they differ, and a "live now" indicator
+when today is inside the window. Data is already in the CSVs +
+JSON; just a render change. Half-session.
+
+### Live lots (✓ shipped, with pending coverage gaps)
+
+`auction_lots_scraper.py` walks every active sale in
+`auctions.json` and pulls per-lot detail:
+
+- **Antiquorum** — `live.antiquorum.swiss/...?limit=1000` single
+  fetch per sale, parses `viewVars.lots.result_page` (PR #48,
+  was previously broken `catalog.antiquorum.swiss` pagination
+  surfacing only first 20 of ~600 lots).
+- **Christie's** — `chrComponents.lots.data.lots` blob inline on
+  the auction page; one fetch per sale.
+- **Sotheby's** — `__NEXT_DATA__.props.pageProps.algoliaJson.hits`,
+  paginated; per-lot `og:image` fetch for canonical brightspot URL
+  (PR #46).
+- **Phillips** — auction-page tile enumeration → per-lot fetch.
+  Cap raised 60 → 1000 (PR #48); CH080226 (227 lots) and
+  HK080226 (308 lots) now scrape in full.
+
+Outputs `public/auction_lots.json` (URL-keyed). Wired to the
+main Listings feed via `auctionLotItems` in App.js. Hearts on
+auction-lot cards write to `watchlist_items` via `shortHash(url)`.
+
+**Pending coverage:** Bonhams + Monaco Legend lot scraping (parked
+per Epic 1). Heritage entirely (DataDome).
+
+### Archive (manual historical entry)
+
+Pipeline shipped via PR #42:
+- `data/manual_archive_sales.json` — registry, one entry per
+  archive sale.
+- `manual_archive_scraper.py` — reads the registry, walks each
+  sale via the existing per-house enumerators, writes
+  `public/manual_archive_lots.json`.
+- App.js loads + merges into `auctionLotItems` alongside the
+  comprehensive sweep.
+
+First sale in: Phillips CH080317, 42 Heuer lots from
+"Crosthwaite & Gavin Collection" Geneva 2017. Hammer range CHF
+7,500–137,500.
+
+**Adding more archive sales is in-session work**, not a roadmap
+item — Mark's call (the JSON-edit-and-rerun workflow is fine at
+the rare cadence). The two parked target URLs (Phillips CH080218,
+Antiquorum Geneva 2007-04-15) get picked up when there's reason.
+
+### Auction urgency surfacing ✓ shipped 2026-05-03 → retired 2026-05-04
+
+"Ending soon" pinned strip lived on Watchlist briefly, then was
+retired when the Watchlist sub-tab restructure introduced a
+dedicated Saved Auctions sub-tab with its own ending-soonest
+default sort. Same comparator (live → upcoming asc → ended desc →
+non-auction last) survives in App.js's `endingSoonComparator`.
 
 ### Reference-led realized-prices
 
-Not "every auction forever" but "what has come up for this reference,
-when, and what did it sell for."
+Not "every auction forever" — that's the comprehensive archive
+above, which is happening mostly automatically now. This is the
+**research-led lens**: "show me every time the AP 5548BA has been
+to auction" pulled from the accumulated lot data. UI work, not
+scraper work. Lands once Epic 0's references-as-entities ships
+(needs the reference table to group lots by ref).
 
-- **Open houses (Antiquorum, Phillips, Bonhams):** scrape realized prices
-  where publicly available.
-- **Gated houses (Christie's, Sotheby's):** skip realized prices behind login
-  walls; capture publicly visible lot details, estimates, images.
-- **Manual entry** for important results that aren't auto-captured. Admin form,
-  paste URL + price.
-- **Reference-led search UI.** "Show me every time the AP 5548BA has been to
-  auction" with prices, dates, photos, links.
-- **Data shape:** auctions are events that happen to references, not the
-  primary unit. Reference-first, auction-second.
+The `lastMeaningfulPrice` field merge.py emits (PR #47) plus the
+sold-price extraction work (PRs #42, #46) get us most of the
+data; the missing piece is the per-reference grouping query +
+view.
 
-### Comprehensive auction inventory capture
+### Comprehensive auction inventory capture (long horizon)
 
-Currently Watchlist tracks auction calendars (when a sale is happening)
-but doesn't capture all the lots that come through. Expand to scrape
-every auction lot from supported houses and keep them as a permanent
-historical archive after the sale. Filter out: clocks, pocket watches,
-loose dials, watch parts, jewellery. Keep: complete wristwatches.
+What's shipping now is "active sales + on-demand archive sales."
+The comprehensive vision — every lot from every supported house,
+forever — wants a different storage shape (probably a Supabase
+table rather than a static JSON file once lot count crosses ~5k)
+and a different retention policy.
 
-Sold lots become a search-able back catalog ("show me every Heuer
-Carrera that's been to auction in the last 5 years"). High value for
-serendipitous discovery and reference research — the use case Mark
-experienced going through old auction catalogs with his mum.
+High value for serendipitous discovery and reference research —
+the use case Mark experienced going through old auction catalogs
+with his mum.
 
-Bigger than the reference-led capture above (which is selective). This
-is comprehensive historical capture; data volume + scraping work is
-meaningfully larger. The two work together: reference-led is the lens,
-comprehensive is the substrate.
+Plan when the time comes: migrate `auction_lots.json` to a
+Supabase table, write a slow background backfill against past
+sales we have URLs for, keep the static JSON as the active-sales
+projection.
 
-## Epic 3: Lovable features (organized around discovery and play)
+### Auction verification expansions (cross-reference to Epic 0)
 
-The features that make Watchlist tell me things, not just show me things.
+Two checks beyond the existing count-vs-median:
+- Sales whose `date_end` has passed should flip to status=ended
+  within N days; flag stuck-active sales.
+- New sales appearing on each house's calendar should show up in
+  our calendar scrape within N days; flag misses.
 
-### eBay integration (mostly shipped, 2026-04-30)
+Spec lives in Epic 0 (verification) but the failure modes
+manifest here.
 
-Highest-impact single feature on the list when it landed. eBay has a
-stable Browse API (free tier 5k calls/day, OAuth).
+### Auction-house quality (cross-reference to Epic 8 / Site analytics)
 
-**What shipped:**
+Parallel of the Source Quality dashboard for auction houses: avg
+lot price, brand mix, total hammer value, sale frequency, saved/
+clicked lots. Lands in Epic 8 → Source stats (renamed from "Dealer
+stats" to encompass houses too).
 
-- `ebay_oauth.py` — OAuth client-credentials token refresh.
-- `ebay_search_scraper.py` — reads `data/ebay_searches.json`, calls
-  Browse API per (search × country), writes `data/ebay.csv`.
-- `.github/workflows/scrape-ebay.yml` — runs 3×/day at 6:30am /
-  12:30pm / 6:30pm PT, offset 30 minutes from the dealer scrape.
-- `data/ebay_searches.json` — config file. Each entry has `label`,
-  `query`, optional `country` (ISO-2 string or array), optional
-  `seller` (filter to a specific seller's listings).
-- Buy-It-Now eBay items show up in the main Listings feed with
-  `source = "eBay"`. Same Card, same filters.
-- Watchlist > Searches sub-tab now surfaces the contents of
-  `data/ebay_searches.json` read-only, with an "Edit on GitHub" link
-  to the file's in-browser editor. Counts come from `data/ebay.csv`'s
-  `_search_label` column.
-- Manual single-item URL tracking — paste an eBay item URL into Track
-  new item; the auctionlots scraper handles eBay alongside auction
-  houses.
+## Epic 3: Watchlist
 
-**What changed from the original 2026-04-28 design:**
+Serves **job-#2 (watchlist features)**. The saved-set surface where
+users monitor inventory, filter and sort, save things they care about,
+file them into lists, and keep permanency across the live → sold
+transition.
 
-- **No separate Auctions tab for timed auctions.** That tab was
-  retired before eBay landed (calendar moved into Watchlist >
-  Auction Calendar). Timed eBay auctions surface as tracked lots
-  inside Watchlist > Listings via the Track new item flow.
-- **No region split in the live config.** Country was input-side only
-  — never plumbed through to the UI — so the original USA/UK/Europe
-  per-query split was collapsed to single global queries on
-  2026-04-30. Two queries today (Omega Railmaster CK2914, Heuer
-  Autavia GMT). Re-add country filter per query if a future search
-  is noisy enough to fill 50 results in one country.
+### Sub-tab structure ✓ shipped
 
-**Future work:**
+Five Watchlist sub-tabs, mirroring Listings: **Saved listings**
+(savedAt desc, saved-date dividers), **Saved auctions**
+(ending-soonest, +Track eBay button), **Saved sold** (sold-date desc,
+sold-date dividers), **Favorite searches**, **Lists**. Status segment
+retired (sub-tabs cover that role); Auctions-only toggle retired;
+EndingSoon pinned strip retired (Saved auctions sub-tab IS the
+ending-soon view).
 
-- **In-app CRUD for eBay searches.** Currently option 1 of 3:
-  read-only display + GitHub edit link. Option 2 (Supabase migration
-  + admin form) deferred until Mark hits the GitHub-edit friction.
-- **NOT in scope:** re-listing detection (dropped 2026-04-28 — too
-  speculative).
-- **NOT in scope:** broad keyword searches like "vintage Rolex".
-  Targeted reference-level searches only.
+### Lists ✓ shipped (Collections renamed in UI 2026-05-04)
 
-### Alerts (email or push) on saved-search matches
+User-created lists by reference, theme, or research thread ("Rolex
+5513s", "Vintage divers", "Reference comps"). Approach A in the data
+layer: default Favorites stays backed by `watchlist_items`; new
+`collections` + `collection_items` tables hold user-created lists +
+an auto "Shared with me" inbox.
 
-Turns Watchlist from a browse tool into a daily-open tool. Built after
-eBay so it covers both dealer matches AND eBay matches in the same
-notification.
+Hidden listings render as a synthetic "Hidden" row inside Lists —
+data stays in `hidden_listings` table; UI presents it as a virtual
+list with the Card's "..." menu Hide entry flipping to "Unhide" on
+drill-in.
 
-### Collections + Sharing v1 (shipped 2026-05-01)
+(*Sharing of lists is in Epic 4. Watch Challenges as a list-shaped
+feature is in Epic 6 — Collection mentality.*)
 
-Three-session feature pair. Made collections the underlying data
-model for Watchlist content (see CLAUDE.md "Watchlist data model");
-introduced the first user-to-user primitive (sharing) deliberately
-without any in-app messaging, reactions, or sender-identity surface.
+### Permanency across the live → sold transition ✓ shipped
 
-What landed:
-- `collections` + `collection_items` Supabase tables (Approach A —
-  default Favorites stays in `watchlist_items`; new tables hold
-  user-created collections + the auto Shared-with-me inbox).
-- Watchlist sub-tab structure: **Favorites / Collections / Searches
-  / Auction Calendar** (4-up). Favorites is the renamed Listings
-  sub-tab; default heart-flow unchanged.
-- New `"..."` menu on every Card: Share, Add to collection…, Hide
-  (or Remove from collection inside a drill-in).
-- Share via Web Share API → clipboard fallback. Deep link is
-  `?listing=<id>&shared=1` on root (no `react-router`). Recipient
-  sees a non-modal banner above the listing's Card with Save /
-  Dismiss; anonymous gets a passive Sign-in CTA, no nag.
-- "Shared with me" auto-collection lazy-created on first received
-  share. Items tagged `source_of_entry='shared_with_me'`.
+When a dealer takes a listing down or marks it sold, the saved entry
+keeps the price-at-save (`savedPrice`, `savedCurrency`,
+`savedPriceUSD`) plus the cached image, title, brand, source, URL.
+Cards still render in the Saved sold sub-tab even when the source no
+longer hosts the original page.
 
-The collections primitive is forward-compatible with the next two
-v2 surfaces below — both gated on Epic 0 references for full
-power, but the `type` marker (free-form / shared-inbox / challenge
-/ watchbox) is already in the schema.
+`lastMeaningfulPrice` field on every enriched record (PR #47) carries
+the last non-zero entry from priceHistory — so items that went POR
+before disappearing still show a usable display value.
 
-### Build-a-collection / Watch Challenges (v1 ✓ shipped 2026-05-03; v1.5 + v2 below)
+### Pending — Alerts on saved-search matches
 
-**v1 shipped** as Watchlist > Challenges. Constrained hypothetical
-collections — "3 watches for $50k", "5-watch starter", "3 watches
-for business", etc. Multi-stage flow (Create → Picking → Reasoning
-→ Complete) with a 20% budget guardrail. ONE collection per
-challenge, picks vs shortlist split via `is_pick` boolean. Drag-drop
-on desktop, tap-to-select on mobile. Drafts persist as you go;
-state flips draft → complete on Finish. Picks snapshot
-saved_price/_currency/_price_usd so totals are immutable post-share.
+Turn Watchlist from a browse tool into a daily-open tool. Built after
+the saved-search inventory is rich enough to make alerts useful;
+covers both dealer matches AND eBay matches in the same notification.
+Email or push (decide based on user preference at sign-up). Quiet by
+default — daily digest, not per-match push.
+
+### Pending — Image cache for items in Lists
+
+Today `cache_watchlist_images.mjs` only caches Vercel Blob copies
+for `watchlist_items` rows. An item only in a user's list (not
+hearted) doesn't get its image preserved if the dealer pulls it.
+Affects collector-research lists where a dealer like Somlo pulls
+images post-sale. Soon-ish per Mark.
+
+Implementation: extend the cache cron to query
+`collection_items.listing_id` alongside `watchlist_items.listing_id`
+and cache for both sets. Same blob path, same dedup-by-listing-id —
+a single cached image can satisfy a heart AND multiple list memberships.
+
+### Pending — User limits
+
+Defensive engineering for an open public site:
+- Soft cap: 500 hearted items per user, with a friendly warning.
+- Hard cap: 2,500 items, with a "request more" prompt — Mark can
+  grant individuals expanded limits via the user-management
+  dashboard (Epic 8).
+- Lists themselves unbounded but bounded by the item caps (a list
+  can't hold an item beyond your total).
+- Hard line of defense: a Supabase trigger on `watchlist_items`
+  insert that rejects writes past 2,500 even if the frontend
+  check is bypassed.
+
+Mark's wife is the seed case for needing manual expansion.
+
+### Pending — Strength-of-save (reinstated 2026-05-03)
+
+Replace single-tier hearts with two levels: **"Love"** (strong,
+definitive) and **"Watch"** (lighter, "keep an eye on this").
+
+**Critical constraint:** must not add UI clutter or extra friction.
+Likely a single tap that cycles through three states (none → watch
+→ love → none), or a long-press to escalate. Bad UX kills the
+feature; the simpler the gesture, the better.
+
+Was rejected during Collections + Sharing v1 because it added
+complexity. Reinstated because the distinction is real ("I love
+this" vs "I'm tracking this lightly") and because it's the
+entry-level shape of the broader Multi-signal taste capture
+(Epic 7).
+
+## Epic 4: Sharing
+
+Serves **job-#3 (sharing)**. The bring-others-in primitive. Deliberately
+narrow scope — Watchlist's share surface is a one-tap export to the
+native share sheet plus a lightweight in-app receive banner.
+Everything social *between* users (replies, reactions, sender
+identity reveal) lives in the user's own messenger of choice
+(iMessage / WhatsApp / email / Slack / AirDrop), not in this app.
+
+### Single-listing share ✓ shipped 2026-05-01
+
+Web Share API → clipboard fallback. Deep link
+`?listing=<id>&shared=1` on root (no `react-router`). Recipient sees
+a non-modal banner above the listing's Card with Save / Dismiss;
+anonymous user gets a passive Sign-in CTA, no nag. "Shared with me"
+auto-collection lazy-created on first received share; items tagged
+`source_of_entry='shared_with_me'`.
+
+### Pending — Shared-link landing surface (richer than today)
+
+The current Save / Dismiss banner is functional but minimal. Mark
+wants a richer arrival surface: still single-listing-anchored, but
+with more sense of "someone curated this for you" — without
+re-introducing the rejected social layer (no sender name, no reply,
+no reaction). Open design question for the next session.
+
+### Pending — Sharing collections (extends v1 share primitive)
+
+Share an entire list by link, not just a single listing. URL shape
+mirrors v1: `?collection=<id>&shared=1`. Recipient banner gives
+"Save copy to my collections" / "Just browsing". Public read-only
+list links also live here. Depends on RLS surgery on
+`public.collections` to permit anon SELECT for `state='complete'`
+or `is_public=true` rows.
+
+### Things explicitly NOT in scope (reaffirmed)
+
+- In-app messaging, reactions, replies — chosen messenger handles.
+- Sender-identity exposure on the receive banner — keeps the
+  primitive lightweight + deniable.
+- Notifications for new shares — out-of-app messenger handles.
+- Auto-redirect of shared listing links to dealer / external site —
+  recipient sees the listing in the same UI they'd browse.
+
+## Epic 5: References
+
+Serves **jobs-#4 + #5 (reference research + reference learning)**.
+The actual core value the platform builds toward — the feature
+nobody else on the market has. Two distinct sub-areas, sharing the
+same per-reference data substrate (Epic 0's references-as-entities).
+
+(*This was previously labelled "References (collector resources
+surface)" and was unrelated-feeling to Epic 3's "Reference-level
+grouping" + Epic 0's "References as first-class entities". Pulled
+together 2026-05-05 to make the chain explicit: Epic 0 builds the
+reference table → Epic 5 surfaces both research and learning views
+on top of it.*)
+
+### Sub-area: Reference research (job #4)
+
+The "compare every Seamaster 165.024 currently or recently in
+market" feature. Cross-source, cross-time. Distinct from the
+encyclopedia (which is reference content); this is reference
+ANALYTICS over current and historical inventory.
+
+Sub-features:
+- **Reference-level grouping** — three saved 5548BAs collapse into
+  one card with "3 listings, click to expand." Depends on Epic 0
+  references-as-entities.
+- **Per-reference search UI** — "Show me every time the AP 5548BA
+  has been to auction" with prices, dates, photos, links. Pulls
+  from the auction-lot dataset (Epic 2) once per-reference grouping
+  is live.
+- **Variation gallery** — dial / hand / bezel / case variants
+  surfaced as a visual grid for a given ref. Useful for spotting
+  what variations exist in market vs reading about them in
+  Hodinkee. Depends on per-listing variant detection (LLM-led).
+- **Listing-quality signals** — per-listing "priced above/below
+  this dealer's norm" chips. Cross-references the per-dealer
+  historical-price substrate (Epic 8 dealer stats) with the
+  current ask.
+- **Comparison view** for similar saved items — side-by-side specs,
+  price, condition, dealer.
+
+### Sub-area: Reference-number encyclopedia (job #5 — the headline learning feature)
+
+Reference-number-led learning resource. Combines three layers:
+
+1. **LLM-synthesised body.** Aggregates dealer descriptions,
+   auction lot notes, and other on-platform writing about a
+   reference number into a coherent reference guide. Refreshes
+   periodically. Credit: "synthesized from descriptions by
+   Hairspring, Wind Vintage, Analog Shift, ..."
+2. **Curated layer.** Hand-picked links to deep dives, forum
+   threads, videos, photo galleries. Public can suggest via form;
+   I moderate. Inspired by explorer1016.com and similar
+   collector-built sites.
+3. **Live layer.** Currently-available listings of that reference
+   number, plus past auction results, plus price trends.
+
+Surfaces on listings of relevant reference numbers and as a
+standalone browseable encyclopedia inside the Cool Stuff section
+(today's UI label for what was originally called "References" —
+see naming note below).
+
+Watchcharts has prices. Hodinkee has editorial. Dealer sites have
+inventory. Nobody has all three synthesized into a single
+reference-number-led learning view drawn from the dealer market
+itself. **This is potentially the platform's most differentiated
+feature.**
+
+Depends on: Epic 0 references + Mac mini Phase A (Epic 0) or cloud LLM access
+for generation + accumulated dealer descriptions (already happening
+passively if we start storing full descriptions for tracked
+reference numbers).
+
+Storage decision: full dealer descriptions for tracked reference
+numbers stored locally on Mac mini and synced to Supabase, rather
+than bloating `listings.json` for everyone.
+
+**Moderated user contributions v2 (deferred — Epic 5 ships first).**
+Users can suggest corrections to entries and propose additional
+links via a contribution form. Submissions queue for moderation;
+Mark approves or declines. Not wiki-editable — every change goes
+through review. Probably a year+ out: the encyclopedia has to
+exist first, with enough entries to make contributions useful.
+
+### Sub-area: Tools and calculators
+
+Tactile tools that solve specific calculation or visualization
+problems collectors actually have — narrow scope by design.
+
+- **Watch size comparison ✓ shipped 2026-04-29.** Two case
+  dimensions (width × length in mm) → side-by-side preview, stat
+  boxes, print-to-scale on US Letter. Print scoping uses a React
+  Portal pattern (CLAUDE.md "Print scoping for in-app tools" —
+  reusable for future printable tools).
+- **Auction total-cost calculator (pending).** Hammer × buyer's
+  premium + shipping + duty/VAT → all-in cost in user's primary
+  currency. BP schedules from the four scraped houses (vary by
+  hammer band, change ~yearly). Inputs: hammer, house, ship-to
+  country (+ optional state/region for US sales tax). Tactile,
+  runs every time a collector eyes a lot.
+
+Resist building lug-to-lug calculators, strap-size calculators,
+etc. as separate tools. Most of that calculation is better surfaced
+**within reference guides themselves** — the 1675's reference guide
+can include lug-to-lug context for that specific reference, where
+the data is actually meaningful.
+
+### Sub-area: Curated link aggregator ✓ shipped (Cool Stuff > Links)
+
+Hand-picked outbound resources that don't fit the encyclopedia
+structure. Lives at Cool Stuff > Links. Three section types:
+
+- **Dealers** — auto-derived from `allListings` (every dealer in
+  the feed gets a row pointing at their homepage). Auto-current.
+- **References** — per-watch-reference research clusters (Rolex
+  GMT 1675, Tudor Sub 7021, Omega Seamaster 300, AP 5548 BA,
+  Heuer, etc.).
+- **Topics** — Art, Straps, Editorial, Major Auctions.
+
+All sections collapsible (accordion); all collapsed by default.
+Add a section by appending to `REFERENCE_SECTIONS` /
+`TOPIC_SECTIONS` in `src/components/Links.js`.
+
+### Naming note
+
+UI label is "Cool Stuff" (renamed 2026-05-04 per Mark from
+"References"). URL key (`?tab=references`), component name
+(`ReferencesTab`), and route still say `references`. The internal
+"watch reference number" data concept (Rolex 1675 etc.) is also
+called "reference"; when both meanings appear in the same paragraph,
+prefer the explicit forms ("Cool Stuff section" and "watch reference
+numbers") to keep them distinct.
+
+## Epic 6: Collection mentality
+
+Serves **job-#6 (collection mentality)**. The reflective layer over
+"watches I own / have owned / am thinking about." Where Watchlist
+becomes a thinking-tool for collecting, not just a browsing-tool for
+listings.
+
+This epic is what gives the Strategic-bets "reflective tool" position
+real teeth — it's the home for everything that would feel
+inappropriate in Chrono24 or eBay because those tools optimize for
+transactions, not reflection.
+
+### Watch Challenges (v1 ✓ shipped 2026-05-03; v1.5 + v2 below)
+
+Constrained hypothetical collections — "3 watches for $50k", "5-watch
+starter", "3 watches for business", etc. Multi-stage flow (Create →
+Picking → Reasoning → Complete) with a 20% budget guardrail. ONE
+collection per challenge, picks vs shortlist split via `is_pick`
+boolean. Drag-drop on desktop, tap-to-select on mobile. Drafts
+persist as you go; state flips draft → complete on Finish. Picks
+snapshot saved_price/_currency/_price_usd so totals are immutable
+post-share.
 
 Schema: `supabase/schema/2026-05-03_challenges.sql` extends
 collections (target_count, budget, description_long, state,
 parent_challenge_id) and collection_items (is_pick, reasoning).
+Surfaces under Cool Stuff > Watch challenges (was Watchlist
+sub-tab; moved 2026-05-04).
 
 Share generates a spec-encoded URL
 (`?newchallenge=1&n=N&b=B&t=TITLE&d=DESC`) — recipients build their
-own response under the same constraints. The receive surface for
-that URL is **v1.5 work**, plus public read of completed challenges
-for show-my-picks-style sharing.
+own response under the same constraints.
 
-**v1.5 (next session):**
-- `?newchallenge=1` receive flow — auto-prompt a draft response when
-  a recipient lands on a spec URL, pre-filling Create-stage fields.
+**v1.5 (next):**
+- `?newchallenge=1` receive flow — auto-prompt a draft response
+  pre-filling Create-stage fields when a recipient lands on a
+  spec URL.
 - Public read of `state='complete'` challenges (RLS surgery on
-  `public.collections` to permit anon SELECT; today everything's
-  RLS-gated to row owner). Lets a recipient see the creator's picks
-  + reasoning without signing in.
-- Open question: should completed challenges be editable? v1 says
-  no (immutable for share-stability). Revisit if usage demands.
+  `public.collections` to permit anon SELECT for completed rows).
+- Open question: should completed challenges be editable? v1
+  says no (immutable for share-stability). Revisit if usage demands.
 
 **v2 (deferred — design exploration ongoing):**
 - Source from current AND past listings (sold archive becomes a
@@ -482,10 +878,10 @@ for show-my-picks-style sharing.
   demand). Soft suggestion ("you have N challenges, consider
   archiving older ones") preferred over hard limits.
 
-### Watchbox v2 — real ownership tracking (deferred)
+### Watchbox v2 — real ownership tracking (deferred — high personal value)
 
-Track watches Mark and other users actually own and have owned. A
-Watchbox is a collection with `type='watchbox'`.
+Track watches users actually own and have owned. A Watchbox is a
+collection with `type='watchbox'`.
 
 Per-item ownership data:
 - Purchase price + date acquired
@@ -505,36 +901,39 @@ Per-user **collecting journey narrative**:
 - Strictly private by default; optionally shareable later.
 - Compounds in value over time as the reflection layer accumulates.
 
-Grounded by Journey 10 (the returning reflection). This is the
-exemplar of the **Strategic bets** "reflective tool, not transactional
-tool" lens — highest personal value of any roadmap item; low platform
-risk; low implementation cost on top of the watchbox data model.
+Use case for the returning reflection: Mark opens his watchbox three
+years from now, reads what he wrote about his first Heuer, realizes
+how his taste has shifted, adds a note. That arc only happens because
+the reflection layer accumulated over years of small, low-friction
+entries.
 
-### Sharing collections (deferred — extends v1 share primitive)
+### Pending — AI reflection bot (delighter)
 
-Share an entire collection by link, not just a single listing.
-URL shape will mirror v1: `?collection=<id>&shared=1`. Recipient
-banner gives "Save copy to my collections" / "Just browsing".
-Public read-only collection links also live here.
+Conversational layer over the watchbox + reflection data. Helps
+the user think about their own collecting: "what mistakes have I
+made", "why am I gravitating toward chronographs lately", "what's
+the through-line in the watches I've kept vs the ones I've parted
+with." Stays narrowly scoped to the user's own data — not a
+general watch knowledge bot.
 
-### Strength-of-save model (reinstated 2026-05-03)
+Inspired by the editorial line at Screwdown Crown about why we
+collect / what mistakes we make. The bot is the collector-mind
+equivalent.
 
-Replace single-tier hearts with two levels of save signal: **"Love"**
-(strong, definitive) and **"Watch"** (lighter, "keep an eye on this").
+Depends on Watchbox v2 + reflection-layer data + cloud LLM access
+or Mac mini local LLM (Epic 0).
 
-**Critical constraint:** must not add UI clutter or extra friction.
-Likely a single tap that cycles through three states (none → watch
-→ love → none), or a long-press to escalate. Bad UX kills the
-feature; the simpler the gesture, the better.
+## Epic 7: Discovery & recommender
 
-Was rejected during Collections + Sharing v1 because it added
-complexity. Reinstated because the underlying need (distinguishing "I
-love this" from "I'm tracking this lightly") is real, especially as
-input for the AI taste features below. The challenge is the UI, not
-the concept.
+Serves **job-#7 (discovery / recommender)**. Expand the user's
+awareness beyond what they already know. Obscurity is relative to
+the user's browsing pattern, not absolute — what's obscure for a
+Rolex-only collector is everyday for a Heuer-deep one.
 
-This is the entry-level shape of the broader **Multi-signal taste
-capture** below — start here, expand later.
+This epic is enabled by — and only meaningful after — Epics 3
+(watchlist data), 6 (taste-rich watchbox data), and 8 (engagement
+data). Depth-first ordering: don't ship a recommender until the
+inputs are rich.
 
 ### Multi-signal taste capture
 
@@ -542,7 +941,7 @@ Beyond binary heart/no-heart, capture calibrated taste signals along
 a spectrum:
 
 - **Love** — strong positive
-- **Watch** — light positive (covered by Strength-of-save above)
+- **Watch** — light positive (covered by Strength-of-save in Epic 3)
 - **Keep but don't recommend** — neutral; don't surface in suggestions
   but don't actively reject
 - **Not for me but show others** — mild negative for me only
@@ -551,9 +950,9 @@ a spectrum:
 Hide is currently doing too many jobs (clutter removal, taste signal,
 "I don't want this"); this disambiguates them.
 
-Powers the AI taste model with calibrated signals. Implementation can
-be progressive: start with the strongest signals (Love, Never), add
-finer-grained ones as the UI for capturing them gets easier.
+Powers the AI taste model with calibrated signals. Implementation
+can be progressive: start with the strongest signals (Love, Never),
+add finer-grained ones as the UI for capturing them gets easier.
 
 ### Discover mode (with serendipity)
 
@@ -591,26 +990,22 @@ mode's swipe interface:
   from her own use; Mark can ask "what does Jackie's taste model say
   about this?" before sharing.
 
-Restricted initially to Mark's household. Can extend to friends later,
-or remain admin/household only indefinitely. Cost estimate: pennies
-per month at current scale.
+Restricted initially to Mark's household. Can extend to friends
+later, or remain admin/household only indefinitely. Cost estimate:
+pennies per month at current scale.
 
 Depends on Multi-signal taste capture + embeddings infrastructure
 (Supabase pgvector, computed once per listing on first sight).
 
-### Reference-level grouping
-Three saved 5548BAs collapse into one card with "3 listings, click to expand."
-Depends on Epic 0 references.
-
 ### Deferred under this epic
-- **Taste arcs** ("you love Rolex, fall out, return"). Defer until
-  embeddings prove themselves; embeddings cover ~70% of this naturally.
-- **Cross-source duplicate detection.** Possibly combine with reference
-  normalization.
-- **Listing-quality signals** (priced above/below dealer norm).
-- **Comparison view** for similar saved items.
 
-## Epic 4: Site analytics (admin-only)
+- **Taste arcs** ("you love Rolex, fall out, return"). Defer until
+  embeddings prove themselves; embeddings cover ~70% of this
+  naturally.
+- **Cross-source duplicate detection.** Possibly combine with
+  reference normalization.
+
+## Epic 8: Site analytics (admin-only)
 
 A separate area of the same site (`/admin` route, gated to my
 Supabase user ID via `REACT_APP_ADMIN_EMAILS`). Hidden from regular
@@ -618,7 +1013,7 @@ users. Different visual language: dense, data-heavy.
 
 Two halves with different signals and different consumers:
 
-### Dealer stats
+### Source stats (renamed from "Dealer stats" 2026-05-05 — covers houses too)
 
 About *supply* — the inventory side of the marketplace. Powers
 inventory decisions: which dealers to keep, which to prune, which
@@ -708,193 +1103,81 @@ events prove useful and Mark wants more granularity.
 What Watchcharts already does well: don't compete on historical
 price-per-reference. Use it; build what it doesn't.
 
-## Epic 5: References (collector resources surface)
-
-A top-level **References** section in the app for tools, calculators, and
-reference material that supports vintage-watch collecting but isn't tied
-to a specific listing or auction. Lives at its own main-nav tab alongside
-Available / Auctions / Watchlist.
-
-**Naming note.** "References" here is the section name (collector
-resources). It is distinct from "watch reference numbers" (Rolex 1675,
-Omega 2998, etc.) which are the data concept tracked under Epic 0. When
-both meanings appear in the same paragraph, prefer the explicit forms
-"References section" vs "reference numbers" for clarity. If/when the
-ambiguity becomes painful in product copy, we can rename one — but in
-docs and code the two coexist with the disambiguating qualifier.
-
-### Sub-area: Tools and calculators
-
-**Tools section is intentionally narrow.** The Watch size comparison
-tool is the seed. Future tools should solve specific *tactile* or
-*calculation* problems collectors actually have — e.g. "lay this watch
-on my wrist before I buy it" — not a generic toolbox.
-
-Resist building lug-to-lug calculators, strap-size calculators, etc.
-as separate tools. Most of that calculation is better surfaced
-**within reference guides themselves** (the 1675's reference guide
-can include lug-to-lug context for that specific reference, where
-the data is actually meaningful). Keep Tools tiny.
-
-Shipped:
-
-- **2026-04-29: Watch size comparison.** Two case dimensions (width ×
-  length in mm) → side-by-side preview, stat boxes (width / length /
-  footprint diff), and a print-to-scale sheet you can print on US Letter
-  to lay on your wrist. First feature in the References section. Print
-  scoping uses a React Portal pattern (see CLAUDE.md "Print scoping for
-  in-app tools" — pattern is reusable for future printable tools).
-
-Pending:
-
-- **Auction total-cost calculator** — every auction house adds buyer's
-  premium, and depending on jurisdiction the buyer also picks up
-  shipping, import duty, and sales / VAT. Hammer × house's BP table +
-  destination-country shipping + duty/tax estimator → "what will this
-  lot actually cost me, all-in." Inputs: hammer, house, ship-to
-  country (+ optional state/region for US sales tax). Outputs:
-  itemised line breakdown + total in user's primary currency.
-  Reference points: BP schedules from the four houses we already
-  scrape (Antiquorum, Christie's, Sotheby's, Phillips); the BP %
-  varies by hammer band and changes ~yearly so the table needs a
-  comment with the as-of date. Anchor under Cool Stuff alongside
-  the size comparison tool. Lands well in the cost-calculator track
-  rather than the encyclopedia track because it's *tactile* —
-  collectors run the math the moment they see a lot they like.
-
-### Sub-area: Reference-number encyclopedia (the headline feature)
-
-Reference-number-led learning resource — what was previously this epic's
-sole content. Surfaces under the same References tab once it's built.
-Combines three layers:
-
-1. **LLM-synthesized body.** Aggregates dealer descriptions, auction lot
-   notes, and other on-platform writing about a reference number into a
-   coherent reference guide. Refreshes periodically. Credit: "synthesized
-   from descriptions by Hairspring, Wind Vintage, Analog Shift, ..."
-2. **Curated layer.** Hand-picked links to deep dives, forum threads,
-   videos, photo galleries. Public can suggest via form; I moderate.
-   Inspired by explorer1016.com and similar collector-built sites.
-3. **Live layer.** Currently-available listings of that reference number,
-   plus past auction results, plus price trends.
-
-Surfaces on listings of relevant reference numbers and as a standalone
-browseable encyclopedia inside the References section.
-
-This is potentially the platform's most differentiated feature.
-Watchcharts has prices. Hodinkee has editorial. Dealer sites have
-inventory. Nobody has all three synthesized into a single
-reference-number-led learning view drawn from the dealer market itself.
-
-Depends on: Epic 0 (reference numbers) + Epic 6 Phase A or cloud LLM
-access for generation + accumulated dealer descriptions (already
-happening passively if we start storing full descriptions for tracked
-reference numbers).
-
-Storage decision: full dealer descriptions for tracked reference numbers
-stored locally on Mac mini and synced to Supabase, rather than bloating
-`listings.json` for everyone.
-
-**Moderated user contributions v2 (deferred — Epic 5 ships first).**
-Users can suggest corrections to entries and propose additional links
-via a contribution form. Submissions queue for moderation; Mark
-approves or declines. Not wiki-editable — every change goes through
-review. The intent is to leverage community knowledge while preserving
-editorial integrity, so the encyclopedia keeps reading like a curated
-resource rather than a free-for-all. Probably a year+ out: the
-encyclopedia has to exist and have enough entries that contributions
-become useful.
-
-### Sub-area: Curated link aggregator
-
-Hand-picked outbound resources that are useful but don't fit the
-encyclopedia structure: forum threads, vintage dealers' shop tours,
-historical references, articles. Lives under References as a browsable
-list with brand / topic / type filters. Some overlap with the
-encyclopedia's curated layer; this surface is the catch-all home when
-the link doesn't tie cleanly to one reference number.
-
-## Epic 6: Mac mini infrastructure
-
-Learning project plus capability extension. Phased.
-
-- **Phase A:** Mac mini scrapes hard sources (Cloudflare-protected, JS-heavy)
-  using headed Playwright. Pushes CSVs to repo. Rest of system unchanged.
-  ~1 weekend setup. Concrete and useful.
-- **Phase A.5 (likely combined with A):** Mac mini stores full dealer
-  descriptions for tracked references. Generates reference guides via local
-  LLM (Llama 3 or similar). Pushes results to Supabase. Powers Epic 5
-  encyclopedia without burning cloud LLM budget.
-- **Phase B (later, optional):** Mac mini runs Postgres and the API; Vercel
-  still serves frontend.
-- **Phase C (later, optional):** Full self-hosting on Mac mini.
-
-Watch out for: CGNAT on home internet (check before buying), power/network
-reliability, SSL cert renewal, backup strategy.
-
-Hardware: M4 Mac mini base, 16GB RAM, ~$600.
 
 ## Priority order
 
 Current best-guess sequence. Will shift; update this doc when it does.
+Epic numbers reflect the 2026-05-05 restructure.
 
-1. **Site analytics — User stats half (Epic 4).** Top of queue —
-   click / save / hide / list-add / share telemetry into a new
+1. **Site analytics — User stats half (Epic 8).** Top of queue.
+   Click / save / hide / list-add / share telemetry into a new
    `listing_events` Supabase table; rollup-and-prune cron; admin
-   panels surfaced on the Source Quality dashboard. Half-session
-   to a day. Anonymous-friendly (UUID in `localStorage`); admin-
-   only RLS for reads. Gates the Stop-rule prune (#7 below) — no
-   meaningful demand-side signal until this lands.
-2. **Site analytics — Dealer stats extensions (Epic 4).** Throughput
-   in value, sales by watch type per dealer, cross-source live
-   inventory, listing-quality signals, taste-relative pricing.
-   Sequence after #1 because some panels combine supply (these)
-   and demand (#1) in one view.
-3. **Watch Challenges v1.5 (Epic 3).** Close the social loop left
-   by v1: implement the `?newchallenge=1` receive flow + public
-   read of completed challenges (RLS surgery). Half-session of
-   work.
+   panels surfaced on the Source Quality dashboard. Anonymous-
+   friendly (UUID in `localStorage`); admin-only RLS for reads.
+   Gates the Stop-rule prune below — no meaningful demand-side
+   signal until this lands. Half-session to a day.
+2. **Site analytics — Source stats extensions (Epic 8).** Throughput
+   in value, sales by watch type per dealer / per house, cross-source
+   live inventory, listing-quality signals, taste-relative pricing,
+   auction-house quality dashboard. Some panels combine supply (these)
+   and demand (#1) in one view; sequence after #1.
+3. **Watch Challenges v1.5 (Epic 6).** Close the social loop left
+   by v1: `?newchallenge=1` receive flow + public read of completed
+   challenges (RLS surgery). Half-session.
 4. **References as first-class entities (Epic 0).** The remaining
-   foundation. Several downstream features (encyclopedia, comparison
-   view, auction lot grouping, Discover mode quality) gate on this.
-5. **Welcome page + remaining SEO (Epic 0).** SEO basics shipped
-   (PR #39 + #43 — `<title>`, meta description, OG/Twitter,
-   robots, sitemap, JSON-LD). Still pending: og:image refresh
-   (currently the 1024×1024 apple-touch-icon as placeholder) +
-   first-time-visitor welcome page. Half-session.
-6. **Strength-of-save model (Epic 3).** Two-tier (Love / Watch) is
-   the entry point to the broader Multi-signal taste capture. Small
-   UI lift; the feature is *the gesture*, not the underlying data.
-7. **Epic 1 source pruning** under the Stop rule. At **38 dealers**
-   (post Avocado removal 2026-05-05) we're 12 under the new
-   50-target — adding remains the active mode. When we hit ~50,
-   audit using Site analytics (#1) and prune.
-8. **Epic 6 Phase A** when a specific blocked source needs it OR
-   when ready to start Epic 5 generation work.
-9. **Watchbox v2 — reflection layer (Epic 3).** Highest personal
-   value of any roadmap item. Reflective-tool exemplar per Strategic
-   bets. Unlocks Journey 10.
-10. **Epic 2 comprehensive auction inventory capture.** Substrate for
-    serendipitous discovery and reference research.
+   foundation. Several downstream features (Epic 5 encyclopedia,
+   per-reference comparison views, auction lot grouping, Discover
+   mode quality) gate on this.
+5. **Welcome page + og:image (Epic 0).** SEO basics shipped (PRs
+   #39, #43, #51). Still pending: og:image refresh (currently the
+   1024×1024 apple-touch-icon as placeholder) + first-time-visitor
+   welcome page. Half-session.
+6. **Strength-of-save model (Epic 3 + Epic 7 entry point).** Two-tier
+   (Love / Watch) is the gesture entry point to the broader
+   Multi-signal taste capture. Small UI lift; the feature is *the
+   gesture*, not the underlying data.
+7. **User limits + user-management dashboard (Epic 3 + Epic 8).**
+   500 soft / 2,500 hard cap; admin grants individuals expanded
+   limits. Defensive engineering for an open public site.
+8. **Image cache for List items (Epic 3).** Extend
+   `cache_watchlist_images.mjs` to cover `collection_items`, not
+   just `watchlist_items`. Soon-ish per Mark.
+9. **Source pruning (Epic 1 Stop rule).** At ~50 dealers, audit
+   with the click + save data from #1 and prune. Currently at 38;
+   adding remains the active mode until we hit threshold.
+10. **Mac mini Phase A (Epic 0).** When Tropical Watch hits a
+    Browse AI snag OR when Heritage / Bonhams / Monaco Legend need
+    a Playwright runner OR when ready to start Epic 5 encyclopedia
+    generation.
+11. **Watchbox v2 — reflection layer (Epic 6).** Highest personal
+    value of any roadmap item. The collection-mentality flagship.
+    Reflection notes + per-watch journey + the AI reflection bot
+    delighter.
+12. **Epic 5 encyclopedia.** Built incrementally as dealer
+    descriptions accumulate. Depends on Epic 0 references + Mac
+    mini A.5 for local LLM generation (or cloud LLM access).
+13. **Multi-signal taste capture + Discover mode + AI recommendations
+    (Epic 7).** Stack progressively. Multi-signal first; Discover
+    and recommendations layer on top once signals are rich.
+14. **Watch Challenges v2 (Epic 6).** Past-listings as a source,
+    value-over-time tracking, challenge response threads — once
+    Epic 0 references land.
+15. **Comprehensive auction inventory capture beyond active sales
+    (Epic 2).** Substrate for serendipitous discovery + reference
+    research at scale.
 
-**Manual historical auction entry (Epic 2 / Phase D)** is no longer
-in the queue as a roadmap item — Mark's call 2026-05-05. Adding
-archive sales happens in-session as the cadence requires (one shipped
-PR #42; the existing `data/manual_archive_sales.json` registry +
-`manual_archive_scraper.py` workflow handles Phillips trivially, and
-the Antiquorum-archive enumerator is a session of work IF we ever
-need it). The previously-listed admin-form ambition is dropped;
-in-session work is the chosen mode.
-11. **Epic 5 encyclopedia** built incrementally as dealer descriptions
-    accumulate.
-12. **Multi-signal taste capture + Discover mode + AI recommendation
-    surfaces (Epic 3).** Stack progressively. Multi-signal first;
-    Discover and recommendations layer on top once signals are rich.
-13. **Build-a-collection / Watch Challenges v2 (Epic 3).** The deeper
-    extensions — past-listings as a source, value-over-time tracking,
-    challenge response threads — once Epic 0 references land.
-14. **Epic 4 admin analytics** beyond #2 — taste-relative pricing,
-    auction lot prediction, etc. — built incrementally throughout.
+**Items deliberately NOT in the priority order:**
+
+- **Manual historical auction entry (Epic 2 archive layer).** The
+  pipeline shipped (PR #42); adding more archive sales is
+  in-session work, not a roadmap item — Mark's call 2026-05-05.
+  The JSON-edit-and-rerun workflow handles Phillips trivially; the
+  Antiquorum-archive enumerator is a session of work if/when needed.
+- **Open submission v2 (Epic 1).** Deferred until there are users
+  who'd benefit from suggesting sources.
+- **Personal-learning agent side track.** Brand-watcher agent and
+  maintenance-assistant agent both accepted in concept (2026-05-05);
+  defer the build to its own session whenever Mark wants to start.
 
 ## Explicitly NOT on the roadmap
 
@@ -973,6 +1256,52 @@ moved, priorities drift. A quarterly pass catches that before it
 becomes confusion.
 
 ## Update log
+
+> **Note on epic numbers in older entries.** The 2026-05-05 evening
+> restructure changed the epic numbering: Epic 3 (Lovable features)
+> split into Epic 3 Watchlist + Epic 4 Sharing + Epic 6 Collection
+> mentality + Epic 7 Discovery & recommender; old Epic 4 (Site
+> analytics) became Epic 8; old Epic 6 (Mac mini) folded into Epic 0.
+> Epic 0/1/2/5 numbering unchanged. Entries below dated before
+> 2026-05-05 evening reference the pre-restructure scheme.
+
+- 2026-05-05 (evening): **Roadmap section-by-section review.** Per
+  Mark, the roadmap had drifted from how he was actually thinking
+  + building. Walk-through restructured the doc:
+  - **Strategic bets demoted "reflective tool"** from primary
+    framing to one-of-several distinguishing positions.
+  - Added a **Jobs-to-be-done chain** as the priority-ordering
+    principle (aggregator → watchlist → sharing → reference
+    research → reference learning → collection → discovery →
+    commercial signals).
+  - **Epic 3 (Lovable features) split into four:** new Epic 3
+    Watchlist, Epic 4 Sharing, Epic 6 Collection mentality, Epic 7
+    Discovery & recommender.
+  - **Epic 5 (References)** kept its number; restructured into
+    Reference research vs Reference learning vs Tools vs Curated
+    links sub-areas to match Mark's distinction between research
+    (analytics over inventory) and learning (encyclopedia /
+    editorial).
+  - **Epic 8 (Site analytics)** = old Epic 4 renumbered. Dealer
+    stats half renamed Source stats to encompass auction-house
+    analytics too.
+  - **Mac mini infrastructure** (was standalone Epic 6) folded
+    into Epic 0 as a future-hardware-tier sub-section. Same
+    phasing (A / A.5 / B / C); just lives next to the other infra
+    items.
+  - **Epic 1 + Epic 2 split adjusted** so Epic 1 covers dealers +
+    eBay (the dealer-shaped sources) and Epic 2 covers the full
+    auction-house pipeline (calendar + lots + archive). Auction-
+    house gaps moved out of Epic 1 into Epic 2.
+  - **eBay integration moved from old Epic 3 to new Epic 1** — it
+    was always source-shaped work, not a "lovable feature."
+  - **Pending review block deleted** — items dissolved into the
+    right epics during the review.
+  - **User journeys section deleted** — the two forward-looking
+    journeys (Returning Reflection, Source Suggestion) folded
+    into the relevant epics' descriptions.
+  - **Constraints note** about commercial intent reframed so it
+    doesn't conflict with job-#8 (commercial signals).
 
 - 2026-05-05 (afternoon): **Roadmap review + Avocado prune.** Per Mark:
   - **Avocado Vintage removed.** Scraper file, merge.py SOURCES
