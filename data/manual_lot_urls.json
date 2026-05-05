@@ -1,0 +1,5 @@
+{
+  "_comment": "Manually curated auction lot URLs. Each entry gets scraped on the daily auctions cron and merged into public/auction_lots.json (same shape as the comprehensive scrape output). Use this for: (a) historical sales the comprehensive scrape can't reach (Phillips/Antiquorum archive URLs), (b) individual lots Mark wants tracked but that aren't in a currently-active sale on the calendar, (c) houses whose calendar enumeration is broken. Supported URL patterns mirror auctionlots_scraper's per-lot scrapers: Antiquorum live + catalog, Christie's, Sotheby's, Phillips, Monaco Legend.",
+  "_format": "Edit the `lots` array. Each entry is just a URL string. Comments above are ignored by the scraper.",
+  "lots": []
+}

@@ -24,6 +24,7 @@ export function DesktopShell(props) {
     currentIsSaved,
     filterAuctionsOnly, filterBrands, filterSources,
     listingsSubTab,
+    allFiltered,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
     search, sort,
@@ -200,9 +201,22 @@ export function DesktopShell(props) {
         </div>
       )}
 
+      {/* Filtered count — pushed right via marginLeft auto. Mirrors
+          the count Mobile already shows at the head of its sort row;
+          surfaced at the top so the user doesn't have to scroll to
+          the bottom of an infinite-scroll list to see how many
+          matched. Only renders on tabs that have a filterable list
+          (skip on Watchlist sub-tabs that don't render allFiltered). */}
+      <span style={{
+        marginLeft: "auto", flexShrink: 0,
+        fontSize: 12, color: "var(--text3)", fontFamily: "inherit",
+        whiteSpace: "nowrap", padding: "0 6px",
+      }}>
+        {(allFiltered?.length || 0).toLocaleString()} {(allFiltered?.length === 1) ? "watch" : "watches"}
+      </span>
+
       {hasFilters && (
         <button onClick={resetFilters} style={{
-          marginLeft: "auto",
           fontSize: 13, padding: "6px 12px", borderRadius: 20, cursor: "pointer",
           fontFamily: "inherit", whiteSpace: "nowrap",
           border: "none", outline: "none",

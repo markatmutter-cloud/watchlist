@@ -90,6 +90,57 @@ def fetch_tracked_urls():
         return []
 
 
+def _enrich_antiquorum_title(raw_title, description_html):
+    """Antiquorum's `lot.title` field on live.antiquorum.swiss is often
+    just a brand name ("OMEGA", "ROLEX") — the model + reference live in
+    the rendered description, formatted as an ALL-CAPS prefix followed
+    by mixed-case body text. Example:
+
+      title:       'OMEGA'
+      description: 'OMEGA, SWITZERLAND, REF. ST 166.024, SEAMASTER 300,
+                    STAINLESS STEEL A fine, stainless steel...'
+
+    This pulls the all-caps prefix out as a richer title so cards in the
+    feed are visually distinguishable and the search box matches on
+    model + reference. Returns the original title untouched if the
+    description doesn't fit the pattern (defensive against future
+    Antiquorum format changes).
+    """
+    raw_title = (raw_title or "").strip()
+    desc = re.sub(r"<[^>]+>", " ", (description_html or ""))
+    desc = re.sub(r"\s+", " ", desc).strip()
+    if not desc:
+        return raw_title
+    # If the existing title is already substantive (has a comma or
+    # is longer than a single brand word), trust it.
+    if "," in raw_title or len(raw_title.split()) > 2:
+        return raw_title
+    # Walk words from the start of the description. Keep ALL-UPPERCASE
+    # tokens (allowing digits, dots, commas, ampersand, slash, hyphen).
+    # Stop at the first mixed-case word — that's the "A fine, ..." body.
+    # A single-letter uppercase word (e.g. "A") followed by a lowercase
+    # word is also a stop condition (the article "A" preceding "fine").
+    words = desc.split()
+    title_words = []
+    for i, w in enumerate(words):
+        next_w = words[i + 1] if i + 1 < len(words) else ""
+        if re.match(r"^[A-Z][a-z]", w):
+            break
+        if re.match(r"^[a-z]", w):
+            break
+        if len(w) == 1 and w.isupper() and re.match(r"^[a-z]", next_w):
+            break
+        title_words.append(w)
+    derived = " ".join(title_words).strip(" ,.")
+    if not derived:
+        return raw_title
+    # Only adopt the derived title when it's strictly more informative
+    # (longer, contains the brand-only original).
+    if len(derived) <= len(raw_title):
+        return raw_title
+    return derived
+
+
 def scrape_antiquorum_lot(url):
     """Return a dict of fields scraped from one Antiquorum lot page."""
     r = requests.get(url, headers=HEADERS, timeout=20)
@@ -111,7 +162,7 @@ def scrape_antiquorum_lot(url):
         "house": "Antiquorum",
         "lot_id": lot.get("row_id"),
         "lot_number": lot.get("lot_number"),
-        "title": (lot.get("title") or "").strip(),
+        "title": _enrich_antiquorum_title(lot.get("title"), lot.get("description")),
         "description": (lot.get("description") or "").replace("<br/>", " ").strip()[:600],
         "currency": currency,
         "estimate_low": lot.get("estimate_low"),

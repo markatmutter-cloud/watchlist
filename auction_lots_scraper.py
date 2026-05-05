@@ -50,6 +50,10 @@ import requests
 from auctionlots_scraper import (
     scrape_catalog_antiquorum_lot,
     scrape_phillips_lot,
+    scrape_antiquorum_lot,
+    scrape_christies_lot,
+    scrape_sothebys_lot,
+    scrape_monaco_legend_lot,
     to_usd,
     HEADERS as LOT_HEADERS,
 )
@@ -86,6 +90,15 @@ HEADERS = {
 
 AUCTIONS_JSON = "public/auctions.json"
 OUTPUT_JSON = "public/auction_lots.json"
+# Manually curated lot URLs Mark adds via GitHub UI when he wants a
+# specific lot tracked that the comprehensive enumeration won't reach
+# (historical sales, lots dropped from current sales, houses with
+# broken enumeration). Each URL is dispatched to the matching
+# scrape_<house>_lot function from auctionlots_scraper.py and merged
+# into the output alongside the comprehensive scrape. Long-term
+# replaced by an admin form (Phase D); short-term Mark edits the
+# JSON file directly via the GitHub web editor.
+MANUAL_URLS_JSON = "data/manual_lot_urls.json"
 
 
 # ── Category exclusion ───────────────────────────────────────────────────
@@ -481,6 +494,42 @@ ENUMERATORS = {
 }
 
 
+def scrape_manual_url(url):
+    """Dispatch a manually-supplied URL to the right per-lot scraper.
+    Returns (url, lot_dict) on success or None on unsupported pattern.
+    """
+    if not url or not url.startswith("http"):
+        return None
+    if "live.antiquorum.swiss/lots/view" in url:
+        return (url, scrape_antiquorum_lot(url))
+    if "catalog.antiquorum.swiss/" in url and "/lots/" in url:
+        return (url, scrape_catalog_antiquorum_lot(url))
+    if "christies.com/" in url and "/lot/lot-" in url:
+        return (url, scrape_christies_lot(url))
+    if "sothebys.com/" in url and "/buy/auction/" in url:
+        return (url, scrape_sothebys_lot(url))
+    if "phillips.com/detail/" in url:
+        return (url, scrape_phillips_lot(url))
+    if "monacolegendauctions.com/auction/" in url and "/lot-" in url:
+        return (url, scrape_monaco_legend_lot(url))
+    return None
+
+
+def load_manual_urls():
+    """Read data/manual_lot_urls.json. Returns a list of URL strings.
+    Missing file or malformed JSON is treated as empty (non-fatal)."""
+    if not os.path.exists(MANUAL_URLS_JSON):
+        return []
+    try:
+        with open(MANUAL_URLS_JSON) as f:
+            blob = json.load(f)
+        urls = blob.get("lots") or []
+        return [u for u in urls if isinstance(u, str) and u.strip()]
+    except Exception as e:
+        print(f"WARNING: {MANUAL_URLS_JSON} unreadable: {e}")
+        return []
+
+
 def main():
     if not os.path.exists(AUCTIONS_JSON):
         print(f"ERROR: {AUCTIONS_JSON} not found — run merge.py first.", file=sys.stderr)
@@ -524,7 +573,30 @@ def main():
             n_kept += 1
         print(f"  → {n_kept} lots kept after filter\n")
 
-    print(f"Total lots: {len(out)}")
+    # Manually curated URLs (data/manual_lot_urls.json) — process AFTER
+    # the comprehensive scrape so manual entries win on URL collision
+    # (they're typically the more authoritative scrape for that lot,
+    # since Mark only adds lots he wants tracked carefully).
+    manual_urls = load_manual_urls()
+    if manual_urls:
+        print(f"\nManual lot URLs: {len(manual_urls)}\n")
+        for url in manual_urls:
+            try:
+                time.sleep(PER_LOT_SLEEP_SECONDS)
+                result = scrape_manual_url(url)
+                if result is None:
+                    print(f"  [manual] unsupported URL pattern: {url}")
+                    continue
+                _, data = result
+                if is_excluded_title(data.get("title")):
+                    print(f"  [manual] excluded by category filter: {url}")
+                    continue
+                out[result[0]] = data
+                print(f"  [manual] {data.get('house', '?')} · {(data.get('title') or '')[:60]}")
+            except Exception as e:
+                print(f"  [manual] scrape failed {url}: {e}")
+
+    print(f"\nTotal lots: {len(out)}")
     with open(OUTPUT_JSON, "w") as f:
         json.dump(out, f, indent=2, ensure_ascii=False, sort_keys=True)
     print(f"Wrote {OUTPUT_JSON}")

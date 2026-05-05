@@ -106,10 +106,23 @@ jobs:
         # Antiquorum / Christie's / Sotheby's / Phillips. Filters
         # pocket watches / clocks / loose dials at scrape time per
         # Mark's spec on 2026-05-04. Output: public/auction_lots.json.
-        # Soft-fail so a temporary house-side breakage doesn't kill
-        # the whole auctions run.
+        # Also dispatches data/manual_lot_urls.json entries to the
+        # right per-lot scraper (Mark's manual-tracking surface
+        # before Phase D admin form lands). Soft-fail so a temporary
+        # house-side breakage doesn't kill the whole auctions run.
         continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python auction_lots_scraper.py
+
+      - name: Verify auction-lot health
+        # Mirror of the dealer-side verify_sources step — counts live
+        # lots per auction house, alerts on drops to zero or below
+        # 30% of rolling median. Non-blocking so a verification glitch
+        # never kills the run.
+        continue-on-error: true
+        run: python verify_auction_lots.py || true
 
       - name: Commit and push
         # Same race-resilient retry as the listings workflow.
