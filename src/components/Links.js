@@ -42,6 +42,7 @@ const TOPIC_SECTIONS = [
       "https://perezcope.com/about/",
       "https://www.watchuseek.com/",
       "https://www.strictlyvintagewatches.com/",
+      "https://www.ablogtowatch.com/retail-me-not/",
     ],
   },
 ];
