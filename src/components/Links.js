@@ -41,6 +41,7 @@ const TOPIC_SECTIONS = [
       "https://www.fratellowatches.com/",
       "https://perezcope.com/about/",
       "https://www.watchuseek.com/",
+      "https://www.strictlyvintagewatches.com/",
     ],
   },
 ];
