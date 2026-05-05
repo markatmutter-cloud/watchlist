@@ -116,10 +116,6 @@ jobs:
         continue-on-error: true
         run: python thevintagewatch_scraper.py
 
-      - name: Run Avocado Vintage scraper
-        continue-on-error: true
-        run: python avocadovintage_scraper.py
-
       - name: Run Chronoholic scraper (Omega category only)
         continue-on-error: true
         run: python chronoholic_scraper.py
@@ -259,7 +255,6 @@ jobs:
           [ -f moonphase_listings.csv ]           && mv moonphase_listings.csv           data/moonphase.csv           || echo "moonphase missing"
           [ -f huntington_listings.csv ]          && mv huntington_listings.csv          data/huntington.csv          || echo "huntington missing"
           [ -f thevintagewatch_listings.csv ]     && mv thevintagewatch_listings.csv     data/thevintagewatch.csv     || echo "thevintagewatch missing"
-          [ -f avocadovintage_listings.csv ]      && mv avocadovintage_listings.csv      data/avocadovintage.csv      || echo "avocadovintage missing"
           [ -f chronoholic_listings.csv ]         && mv chronoholic_listings.csv         data/chronoholic.csv         || echo "chronoholic missing"
           [ -f vintagewatchfam_listings.csv ]     && mv vintagewatchfam_listings.csv     data/vintagewatchfam.csv     || echo "vintagewatchfam missing"
           [ -f shucktheoyster_listings.csv ]      && mv shucktheoyster_listings.csv      data/shucktheoyster.csv      || echo "shucktheoyster missing"

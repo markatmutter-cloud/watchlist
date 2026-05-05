@@ -22,7 +22,7 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 Three top-level tabs:
 
-- **Listings** — aggregates 39 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
+- **Listings** — aggregates 38 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
 - **Watchlist** — five sub-tabs:
   - **Favorites** — items you've hearted (your default list), with price-at-save preserved.
   - **Lists** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you. Anything you've hidden from the Available feed surfaces here too as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
@@ -60,7 +60,7 @@ Plus:
   ┌─────────────────────────────────────────────────────────────┐
   │                  GitHub Actions (cron, daily)               │
   │                                                             │
-  │   39× listing scrapers + 6× auction scrapers (Python)       │
+  │   38× listing scrapers + 6× auction scrapers (Python)       │
   │            │                              │                 │
   │            ▼                              ▼                 │
   │     *_listings.csv               *_auctions.csv             │
@@ -97,7 +97,7 @@ Listings/auctions are static JSON committed to the repo. The only thing behind a
 
 ## Data sources
 
-### Dealers (39)
+### Dealers (38)
 
 All scrapers hit each dealer's existing public endpoint — no credential-protected APIs, no headless browsers where it can be avoided.
 
@@ -125,7 +125,6 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 | Moonphase | pushers.io | `/api/dealers/{handle}.json` (structured brand + price + state) | EUR |
 | Huntington Company | Shopify | `/collections/watchshop/products.json` | USD |
 | The Vintage Watch | Shopify | `/collections/available-watches/products.json` | USD |
-| Avocado Vintage | Squarespace | `?format=json` items[] | USD |
 | Chronoholic (Omega only) | Wix | `productsWithMetaData.list[]` JSON embedded in HTML | USD |
 | Vintage Watch Fam | Shopify | collection-scoped `/products.json` | USD |
 | Shuck the Oyster | Custom (WordPress) | `/portfolio/` listing pages + per-item detail-page price extraction (`PRICE NNNN€`) | EUR |
