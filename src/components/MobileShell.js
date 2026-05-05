@@ -1,7 +1,6 @@
 import React from "react";
 import { SearchIcon, FilterIcon, TabIcon } from "./icons";
 import { Chip } from "./Chip";
-import { ReferencesTab } from "./ReferencesTab";
 import { AboutModal } from "./AboutModal";
 import { iconButton, pillBase } from "../styles";
 
@@ -22,7 +21,7 @@ export function MobileShell(props) {
     // State
     aboutModalOpen, allFiltered, brandsExpanded,
     currentIsSaved, drawerOpen,
-    filterAuctionsOnly, filterBrands, filterSources,
+    filterBrands, filterSources,
     listingsSubTab,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
@@ -32,7 +31,7 @@ export function MobileShell(props) {
     // Setters / handlers
     handleWish, openFavPrompt, resetFilters,
     setAboutModalOpen, setBrandsExpanded,
-    setDrawerOpen, setFilterAuctionsOnly,
+    setDrawerOpen,
     setMaxPriceText, setMinPriceText,
     setPage, setSearch, setSort,
     setSourcePickerOpen, setSourcesExpanded,
@@ -47,6 +46,7 @@ export function MobileShell(props) {
     settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX, watchlistTabJSX,
+    referencesTabJSX,
     lotMigrationBannerJSX,
   } = props;
 
@@ -57,7 +57,7 @@ export function MobileShell(props) {
   // Watchlist sub-tabs that don't show a filterable list.
   const noFilterableList =
     (tab === "listings" && listingsSubTab === "calendar") ||
-    (tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections" || watchTopTab === "challenges"));
+    (tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections"));
 
   return (
       <div style={baseStyle}>
@@ -192,7 +192,7 @@ export function MobileShell(props) {
               the user has no qualifying tracked lots. */}
           {tab === "watchlist" && endingSoonJSX}
           {tab === "listings" ? listingsTabContentJSX
-            : tab === "references" ? <ReferencesTab />
+            : tab === "references" ? referencesTabJSX
             : tab === "admin" ? adminTabJSX
             : watchlistTabJSX}
         </div>
@@ -233,40 +233,9 @@ export function MobileShell(props) {
               {/* Scrollable filter content */}
               <div style={{ flex: 1, overflowY: "auto", padding: "0 0 8px" }}>
 
-                {/* Status segment — Watchlist tab only (Listings tab
-                    sub-tabs cover Live / Sold). */}
-                {tab === "watchlist" && (
-                  <>
-                    <div style={{ padding: "10px 16px 10px" }}>
-                      <div style={sectionHeadingStyle}>Status</div>
-                      {statusSegmentJSX}
-                    </div>
-                    <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
-                  </>
-                )}
-
-                {/* Auctions-only toggle. Orthogonal to the Live/Sold/All
-                    status segment above — when on, narrows to auction-
-                    format items (auction-house lots + eBay AUCTION).
-                    Watchlist-only because Listings doesn't have any
-                    auction-format items (those are tracked URLs that
-                    live in Watchlist). Mirrors the desktop pill that
-                    only renders on `tab === "watchlist"`. */}
-                {tab === "watchlist" && (
-                  <>
-                    <div style={{ padding: "10px 16px 10px" }}>
-                      <div style={sectionHeadingStyle}>Auctions only</div>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        <Chip
-                          label={filterAuctionsOnly ? "✓ Auctions only" : "Auctions only"}
-                          active={filterAuctionsOnly}
-                          onClick={() => setFilterAuctionsOnly(v => !v)}
-                        />
-                      </div>
-                    </div>
-                    <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
-                  </>
-                )}
+                {/* Status + Auctions-only sections retired 2026-05-04
+                    — both Listings AND Watchlist now use sub-tabs that
+                    cover Live / Sold and Dealers / Auctions scope. */}
 
                 <div style={{ padding: "10px 16px 10px" }}>
                   <div style={sectionHeadingStyle}>Source</div>

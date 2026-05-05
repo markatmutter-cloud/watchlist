@@ -1,7 +1,6 @@
 import React from "react";
 import { SearchIcon, TabIcon } from "./icons";
 import { Chip } from "./Chip";
-import { ReferencesTab } from "./ReferencesTab";
 import { AboutModal } from "./AboutModal";
 import { pillBase } from "../styles";
 
@@ -22,7 +21,7 @@ export function DesktopShell(props) {
     aboutModalOpen, activeFilterPop,
     brandsExpanded,
     currentIsSaved,
-    filterAuctionsOnly, filterBrands, filterSources,
+    filterBrands, filterSources,
     listingsSubTab,
     allFiltered,
     hasFilters, hiddenItems,
@@ -33,7 +32,7 @@ export function DesktopShell(props) {
     // Setters / handlers
     handleWish, openFavPrompt, resetFilters,
     setAboutModalOpen, setActiveFilterPop, setBrandsExpanded,
-    setFilterAuctionsOnly, setFilterBrands, setFilterSources,
+    setFilterBrands, setFilterSources,
     setMaxPriceText, setMinPriceText,
     setPage, setSearch, setSort,
     setTab,
@@ -46,6 +45,7 @@ export function DesktopShell(props) {
     adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX, watchlistTabJSX,
+    referencesTabJSX,
     lotMigrationBannerJSX,
   } = props;
 
@@ -86,9 +86,8 @@ export function DesktopShell(props) {
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
                   borderBottom: expandedSource || expandedBrand ? "none" : "0.5px solid var(--border)",
                   flexShrink: 0, flexWrap: "wrap", position: "relative" }}>
-      {/* Status segment (Live / Sold / All) is Watchlist-only now —
-          on Listings the sub-tabs cover that role. */}
-      {tab === "watchlist" && statusSegmentJSX}
+      {/* Status segment retired 2026-05-04 — both Listings AND
+          Watchlist now have sub-tabs that cover Live / Sold. */}
 
       {/* Sort — Date + Price toggle pills. Date pill semantics depend
           on the active Listings sub-tab (newest firstSeen on Live;
@@ -192,14 +191,8 @@ export function DesktopShell(props) {
         Brand{filterBrands.length > 0 ? ` · ${filterBrands.length}` : ""}
       </button>
 
-      {/* Auctions-only toggle — only relevant on Watchlist tab. */}
-      {tab === "watchlist" && (
-        <div style={{ position: "relative" }}>
-          <button onClick={() => setFilterAuctionsOnly(v => !v)} style={dtPill(filterAuctionsOnly)}>
-            {filterAuctionsOnly ? "✓ Auctions" : "Auctions"}
-          </button>
-        </div>
-      )}
+      {/* Auctions-only pill retired 2026-05-04 — Watchlist > Saved
+          auctions sub-tab covers it. */}
 
       {/* Filtered count — pushed right via marginLeft auto. Mirrors
           the count Mobile already shows at the head of its sort row;
@@ -294,7 +287,7 @@ export function DesktopShell(props) {
     <div style={{ ...baseStyle, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* Full-width top bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections" || watchTopTab === "challenges")) && sidebarToggleJSX}
+        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections")) && sidebarToggleJSX}
         <button onClick={() => { setTab("listings"); setPage(1); }}
           style={{ background: "none", border: "none", cursor: "pointer",
                   padding: 0, fontFamily: "inherit",
@@ -355,7 +348,7 @@ export function DesktopShell(props) {
       {watchSubTabsJSX}
       {(
         (tab === "listings" && showListingsFilterRow) ||
-        (tab === "watchlist" && watchTopTab !== "searches" && watchTopTab !== "collections" && watchTopTab !== "challenges")
+        (tab === "watchlist" && watchTopTab !== "searches" && watchTopTab !== "collections")
       )
         ? filterRowJSX
         : (
@@ -381,7 +374,7 @@ export function DesktopShell(props) {
               Returns null when no qualifying tracked lots. */}
           {tab === "watchlist" && endingSoonJSX}
           {tab === "listings" ? listingsTabContentJSX
-            : tab === "references" ? <ReferencesTab />
+            : tab === "references" ? referencesTabJSX
             : tab === "admin" ? adminTabJSX
             : watchlistTabJSX}
         </div>
