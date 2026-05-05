@@ -87,25 +87,40 @@ export const Card = memo(function Card({
   // even when sold — misleading because the dealer never showed a
   // price OR sold the item silently. If sold AND price is missing
   // AND there's no historic price record, show "—" instead.
-  const hasHistoricPrice = (item.priceHistory || []).some(h => (h?.price ?? 0) > 0)
-    || (item.price && item.price > 0);
+  // Last non-zero entry from priceHistory — used as the "last asking
+  // price" for sold items whose current price has dropped to 0 (dealer
+  // hid the price post-sale). 40% of sold dealer items hit this case
+  // because most dealers replace the price label with "SOLD" once the
+  // item moves, and the next scrape captures price=0 + priceOnRequest.
+  const lastKnownPrice = (item.priceHistory || [])
+    .map(h => h && h.price)
+    .filter(p => typeof p === "number" && p > 0)
+    .pop();
+  const hasHistoricPrice = !!lastKnownPrice || (item.price && item.price > 0);
   const itemCurrency = (item.currency || "USD").toUpperCase();
   const matchesPrimary = itemCurrency === primaryCurrency;
   // Compute the primary-currency display value. Exact when listing
   // is already in user's primary currency; ~approx otherwise.
   const primaryAmount = priceIn(item, primaryCurrency);
   const primarySym = CURRENCY_SYM[primaryCurrency] || "$";
+  // Sold-with-historic-price: use the last non-zero asking price as the
+  // display value (the "Sold" badge already conveys that this isn't a
+  // current ask). Beats "Price on request" for items that DID have a
+  // price visible while live but went dark after sale.
+  const useHistoricForSold = !!(item.sold && item.priceOnRequest && lastKnownPrice);
   const displayPrice = (item.sold && item.priceOnRequest && !hasHistoricPrice)
     ? "—"
-    : item.priceOnRequest
-      ? "Price on request"
-      : matchesPrimary
-        ? fmt(item.price, primaryCurrency)
-        : (primaryAmount != null
-            ? `~${primarySym}${primaryAmount.toLocaleString()}`
-            // No conversion possible (no priceUSD bridge): fall back
-            // to native so the user still sees a price rather than "—".
-            : fmt(item.price, itemCurrency));
+    : useHistoricForSold
+      ? fmt(lastKnownPrice, itemCurrency)
+      : item.priceOnRequest
+        ? "Price on request"
+        : matchesPrimary
+          ? fmt(item.price, primaryCurrency)
+          : (primaryAmount != null
+              ? `~${primarySym}${primaryAmount.toLocaleString()}`
+              // No conversion possible (no priceUSD bridge): fall back
+              // to native so the user still sees a price rather than "—".
+              : fmt(item.price, itemCurrency));
   // Show the native price on the secondary line whenever it's not
   // already the primary line and we have a real price.
   const showNative = !matchesPrimary && !item.priceOnRequest && item.price;

@@ -58,7 +58,13 @@ export function matchesSearch(item, query) {
   if (!query) return true;
   const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (tokens.length === 0) return true;
-  const haystack = `${item.brand || ""} ${item.ref || ""}`.toLowerCase();
+  // Description included so reference numbers that live in the body
+  // text (e.g. live.antiquorum.swiss lots, where the title is just a
+  // brand and "REF. ST 166.024" sits in the description) are findable.
+  // HTML stripped via a quick regex — descriptions can carry <strong>
+  // tags around field labels.
+  const desc = ((item.description || "") + "").replace(/<[^>]+>/g, " ");
+  const haystack = `${item.brand || ""} ${item.ref || ""} ${item.title || ""} ${desc}`.toLowerCase();
   return tokens.every(t => haystack.includes(t));
 }
 
