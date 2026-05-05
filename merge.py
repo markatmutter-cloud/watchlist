@@ -366,6 +366,20 @@ def update_state(items, state):
             # Stale field cleanup — nothing if the history shows no drop.
             entry.pop('priceDropAt', None)
 
+        # Last meaningful (non-zero) price. Surfaces a usable display
+        # value for items whose CURRENT price is 0 — typically because
+        # they've gone "Price on request" or "On hold" but were
+        # advertised at a real price earlier. The frontend's Card
+        # component had been deriving this inline by walking
+        # priceHistory; baking it into the output entry means
+        # consumers (Card render + future analytics) don't have to
+        # re-derive. Falls back to it['price'] when no history exists,
+        # which keeps the field non-null for fresh listings.
+        last_meaningful_price = next(
+            (h['price'] for h in reversed(history) if (h.get('price') or 0) > 0),
+            (it.get('price') or 0) if (it.get('price') or 0) > 0 else 0,
+        )
+
         enriched.append({
             **it,
             'firstSeen':    entry['firstSeen'],
@@ -375,6 +389,7 @@ def update_state(items, state):
             'priceDropTotal':    price_drop_total,
             'pricePeak':         price_peak,
             'priceDropAt':       entry.get('priceDropAt'),
+            'lastMeaningfulPrice': last_meaningful_price,
             # soldAt is set for both Wind Vintage "on hold" items (still in
             # the live scrape but flagged reserved) and items that disappeared
             # entirely — both get archived.
@@ -408,6 +423,18 @@ def update_state(items, state):
         rate = FX.get(currency, 1.0)
         price_usd = round(last_price * rate)
 
+        # Last non-zero price for items whose final history entry is 0
+        # (item went POR / "On hold" before disappearing). Roughly 40%
+        # of sold dealer items hit this — most dealers replace the
+        # price label with "SOLD" on the page, so the next scrape
+        # captures price=0 and the item disappears with that as its
+        # final history entry. Frontend prefers this over walking
+        # priceHistory inline.
+        last_meaningful_price = next(
+            (h['price'] for h in reversed(history) if (h.get('price') or 0) > 0),
+            last_price,
+        )
+
         archive_brand = canonicalize_brand(
             entry.get('lastBrand') or detect_brand(entry.get('lastTitle', ''))
         )
@@ -423,6 +450,7 @@ def update_state(items, state):
             'price':         last_price,
             'currency':      currency,
             'priceUSD':      price_usd,
+            'lastMeaningfulPrice': last_meaningful_price,
             'source':        entry.get('lastSource', ''),
             'url':           entry.get('lastUrl', ''),
             'img':           entry.get('lastImg', ''),
