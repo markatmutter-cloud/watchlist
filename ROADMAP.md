@@ -127,13 +127,26 @@ they're not yet integrated into the right epic / phrasing, just queued.
     roadmap describes future state, Update log carries the
     historical record. Exceptions: items where v2 / v3 evolution
     is still pending (Watch Challenges v1.5 stays).
-- **Personal-learning agent setup** as a side track Mark wants to
-  explore (deferred from this session). Use case suggestions:
-  could go on a brand watcher (Scrape diff agent: every N days
-  re-fetches a brand's listings across all dealers and surfaces
-  changes worth knowing about), or as a maintenance assistant
-  (read CI logs, suggest scraper fixes, write the patch). Both
-  achievable through Claude Agent SDK. Defer to its own session.
+- **Personal-learning agent side track** — Mark accepted both use
+  cases 2026-05-05; defer the build to its own session. Both run
+  through the Claude Agent SDK.
+  - **Brand-watcher agent.** Scrape-diff agent runs every N days
+    against a configured brand (or reference). Re-fetches that
+    brand's listings across every dealer + the auction-lot pool,
+    diffs against the previous snapshot, surfaces "things worth
+    knowing": new tropical-dial 1675 just listed, a Heuer Carrera
+    well below the dealer's median, a sold lot at a notable price.
+    Output: a digest delivered however (email / a Supabase table
+    Mark reads / a daily Slack ping). Useful daily-driver tool +
+    a great learning project — agent loop, scraper-call composition,
+    diff logic, a small notification surface.
+  - **Maintenance assistant agent.** Reads CI failures + the
+    `verification.json` / `verification_lots.json` outputs,
+    classifies what kind of breakage it sees (regex shifted vs
+    page redesign vs auth blip), proposes the patch, drafts the
+    PR. Mark reviews + ships. Pairs naturally with the dealer-
+    scraper-helper refactor (helpers + agent fixes are the same
+    abstraction layer).
 
 The block above gets dissolved into the right epics during the
 review. Don't ship work from here without first landing it

@@ -184,6 +184,15 @@ BRACELET_TITLE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# Per-model exclusions — title patterns Mark explicitly doesn't want
+# in the feed regardless of brand. Audemars Piguet stays as a brand;
+# the Royal Oak Offshore sub-line specifically gets filtered out
+# (Mark 2026-05-05). Whitespace-tolerant so "Royal Oak Offshore",
+# "Royal-Oak Offshore", "Royal  Oak Offshore" all match.
+EXCLUDED_TITLE_PATTERNS = [
+    re.compile(r'\broyal[\s\-]+oak[\s\-]+offshore\b', re.IGNORECASE),
+]
+
 
 def canonicalize_brand(brand):
     """Map any known variant of a brand name to its canonical form.
@@ -299,6 +308,9 @@ def load_csv(path, source_name, currency='USD'):
             # BRACELET_TITLE_PATTERN definition. Most affected:
             # Wind Vintage's Gay Frères inventory.
             if BRACELET_TITLE_PATTERN.search(title):
+                continue
+            # Per-model title exclusions — see EXCLUDED_TITLE_PATTERNS.
+            if any(p.search(title) for p in EXCLUDED_TITLE_PATTERNS):
                 continue
             url = r.get('url', '')
             # Per-row currency support: eBay's Browse API returns

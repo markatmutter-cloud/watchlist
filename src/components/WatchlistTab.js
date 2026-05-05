@@ -777,18 +777,11 @@ export function WatchlistTab(props) {
               + the strip render. */}
 
           {(watchTopTab === "listings" || watchTopTab === "auctions" || watchTopTab === "sold") && (<>
-          {/* Saved auctions intro — carries the +Track eBay item
-              action that used to live in the Watchlist sub-tab strip.
-              Other auction-house lots heart from the Listings feed
-              (Phase B2, 2026-05-04), so this trigger is eBay-only. */}
-          {watchTopTab === "auctions" && (
-            <SubTabIntro
-              title="Auctions you're following"
-              blurb={<>Hearts on auction-house lots in the Listings feed land here. eBay items don't show up there yet — paste their URL with <strong style={{ color: "var(--text1)" }}>+ Track eBay item</strong> to follow them through to hammer.</>}
-              actionLabel="+ Track eBay item"
-              onAction={openTrackModal}
-            />
-          )}
+          {/* (Saved auctions intro banner removed 2026-05-05 per Mark.
+              Was a SubTabIntro pitching the +Track eBay item flow
+              alongside auction-house hearts from the Listings feed;
+              cluttered the sub-tab when 95% of saved auction items
+              now flow through hearts on the unified feed.) */}
           {watchCount === 0 ? (
             <div style={{ padding: "48px 20px", textAlign: "center" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>

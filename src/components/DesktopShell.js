@@ -74,7 +74,11 @@ export function DesktopShell(props) {
     // pattern (vs the prior floating popover) so all filter controls
     // share the same "tap a pill" interaction.
     const expansionPanelStyle = {
-      padding: "8px 16px 12px",
+      // Bottom padding bumped 12 → 20 on 2026-05-05 so the chip
+      // cluster doesn't feel like it's touching the first section
+      // header in the listings grid below. Top padding stays 8 —
+      // chips visually anchor to the pill above without much space.
+      padding: "8px 16px 20px",
       borderBottom: "0.5px solid var(--border)",
       background: "var(--surface)",
       display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center",
