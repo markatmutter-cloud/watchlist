@@ -57,8 +57,16 @@ const TOPIC_SECTIONS = [
   },
   {
     title: "Major Auctions",
+    // Entries can be either a bare URL string (label is auto-derived
+    // from the URL path via describeLink) or a `{url, name}` object
+    // when the auto-label would be uninformative — e.g. Phillips
+    // sale codes like CH080317 that need their friendly title spelled
+    // out. The render loop normalises either form to the same item shape.
     links: [
-      "https://www.phillips.com/auctions/auction/CH080317",
+      {
+        url: "https://www.phillips.com/auctions/auction/CH080317",
+        name: "Phillips · Exceptional Heuer Chronographs from the Jack Heuer Era",
+      },
     ],
   },
 ];
@@ -191,17 +199,25 @@ export function Links({ allListings = [], onBack }) {
   const [openSections, setOpenSections] = useState(() => ({}));
   const toggle = (title) => setOpenSections(prev => ({ ...prev, [title]: !prev[title] }));
 
+  // Normalise a section's `links` entry — accepts a bare URL string
+  // OR `{url, name}` when the auto-derived label would be useless
+  // (e.g. Phillips sale codes like CH080317).
+  const toRefItem = (entry) => {
+    if (typeof entry === "string") return { kind: "reference", url: entry };
+    return { kind: "reference", url: entry.url, name: entry.name };
+  };
+
   const dealerSection = {
     title: "Dealers",
     items: dealers.map(d => ({ kind: "dealer", name: d.name, url: d.url })),
   };
   const refSections = REFERENCE_SECTIONS.map(s => ({
     title: s.title,
-    items: s.links.map(url => ({ kind: "reference", url })),
+    items: s.links.map(toRefItem),
   }));
   const topicSections = TOPIC_SECTIONS.map(s => ({
     title: s.title,
-    items: s.links.map(url => ({ kind: "reference", url })),
+    items: s.links.map(toRefItem),
   }));
 
   return (
@@ -323,9 +339,15 @@ function LinkRow({ kind, name, url }) {
   // dealer name (left) + bare host (right). Reference rows lead with a
   // derived path label (left) + bare host (right) — a path-derived title
   // reads better than a wall of "hodinkee.com / hodinkee.com / ...".
+  // Reference rows can ALSO carry an explicit `name` override when the
+  // auto-derived label would be useless (Phillips sale codes etc.).
   const { host, label } = describeLink(url);
-  const primary = kind === "dealer" ? name : (label || host);
-  const secondary = kind === "dealer" ? host : (label ? host : "");
+  const primary = kind === "dealer"
+    ? name
+    : (name || label || host);
+  const secondary = kind === "dealer"
+    ? host
+    : (name ? host : (label ? host : ""));
   return (
     <a href={url} target="_blank" rel="noopener noreferrer" title={url} style={{
       display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,

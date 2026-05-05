@@ -391,6 +391,14 @@ def enumerate_sothebys(sale_url, sale=None):
                 "lot_id": oid,
                 "lot_number": hit.get("lotDisplayNumber") or hit.get("lotNr"),
                 "title": title,
+                # Sotheby's titles are pure model descriptions
+                # ("Baignoire, Reference 866034 | A yellow gold ..."),
+                # so the maker only surfaces in creators[]. Emit it
+                # as an explicit field so the App.js projection can
+                # use it directly without re-parsing the description.
+                # Pre-2026-05-05 every Cartier-branded Sotheby's lot
+                # landed in "Other" because of this gap.
+                "maker": creator or None,
                 "description": description[:600],
                 "currency": currency,
                 "estimate_low": low,

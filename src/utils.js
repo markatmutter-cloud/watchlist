@@ -168,6 +168,47 @@ export function detectBrandFromTitle(title) {
   return "Other";
 }
 
+// Brand detection for auction-house lots, where the title may be a
+// pure model description (Sotheby's: "Baignoire, Reference 866034 |
+// A yellow gold ...") with the maker stashed elsewhere. Tries, in
+// order: explicit `maker` field on the data dict, the title parser,
+// the leading "<Maker> — " prefix on the description (Sotheby's
+// idiom), and finally the description body. Returns "Other" only if
+// every signal misses. Lifted out of the App.js projection on
+// 2026-05-05 after Cartier-branded Sotheby's lots (Tank Cintrée,
+// Tortue, Baignoire, etc.) were all landing in "Other".
+export function detectAuctionLotBrand(data) {
+  if (!data) return "Other";
+  // 1. Explicit field set by the scraper (forward-looking — not
+  //    every house populates this yet, but Sotheby's enumerator
+  //    is being patched alongside this commit).
+  if (data.maker) {
+    const c = canonicalizeBrand(data.maker);
+    if (c && c !== "Other") return c;
+  }
+  // 2. Title — works for Christie's ("CARTIER. AN ICONIC ..."),
+  //    Phillips, dealer feeds, and any house that surfaces the
+  //    brand in the listing headline.
+  const fromTitle = detectBrandFromTitle(data.title || "");
+  if (fromTitle !== "Other") return fromTitle;
+  // 3. Sotheby's "<Maker> — <model>" description prefix. Em-dash
+  //    is the canonical separator in the Sotheby's enumerator.
+  const desc = data.description || "";
+  const dashIdx = desc.indexOf(" — ");
+  if (dashIdx > 0 && dashIdx <= 60) {
+    const maker = desc.slice(0, dashIdx).trim();
+    if (maker) {
+      const c = canonicalizeBrand(maker);
+      if (c && c !== "Other") return c;
+      const fromMakerStr = detectBrandFromTitle(maker);
+      if (fromMakerStr !== "Other") return fromMakerStr;
+    }
+  }
+  // 4. Last resort — scan the description body. Catches cases
+  //    where a non-dash description still mentions the brand.
+  return detectBrandFromTitle(desc);
+}
+
 // Friendly "Sold today" / "Sold 5 days ago" / "Sold 2026-03-12" label
 // for the secondary line on sold cards. Recent → relative; older →
 // absolute date so the value reads clearly without arithmetic.

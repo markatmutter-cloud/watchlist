@@ -3,7 +3,8 @@ import { useAuth, useWatchlist, useHidden, useSearches, useTrackedLots, useColle
 import {
   GLOBAL_MAX,
   daysAgo, freshDate,
-  ageBucketFromDate, canonicalizeBrand, detectBrandFromTitle, shortHash,
+  ageBucketFromDate, canonicalizeBrand, detectAuctionLotBrand,
+  shortHash,
   matchesSearch,
 } from "./utils";
 import { useWidth, useSystemDark } from "./hooks";
@@ -553,7 +554,14 @@ export default function Watchlist() {
       const isAuctionFormat = !isFixedPrice;
       arr.push({
         id: shortHash(url),
-        brand: canonicalizeBrand(detectBrandFromTitle(data.title || "")),
+        // Auction lots: brand often isn't in the title (Sotheby's
+        // titles are pure model descriptions; the maker is in
+        // creators[] / description). detectAuctionLotBrand walks
+        // every signal — explicit `maker` field, title, "<Maker> — "
+        // description prefix, full-description scan — before falling
+        // back to "Other". Pre-2026-05-05 this read title only, which
+        // dropped every Cartier Sotheby's lot into "Other".
+        brand: canonicalizeBrand(detectAuctionLotBrand(data)),
         ref: data.title || "—",
         price: price || 0,
         currency: data.currency || "USD",
@@ -625,14 +633,35 @@ export default function Watchlist() {
   // listing of the same brand appears. Mark set this to 2 on
   // 2026-04-29 — adjustable later if the chip rail feels sparse.
   const BRAND_CHIP_MIN = 2;
+  // Brand counts power both the filter-chip rail (BRANDS below) and
+  // the singleton-collapse decision in displayBrand. Pool depends on
+  // the active view: pre-2026-05-05 this read every live dealer item
+  // regardless of tab, so on Listings > Live auctions the user could
+  // tap a brand and find no matches (chip rail was built from dealer
+  // inventory, not auction lots). Now scoped per-sub-tab.
   const brandCounts = useMemo(() => {
+    let pool;
+    if (tab === "listings" && listingsSubTab === "auctions") {
+      pool = mainFeedItems.filter(i =>
+        !i.sold && (!!i._isAuctionFormat || !!i._isTrackedLot)
+      );
+    } else if (tab === "listings" && listingsSubTab === "sold") {
+      pool = mainFeedItems.filter(i => i.sold && !hidden[i.id]);
+    } else {
+      // Live listings + Auction calendar + Watchlist + References all
+      // fall through to the live dealer pool. Watchlist is technically
+      // imperfect (its sub-tab scoping isn't wired in here yet) but
+      // matches the long-standing behavior; refine when a Watchlist
+      // brand-filter complaint surfaces.
+      pool = items.filter(i => !i.sold && !hidden[i.id]);
+    }
     const c = {};
-    items.filter(i => !i.sold).forEach(i => {
+    pool.forEach(i => {
       const k = i.brand || "Other";
       c[k] = (c[k] || 0) + 1;
     });
     return c;
-  }, [items]);
+  }, [items, hidden, mainFeedItems, tab, listingsSubTab]);
   // Bucket label for one item under singleton-collapse rules.
   // "Other" + any brand below the chip threshold all funnel into one
   // "Other" bucket for filter + group-by purposes.
@@ -934,7 +963,7 @@ export default function Watchlist() {
       const isAuctionFormat = !isFixedPrice;
       its.push({
         id: shortHash(url),
-        brand: canonicalizeBrand(detectBrandFromTitle(data.title || "")),
+        brand: canonicalizeBrand(detectAuctionLotBrand(data)),
         ref: data.title || "—",
         price: price || 0,
         currency: data.currency || "USD",
