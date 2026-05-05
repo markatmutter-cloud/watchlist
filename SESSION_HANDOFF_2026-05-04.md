@@ -7,10 +7,12 @@ graduate to ROADMAP.md.
 
 ## TL;DR
 
-Two-half day. AM: bug-fix session (8 PRs). PM: **Listings unified
-feed → comprehensive auction-lot scrape → heart-on-lot → Listings
-sub-tab restructure**. Four PRs (#30 / #31 / #32 / #33), all
-merged. Production live on bundle `main.101d166a.js`.
+Long day. AM: bug-fix session (8 PRs). PM: **Listings unified feed
+→ comprehensive auction-lot scrape → heart-on-lot → Listings
+sub-tab restructure → tweaks → Watchlist sub-tab restructure +
+Challenges → References**. Seven PRs (#30 / #31 / #32 / #33 / #34
+/ #35 / #36), all merged. Production live on bundle
+`main.5fbebe67.js`.
 
 **PM net deliverables**:
 - **Phase A (PR #30 ✓ merged)**: First pass at unifying dealer
@@ -39,11 +41,28 @@ merged. Production live on bundle `main.101d166a.js`.
   sold dealers + lots, sort most-recently-sold first, sold-date
   dividers), **Auction calendar**. Date pill semantics depend on
   sub-tab; Price pill uniform. Sub-tabs gate filter exposure.
-  Status segment dropped from Listings (kept on Watchlist).
   Removed: feedFilter / auctionsView state, blendBucket function,
   Ending sort pill.
+- **Listings tweaks (PR #35 ✓ merged)**: Antiquorum live-lot title
+  enrichment (model + ref pulled from description so cards aren't
+  all "OMEGA"); search includes description (refs in body text are
+  findable); sold-with-historic-price fallback (sold dealer items
+  with priceOnRequest now show last non-zero `priceHistory` entry
+  ~40% coverage win); top-of-feed count on desktop;
+  `data/manual_lot_urls.json` short-term manual-tracking config +
+  cron plumbing; `verify_auction_lots.py` health-check + cron step.
+- **Watchlist sub-tabs (PR #36 ✓ merged)**: Five sub-tabs
+  mirroring Listings: **Saved listings** (savedAt desc, saved-date
+  dividers), **Saved auctions** (ending-soonest, +Track eBay button
+  here, BIN eBay always lives here), **Saved sold** (sold-date
+  desc, sold-date dividers), **Favorite searches**, **Lists**
+  (with new help banner + folder icon disc). Watch Challenges
+  moved from Watchlist sub-tab to a resource under **References
+  tab**. Removed: Status segment everywhere, Auctions-only toggle,
+  EndingSoon pinned strip + component file, watchLive/Sold derived
+  memos, filterAuctionsOnly state.
 
-Production: bundle `main.101d166a.js`. Dealer count: **36**.
+Production: bundle `main.5fbebe67.js`. Dealer count: **36**.
 Branch list: clean.
 
 **AM bug-fix deliverables** (preserved below):
@@ -238,48 +257,57 @@ session-handoff-update + dealer count entries (#20)
 
 ## Next session
 
-Auction-inclusion work is **shipped** (PRs #30 merged + #31/#32 in
-flight). Per refreshed priority order:
+Auction-inclusion work + Watchlist restructure both **shipped**
+across 7 PRs (#30 / #31 / #32 / #33 / #34 / #35 / #36). Per
+refreshed priority order:
 
 1. **Listing event capture (Epic 4)** — top of queue. Click + save
    events feeding "what's hot" / "most saved" / per-listing CTR on
    the Source Quality dashboard. Anonymous-friendly UUID in
    localStorage; admin-only RLS for reads; periodic rollup + prune
    cron.
-2. **Sotheby's lot images** — Phase B1 v1 left these null. Easy
-   30-min addition: per-lot detail-page fetch to extract the
-   brightspotcdn URL.
-3. **Manual historical auction entry (original Phase D, deferred
-   from this session)** — Mark's three target URLs:
+2. **Sotheby's lot images** — left null in v1. ~30-min addition:
+   per-lot detail-page fetch to extract the brightspotcdn URL.
+3. **Manual historical auction entry (original Phase D, deferred)**
+   — Mark's three target URLs:
    `https://www.phillips.com/auctions/auction/CH080317`,
    `https://www.phillips.com/auction/CH080218/browse`,
    `https://catalog.antiquorum.swiss/en/auctions/geneva-mandarin-oriental-hotel-du-rhone-2007-04-15/lots/`.
    Phillips + Antiquorum scrapers may need archive-URL extensions.
-   Admin-only form gated by `REACT_APP_ADMIN_EMAILS`.
-4. **Watch Challenges v1.5** — close the social loop: implement the
-   `?newchallenge=1` receive flow (auto-prompt a draft response)
-   and decide on public read of completed challenges (RLS surgery).
-5. **References as first-class entities (Epic 0).**
-6. **Site discoverability + welcome page (Epic 0).** Half-session.
-7. **Strength-of-save model (Epic 3).**
-8. **Stop-rule prune** — at 36 dealers, audit + prune to 25.
-   Source Quality dashboard already exists. ClassicHeuer is at
-   60%-sold-as-archive — strong prune candidate.
+   Admin-only form gated by `REACT_APP_ADMIN_EMAILS`. Short-term
+   workaround already in place via `data/manual_lot_urls.json`
+   (PR #35).
+4. **merge.py last-known price retention** — frontend fallback in
+   PR #35 surfaces last non-zero `priceHistory` entry for sold
+   items with priceOnRequest. Durable backend version (preserve
+   the last meaningful price in the output entry) needs
+   `tests/test_merge_state.py` updates.
+5. **Watch Challenges v1.5** — close the social loop:
+   `?newchallenge=1` receive flow + public read of completed
+   challenges (RLS surgery). Lives under References tab now.
+6. **References as first-class entities (Epic 0).**
+7. **Site discoverability + welcome page (Epic 0).** Half-session.
+8. **Strength-of-save model (Epic 3).**
+9. **Stop-rule prune** — at 36 dealers, audit + prune to 25.
+   ClassicHeuer is at 60%-sold-as-archive — strong prune candidate.
 
 Plus the maintenance-rhythm beat: every 4th-5th session is hygiene
 only.
 
 ## Open questions left from this session
 
-- **Tests workflow glitch** — fired late on this session's PRs
-  (#31 + #32 merged with only Vercel green at squash time; Tests
-  fired on the push-to-main and PR #33's pre-merge run worked
-  normally). Watch for recurrence next session.
-- **Phase D not started.** Manual historical entry deferred per
-  scope/time. Captured in priority order above. Mark's three
-  target URLs preserved.
+- **Tests workflow glitch** (early in the day) — fired late on
+  PRs #31 + #32 (merged with only Vercel green at squash time).
+  Self-resolved by PR #33 onward; Tests fire normally now. Watch
+  for recurrence next session.
+- **Phase D not started.** Captured above; manual_lot_urls.json
+  is the short-term path.
 - **Sotheby's lot images null in v1.** brightspot CDN URL needs a
-  per-lot fetch to extract the hash. ~30-min addition.
-- **Antiquorum catalog pagination broken at the source** — `?page=N`
-  301s back to /lots, so we get the first 20 lots per sale. Lots
-  fill in over time as the catalog publishes more batches.
+  per-lot fetch.
+- **Antiquorum catalog pagination broken at the source** —
+  `?page=N` 301s back to /lots, so we get the first 20 lots per
+  sale. Lots fill over time as the catalog publishes batches.
+- **Phillips Saved auctions cap** — `auction_lots_scraper.py`
+  caps Phillips at 60 lots/sale for CI time. Mark may want this
+  tunable or the cap raised once we have a sense of total minutes
+  per cron run.

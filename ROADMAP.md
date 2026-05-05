@@ -796,6 +796,28 @@ becomes confusion.
 
 ## Update log
 
+- 2026-05-04 (latest): **Watchlist sub-tab restructure + Challenges
+  to References + Lists UI tweaks (PRs #34, #35, #36).** Three more
+  PRs after the listings restructure landed, mirroring the same
+  pattern on Watchlist:
+  - **PR #34** — docs sync for the listings sub-tab work.
+  - **PR #35** — listings tweaks: richer Antiquorum lot titles,
+    sold-with-historic-price fallback in Card, top-of-feed count
+    on desktop, `data/manual_lot_urls.json` config + plumbing in
+    `auction_lots_scraper.py`, `verify_auction_lots.py` health-
+    check + cron wiring.
+  - **PR #36** — Watchlist gets 5 sub-tabs mirroring Listings:
+    Saved listings (sort: savedAt desc) / Saved auctions (sort:
+    ending-soonest, +Track eBay button moves here, Buy-It-Now eBay
+    items always live here regardless of format) / Saved sold
+    (sort: sold-date desc, sold-date dividers) / Favorite searches /
+    Lists. Removed: Status segment, Auctions-only toggle, EndingSoon
+    pinned strip, watchLive/Sold derived memos. Watch Challenges
+    moved from a Watchlist sub-tab to a resource under the
+    **References tab** (challenges are a reflective collector
+    resource, not a saved-items surface). Lists sub-tab also got a
+    help banner + folder-icon disc treatment per Mark feedback.
+
 - 2026-05-04 (later PM): **Listings sub-tab restructure (PR #33).**
   Replaced Phase A's tri-state All/Dealers/Auctions pill +
   weighted-blend sort + Lots/Calendar toggle with four explicit
