@@ -132,8 +132,14 @@ def is_excluded_title(title):
     """True iff the lot title indicates pocket watch / clock / loose dial."""
     if not title:
         return False
+    # The bare \bclock\b regex below would otherwise match "o'clock" /
+    # "o’clock" (curly apostrophe) — a positional reference inside
+    # watch titles ("date aperture at 6 o'clock", "register at 3 o'clock"),
+    # NOT a clock-the-object signal. Verified 2026-05-05 against the
+    # CH080317 archive: 9 of 42 lots were being false-flagged on this.
+    cleaned = re.sub(r"\bo['’]clock\b", " ", title, flags=re.IGNORECASE)
     for pat in EXCLUDE_PATTERNS:
-        if pat.search(title):
+        if pat.search(cleaned):
             return True
     return False
 
