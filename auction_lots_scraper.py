@@ -311,6 +311,61 @@ def enumerate_christies(sale_url, sale=None):
     return out
 
 
+def scrape_sothebys_lot_image(lot_url):
+    """Return the canonical lot image URL or None.
+
+    Sotheby's renders the high-res lot image into the page's `og:image`
+    meta tag — a brightspotcdn URL like
+    `https://sothebys-md.brightspotcdn.com/dims4/.../crop/.../resize/4096x4096!/quality/90/?url=…`.
+    The algoliaJson hit on the auction page doesn't carry the hash
+    needed to construct this URL, so we pay one HTTP fetch per lot.
+
+    Caller is expected to politeness-delay between calls; this function
+    just does the fetch + parse and lets the caller orchestrate.
+    Returns None on any error (no image is better than a thrown
+    exception that aborts the whole sale).
+    """
+    try:
+        r = requests.get(lot_url, headers=HEADERS, timeout=20)
+        r.raise_for_status()
+    except Exception:
+        return None
+    # property="og:image" can appear before or after the content="..."
+    # attribute, so match the meta tag flexibly. The image URL is
+    # always brightspotcdn — anchor on that to avoid picking up
+    # site-chrome OG images on error pages.
+    m = re.search(
+        r'<meta[^>]+property="og:image"[^>]+content="([^"]+brightspotcdn[^"]+)"',
+        r.text,
+    )
+    if not m:
+        m = re.search(
+            r'<meta[^>]+content="([^"]+brightspotcdn[^"]+)"[^>]+property="og:image"',
+            r.text,
+        )
+    if m:
+        # The og:image carries HTML-encoded ampersands — undo them
+        # so the URL works directly as an <img src>.
+        return m.group(1).replace("&amp;", "&")
+
+    # Fallback for lots without an og:image meta (a small minority —
+    # usually older sales where Sotheby's didn't generate the social
+    # preview): scan the body for brightspotcdn URLs and pick the
+    # largest-resize variant. The brightspot URL pattern is
+    # `.../resize/WIDTHxHEIGHT!/...`; bigger numbers = the canonical
+    # hero image rather than thumbnail/sidebar variants.
+    candidates = re.findall(r'(https://[^"\s]+brightspotcdn[^"\s]+)', r.text)
+    if not candidates:
+        return None
+    def _resize_size(u):
+        m_ = re.search(r"/resize/(\d+)x(\d+)!", u)
+        if not m_: return 0
+        try: return int(m_.group(1)) * int(m_.group(2))
+        except ValueError: return 0
+    best = max(candidates, key=_resize_size)
+    return best.replace("&amp;", "&")
+
+
 def enumerate_sothebys(sale_url, sale=None):
     """Return a list of (url, lot dict) tuples for a Sotheby's sale.
 
@@ -374,13 +429,20 @@ def enumerate_sothebys(sale_url, sale=None):
             lot_state = (hit.get("lotState") or "").lower()
             auction_state = (hit.get("auctionState") or "").lower()
             status = "ended" if auction_state in ("closed", "complete", "completed") or lot_state == "sold" else "active"
-            # Image: Sotheby's serves images via brightspotcdn with
-            # a hash in the path that isn't derivable from the algolia
-            # hit alone. v1 leaves image=None and lets the Card fall
-            # back to the no-image placeholder. A future iteration can
-            # one-shot the lot detail page to pull the brightspot URL,
-            # at the cost of N extra HTTP fetches per sale.
+            # Image: Sotheby's serves images via brightspotcdn with a
+            # hash in the path that isn't derivable from the algoliaJson
+            # hit. We pay one extra fetch per lot (politeness-delayed)
+            # to grab the og:image meta from the lot detail page —
+            # Sotheby's renders the canonical 4096×4096 image there.
+            # Failing silently keeps individual broken pages from
+            # killing the whole sale.
             img_url = None
+            if slug:
+                try:
+                    time.sleep(PER_LOT_SLEEP_SECONDS)
+                    img_url = scrape_sothebys_lot_image(full_url)
+                except Exception as e:
+                    print(f"    [Sotheby's] image fetch failed for {full_url}: {e}")
             creator = ""
             creators = hit.get("creators") or []
             if creators and isinstance(creators[0], str):
