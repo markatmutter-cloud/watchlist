@@ -1,41 +1,33 @@
 {
   "date": "2026-05-05",
-  "alerts": [
-    {
-      "source": "Avocado Vintage",
-      "level": "ERROR",
-      "today": 0,
-      "previous": 56,
-      "note": "source absent from today's listings (was present yesterday)"
-    }
-  ],
+  "alerts": [],
   "counts": {
-    "Wind Vintage": 161,
-    "Tropical Watch": 100,
-    "Menta Watches": 40,
+    "Wind Vintage": 105,
+    "Tropical Watch": 104,
+    "Menta Watches": 39,
     "Collectors Corner NY": 56,
     "Falco Watches": 107,
     "Grey & Patina": 46,
     "Oliver & Clarke": 89,
-    "Craft & Tailored": 83,
+    "Craft & Tailored": 78,
     "Watch Brothers London": 17,
     "MVV Watches": 40,
     "DB1983": 25,
     "Hairspring": 29,
     "Somlo": 205,
-    "Analog Shift": 633,
+    "Analog Shift": 636,
     "Watches of Knightsbridge": 81,
     "Belmont Watches": 40,
     "Bob's Watches": 55,
     "Watchfid": 67,
     "Bulang & Sons": 178,
     "Moonphase": 21,
-    "Huntington Company": 74,
+    "Huntington Company": 78,
     "The Vintage Watch": 26,
     "Chronoholic": 5,
-    "Vintage Watch Fam": 414,
+    "Vintage Watch Fam": 422,
     "Shuck the Oyster": 133,
-    "Central Watch": 178,
+    "Central Watch": 182,
     "European Watch": 24,
     "Vintage Watch Collective": 42,
     "Watchurbia": 7,
@@ -47,9 +39,9 @@
     "ClassicHeuer": 46,
     "Luna Royster": 30,
     "S.Song Watches": 23,
-    "Swiss Hours": 80,
-    "eBay": 47
+    "Swiss Hours": 79,
+    "eBay": 49
   },
-  "total_listings": 3424,
+  "total_listings": 3386,
   "sources_tracked": 39
 }
