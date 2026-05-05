@@ -341,3 +341,89 @@ def test_two_distinct_listings_do_not_share_state(at_date):
     assert state[a["id"]]["priceHistory"][-1]["price"] == 4500
     assert state[b["id"]]["active"] is False
     assert state[b["id"]]["soldAt"] == "2026-04-02"
+
+
+# ── lastMeaningfulPrice (last non-zero historic ask) ────────────────────────
+#
+# 2026-05-05: merge.py emits a `lastMeaningfulPrice` field on every
+# enriched record so the frontend Card render no longer has to walk
+# priceHistory inline. The field carries the last non-zero entry from
+# priceHistory (or the current price when history is empty / clean).
+# These tests cover the live + archive emission paths plus the empty-
+# history edge case.
+
+
+def test_last_meaningful_price_equals_current_when_history_is_clean(at_date):
+    at_date("2026-04-01")
+    state = {}
+    enriched = merge.update_state([make_item(price=5000)], state)
+    out = _enriched_by_id(enriched, _id_for("https://example.com/products/test-watch"))
+    assert out["lastMeaningfulPrice"] == 5000
+
+
+def test_last_meaningful_price_skips_zero_at_history_tail_for_live_item(at_date):
+    """Live item that just went POR — current price is 0, but the last
+    non-zero entry in history is 4500. Frontend wants to show 'asking
+    4500' rather than '0' or 'Price on request' without a number."""
+    at_date("2026-04-01")
+    state = {}
+    merge.update_state([make_item(price=5000)], state)
+
+    at_date("2026-04-02")
+    merge.update_state([make_item(price=4500)], state)
+
+    # Day 3: dealer flipped the listing to 'Price on request' — the
+    # scrape captures price=0 + priceOnRequest=True.
+    at_date("2026-04-03")
+    enriched = merge.update_state(
+        [make_item(price=0, price_on_request=True)], state,
+    )
+    out = _enriched_by_id(enriched, _id_for("https://example.com/products/test-watch"))
+    assert out["price"] == 0, "current ask is 0 (POR)"
+    assert out["lastMeaningfulPrice"] == 4500, (
+        "should surface the last non-zero ask, not the trailing 0"
+    )
+
+
+def test_last_meaningful_price_on_archive_emission(at_date):
+    """When a listing disappears with a final history entry of 0 (went
+    POR before going dark), the archive emission should still carry a
+    meaningful price for the Sold-card display. ~40% of sold dealer
+    items hit this path in production per the merge.py comment."""
+    at_date("2026-04-01")
+    state = {}
+    merge.update_state([make_item(price=5000)], state)
+
+    at_date("2026-04-02")
+    merge.update_state([make_item(price=4500)], state)
+
+    # Day 3: dealer marks POR.
+    at_date("2026-04-03")
+    merge.update_state([make_item(price=0, price_on_request=True)], state)
+
+    # Day 4: listing disappears entirely.
+    at_date("2026-04-04")
+    enriched = merge.update_state([], state)
+
+    sid = _id_for("https://example.com/products/test-watch")
+    out = _enriched_by_id(enriched, sid)
+    assert out["sold"] is True
+    assert out["soldAt"] == "2026-04-04"
+    # `price` reflects the trailing history entry (0 here) — preserved
+    # for analytics. The display field is lastMeaningfulPrice.
+    assert out["price"] == 0
+    assert out["lastMeaningfulPrice"] == 4500
+
+
+def test_last_meaningful_price_zero_when_history_is_all_zeros(at_date):
+    """Edge case: a listing that's been POR every time we've seen it.
+    No non-zero ask was ever recorded. Field falls back to the current
+    price (also 0) — frontend then renders '—' or 'Price on request'
+    via its existing logic."""
+    at_date("2026-04-01")
+    state = {}
+    enriched = merge.update_state(
+        [make_item(price=0, price_on_request=True)], state,
+    )
+    out = _enriched_by_id(enriched, _id_for("https://example.com/products/test-watch"))
+    assert out["lastMeaningfulPrice"] == 0

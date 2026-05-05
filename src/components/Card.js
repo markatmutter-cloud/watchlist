@@ -87,15 +87,22 @@ export const Card = memo(function Card({
   // even when sold — misleading because the dealer never showed a
   // price OR sold the item silently. If sold AND price is missing
   // AND there's no historic price record, show "—" instead.
-  // Last non-zero entry from priceHistory — used as the "last asking
-  // price" for sold items whose current price has dropped to 0 (dealer
-  // hid the price post-sale). 40% of sold dealer items hit this case
-  // because most dealers replace the price label with "SOLD" once the
-  // item moves, and the next scrape captures price=0 + priceOnRequest.
-  const lastKnownPrice = (item.priceHistory || [])
-    .map(h => h && h.price)
-    .filter(p => typeof p === "number" && p > 0)
-    .pop();
+  // Last non-zero ask, used as "last asking price" for sold items
+  // whose current price has dropped to 0 (dealer hid it post-sale).
+  // 40% of sold dealer items hit this — most dealers replace the
+  // price label with "SOLD" so the next scrape captures price=0 +
+  // priceOnRequest. Prefer the backend-emitted `lastMeaningfulPrice`
+  // (added in merge.py 2026-05-05) and fall back to walking
+  // priceHistory locally so older state.json snapshots — and any
+  // surface that doesn't go through merge.py — keep working.
+  const lastKnownPrice = (
+    (typeof item.lastMeaningfulPrice === "number" && item.lastMeaningfulPrice > 0)
+      ? item.lastMeaningfulPrice
+      : (item.priceHistory || [])
+          .map(h => h && h.price)
+          .filter(p => typeof p === "number" && p > 0)
+          .pop()
+  );
   const hasHistoricPrice = !!lastKnownPrice || (item.price && item.price > 0);
   const itemCurrency = (item.currency || "USD").toUpperCase();
   const matchesPrimary = itemCurrency === primaryCurrency;
