@@ -39,6 +39,11 @@ const TRACKED_LOTS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/w
 // tracked_lots.json (URL-keyed lot detail dicts) so the App.js
 // projection treats them identically.
 const AUCTION_LOTS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/auction_lots.json";
+// Manually-captured historical-auction lots (Phase D, 2026-05-05).
+// Static, immutable: the manual_archive_scraper writes this once per
+// added sale and the result never changes (archive sales don't update
+// post-hoc). Loaded alongside auction_lots.json and merged by URL key.
+const MANUAL_ARCHIVE_LOTS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/manual_archive_lots.json";
 const PAGE_SIZE = 48;
 // Legacy localStorage keys — kept only for the one-shot import on first
 // sign-in (see importLocalData + the banner in the Watchlist tab). Active
@@ -148,6 +153,7 @@ export default function Watchlist() {
   // a daily cron. Public — every visitor sees the same set; user-
   // hearting is layered on top via watchlist_items.
   const [auctionLotsState, setAuctionLotsState] = useState({});
+  const [manualArchiveLotsState, setManualArchiveLotsState] = useState({});
   // Sub-tab inside Watchlist > Auction lots: upcoming vs past.
   // Sub-tab on the Watchlist tab. Three values: "listings" (dealer
   // items you've hearted) or "searches" (saved searches editor). The
@@ -483,6 +489,14 @@ export default function Watchlist() {
       .then(r => r.ok ? r.json() : {})
       .then(d => setAuctionLotsState(d && typeof d === "object" ? d : {}))
       .catch(() => {});
+
+    // Manual archive lots — Phase D historical-auction surface. Same
+    // shape as auction_lots.json, merged into the same projection
+    // below. Failing silently is fine if the file isn't deployed yet.
+    fetch(MANUAL_ARCHIVE_LOTS_URL, fetchOpts)
+      .then(r => r.ok ? r.json() : {})
+      .then(d => setManualArchiveLotsState(d && typeof d === "object" ? d : {}))
+      .catch(() => {});
   }, []);
 
   const c = dark ? {
@@ -515,7 +529,17 @@ export default function Watchlist() {
   // tracked_lots with watchlist_items.
   const auctionLotItems = useMemo(() => {
     const arr = [];
-    const merged = { ...(trackedLotsState || {}), ...(auctionLotsState || {}) };
+    // Merge order matters when the same URL appears in multiple
+    // sources: later spreads win. Manual archive lots get the lowest
+    // priority (they're frozen captures — if the comprehensive scrape
+    // ever picks the same URL up, prefer the fresher data) but in
+    // practice they never collide because manual archives target
+    // long-closed sales and the comprehensive scrape walks active ones.
+    const merged = {
+      ...(manualArchiveLotsState || {}),
+      ...(trackedLotsState || {}),
+      ...(auctionLotsState || {}),
+    };
     for (const url of Object.keys(merged)) {
       const data = merged[url];
       if (!data) continue;
@@ -567,7 +591,7 @@ export default function Watchlist() {
       });
     }
     return arr;
-  }, [trackedLotsState, auctionLotsState]);
+  }, [trackedLotsState, auctionLotsState, manualArchiveLotsState]);
 
   // Main feed = dealer listings ∪ auction lots. Powers the Listings
   // tab's allFiltered memo; the listingsSubTab (live / auctions /

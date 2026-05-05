@@ -643,13 +643,41 @@ def scrape_phillips_lot(url):
     if cur_match:
         currency = cur_match.group(1)
 
-    # For sold lots, JSON-LD price gets overloaded onto sold_price —
-    # we don't have access to a live "currentBid" / "hammerPrice" at
-    # the granularity Phillips' bid widget uses. Mark's first test
-    # URL is upcoming, so this branch is provisional until validated
-    # against a sold lot.
-    sold_price = ld_price if is_ended else None
+    # For sold lots, prefer the rendered "Sold For" label over the
+    # JSON-LD price. Verified 2026-05-05 against four lots in the
+    # CH080317 (Crosthwaite & Gavin) archive — JSON-LD `price` was
+    # always the low estimate (e.g. 8000), while the rendered hammer
+    # in the "Sold For" panel was the actual realised price (e.g.
+    # 20000). The previous code mapped JSON-LD price onto sold_price
+    # and was wrong for every sold lot.
+    #
+    # Pattern: `<span ...>Sold For</span> ... <span ...>CHF20,000</span>`.
+    # Currency prefix can be CHF, USD, GBP, EUR, HKD; comma-thousands
+    # only (Phillips formats consistently). The .*? between spans
+    # tolerates the small chunks of inner-divs that wrap the value.
+    sold_price = None
     current_bid = None  # Phillips bid widget data isn't in static HTML.
+    if is_ended:
+        m_sold = re.search(
+            r'Sold For</span>.{0,400}?<span[^>]*>([A-Z]{3}|\$|£|€)\s*([0-9,]+)</span>',
+            html, re.S,
+        )
+        if m_sold:
+            cur_token = m_sold.group(1)
+            try:
+                sold_price = int(m_sold.group(2).replace(",", ""))
+            except ValueError:
+                sold_price = None
+            # Use the explicit currency from the Sold-For label when
+            # present (overrides the inline-blob currency, which can
+            # disagree on multi-currency lots).
+            if cur_token in {"CHF", "USD", "GBP", "EUR", "HKD"}:
+                currency = cur_token
+        # Fall back to the (incorrect-but-better-than-nothing) JSON-LD
+        # price only if the Sold For label wasn't found — covers any
+        # future variant where Phillips changes the rendered structure.
+        if sold_price is None:
+            sold_price = ld_price
 
     # Auction window: Phillips' lot detail page embeds session times
     # only via a transit-format graph that's hard to follow without
