@@ -19,7 +19,7 @@ export function MobileShell(props) {
     BRANDS, BRANDS_SHOW, SOURCES, SOURCES_SHOW,
     DEALER_SOURCES, AUCTION_SOURCES,
     // State
-    aboutModalOpen, allFiltered, brandsExpanded,
+    aboutModalOpen, allFiltered, displayedCount, brandsExpanded,
     currentIsSaved, drawerOpen,
     filterBrands, filterSources,
     listingsSubTab,
@@ -125,7 +125,7 @@ export function MobileShell(props) {
         )}
         {!noFilterableList && (
         <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          <span style={{ fontSize: 12, color: "var(--text3)", marginRight: 2, flexShrink: 0 }}>{allFiltered.length}</span>
+          <span style={{ fontSize: 12, color: "var(--text3)", marginRight: 2, flexShrink: 0 }}>{displayedCount}</span>
           {/* Date sort pill — semantics depend on the active Listings
               sub-tab (newest firstSeen on Live; ending order on Live
               auctions; sold-date on All sold). Dispatch lives in
@@ -312,7 +312,7 @@ export function MobileShell(props) {
                     </button>
                   )}
                   <button onClick={() => setDrawerOpen(false)} style={{ flex: 1, padding: 12, borderRadius: 12, border: "none", background: "var(--text1)", color: "var(--bg)", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>
-                    Show {allFiltered.length} watches
+                    Show {displayedCount} watches
                   </button>
                 </div>
               </div>

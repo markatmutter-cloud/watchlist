@@ -298,13 +298,21 @@ export const Card = memo(function Card({
           </div>
         </div>
       </a>
+      {/* Action-button sizing tracks card density. compact mode is
+          activated at cols >= 4 (App.js: const compact = cols >= 4),
+          where cards are narrow and a tight 26px button is fine. At
+          1 / 2 / 3 cols the cards are large enough that 26px reads as
+          a tiny tap target — especially on mobile 1-col where each
+          card spans the viewport. Bump to 36px (heart 16px, ⋯ 20px)
+          for the non-compact case so the heart is comfortably tap-
+          sized at all column counts. */}
       <div style={{ position: "absolute", top: 6, right: 6, display: "flex", flexDirection: "column", gap: 6 }}>
         <button onClick={e => { e.preventDefault(); e.stopPropagation(); onWish(item); }}
           aria-label="Save"
-          style={{ width: 26, height: 26, borderRadius: "50%", border: "none", cursor: "pointer",
+          style={{ width: compact ? 26 : 36, height: compact ? 26 : 36, borderRadius: "50%", border: "none", cursor: "pointer",
                   background: wished ? "rgba(220,38,38,0.88)" : "rgba(0,0,0,0.28)",
                   color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <HeartIcon filled={wished} size={12} />
+          <HeartIcon filled={wished} size={compact ? 12 : 16} />
         </button>
         {/* "..." menu — replaces the standalone × hide button as of
             2026-05-01. Houses Add-to-collection + Hide; Session 3
@@ -316,16 +324,16 @@ export const Card = memo(function Card({
           <div ref={menuRef} style={{ position: "relative" }}>
             <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(o => !o); }}
               aria-label="More actions"
-              style={{ width: 26, height: 26, borderRadius: "50%", border: "none", cursor: "pointer",
+              style={{ width: compact ? 26 : 36, height: compact ? 26 : 36, borderRadius: "50%", border: "none", cursor: "pointer",
                       background: menuOpen ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.28)",
                       color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-                      padding: 0, fontFamily: "inherit", fontSize: 16, lineHeight: 1 }}>
+                      padding: 0, fontFamily: "inherit", fontSize: compact ? 16 : 20, lineHeight: 1 }}>
               ⋯
             </button>
             {menuOpen && (
               <div onClick={e => e.preventDefault()}
                 style={{
-                  position: "absolute", top: 30, right: 0, zIndex: 30,
+                  position: "absolute", top: compact ? 30 : 40, right: 0, zIndex: 30,
                   background: "var(--bg)", border: "0.5px solid var(--border)",
                   borderRadius: 8, padding: 4,
                   // No minWidth — menu sizes to its widest item.

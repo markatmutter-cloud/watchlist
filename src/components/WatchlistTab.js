@@ -39,8 +39,12 @@ export function WatchlistTab(props) {
     // useCollections return value; setEditingCollection opens the
     // create/rename modal (rendered in the parent shell);
     // openCollectionPicker opens the add-to-collection modal for a
-    // listing.
+    // listing. startCreateCollection opens the create modal directly
+    // (lifted from the sub-tab strip into the Lists intro banner on
+    // 2026-05-04); openTrackModal opens the Track-eBay-item flow
+    // (same lift, into the Saved auctions intro banner).
     collectionsApi, setEditingCollection, openCollectionPicker,
+    startCreateCollection, openTrackModal,
     // User's primary display currency (USD/GBP/EUR), forwarded
     // to every Card render so the new currency rule applies in the
     // Watchlist > Favorites and Collection drill-in surfaces too.
@@ -132,6 +136,48 @@ export function WatchlistTab(props) {
     color: "var(--text1)",
     cursor: "pointer", fontFamily: "inherit",
   };
+
+  // Shared intro-banner shape for sub-tabs that surface a primary "add"
+  // action. Mirrors the Lists banner that's been there since 2026-05-04;
+  // generalised here so Searches + Saved auctions can use the same
+  // "title row left, +button right, blurb underneath" layout. Action
+  // button is optional — drop it for read-only sub-tabs (Saved listings
+  // / Saved sold) if a banner is ever wanted there too.
+  //
+  // Defined as a JSX-returning function rather than a nested component
+  // so each parent render doesn't unmount + remount it (CLAUDE.md
+  // flags this as a known footgun: nested function components get a
+  // new reference per render and React treats them as a new type).
+  const subTabIntroJSX = ({ title, blurb, actionLabel, onAction }) => (
+    <div style={{
+      margin: "0 0 14px",
+      padding: "12px 14px",
+      borderRadius: 10,
+      border: "0.5px solid var(--border)",
+      background: "var(--surface)",
+    }}>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        gap: 10,
+      }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text1)" }}>
+          {title}
+        </div>
+        {actionLabel && onAction && (
+          <button onClick={onAction} style={{
+            ...primaryActionButtonStyle,
+            flexShrink: 0, whiteSpace: "nowrap",
+          }}>{actionLabel}</button>
+        )}
+      </div>
+      {blurb && (
+        <div style={{
+          marginTop: 6,
+          fontSize: 12, lineHeight: 1.5, color: "var(--text2)",
+        }}>{blurb}</div>
+      )}
+    </div>
+  );
 
 
   // (Group-by feature removed 2026-04-30. Only implicit date
@@ -306,6 +352,18 @@ export function WatchlistTab(props) {
     "Save searches and run them with one tap. Your list syncs across every device you use."
   ) : (
     <div style={{ paddingTop: 4 }}>
+      {/* Intro banner — mirrors the Lists sub-tab pattern (2026-05-04)
+          so the two "add a thing" sub-tabs read consistently. The
+          + button used to live in the Watchlist sub-tab strip, but
+          that pushed the strip into a horizontal scroller on mobile;
+          now it sits inline with the section blurb. */}
+      {subTabIntroJSX({
+        title: "Saved searches run on tap",
+        blurb: <>Save the queries you keep coming back to — a reference, a brand cut, a phrase you scan for. Each one runs across every dealer in the feed and tells you when something new matches.</>,
+        actionLabel: "+ Add search",
+        onAction: startAddSearch,
+      })}
+
       {/* eBay source-searches — read-only view of data/ebay_searches.json.
           These configure what the scraper pulls into the feed (vs the
           saved searches below, which filter what's already in the feed).
@@ -620,28 +678,16 @@ export function WatchlistTab(props) {
       );
     }
 
-    // List view. Top of the list-view always shows a one-line
-    // "how this works" hint so users know lists exist and how to
-    // populate them — feedback from Mark on 2026-05-04 that the
-    // sub-tab felt bland and undocumented.
-    const helpBanner = (
-      <div style={{
-        margin: "0 0 14px",
-        padding: "12px 14px",
-        borderRadius: 10,
-        border: "0.5px solid var(--border)",
-        background: "var(--surface)",
-        fontSize: 12, lineHeight: 1.5, color: "var(--text2)",
-      }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text1)", marginBottom: 4 }}>
-          Lists group watches your way
-        </div>
-        Reference threads, dealer comps, "Rolex 5513s", "Vintage divers" —
-        whatever cut helps you think. Tap <strong style={{ color: "var(--text1)" }}>+ New list</strong> above to start one,
-        then add watches via the <strong style={{ color: "var(--text1)" }}>…</strong> menu on any card →{" "}
-        <em>Add to list…</em>.
-      </div>
-    );
+    // List view. Intro banner uses the shared subTabIntroJSX shape
+    // with the +New list action embedded on the right (was a separate
+    // trailing button in the Watchlist sub-tab strip until 2026-05-04;
+    // moved inline so the strip stays narrow enough on mobile).
+    const helpBanner = subTabIntroJSX({
+      title: "Lists group watches your way",
+      blurb: <>Reference threads, dealer comps, "Rolex 5513s", "Vintage divers" — whatever cut helps you think. Add watches via the <strong style={{ color: "var(--text1)" }}>…</strong> menu on any card → <em>Add to list…</em>.</>,
+      actionLabel: "+ New list",
+      onAction: startCreateCollection,
+    });
     return (
       <div style={{ paddingTop: 4 }}>
         {helpBanner}
@@ -675,7 +721,6 @@ export function WatchlistTab(props) {
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     padding: "14px 16px", borderRadius: 12,
                     border: "0.5px solid var(--border)",
-                    borderLeft: "3px solid #185FA5",
                     background: "var(--card-bg)",
                     color: "var(--text1)", cursor: "pointer",
                     fontFamily: "inherit", textAlign: "left",
@@ -747,9 +792,16 @@ export function WatchlistTab(props) {
               + the strip render. */}
 
           {(watchTopTab === "listings" || watchTopTab === "auctions" || watchTopTab === "sold") && (<>
-          {/* (Subtitle "Watchlist" + inline Track button removed
-              2026-04-30 — Track moved into the sub-tab strip; the
-              tab pill itself carries the section identity.) */}
+          {/* Saved auctions intro — carries the +Track eBay item
+              action that used to live in the Watchlist sub-tab strip.
+              Other auction-house lots heart from the Listings feed
+              (Phase B2, 2026-05-04), so this trigger is eBay-only. */}
+          {watchTopTab === "auctions" && subTabIntroJSX({
+            title: "Auctions you're following",
+            blurb: <>Hearts on auction-house lots in the Listings feed land here. eBay items don't show up there yet — paste their URL with <strong style={{ color: "var(--text1)" }}>+ Track eBay item</strong> to follow them through to hammer.</>,
+            actionLabel: "+ Track eBay item",
+            onAction: openTrackModal,
+          })}
           {watchCount === 0 ? (
             <div style={{ padding: "48px 20px", textAlign: "center" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>

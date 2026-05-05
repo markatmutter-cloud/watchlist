@@ -23,7 +23,7 @@ export function DesktopShell(props) {
     currentIsSaved,
     filterBrands, filterSources,
     listingsSubTab,
-    allFiltered,
+    allFiltered, displayedCount,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
     search, sort,
@@ -205,7 +205,7 @@ export function DesktopShell(props) {
         fontSize: 12, color: "var(--text3)", fontFamily: "inherit",
         whiteSpace: "nowrap", padding: "0 6px",
       }}>
-        {(allFiltered?.length || 0).toLocaleString()} {(allFiltered?.length === 1) ? "watch" : "watches"}
+        {(displayedCount || 0).toLocaleString()} {displayedCount === 1 ? "watch" : "watches"}
       </span>
 
       {hasFilters && (
