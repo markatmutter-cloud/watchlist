@@ -1,10 +1,16 @@
 import React, { useState } from "react";
 import { SizeCompare } from "./SizeCompare";
+import { ChallengesView } from "./ChallengesView";
 
 // References tab — broader collector resources surface. First tool
 // is the watch size comparison; encyclopedia + curated link
 // aggregator + further calculators land here over time. See
 // ROADMAP.md "References" for the parking lot of future ideas.
+//
+// 2026-05-04: Watch Challenges moved here from a Watchlist sub-tab
+// per Mark's restructure — challenges are a reflective collector
+// resource (constrained-set thought experiments), not a saved-items
+// surface. The list / drill-in flow lives in ChallengesView.
 //
 // No client-side URL routing in this app, so navigation between the
 // landing list and an individual tool happens via local state on this
@@ -17,15 +23,39 @@ const RESOURCES = [
     title: "Watch size comparison",
     desc: "Compare any two watches by case dimensions. Print to scale on US Letter to lay on your wrist.",
   },
+  {
+    key: "challenges",
+    title: "Watch challenges",
+    desc: "Pick N watches under a budget. A thought experiment, a way to surface taste, or a question to send a friend.",
+  },
 ];
 
-export function ReferencesTab() {
+export function ReferencesTab(props) {
   const [view, setView] = useState("list");
 
   if (view === "size-compare") {
     return (
       <div style={{ paddingTop: 4 }}>
         <SizeCompare onBack={() => setView("list")} />
+      </div>
+    );
+  }
+
+  if (view === "challenges") {
+    return (
+      <div style={{ paddingTop: 4 }}>
+        <ChallengesView
+          user={props.user}
+          isAuthConfigured={props.isAuthConfigured}
+          signInWithGoogle={props.signInWithGoogle}
+          collectionsApi={props.collectionsApi}
+          allListings={props.allListings}
+          watchlist={props.watchlist}
+          hidden={props.hidden}
+          primaryCurrency={props.primaryCurrency}
+          handleShare={props.handleShare}
+          onBack={() => setView("list")}
+        />
       </div>
     );
   }

@@ -3,7 +3,6 @@ import { Card } from "./Card";
 import { ageBucketFromDate, fmtUSD } from "../utils";
 import { useEBaySearches, EBAY_SEARCHES_EDIT_URL } from "../hooks/useEBaySearches";
 import { importLocalData } from "../supabase";
-import { ChallengeFlow } from "./ChallengeFlow";
 
 
 
@@ -13,10 +12,8 @@ export function WatchlistTab(props) {
     // Auth
     user, signInWithGoogle, isAuthConfigured,
     // Watchlist data
-    watchlist, watchItems, watchLive, watchSold, watchCount,
+    watchlist, watchItems, watchCount,
     toggleWatchlist,
-    // For computing the unfiltered raw counts in the Listings empty state
-    liveStateById,
     // Searches
     savedSearchStats, searchEditor, setSearchEditor,
     startAddSearch, startEditSearch, cancelSearchEdit, commitSearch, removeSearch,
@@ -24,7 +21,7 @@ export function WatchlistTab(props) {
     // Card
     handleWish,
     // UI shared
-    compact, gridStyle, inp, isMobile, statusMode,
+    compact, gridStyle, inp, isMobile,
     // Sort state from the global filter bar
     sort,
     // (Auction calendar prop removed 2026-05-04 — calendar moved to
@@ -104,31 +101,8 @@ export function WatchlistTab(props) {
     }
   }, [selectedCollectionId, watchTopTab]);
 
-  // Challenges sub-tab — drill-in id mirrors the Collections pattern.
-  // URL param `?challenge=<id>` deep-links straight to a challenge
-  // (used by share links and refresh-preserves-location).
-  const [selectedChallengeId, setSelectedChallengeId] = useState(() => {
-    if (typeof window === "undefined") return null;
-    return new URLSearchParams(window.location.search).get("challenge") || null;
-  });
-  useEffect(() => {
-    if (watchTopTab !== "challenges") setSelectedChallengeId(null);
-  }, [watchTopTab]);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("shared") === "1") return;
-    if (selectedChallengeId && watchTopTab === "challenges") {
-      params.set("challenge", selectedChallengeId);
-    } else {
-      params.delete("challenge");
-    }
-    const qs = params.toString();
-    const newUrl = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
-    if (newUrl !== window.location.pathname + window.location.search + window.location.hash) {
-      window.history.replaceState({}, "", newUrl);
-    }
-  }, [selectedChallengeId, watchTopTab]);
+  // (Challenges sub-tab moved to References tab 2026-05-04 —
+  // ChallengesView component owns its own selection state + render.)
 
   // (Track New Item modal lifted to App.js on 2026-04-30 — its
   // trigger button now lives in the watchSubTabsJSX strip above
@@ -164,52 +138,36 @@ export function WatchlistTab(props) {
   // dividers remain when sort is by date — see watchGroups below.)
 
   // ── DERIVED ────────────────────────────────────────────────────────────
-  const watchView = useMemo(() => {
-    if (statusMode === "all")  return watchItems;
-    if (statusMode === "sold") return watchSold;
-    return watchLive;
-  }, [statusMode, watchItems, watchLive, watchSold]);
+  // Watchlist sub-tab restructure (2026-05-04): App.js's watchItems
+  // memo now scopes by sub-tab (saved listings / saved auctions /
+  // saved sold) up-front, so this component just consumes that single
+  // pre-filtered list. No more statusMode dispatch here.
+  const watchView = watchItems;
 
-  // Group acts first; sort applies within (watchView arrives already
-  // sorted by the global sort state). When `groupBy === "none"` AND
-  // sort is by date (newest/oldest), we additionally surface implicit
-  // weekday-named dividers (Today / Yesterday / Wednesday / ...
-  // / Last week / Older) using savedAt. Date-axis grouping is a
-  // *side-effect* of the date sort rather than its own chip.
+  // Date-bucket dividers for date-sorted views. Bucket-key source
+  // depends on which sub-tab is active:
+  //   listings → savedAt buckets ("Today saved" / weekday saved / ...)
+  //   sold     → soldAt / auction_end buckets ("Today sold" / ... )
+  //   auctions → no dividers (sort is by ending order, not by date posted)
   const isDateSort = sort === "date" || sort === "date-asc";
-
-  // Bucket rank — smaller = more recent. Date↓ sorts buckets ascending
-  // by rank (Today first); Date↑ sorts descending (Older first).
-  //
-  // Earlier versions (pre-2026-05-01) used a max-savedAt-per-group
-  // comparator. That fell over when tracked-lot rows had empty
-  // `savedAt` — every group's "max" collapsed to 0 (epoch) and the
-  // sort became unstable, putting Older above Today even on Date↓.
-  // An explicit rank table is deterministic regardless of timestamp
-  // gaps. Weekday names come from ageBucketFromDate, which only emits
-  // them for d ∈ [2..6], so we just need a single weekday tier (the
-  // labels are mutually exclusive on any given day) — they all rank
-  // between "Yesterday" and "Last week".
   const bucketRank = (label) => {
-    if (label === "Today")     return 0;
-    if (label === "Yesterday") return 1;
-    if (label === "Last week") return 8;
-    if (label === "Older")     return 9;
-    // Anything else is a weekday (Mon..Sun) emitted only for 2-6 days
-    // ago. Rank them all together at 4; ageBucketFromDate guarantees
-    // there's at most ONE such weekday bucket on any given day, so a
-    // single rank is enough.
+    if (label && label.startsWith("Today")) return 0;
+    if (label && label.startsWith("Yesterday")) return 1;
+    if (label && label.startsWith("Last week")) return 8;
+    if (label && label.startsWith("Older")) return 9;
     return 4;
   };
+  const dividerSuffix = watchTopTab === "sold" ? " sold" : " saved";
+  const dividerDate = (item) => watchTopTab === "sold"
+    ? (item.soldAt || item.auction_end || "")
+    : (item.savedAt || "");
 
-  // Group-by feature removed 2026-04-30 — only implicit weekday-
-  // named dividers remain when sort is by date and status isn't
-  // sold-archive. Other sorts get a single flat bucket.
   const watchGroups = useMemo(() => {
-    if (isDateSort && statusMode !== "sold") {
+    if (isDateSort && watchTopTab !== "auctions") {
       const map = new Map();
       for (const item of watchView) {
-        const key = ageBucketFromDate((item.savedAt || "").slice(0, 10));
+        const base = ageBucketFromDate((dividerDate(item) || "").slice(0, 10));
+        const key = base ? `${base}${dividerSuffix}` : "";
         if (!map.has(key)) map.set(key, []);
         map.get(key).push(item);
       }
@@ -217,13 +175,11 @@ export function WatchlistTab(props) {
       return [...map.entries()].sort((a, b) => {
         const ra = bucketRank(a[0]);
         const rb = bucketRank(b[0]);
-        // Date↓ (descending = newest first) wants smaller rank first
-        // → ra - rb. Date↑ flips that.
         return ascending ? rb - ra : ra - rb;
       });
     }
     return [["", watchView]];
-  }, [watchView, isDateSort, sort, statusMode]);
+  }, [watchView, isDateSort, sort, watchTopTab]);
 
 
   const legacyCounts = {
@@ -664,17 +620,39 @@ export function WatchlistTab(props) {
       );
     }
 
-    // List view.
+    // List view. Top of the list-view always shows a one-line
+    // "how this works" hint so users know lists exist and how to
+    // populate them — feedback from Mark on 2026-05-04 that the
+    // sub-tab felt bland and undocumented.
+    const helpBanner = (
+      <div style={{
+        margin: "0 0 14px",
+        padding: "12px 14px",
+        borderRadius: 10,
+        border: "0.5px solid var(--border)",
+        background: "var(--surface)",
+        fontSize: 12, lineHeight: 1.5, color: "var(--text2)",
+      }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text1)", marginBottom: 4 }}>
+          Lists group watches your way
+        </div>
+        Reference threads, dealer comps, "Rolex 5513s", "Vintage divers" —
+        whatever cut helps you think. Tap <strong style={{ color: "var(--text1)" }}>+ New list</strong> above to start one,
+        then add watches via the <strong style={{ color: "var(--text1)" }}>…</strong> menu on any card →{" "}
+        <em>Add to list…</em>.
+      </div>
+    );
     return (
       <div style={{ paddingTop: 4 }}>
+        {helpBanner}
         {visibleCols.length === 0 ? (
-          <div style={{ padding: "48px 20px", textAlign: "center" }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>📂</div>
+          <div style={{ padding: "32px 20px 48px", textAlign: "center" }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>📂</div>
             <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
               No lists yet
             </div>
             <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto" }}>
-              Group watches by reference, theme, or research thread — "Rolex 5513s", "Vintage divers", "Reference comps - 5512". Use "+ New list" above to create one, then add listings via the "…" menu on any card.
+              You haven't created any lists. Tap <strong style={{ color: "var(--text1)" }}>+ New list</strong> above to start one.
             </div>
           </div>
         ) : (
@@ -685,6 +663,10 @@ export function WatchlistTab(props) {
               const count = isHiddenRow
                 ? hiddenItems.length
                 : (itemsByColl[c.id] || []).length;
+              // Default-list (user-created) cards get a folder glyph
+              // on the left — same accent blue as the inbox + hidden
+              // glyphs. Treats every row visually consistently.
+              const defaultIcon = !isInbox && !isHiddenRow;
               return (
                 <button
                   key={c.id}
@@ -698,25 +680,34 @@ export function WatchlistTab(props) {
                     color: "var(--text1)", cursor: "pointer",
                     fontFamily: "inherit", textAlign: "left",
                   }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    {isInbox && (
-                      // Inbox icon — small tray glyph in the same blue
-                      // as the borderLeft accent.
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
-                        <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
-                      </svg>
-                    )}
-                    {isHiddenRow && (
-                      // Eye-slash icon for the synthetic Hidden collection
-                      // — same accent treatment as the inbox icon.
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                        <path d="M17.94 17.94A10.06 10.06 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                        <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/>
-                        <line x1="1" y1="1" x2="23" y2="23"/>
-                      </svg>
-                    )}
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    {/* Icon disc — same surface treatment regardless of
+                        list kind so the row reads visually consistent.
+                        Glyph swaps based on list kind. */}
+                    <div style={{
+                      flexShrink: 0,
+                      width: 36, height: 36, borderRadius: "50%",
+                      background: "rgba(24,95,165,0.08)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      {isInbox ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+                          <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+                        </svg>
+                      ) : isHiddenRow ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17.94 17.94A10.06 10.06 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                          <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/>
+                          <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                      ) : defaultIcon && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                        </svg>
+                      )}
+                    </div>
                     <div>
                       <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 2 }}>{c.name}</div>
                       <div style={{ fontSize: 12, color: "var(--text2)" }}>
@@ -724,7 +715,7 @@ export function WatchlistTab(props) {
                           ? `${count} listing${count === 1 ? "" : "s"} shared with you`
                           : isHiddenRow
                             ? `${count} listing${count === 1 ? "" : "s"} hidden from feed`
-                            : `${count} item${count === 1 ? "" : "s"}`}
+                            : `${count} watch${count === 1 ? "" : "es"}`}
                       </div>
                     </div>
                   </div>
@@ -738,142 +729,6 @@ export function WatchlistTab(props) {
     );
   })();
 
-  // ── CHALLENGES SUB-TAB ─────────────────────────────────────────────────
-  // Build-a-collection v1. Challenges are collections with type=
-  // 'challenge' (the existing schema's `type` enum already permits this
-  // value). One collection per challenge; shortlist + final picks live
-  // in the same items table with an is_pick boolean. ChallengeFlow.js
-  // owns the multi-stage flow once a challenge is selected; this list
-  // view handles browse + create.
-  const challengesTabJSX = !user ? signInPromptJSX(
-    "Sign in to build a challenge",
-    "Build a constrained list: pick N watches under a budget. " +
-    "Save it, share it, ask a friend to fill in their own answer. Your challenges sync across every device you use."
-  ) : (() => {
-    const allChallenges = (collectionsApi?.collections || [])
-      .filter(c => c.type === "challenge");
-    const itemsByColl = collectionsApi?.itemsByCollection || {};
-    const selected = selectedChallengeId
-      ? allChallenges.find(c => c.id === selectedChallengeId)
-      : null;
-
-    if (selected) {
-      const items = itemsByColl[selected.id] || [];
-      return (
-        <div style={{ paddingTop: 4 }}>
-          <ChallengeFlow
-            challenge={selected}
-            items={items}
-            allListings={allListings || []}
-            watchlist={watchlist}
-            hidden={hidden || {}}
-            primaryCurrency={primaryCurrency}
-            collectionsApi={collectionsApi}
-            handleShare={handleShare}
-            onExit={() => setSelectedChallengeId(null)}
-          />
-        </div>
-      );
-    }
-
-    const handleNewChallenge = async () => {
-      // Create with sensible defaults; user fills in target_count +
-      // budget on the Create stage. State='draft'.
-      const res = await collectionsApi.createChallenge({
-        name: "",                  // becomes auto-titled "N watches for $Xk"
-        targetCount: null,         // null targetCount triggers Create stage in ChallengeFlow
-        budget: null,
-      });
-      if (res.error) {
-        window.alert("Couldn't create challenge: " + res.error);
-        return;
-      }
-      setSelectedChallengeId(res.id);
-    };
-
-    // List view
-    return (
-      <div style={{ paddingTop: 4 }}>
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          marginBottom: 14, gap: 8, flexWrap: "wrap",
-        }}>
-          <p style={{
-            fontSize: 12, fontWeight: 600, color: "var(--text2)",
-            textTransform: "uppercase", letterSpacing: "0.04em", margin: 0,
-          }}>
-            Challenges · {allChallenges.length}
-          </p>
-          <button onClick={handleNewChallenge} style={{
-            padding: "7px 14px", borderRadius: 8,
-            border: "0.5px solid var(--border)",
-            background: "var(--surface)", color: "var(--text1)",
-            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-          }}>+ New challenge</button>
-        </div>
-
-        {allChallenges.length === 0 ? (
-          <div style={{ padding: "48px 20px", textAlign: "center" }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>🎯</div>
-            <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-              No challenges yet
-            </div>
-            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto" }}>
-              Pick N watches under a budget. Useful as a thought experiment, a way to surface taste,
-              or a question to send a friend. Tap "+ New challenge" to start.
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {allChallenges.map(c => {
-              const items = itemsByColl[c.id] || [];
-              const picks = items.filter(it => it.isPick);
-              const totalSpend = picks.reduce((s, p) => s + (p.savedPriceUSD || p.priceUSD || 0), 0);
-              const isDraft = c.state === "draft";
-              return (
-                <button key={c.id}
-                  onClick={() => setSelectedChallengeId(c.id)}
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "14px 16px", borderRadius: 12,
-                    border: "0.5px solid var(--border)",
-                    borderLeft: `3px solid ${isDraft ? "#c9a227" : "#185FA5"}`,
-                    background: "var(--card-bg)",
-                    color: "var(--text1)", cursor: "pointer",
-                    fontFamily: "inherit", textAlign: "left", gap: 10,
-                  }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 2,
-                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {c.name}
-                      {isDraft && (
-                        <span style={{
-                          marginLeft: 8, fontSize: 10, fontWeight: 600,
-                          padding: "1px 6px", borderRadius: 3,
-                          background: "rgba(201,162,39,0.15)", color: "#c9a227",
-                          textTransform: "uppercase", letterSpacing: "0.04em",
-                        }}>Draft</span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--text2)" }}>
-                      {c.targetCount && c.budget ? (
-                        <>
-                          {picks.length} of {c.targetCount} picks · {fmtUSD(totalSpend)} of {fmtUSD(c.budget)}
-                        </>
-                      ) : (
-                        <>Set the constraints to start</>
-                      )}
-                    </div>
-                  </div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  })();
 
   // ── RENDER ─────────────────────────────────────────────────────────────
   return (
@@ -891,7 +746,7 @@ export function WatchlistTab(props) {
               content — the parent App.js controls watchTopTab state
               + the strip render. */}
 
-          {watchTopTab === "listings" && (<>
+          {(watchTopTab === "listings" || watchTopTab === "auctions" || watchTopTab === "sold") && (<>
           {/* (Subtitle "Watchlist" + inline Track button removed
               2026-04-30 — Track moved into the sub-tab strip; the
               tab pill itself carries the section identity.) */}
@@ -900,13 +755,13 @@ export function WatchlistTab(props) {
               <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>
               <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>No watches saved yet</div>
               <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 320, margin: "0 auto 16px" }}>
-                Browse the Available tab and tap the heart on any listing — it'll appear here with the price you saved at, even after the dealer takes the URL down.
+                Browse the Listings tab and tap the heart on any item — it'll appear here with the price you saved at, even after the dealer takes the URL down.
               </div>
               <button onClick={() => { setTab("listings"); setPage(1); }} style={{
                 padding: "8px 16px", borderRadius: 8, border: "0.5px solid var(--border)",
                 background: "var(--card-bg)", color: "var(--text1)", cursor: "pointer",
                 fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-              }}>Browse Available</button>
+              }}>Browse Listings</button>
             </div>
           ) : (
             <>
@@ -933,24 +788,14 @@ export function WatchlistTab(props) {
                 );
 
                 if (watchView.length === 0) {
-                  const rawSold = Object.values(watchlist).filter(it => {
-                    const live = liveStateById.get(it.id);
-                    return !live || !!live.sold;
-                  }).length;
-                  const rawLive = Object.keys(watchlist).length - rawSold;
-                  const rawForStatus =
-                    statusMode === "all"  ? Object.keys(watchlist).length :
-                    statusMode === "sold" ? rawSold : rawLive;
+                  const emptyCopy =
+                    watchTopTab === "auctions" ? "No saved auction lots match your filters." :
+                    watchTopTab === "sold"     ? "Nothing in your saved set has sold yet that matches your filters." :
+                                                 "No saved listings match your filters.";
                   return (
                     <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
                       <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
-                        {rawForStatus === 0
-                          ? (statusMode === "sold"
-                              ? "No watchlisted items have sold yet."
-                              : statusMode === "live"
-                                ? "All your saved items have sold or been pulled. Try Sold or All in the filter bar above."
-                                : "No saved watches yet.")
-                          : "No saved watches match your filters"}
+                        {emptyCopy}
                       </div>
                     </div>
                   );
@@ -1006,7 +851,6 @@ export function WatchlistTab(props) {
           </>)}
 
           {watchTopTab === "collections" && collectionsTabJSX}
-          {watchTopTab === "challenges" && challengesTabJSX}
           {watchTopTab === "searches" && searchesTabJSX}
           {/* Auction calendar sub-tab retired 2026-05-04 — calendar
               moved into the Listings tab's Auctions filter as a

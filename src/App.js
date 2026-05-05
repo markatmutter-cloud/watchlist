@@ -26,7 +26,6 @@ import { CollectionEditModal } from "./components/CollectionEditModal";
 import { CollectionPickerModal } from "./components/CollectionPickerModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { ShareReceiver } from "./components/ShareReceiver";
-import { EndingSoon } from "./components/EndingSoon";
 import { AuctionCalendar } from "./components/AuctionCalendar";
 import { LotMigrationBanner } from "./components/LotMigrationBanner";
 import { WatchlistTab } from "./components/WatchlistTab";
@@ -123,7 +122,6 @@ export default function Watchlist() {
     filterSources, setFilterSources,
     filterBrands,  setFilterBrands,
     filterRefs,    setFilterRefs,
-    filterAuctionsOnly, setFilterAuctionsOnly,
     toggleSource, toggleBrand,
     sort, setSort,
     search, setSearch,
@@ -177,15 +175,15 @@ export default function Watchlist() {
   // refresh on `?tab=watchlist&sub=collections` lands you back where
   // you were. Otherwise fall back to the persisted preference; final
   // fallback is "listings" (Favorites).
-  // Watchlist sub-tab values. The "calendar" sub-tab was retired
-  // 2026-05-04 with the unified listings/auctions feed — the auction
-  // calendar now lives inside the Listings tab's Auctions filter as
-  // a "Calendar view" toggle. URL or localStorage values that still
-  // say "calendar" map back to "listings" silently so users who
-  // bookmarked or had it persisted don't land on a missing sub-tab.
-  const SUB_VALUES = ["listings", "collections", "challenges", "searches"];
+  // Watchlist sub-tab values. Restructured 2026-05-04 to mirror
+  // Listings: separate sub-tabs for live saved listings, live saved
+  // auctions, and saved-that-sold. "challenges" moved to the
+  // References tab; "calendar" already retired earlier the same day.
+  // Stale localStorage / URL values silently map to "listings" so
+  // bookmarked / persisted preferences don't land on a missing sub-tab.
+  const SUB_VALUES = ["listings", "auctions", "sold", "searches", "collections"];
   const [watchTopTab, setWatchTopTab] = useState(() => {
-    const normalize = (v) => v === "calendar" ? "listings" : v;
+    const normalize = (v) => (v === "calendar" || v === "challenges") ? "listings" : v;
     if (typeof window !== "undefined") {
       const sub = normalize(new URLSearchParams(window.location.search).get("sub"));
       if (SUB_VALUES.includes(sub)) return sub;
@@ -487,16 +485,10 @@ export default function Watchlist() {
     return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
   }, []);
 
-  // Auto-sort: Watchlist's auctions-only toggle still flips sort to
-  // "ending"; the Listings tab now uses sub-tabs and dispatches sort
-  // semantics inside `allFiltered` based on `listingsSubTab` (Date
-  // pill on Live auctions = ending order; Date pill on All sold =
-  // sold-date). setSort runs only on filter change so a manually
-  // picked sort sticks. Lives at the top with the other effects per
-  // the CLAUDE.md "don't add hooks deep in App.js" rule.
-  useEffect(() => {
-    if (filterAuctionsOnly) setSort("ending");
-  }, [filterAuctionsOnly]);
+  // (Auto-sort effect retired 2026-05-04 — both Listings AND Watchlist
+  // now use sub-tabs that own their own Date-pill semantics inside
+  // allFiltered / watchItems memos. No state change needed when the
+  // user switches sub-tabs; the dispatch reads sort + sub-tab.)
 
   useEffect(() => {
     // `cache: 'no-cache'` forces the browser/PWA to revalidate with the
@@ -807,7 +799,6 @@ export default function Watchlist() {
     if (newDays > 0) its = its.filter(i => daysAgo(freshDate(i)) <= newDays && !i.backfilled);
     if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
     if (filterBrands.length > 0) its = its.filter(i => filterBrands.includes(displayBrand(i)));
-    if (filterAuctionsOnly) its = its.filter(i => i._isAuctionFormat);
     if (search.trim()) {
       its = its.filter(i => matchesSearch(i, search));
     }
@@ -865,7 +856,7 @@ export default function Watchlist() {
       });
     }
     return its;
-  }, [mainFeedItems, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, filterAuctionsOnly, listingsSubTab]);
+  }, [mainFeedItems, filterSources, filterBrands, filterRefs, hidden, search, sort, minPrice, maxPrice, newDays, listingsSubTab]);
 
   const visible = useMemo(() => allFiltered.slice(0, page * PAGE_SIZE), [allFiltered, page]);
   const hasMore = visible.length < allFiltered.length;
@@ -1002,13 +993,29 @@ export default function Watchlist() {
         soldAt: isEnded ? (data.auction_end || data.scraped_at || "") : null,
       });
     }
-    // Apply the same source/brand/ref/search filters as Available and Archive,
-    // so the sidebar drawer narrows down the watchlist too. Saved entries
-    // carry the listing_snapshot fields (source, brand, ref), so the same
+    // Watchlist sub-tab scopes the saved set BEFORE other filters
+    // narrow it. Mirrors the Listings tab's sub-tab dispatch:
+    //   listings → live dealer items only (no auction-format, no eBay)
+    //   auctions → live auction-format items + ALL eBay items
+    //              (including Buy-It-Now), per Mark 2026-05-04
+    //   sold     → anything that's gone sold (dealer or lot)
+    //   searches/collections → not item-shaped, watchView is empty here
+    const isEbay = (i) => (i.source || "").toLowerCase() === "ebay"
+      || /\bebay\.[a-z.]+\//i.test(i.url || "");
+    const isAuctionShaped = (i) => !!i._isAuctionFormat || isEbay(i);
+    if (watchTopTab === "listings") {
+      its = its.filter(i => !i._isSold && !isAuctionShaped(i));
+    } else if (watchTopTab === "auctions") {
+      its = its.filter(i => !i._isSold && isAuctionShaped(i));
+    } else if (watchTopTab === "sold") {
+      its = its.filter(i => i._isSold);
+    }
+    // Apply the same source/brand/ref/search filters as Available so
+    // the drawer narrows the watchlist too. Saved entries carry the
+    // listing_snapshot fields (source, brand, ref), so the same
     // predicates work here.
     if (filterSources.length > 0) its = its.filter(i => filterSources.includes(i.source));
     if (filterBrands.length > 0)  its = its.filter(i => filterBrands.includes(displayBrand(i)));
-    if (filterAuctionsOnly)       its = its.filter(i => i._isAuctionFormat);
     if (filterRefs.length > 0) {
       its = its.filter(i => {
         const ref = (i.ref || "").toLowerCase();
@@ -1020,29 +1027,45 @@ export default function Watchlist() {
     }
     // Price filter — was missing on Watchlist (Mark surfaced
     // 2026-04-30: divider counts didn't react to the price boxes).
-    // Watchlist items carry savedPriceUSD / savedPrice; project
-    // tracked-lots populate the same fields. Use whichever is set
-    // for comparison, falling back to plain price if neither.
     if (minPrice > 0)  its = its.filter(i => (i.savedPriceUSD || i.savedPrice || i.priceUSD || i.price) >= minPrice);
     if (maxPrice < GLOBAL_MAX) its = its.filter(i => (i.savedPriceUSD || i.savedPrice || i.priceUSD || i.price) <= maxPrice);
-    // Drive the watchlist sort off the same `sort` state the sidebar uses,
-    // so "Newest first" / "Price low to high" / "Price high to low" applies
-    // here too. "Newest first" maps to most-recently-saved (savedAt desc).
-    // "Ending soonest" tiers items by auction urgency: live now → upcoming
-    // (asc) → ended (last) → not-an-auction (last). Defaults on when the
-    // user toggles the auctions-only filter.
-    if (sort === "price-asc") its.sort((a, b) => (a.savedPriceUSD || a.savedPrice) - (b.savedPriceUSD || b.savedPrice));
-    else if (sort === "price-desc") its.sort((a, b) => (b.savedPriceUSD || b.savedPrice) - (a.savedPriceUSD || a.savedPrice));
-    else if (sort === "date-asc") its.sort((a, b) => (a.savedAt || "").localeCompare(b.savedAt || ""));
-    else if (sort === "ending") its.sort(endingSoonComparator);
-    else its.sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
+    // Sort dispatch — Date pill semantics depend on sub-tab, mirroring
+    // the Listings tab dispatch. Price pill uniform.
+    if (sort === "price-asc") {
+      its.sort((a, b) => (a.savedPriceUSD || a.savedPrice) - (b.savedPriceUSD || b.savedPrice));
+    } else if (sort === "price-desc") {
+      its.sort((a, b) => (b.savedPriceUSD || b.savedPrice) - (a.savedPriceUSD || a.savedPrice));
+    } else if (watchTopTab === "auctions") {
+      // Live saved auctions: Date pill = ending order. Date↓ soonest
+      // first; Date↑ reverses.
+      its.sort(endingSoonComparator);
+      if (sort === "date-asc") its.reverse();
+    } else if (watchTopTab === "sold") {
+      // Saved sold: Date pill = sold-date. Most-recent first by
+      // default; Date↑ flips.
+      const soldDate = (i) => i.soldAt || i.auction_end || "";
+      const ascending = sort === "date-asc";
+      its.sort((a, b) => {
+        const da = soldDate(a), db = soldDate(b);
+        if (!da && !db) return 0;
+        if (!da) return 1;
+        if (!db) return -1;
+        return ascending ? da.localeCompare(db) : db.localeCompare(da);
+      });
+    } else {
+      // Saved listings + non-listing sub-tabs: savedAt order.
+      const ascending = sort === "date-asc";
+      its.sort((a, b) => ascending
+        ? (a.savedAt || "").localeCompare(b.savedAt || "")
+        : (b.savedAt || "").localeCompare(a.savedAt || ""));
+    }
     return its;
   }, [watchlist, liveStateById, sort, filterSources, filterBrands, filterRefs, search,
-      filterAuctionsOnly, minPrice, maxPrice,
+      minPrice, maxPrice, watchTopTab,
       trackedLotUrls, trackedLotsState, trackedLotAddedAt]);
 
-  const watchLive = useMemo(() => watchItems.filter(i => !i._isSold), [watchItems]);
-  const watchSold = useMemo(() => watchItems.filter(i =>  i._isSold), [watchItems]);
+  // (watchLive / watchSold removed 2026-05-04 — Watchlist sub-tabs
+  // now scope live vs sold up-front inside the watchItems memo.)
 
   // Status-filtered slice: "live" / "sold" / "all". Drives the Watchlist
   // > Listings sub-tab. Sort + filters from the existing controls flow
@@ -1557,27 +1580,10 @@ export default function Watchlist() {
     </div>
   );
 
-  // Tri-state Status segment, used in BOTH the desktop filter row AND
-  // the mobile sticky sort row so the same control drives every view.
-  // Passed through to both shells via the shellProps bag.
-  const statusSegmentJSX = (
-    <div style={{ display: "flex", border: "0.5px solid var(--border)", borderRadius: 20, overflow: "hidden" }}>
-      {[
-        ["live", `Live · ${liveCountForPill}`],
-        ["sold", `Sold · ${soldCountForPill}`],
-        ["all",  `All · ${allCountForPill}`],
-      ].map(([k, label], idx) => (
-        <button key={k} onClick={() => setStatusMode(k)} style={{
-          border: "none",
-          borderLeft: idx === 0 ? "none" : "0.5px solid var(--border)",
-          padding: "6px 10px", fontSize: 12, cursor: "pointer",
-          background: statusMode === k ? "var(--text1)" : "transparent",
-          color: statusMode === k ? "var(--bg)" : "var(--text2)",
-          fontFamily: "inherit", whiteSpace: "nowrap",
-        }}>{label}</button>
-      ))}
-    </div>
-  );
+  // (statusSegmentJSX retired 2026-05-04 — both Listings AND Watchlist
+  // tabs now have sub-tabs that cover Live / Sold scoping. The
+  // statusMode state still lives in useFilters but no UI mutates it.)
+  const statusSegmentJSX = null;
 
   // (Retired 2026-04-30) AuctionsTab JSX was built here. Tracked lots
   // now flow into Watchlist > Listings; calendar lives at Watchlist >
@@ -1592,8 +1598,6 @@ export default function Watchlist() {
       isAuthConfigured={isAuthConfigured}
       watchlist={watchlist}
       watchItems={watchItems}
-      watchLive={watchLive}
-      watchSold={watchSold}
       watchCount={watchCount}
       toggleWatchlist={toggleWatchlist}
       liveStateById={liveStateById}
@@ -1611,7 +1615,6 @@ export default function Watchlist() {
       gridStyle={gridStyle}
       inp={inp}
       isMobile={isMobile}
-      statusMode={statusMode}
       sort={sort}
       auctions={auctions}
       watchTopTab={watchTopTab}
@@ -1642,6 +1645,25 @@ export default function Watchlist() {
     <AdminTab watchItems={watchItems} hiddenItems={hiddenItems} />
   );
 
+  // References tab JSX. Built here so the Challenges resource (moved
+  // from a Watchlist sub-tab to References on 2026-05-04) gets the
+  // same collectionsApi / watchlist / hidden / etc. props it needed
+  // when it lived inside WatchlistTab. The shells just render this
+  // const for tab === "references".
+  const referencesTabJSX = (
+    <ReferencesTab
+      user={user}
+      isAuthConfigured={isAuthConfigured}
+      signInWithGoogle={signInWithGoogle}
+      collectionsApi={collectionsApi}
+      allListings={items}
+      watchlist={watchlist}
+      hidden={hidden}
+      primaryCurrency={primaryCurrency}
+      handleShare={handleShare}
+    />
+  );
+
   // ── MOBILE ────────────────────────────────────────────────────────────────
   // "Ending soon" pinned section — Favorites sub-tab only (2026-05-04).
   // Originally rendered across every Watchlist sub-tab, but Mark
@@ -1651,17 +1673,10 @@ export default function Watchlist() {
   // qualifying items so we can mount it unconditionally inside the
   // Favorites view. EndingSoon does its own filtering against
   // watchItems (auction-format + auction_end within 7 days OR live).
-  const endingSoonJSX = (tab !== "watchlist" || watchTopTab !== "listings") ? null : (
-    <EndingSoon
-      items={watchItems}
-      handleWish={handleWish}
-      compact={compact}
-      primaryCurrency={primaryCurrency}
-      handleShare={handleShare}
-      openCollectionPicker={user ? openCollectionPicker : undefined}
-      user={user}
-    />
-  );
+  // (EndingSoon pinned strip retired 2026-05-04 — Watchlist > Saved
+  // auctions sub-tab IS the ending-soon view now, with its own
+  // ending-soonest default sort.)
+  const endingSoonJSX = null;
 
   // Watchlist sub-tab strip — lifted out of WatchlistTab.js on
   // 2026-04-30 so it sits between the main tab strip and the filter
@@ -1696,29 +1711,18 @@ export default function Watchlist() {
       msOverflowStyle: "none",
     }}>
       {[
-        // Mobile drops the trailing count chips and shortens
-        // "Auction Calendar" → "Calendar" so all three pills + the
-        // trailing "+ Track new item" / "+ Add search" action button
-        // fit on one row at 375px viewport. Listings keeps its count
-        // (signals "how many things am I tracking?" — a real piece of
-        // info). Searches + Calendar dropped their counts 2026-05-01:
-        // the count there was just "rows below" rather than
-        // "outstanding work" so it added noise without informing.
-        // The "listings" key is preserved for localStorage compat
-        // (dial_watch_top_tab) so users coming back keep their last
-        // sub-tab. Display label changed to "Favorites" 2026-05-01 —
-        // signals the heart's role more directly than "Listings" did,
-        // and creates breathing room for Collections as the
-        // organizational layer above.
-        ["listings", isMobile ? "Favorites" : `Favorites${watchCount > 0 ? ` · ${watchCount}` : ""}`],
-        // Sub-tab key stays "collections" — persisted in localStorage
-        // (`dial_watch_top_tab`) and reflected in the URL via `?sub=`.
-        // Only the user-facing label changed to "Lists" on 2026-05-04
-        // (Mark wanted shorter / less precious). DB tables, hooks,
-        // and URL params are unchanged.
+        // Sub-tab key "listings" preserved for localStorage compat
+        // (dial_watch_top_tab); display label "Saved listings" makes
+        // the saved-set scope explicit alongside Saved auctions /
+        // Saved sold. Restructured 2026-05-04 to mirror Listings tab
+        // (Mark's call: "as close to listings as possible to keep
+        // clean"). Mobile labels drop the "Saved" prefix to fit a
+        // five-pill strip on 375px viewports.
+        ["listings", isMobile ? "Listings" : "Saved listings"],
+        ["auctions", isMobile ? "Auctions" : "Saved auctions"],
+        ["sold",     isMobile ? "Sold"     : "Saved sold"],
+        ["searches", isMobile ? "Searches" : "Favorite searches"],
         ["collections", "Lists"],
-        ["challenges", "Challenges"],
-        ["searches", "Searches"],
       ].map(([key, label]) => {
         const active = watchTopTab === key;
         return (
@@ -1732,8 +1736,11 @@ export default function Watchlist() {
           the far end of the SCROLLABLE area (off-screen) which made
           it unreachable. Now it sits immediately after the last
           sub-tab; gap: 20 inherits from the parent so visual rhythm
-          stays consistent. flexShrink: 0 so it doesn't compress. */}
-      {watchTopTab === "listings" && user && (
+          stays consistent. flexShrink: 0 so it doesn't compress.
+          +Track button moved from "listings" to "auctions" sub-tab
+          on 2026-05-04 — eBay items always live under Saved auctions
+          regardless of Buy-It-Now vs auction format. */}
+      {watchTopTab === "auctions" && user && (
         <button onClick={() => { setTrackOpen(true); setTrackError(""); }} style={{
           fontSize: 13, fontWeight: 500,
           padding: "9px 14px", borderRadius: 8,
@@ -1899,7 +1906,7 @@ export default function Watchlist() {
     aboutModalOpen, activeFilterPop, allFiltered,
     brandsExpanded, currentIsSaved,
     drawerOpen,
-    filterAuctionsOnly, filterBrands, filterSources,
+    filterBrands, filterSources,
     listingsSubTab,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
@@ -1910,7 +1917,7 @@ export default function Watchlist() {
     handleWish, openFavPrompt, resetFilters,
     setAboutModalOpen, setActiveFilterPop, setBrandsExpanded,
     setDrawerOpen,
-    setFilterAuctionsOnly, setFilterBrands, setFilterSources,
+    setFilterBrands, setFilterSources,
     setListingsSubTab,
     setMaxPriceText, setMinPriceText,
     setPage, setSearch, setShowUserMenu,
@@ -1926,7 +1933,7 @@ export default function Watchlist() {
     settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX,
-    watchlistTabJSX, adminTabJSX,
+    watchlistTabJSX, adminTabJSX, referencesTabJSX,
     lotMigrationBannerJSX,
   };
 

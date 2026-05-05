@@ -24,9 +24,10 @@ export function useFilters() {
   const [filterSources, setFilterSources] = useState([]);
   const [filterBrands,  setFilterBrands]  = useState([]);
   const [filterRefs,    setFilterRefs]    = useState([]);
-  // Auctions-only is a single toggle, not a multi-select. Used only by
-  // the Watchlist tab now; the Listings tab uses sub-tabs.
-  const [filterAuctionsOnly, setFilterAuctionsOnly] = useState(false);
+  // (filterAuctionsOnly state retired 2026-05-04 — both Listings AND
+  // Watchlist now use sub-tabs that scope dealer vs auction items
+  // up-front. The toggle's role is gone; predicate dispatch happens
+  // inside the per-tab memos.)
 
   // Sort axis + direction (date / date-asc / price-asc / price-desc).
   const [sort, setSort] = useState("date");
@@ -126,7 +127,6 @@ export function useFilters() {
     filterSources, setFilterSources,
     filterBrands,  setFilterBrands,
     filterRefs,    setFilterRefs,
-    filterAuctionsOnly, setFilterAuctionsOnly,
     toggleSource, toggleBrand,
     // Sort + search
     sort, setSort,
