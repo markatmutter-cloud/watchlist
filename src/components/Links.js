@@ -44,6 +44,7 @@ const TOPIC_SECTIONS = [
       "https://www.strictlyvintagewatches.com/",
       "https://www.ablogtowatch.com/retail-me-not/",
       "https://www.screwdowncrown.com/",
+      "https://www.thefourthwheel.co.uk/",
     ],
   },
 ];
