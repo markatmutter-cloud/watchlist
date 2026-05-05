@@ -41,11 +41,19 @@ BRANDS = [
     # Tag Heuer must come BEFORE Heuer so substring match doesn't grab "Heuer" first.
     'Tag Heuer', 'Heuer',
     'Longines', 'Movado', 'Czapek', 'Urwerk', 'Zenith', 'Breguet',
-    'Blancpain', 'Tissot', 'Gallet', 'Mulco', 'Girard-Perregaux', 'Eberhard',
+    'Blancpain', 'Tissot', 'Gallet', 'Girard-Perregaux', 'Eberhard',
     # Added 2026-04-29 — Mark requested Favre-Leuba + Vulcain; Ebel /
     # Ikepod / Piaget were sitting in the Other bucket despite clearly
     # branded titles.
     'Favre-Leuba', 'Vulcain', 'Ebel', 'Ikepod', 'Piaget',
+    # Added 2026-05-05: Gerald Genta + Bulgari were sitting in Other
+    # because the brand wasn't on the substring list. Nivada Grenchen
+    # added so titles like "Nivada Grenchen Antarctic" detect cleanly
+    # (Croton + bare "Nivada" titles route through canonicalize_brand
+    # aliases). Mulco removed from BRANDS — promoted to the front-end
+    # FORCE_OTHER_BRANDS list (kept on the data side, pooled into the
+    # Other chip in the UI per Mark's brand-cleanup pass).
+    'Gerald Genta', 'Bulgari', 'Nivada Grenchen',
 ]
 
 # Brand-name variants we want to collapse onto a single canonical chip.
@@ -106,13 +114,75 @@ BRAND_ALIASES = {
     'frank muller':       'Franck Muller',
     'franck muller':      'Franck Muller',
     'franck-muller':      'Franck Muller',
+
+    # Vacheron variants — Maison's modern name is the canonical;
+    # "Vacheron & Constantin" is the historic 19th-century lockup
+    # but Mark + most collectors treat them as one filter. Bare
+    # "Vacheron" added 2026-05-05 — turned up as its own filter
+    # chip with 2 listings.
+    'vacheron':                'Vacheron Constantin',
+    'vacheron constantin':     'Vacheron Constantin',
+    'vacheron-constantin':     'Vacheron Constantin',
+    'vacheron & constantin':   'Vacheron Constantin',
+    'vacheron and constantin': 'Vacheron Constantin',
+
+    # Doxa: dealer scrapers ship a mix of "Doxa" and "DOXA".
+    # canonicalize_brand is case-insensitive on the lookup side,
+    # so this entry collapses both onto the title-cased canonical.
+    'doxa':                  'Doxa',
+
+    # Nivada Grenchen / Croton — same Swiss maker, sold under the
+    # Croton name in the US through the 1960s. Mark wants every
+    # variant filed under one chip.
+    'nivada':                'Nivada Grenchen',
+    'nivada grenchen':       'Nivada Grenchen',
+    'nivada-grenchen':       'Nivada Grenchen',
+    'croton':                'Nivada Grenchen',
+
+    # Favre-Leuba is the canonical hyphenated form (already in
+    # BRANDS). Catch the unhyphenated variant.
+    'favre leuba':           'Favre-Leuba',
+
+    # Gerald Genta variants — the maison spells with a single
+    # consonant; some scraper rows / dealer titles drift to
+    # "Genta" alone or with extra spacing.
+    'gerald genta':          'Gerald Genta',
+    'genta':                 'Gerald Genta',
+
+    # Bulgari is the brand's own spelling on most products;
+    # "Bvlgari" is the Latin lockup the maison also uses. Treating
+    # them as one for filter purposes.
+    'bvlgari':               'Bulgari',
 }
 
 
 # Brands we never want in the user-facing feed. Matched after
 # canonicalize_brand so any spelling variant gets caught. Lowercase;
 # canonical name (post-canonicalize_brand) is checked case-insensitively.
-EXCLUDED_BRANDS = {'Franck Muller', 'Hublot', 'Gucci', 'Harry Winston'}
+# 2026-05-05: Mark added Corum (low quality / not interesting to him)
+# and Scatola Del Tempo (these are watch boxes from Craft & Tailored,
+# not actual watches — kept showing up as a brand chip on its own).
+EXCLUDED_BRANDS = {
+    'Franck Muller', 'Hublot', 'Gucci', 'Harry Winston',
+    'Corum', 'Scatola Del Tempo',
+}
+
+
+# Standalone bracelet / strap listings we want to filter out at
+# scrape-merge time. Wind Vintage in particular sells vintage Gay
+# Frères bracelets as their own listings — interesting inventory
+# but not watches. Pattern: title starts with a width measurement
+# (`<digits>mm`) AND contains "bracelet". Watches that come "on
+# Bracelet" don't lead with a width, so they pass through.
+# Verified 2026-05-05 against the active feed: 58 hits, 0 false
+# positives in the matched set. False-NEGATIVE risk (a real watch
+# whose title starts with mm) is acceptable — those would be
+# unusual titles anyway and any watch that slips through still
+# costs nothing to leave in.
+BRACELET_TITLE_PATTERN = re.compile(
+    r'^\s*\d+(?:\.\d+)?\s?mm\b.*\bbracelet\b',
+    re.IGNORECASE,
+)
 
 
 def canonicalize_brand(brand):
@@ -224,6 +294,12 @@ def load_csv(path, source_name, currency='USD'):
             if price < 500 and not price_on_request:
                 continue
             title = clean(r.get('title', ''))
+            # Standalone bracelet / strap listings — kept off the
+            # feed at merge time. Pattern + rationale in the
+            # BRACELET_TITLE_PATTERN definition. Most affected:
+            # Wind Vintage's Gay Frères inventory.
+            if BRACELET_TITLE_PATTERN.search(title):
+                continue
             url = r.get('url', '')
             # Per-row currency support: eBay's Browse API returns
             # listings priced in their seller's native currency, so the

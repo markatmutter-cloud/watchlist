@@ -130,7 +130,61 @@ const BRAND_ALIASES = {
   "frank muller":      "Franck Muller",
   "franck muller":     "Franck Muller",
   "franck-muller":     "Franck Muller",
+
+  // 2026-05-05 Mark cleanup pass — mirror merge.py BRAND_ALIASES.
+  // Vacheron variants
+  "vacheron":                "Vacheron Constantin",
+  "vacheron constantin":     "Vacheron Constantin",
+  "vacheron-constantin":     "Vacheron Constantin",
+  "vacheron & constantin":   "Vacheron Constantin",
+  "vacheron and constantin": "Vacheron Constantin",
+  // Doxa — case fold
+  "doxa":              "Doxa",
+  // Nivada / Croton → one canonical
+  "nivada":            "Nivada Grenchen",
+  "nivada grenchen":   "Nivada Grenchen",
+  "nivada-grenchen":   "Nivada Grenchen",
+  "croton":            "Nivada Grenchen",
+  // Favre-Leuba unhyphenated
+  "favre leuba":       "Favre-Leuba",
+  // Gerald Genta variants
+  "gerald genta":      "Gerald Genta",
+  "genta":             "Gerald Genta",
+  // Bulgari / Bvlgari → one canonical
+  "bvlgari":           "Bulgari",
 };
+
+// Brands kept in the data layer but pooled into the "Other" chip
+// in the brand filter rail. Mark's call 2026-05-05: these brands
+// have legitimate listings but they're not interesting enough to
+// occupy a top-level chip — so we keep the original brand label
+// on the item (preserving the data) and just collapse them in the
+// UI. App.js's displayBrand checks this set after canonicalization.
+//
+// Frontend-only — merge.py and listings.json carry the original
+// brand. Reverting any of these is a one-line edit here, not a
+// re-scrape.
+export const FORCE_OTHER_BRANDS = new Set([
+  "Wittnauer", "Mulco", "Berd Vay'e", "Hanhart", "Illinois",
+  "Elgin", "Marvin", "Wakmann", "Caravelle", "Pro Hunter",
+]);
+
+// Sold items in these brands are hidden from Listings > All sold
+// UNLESS the user has hearted them (in which case the saved set
+// keeps the entry visible). Mark's curation pass 2026-05-05 — the
+// All Sold tab was getting cluttered with low-tier sold listings he
+// has no interest in retaining post-sale. Heart-overrides are
+// preserved because a user who explicitly hearted one of these
+// before it sold should still be able to see it in their saved
+// archive.
+//
+// Note: TAG Heuer is in the suppress set; bare Heuer (Jack Heuer
+// era, vintage) is NOT. Same brand identity at the maison level
+// but distinct collector value.
+export const SUPPRESS_AT_SOLD_BRANDS = new Set([
+  "Gerald Genta", "Panerai", "Tissot", "Bell & Ross", "TAG Heuer",
+  "Girard-Perregaux", "Jaquet Droz", "Enigma", "Ebel",
+]);
 
 export function canonicalizeBrand(brand) {
   if (!brand) return brand;
@@ -156,8 +210,13 @@ const FRONTEND_BRANDS = [
   "Rolex", "Omega", "Tudor", "Breitling", "IWC", "Cartier",
   "Panerai", "Longines", "Movado", "Czapek", "Urwerk", "Zenith",
   "Breguet", "Blancpain", "Tissot", "Eberhard", "Aquastar",
-  "Hermès", "Hermes", "Bvlgari", "Doxa", "Piaget", "Ebel",
+  "Hermès", "Hermes", "Bvlgari", "Bulgari", "Doxa", "Piaget", "Ebel",
   "Vulcain", "Favre-Leuba", "Lemania", "Yema", "Glycine",
+  // Added 2026-05-05 for the brand-cleanup pass — Gerald Genta
+  // titles in the auction-lot projection were landing in "Other"
+  // because the brand wasn't on the substring list. Nivada Grenchen
+  // (covers the Croton variant via canonicalizeBrand).
+  "Gerald Genta", "Nivada Grenchen",
 ];
 export function detectBrandFromTitle(title) {
   if (!title) return "Other";
