@@ -796,6 +796,29 @@ becomes confusion.
 
 ## Update log
 
+- 2026-05-04 (later PM): **Listings sub-tab restructure (PR #33).**
+  Replaced Phase A's tri-state All/Dealers/Auctions pill +
+  weighted-blend sort + Lots/Calendar toggle with four explicit
+  Listings sub-tabs:
+  - **Live listings** — currently-active dealers, sort newest
+    `firstSeen` first, date dividers (Today / Yesterday / weekday /
+    Last week / Older).
+  - **Live auctions** — currently-active auction lots, sort
+    ending-soonest (live → upcoming asc → ended desc → non-auction
+    last), no date dividers.
+  - **All sold** — sold dealers ∪ sold auction lots, sort
+    most-recently-sold first, sold-date dividers.
+  - **Auction calendar** — month-banded list of upcoming sales.
+  Date pill semantics depend on sub-tab; Price pill uniform.
+  Sub-tabs gate filter exposure (Live listings hides Auction
+  houses chip group; Live auctions hides Dealers; Sold + Calendar
+  show both). Calendar sub-tab hides the filter row entirely.
+  Removed: `feedFilter` state, `auctionsView` state, `blendBucket`
+  function + BLEND_* constants, "Ending" sort pill, Status segment
+  on Listings (kept on Watchlist). URL: `?tab=listings&sub=<live|auctions|sold|calendar>`.
+  Things-to-never-do entries added in CLAUDE.md to prevent the
+  pill + blend sort from coming back.
+
 - 2026-05-04 (PM): **Unified listings/auctions feed + comprehensive
   auction-lot scrape + heart-on-lot (Phases A / B1 / B2, PRs
   #30 / #31 / #32).** Net deliverables:

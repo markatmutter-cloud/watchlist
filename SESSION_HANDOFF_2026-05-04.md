@@ -7,37 +7,44 @@ graduate to ROADMAP.md.
 
 ## TL;DR
 
-Two-half day. AM: bug-fix session (8 PRs). PM: **Unified listings/
-auctions feed + comprehensive auction-lot scraping + heart-on-lot**
-shipped across Phases A / B1 / B2 (PRs #30 merged, #31 + #32 awaiting
-merge as of writing).
+Two-half day. AM: bug-fix session (8 PRs). PM: **Listings unified
+feed → comprehensive auction-lot scrape → heart-on-lot → Listings
+sub-tab restructure**. Four PRs (#30 / #31 / #32 / #33), all
+merged. Production live on bundle `main.101d166a.js`.
 
 **PM net deliverables**:
-- **Phase A (PR #30 ✓ merged)**: Listings tab gets a tri-state
-  All / Dealers / Auctions pill. Tracked-lot data projects into the
-  main feed alongside dealers; "All" view sort uses a weighted
-  blend (ending-soon top → dealers/far-out lots middle → recently
-  sold → older sold). Auction houses appear in source filter under
-  sub-header. Calendar moved out of `Watchlist > Calendar` (sub-tab
-  removed) into `Listings > Auctions > Calendar` toggle.
-- **Phase B1 (PR #31 awaiting merge)**: New `auction_lots_scraper.py`
+- **Phase A (PR #30 ✓ merged)**: First pass at unifying dealer
+  listings + auction lots into the main feed. Tri-state pill +
+  weighted-blend sort + Lots/Calendar toggle. **Superseded same
+  session by PR #33** below.
+- **Phase B1 (PR #31 ✓ merged)**: New `auction_lots_scraper.py`
   walks every active sale in `auctions.json` and pulls per-lot
   detail for Antiquorum (catalog → per-lot fetch), Christie's
   (inline `chrComponents.lots` blob), Sotheby's (`__NEXT_DATA__`
   algoliaJson, paginated), Phillips (page enum → per-lot fetch,
   capped 60/sale). Output: `public/auction_lots.json`. Per Mark:
   filter pocket / clocks / dials only at scrape time; keep
-  accessories. **Initial scrape: 296 lots.** Wired into daily
-  auctions cron after merge.py.
-- **Phase B2 (PR #32 awaiting merge, stacked on B1)**: Hearts on
-  auction-lot cards write to watchlist_items (no more `_isTrackedLot`
-  guard). +Track URL validator narrowed to eBay-only. Per-user
-  one-shot migration via `<LotMigrationBanner/>` copies non-eBay
-  tracked URLs into watchlist_items + removes the tracked_lots row.
+  accessories. **Initial scrape: 296 lots; first cron refresh: 202.**
+  Wired into daily auctions cron after merge.py.
+- **Phase B2 (PR #32 ✓ merged)**: Hearts on auction-lot cards
+  write to watchlist_items (no more `_isTrackedLot` guard).
+  +Track URL validator narrowed to eBay-only. Per-user one-shot
+  migration via `<LotMigrationBanner/>` copies non-eBay tracked
+  URLs into watchlist_items + removes the tracked_lots row.
   Idempotent via localStorage flag. eBay tracking workflow stays.
+- **Listings sub-tabs (PR #33 ✓ merged)**: Replaced Phase A's
+  pill + blend with four explicit sub-tabs: **Live listings**
+  (dealers, sort newest-first, freshness dividers), **Live
+  auctions** (lots, sort ending-soonest), **All sold** (mixed
+  sold dealers + lots, sort most-recently-sold first, sold-date
+  dividers), **Auction calendar**. Date pill semantics depend on
+  sub-tab; Price pill uniform. Sub-tabs gate filter exposure.
+  Status segment dropped from Listings (kept on Watchlist).
+  Removed: feedFilter / auctionsView state, blendBucket function,
+  Ending sort pill.
 
-Production for **Phase A**: bundle `7efca632`, green. Dealer count:
-**36**. Branch list: PRs #31 + #32 open, awaiting merge.
+Production: bundle `main.101d166a.js`. Dealer count: **36**.
+Branch list: clean.
 
 **AM bug-fix deliverables** (preserved below):
 
@@ -264,11 +271,15 @@ only.
 
 ## Open questions left from this session
 
-- **Tests workflow not firing on PRs #31 + #32.** Looks like a
-  GitHub Actions glitch — the `tests.yml` `pull_request` trigger
-  didn't fire on either. Vercel + bundle build are green so the
-  app compiles cleanly; Tests will run on the next push to main
-  (after merge). Worth a one-line "is this still happening?"
-  check at the start of next session.
+- **Tests workflow glitch** — fired late on this session's PRs
+  (#31 + #32 merged with only Vercel green at squash time; Tests
+  fired on the push-to-main and PR #33's pre-merge run worked
+  normally). Watch for recurrence next session.
 - **Phase D not started.** Manual historical entry deferred per
-  scope/time. Captured in priority order above.
+  scope/time. Captured in priority order above. Mark's three
+  target URLs preserved.
+- **Sotheby's lot images null in v1.** brightspot CDN URL needs a
+  per-lot fetch to extract the hash. ~30-min addition.
+- **Antiquorum catalog pagination broken at the source** — `?page=N`
+  301s back to /lots, so we get the first 20 lots per sale. Lots
+  fill in over time as the catalog publishes more batches.
