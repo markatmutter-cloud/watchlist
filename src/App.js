@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useAuth, useWatchlist, useHidden, useSearches, useTrackedLots, useCollections, useUserSettings, importLocalData, isAuthConfigured } from "./supabase";
 import {
-  GLOBAL_MAX, CURRENCY_SYM,
-  fmt, fmtUSD, daysAgo, freshDate, imgSrc, logToPrice, extractRef,
+  GLOBAL_MAX,
+  daysAgo, freshDate,
   ageBucketFromDate, canonicalizeBrand, detectBrandFromTitle, shortHash,
   matchesSearch,
 } from "./utils";
@@ -11,14 +11,11 @@ import { useTrackModal } from "./hooks/useTrackModal";
 import { useFavSearchModal } from "./hooks/useFavSearchModal";
 import { useViewSettings } from "./hooks/useViewSettings";
 import { useFilters } from "./hooks/useFilters";
-import { FilterIcon, SearchIcon, TabIcon } from "./components/icons";
 import { Card } from "./components/Card";
-import { Chip, SidebarChip } from "./components/Chip";
 // AuctionsTab retired 2026-04-30 — Tracked lots merged into Watchlist
 // Listings; calendar moved to Watchlist > Auction Calendar sub-tab via
 // the new AuctionCalendar component (AuctionsTab.js deleted 2026-04-30).
 import { ReferencesTab } from "./components/ReferencesTab";
-import { AboutModal } from "./components/AboutModal";
 import { TrackNewItemModal } from "./components/TrackNewItemModal";
 import { FavSearchModal } from "./components/FavSearchModal";
 import { AddSearchModal } from "./components/AddSearchModal";
@@ -48,13 +45,6 @@ const PAGE_SIZE = 48;
 // reads/writes now go through Supabase via the hooks in ./supabase.js.
 const LEGACY_WATCHLIST_KEY = "dial_watchlist_v2";
 const LEGACY_HIDDEN_KEY    = "dial_hidden_v1";
-const SIDEBAR_MIN = 160;
-const SIDEBAR_MAX = 520;
-const SIDEBAR_DEFAULT_FRACTION = 0.25;   // start at 25% of window width
-function initialSidebarWidth() {
-  if (typeof window === "undefined") return 280;
-  return Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(window.innerWidth * SIDEBAR_DEFAULT_FRACTION)));
-}
 
 // "Ending soonest" comparator. Tiers items so urgency wins over raw
 // date order:
@@ -109,11 +99,9 @@ export default function Watchlist() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const dark = darkOverride !== null ? darkOverride : sysDark;
 
-  const [sidebarWidth, setSidebarWidth] = useState(initialSidebarWidth);
-  // Desktop-only: hide the filter drawer with a top-left toggle so the grid
-  // gets the full window width. Mobile already opens filters in a separate
-  // drawer, so this is irrelevant there.
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // (Desktop sidebar + drag-resize machinery retired with the
+  // April '26 filter consolidation — useState pairs, refs, and
+  // onDragStart handler all removed alongside sidebarFilterPanelJSX.)
   // All filter-row state lives in useFilters — search/sources/brands/
   // refs/auctions-only/sort/price/status/expansion-toggles/popover.
   // Destructured into the existing names so the rest of App.js doesn't
@@ -137,9 +125,6 @@ export default function Watchlist() {
     filterPopRef,
     hasFilters, resetFilters,
   } = useFilters();
-  const isDragging = useRef(false);
-  const dragStart = useRef(0);
-  const widthStart = useRef(0);
   // Desktop column count: user override wins; otherwise the fluid default
   // based on viewport width with a sensible minimum.
   const desktopAutoCols = Math.max(3, Math.round(screenWidth / 240));
@@ -460,30 +445,6 @@ export default function Watchlist() {
   const observerRef = useRef(null);
   const BRANDS_SHOW = 8;
   const SOURCES_SHOW = 8;
-
-  const onDragStart = useCallback((e) => {
-    isDragging.current = true;
-    dragStart.current = e.clientX;
-    widthStart.current = sidebarWidth;
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-  }, [sidebarWidth]);
-
-  useEffect(() => {
-    const onMove = e => {
-      if (!isDragging.current) return;
-      setSidebarWidth(Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, widthStart.current + e.clientX - dragStart.current)));
-    };
-    const onUp = () => {
-      if (!isDragging.current) return;
-      isDragging.current = false;
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
-  }, []);
 
   // (Auto-sort effect retired 2026-05-04 — both Listings AND Watchlist
   // now use sub-tabs that own their own Date-pill semantics inside
@@ -1292,64 +1253,16 @@ export default function Watchlist() {
   if (loading) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Loading listings...</div>;
   if (loadError) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Could not load listings. Try refreshing.</div>;
 
-  // ── SIDEBAR FILTER PANEL (desktop only) ──────────────────────────────────
-  // NOTE: defined as a JSX const rather than a function component so the DOM
-  // nodes (especially the price text inputs) aren't rebuilt on every parent
-  // render. Function components defined inside Watchlist() get a new reference per
-  // render and React treats them as a new component type — which was killing
-  // input focus mid-keystroke.
-  // Sidebar section heading style — lifted out so all headings match and
-  // one edit changes them everywhere. Slightly darker + bolder than before.
+  // ── SHARED STYLE TOKEN ───────────────────────────────────────────────────
+  // sectionHeadingStyle still consumed by MobileShell for the filter
+  // drawer's Source / Brand / Price-range section labels. The desktop
+  // sidebar this once also fed (sidebarFilterPanelJSX, ~45 lines of
+  // dead JSX) was retired in the April '26 filter consolidation and
+  // removed in the 2026-05-04 cleanup pass.
   const sectionHeadingStyle = {
     fontSize: 10, fontWeight: 600, textTransform: "uppercase",
     letterSpacing: "0.08em", color: "var(--text1)", marginBottom: 8,
   };
-
-  const sidebarFilterPanelJSX = (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      <div style={{ padding: "12px 16px 8px" }}>
-        <div style={sectionHeadingStyle}>Sort</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          {[["date", "Newest first"], ["price-asc", "Price: low to high"], ["price-desc", "Price: high to low"]].map(([val, label]) => (
-            <button key={val} onClick={() => setSort(val)} style={{ padding: "5px 8px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, textAlign: "left", background: sort === val ? "var(--surface)" : "transparent", color: sort === val ? "var(--text1)" : "var(--text2)", fontWeight: sort === val ? 500 : 400 }}>{label}</button>
-          ))}
-        </div>
-      </div>
-      {hasFilters && (
-        <div style={{ padding: "0 16px 8px" }}>
-          <button onClick={resetFilters} style={{ fontSize: 12, color: "#185FA5", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>Reset all filters</button>
-        </div>
-      )}
-      <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
-      <div style={{ padding: "12px 16px 8px" }}>
-        <div style={sectionHeadingStyle}>Source</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-          {SOURCES.map(s => <SidebarChip key={s} label={s} active={filterSources.includes(s)} onClick={() => toggleSource(s)} />)}
-        </div>
-      </div>
-      <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
-      <div style={{ padding: "12px 16px 8px" }}>
-        <div style={sectionHeadingStyle}>Brand</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-          {visibleBrands.map(b => <SidebarChip key={b} label={b} active={filterBrands.includes(b)} onClick={() => toggleBrand(b)} />)}
-          {BRANDS.length > BRANDS_SHOW && <SidebarChip label={brandsExpanded ? "Less ↑" : `+${BRANDS.length - BRANDS_SHOW} more`} active={false} onClick={() => setBrandsExpanded(!brandsExpanded)} blue />}
-        </div>
-      </div>
-      <div style={{ height: "0.5px", background: "var(--border)", margin: "0 12px" }} />
-      <div style={{ padding: "12px 16px 14px" }}>
-        <div style={sectionHeadingStyle}>Price (USD)</div>
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <input value={minPriceText} onChange={e => setMinPriceText(e.target.value)} placeholder="Min"
-            inputMode="numeric"
-            style={{ ...inp, fontSize: 12, padding: "6px 8px", flex: 1 }} />
-          <span style={{ fontSize: 11, color: "var(--text3)" }}>–</span>
-          <input value={maxPriceText} onChange={e => setMaxPriceText(e.target.value)} placeholder="Max"
-            inputMode="numeric"
-            style={{ ...inp, fontSize: 12, padding: "6px 8px", flex: 1 }} />
-        </div>
-      </div>
-    </div>
-  );
 
   // ── SEARCH RUNNER ─────────────────────────────────────────────────────────
   // Saved searches aren't their own tab — they render as a subsection
@@ -1580,11 +1493,6 @@ export default function Watchlist() {
     </div>
   );
 
-  // (statusSegmentJSX retired 2026-05-04 — both Listings AND Watchlist
-  // tabs now have sub-tabs that cover Live / Sold scoping. The
-  // statusMode state still lives in useFilters but no UI mutates it.)
-  const statusSegmentJSX = null;
-
   // (Retired 2026-04-30) AuctionsTab JSX was built here. Tracked lots
   // now flow into Watchlist > Listings; calendar lives at Watchlist >
   // Auction Calendar via AuctionCalendar.js.
@@ -1616,7 +1524,6 @@ export default function Watchlist() {
       inp={inp}
       isMobile={isMobile}
       sort={sort}
-      auctions={auctions}
       watchTopTab={watchTopTab}
       setWatchTopTab={setWatchTopTab}
       legacyLocal={legacyLocal}
@@ -1667,18 +1574,10 @@ export default function Watchlist() {
   );
 
   // ── MOBILE ────────────────────────────────────────────────────────────────
-  // "Ending soon" pinned section — Favorites sub-tab only (2026-05-04).
-  // Originally rendered across every Watchlist sub-tab, but Mark
-  // wanted it scoped to Favorites since the items are part of the
-  // hearted set and showing it on Collections / Searches / Calendar
-  // was just visual noise. Component returns null when there are no
-  // qualifying items so we can mount it unconditionally inside the
-  // Favorites view. EndingSoon does its own filtering against
-  // watchItems (auction-format + auction_end within 7 days OR live).
   // (EndingSoon pinned strip retired 2026-05-04 — Watchlist > Saved
   // auctions sub-tab IS the ending-soon view now, with its own
-  // ending-soonest default sort.)
-  const endingSoonJSX = null;
+  // ending-soonest default sort. Const + shellProps wiring removed
+  // in the same cleanup pass.)
 
   // Watchlist sub-tab strip — lifted out of WatchlistTab.js on
   // 2026-04-30 so it sits between the main tab strip and the filter
@@ -1844,9 +1743,9 @@ export default function Watchlist() {
 
   // Both shells consume the same props bag. App.js owns state and the
   // top-level JSX consts (authJSX, listingsGridJSX, watchSubTabsJSX,
-  // statusSegmentJSX, watchlistTabJSX, plus the modal JSX consts) — the
-  // shells just render. Extracted into MobileShell/DesktopShell as
-  // Stage 2 of recommendation #1 on 2026-04-30.
+  // watchlistTabJSX, plus the modal JSX consts) — the shells just
+  // render. Extracted into MobileShell/DesktopShell as Stage 2 of
+  // recommendation #1 on 2026-04-30.
   // Count shown next to the sort row (mobile) and at the right of the
   // filter row (desktop). On the Listings tab this is the filtered
   // dealer-feed length; on Watchlist it's the post-filter length of the
@@ -1888,9 +1787,9 @@ export default function Watchlist() {
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX, inp,
     listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
-    settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
+    settingsModalJSX, shareReceiverJSX,
     listingsSubTabsJSX,
-    trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX,
+    trackNewItemModalJSX, watchSubTabsJSX,
     watchlistTabJSX, adminTabJSX, referencesTabJSX,
     lotMigrationBannerJSX,
   };

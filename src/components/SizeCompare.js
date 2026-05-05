@@ -370,7 +370,7 @@ export function SizeCompare({ onBack }) {
             border: "none", background: "transparent",
             color: "var(--text2)", fontFamily: "inherit",
             fontSize: 13, cursor: "pointer", padding: "4px 0",
-          }}>← References</button>
+          }}>← Cool Stuff</button>
         )}
       </div>
       <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 4px", color: "var(--text1)" }}>

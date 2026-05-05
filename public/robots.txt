@@ -1,0 +1,10 @@
+# Watchlist — open crawling. Single-page React app, all routes resolve
+# to / and hydrate client-side. /api/img is a serverless image-proxy
+# endpoint that has no SEO value (and proxies third-party dealer assets
+# we don't own) so it stays out of crawl scope.
+
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://the-watch-list.app/sitemap.xml

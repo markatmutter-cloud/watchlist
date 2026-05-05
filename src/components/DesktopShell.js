@@ -42,9 +42,9 @@ export function DesktopShell(props) {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
-    adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX, statusSegmentJSX,
+    adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX,
     listingsSubTabsJSX,
-    trackNewItemModalJSX, watchSubTabsJSX, endingSoonJSX, watchlistTabJSX,
+    trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
     referencesTabJSX,
     lotMigrationBannerJSX,
   } = props;
@@ -60,9 +60,9 @@ export function DesktopShell(props) {
   // Calendar sub-tab has no filterable list — hide the row.
   const showListingsFilterRow = !(tab === "listings" && listingsSubTab === "calendar");
 
-  // Desktop sidebar retired in the April '26 filter-consolidation pass.
-  // Toggle still hard-coded to null so we can revert quickly if needed.
-  const sidebarToggleJSX = null;
+  // (sidebarToggleJSX retired — desktop sidebar removed in the April '26
+  // filter-consolidation pass; toggle const + render slot deleted in the
+  // 2026-05-04 cleanup pass.)
 
   // Pill helper for the desktop filter row — denser padding than mobile
   // because horizontal real estate is the constraint, not tap targets.
@@ -287,7 +287,6 @@ export function DesktopShell(props) {
     <div style={{ ...baseStyle, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* Full-width top bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-        {!(tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections")) && sidebarToggleJSX}
         <button onClick={() => { setTab("listings"); setPage(1); }}
           style={{ background: "none", border: "none", cursor: "pointer",
                   padding: 0, fontFamily: "inherit",
@@ -296,7 +295,7 @@ export function DesktopShell(props) {
           Watchlist
         </button>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
-          {[["listings", "Listings"], ["watchlist", "Watchlist"], ["references", "Reference"]].map(([key, label]) => (
+          {[["listings", "Listings"], ["watchlist", "Watchlist"], ["references", "Cool Stuff"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               padding: "6px 14px", borderRadius: 20, border: "0.5px solid var(--border)", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,
@@ -367,12 +366,8 @@ export function DesktopShell(props) {
           {shareReceiverJSX}
           {/* Phase B2 lot-migration banner. */}
           {lotMigrationBannerJSX}
-          {/* Ending-soon pinned section. Mounted at the top of the
-              scroll area so it's the first thing the user sees when
-              they hit Watchlist; sub-tab strip stays sticky above
-              via the chrome rendered outside this scroll container.
-              Returns null when no qualifying tracked lots. */}
-          {tab === "watchlist" && endingSoonJSX}
+          {/* (Ending-soon pinned section retired 2026-05-04 — Watchlist
+              > Saved auctions sub-tab IS the ending-soon view now.) */}
           {tab === "listings" ? listingsTabContentJSX
             : tab === "references" ? referencesTabJSX
             : tab === "admin" ? adminTabJSX
