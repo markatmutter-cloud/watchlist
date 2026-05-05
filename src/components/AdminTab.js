@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { supabase } from "../supabase";
 
 // Admin-only source-quality dashboard. Surfaces the data the Epic 0
 // verification script + per-source aggregates produce, in a dense
@@ -70,6 +71,9 @@ function ChipDot({ kind }) {
   );
 }
 
+const fmtPct = (n) => (n ? `${(n * 100).toFixed(1)}%` : "—");
+const fmtPer100 = (n) => (n ? n.toFixed(1) : "—");
+
 const COLUMNS = [
   { key: "source",      label: "Source",      align: "left",  fmt: (r) => r.source },
   { key: "live",        label: "Live",        align: "right", fmt: (r) => r.live.toLocaleString() },
@@ -77,11 +81,20 @@ const COLUMNS = [
   { key: "trend",       label: "Trend (14d)", align: "left",  fmt: (r) => <Sparkline values={r.trend} /> },
   { key: "daysStale",   label: "Stale",       align: "right", fmt: (r) => r.daysStale >= 999 ? "—" : `${r.daysStale}d` },
   { key: "hearts",      label: "♥",           align: "right", fmt: (r) => r.hearts.toLocaleString() },
-  { key: "heartRate",   label: "♥ %",         align: "right", fmt: (r) => r.heartRate ? `${(r.heartRate*100).toFixed(1)}%` : "—" },
+  { key: "heartRate",   label: "♥ %",         align: "right", fmt: (r) => fmtPct(r.heartRate) },
   { key: "hides",       label: "✕",           align: "right", fmt: (r) => r.hides.toLocaleString() },
-  { key: "hideRate",    label: "✕ %",         align: "right", fmt: (r) => r.hideRate ? `${(r.hideRate*100).toFixed(1)}%` : "—" },
+  { key: "hideRate",    label: "✕ %",         align: "right", fmt: (r) => fmtPct(r.hideRate) },
   { key: "avgPrice",    label: "Avg $",       align: "right", fmt: (r) => r.avgPrice ? `$${(r.avgPrice/1000).toFixed(1)}K` : "—" },
   { key: "topBrand",    label: "Top brand",   align: "left",  fmt: (r) => r.topBrand ? `${r.topBrand} ${(r.topBrandPct*100).toFixed(0)}%` : "—" },
+  // Demand-side columns from listing_events (Epic 8). 30-day rolling
+  // window, sourced from listing_events_daily via the
+  // source_engagement_summary RPC. Today's events appear after the
+  // next rollup runs.
+  { key: "views30d",    label: "Views (30d)", align: "right", fmt: (r) => r.views30d.toLocaleString() },
+  { key: "ctr",         label: "CTR",         align: "right", fmt: (r) => fmtPct(r.ctr) },
+  { key: "savePer100v", label: "♥/100v",      align: "right", fmt: (r) => fmtPer100(r.savePer100v) },
+  { key: "listAddPer100v", label: "+List/100v", align: "right", fmt: (r) => fmtPer100(r.listAddPer100v) },
+  { key: "sharePer100v",label: "Sh/100v",     align: "right", fmt: (r) => fmtPer100(r.sharePer100v) },
   { key: "health",      label: "Health",      align: "center",fmt: (r) => <ChipDot kind={r.health} /> },
   { key: "earning",     label: "Earning?",    align: "center",fmt: (r) => <ChipDot kind={r.earning} /> },
 ];
@@ -92,6 +105,10 @@ export function AdminTab({ watchItems, hiddenItems }) {
   const [listings, setListings] = useState([]);
   const [loadError, setLoadError] = useState(null);
   const [sort, setSort] = useState({ key: "earning", dir: "desc" });
+  // Per-source engagement aggregates from listing_events_daily.
+  // Empty Map until the RPC resolves; engagement columns render "—"
+  // for sources without rolled-up events yet.
+  const [engagement, setEngagement] = useState(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -107,6 +124,24 @@ export function AdminTab({ watchItems, hiddenItems }) {
     }).catch((e) => {
       if (!cancelled) setLoadError(String(e));
     });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Engagement fetch — RLS gates this RPC to admin emails (function
+  // is security invoker; underlying tables enforce admin-only SELECT).
+  // Non-admin browsers get an empty result without an error, which we
+  // already handle by rendering "—" in the engagement columns.
+  useEffect(() => {
+    if (!supabase) return undefined;
+    let cancelled = false;
+    supabase.rpc("source_engagement_summary", { window_days: 30 })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) return;  // silent for non-admin / unconfigured
+        const next = new Map();
+        for (const row of data || []) next.set(row.source || "", row);
+        setEngagement(next);
+      });
     return () => { cancelled = true; };
   }, []);
 
@@ -175,13 +210,30 @@ export function AdminTab({ watchItems, hiddenItems }) {
       const health = !alert ? "ok" : (alert.level === "ERROR" ? "error" : "warn");
       const earning = earningChip(heartRate, hideRate, newPerWeek, daysStale, !alert);
 
+      // Engagement (30-day rolling). Numbers come from the rollup
+      // table via the source_engagement_summary RPC; rates are
+      // normalised to views so a higher-traffic source doesn't auto-
+      // win the chart.
+      const eng = engagement.get(src) || {};
+      const views30d = Number(eng.views || 0);
+      const clicks30d = Number(eng.clicks || 0);
+      const saves30d = Number(eng.saves || 0);
+      const listAdds30d = Number(eng.list_adds || 0);
+      const shares30d = Number(eng.shares || 0);
+      const ctr = views30d ? clicks30d / views30d : 0;
+      const savePer100v = views30d ? (saves30d / views30d) * 100 : 0;
+      const listAddPer100v = views30d ? (listAdds30d / views30d) * 100 : 0;
+      const sharePer100v = views30d ? (shares30d / views30d) * 100 : 0;
+
       out.push({
         source: src, live: agg.live, newPerWeek, daysStale, hearts, heartRate, hides, hideRate,
         avgPrice: median, topBrand, topBrandPct, trend, health, earning, alert,
+        views30d, clicks30d, saves30d, listAdds30d, shares30d,
+        ctr, savePer100v, listAddPer100v, sharePer100v,
       });
     }
     return out;
-  }, [listings, history, verification, watchItems, hiddenItems]);
+  }, [listings, history, verification, watchItems, hiddenItems, engagement]);
 
   const sortedRows = useMemo(() => {
     const r = rows.slice();
@@ -343,6 +395,12 @@ export function AdminTab({ watchItems, hiddenItems }) {
         <br />
         <strong style={{ color: "var(--text2)" }}>Caveats:</strong> hide counts cover only currently-active listings (the schema doesn't snapshot at hide time);
         heart/hide rates use max(live, hearts+hides) as the denominator (proxy for "ever seen") to avoid loading state.json. Both reasonable for v1.
+        <br />
+        <strong style={{ color: "var(--text2)" }}>Engagement</strong> (Views / CTR / ♥/100v / +List/100v / Sh/100v) is a 30-day rolling
+        window from the listing_events_daily rollup. Today's events
+        appear after the next nightly rollup; trigger one early via
+        <code style={{ marginLeft: 4, marginRight: 4, padding: "0 4px", background: "var(--surface)", borderRadius: 3 }}>select public.rollup_and_prune_listing_events();</code>
+        in the SQL editor.
       </div>
     </div>
   );

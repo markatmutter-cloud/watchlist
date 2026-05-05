@@ -37,6 +37,10 @@ export function ShareReceiver({
   isAuthConfigured,
   signInWithGoogle,
   primaryCurrency,
+  // Telemetry (Epic 8). Optional. Click-on-shared-listing is the
+  // engagement signal worth capturing here; view tracking is skipped
+  // because the receiver is a single-card banner (not a feed scroll).
+  onClickListing,
 }) {
   const [shareIntent, setShareIntent] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -133,6 +137,7 @@ export function ShareReceiver({
             compact={false}
             onShare={handleShare}
             primaryCurrency={primaryCurrency}
+            onClickListing={onClickListing}
           />
         </div>
       ) : (

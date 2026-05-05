@@ -293,6 +293,28 @@ flicker). Admin data: verification.json + verification_history.json
 watchlist_items / hidden_listings (RLS-gated to the user's own rows).
 Don't surface admin existence to non-admin users in any UI text.
 
+**Listing events telemetry (Epic 8 — User stats half, 2026-05-05).**
+Six event types written to `listing_events` from the frontend:
+`view` / `click` / `save` / `hide` / `list_add` / `share`. Anonymous-
+friendly via a stable UUID in `localStorage` at key `dial_watch_anon_id`
+(don't bump it — same person across visits hinges on this). Reads are
+admin-only via RLS, gated by an `admin_emails` table + `is_admin()`
+SQL function (mirrors `REACT_APP_ADMIN_EMAILS` at the DB layer; seed
+the table once via the SQL editor). Schema:
+`supabase/schema/2026-05-05_listing_events.sql`. Hook:
+`src/hooks/useEventTelemetry.js`. **Telemetry is fire-and-forget** —
+never await `recordEvent`, never surface errors to the user; on
+view-event failure the dedup is rolled back so the next intersection
+can re-fire. View events are deduped per page-load via a module-scoped
+Set (refresh resets — that's deliberate; "session view" is the unit).
+Daily rollup runs at 09:15 UTC (`.github/workflows/rollup-events.yml`)
+and aggregates raw events into `listing_events_daily`, then prunes
+raw rows older than 90 days. **Don't query raw `listing_events` from
+the dashboard** — read from the rollup via the
+`source_engagement_summary` RPC. Today's events appear after the
+next rollup; admin can trigger one early via
+`select public.rollup_and_prune_listing_events();` in the SQL editor.
+
 ## Scraper conventions
 
 - Each dealer / auction house has its own `*_scraper.py` at repo root.
@@ -526,6 +548,21 @@ To add a new printable tool: render its sheet via `createPortal` to
 - **Don't bump `LEGACY_WATCHLIST_KEY` / `LEGACY_HIDDEN_KEY`** in App.js —
   they're stable storage keys for users' pre-Supabase localStorage data
   that the import banner reads on first sign-in.
+- **Don't bump `dial_watch_anon_id`.** It's the stable per-browser
+  UUID for `listing_events` telemetry. Bumping resets every visitor's
+  identity in the rollup, breaking 30-day per-source comparisons.
+  Same applies to renaming the localStorage key.
+- **Don't `await` `recordEvent` / route telemetry through the user
+  flow.** The hook is fire-and-forget by design — surfacing errors,
+  retrying, or blocking the heart toggle on a failed insert breaks
+  the user experience for the sake of an analytics row that doesn't
+  affect anything user-visible.
+- **Don't query raw `listing_events` from the dashboard.** Read
+  `listing_events_daily` via `source_engagement_summary`. The raw
+  table is pruned to a 90-day retention window AND can grow large
+  enough to bump into PostgREST row limits — the rollup is what the
+  UI is supposed to read. If you need a never-rolled-up event for
+  debugging, query directly from the SQL editor.
 - **Don't extend the Vercel Blob cache** to listings/auctions feeds.
   Watchlist-only is intentional (auction images stay up long-term;
   caching ~1,800 dealer images costs storage for transient inventory).

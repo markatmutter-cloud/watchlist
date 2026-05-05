@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useAuth, useWatchlist, useHidden, useSearches, useTrackedLots, useCollections, useUserSettings, importLocalData, isAuthConfigured } from "./supabase";
+import { useEventTelemetry } from "./hooks/useEventTelemetry";
 import {
   GLOBAL_MAX,
   daysAgo, freshDate,
@@ -296,6 +297,11 @@ export default function Watchlist() {
   // toggles no-op — we wrap the toggles below to kick off sign-in instead.
   const { items: watchlist, toggle: toggleWatchlist } = useWatchlist(user);
   const { items: hidden,   toggle: toggleHidden    } = useHidden(user);
+  // Demand-side telemetry — view / click / save / hide / list_add /
+  // share. Anonymous-friendly (UUID in localStorage); admin-only RLS
+  // for reads. See supabase/schema/2026-05-05_listing_events.sql.
+  const { recordEvent, observeCard } = useEventTelemetry(user);
+  const onClickListing = useCallback((item) => recordEvent("click", item), [recordEvent]);
   // Saved searches are per-user (stored in Supabase). Signed-out visitors
   // get an empty list, and the whole Searches subsection is hidden inside
   // the Watchlist tab.
@@ -354,6 +360,10 @@ export default function Watchlist() {
   // clipboard fallback path.
   const handleShare = async (item) => {
     if (!item || !item.id) return { copied: false };
+    // Telemetry: count the share intent the moment the user invokes
+    // the menu item. Counting after the share completes would miss
+    // dismissed share-sheets, which are still engagement signal.
+    recordEvent("share", item);
     let shareUrl;
     try {
       const url = new URL(window.location.origin);
@@ -749,8 +759,12 @@ export default function Watchlist() {
 
   const toggleHide = useCallback((item) => {
     if (!user) { requireSignIn({ kind: "hide", id: item.id }); return; }
+    // Telemetry: only fire on the on-direction so analytics counts
+    // hides, not toggles. Read state BEFORE toggleHidden mutates it.
+    const wasHidden = !!hidden[item.id];
     toggleHidden(item);
-  }, [user, toggleHidden, requireSignIn]);
+    if (!wasHidden) recordEvent("hide", item);
+  }, [user, hidden, toggleHidden, requireSignIn, recordEvent]);
 
   const toggleFilterRef = (ref) =>
     setFilterRefs(p => p.includes(ref) ? p.filter(x => x !== ref) : [...p, ref]);
@@ -763,8 +777,11 @@ export default function Watchlist() {
     // The watchItems memo dedupes when a URL appears in both the
     // user's hearted set and the trackedLotUrls projection, so the
     // duplicate-card bug from before Phase B2 doesn't recur.
+    const wasWished = !!watchlist[item.id];
     toggleWatchlist(item);
-  }, [user, toggleWatchlist, requireSignIn]);
+    // Telemetry on the on-direction only — same shape as toggleHide.
+    if (!wasWished) recordEvent("save", item);
+  }, [user, watchlist, toggleWatchlist, requireSignIn, recordEvent]);
 
   // Replay a pending heart/hide once the user is back from OAuth and
   // the items list has loaded (so we can resolve the saved id to the
@@ -782,9 +799,15 @@ export default function Watchlist() {
     if (!intent || !intent.id) return;
     const target = items.find(i => i.id === intent.id);
     if (!target) return;
-    if (intent.kind === "wish" && !watchlist[target.id]) toggleWatchlist(target);
-    if (intent.kind === "hide" && !hidden[target.id])    toggleHidden(target);
-  }, [user, items, watchlist, hidden, toggleWatchlist, toggleHidden]);
+    if (intent.kind === "wish" && !watchlist[target.id]) {
+      toggleWatchlist(target);
+      recordEvent("save", target);
+    }
+    if (intent.kind === "hide" && !hidden[target.id]) {
+      toggleHidden(target);
+      recordEvent("hide", target);
+    }
+  }, [user, items, watchlist, hidden, toggleWatchlist, toggleHidden, recordEvent]);
 
   // (toggleSource / toggleBrand moved to useFilters.)
 
@@ -1480,7 +1503,7 @@ export default function Watchlist() {
               </span>
             </div>
           ) : (
-            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} primaryCurrency={primaryCurrency} onShare={handleShare} />
+            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} primaryCurrency={primaryCurrency} onShare={handleShare} onView={observeCard} onClickListing={onClickListing} />
           )
         ))}
         {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>
@@ -1627,6 +1650,8 @@ export default function Watchlist() {
       toggleHide={toggleHide}
       allListings={items}
       hidden={hidden}
+      observeCard={observeCard}
+      onClickListing={onClickListing}
     />
   );
 
@@ -1755,13 +1780,23 @@ export default function Watchlist() {
       inp={inp}
     />
   );
+  // Wrap addItemToCollection so the picker fires a list_add telemetry
+  // event each time a user adds the target listing into a collection.
+  // Forwards args + return identity unchanged.
+  const addItemToCollectionWithTelemetry = useCallback(
+    (collectionId, item) => {
+      recordEvent("list_add", item);
+      return collectionsApi.addItemToCollection(collectionId, item);
+    },
+    [recordEvent, collectionsApi],
+  );
   const collectionPickerModalJSX = (
     <CollectionPickerModal
       target={pickerTarget}
       setTarget={setPickerTarget}
       collections={collectionsApi.collections}
       itemsByCollection={collectionsApi.itemsByCollection}
-      addItemToCollection={collectionsApi.addItemToCollection}
+      addItemToCollection={addItemToCollectionWithTelemetry}
       createCollection={collectionsApi.createCollection}
       inp={inp}
     />
@@ -1805,6 +1840,7 @@ export default function Watchlist() {
       isAuthConfigured={isAuthConfigured}
       signInWithGoogle={signInWithGoogle}
       primaryCurrency={primaryCurrency}
+      onClickListing={onClickListing}
     />
   );
 

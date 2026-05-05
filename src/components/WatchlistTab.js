@@ -59,6 +59,9 @@ export function WatchlistTab(props) {
     // ChallengeFlow's add-to-shortlist search drawer (filter the
     // global feed for picks).
     allListings, hidden,
+    // Telemetry hooks (Epic 8 — Site analytics). Both optional so
+    // signed-out / non-Supabase environments degrade silently.
+    observeCard, onClickListing,
   } = props;
 
   // eBay source-search config (read-only display in the Searches
@@ -656,6 +659,8 @@ export function WatchlistTab(props) {
                   onAddToCollection={openCollectionPicker}
                   primaryCurrency={primaryCurrency}
                   onShare={handleShare}
+                  onView={observeCard}
+                  onClickListing={onClickListing}
                 />
               ))}
             </div>
@@ -816,6 +821,8 @@ export function WatchlistTab(props) {
                     onAddToCollection={openCollectionPicker}
                     primaryCurrency={primaryCurrency}
                     onShare={handleShare}
+                    onView={observeCard}
+                    onClickListing={onClickListing}
                   />
                 );
 
