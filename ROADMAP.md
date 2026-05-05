@@ -111,13 +111,13 @@ Cross-cutting infrastructure. Several later epics depend on this.
   hearts/heart-rate, hides/hide-rate, avg price, top brand %, health
   (from verification alerts), earning-keep chip (🟢🟡🔴). Drives the
   "which sources earn their keep" decision; folded into Epic 4 too.
-- **Site discoverability and welcome page (pending).** robots.txt,
-  sitemap.xml, og:image refresh, meta-tag pass, Schema.org markup,
-  plus a welcome/about page for first-time visitors. Foundation for
-  organic discovery (not promotion in the marketing sense). The
-  welcome page addresses the "what is this and how do I use it" gap
-  a first-time visitor hits when landing on the Available feed cold.
-  Half-session of work; mostly content + a few public/ files.
+- **Site discoverability and welcome page (partially shipped
+  2026-05-04 PR #39).** SEO basics done: descriptive `<title>`
+  upgraded from bare "Watchlist", `<meta name="description">`
+  added. Still pending: robots.txt, sitemap.xml, og:image refresh,
+  Schema.org markup, plus the welcome/about page for first-time
+  visitors (the "what is this and how do I use it" gap on the
+  cold-landing Listings tab).
 - **Maintenance rhythm.** Every 4th-5th session is hygiene only: bug fixes,
   dependency updates, source pruning. No new features.
 - **User settings / currency preference ✓ shipped 2026-05-01.** New
@@ -129,9 +129,10 @@ Cross-cutting infrastructure. Several later epics depend on this.
 ## Epic 1: Sources
 
 Target end state: ~30 dealers + 6 auction houses, all earning their keep.
-Currently at 34 dealers + 6 auction houses (past the 30-dealer
-end-state target — **Stop rule pruning is now the next Epic 1
-priority**).
+Currently at **39 dealers + 6 auction houses** (post Luna Royster +
+S.Song Watches + Swiss Hours added 2026-05-04 PR #41 — past the
+30-dealer end-state target by 9; **Stop rule pruning is now the
+next Epic 1 priority**, not adding more).
 
 - **Active candidates** (evaluated, not all guaranteed):
 
@@ -688,18 +689,19 @@ Current best-guess sequence. Will shift; update this doc when it does.
 4. **References as first-class entities (Epic 0).** The remaining
    foundation. Several downstream features (encyclopedia, comparison
    view, auction lot grouping, Discover mode quality) gate on this.
-5. **Site discoverability + welcome page (Epic 0).** Half-session;
-   robots / sitemap / og / Schema.org / first-time-visitor page.
-   Foundation for organic discovery.
+5. **Welcome page + remaining SEO (Epic 0).** SEO basics shipped
+   (PR #39 — `<title>` + meta description). Still pending: robots
+   / sitemap / og:image / Schema.org / first-time-visitor welcome
+   page. Half-session.
 6. **Strength-of-save model (Epic 3).** Two-tier (Love / Watch) is
    the entry point to the broader Multi-signal taste capture. Small
    UI lift; the feature is *the gesture*, not the underlying data.
-7. **Epic 1 source pruning** under the Stop rule. At 36 dealers
-   we're past the 30-target. Source quality dashboard exists; this
-   is now a "look at the data and decide" session, not a build.
-   Listing event capture (#2) makes the dashboard meaningfully
-   richer for this decision — strong reason to slot the prune
-   after, not before.
+7. **Epic 1 source pruning** under the Stop rule. At **39 dealers**
+   (post LR + S.Song + Swiss Hours from PR #41) we're 9 over the
+   30-target. Source quality dashboard exists; this is now a "look
+   at the data and decide" session, not a build. Listing event
+   capture (#2) makes the dashboard meaningfully richer for this
+   decision — strong reason to slot the prune after, not before.
 8. **Epic 6 Phase A** when a specific blocked source needs it OR
    when ready to start Epic 5 generation work.
 9. **Watchbox v2 — reflection layer (Epic 3).** Highest personal
@@ -795,6 +797,45 @@ moved, priorities drift. A quarterly pass catches that before it
 becomes confusion.
 
 ## Update log
+
+- 2026-05-04 (overnight): **Cool Stuff (was References) + Links
+  page + Watchlist sub-tab UX tweaks + 3 new dealers (PRs #38 →
+  #41).** Five PRs that landed after the Watchlist restructure
+  doc PR (#37):
+  - **PR #38** — five Watchlist sub-tab UX fixes:
+    `displayedCount` (shellProps now exposes the right count for
+    Watchlist vs Listings; previously the count badge read the
+    Listings figure regardless of tab); mobile sub-tab strip no
+    longer scrolls (trailing +buttons removed and moved into a
+    new `subTabIntroJSX` per-sub-tab intro banner); Lists rows
+    drop the heavy left accent; heart + ⋯ tap targets scale with
+    card density (26px at compact, 36px at 1/2/3 cols).
+  - **PR #39** — Top-tab label "Reference" → "Cool Stuff"
+    (label-only; URL key + component name unchanged for
+    bookmark-stability). New Cool Stuff > **Links** resource:
+    auto-derived Dealers list, hand-curated Reference clusters
+    per watch reference (1675, 7021, Seamaster 300, 1016, 5548
+    BA, 1803, Heuer), Art / Straps / Editorial sections.
+    WatchlistTab signed-out copy now per sub-tab via
+    `SIGNED_OUT_BY_SUBTAB`. Dead-code sweep: −150ish lines (the
+    sidebar drag-resize machinery, `statusSegmentJSX` /
+    `endingSoonJSX` `null`-pass-through wiring, sidebar toggle,
+    11 unused App.js imports). SEO basics shipped: `<title>` +
+    `<meta description>`.
+  - **PR #40** — test fixes: PR #38 + PR #39 each missed a mock
+    fixture / test-string update; CI on main caught both.
+    Process flag in next-session for shell-prop changes.
+  - **PR #41** — Cool Stuff v2: lifted `subTabIntroJSX` to a
+    real `SubTabIntro.js` component used by both WatchlistTab +
+    ReferencesTab, so Cool Stuff landing matches the Lists +
+    Saved-searches visual shell. Cool Stuff > Links sections
+    converted to accordions. New Major Auctions section seeded
+    with Phillips CH080317 (the actual lot scrape for that
+    archive sale is real Phase D work, parked). **Three new
+    dealer sources** lift count 36 → 39: Luna Royster (NYC,
+    WooCommerce), S.Song Watches (Shopify, scoped to
+    `/collections/vintage`), Swiss Hours (Shopify, scoped to
+    `/collections/watches`).
 
 - 2026-05-04 (latest): **Watchlist sub-tab restructure + Challenges
   to References + Lists UI tweaks (PRs #34, #35, #36).** Three more
