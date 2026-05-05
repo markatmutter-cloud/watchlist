@@ -3,6 +3,7 @@ import { Card } from "./Card";
 import { ageBucketFromDate, fmtUSD } from "../utils";
 import { useEBaySearches, EBAY_SEARCHES_EDIT_URL } from "../hooks/useEBaySearches";
 import { importLocalData } from "../supabase";
+import { SubTabIntro } from "./SubTabIntro";
 
 
 
@@ -133,47 +134,10 @@ export function WatchlistTab(props) {
     cursor: "pointer", fontFamily: "inherit",
   };
 
-  // Shared intro-banner shape for sub-tabs that surface a primary "add"
-  // action. Mirrors the Lists banner that's been there since 2026-05-04;
-  // generalised here so Searches + Saved auctions can use the same
-  // "title row left, +button right, blurb underneath" layout. Action
-  // button is optional — drop it for read-only sub-tabs (Saved listings
-  // / Saved sold) if a banner is ever wanted there too.
-  //
-  // Defined as a JSX-returning function rather than a nested component
-  // so each parent render doesn't unmount + remount it (CLAUDE.md
-  // flags this as a known footgun: nested function components get a
-  // new reference per render and React treats them as a new type).
-  const subTabIntroJSX = ({ title, blurb, actionLabel, onAction }) => (
-    <div style={{
-      margin: "0 0 14px",
-      padding: "12px 14px",
-      borderRadius: 10,
-      border: "0.5px solid var(--border)",
-      background: "var(--surface)",
-    }}>
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        gap: 10,
-      }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text1)" }}>
-          {title}
-        </div>
-        {actionLabel && onAction && (
-          <button onClick={onAction} style={{
-            ...primaryActionButtonStyle,
-            flexShrink: 0, whiteSpace: "nowrap",
-          }}>{actionLabel}</button>
-        )}
-      </div>
-      {blurb && (
-        <div style={{
-          marginTop: 6,
-          fontSize: 12, lineHeight: 1.5, color: "var(--text2)",
-        }}>{blurb}</div>
-      )}
-    </div>
-  );
+  // (subTabIntroJSX helper lifted to ./SubTabIntro on 2026-05-05 so
+  // Cool Stuff can share the exact same shell. Imported as <SubTabIntro/>
+  // at the top; call sites below use JSX directly rather than the
+  // previous {fn(...)} pattern.)
 
 
   // (Group-by feature removed 2026-04-30. Only implicit date
@@ -380,12 +344,12 @@ export function WatchlistTab(props) {
           + button used to live in the Watchlist sub-tab strip, but
           that pushed the strip into a horizontal scroller on mobile;
           now it sits inline with the section blurb. */}
-      {subTabIntroJSX({
-        title: "Saved searches run on tap",
-        blurb: <>Save the queries you keep coming back to — a reference, a brand cut, a phrase you scan for. Each one runs across every dealer in the feed and tells you when something new matches.</>,
-        actionLabel: "+ Add search",
-        onAction: startAddSearch,
-      })}
+      <SubTabIntro
+        title="Saved searches run on tap"
+        blurb={<>Save the queries you keep coming back to — a reference, a brand cut, a phrase you scan for. Each one runs across every dealer in the feed and tells you when something new matches.</>}
+        actionLabel="+ Add search"
+        onAction={startAddSearch}
+      />
 
       {/* eBay source-searches — read-only view of data/ebay_searches.json.
           These configure what the scraper pulls into the feed (vs the
@@ -700,16 +664,18 @@ export function WatchlistTab(props) {
       );
     }
 
-    // List view. Intro banner uses the shared subTabIntroJSX shape
+    // List view. Intro banner uses the shared SubTabIntro shape
     // with the +New list action embedded on the right (was a separate
     // trailing button in the Watchlist sub-tab strip until 2026-05-04;
     // moved inline so the strip stays narrow enough on mobile).
-    const helpBanner = subTabIntroJSX({
-      title: "Lists group watches your way",
-      blurb: <>Reference threads, dealer comps, "Rolex 5513s", "Vintage divers" — whatever cut helps you think. Add watches via the <strong style={{ color: "var(--text1)" }}>…</strong> menu on any card → <em>Add to list…</em>.</>,
-      actionLabel: "+ New list",
-      onAction: startCreateCollection,
-    });
+    const helpBanner = (
+      <SubTabIntro
+        title="Lists group watches your way"
+        blurb={<>Reference threads, dealer comps, "Rolex 5513s", "Vintage divers" — whatever cut helps you think. Add watches via the <strong style={{ color: "var(--text1)" }}>…</strong> menu on any card → <em>Add to list…</em>.</>}
+        actionLabel="+ New list"
+        onAction={startCreateCollection}
+      />
+    );
     return (
       <div style={{ paddingTop: 4 }}>
         {helpBanner}
@@ -815,12 +781,14 @@ export function WatchlistTab(props) {
               action that used to live in the Watchlist sub-tab strip.
               Other auction-house lots heart from the Listings feed
               (Phase B2, 2026-05-04), so this trigger is eBay-only. */}
-          {watchTopTab === "auctions" && subTabIntroJSX({
-            title: "Auctions you're following",
-            blurb: <>Hearts on auction-house lots in the Listings feed land here. eBay items don't show up there yet — paste their URL with <strong style={{ color: "var(--text1)" }}>+ Track eBay item</strong> to follow them through to hammer.</>,
-            actionLabel: "+ Track eBay item",
-            onAction: openTrackModal,
-          })}
+          {watchTopTab === "auctions" && (
+            <SubTabIntro
+              title="Auctions you're following"
+              blurb={<>Hearts on auction-house lots in the Listings feed land here. eBay items don't show up there yet — paste their URL with <strong style={{ color: "var(--text1)" }}>+ Track eBay item</strong> to follow them through to hammer.</>}
+              actionLabel="+ Track eBay item"
+              onAction={openTrackModal}
+            />
+          )}
           {watchCount === 0 ? (
             <div style={{ padding: "48px 20px", textAlign: "center" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>
