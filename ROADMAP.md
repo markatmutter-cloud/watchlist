@@ -32,6 +32,113 @@ direction, not state.
 - When suggesting work, name the epic it lives under. ("This is Epic 3 work.")
 - When work is finished, suggest updating this doc to reflect the change.
 
+## Pending review (input for next session's roadmap walk-through)
+
+Mark flagged 2026-05-05 that the roadmap diverged from how he's actually
+been thinking + building, and asked to do a section-by-section review
+in a fresh Claude Code session. This block captures the items that
+need to land *somewhere* in the roadmap during that walk-through —
+they're not yet integrated into the right epic / phrasing, just queued.
+
+**Maintenance items Mark accepted this session:**
+- **Refactor dealer scrapers via shared helper library** — opt-in
+  `scraper_lib.py` with `fetch_shopify_products`,
+  `fetch_woocommerce_store_api`, `parse_wix_products_blob`, etc.
+  Per-dealer files keep their quirks; just delegate the boilerplate.
+  CLAUDE.md updated this session to allow it (was previously
+  guarded against). Lands under Epic 1 maintenance.
+- **Auction verification expansions.** Today `verify_auction_lots.py`
+  flags drops below median; add: (a) sales that should be flipping
+  to status=ended on time, (b) new sales appearing on each house's
+  calendar getting picked up by the calendar scrapers within N days.
+  Lands under Epic 0 (verification) or Epic 2.
+- **Auction-house quality dashboard** as a parallel to the dealer
+  one — avg lot price, brand mix, total hammer value, sales
+  frequency, saved/clicked lots. Lands under Epic 4 → Site analytics
+  → renamed "Source stats" (covers dealers + houses both).
+- **Listings.json split by status.** Currently 3.5 MB; plan the
+  split (live vs sold vs older-archive) before it crosses 5 MB.
+  Lands under Epic 0 / infrastructure.
+- **Brand/listing curation rules.** Develop me-centric rules Mark
+  can live with for what brands + price-floors stay in. Some
+  shipped this session (Corum out, Scatola Del Tempo out, Mulco
+  pooled to Other, suppress-at-sold list, bracelet filter — see
+  PR #50). More expected as Mark surfaces what he doesn't want.
+  Lands under Epic 1.
+- **Image cache for items in Lists** (not just hearted). Today
+  `cache_watchlist_images.mjs` only caches blobs for
+  `watchlist_items` rows; an item only in a user's list (not
+  hearted) doesn't get its image preserved if the dealer pulls
+  it. Soon-ish per Mark — affects collector-research lists where
+  a dealer like Somlo pulls images post-sale.
+- **User limits.** Soft cap 500 hearted items / 2,500 hard cap
+  with a "request more access" prompt above. Lists themselves
+  unbounded but bounded by the item caps. Lands under Epic 4 +
+  needs Supabase trigger as the hard line of defense.
+- **User management dashboard** — admin view to see how many
+  users, their utilization (heart count, list count, search
+  count, share count, click count), and grant individual users
+  expanded limits (Mark's wife as the seed case). Pairs with
+  user-stats half of Site analytics.
+- **Tropical Watch → Mac mini explicit** in Epic 6 Phase A.
+  Today the only Browse AI dealer; moving to a self-hosted
+  Playwright runner removes the paid-credit dependency.
+- **Vercel Blob TTL** — deferred but keep on the parking lot.
+  Mark wants a clearer description before it lands as a real
+  item (the question is: how often do dealer images change for
+  a watch we've cached, and is it worth detecting?).
+- **App.js extraction pass** — current 1853 lines (down from a
+  high-water of ~2200). Recommended targets in chat: lift the
+  two `auctionLotItems`-shaped projection memos (~140 lines of
+  near-duplication) into a hook, lift the brand/source/refs
+  derivation (~100 lines) into a `useDerivedTaxonomies`, lift
+  display-style derivation. Could take App.js to ~1300-1400.
+  Not urgent. Lands under Epic 0 / refactor track.
+
+**Roadmap-quality items Mark flagged for the review:**
+- **"Reflective tool" framing** — was a side comment from a
+  Claude chat that got promoted into "Strategic bets". Mark wants
+  to demote it: nice-to-have / unique-element, not the primary
+  purpose. The actual North Star is more practical (personal
+  tool first, with the concrete must-do sequence below).
+- **Mark's must-do sequence** (his own words 2026-05-05): "First
+  needs to be a good aggregator with enough stock that you're
+  not wanting to go back to eBay or bezel or chrono24. Then it
+  needs to be good at watch list features — monitoring, filtering,
+  sorting, saving, filing/compartmentalizing, bringing permanency
+  to sold lots. Then it can start to get good at bringing in
+  others with things like sharing." Reference research is the
+  core value, then reference-learning support, then collection
+  mentality. Sequence the roadmap around this.
+- **Threads to develop in review:**
+  - **Mining references from listings** — what does this actually
+    look like? Per-listing → per-reference roll-up, with dealer
+    descriptions accumulating?
+  - **Making the Watch Challenge work** — current state vs what
+    Mark wants to ship for v1.5 / v2.
+  - **Landing page when you click on a shared link** — what does
+    that surface look like in detail? Current ShareReceiver flow
+    vs what Mark imagines.
+  - **eBay model** — what we're pulling, how Mark wants to
+    manage the search topics/references (admin interface, not
+    per-user).
+  - **Should the roadmap have already-shipped features still in
+    it?** Mark's question. My read: mostly no — body of the
+    roadmap describes future state, Update log carries the
+    historical record. Exceptions: items where v2 / v3 evolution
+    is still pending (Watch Challenges v1.5 stays).
+- **Personal-learning agent setup** as a side track Mark wants to
+  explore (deferred from this session). Use case suggestions:
+  could go on a brand watcher (Scrape diff agent: every N days
+  re-fetches a brand's listings across all dealers and surfaces
+  changes worth knowing about), or as a maintenance assistant
+  (read CI logs, suggest scraper fixes, write the patch). Both
+  achievable through Claude Agent SDK. Defer to its own session.
+
+The block above gets dissolved into the right epics during the
+review. Don't ship work from here without first landing it
+properly.
+
 ## North star
 
 Watchlist is a personal vintage-watch tool first, a public site second. Built
