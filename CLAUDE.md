@@ -80,22 +80,29 @@ Lists sub-tab + its modals use the new label. When a future doc or
 comment refers to "the Collections sub-tab", read it as "the Lists
 sub-tab"; the UI label moved, the data model didn't.
 
-**Watch Challenges (Build-a-collection v1, 2026-05-03).** Challenges
-are collections with `type='challenge'`. Schema additions in
-`supabase/schema/2026-05-03_challenges.sql`: `target_count`, `budget`,
-`description_long`, `state` (draft|complete), `parent_challenge_id`
-on collections; `is_pick` (shortlist vs final pick) + `reasoning`
-on collection_items. ONE collection per challenge — picks and
-shortlist live in the same items table, distinguished by the
-boolean. Picks snapshot `saved_price`/`saved_currency`/
-`saved_price_usd` so the total is immutable once shared. Drafts
-persist as you go via useCollections (no explicit save button).
+**Watch Challenges (Build-a-collection v1, 2026-05-03; relocated
+2026-05-04).** Challenges are collections with `type='challenge'`.
+Schema additions in `supabase/schema/2026-05-03_challenges.sql`:
+`target_count`, `budget`, `description_long`, `state`
+(draft|complete), `parent_challenge_id` on collections; `is_pick`
+(shortlist vs final pick) + `reasoning` on collection_items. ONE
+collection per challenge — picks and shortlist live in the same
+items table, distinguished by the boolean. Picks snapshot
+`saved_price`/`saved_currency`/`saved_price_usd` so the total is
+immutable once shared. Drafts persist as you go via useCollections.
 Multi-stage UI flow lives in `ChallengeFlow.js`; stage is
-component-local state, derived from data on mount. Drag-drop on
-desktop (HTML5 DnD; gated on `(pointer: fine)`), tap-to-select on
-mobile (SlotPickerModal). Don't reach for react-dnd — the existing
-HTML5 + tap pattern is enough for v1. Mutability after share is
-deferred to v2 (current state ='complete' is meant to be terminal).
+component-local state. Drag-drop on desktop (HTML5 DnD; gated on
+`(pointer: fine)`), tap-to-select on mobile.
+
+**Surface (2026-05-04, PR #36):** Challenges moved from a Watchlist
+sub-tab to a resource under the **References tab** (Mark's framing:
+challenges are a reflective collector resource, not a saved-items
+surface). The list + drill-in flow lives in
+`src/components/ChallengesView.js`; ReferencesTab adds it as a
+resource card alongside Watch size comparison. Selection state is
+component-local (no URL persistence in this iteration). Stale
+`?sub=challenges` / `dial_watch_top_tab=challenges` values
+silently map to "listings" via the watchTopTab normalize().
 
 **Hidden listings as a virtual list (2026-05-01).** Hidden follows
 the same Approach A pattern as Favorites: data stays in the existing
@@ -151,8 +158,38 @@ auctions hides the Dealers group; Sold + Calendar show both.
 Calendar sub-tab hides the filter row entirely.
 
 The Listings tab no longer has a Status (Live/Sold/All) segment —
-the sub-tabs cover that role. Watchlist still does (Live/Sold/All
-filter applies within saved items).
+the sub-tabs cover that role. (Watchlist also dropped the segment
+2026-05-04 PR #36 — see Watchlist sub-tabs note below.)
+
+**Watchlist tab structure (sub-tabs, 2026-05-04, PR #36).** Mirrors
+the Listings tab restructure. Five sub-tabs:
+- **Saved listings** (key `listings`) — currently-active hearted
+  dealer items. Default sort = `savedAt` desc. Date dividers
+  ("Today saved" / weekday saved / "Last week saved" / "Older saved").
+- **Saved auctions** (key `auctions`) — currently-active auction
+  lots + ALL eBay items (BIN included, per Mark — eBay always lives
+  here regardless of buying_option). Default sort = ending soonest.
+  No date dividers. **+Track eBay item** button lives in this
+  sub-tab's strip.
+- **Saved sold** (key `sold`) — saved items that went sold (dealer
+  or lot). Default sort = sold-date desc. Sold-date dividers.
+- **Favorite searches** (key `searches`) — saved-search editor.
+- **Lists** (key `collections`) — user-created collections + Shared
+  inbox + synthetic Hidden row.
+
+Sub-tab routing in `App.js`'s watchItems memo: filter by
+watchTopTab BEFORE applying source/brand/ref/search/price filters.
+Sort dispatch depends on sub-tab — savedAt for Saved listings,
+endingSoonComparator for Saved auctions, sold-date for Saved sold.
+The eBay-as-auctions classification: `i.source === "eBay"` OR
+`/\bebay\.[a-z.]+\//i.test(i.url)` OR `i._isAuctionFormat`.
+
+**Removed in PR #36:** the Status (Live/Sold/All) segment, the
+Auctions-only toggle (filterAuctionsOnly state gone from useFilters),
+the EndingSoon pinned strip + the EndingSoon component file (Mark's
+call: Saved auctions sub-tab IS the ending-soon view now), the
+`watchLive` / `watchSold` derived memos. Stale localStorage values
+(`challenges`, `calendar`) silently map to `listings`.
 
 **Listings → auction-lot data flow.** Tracked-lot data
 (`public/tracked_lots.json` ∪ `public/auction_lots.json`) projects
@@ -202,9 +239,10 @@ admin) and `sub` (per-active-tab) reflect navigation state via
 `history.replaceState`. `sub` values:
 - `tab=listings` → live | auctions | sold | calendar (default
   "live" stripped from URL)
-- `tab=watchlist` → listings | collections | challenges | searches
-  (default "listings" stripped from URL; key stays `collections`
-  for the Lists sub-tab — see UI rename note above)
+- `tab=watchlist` → listings | auctions | sold | searches |
+  collections (default "listings" stripped from URL; key stays
+  `collections` for the Lists sub-tab — see UI rename note above;
+  `challenges` was retired with PR #36)
 
 `col` (collection UUID, or `__hidden__` for the synthetic Hidden
 list) is Watchlist-only. App.js owns `tab` + `sub`; WatchlistTab
@@ -414,11 +452,26 @@ To add a new printable tool: render its sheet via `createPortal` to
   would re-introduce a control with overlapping semantics; mixing
   dealer items + auction lots in one card grid with a single sort
   axis was the underlying mistake.
-- **Don't add a Status (Live/Sold/All) segment to the Listings tab.**
-  Sub-tabs cover that role now (Live listings + Live auctions vs
-  All sold). Watchlist still has the segment because its question
-  is "what's still live in my saved set vs gone sold" — different
-  from "what kind of inventory am I browsing".
+- **Don't add a Status (Live/Sold/All) segment to either Listings
+  or Watchlist.** Both tabs use sub-tabs for that scope now (PR #33
+  on Listings; PR #36 on Watchlist). The earlier two-axis system
+  (status pill × auctions-only toggle) was retired because the
+  combinations were hard to reason about and the sub-tabs read
+  cleanly. If a single-tab "All status for this reference" view is
+  needed in future, fold it into the search-result UI rather than
+  re-introducing the segment.
+- **Don't reintroduce the EndingSoon pinned strip on Watchlist.**
+  Removed PR #36; Saved auctions sub-tab IS the ending-soon view
+  now (default sort is ending-soonest, and the user gets there in
+  one click). Adding the strip back puts the same data in two
+  places — the strip and the sub-tab — and re-creates the heart-
+  click duplicate-card class of bug it had on its first ship.
+- **Don't put Watch Challenges back under a Watchlist sub-tab.**
+  Lives under References tab now (PR #36). Mark's framing:
+  challenges are a *reflective collector resource* (constrained-set
+  thought experiments), not a saved-items surface — the Watchlist
+  tab is for things you own/want, References is for tools that help
+  you think about collecting.
 - **Don't add new `useState`/`useMemo`/`useCallback` deep into App.js**
   near render-conditional code paths. Adding hooks to the back of
   App.js's already-large hook list triggered React error #310
