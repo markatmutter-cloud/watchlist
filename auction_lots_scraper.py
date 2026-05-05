@@ -65,9 +65,15 @@ PER_LOT_SLEEP_SECONDS = 0.6
 
 # Per-sale lot cap for Phillips (where each lot needs its own HTTP
 # fetch). Other houses inline lot data on the auction page so no cap
-# is needed there. 60 keeps a single Phillips sale under ~1 minute of
-# scrape time and keeps the CI run bounded as we add more sales.
-PHILLIPS_LOTS_PER_SALE = 60
+# is needed there. Cap was 60 originally; raised to 1000 on
+# 2026-05-05 per Mark — Phillips sales routinely run 200–400 lots
+# (CH080226: 227, HK080226: 308) and the 60-cap was missing the
+# bulk of every sale. 1000 is a soft "shouldn't ever bind" guard
+# rather than a hard budget — GitHub Actions on this repo is free
+# + unlimited so the only cost is wall-clock; ~1.5s/lot × 1000 =
+# 25 min worst case per sale, comfortably under the 6h job limit
+# even across multiple concurrent sales.
+PHILLIPS_LOTS_PER_SALE = 1000
 
 # Date window for which sales we attempt to scrape:
 #   end >= today - RECENT_SOLD_WINDOW_DAYS (so recently closed sales
@@ -172,46 +178,206 @@ def in_active_window(sale, today=None):
 
 # ── Per-house enumerators ────────────────────────────────────────────────
 
+def _resolve_antiquorum_live_auction_url(catalog_url):
+    """Map a catalog.antiquorum.swiss sale URL → live.antiquorum.swiss
+    auction URL. Returns None on failure.
+
+    The catalog and live surfaces have different IDs (catalog uses a
+    human slug like `Geneva_May_9th_10th_2026`, live uses a short code
+    like `1-CDGBNO`). The catalog page doesn't carry an auction-level
+    live URL — only per-lot live URLs of the form
+    `live.antiquorum.swiss/lots/view/<live-lot-id>`. We follow the
+    first one and pull `auction._detail_url` out of its viewVars blob.
+    """
+    try:
+        r = requests.get(catalog_url, headers=HEADERS, timeout=30)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"    [Antiquorum] catalog fetch failed for live-URL resolution: {e}")
+        return None
+    # Pull any per-lot live URL.
+    m = re.search(r"https://live\.antiquorum\.swiss/lots/view/[A-Za-z0-9-]+", r.text)
+    if not m:
+        return None
+    lot_url = m.group(0)
+    try:
+        r2 = requests.get(lot_url, headers=HEADERS, timeout=30, allow_redirects=True)
+        r2.raise_for_status()
+    except Exception as e:
+        print(f"    [Antiquorum] live lot fetch failed: {e}")
+        return None
+    # The live lot page embeds auction._detail_url inside its viewVars
+    # blob. The blob is a giant JS object literal — easier to grep
+    # than to parse — so anchor on the field name and the JSON-escape
+    # of the leading slash.
+    m = re.search(r'"_detail_url":"(\\?/auctions\\?/[^"]+)"', r2.text)
+    if not m:
+        return None
+    detail_path = m.group(1).replace("\\/", "/")
+    return f"https://live.antiquorum.swiss{detail_path}?limit=1000"
+
+
 def enumerate_antiquorum(sale_url, sale=None):
     """Return a list of full lot detail dicts for an Antiquorum sale.
 
-    Uses the catalog page (catalog.antiquorum.swiss) as the lot index
-    then per-lot fetches to scrape_catalog_antiquorum_lot for full
-    estimate / image / title. The catalog detail page doesn't carry
-    structured auction_end / auction_start (only a human date label),
-    so we patch those in from the parent `sale` entry passed by the
-    orchestrator.
+    Strategy (rev 2026-05-05):
+    1. Resolve the catalog URL → live auction URL via a small helper
+       (catalog page exposes per-lot live URLs; one of those points
+       back to the auction's live `_detail_url`).
+    2. Fetch `live.antiquorum.swiss/auctions/<id>/...?limit=1000` once.
+    3. Parse `viewVars.lots.result_page` from the inline JS blob.
+    4. Project each lot dict into our standard shape.
+
+    Pre-2026-05-05 the enumerator hit catalog.antiquorum.swiss's
+    paginated index and per-lot detail pages, but the catalog's
+    `?page=N` redirects to `/lots`, so we only ever saw the first 20
+    of 600+ lots per sale. Per Mark: the live surface's `?limit=N`
+    actually paginates — and the server caps `?limit=1000` at the
+    actual lot count, so it's future-proof without us tracking
+    individual sale sizes.
     """
-    if "catalog.antiquorum.swiss" not in sale_url:
+    # Accept either the catalog URL (as it lands in auctions.json) OR
+    # a pre-resolved live auction URL — useful when manually running
+    # the scraper against a known live sale.
+    if "live.antiquorum.swiss/auctions/" in sale_url:
+        live_url = sale_url if "limit=" in sale_url else (
+            sale_url + ("&" if "?" in sale_url else "?") + "limit=1000"
+        )
+    elif "catalog.antiquorum.swiss" in sale_url:
+        live_url = _resolve_antiquorum_live_auction_url(sale_url)
+        if not live_url:
+            print("  [Antiquorum] couldn't resolve live auction URL; skipping sale")
+            return []
+    else:
         return []
+
     try:
-        r = requests.get(sale_url, headers=HEADERS, timeout=30)
+        r = requests.get(live_url, headers=HEADERS, timeout=60)
         r.raise_for_status()
     except Exception as e:
-        print(f"  [Antiquorum] catalog fetch failed: {e}")
+        print(f"  [Antiquorum] live page fetch failed: {e}")
         return []
-    lot_paths = sorted(set(re.findall(r"/en/lots/[a-z0-9-]+-lot-\d+-\d+", r.text)))
-    base = "https://catalog.antiquorum.swiss"
+
+    # Extract the viewVars JS-object blob. The page is a 5MB Angular
+    # template, but viewVars itself is the only top-level assignment
+    # that opens with `viewVars = {`; greedy match to the end of the
+    # following `};\n` is fine because no nested object literal in the
+    # blob terminates that exact way.
+    m = re.search(r"viewVars\s*=\s*(\{.*?\});", r.text, re.S)
+    if not m:
+        print("  [Antiquorum] viewVars blob not found")
+        return []
+    try:
+        view_vars = json.loads(m.group(1))
+    except Exception as e:
+        print(f"  [Antiquorum] viewVars parse failed: {e}")
+        return []
+
+    lots = (view_vars.get("lots") or {}).get("result_page") or []
+    if not lots:
+        print("  [Antiquorum] viewVars.lots.result_page empty")
+        return []
+
     sale_start = (sale or {}).get("dateStart")
     sale_end = (sale or {}).get("dateEnd") or sale_start
     out = []
-    for path in lot_paths:
-        url = base + path
-        try:
-            time.sleep(PER_LOT_SLEEP_SECONDS)
-            data = scrape_catalog_antiquorum_lot(url)
-        except Exception as e:
-            print(f"    [Antiquorum] lot fetch failed {path}: {e}")
+    for lot in lots:
+        title_short = (lot.get("title") or "").strip()
+        truncated = (lot.get("truncated_description") or "").strip()
+        # Antiquorum's `title` field is often just the maker
+        # ("LEMANIA"); the description carries the model + reference.
+        # Build a fuller title from both so brand-detection + Card
+        # render pull useful tokens.
+        if truncated:
+            # Strip leading "<MAKER>, " prefix if `title` already says
+            # the same thing — avoids "LEMANIA LEMANIA, SWITZERLAND..."
+            desc_no_prefix = truncated
+            if title_short and truncated.upper().startswith(title_short.upper()):
+                desc_no_prefix = truncated[len(title_short):].lstrip(", ")
+            title = f"{title_short} {desc_no_prefix}".strip()
+        else:
+            title = title_short
+        # Cap so the JSON file stays compact; Card clamps to 2 lines.
+        if len(title) > 240:
+            title = title[:237].rstrip() + "…"
+
+        if is_excluded_title(title):
             continue
-        if is_excluded_title(data.get("title")):
+
+        currency = (lot.get("currency_code") or "CHF").upper()
+
+        def _money(val):
+            if val in (None, ""):
+                return None
+            try:
+                return int(float(val))
+            except (TypeError, ValueError):
+                return None
+
+        estimate_low = _money(lot.get("estimate_low"))
+        estimate_high = _money(lot.get("estimate_high"))
+        starting_price = _money(lot.get("starting_price"))
+        sold_price = _money(lot.get("sold_price"))
+        # `highest_live_bid` carries the most recent live bid on
+        # in-progress lots; falls back to None for lots that haven't
+        # opened yet. Map onto current_bid so the Card render's
+        # bid/estimate dispatch lights up correctly.
+        current_bid = _money(lot.get("highest_live_bid"))
+
+        # Status mapping: live page reports lot.status as 'active',
+        # 'sold', 'passed', etc. Roll 'sold' / 'passed' / 'unsold'
+        # into our binary 'ended' bucket; everything else is 'active'.
+        raw_status = (lot.get("status") or "").lower()
+        is_ended = raw_status in {"sold", "passed", "unsold", "withdrawn", "ended"}
+        status = "ended" if is_ended else "active"
+
+        detail_path = lot.get("_detail_url") or ""
+        full_url = (
+            f"https://live.antiquorum.swiss{detail_path}"
+            if detail_path.startswith("/")
+            else detail_path
+        )
+        if not full_url:
             continue
-        # Backfill the structured dates from the parent sale entry —
-        # the catalog page only has a human label.
-        if sale_start and not data.get("auction_start"):
-            data["auction_start"] = sale_start
-        if sale_end and not data.get("auction_end"):
-            data["auction_end"] = sale_end
-        out.append((url, data))
+
+        auction_blob = lot.get("auction") or {}
+        auction_title = auction_blob.get("title")
+        auction_time_start = auction_blob.get("time_start")
+        auction_time_end = auction_blob.get("effective_end_time")
+        auction_detail = auction_blob.get("_detail_url")
+        auction_url = (
+            f"https://live.antiquorum.swiss{auction_detail}"
+            if auction_detail and auction_detail.startswith("/")
+            else None
+        )
+
+        out.append((full_url, {
+            "house": "Antiquorum",
+            "lot_id": lot.get("row_id"),
+            "lot_number": lot.get("lot_number"),
+            "title": title,
+            "description": truncated[:600],
+            "currency": currency,
+            "estimate_low": estimate_low,
+            "estimate_high": estimate_high,
+            "starting_price": starting_price,
+            "current_bid": current_bid,
+            "sold_price": sold_price,
+            "estimate_low_usd":   to_usd(estimate_low,   currency),
+            "estimate_high_usd":  to_usd(estimate_high,  currency),
+            "starting_price_usd": to_usd(starting_price, currency),
+            "current_bid_usd":    to_usd(current_bid,    currency),
+            "sold_price_usd":     to_usd(sold_price,     currency),
+            "status": status,
+            "image": lot.get("cover_thumbnail") or None,
+            "auction_title": auction_title,
+            # Prefer the auction's own time fields (ISO timestamps)
+            # over the calendar's date-only entries when present.
+            "auction_start": auction_time_start or sale_start,
+            "auction_end":   auction_time_end or sale_end,
+            "auction_url":   auction_url,
+            "scraped_at":    time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }))
     return out
 
 
