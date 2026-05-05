@@ -9,7 +9,7 @@ how to behave for the rest of it.
 - [README.md](README.md) — what the project is + architecture. Public-facing.
 - [ROADMAP.md](ROADMAP.md) — priorities, epics, what's explicitly out of scope.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
-  The current one is [SESSION_HANDOFF_2026-05-04.md](SESSION_HANDOFF_2026-05-04.md);
+  The current one is [SESSION_HANDOFF_2026-05-05.md](SESSION_HANDOFF_2026-05-05.md);
   older ones live in `archive/`.
 
 If a gotcha or convention is durable (still true next session), graduate
@@ -329,6 +329,93 @@ Don't surface admin existence to non-admin users in any UI text.
   + `REFERER_BY_HOST` in lockstep. The proxy fetches with the
   dealer's own domain in Referer and minimal Accept. The CSV's
   raw image URL stays unchanged; `imgSrc()` rewrites at render time.
+- **`is_excluded_title` strips "o'clock" before running the
+  clock-pattern regex.** The bare `\bclock\b` pattern matched
+  "date aperture at 6 o'clock" and silently dropped 9/42 lots in
+  the CH080317 archive run on 2026-05-05. Fix lives in
+  `auction_lots_scraper.is_excluded_title` — strip
+  `\bo['']clock\b` (both ASCII and curly apostrophe variants)
+  before iterating EXCLUDE_PATTERNS. Same regex shape lives in any
+  future title-pattern exclusion; check for similar false-positive
+  vectors before trusting `\bclock\b` / `\bdial\b` / `\bpocket\b`
+  without context.
+- **Phillips `sold_price` extraction uses the rendered "Sold For"
+  panel, not the JSON-LD price.** JSON-LD `offers.price` on Phillips
+  lot pages is always the *low estimate* — it just happens to
+  coincide with the hammer for some lots, so the original
+  `auctionlots_scraper.scrape_phillips_lot` mapping was provisional.
+  Validated against CH080317 archive 2026-05-05: real hammer is
+  rendered inside `<span ...>Sold For</span> ... <span ...>CHF20,000</span>`.
+  Extractor anchors on that pattern; falls back to ld_price only when
+  the panel is missing (very rare). Affects every sold Phillips lot,
+  including the daily comprehensive sweep — fix is global.
+- **Antiquorum lot scraping uses `live.antiquorum.swiss`, not
+  `catalog.antiquorum.swiss`.** Catalog's `?page=N` 301-redirects
+  to `/lots`, so the catalog scraper had only ever seen the first
+  20 of 600+ lots per sale (vendor-broken pagination, can't fix).
+  Live page embeds the entire lot set in
+  `viewVars.lots.result_page` — single fetch, no pagination. URL
+  pattern: `live.antiquorum.swiss/auctions/<id>/...?limit=1000`;
+  the server caps `?limit=1000` at the actual lot count, so it's
+  future-proof without us tracking sale sizes. The catalog URL in
+  `data/antiquorum_auctions.csv` is bridged at scrape time:
+  `_resolve_antiquorum_live_auction_url` fetches the catalog page,
+  finds any per-lot live URL, follows it, parses `auction._detail_url`
+  out of the live lot's viewVars. ~1.5s of overhead per sale.
+- **Sotheby's lot images via per-lot `og:image` fetch.** algoliaJson
+  hits don't carry the brightspotcdn URL (hash isn't derivable). One
+  per-lot HTTP fetch grabs the canonical 4096×4096 brightspot URL
+  from the `og:image` meta. Body-scan fallback (largest-resize
+  brightspotcdn URL anywhere in the body) catches the small minority
+  of older lots without a social preview. Cost: ~1.5s per lot.
+- **Per-sale lot caps are CI-time guards, not policy.** Phillips
+  was capped at 60/sale before 2026-05-05 (CH080226 = 227, HK080226
+  = 308 — missing 70-80% of every large sale). Cap raised to 1000.
+  GitHub Actions on this public repo has unlimited minutes; only
+  cost is wall-clock. Default to "scrape all lots" unless there's a
+  specific reason to truncate.
+
+## Manual archive-sale pipeline
+
+For historical auction sales (Phase D / Epic 2 archive layer):
+
+- **Registry:** `data/manual_archive_sales.json` — one entry per
+  archive sale with `{url, house, title, date}`.
+- **Scraper:** `manual_archive_scraper.py` reads the registry, walks
+  each sale via the existing per-house enumerators (with the lot cap
+  removed for archive runs), writes `public/manual_archive_lots.json`.
+  Idempotent — re-running merges cleanly.
+- **Output is immutable:** archive sales never update post-hoc, so
+  the JSON file is committed once per added sale and stays frozen.
+  This is why it's a SEPARATE file from `auction_lots.json` (which
+  the daily comprehensive sweep rebuilds from scratch — co-locating
+  would clobber archive entries every cron run).
+- **App.js loads + merges** `manual_archive_lots.json` alongside
+  `auction_lots.json` and `tracked_lots.json` into `auctionLotItems`
+  with the same shape.
+- **Adding a new archive sale is an in-session task**, not a roadmap
+  item — Mark's call. Phillips archive URLs work on the existing
+  Phillips path; Antiquorum archive URLs would need an enumerator
+  extension when needed.
+
+## Backend-emitted display fields (prefer over inline derivation)
+
+`merge.py` emits a few computed fields on every enriched record so
+the frontend doesn't re-derive them inline. Prefer the field over
+re-walking the source data:
+
+- **`lastMeaningfulPrice`** — last non-zero entry from `priceHistory`
+  (or current `price` when history is clean / a fresh listing).
+  Surfaces a usable display value for items whose CURRENT price is
+  0 — typically because they've gone "Price on request" before
+  disappearing. ~40% of sold dealer items hit this case. The Card
+  render prefers `item.lastMeaningfulPrice`; falls back to inline
+  priceHistory walk only for older `state.json` snapshots that
+  predate this field.
+
+When adding new computed-display fields, follow the same shape:
+emit at merge time, prefer the field on the frontend, keep an
+inline-derive fallback for older snapshots.
 
 ## Tests
 
@@ -506,6 +593,53 @@ To add a new printable tool: render its sheet via `createPortal` to
   the JSX tree (`<div>{/* ... */}</div>`) or above the `return`. Same
   trap exists for any expression that isn't a single JSX element in
   that slot.
+- **Don't update brand aliases on only one side.** `merge.py`
+  `BRAND_ALIASES` (Python) and `src/utils.js` `BRAND_ALIASES` (JS)
+  must stay in lockstep. The frontend canonicalises saved snapshots
+  at read time so older `watchlist_items` rows benefit from new
+  aliases without a re-scrape; the backend canonicalises during
+  scrape merge. A new alias added to one but not the other will
+  manifest as the same brand showing under two chips for older
+  saved entries vs new ones. Same rule applies to `EXCLUDED_BRANDS`
+  (backend only — never reaches the user-facing feed).
+- **Don't promote `FORCE_OTHER_BRANDS` or `SUPPRESS_AT_SOLD_BRANDS`
+  to a backend rewrite without a deliberate decision.** Both are
+  intentionally frontend-only (`src/utils.js`) so the data layer
+  keeps the original brand label. `FORCE_OTHER_BRANDS` makes the
+  brand chip rail collapse a brand into "Other" without losing the
+  field; `SUPPRESS_AT_SOLD_BRANDS` hides specific brands from
+  Listings > All sold UNLESS the user has hearted them
+  (`watchlist[i.id]` override). Reverting either is a one-line edit.
+  A backend rewrite (e.g. mapping brand=Mulco → brand=Other in
+  `merge.py`) loses the original label and can't be undone without
+  re-scraping. The Mulco / Wittnauer / Pro Hunter pooling done in
+  PR #50 is the reference pattern.
+- **Don't compute `brandCounts` off `items` alone.** Pre-2026-05-05
+  it was — meaning Listings > Live auctions could surface a brand
+  chip whose `auctionLotItems` set was empty. The fix in `App.js`'s
+  `brandCounts` memo dispatches on `tab` + `listingsSubTab`:
+  `auctions` reads the live auction-lot pool, `sold` reads the
+  sold-mixed pool, everything else falls through to live dealer
+  items. When adding a new sub-tab or surface that has its own
+  filterable set, extend the dispatch — don't fall back to the
+  global `items` set.
+- **Don't ship a `merge.py`-touching change without updating
+  `tests/test_merge_state.py`.** The state-transition layer is the
+  one place we have unit-test coverage; regressions there silently
+  corrupt the cross-run memory that drives "NEW" badges, price-drop
+  detection, the sold/archive view, and (post-2026-05-05) the
+  `lastMeaningfulPrice` field. Add a behaviour-pinning test for
+  any new field merge.py emits AND for any change in the
+  enrichment / disappearance logic.
+- **Don't claim a PR is "shipped" until CI is green on it.** Twice
+  in this session I described work as shipped before the test
+  workflow finished, and twice the test workflow caught a real
+  regression after the merge had landed. PR #38 + PR #39 each
+  introduced a test failure that was only visible post-merge; both
+  needed a hotfix. Watch CI to completion (Bash `run_in_background`
+  with an `until` loop is the canonical pattern) before reporting
+  done. Pair with: when adding a new shell prop, mirror it in
+  `mockShellProps.js` in the same edit.
 
 ## When in doubt
 
