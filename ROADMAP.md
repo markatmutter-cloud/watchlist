@@ -128,11 +128,16 @@ Cross-cutting infrastructure. Several later epics depend on this.
 
 ## Epic 1: Sources
 
-Target end state: ~30 dealers + 6 auction houses, all earning their keep.
-Currently at **39 dealers + 6 auction houses** (post Luna Royster +
-S.Song Watches + Swiss Hours added 2026-05-04 PR #41 — past the
-30-dealer end-state target by 9; **Stop rule pruning is now the
-next Epic 1 priority**, not adding more).
+Target end state: ~50 dealers + 6 auction houses, all earning their
+keep. Threshold raised 30 → 50 on 2026-05-05 per Mark — the original
+30 was set before Watchlist had analytics to inform a meaningful
+prune; better to grow first, then audit with click + save data
+(see Epic 4 → Site analytics) once it lands.
+
+Currently at **38 dealers + 6 auction houses** (post Luna Royster +
+S.Song Watches + Swiss Hours added 2026-05-04 PR #41; Avocado
+Vintage removed 2026-05-05 per Mark). Twelve dealers under the new
+50-target, so adding remains the active mode.
 
 - **Active candidates** (evaluated, not all guaranteed):
 
@@ -155,9 +160,12 @@ next Epic 1 priority**, not adding more).
   catalog), Bonhams (Cloudflare), Monaco Legend (SPA, no server-rendered
   lot links), Heritage (DataDome). Same three escape hatches as above.
 
-- **Stop rule.** At ~30 dealers, audit and prune to 25. Don't add a source
-  unless it brings inventory not already covered or unique to a reference
-  category I care about.
+- **Stop rule.** At ~50 dealers (raised from 30 on 2026-05-05), audit
+  and prune. Pruning informed by Site analytics (Epic 4) — the click
+  + save data tells us which dealer inventory users engage with. Don't
+  add a source unless it brings inventory not already covered or
+  unique to a reference category I care about. Final prune-to count
+  TBD with the data in hand.
 
 ### Open submission v2 (deferred — needs users)
 
@@ -482,71 +490,100 @@ Depends on Epic 0 references.
 - **Listing-quality signals** (priced above/below dealer norm).
 - **Comparison view** for similar saved items.
 
-## Epic 4: Personal analytics (admin-only)
+## Epic 4: Site analytics (admin-only)
 
-A separate area of the same site (`/admin` route, gated to my Supabase user
-ID). Hidden from regular users. Different visual language: dense, data-heavy.
+A separate area of the same site (`/admin` route, gated to my
+Supabase user ID via `REACT_APP_ADMIN_EMAILS`). Hidden from regular
+users. Different visual language: dense, data-heavy.
 
-Build incrementally as questions surface:
+Two halves with different signals and different consumers:
 
-- **Source quality dashboard** (also Epic 0). First view to ship.
-- **Cross-source live inventory** for any reference.
-- **Personal taste-relative pricing.** "This Heuer is priced 15% above where
-  similar Heuers from this dealer have sold in the last year."
-- **Auction lot prediction.** "Phillips Geneva has 3 lots that match your
-  interests."
+### Dealer stats
 
-### Listing event capture (clicks + saves)
+About *supply* — the inventory side of the marketplace. Powers
+inventory decisions: which dealers to keep, which to prune, which
+brand/model verticals are well-served, where the gaps are.
 
-Lightweight per-listing telemetry to power "what's hot", "most
-saved", "most viewed", and per-listing click-through-rate signals
-on the Source Quality dashboard. Mark's framing on 2026-05-04: "a
-click shows potential for good stock" — i.e. what users tap through
-to is signal about which dealer inventory is interesting, not just
-which dealers users save from.
+- **Source quality dashboard** ✓ shipped 2026-05-02. Per-source
+  table at `?tab=admin`: live count, new-per-week, sparkline,
+  days stale, hearts/heart-rate, hides/hide-rate, avg price, top
+  brand %, scrape health, "earning its keep" chip.
+- **Pending — total throughput in value.** Per-source rolling
+  view of $ added (sum of new-listing prices over a window),
+  $ sold (sum of `lastMeaningfulPrice` on items that disappeared
+  over the window). Surfaces dealers whose unit-count is low but
+  whose inventory cycles through high-value pieces vs dealers
+  whose unit-count is high but whose stock sits.
+- **Pending — sales by watch type per dealer.** For each dealer,
+  break sold inventory down by brand × decade × type (chronograph
+  / dive / dress / etc.). Two uses: (a) tells me which dealers
+  reliably surface a given vertical (Heuertime → Heuer chronos,
+  no surprise; useful for the long tail) and (b) feeds future
+  dealer recommendations on listing pages ("dealers who sell
+  more 1960s Rolex chronos: ..."). Also gates Strength-of-save's
+  taste-vs-dealer-norm question.
+- **Pending — cross-source live inventory** for any reference.
+  Side-by-side prices for the same ref across dealers in stock
+  today.
+- **Pending — listing-quality signals.** Per-listing "priced
+  above/below this dealer's norm" chips. Lighter-weight version
+  of the personal taste-relative pricing idea below.
+- **Pending — auction lot prediction.** "Phillips Geneva has 3
+  lots that match your interests." Cross-references saved-set
+  embeddings with the comprehensive auction-lot scrape.
+- **Pending — personal taste-relative pricing.** "This Heuer is
+  priced 15% above where similar Heuers from this dealer have
+  sold in the last year." More personal than the listing-quality
+  signal above; shares the per-dealer historical-price substrate.
 
-Today, only **saves** (`watchlist_items`) and **hides**
-(`hidden_listings`) get captured, and only for signed-in users. No
-clicks, no views, no anonymous data. The Source Quality dashboard
-aggregates saves/hides at the source level but can't surface
-per-listing or anonymous activity.
+### User stats (visitors, clicks, hearts, list-saves, shares)
 
-**Scope when this lands** (deferred until after the auction-inclusion
-work Mark has planned for the next session):
+About *demand* — what users actually engage with. Today only
+**saves** (`watchlist_items`) and **hides** (`hidden_listings`)
+get captured, and only for signed-in users. No clicks, no views,
+no anonymous data, no list-save signal, no share signal.
+
+The build:
 
 - New `listing_events` table in Supabase. Columns: `id`,
-  `listing_id`, `event_type` (`view` | `click` | `save` | `hide`),
-  `anon_session_id` (text, nullable — UUID stored in `localStorage`),
-  `user_id` (uuid, nullable), `occurred_at`.
+  `listing_id`, `event_type` (`view` | `click` | `save` | `hide`
+  | `list_add` | `share`), `anon_session_id` (text, nullable —
+  UUID stored in `localStorage`), `user_id` (uuid, nullable),
+  `occurred_at`.
 - RLS: anyone can INSERT (write-only); only admin emails can
   SELECT. Anonymous events flow in without exposing reads.
-- Three event types to start: `view` (debounced once per listing
-  per session), `click` (when the dealer link is followed from a
-  Card), and mirrors of save/hide for unified querying. The
-  existing `watchlist_items` and `hidden_listings` tables stay as
-  the source of truth for current state; events are the
-  time-series record.
+- Six event types to start: `view` (debounced once per listing
+  per session), `click` (dealer link followed from a Card),
+  `save` / `hide` (mirror the existing tables for unified
+  querying), `list_add` (item added to a user list), `share`
+  (Card → Share menu fired). The existing tables stay as the
+  source of truth for current state; events are the time-series
+  record.
 - Anon session id = `localStorage`-persisted UUID. Same person
-  across visits until storage clears. Borderline tracking; defensible
-  because reads are admin-only and there's no PII, but pair with a
-  one-line note on the welcome page (already on Epic 0).
+  across visits until storage clears. Borderline tracking;
+  defensible because reads are admin-only and there's no PII, but
+  pair with a one-line note on the welcome page (already on
+  Epic 0).
 - **Periodic rollup + prune** is part of v1, not a follow-up. Cron
-  (daily or weekly) aggregates the event table into a per-listing
-  + per-source materialized view (`listing_events_daily`,
-  `source_events_daily`), then deletes raw events older than N
-  days (e.g. 90). Keeps the raw table from growing unbounded on
-  the Supabase free tier; admin queries hit the rolled-up view
-  for history beyond the window. Volume thinking: ~1k-10k events
-  per day at modest traffic; rollup of ~30 days holds well under
-  Supabase's free row limits, and the 90-day raw window leaves
-  enough fidelity to debug or backfill.
-- Surfaces on the Source Quality dashboard: per-source views,
-  clicks, click-through-rate (clicks ÷ views), saves-per-100-views.
-  Per-listing "most viewed" + "most saved" rows.
+  (daily) aggregates the event table into per-listing + per-source
+  materialized views (`listing_events_daily`, `source_events_daily`),
+  then deletes raw events older than N days (e.g. 90). Keeps the
+  raw table from growing unbounded on the Supabase free tier;
+  admin queries hit the rolled-up view for history beyond the
+  window. Volume thinking: ~1k-10k events per day at modest
+  traffic; rollup of ~30 days holds well under free-tier row
+  limits.
+- New admin panels surfaced on the Source Quality dashboard:
+  per-source views, clicks, click-through-rate (clicks ÷ views),
+  saves-per-100-views, list-add-rate, share-rate. Per-listing
+  "most viewed" + "most saved" + "most shared" rows.
+- Public surface (longer-term): a "what's hot this week" strip
+  on the Listings tab, derived from anonymised engagement
+  rollups. Gated behind enough volume to anonymise meaningfully.
 
 **Out of scope for v1**: filter usage telemetry, time-on-listing,
-scroll depth, search analytics. Add only if the per-listing events
-prove useful and Mark wants more granularity.
+scroll depth, search-query analytics. Add only if the per-listing
+events prove useful and Mark wants more granularity.
 
 What Watchcharts already does well: don't compete on historical
 price-per-reference. Use it; build what it doesn't.
@@ -681,34 +718,18 @@ Hardware: M4 Mac mini base, 16GB RAM, ~$600.
 
 Current best-guess sequence. Will shift; update this doc when it does.
 
-1. **Listing event capture (Epic 4).** Now top of queue —
-   the auction-inclusion work shipped in PRs #30 / #31 / #32
-   (2026-05-04). Click + save telemetry feeds the "what's hot" /
-   "most saved" / per-listing CTR signals on the Source Quality
-   dashboard. Half-session of build + the periodic rollup-and-prune
-   so the table doesn't grow unbounded. Anonymous-friendly (UUID
-   in `localStorage`); admin-only RLS for reads.
-2. **Sotheby's lot images** — Phase B1 v1 left these null
-   (brightspot CDN URL is hash-prefixed, not derivable from the
-   algoliaJson hit alone). Fix: one-shot detail-page fetch per
-   Sotheby's lot to extract the brightspotcdn URL. ~30-min
-   addition to `auction_lots_scraper.py`. Not blocking; cards
-   render with the no-image placeholder until then.
-3. **Manual historical auction entry — next archive sales (Epic 2 /
-   Phase D).** First sale shipped 2026-05-04 (PR #42): Phillips
-   CH080317, 42 Heuer lots in Listings > All sold via the new
-   `data/manual_archive_sales.json` registry +
-   `manual_archive_scraper.py` + `public/manual_archive_lots.json`
-   pipeline. Two parked URLs remain:
-   - **Phillips CH080218/browse** — should work as-is on the
-     existing Phillips path; one registry append + one script run
-     + commit. Sub-30-minute job.
-   - **Antiquorum Geneva 2007-04-15** — needs the Antiquorum side
-     of the manual scraper plumbed in (`scrape_catalog_antiquorum_lot`
-     covers active catalogs but archive URL pattern + per-lot
-     coverage may need extending). Half-session.
-   The admin-only seed-form remains a longer-term ambition; for
-   now, registry-edit-and-rerun is the workflow.
+1. **Site analytics — User stats half (Epic 4).** Top of queue —
+   click / save / hide / list-add / share telemetry into a new
+   `listing_events` Supabase table; rollup-and-prune cron; admin
+   panels surfaced on the Source Quality dashboard. Half-session
+   to a day. Anonymous-friendly (UUID in `localStorage`); admin-
+   only RLS for reads. Gates the Stop-rule prune (#7 below) — no
+   meaningful demand-side signal until this lands.
+2. **Site analytics — Dealer stats extensions (Epic 4).** Throughput
+   in value, sales by watch type per dealer, cross-source live
+   inventory, listing-quality signals, taste-relative pricing.
+   Sequence after #1 because some panels combine supply (these)
+   and demand (#1) in one view.
 3. **Watch Challenges v1.5 (Epic 3).** Close the social loop left
    by v1: implement the `?newchallenge=1` receive flow + public
    read of completed challenges (RLS surgery). Half-session of
@@ -717,18 +738,17 @@ Current best-guess sequence. Will shift; update this doc when it does.
    foundation. Several downstream features (encyclopedia, comparison
    view, auction lot grouping, Discover mode quality) gate on this.
 5. **Welcome page + remaining SEO (Epic 0).** SEO basics shipped
-   (PR #39 — `<title>` + meta description). Still pending: robots
-   / sitemap / og:image / Schema.org / first-time-visitor welcome
-   page. Half-session.
+   (PR #39 + #43 — `<title>`, meta description, OG/Twitter,
+   robots, sitemap, JSON-LD). Still pending: og:image refresh
+   (currently the 1024×1024 apple-touch-icon as placeholder) +
+   first-time-visitor welcome page. Half-session.
 6. **Strength-of-save model (Epic 3).** Two-tier (Love / Watch) is
    the entry point to the broader Multi-signal taste capture. Small
    UI lift; the feature is *the gesture*, not the underlying data.
-7. **Epic 1 source pruning** under the Stop rule. At **39 dealers**
-   (post LR + S.Song + Swiss Hours from PR #41) we're 9 over the
-   30-target. Source quality dashboard exists; this is now a "look
-   at the data and decide" session, not a build. Listing event
-   capture (#2) makes the dashboard meaningfully richer for this
-   decision — strong reason to slot the prune after, not before.
+7. **Epic 1 source pruning** under the Stop rule. At **38 dealers**
+   (post Avocado removal 2026-05-05) we're 12 under the new
+   50-target — adding remains the active mode. When we hit ~50,
+   audit using Site analytics (#1) and prune.
 8. **Epic 6 Phase A** when a specific blocked source needs it OR
    when ready to start Epic 5 generation work.
 9. **Watchbox v2 — reflection layer (Epic 3).** Highest personal
@@ -736,6 +756,15 @@ Current best-guess sequence. Will shift; update this doc when it does.
    bets. Unlocks Journey 10.
 10. **Epic 2 comprehensive auction inventory capture.** Substrate for
     serendipitous discovery and reference research.
+
+**Manual historical auction entry (Epic 2 / Phase D)** is no longer
+in the queue as a roadmap item — Mark's call 2026-05-05. Adding
+archive sales happens in-session as the cadence requires (one shipped
+PR #42; the existing `data/manual_archive_sales.json` registry +
+`manual_archive_scraper.py` workflow handles Phillips trivially, and
+the Antiquorum-archive enumerator is a session of work IF we ever
+need it). The previously-listed admin-form ambition is dropped;
+in-session work is the chosen mode.
 11. **Epic 5 encyclopedia** built incrementally as dealer descriptions
     accumulate.
 12. **Multi-signal taste capture + Discover mode + AI recommendation
@@ -824,6 +853,56 @@ moved, priorities drift. A quarterly pass catches that before it
 becomes confusion.
 
 ## Update log
+
+- 2026-05-05 (afternoon): **Roadmap review + Avocado prune.** Per Mark:
+  - **Avocado Vintage removed.** Scraper file, merge.py SOURCES
+    entry, workflow steps, README dealer table, and 66 `state.json`
+    entries all dropped. Dealer count 39 → 38.
+  - **Stop-rule threshold raised 30 → 50.** Original 30 was set
+    before analytics existed to inform a meaningful prune.
+  - **"Listing event capture" → "Site analytics"** with explicit
+    Dealer stats (existing) and User stats (new build) halves.
+    User stats expanded to include list-add + share events
+    alongside view / click / save / hide. Dealer stats expanded
+    with throughput-in-value, sales-by-watch-type per dealer,
+    listing-quality signals, taste-relative pricing.
+  - **Phase D / manual historical auction entry dropped from
+    roadmap.** Becomes in-session work as needed; the existing
+    JSON-registry + scraper workflow is sufficient at the rare
+    cadence Mark adds archive sales.
+
+- 2026-05-05 (morning): **Auction-coverage step-change + small
+  fixes (PRs #45 → #48).** Four PRs on a single day:
+  - **PR #45** — auction lot brand detection: Sotheby's titles
+    are pure model descriptions ("Baignoire, Reference 866034 |
+    A yellow gold ..."), so Cartier-branded lots had been landing
+    in "Other". New `detectAuctionLotBrand` walks `data.maker` →
+    title → "<Maker> — " description prefix → full description.
+    Brand chip rail also scoped per active sub-tab so Live
+    auctions doesn't show brands with zero matches. Major
+    Auctions Links entry got a friendly label override
+    (CH080317 → "Phillips · Exceptional Heuer Chronographs from
+    the Jack Heuer Era"). Auction total-cost calculator added to
+    Cool Stuff > Tools as pending.
+  - **PR #46** — Sotheby's lot images. Per-lot fetch to grab
+    canonical brightspotcdn URL from `og:image` (with body-scan
+    fallback for the small minority of lots without the meta
+    tag). 100% coverage on the 15-lot smoke sample. ~+2.4 min
+    per cron.
+  - **PR #47** — `merge.py` emits `lastMeaningfulPrice` (last
+    non-zero entry from priceHistory) on every enriched record.
+    Backend-durable version of the inline priceHistory walk Card
+    had been doing. Frontend prefers the field, falls back to
+    the walk for older state snapshots. Four new pytest cases.
+  - **PR #48** — auction lot scrape coverage step-change.
+    Phillips cap 60 → 1000 (CH080226 has 227 lots, HK080226 has
+    308; cap was missing 70-80% of every large sale). Antiquorum
+    switched from `catalog.antiquorum.swiss` (paginated `?page=N`
+    301-redirects, vendor broken) to
+    `live.antiquorum.swiss/...?limit=1000` — single 5MB fetch
+    returns the full `viewVars.lots.result_page` array. CDGBNO:
+    540 lots in ~2s (was 20). ~+25 min per daily auctions cron;
+    well under the 6h job timeout.
 
 - 2026-05-05 (very early AM): **Phase D first archive sale shipped
   (PR #42).** 42 Heuer lots from "The Crosthwaite & Gavin
