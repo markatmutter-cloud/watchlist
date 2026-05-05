@@ -47,7 +47,7 @@ built on top of that data. Listings are today's surface; reference
 research, reference learning, and collection-as-play are the next
 chapters.
 
-Watchlist is not trying to be Watchcharts. Don't compete on historical
+Watchlist is not trying to be Watchcharts or Chrono24. Don't compete on historical
 price-per-reference; build what they don't.
 
 ## Jobs to be done
