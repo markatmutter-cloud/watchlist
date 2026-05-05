@@ -10,9 +10,11 @@ graduate to ROADMAP.md.
 Long day. AM: bug-fix session (8 PRs). PM: **Listings unified feed
 → comprehensive auction-lot scrape → heart-on-lot → Listings
 sub-tab restructure → tweaks → Watchlist sub-tab restructure +
-Challenges → References**. Seven PRs (#30 / #31 / #32 / #33 / #34
-/ #35 / #36), all merged. Production live on bundle
-`main.5fbebe67.js`.
+Challenges → References → Watchlist UI tweaks → Cool Stuff rename
++ Links + dead-code sweep + SEO basics → test fixes → Cool Stuff
+v2 (shared SubTabIntro + accordion Links + 3 new dealers)**. Twelve
+PRs (#30 → #41), all merged. Production live on bundle
+`main.0a6f14c3.js`. Dealer count: **39** (up from 36).
 
 **PM net deliverables**:
 - **Phase A (PR #30 ✓ merged)**: First pass at unifying dealer
@@ -61,8 +63,79 @@ Challenges → References**. Seven PRs (#30 / #31 / #32 / #33 / #34
   tab**. Removed: Status segment everywhere, Auctions-only toggle,
   EndingSoon pinned strip + component file, watchLive/Sold derived
   memos, filterAuctionsOnly state.
+- **Listings sub-tab restructure docs (PR #34 ✓ merged)** and
+  **Watchlist restructure docs (PR #37 ✓ merged)** — CLAUDE.md +
+  ROADMAP + SESSION_HANDOFF passes for #33 and #36 respectively.
+- **Watchlist sub-tab UX tweaks (PR #38 ✓ merged)**: Five small
+  fixes that surfaced together. Count badge on Watchlist read
+  `allFiltered.length` (the dealer-feed count) regardless of
+  sub-tab — App.js now exposes `displayedCount` (`watchItems.length`
+  on Watchlist, `allFiltered.length` elsewhere); both shells
+  consume it. Mobile sub-tab strip stopped being a horizontal
+  scroller — trailing +buttons removed and moved into per-sub-tab
+  intro banners (new `subTabIntroJSX` helper inside WatchlistTab).
+  Saved auctions / Searches / Lists each now have title + blurb +
+  inline +button. Lists rows: dropped the heavy `borderLeft: 3px
+  solid #185FA5` (the icon disc already carries identity). Heart +
+  ⋯ tap targets scale with card density (26px at cols ≥ 4, 36px
+  at 1/2/3 cols).
+- **Cool Stuff rename + Links page + dead-code sweep + SEO
+  (PR #39 ✓ merged)**: Top-tab "Reference" relabelled "Cool
+  Stuff" — label-only change, URL key (`?tab=references`) and
+  component name (`ReferencesTab`) unchanged so old links still
+  resolve. New **Links** resource under Cool Stuff: auto-derived
+  Dealers list (one per source), hand-curated Reference clusters
+  (Rolex GMT 1675, Tudor Sub 7021, Omega Seamaster 300, Rolex
+  Explorer 1016, AP 5548 BA, Rolex DayDate 1803, Heuer), Art /
+  Straps / Editorial outbound links. WatchlistTab signed-out copy
+  now per sub-tab via `SIGNED_OUT_BY_SUBTAB` map (was a generic
+  outer `!user` short-circuit that hid tailored copy in Searches +
+  Lists). Dead-code sweep: −150ish lines — `sidebarFilterPanelJSX`,
+  the entire sidebar drag-resize machinery (`SIDEBAR_*` constants,
+  `[sidebarWidth]` + `[sidebarCollapsed]` state, `isDragging` /
+  `dragStart` / `widthStart` refs, `onDragStart`, mousemove
+  effect), `statusSegmentJSX = null` + `endingSoonJSX = null`
+  pass-through wiring through both shells, `sidebarToggleJSX = null`,
+  unused `auctions` prop on WatchlistTab, dead App.js imports
+  (`CURRENCY_SYM`, `fmt`, `fmtUSD`, `imgSrc`, `logToPrice`,
+  `extractRef`, `FilterIcon`, `SearchIcon`, `TabIcon`, `Chip`,
+  `SidebarChip`, `AboutModal`). SEO basics: `<title>` upgraded
+  from bare "Watchlist" to a descriptive form; `<meta
+  name="description">` added.
+- **Test fixes (PR #40 ✓ merged)**: PR #38 introduced
+  `displayedCount` but didn't add it to `mockShellProps.js` →
+  drawer's `Show {displayedCount} watches` rendered as "Show
+  watches" + the `/Show 0 watches/` matcher failed. PR #39
+  relabelled the third top-tab "Reference" → "Cool Stuff" but
+  `DesktopShell.test.jsx` still asserted `getByText("Reference")`.
+  Both fixed.
+- **Cool Stuff v2 + 3 new dealers (PR #41 ✓ merged)**: Visual
+  alignment — Cool Stuff landing now uses the same `SubTabIntro`
+  banner + icon-disc/label/chevron row treatment as Watchlist >
+  Lists and Watchlist > Saved searches. `subTabIntroJSX` lifted
+  from WatchlistTab to a real `src/components/SubTabIntro.js`
+  component (WatchlistTab + ReferencesTab both import it). Cool
+  Stuff > Links sections converted to accordions, all collapsed
+  by default, count badge + 90°-rotating chevron per header. New
+  Editorial entry (monochrome-watches), additional Heuer /
+  Fratello row, new top-level "Major Auctions" section seeded
+  with the Phillips CH080317 archive URL (the actual lot scrape
+  for that sale is real Phase D work — `auction_lots_scraper.py`
+  only walks active sales from `auctions.json`; archive sales
+  need a manual one-shot URL list path, parked for a separate
+  PR). Three new dealer sources lift count **36 → 39**:
+  - **Luna Royster** (NYC, WooCommerce, USD) — independent +
+    neo-vintage heavy (F.P. Journe, MB&F). Skips placeholder
+    $1/$0 prices LR uses for "price on request" pieces.
+  - **S.Song Watches** (Shopify, USD, collection-scoped to
+    `/collections/vintage` so straps don't leak).
+  - **Swiss Hours** (Shopify, USD, collection-scoped to
+    `/collections/watches`).
+  All wired into `merge.py` SOURCES + `scrape-listings.yml` with
+  `continue-on-error`.
 
-Production: bundle `main.5fbebe67.js`. Dealer count: **36**.
+Production: bundle `main.0a6f14c3.js`. Dealer count: **39** (up
+from 36 mid-day; LR + S.Song + Swiss Hours added in PR #41).
 Branch list: clean.
 
 **AM bug-fix deliverables** (preserved below):
@@ -257,8 +330,8 @@ session-handoff-update + dealer count entries (#20)
 
 ## Next session
 
-Auction-inclusion work + Watchlist restructure both **shipped**
-across 7 PRs (#30 / #31 / #32 / #33 / #34 / #35 / #36). Per
+Auction-inclusion work + Watchlist restructure + Cool Stuff +
+dealer additions all **shipped** across 12 PRs (#30 → #41). Per
 refreshed priority order:
 
 1. **Listing event capture (Epic 4)** — top of queue. Click + save
@@ -268,15 +341,19 @@ refreshed priority order:
    cron.
 2. **Sotheby's lot images** — left null in v1. ~30-min addition:
    per-lot detail-page fetch to extract the brightspotcdn URL.
-3. **Manual historical auction entry (original Phase D, deferred)**
-   — Mark's three target URLs:
+3. **Phase D — manual historical auction entry.** Mark's three
+   target URLs:
    `https://www.phillips.com/auctions/auction/CH080317`,
    `https://www.phillips.com/auction/CH080218/browse`,
    `https://catalog.antiquorum.swiss/en/auctions/geneva-mandarin-oriental-hotel-du-rhone-2007-04-15/lots/`.
-   Phillips + Antiquorum scrapers may need archive-URL extensions.
-   Admin-only form gated by `REACT_APP_ADMIN_EMAILS`. Short-term
-   workaround already in place via `data/manual_lot_urls.json`
-   (PR #35).
+   The Phillips CH080317 link is already surfaced under Cool Stuff
+   > Links > Major Auctions (PR #41), but the actual lot scrape
+   isn't there yet — `auction_lots_scraper.py` only walks active
+   sales from `auctions.json`. Need an archive-URL extension to the
+   Phillips + Antiquorum per-lot scrapers, plus a one-shot batch
+   path. Short-term workaround in place via
+   `data/manual_lot_urls.json` (PR #35); long-term wants the admin
+   form gated by `REACT_APP_ADMIN_EMAILS`.
 4. **merge.py last-known price retention** — frontend fallback in
    PR #35 surfaces last non-zero `priceHistory` entry for sold
    items with priceOnRequest. Durable backend version (preserve
@@ -284,12 +361,16 @@ refreshed priority order:
    `tests/test_merge_state.py` updates.
 5. **Watch Challenges v1.5** — close the social loop:
    `?newchallenge=1` receive flow + public read of completed
-   challenges (RLS surgery). Lives under References tab now.
+   challenges (RLS surgery). Lives under Cool Stuff > Watch
+   challenges now.
 6. **References as first-class entities (Epic 0).**
-7. **Site discoverability + welcome page (Epic 0).** Half-session.
+7. **Welcome page (Epic 0)** — `<title>` + `<meta description>`
+   shipped in PR #39; the welcome/about page for first-time
+   visitors is the remaining piece.
 8. **Strength-of-save model (Epic 3).**
-9. **Stop-rule prune** — at 36 dealers, audit + prune to 25.
-   ClassicHeuer is at 60%-sold-as-archive — strong prune candidate.
+9. **Stop-rule prune** — at **39 dealers** now (post LR + S.Song +
+   Swiss Hours in PR #41), audit + prune to 25. ClassicHeuer is at
+   60%-sold-as-archive — strong prune candidate.
 
 Plus the maintenance-rhythm beat: every 4th-5th session is hygiene
 only.
@@ -300,8 +381,18 @@ only.
   PRs #31 + #32 (merged with only Vercel green at squash time).
   Self-resolved by PR #33 onward; Tests fire normally now. Watch
   for recurrence next session.
-- **Phase D not started.** Captured above; manual_lot_urls.json
-  is the short-term path.
+- **Test fixture drift.** PR #40 caught that #38 added
+  `displayedCount` to shellProps without mirroring it in
+  `mockShellProps.js`, and #39 relabelled the top-tab without
+  updating `DesktopShell.test.jsx`. CLAUDE.md is explicit about
+  the fixture mirror rule but Tests fired AFTER the merge in both
+  cases; the gate is post-hoc rather than pre-merge for shell-prop
+  changes. Worth a process check next session — maybe a pre-commit
+  hook that runs `react-scripts test --watchAll=false` if any
+  `src/components/*Shell*` file changed.
+- **Phase D still not started.** Captured above; the surface is
+  there (Major Auctions section in Cool Stuff > Links seeded with
+  Phillips CH080317), the actual lot scrape is the gap.
 - **Sotheby's lot images null in v1.** brightspot CDN URL needs a
   per-lot fetch.
 - **Antiquorum catalog pagination broken at the source** —
