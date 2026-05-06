@@ -121,13 +121,15 @@ export function ListingPickerModal({
                   disabled={busy}>×</button>
         </div>
 
-        {/* Source chips. Horizontally scrollable on narrow viewports
-            so a long list of user-named collections doesn't push the
-            search input down. */}
+        {/* Source chips. Wrap to multiple lines instead of horizontal-
+            scroll: the prior overflowX:auto setup caused the chip row
+            to be vertically clipped by the modal flex layout (Mark's
+            report 2026-05-06 — chips appeared cut off at the top with
+            many user lists). flexShrink:0 + flexWrap is the
+            clip-proof shape. */}
         <div style={{
-          display: "flex", gap: 6, overflowX: "auto",
-          paddingBottom: 10, marginBottom: 8,
-          WebkitOverflowScrolling: "touch",
+          display: "flex", flexWrap: "wrap", gap: 6,
+          marginBottom: 12, flexShrink: 0,
         }}>
           <Chip active={source === "favorites"} label="♥ Favorites" onClick={() => setSource("favorites")} />
           <Chip active={source === "all"}       label="All listings" onClick={() => setSource("all")} />

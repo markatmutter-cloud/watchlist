@@ -23,23 +23,31 @@ import React from "react";
 //                an inline pill like "Draft").
 //   subtitle   — secondary line. ReactNode. Optional.
 //   onClick    — row click handler. ListRow owns the keyboard /
-//                focus path via <button>; no separate onKeyDown
-//                needed.
+//                focus path; no separate onKeyDown needed.
 //   ariaLabel  — optional aria-label override (defaults to the
 //                title — usually fine).
-export function ListRow({ icon, accent = "#185FA5", title, subtitle, onClick, ariaLabel }) {
+//   actions    — optional array of { ariaLabel, title, icon, onClick }
+//                rendered as icon-only buttons just before the
+//                trailing chevron. Mark 2026-05-06: restore Share +
+//                Delete on the challenges list rows. When actions
+//                are present, the outer element becomes a
+//                <div role="button"> so the nested action buttons
+//                are valid HTML (a <button> can't contain other
+//                buttons). Click handlers stop propagation so they
+//                don't drill in.
+export function ListRow({ icon, accent = "#185FA5", title, subtitle, onClick, ariaLabel, actions }) {
   const tint = ACCENT_TINTS[accent] || ACCENT_TINTS["#185FA5"];
-  return (
-    <button onClick={onClick} aria-label={ariaLabel}
-      style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "14px 16px", borderRadius: 12,
-        border: "0.5px solid var(--border)",
-        background: "var(--card-bg)",
-        color: "var(--text1)", cursor: "pointer",
-        fontFamily: "inherit", textAlign: "left",
-        width: "100%",
-      }}>
+  const rowStyle = {
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    padding: "14px 16px", borderRadius: 12,
+    border: "0.5px solid var(--border)",
+    background: "var(--card-bg)",
+    color: "var(--text1)", cursor: "pointer",
+    fontFamily: "inherit", textAlign: "left",
+    width: "100%", gap: 8,
+  };
+  const inner = (
+    <>
       <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
         <div style={{
           flexShrink: 0,
@@ -66,10 +74,54 @@ export function ListRow({ icon, accent = "#185FA5", title, subtitle, onClick, ar
           )}
         </div>
       </div>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-    </button>
+      <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+        {(actions || []).map((a, i) => (
+          <button key={i}
+            onClick={(e) => { e.stopPropagation(); a.onClick(e); }}
+            aria-label={a.ariaLabel}
+            title={a.title || a.ariaLabel}
+            style={iconActionBtnStyle}
+          >{a.icon}</button>
+        ))}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ marginLeft: actions && actions.length > 0 ? 4 : 0 }}><path d="M9 18l6-6-6-6"/></svg>
+      </div>
+    </>
+  );
+  // No actions → keep the simple <button> shape (Lists rows). Has
+  // actions → switch to div+role so nested buttons are legal.
+  if (!actions || actions.length === 0) {
+    return (
+      <button onClick={onClick} aria-label={ariaLabel} style={rowStyle}>
+        {inner}
+      </button>
+    );
+  }
+  return (
+    <div onClick={onClick} aria-label={ariaLabel}
+      role="button" tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          if (typeof onClick === "function") onClick(e);
+        }
+      }}
+      style={rowStyle}>
+      {inner}
+    </div>
   );
 }
+
+const iconActionBtnStyle = {
+  width: 28, height: 28,
+  display: "flex", alignItems: "center", justifyContent: "center",
+  border: "none",
+  background: "transparent",
+  color: "var(--text2)",
+  cursor: "pointer",
+  borderRadius: 6,
+  padding: 0,
+  fontFamily: "inherit",
+};
 
 // Disc-tint lookup keyed by stroke accent. Two tones for now (brand
 // blue + draft gold); add new entries as new surfaces adopt the row.

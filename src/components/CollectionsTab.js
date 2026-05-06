@@ -467,13 +467,18 @@ function HardListRow({ kind, coll, items, onClick }) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </div>
       {previews.length > 0 && (
+        // Fixed-size thumbnail strip so a hard list with 1 watch
+        // doesn't render a full-width square preview on desktop.
+        // Mark's report 2026-05-06: Owned with one item rendered a
+        // ~1900px-tall image. Each thumb caps at 64px on a side.
         <div style={{
           display: "flex", gap: 4, padding: "0 16px 14px",
           overflow: "hidden",
         }}>
           {previews.map(it => (
             <div key={it.id || it.rowId} style={{
-              flex: 1, aspectRatio: "1 / 1", borderRadius: 6,
+              flexShrink: 0,
+              width: 64, height: 64, borderRadius: 6,
               background: "var(--surface)", overflow: "hidden",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
