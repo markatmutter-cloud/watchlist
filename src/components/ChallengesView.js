@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChallengeFlow } from "./ChallengeFlow";
+import { ChallengeFlow, CreateStage } from "./ChallengeFlow";
 import { fmtUSD } from "../utils";
 
 // Challenges view — extracted from WatchlistTab.js on 2026-05-04
@@ -32,6 +32,11 @@ export function ChallengesView({
   onBack,
 }) {
   const [selectedChallengeId, setSelectedChallengeId] = useState(null);
+  // "+ New challenge" used to insert an empty Supabase row immediately
+  // and route the user into the now-orphaned-on-cancel CreateStage.
+  // creatingNew=true now renders CreateStage WITHOUT a row, and the
+  // create only happens on form submit. Cancel just clears the flag.
+  const [creatingNew, setCreatingNew] = useState(false);
 
   if (!user) {
     return (
@@ -78,18 +83,35 @@ export function ChallengesView({
     );
   }
 
-  const handleNewChallenge = async () => {
-    const res = await collectionsApi.createChallenge({
-      name: "",                  // becomes auto-titled "N watches for $Xk"
-      targetCount: null,         // null targetCount triggers Create stage
-      budget: null,
-    });
+  const handleNewChallenge = () => {
+    // No DB write here — CreateStage's onSubmit calls
+    // submitNewChallenge below, which is the only path that creates
+    // a row. Avoids polluting the list with empty drafts when the
+    // user opens the form and changes their mind.
+    setCreatingNew(true);
+  };
+
+  const submitNewChallenge = async (config) => {
+    const res = await collectionsApi.createChallenge(config);
     if (res.error) {
       window.alert("Couldn't create challenge: " + res.error);
       return;
     }
+    setCreatingNew(false);
     setSelectedChallengeId(res.id);
   };
+
+  if (creatingNew) {
+    return (
+      <div style={{ paddingTop: 4 }}>
+        <CreateStage
+          challenge={null}
+          onSubmit={submitNewChallenge}
+          onCancel={() => setCreatingNew(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={{ paddingTop: 4 }}>

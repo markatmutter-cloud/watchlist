@@ -50,7 +50,54 @@ function inferStage(challenge, items) {
 
 // Container with the standard back-button + title block. Used by
 // every stage for visual consistency with the rest of the app.
-function StageHeader({ onBack, label, title, subtitle }) {
+// 4-stage progression. The stepper component below highlights the
+// active stage so users know where they are in the flow.
+const STEPPER_STAGES = [
+  { key: "create",    label: "Set" },
+  { key: "picking",   label: "Pick" },
+  { key: "reasoning", label: "Reason" },
+  { key: "complete",  label: "Share" },
+];
+
+function Stepper({ activeStage }) {
+  if (!activeStage) return null;
+  const activeIdx = STEPPER_STAGES.findIndex(s => s.key === activeStage);
+  if (activeIdx < 0) return null;
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
+      marginBottom: 14,
+    }}>
+      {STEPPER_STAGES.map((s, i) => {
+        const isActive = i === activeIdx;
+        const isPast = i < activeIdx;
+        return (
+          <React.Fragment key={s.key}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              fontSize: 11, fontWeight: isActive ? 600 : 500,
+              color: isActive ? "var(--text1)" : (isPast ? "var(--text2)" : "var(--text3)"),
+              textTransform: "uppercase", letterSpacing: "0.06em",
+            }}>
+              <span style={{
+                display: "inline-block", width: 8, height: 8, borderRadius: "50%",
+                background: isActive ? "#185FA5" : (isPast ? "var(--text2)" : "var(--border)"),
+              }} />
+              {s.label}
+            </span>
+            {i < STEPPER_STAGES.length - 1 && (
+              <span style={{
+                width: 16, height: 1, background: "var(--border)",
+              }} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+function StageHeader({ onBack, label, title, subtitle, activeStage }) {
   return (
     <div style={{ marginBottom: 18 }}>
       {onBack && (
@@ -61,6 +108,7 @@ function StageHeader({ onBack, label, title, subtitle }) {
           fontFamily: "inherit", padding: 0,
         }}>← {label || "back"}</button>
       )}
+      <Stepper activeStage={activeStage} />
       <h1 style={{
         fontSize: 20, fontWeight: 600, margin: 0, color: "var(--text1)",
         letterSpacing: "-0.01em",
@@ -75,7 +123,11 @@ function StageHeader({ onBack, label, title, subtitle }) {
 }
 
 // ── Create stage ────────────────────────────────────────────────────
-function CreateStage({ challenge, onSubmit, onCancel }) {
+// Exported so ChallengesView can render it directly for the "+ New
+// challenge" flow without first creating an empty Supabase row.
+// Same component the in-flow "Edit constraints" link uses; the
+// `challenge` prop is null for new-challenge mode.
+export function CreateStage({ challenge, onSubmit, onCancel }) {
   const [count, setCount] = useState(challenge?.targetCount || 3);
   const [budget, setBudget] = useState(challenge?.budget || 50000);
   const [title, setTitle] = useState(challenge?.name || "");
@@ -114,6 +166,7 @@ function CreateStage({ challenge, onSubmit, onCancel }) {
         onBack={onCancel}
         title={challenge ? "Edit constraints" : "New challenge"}
         subtitle="Set the constraints. You can change them mid-flow if you change your mind."
+        activeStage="create"
       />
 
       <div style={{ marginBottom: 16 }}>
@@ -254,9 +307,20 @@ function PickingStage({
   const desktop = hasFinePointer();
 
   const [draggedItem, setDraggedItem] = useState(null);
+  // Index of the slot currently under the cursor during a drag, or
+  // null. Drives the drop-zone highlight (slotStyle's isDragOver
+  // branch) which previously was always false because nothing fed
+  // it. Cleared on drop, leave, or end-of-drag.
+  const [dragOverSlot, setDragOverSlot] = useState(null);
   const [pickerOpenForItem, setPickerOpenForItem] = useState(null);
   const [showAddDrawer, setShowAddDrawer] = useState(items.length === 0);
   const [searchQuery, setSearchQuery] = useState("");
+  // Whether the shortlist search drawer should include sold listings.
+  // Default off — most builds are about live inventory — but a thought-
+  // experiment over historical results is a legitimate use-case (Mark's
+  // brief: "Pick 5 Heuers under $20k from any year"), so make it a
+  // checkbox. Persisted across drawer toggles via component state.
+  const [includeSold, setIncludeSold] = useState(false);
 
   // Recompute "show drawer" when items first arrive — empty challenges
   // get the drawer open by default; once any item exists we hide it
@@ -279,6 +343,7 @@ function PickingStage({
   });
 
   const handleSlotDrop = (slotIdx) => {
+    setDragOverSlot(null);
     if (!draggedItem) return;
     onPlaceInSlot(draggedItem, slotIdx);
     setDraggedItem(null);
@@ -298,18 +363,27 @@ function PickingStage({
 
   // Search results for the add drawer — listings.json filtered by
   // the user's typed query, excluding items already in this challenge.
+  // Search haystack covers brand + ref + title + model + source so
+  // queries like "submariner" or "speedmaster" hit titles that don't
+  // include the brand string. Sold filter is opt-in via the toggle.
   const filteredResults = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) return [];
     const q = searchQuery.toLowerCase().trim();
     const inThis = new Set(items.map(it => it.id));
     return allListings
-      .filter(l => !l.sold && !inThis.has(l.id) && !hidden[l.id])
+      .filter(l => (includeSold || !l.sold) && !inThis.has(l.id) && !hidden[l.id])
       .filter(l => {
-        const hay = (l.brand + " " + (l.ref || "") + " " + (l.source || "")).toLowerCase();
+        const hay = (
+          (l.brand || "") + " " +
+          (l.ref || "") + " " +
+          (l.title || "") + " " +
+          (l.model || "") + " " +
+          (l.source || "")
+        ).toLowerCase();
         return hay.includes(q);
       })
       .slice(0, 25);
-  }, [searchQuery, allListings, items, hidden]);
+  }, [searchQuery, allListings, items, hidden, includeSold]);
 
   return (
     <div>
@@ -318,6 +392,7 @@ function PickingStage({
         onBack={onBack}
         title={challenge.name}
         subtitle={challenge.descriptionLong || `${challenge.targetCount} watches for ${fmtUSD(challenge.budget)}`}
+        activeStage="picking"
       />
 
       {/* Stat row — total spend + picks count */}
@@ -364,12 +439,20 @@ function PickingStage({
               slotIdx={slotIdx}
               occupant={occupant}
               desktop={desktop}
-              onDragOver={desktop ? (e) => e.preventDefault() : undefined}
+              onDragOver={desktop ? (e) => {
+                e.preventDefault();
+                if (dragOverSlot !== slotIdx) setDragOverSlot(slotIdx);
+              } : undefined}
+              onDragLeave={desktop ? () => {
+                // Only clear if leaving THIS slot — onDragLeave fires
+                // on every entered child element, so guard on slot id.
+                setDragOverSlot((prev) => (prev === slotIdx ? null : prev));
+              } : undefined}
               onDrop={desktop ? (e) => { e.preventDefault(); handleSlotDrop(slotIdx); } : undefined}
               onDragStartItem={desktop ? () => setDraggedItem(occupant) : undefined}
-              onDragEndItem={desktop ? () => setDraggedItem(null) : undefined}
+              onDragEndItem={desktop ? () => { setDraggedItem(null); setDragOverSlot(null); } : undefined}
               onTap={desktop ? undefined : () => occupant && onMoveToShortlist(occupant)}
-              slotStyle={slotStyle(!!occupant, false)}
+              slotStyle={slotStyle(!!occupant, dragOverSlot === slotIdx && !!draggedItem)}
               primaryCurrency={primaryCurrency}
             />
           ))}
@@ -435,23 +518,34 @@ function PickingStage({
           }}>
             <input type="text" value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search listings (brand, reference, dealer)…"
+              placeholder="Search by brand, reference, title, model, dealer…"
               autoFocus
               style={{
                 width: "100%", boxSizing: "border-box",
                 border: "0.5px solid var(--border)", borderRadius: 6,
                 background: "var(--bg)", padding: "8px 10px",
                 fontFamily: "inherit", fontSize: 13, color: "var(--text1)", outline: "none",
-                marginBottom: 10,
+                marginBottom: 8,
               }} />
+            <label style={{
+              display: "flex", alignItems: "center", gap: 6, marginBottom: 10,
+              fontSize: 12, color: "var(--text2)", cursor: "pointer", userSelect: "none",
+            }}>
+              <input type="checkbox" checked={includeSold}
+                onChange={e => setIncludeSold(e.target.checked)} />
+              Include sold listings
+              <span style={{ color: "var(--text3)" }}>
+                {includeSold ? "(searching all inventory, live + sold)" : "(searching live inventory)"}
+              </span>
+            </label>
             {searchQuery.length >= 2 && filteredResults.length === 0 && (
               <p style={{ fontSize: 13, color: "var(--text3)", margin: "16px 0", textAlign: "center", fontStyle: "italic" }}>
-                No matches.
+                No matches.{!includeSold && " Try toggling \"Include sold\" above."}
               </p>
             )}
             {searchQuery.length < 2 && (
               <p style={{ fontSize: 12, color: "var(--text3)", margin: "8px 0 0", fontStyle: "italic" }}>
-                Type at least 2 characters. Sold / hidden listings excluded.
+                Type at least 2 characters.{!includeSold && " Sold listings excluded — toggle above to include."} Hidden listings always excluded.
               </p>
             )}
             {filteredResults.length > 0 && (
@@ -496,10 +590,10 @@ function PickingStage({
   );
 }
 
-function SlotCell({ occupant, slotIdx, desktop, onDragOver, onDrop, onDragStartItem, onDragEndItem, onTap, slotStyle, primaryCurrency }) {
+function SlotCell({ occupant, slotIdx, desktop, onDragOver, onDragLeave, onDrop, onDragStartItem, onDragEndItem, onTap, slotStyle, primaryCurrency }) {
   if (!occupant) {
     return (
-      <div onDragOver={onDragOver} onDrop={onDrop} style={slotStyle}>
+      <div onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop} style={slotStyle}>
         <div style={{
           flex: 1, display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center",
@@ -516,7 +610,7 @@ function SlotCell({ occupant, slotIdx, desktop, onDragOver, onDrop, onDragStartI
   return (
     <div
       draggable={desktop} onDragStart={onDragStartItem} onDragEnd={onDragEndItem}
-      onDragOver={onDragOver} onDrop={onDrop}
+      onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
       onClick={onTap}
       style={{ ...slotStyle, cursor: desktop ? "grab" : "pointer" }}>
       <div style={{
@@ -696,7 +790,8 @@ function ReasoningStage({ challenge, items, onUpdateReasoning, onBack, onFinish 
         label="back to picking"
         onBack={onBack}
         title={`Why these ${picks.length}?`}
-        subtitle="One line each. Optional, but it's the part people read." />
+        subtitle="One line each. Optional, but it's the part people read."
+        activeStage="reasoning" />
 
       {picks.map((p, i) => (
         <div key={p.rowId} style={{
@@ -745,7 +840,7 @@ function ReasoningStage({ challenge, items, onUpdateReasoning, onBack, onFinish 
 }
 
 // ── Complete stage ──────────────────────────────────────────────────
-function CompleteStage({ challenge, items, onShare, onBack }) {
+function CompleteStage({ challenge, items, onShare, onBack, onReopen }) {
   const picks = useMemo(() => items.filter(it => it.isPick), [items]);
   const totalSpend = picks.reduce((s, p) => s + (p.savedPriceUSD || p.priceUSD || 0), 0);
   const overBy = Math.max(0, totalSpend - challenge.budget);
@@ -753,7 +848,8 @@ function CompleteStage({ challenge, items, onShare, onBack }) {
   return (
     <div>
       <StageHeader label="back to challenges" onBack={onBack} title={challenge.name}
-        subtitle={challenge.descriptionLong} />
+        subtitle={challenge.descriptionLong}
+        activeStage="complete" />
 
       <div style={{
         background: "var(--card-bg)", borderRadius: 8, border: "0.5px solid var(--border)",
@@ -806,13 +902,27 @@ function CompleteStage({ challenge, items, onShare, onBack }) {
         ))}
       </div>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        {onReopen ? (
+          <button onClick={onReopen} style={{
+            padding: "10px 16px", borderRadius: 8,
+            border: "0.5px solid var(--border)", background: "transparent",
+            color: "var(--text2)", cursor: "pointer",
+            fontFamily: "inherit", fontSize: 13,
+          }}>Reopen for edits</button>
+        ) : <span />}
         <button onClick={onShare} style={{
           padding: "10px 18px", borderRadius: 8, border: "none",
           background: "#185FA5", color: "#fff", cursor: "pointer",
           fontFamily: "inherit", fontSize: 14, fontWeight: 500,
         }}>Share →</button>
       </div>
+      <p style={{
+        marginTop: 14, fontSize: 11, color: "var(--text3)",
+        textAlign: "right", lineHeight: 1.5,
+      }}>
+        Share sends the constraints — your picks stay private.
+      </p>
     </div>
   );
 }
@@ -871,6 +981,11 @@ export function ChallengeFlow({
     await collectionsApi.addToShortlist(challenge.id, listing);
   }, [challenge.id, collectionsApi]);
 
+  const reopenChallenge = useCallback(async () => {
+    await collectionsApi.updateChallenge(challenge.id, { state: "draft" });
+    setStage("picking");
+  }, [challenge.id, collectionsApi]);
+
   const completeChallenge = useCallback(async () => {
     await collectionsApi.updateChallenge(challenge.id, { state: "complete" });
     setStage("complete");
@@ -909,6 +1024,7 @@ export function ChallengeFlow({
     return (
       <CompleteStage challenge={challenge} items={items}
         onShare={shareChallenge}
+        onReopen={reopenChallenge}
         onBack={onExit} />
     );
   }
