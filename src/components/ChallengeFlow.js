@@ -395,12 +395,19 @@ function PickingStage({
         activeStage="picking"
       />
 
-      {/* Stat row — total spend + picks count */}
+      {/* Stat row — total spend + picks count.
+          The Total-spend tile leads with what's still available
+          (Mark's feedback: "There isn't anything to tell you how
+          much budget is left, just how much you've spent"). When
+          over budget the same slot flips to the warn label so the
+          two states share one visual position. */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 18 }}>
         <StatCard
           label="Total spend"
           value={fmtUSD(totalSpend)}
-          sub={`of ${fmtUSD(challenge.budget)}`}
+          sub={overBudget
+            ? `of ${fmtUSD(challenge.budget)}`
+            : `${fmtUSD(Math.max(challenge.budget - totalSpend, 0))} left`}
           progress={Math.min((totalSpend / Math.max(challenge.budget, 1)) * 100, 100)}
           warn={overBudget}
           hardWarn={hardBlocked}
