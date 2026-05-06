@@ -157,11 +157,11 @@ export function ShareReceiver({
   return (
     <div style={{
       // Take over the parent content area. Bottom padding sized to
-      // clear the mobile bottom tab bar (~80px tall). maxWidth lifted
-      // to 1320 (was 1100) so the 3-column wide layout uses the
-      // available horizontal real estate instead of forcing scroll.
+      // clear the mobile bottom tab bar (~80px tall). maxWidth bumped
+      // 1320 → 1600 so on wider screens the focused card actually
+      // uses the available room instead of sitting in a centred well.
       padding: "16px 16px 110px",
-      maxWidth: 1320,
+      maxWidth: 1600,
       margin: "0 auto",
       width: "100%",
     }}>
@@ -227,7 +227,7 @@ export function ShareReceiver({
           // Light-mode lift: --card-bg is #fff (same as page) in light
           // mode, so without a shadow the card has no tone shift. The
           // shadow disappears against #000 in dark mode (no harm).
-          boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)",
           fontSize: 14, color: "var(--text2)", lineHeight: 1.6,
           maxWidth: 720,
         }}>
@@ -274,7 +274,7 @@ function FocusedShareCard({
       // Light-mode lift: --card-bg is #fff (same as page bg) in
       // light mode, so without a shadow the card has no tone shift.
       // Shadow disappears against #000 in dark mode (no harm).
-      boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)",
+      boxShadow: "0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)",
     }}
     className="share-receiver-focused-card"
     >
@@ -480,7 +480,7 @@ function OrientationAnchors({ signedIn, onClickAnchor }) {
       background: "var(--card-bg)",
       // Same lift treatment as the focused card so the two read as
       // a paired surface in light mode where --card-bg = --bg.
-      boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)",
+      boxShadow: "0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)",
       padding: "18px 18px 16px",
       display: "flex", flexDirection: "column",
       // Stretch to match the focused card height on wide so the two

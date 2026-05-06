@@ -348,10 +348,13 @@ export function DesktopShell(props) {
         {authJSX}
       </div>
       {/* Sub-tab strips — Listings on tab=listings, Watchlist on
-          tab=watchlist. Sit between main tabs and the filter row. */}
-      {listingsSubTabsJSX}
-      {watchSubTabsJSX}
-      {(
+          tab=watchlist. Sit between main tabs and the filter row.
+          Hidden when a share-receive landing surface is taking over
+          the content area, since the recipient has no use for the
+          sub-tab + filter row chrome until they dismiss / save. */}
+      {!shareActive && listingsSubTabsJSX}
+      {!shareActive && watchSubTabsJSX}
+      {shareActive ? null : (
         (tab === "listings" && showListingsFilterRow) ||
         (tab === "watchlist" && watchTopTab !== "searches" && watchTopTab !== "collections")
       )

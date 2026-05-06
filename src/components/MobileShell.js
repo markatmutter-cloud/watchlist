@@ -119,13 +119,15 @@ export function MobileShell(props) {
         </div>
         {/* Sort row — only when the current sub-tab has a filterable
             list. Otherwise render a spacer of the same height so
-            sub-tab switching doesn't pop content up. */}
-        {noFilterableList && (
+            sub-tab switching doesn't pop content up. Hidden during
+            share-receive landing so the recipient sees the focused
+            card without browse chrome above it. */}
+        {!shareActive && noFilterableList && (
           <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", alignItems: "center" }}>
             <span style={{ fontSize: 13, padding: "9px 14px", borderRadius: 20, border: "0.5px solid transparent", visibility: "hidden" }}>placeholder</span>
           </div>
         )}
-        {!noFilterableList && (
+        {!shareActive && !noFilterableList && (
         <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
           <span style={{ fontSize: 12, color: "var(--text3)", marginRight: 2, flexShrink: 0 }}>{displayedCount}</span>
           {/* Date sort pill — semantics depend on the active Listings
@@ -174,9 +176,10 @@ export function MobileShell(props) {
         )}
         {/* Sub-tab strips — Listings strip on tab=listings, Watchlist
             strip on tab=watchlist. Both lifted into the sticky stack
-            so they survive scroll. */}
-        {listingsSubTabsJSX}
-        {watchSubTabsJSX}
+            so they survive scroll. Hidden during share-receive landing
+            for the same reason as the sort row above. */}
+        {!shareActive && listingsSubTabsJSX}
+        {!shareActive && watchSubTabsJSX}
         </div>
         {/* Share-receive surface — self-contained component, hooks
             isolated. Renders null when no share intent in URL. */}
