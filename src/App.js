@@ -381,9 +381,14 @@ export default function Watchlist() {
     recordEvent("share", item);
     let shareUrl;
     try {
+      // Use the /share/<id> path so the iMessage/Slack/Discord
+      // preview-bot scrapes per-listing OG tags via api/share.js
+      // instead of the static index.html's site-wide tags. Real
+      // browsers get a tiny redirect HTML that bounces them to
+      // ?listing=<id>&shared=1 which ShareReceiver already handles
+      // — recipients land on the focused share surface unchanged.
       const url = new URL(window.location.origin);
-      url.searchParams.set("listing", item.id);
-      url.searchParams.set("shared", "1");
+      url.pathname = `/share/${encodeURIComponent(item.id)}`;
       shareUrl = url.toString();
     } catch {
       return { copied: false };

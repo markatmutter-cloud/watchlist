@@ -119,10 +119,20 @@ and the file deleted. Don't migrate `hidden_listings` into
 `collection_items` for the same reason as Favorites: the migration
 would touch every read path that already uses `useWatchlist().hidden`.
 
-**Share URL format.** Inbound share links use
-`?listing=<id>&shared=1` on the root URL — no `react-router`, no
-`/share/*` route. URL is rewritten via `history.replaceState` after
-action so a refresh doesn't re-trigger.
+**Share URL format (post-2026-05-06).** Outbound share links built
+by `handleShare` use the `/share/<id>` path. Vercel rewrites that
+to the `api/share.js` serverless function (see `vercel.json`) which
+returns HTML with per-listing Open Graph tags (so iMessage / Slack
+/ Discord preview cards show the actual watch + a "Watchlist —
+Vintage watches in one feed" caption rather than the site logo)
+plus a meta-refresh + JS redirect to `?listing=<id>&shared=1` on
+the root. Real browsers land on the SPA's existing share-receive
+surface unchanged; preview bots stop after the head-scrape and
+never see the redirect. Older share links using the legacy
+`?listing=<id>&shared=1` pattern still work — ShareReceiver still
+parses them — they just won't get the dynamic OG preview. URL is
+rewritten via `history.replaceState` after action so a refresh
+doesn't re-trigger.
 
 **Share-receive landing surface (2026-05-06 redesign).**
 ShareReceiver detects share intent in a `useEffect` on mount, sets
