@@ -616,20 +616,29 @@ export function useCollections(user) {
     return { error: null };
   }, [user]);
 
-  // Add a listing to a challenge's shortlist (is_pick=false). Same
-  // payload shape as addItemToCollection but always shortlist-tier.
-  const addToShortlist = useCallback(async (challengeId, listing) => {
+  // Add a listing to a challenge. Default = shortlist (is_pick=false);
+  // pass `{ isPick: true }` to insert as a pick directly (snapshots
+  // price into saved_price/_currency/_price_usd so the challenge
+  // total is immutable once shared, same as togglePickStatus does
+  // when promoting a shortlist row).
+  //
+  // The D3 picking flow (2026-05-06) skips the shortlist entirely —
+  // source-tile taps go straight to picks. Older challenges that
+  // still have shortlist rows in the DB stay readable but the new
+  // UI doesn't surface them.
+  const addToShortlist = useCallback(async (challengeId, listing, opts = {}) => {
     if (!user || !supabase) return { error: 'not signed in' };
     if (!challengeId || !listing?.id) return { error: 'challenge and listing required' };
+    const isPick = !!opts.isPick;
     const payload = {
       collection_id:    challengeId,
       listing_id:       listing.id,
-      saved_price:      null,         // shortlist items don't snapshot price
-      saved_currency:   null,
-      saved_price_usd:  null,
+      saved_price:      isPick ? (listing.price ?? null) : null,
+      saved_currency:   isPick ? (listing.currency || 'USD') : null,
+      saved_price_usd:  isPick ? (listing.priceUSD ?? listing.price ?? null) : null,
       listing_snapshot: listing,
       source_of_entry:  'manual',
-      is_pick:          false,
+      is_pick:          isPick,
       reasoning:        null,
     };
     const { data, error } = await supabase.from('collection_items')
@@ -641,9 +650,11 @@ export function useCollections(user) {
         [challengeId]: [
           {
             rowId: data.id, id: data.listing_id,
-            savedPrice: null, savedCurrency: null, savedPriceUSD: null,
+            savedPrice:    payload.saved_price,
+            savedCurrency: payload.saved_currency,
+            savedPriceUSD: payload.saved_price_usd,
             sourceOfEntry: data.source_of_entry, savedAt: data.added_at,
-            isPick: false, reasoning: '',
+            isPick, reasoning: '',
             ...listing,
           },
           ...(prev[challengeId] || []),

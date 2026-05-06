@@ -1,5 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Card } from "./Card";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { fmtUSD, imgSrc } from "../utils";
 
 // Watch Challenges (Build-a-collection v1) — multi-stage flow inside
@@ -26,15 +25,6 @@ import { fmtUSD, imgSrc } from "../utils";
 //   mobile   → tap a shortlist tile → SlotPickerModal opens with the
 //               available slot numbers → tap a slot → place. Same
 //               moveToSlot action, two trigger paths.
-
-// ── Pointer detection ───────────────────────────────────────────────
-// Same primitive the share-detection commit (c7f7aba) used. (pointer:
-// fine) === mouse on every common platform; (coarse) === touch. We
-// only enable HTML5 DnD when fine.
-const hasFinePointer = () =>
-  typeof window !== "undefined" &&
-  typeof window.matchMedia === "function" &&
-  window.matchMedia("(pointer: fine)").matches;
 
 // ── Stage inference ─────────────────────────────────────────────────
 // Source-of-truth for which stage to land on after a refresh. The
@@ -235,85 +225,42 @@ export function CreateStage({ challenge, onSubmit, onCancel }) {
   );
 }
 
-// ── Slot picker (mobile tap-to-place) ───────────────────────────────
-function SlotPickerModal({ slotsTotal, picks, watch, onPick, onCancel }) {
-  return (
-    <div onClick={onCancel} style={{
-      position: "fixed", inset: 0, zIndex: 100,
-      background: "rgba(0,0,0,0.5)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 16,
-    }}>
-      <div onClick={e => e.stopPropagation()} style={{
-        background: "var(--bg)", borderRadius: 12, maxWidth: 420, width: "100%",
-        padding: 20, border: "0.5px solid var(--border)",
-      }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, margin: "0 0 6px", color: "var(--text1)" }}>
-          Place {watch?.ref?.slice(0, 60) || "watch"}
-        </h2>
-        <p style={{ fontSize: 13, color: "var(--text2)", margin: "0 0 14px" }}>
-          Pick a slot. Items already in slots get bumped to your shortlist.
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))", gap: 8 }}>
-          {Array.from({ length: slotsTotal }).map((_, i) => {
-            const occupant = picks[i];
-            return (
-              <button key={i} onClick={() => onPick(i)}
-                style={{
-                  padding: "12px 8px", borderRadius: 8,
-                  border: occupant ? "0.5px solid var(--border)" : "1.5px dashed var(--border)",
-                  background: occupant ? "var(--surface)" : "transparent",
-                  cursor: "pointer", fontFamily: "inherit",
-                  display: "flex", flexDirection: "column", gap: 4, alignItems: "center",
-                }}>
-                <span style={{ fontSize: 11, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                  Slot {i + 1}
-                </span>
-                <span style={{ fontSize: 12, color: "var(--text1)", fontWeight: 500,
-                              textAlign: "center", lineHeight: 1.2,
-                              overflow: "hidden", textOverflow: "ellipsis",
-                              display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-                  {occupant ? (occupant.ref || occupant.brand) : "empty"}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
-          <button onClick={onCancel} style={{
-            padding: "8px 14px", borderRadius: 8, border: "0.5px solid var(--border)",
-            background: "transparent", color: "var(--text2)", cursor: "pointer",
-            fontFamily: "inherit", fontSize: 13,
-          }}>Cancel</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── Picking stage ───────────────────────────────────────────────────
 // Mark 2026-05-06: separate Reasoning stage felt like an extra step.
 // Comments are now inline notes below the slot grid right here in
 // Picking, and "Mark complete →" jumps straight to Complete. The
 // Reasoning stage component is gone — this used to live there.
+// ── Picking stage ───────────────────────────────────────────────────
+// D3 (2026-05-06): wholesale rewrite per Mark's feedback.
+//   - No shortlist concept. Lists/Favorites ARE the shortlist.
+//     Tap a tile in the source picker → fills the next empty slot
+//     directly as a pick.
+//   - No drag-drop. Click-pick is the single interaction mode on
+//     every device.
+//   - Stat row sticks to the top of the scroll container so spend +
+//     remaining stay visible while the user scrolls source tiles.
+//   - Single page-scroll — source picker no longer has its own
+//     overflow window competing with the shell scroll.
+//   - One challenge-wide note (challenges.descriptionLong) replaces
+//     the per-pick reasoning textareas. Debounced write-through.
 function PickingStage({
   challenge, items, allListings, watchlist, hidden,
   collections, itemsByCollection,
-  onPlaceInSlot, onMoveToShortlist, onAddToShortlist, onComplete, onEditConfig, onBack,
-  onUpdateReasoning,
+  onAddAsPick, onRemovePick, onUpdateChallenge,
+  onComplete, onEditConfig, onBack,
   primaryCurrency,
 }) {
+  // Picks ordered by added_at ascending — first-added → leftmost
+  // slot, stable across re-renders so the user's visual map of
+  // "slot 1 = first pick" doesn't shift when they add a new one.
   const picks = useMemo(
-    () => items.filter(it => it.isPick).slice(0, challenge.targetCount),
+    () => items.filter(it => it.isPick)
+      .slice()
+      .sort((a, b) => String(a.savedAt || "").localeCompare(String(b.savedAt || "")))
+      .slice(0, challenge.targetCount),
     [items, challenge.targetCount],
   );
-  const shortlist = useMemo(
-    () => items.filter(it => !it.isPick),
-    [items],
-  );
-
-  // Pad picks array out to slot count so render maps over fixed-size
-  // slot grid even when partially filled.
   const slotItems = Array.from({ length: challenge.targetCount }, (_, i) => picks[i] || null);
 
   const totalSpend = picks.reduce((s, p) => s + (p.savedPriceUSD || p.priceUSD || 0), 0);
@@ -324,31 +271,11 @@ function PickingStage({
   const allFilled = picks.length === challenge.targetCount;
   const canComplete = allFilled && !hardBlocked;
 
-  // Drag-drop only on fine pointers; mobile gets tap-to-place.
-  const desktop = hasFinePointer();
-
-  const [draggedItem, setDraggedItem] = useState(null);
-  // Index of the slot currently under the cursor during a drag, or
-  // null. Drives the drop-zone highlight (slotStyle's isDragOver
-  // branch) which previously was always false because nothing fed
-  // it. Cleared on drop, leave, or end-of-drag.
-  const [dragOverSlot, setDragOverSlot] = useState(null);
-  const [pickerOpenForItem, setPickerOpenForItem] = useState(null);
-  // D2: source picker replaces the search-allListings drawer Mark
-  // flagged as bad UX ("images and search field to add to the
-  // challenge group is tiny and can't really be seen"). Watches now
-  // come from existing Favorites + Lists (already curated, already
-  // visual), or from pasting a Watchlist URL.
-  //
-  // addSource: "favorites" | `list:<id>` | "paste". Default = the
-  // most likely source the user has populated. Hidden when shortlist
-  // is non-empty so the picking grid + shortlist read tighter; user
-  // toggles via the "+ Add to shortlist" button.
+  // Source picker state
   const userLists = useMemo(
     () => (collections || []).filter(c => c.type === "free-form" && !c.is_shared_inbox),
     [collections],
   );
-  const [showAddDrawer, setShowAddDrawer] = useState(items.length === 0);
   const [addSource, setAddSource] = useState(() => {
     if (watchlist && Object.keys(watchlist).length > 0) return "favorites";
     if (userLists[0]) return `list:${userLists[0].id}`;
@@ -357,38 +284,6 @@ function PickingStage({
   const [pasteUrl, setPasteUrl] = useState("");
   const [pasteError, setPasteError] = useState("");
 
-  const slotStyle = (occupied, isDragOver) => ({
-    background: occupied ? "var(--card-bg)" : "transparent",
-    border: isDragOver
-      ? "1.5px solid #185FA5"
-      : occupied ? "0.5px solid var(--border)" : "1.5px dashed var(--border)",
-    borderRadius: 8, padding: 8, minHeight: 140,
-    display: "flex", flexDirection: "column",
-    transition: "all 0.12s ease",
-  });
-
-  const handleSlotDrop = (slotIdx) => {
-    setDragOverSlot(null);
-    if (!draggedItem) return;
-    onPlaceInSlot(draggedItem, slotIdx);
-    setDraggedItem(null);
-  };
-
-  const handleShortlistTap = (item) => {
-    if (desktop) return; // desktop uses drag; tap is a no-op
-    setPickerOpenForItem(item);
-  };
-
-  const handleSlotPick = (slotIdx) => {
-    if (pickerOpenForItem) {
-      onPlaceInSlot(pickerOpenForItem, slotIdx);
-      setPickerOpenForItem(null);
-    }
-  };
-
-  // Watches available in the currently-selected source (Favorites
-  // or one of the user's Lists). Already-in-challenge items are
-  // filtered out; hidden items too. Sorted savedAt desc.
   const sourceWatches = useMemo(() => {
     const inThis = new Set(items.map(it => it.id));
     let pool = [];
@@ -403,11 +298,6 @@ function PickingStage({
       .sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")));
   }, [addSource, watchlist, itemsByCollection, items, hidden]);
 
-  // Resolve a pasted URL or ID into a listing id. Accepts:
-  // - bare 8-16 char hex id
-  // - https://the-watch-list.app/share/<id>
-  // - https://the-watch-list.app/?listing=<id>(&shared=1)
-  // - external dealer URL → look up by exact or prefix match
   const resolvePastedId = useCallback((raw) => {
     if (!raw) return null;
     const text = raw.trim();
@@ -432,8 +322,17 @@ function PickingStage({
     return null;
   }, [allListings]);
 
+  const handleSourceTap = useCallback((watch) => {
+    if (allFilled) return;
+    onAddAsPick(watch);
+  }, [allFilled, onAddAsPick]);
+
   const handlePaste = useCallback(() => {
     setPasteError("");
+    if (allFilled) {
+      setPasteError("All slots filled. Remove a pick to add another.");
+      return;
+    }
     const id = resolvePastedId(pasteUrl);
     if (!id) {
       setPasteError("Couldn't parse that. Paste a Watchlist share URL, dealer URL, or 12-char ID.");
@@ -448,9 +347,34 @@ function PickingStage({
       setPasteError("Found an ID but no matching listing in the current feed (might've sold or been removed).");
       return;
     }
-    onAddToShortlist(listing);
+    onAddAsPick(listing);
     setPasteUrl("");
-  }, [pasteUrl, resolvePastedId, items, allListings, onAddToShortlist]);
+  }, [allFilled, pasteUrl, resolvePastedId, items, allListings, onAddAsPick]);
+
+  // Single challenge-wide note. Source of truth =
+  // challenge.descriptionLong; local state mirrors so typing isn't
+  // latency-bound, debounced flush every 800ms after edits stop.
+  const [noteDraft, setNoteDraft] = useState(challenge.descriptionLong || "");
+  const noteDirty = useRef(false);
+  useEffect(() => {
+    // Sync external changes (e.g. another tab) when the user isn't
+    // actively typing.
+    if (!noteDirty.current) setNoteDraft(challenge.descriptionLong || "");
+  }, [challenge.descriptionLong]);
+  useEffect(() => {
+    if (!noteDirty.current) return;
+    const timer = setTimeout(() => {
+      onUpdateChallenge({ descriptionLong: noteDraft.trim() || null });
+      noteDirty.current = false;
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [noteDraft, onUpdateChallenge]);
+  const flushNote = () => {
+    if (noteDirty.current) {
+      onUpdateChallenge({ descriptionLong: noteDraft.trim() || null });
+      noteDirty.current = false;
+    }
+  };
 
   return (
     <div>
@@ -458,45 +382,44 @@ function PickingStage({
         label="back to challenges"
         onBack={onBack}
         title={challenge.name}
-        // No subtitle — the StatCard row right below covers
-        // "{N} watches for {budget}" already; the auto-generated
-        // line was filler. descriptionLong stayed null since we
-        // dropped that field in the create form.
         activeStage="picking"
       />
 
-      {/* Stat row — total spend + picks count.
-          The Total-spend tile leads with what's still available
-          (Mark's feedback: "There isn't anything to tell you how
-          much budget is left, just how much you've spent"). When
-          over budget the same slot flips to the warn label so the
-          two states share one visual position. */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
-        <StatCard
-          label="Total spend"
-          value={fmtUSD(totalSpend)}
-          sub={overBudget
-            ? `of ${fmtUSD(challenge.budget)}`
-            : `${fmtUSD(Math.max(challenge.budget - totalSpend, 0))} left`}
-          progress={Math.min((totalSpend / Math.max(challenge.budget, 1)) * 100, 100)}
-          warn={overBudget}
-          hardWarn={hardBlocked}
-          warnLabel={overBudget ? (
-            hardBlocked
-              ? `over by ${fmtUSD(overBy)} · past 20% cap`
-              : `over by ${fmtUSD(overBy)} · ${overPct.toFixed(0)}% over`
-          ) : null}
-        />
-        <StatCard
-          label="Picks"
-          value={`${picks.length}`}
-          sub={`of ${challenge.targetCount}`}
-          progress={(picks.length / challenge.targetCount) * 100}
-        />
+      {/* Sticky stat row — stays visible while the source-tile grid
+          scrolls below, so the user always sees spend + remaining. */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 5,
+        background: "var(--bg)",
+        paddingTop: 4, paddingBottom: 8,
+        marginBottom: 4,
+      }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <StatCard
+            label="Total spend"
+            value={fmtUSD(totalSpend)}
+            sub={overBudget
+              ? `of ${fmtUSD(challenge.budget)}`
+              : `${fmtUSD(Math.max(challenge.budget - totalSpend, 0))} left`}
+            progress={Math.min((totalSpend / Math.max(challenge.budget, 1)) * 100, 100)}
+            warn={overBudget}
+            hardWarn={hardBlocked}
+            warnLabel={overBudget ? (
+              hardBlocked
+                ? `over by ${fmtUSD(overBy)} · past 20% cap`
+                : `over by ${fmtUSD(overBy)} · ${overPct.toFixed(0)}% over`
+            ) : null}
+          />
+          <StatCard
+            label="Picks"
+            value={`${picks.length}`}
+            sub={`of ${challenge.targetCount}`}
+            progress={(picks.length / challenge.targetCount) * 100}
+          />
+        </div>
       </div>
 
-      {/* Picks slot grid */}
-      <div style={{ marginBottom: 18 }}>
+      {/* Pick slot grid */}
+      <div style={{ marginBottom: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text2)", textTransform: "uppercase", letterSpacing: "0.04em", margin: 0 }}>
             Final picks
@@ -512,39 +435,18 @@ function PickingStage({
           gap: 10,
         }}>
           {slotItems.map((occupant, slotIdx) => (
-            <SlotCell key={slotIdx}
-              slotIdx={slotIdx}
-              occupant={occupant}
-              desktop={desktop}
-              onDragOver={desktop ? (e) => {
-                e.preventDefault();
-                if (dragOverSlot !== slotIdx) setDragOverSlot(slotIdx);
-              } : undefined}
-              onDragLeave={desktop ? () => {
-                // Only clear if leaving THIS slot — onDragLeave fires
-                // on every entered child element, so guard on slot id.
-                setDragOverSlot((prev) => (prev === slotIdx ? null : prev));
-              } : undefined}
-              onDrop={desktop ? (e) => { e.preventDefault(); handleSlotDrop(slotIdx); } : undefined}
-              onDragStartItem={desktop ? () => setDraggedItem(occupant) : undefined}
-              onDragEndItem={desktop ? () => { setDraggedItem(null); setDragOverSlot(null); } : undefined}
-              onTap={desktop ? undefined : () => occupant && onMoveToShortlist(occupant)}
-              slotStyle={slotStyle(!!occupant, dragOverSlot === slotIdx && !!draggedItem)}
-              primaryCurrency={primaryCurrency}
-            />
+            <SlotCell key={slotIdx} slotIdx={slotIdx} occupant={occupant}
+              onRemove={() => occupant && onRemovePick(occupant)} />
           ))}
         </div>
         {!allFilled && (
           <p style={{ fontSize: 12, color: "var(--text3)", marginTop: 10, fontStyle: "italic" }}>
-            {desktop
-              ? `Drag from your shortlist below. ${challenge.targetCount - picks.length} slot${challenge.targetCount - picks.length > 1 ? "s" : ""} left to fill.`
-              : `Tap a shortlist item below to place it. ${challenge.targetCount - picks.length} slot${challenge.targetCount - picks.length > 1 ? "s" : ""} left to fill.`
-            }
+            Tap a watch below to fill the next slot. {challenge.targetCount - picks.length} slot{challenge.targetCount - picks.length > 1 ? "s" : ""} left.
           </p>
         )}
         {allFilled && hardBlocked && (
           <p style={{ fontSize: 12, color: "#c0392b", marginTop: 10 }}>
-            Too far over budget — trim a pick to continue.
+            Too far over budget — remove a pick to continue.
           </p>
         )}
         {allFilled && overBudget && !hardBlocked && (
@@ -554,20 +456,33 @@ function PickingStage({
         )}
       </div>
 
-      {/* Notes / reasoning — inline. Was a separate Reasoning stage
-          but Mark 2026-05-06: too many steps. Each filled pick gets a
-          one-line text input here; debounced 800ms write-through to
-          collection_items.reasoning so users don't lose typing if
-          they navigate away. Optional (Mark: "maybe someone wants to
-          write something in there"). */}
-      {picks.length > 0 && onUpdateReasoning && (
-        <PicksNotes picks={picks} onUpdateReasoning={onUpdateReasoning} />
-      )}
+      {/* Single challenge-wide note (replaces per-pick reasoning).
+          Saves to challenges.descriptionLong with a debounced flush. */}
+      <div style={{ marginBottom: 14 }}>
+        <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text2)", textTransform: "uppercase", letterSpacing: "0.04em", margin: "0 0 6px" }}>
+          Note <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "var(--text3)" }}>· optional</span>
+        </p>
+        <textarea
+          value={noteDraft}
+          onChange={(e) => { noteDirty.current = true; setNoteDraft(e.target.value); }}
+          onBlur={flushNote}
+          placeholder="Why these picks? (one note for the whole challenge)"
+          rows={2}
+          style={{
+            width: "100%", boxSizing: "border-box", resize: "vertical",
+            border: "0.5px solid var(--border)", borderRadius: 6,
+            background: "var(--bg)", padding: "8px 10px",
+            fontFamily: "inherit", fontSize: 13, color: "var(--text1)", outline: "none",
+            lineHeight: 1.45,
+          }}
+        />
+      </div>
 
-      {/* Complete CTA */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
+      {/* Mark complete CTA */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 18 }}>
         <button disabled={!canComplete}
           onClick={() => {
+            flushNote();
             if (overBudget) {
               if (window.confirm(`You're ${fmtUSD(overBy)} over budget. Mark complete anyway?`)) onComplete();
             } else { onComplete(); }
@@ -583,232 +498,113 @@ function PickingStage({
         </button>
       </div>
 
-      {/* Shortlist + add drawer */}
-      <div style={{ borderTop: "0.5px solid var(--border)", paddingTop: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text2)", textTransform: "uppercase", letterSpacing: "0.04em", margin: 0 }}>
-            Shortlist · {shortlist.length} watch{shortlist.length === 1 ? "" : "es"}
-          </p>
-          <button onClick={() => setShowAddDrawer(o => !o)} style={{
-            padding: "5px 10px", borderRadius: 6,
-            border: "0.5px solid var(--border)",
-            background: showAddDrawer ? "var(--text1)" : "transparent",
-            color: showAddDrawer ? "var(--bg)" : "var(--text1)",
-            cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-          }}>+ Add to shortlist</button>
+      {/* Source picker — Lists / Favorites tile grid + URL paste.
+          Always visible, no overflow cap, no toggle. The page is the
+          single scroll surface (Mark 2026-05-06: "scrolling isn't
+          working well from a UI perspective. it scrolls the page
+          then the picks. just one scroll"). */}
+      <div style={{ borderTop: "0.5px solid var(--border)", paddingTop: 12 }}>
+        <div style={{
+          display: "flex", gap: 6, marginBottom: 10,
+          overflowX: "auto", paddingBottom: 2,
+          WebkitOverflowScrolling: "touch", scrollbarWidth: "none",
+        }}>
+          <SourceChip
+            active={addSource === "favorites"}
+            onClick={() => setAddSource("favorites")}
+            label={`♥ Favorites · ${Object.keys(watchlist || {}).length}`}
+          />
+          {userLists.map(c => (
+            <SourceChip key={c.id}
+              active={addSource === `list:${c.id}`}
+              onClick={() => setAddSource(`list:${c.id}`)}
+              label={`${c.name} · ${(itemsByCollection?.[c.id] || []).length}`}
+            />
+          ))}
+          <SourceChip
+            active={addSource === "paste"}
+            onClick={() => setAddSource("paste")}
+            label="+ Paste link"
+          />
         </div>
 
-        {showAddDrawer && (
-          <div style={{
-            background: "var(--surface)", border: "0.5px solid var(--border)",
-            borderRadius: 8, padding: 10, marginBottom: 14,
-          }}>
-            {/* Source chips. Horizontal scroll on narrow viewports
-                so a long list of Lists doesn't wrap into a tall
-                stack. Each chip's count helps the user pick the
-                right source at a glance. */}
-            <div style={{
-              display: "flex", gap: 6, marginBottom: 10,
-              overflowX: "auto", paddingBottom: 2,
-              WebkitOverflowScrolling: "touch", scrollbarWidth: "none",
-            }}>
-              <SourceChip
-                active={addSource === "favorites"}
-                onClick={() => setAddSource("favorites")}
-                label={`♥ Favorites · ${Object.keys(watchlist || {}).length}`}
+        {addSource === "paste" ? (
+          <div>
+            <p style={{ fontSize: 12, color: "var(--text2)", margin: "0 0 6px", lineHeight: 1.4 }}>
+              Paste a Watchlist share URL, a dealer URL, or a 12-char watch ID.
+            </p>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input type="text" value={pasteUrl}
+                onChange={(e) => { setPasteUrl(e.target.value); setPasteError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePaste(); } }}
+                placeholder="https://the-watch-list.app/share/…"
+                style={{
+                  flex: 1, boxSizing: "border-box",
+                  border: "0.5px solid var(--border)", borderRadius: 6,
+                  background: "var(--bg)", padding: "8px 10px",
+                  fontFamily: "inherit", fontSize: 13, color: "var(--text1)", outline: "none",
+                }}
               />
-              {userLists.map(c => (
-                <SourceChip key={c.id}
-                  active={addSource === `list:${c.id}`}
-                  onClick={() => setAddSource(`list:${c.id}`)}
-                  label={`${c.name} · ${(itemsByCollection?.[c.id] || []).length}`}
-                />
-              ))}
-              <SourceChip
-                active={addSource === "paste"}
-                onClick={() => setAddSource("paste")}
-                label="+ Paste link"
-              />
+              <button onClick={handlePaste} style={{
+                padding: "8px 14px", borderRadius: 6, border: "none",
+                background: "#185FA5", color: "#fff", cursor: "pointer",
+                fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+              }}>Add</button>
             </div>
-
-            {addSource === "paste" ? (
-              <div>
-                <p style={{ fontSize: 12, color: "var(--text2)", margin: "0 0 6px", lineHeight: 1.4 }}>
-                  Paste a Watchlist share URL, a dealer URL, or a 12-char watch ID.
-                </p>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <input type="text" value={pasteUrl}
-                    onChange={e => { setPasteUrl(e.target.value); setPasteError(""); }}
-                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handlePaste(); } }}
-                    placeholder="https://the-watch-list.app/share/…"
-                    style={{
-                      flex: 1, boxSizing: "border-box",
-                      border: "0.5px solid var(--border)", borderRadius: 6,
-                      background: "var(--bg)", padding: "8px 10px",
-                      fontFamily: "inherit", fontSize: 13, color: "var(--text1)", outline: "none",
-                    }}
-                  />
-                  <button onClick={handlePaste} style={{
-                    padding: "8px 14px", borderRadius: 6, border: "none",
-                    background: "#185FA5", color: "#fff", cursor: "pointer",
-                    fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-                  }}>Add</button>
-                </div>
-                {pasteError && (
-                  <p style={{ fontSize: 12, color: "#c0392b", margin: "6px 0 0", lineHeight: 1.4 }}>
-                    {pasteError}
-                  </p>
-                )}
-              </div>
-            ) : sourceWatches.length === 0 ? (
-              <p style={{ fontSize: 12, color: "var(--text3)", margin: "12px 4px", fontStyle: "italic" }}>
-                {addSource === "favorites"
-                  ? "No favorites available. Heart watches in Listings to populate this."
-                  : "This list is empty (or every item is already in your challenge)."}
+            {pasteError && (
+              <p style={{ fontSize: 12, color: "#c0392b", margin: "6px 0 0", lineHeight: 1.4 }}>
+                {pasteError}
               </p>
-            ) : (
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))",
-                gap: 6,
-                maxHeight: 360,
-                overflowY: "auto",
-              }}>
-                {sourceWatches.slice(0, 80).map(w => (
-                  <SourceTile key={w.id} item={w}
-                    onTap={() => onAddToShortlist(w)}
-                    primaryCurrency={primaryCurrency} />
-                ))}
-                {sourceWatches.length > 80 && (
-                  <p style={{
-                    gridColumn: "1/-1", textAlign: "center",
-                    fontSize: 11, color: "var(--text3)", margin: "8px 0 0",
-                  }}>
-                    Showing first 80 — use the source chips above to switch.
-                  </p>
-                )}
-              </div>
             )}
           </div>
-        )}
-
-        {shortlist.length === 0 ? (
-          <div style={{ padding: "24px 12px", textAlign: "center", color: "var(--text3)" }}>
-            <p style={{ fontSize: 13, margin: 0, fontStyle: "italic" }}>
-              No shortlist yet — use "+ Add to shortlist" above to start.
-            </p>
-          </div>
+        ) : sourceWatches.length === 0 ? (
+          <p style={{ fontSize: 12, color: "var(--text3)", margin: "12px 4px", fontStyle: "italic" }}>
+            {addSource === "favorites"
+              ? "No favorites available. Heart watches in Listings to populate this."
+              : "This list is empty (or every item is already in your challenge)."}
+          </p>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 6 }}>
-            {shortlist.map(item => (
-              <ShortlistTile key={item.rowId} item={item}
-                desktop={desktop}
-                onDragStart={() => setDraggedItem(item)}
-                onDragEnd={() => setDraggedItem(null)}
-                onTap={() => handleShortlistTap(item)}
-                onRemove={() => onMoveToShortlist({ ...item, _remove: true })}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))",
+            gap: 6,
+            opacity: allFilled ? 0.5 : 1,
+          }}>
+            {sourceWatches.map(w => (
+              <SourceTile key={w.id} item={w}
+                onTap={() => handleSourceTap(w)}
                 primaryCurrency={primaryCurrency} />
             ))}
           </div>
         )}
-      </div>
-
-      {pickerOpenForItem && (
-        <SlotPickerModal slotsTotal={challenge.targetCount}
-          picks={slotItems} watch={pickerOpenForItem}
-          onPick={handleSlotPick}
-          onCancel={() => setPickerOpenForItem(null)} />
-      )}
-    </div>
-  );
-}
-
-// Inline picks-notes block — replaces the standalone Reasoning
-// stage. Local-first edit with debounced write-through so typing
-// isn't latency-bound to the round-trip to Supabase. On unmount the
-// debounce flushes any pending writes.
-function PicksNotes({ picks, onUpdateReasoning }) {
-  const [drafts, setDrafts] = useState(() =>
-    Object.fromEntries(picks.map(p => [p.rowId, p.reasoning || ""])),
-  );
-  const [pendingFlush, setPendingFlush] = useState({});
-
-  useEffect(() => {
-    setDrafts(prev => {
-      const next = { ...prev };
-      for (const p of picks) {
-        if (next[p.rowId] === undefined) next[p.rowId] = p.reasoning || "";
-      }
-      return next;
-    });
-    // eslint-disable-next-line
-  }, [picks.length]);
-
-  useEffect(() => {
-    const ids = Object.keys(pendingFlush);
-    if (!ids.length) return;
-    const timer = setTimeout(() => {
-      for (const id of ids) onUpdateReasoning(id, drafts[id]);
-      setPendingFlush({});
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [pendingFlush, drafts, onUpdateReasoning]);
-
-  const setDraft = (id, value) => {
-    setDrafts(prev => ({ ...prev, [id]: value }));
-    setPendingFlush(prev => ({ ...prev, [id]: true }));
-  };
-
-  return (
-    <div style={{ marginBottom: 18 }}>
-      <p style={{
-        fontSize: 12, fontWeight: 600, color: "var(--text2)",
-        textTransform: "uppercase", letterSpacing: "0.04em",
-        margin: "0 0 8px",
-      }}>
-        Notes <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "var(--text3)" }}>· optional</span>
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {picks.map((p, i) => (
-          <div key={p.rowId} style={{
-            display: "grid", gridTemplateColumns: "minmax(120px, 30%) 1fr",
-            alignItems: "center", gap: 10,
-            padding: "8px 10px",
-            border: "0.5px solid var(--border)",
-            borderRadius: 6,
-            background: "var(--card-bg)",
+        {allFilled && addSource !== "paste" && sourceWatches.length > 0 && (
+          <p style={{
+            marginTop: 10, fontSize: 12, color: "var(--text3)",
+            textAlign: "center", fontStyle: "italic",
           }}>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: 11, color: "var(--text3)", margin: "0 0 1px" }}>Pick {i + 1}</p>
-              <p style={{
-                fontSize: 13, color: "var(--text1)", margin: 0,
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              }}>{p.brand}{p.ref ? ` ${p.ref}` : ""}</p>
-            </div>
-            <input
-              type="text"
-              value={drafts[p.rowId] ?? ""}
-              onChange={e => setDraft(p.rowId, e.target.value)}
-              onBlur={() => onUpdateReasoning(p.rowId, drafts[p.rowId] ?? "")}
-              placeholder="Why this one? (optional)"
-              style={{
-                width: "100%", boxSizing: "border-box",
-                border: "0.5px solid var(--border)", borderRadius: 6,
-                background: "var(--bg)", padding: "6px 9px",
-                fontSize: 13, fontFamily: "inherit", color: "var(--text1)", outline: "none",
-              }}
-            />
-          </div>
-        ))}
+            All slots filled. Tap × on a pick above to free a slot.
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
-function SlotCell({ occupant, slotIdx, desktop, onDragOver, onDragLeave, onDrop, onDragStartItem, onDragEndItem, onTap, slotStyle, primaryCurrency }) {
+// ── SlotCell (D3) ───────────────────────────────────────────────────
+// Drag-drop and the desktop/mobile branching are gone — every device
+// uses click-pick. Empty = "+ Slot N" hint; filled = thumbnail +
+// brand/ref + price + a small × in the corner to remove.
+function SlotCell({ occupant, slotIdx, onRemove }) {
+  const baseStyle = {
+    background: occupant ? "var(--card-bg)" : "transparent",
+    border: occupant ? "0.5px solid var(--border)" : "1.5px dashed var(--border)",
+    borderRadius: 8, padding: 8, minHeight: 140,
+    display: "flex", flexDirection: "column",
+    position: "relative",
+  };
   if (!occupant) {
     return (
-      <div onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop} style={slotStyle}>
+      <div style={baseStyle}>
         <div style={{
           flex: 1, display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center",
@@ -823,28 +619,43 @@ function SlotCell({ occupant, slotIdx, desktop, onDragOver, onDragLeave, onDrop,
     );
   }
   return (
-    <div
-      draggable={desktop} onDragStart={onDragStartItem} onDragEnd={onDragEndItem}
-      onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
-      onClick={onTap}
-      style={{ ...slotStyle, cursor: desktop ? "grab" : "pointer" }}>
+    <div style={baseStyle}>
+      <button onClick={onRemove}
+        aria-label={`Remove pick ${slotIdx + 1}`}
+        title="Remove this pick"
+        style={{
+          position: "absolute", top: 4, right: 4, zIndex: 2,
+          width: 22, height: 22, borderRadius: "50%",
+          border: "none", background: "rgba(0,0,0,0.55)",
+          color: "#fff", cursor: "pointer", padding: 0,
+          fontFamily: "inherit", fontSize: 14, lineHeight: 1,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >×</button>
       <div style={{
-        aspectRatio: "1", background: "var(--bg)", borderRadius: 4, marginBottom: 8,
+        aspectRatio: "1", background: "var(--bg)", borderRadius: 4, marginBottom: 6,
         overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         {occupant.img ? (
-          <img src={occupant.img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={imgSrc(occupant.img)} alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <span style={{ fontSize: 22, color: "var(--text3)" }}>⌚</span>
         )}
       </div>
-      <p style={{ fontSize: 12, fontWeight: 500, margin: "0 0 2px", color: "var(--text1)", lineHeight: 1.25,
-                  overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box",
-                  WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+      <p style={{
+        fontSize: 12, fontWeight: 500, margin: "0 0 2px",
+        color: "var(--text1)", lineHeight: 1.25,
+        overflow: "hidden", textOverflow: "ellipsis",
+        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+      }}>
         {occupant.brand}
       </p>
-      <p style={{ fontSize: 11, color: "var(--text2)", margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis",
-                  display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+      <p style={{
+        fontSize: 11, color: "var(--text2)", margin: "0 0 4px",
+        overflow: "hidden", textOverflow: "ellipsis",
+        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+      }}>
         {occupant.ref || ""}
       </p>
       <p style={{ fontSize: 12, fontWeight: 500, margin: 0, color: "var(--text1)" }}>
@@ -854,47 +665,6 @@ function SlotCell({ occupant, slotIdx, desktop, onDragOver, onDragLeave, onDrop,
   );
 }
 
-function ShortlistTile({ item, desktop, onDragStart, onDragEnd, onTap, onRemove, primaryCurrency }) {
-  return (
-    <div
-      draggable={desktop} onDragStart={onDragStart} onDragEnd={onDragEnd}
-      onClick={onTap}
-      style={{
-        background: "var(--card-bg)", border: "0.5px solid var(--border)", borderRadius: 6,
-        padding: 6, cursor: desktop ? "grab" : "pointer", position: "relative",
-      }}>
-      <button onClick={(e) => { e.stopPropagation(); onRemove(); }}
-        title="Remove from shortlist"
-        style={{
-          position: "absolute", top: 3, right: 3,
-          width: 18, height: 18, borderRadius: 9,
-          background: "var(--bg)", border: "0.5px solid var(--border)",
-          color: "var(--text2)", cursor: "pointer", padding: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 10, lineHeight: 1, fontFamily: "inherit",
-        }}>×</button>
-      <div style={{
-        aspectRatio: "1", background: "var(--bg)", borderRadius: 4, marginBottom: 5,
-        overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        {item.img ? (
-          <img src={item.img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <span style={{ fontSize: 18, color: "var(--text3)" }}>⌚</span>
-        )}
-      </div>
-      <p style={{ fontSize: 11, fontWeight: 500, margin: "0 0 2px", color: "var(--text1)", lineHeight: 1.2,
-                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {item.brand} {item.ref || ""}
-      </p>
-      <p style={{ fontSize: 11, color: "var(--text2)", margin: 0 }}>
-        {fmtUSD(item.priceUSD || item.price || 0)}
-      </p>
-    </div>
-  );
-}
-
-// Tab-style chip for the source picker. Active = filled background.
 function SourceChip({ active, onClick, label }) {
   return (
     <button onClick={onClick} style={{
@@ -1105,30 +875,22 @@ export function ChallengeFlow({
     setStage("picking");
   }, [challenge.id, collectionsApi]);
 
-  const placeInSlot = useCallback(async (item, slotIdx) => {
-    // Promote the dragged item to is_pick=true. If there's already an
-    // item in that slot, demote it back to shortlist. Slot index is
-    // implicit — picks list is filtered in render order, so we don't
-    // store slot positions explicitly.
-    const picks = items.filter(it => it.isPick);
-    const currentOccupant = picks[slotIdx];
-    if (currentOccupant && currentOccupant.rowId !== item.rowId) {
-      await collectionsApi.togglePickStatus(currentOccupant.rowId, false, currentOccupant);
-    }
-    await collectionsApi.togglePickStatus(item.rowId, true, item);
-  }, [items, collectionsApi]);
-
-  const moveToShortlist = useCallback(async (item) => {
-    if (item._remove) {
-      // Remove from collection entirely.
-      await collectionsApi.removeItemFromCollection(challenge.id, item.id);
-      return;
-    }
-    await collectionsApi.togglePickStatus(item.rowId, false, item);
+  // D3 (2026-05-06): no more shortlist. Tap a tile in the source
+  // picker → adds straight as a pick at the next available slot.
+  // Tap × on a pick → removes it from the challenge entirely.
+  // Drag-drop is gone too — click-pick is the single interaction
+  // mode on every device.
+  const addAsPick = useCallback(async (listing) => {
+    await collectionsApi.addToShortlist(challenge.id, listing, { isPick: true });
   }, [challenge.id, collectionsApi]);
 
-  const addToShortlist = useCallback(async (listing) => {
-    await collectionsApi.addToShortlist(challenge.id, listing);
+  const removePick = useCallback(async (item) => {
+    if (!item) return;
+    await collectionsApi.removeItemFromCollection(challenge.id, item.id);
+  }, [challenge.id, collectionsApi]);
+
+  const updateChallengePatch = useCallback(async (patch) => {
+    await collectionsApi.updateChallenge(challenge.id, patch);
   }, [challenge.id, collectionsApi]);
 
   const reopenChallenge = useCallback(async () => {
@@ -1178,24 +940,19 @@ export function ChallengeFlow({
         onBack={onExit} />
     );
   }
-  // Default: picking. Reasoning stage was retired 2026-05-06 — notes
-  // happen inline below the slot grid (PicksNotes), and Mark
-  // complete → goes straight to the complete stage.
+  // Default: picking. D3: drag-drop + shortlist concept retired —
+  // tap a source tile to add as a pick, tap × on a slot to remove,
+  // single challenge-wide note (descriptionLong) instead of per-pick.
   return (
     <PickingStage
       challenge={challenge} items={items}
       allListings={allListings} watchlist={watchlist} hidden={hidden}
-      // D2: Lists + Favorites are the new source for adding watches
-      // — replaces the old search-allListings drawer. Pass through
-      // the collection metadata so the source picker can render
-      // tabs per List with their items.
       collections={collectionsApi?.collections || []}
       itemsByCollection={collectionsApi?.itemsByCollection || {}}
       primaryCurrency={primaryCurrency}
-      onPlaceInSlot={placeInSlot}
-      onMoveToShortlist={moveToShortlist}
-      onAddToShortlist={addToShortlist}
-      onUpdateReasoning={updateReasoning}
+      onAddAsPick={addAsPick}
+      onRemovePick={removePick}
+      onUpdateChallenge={updateChallengePatch}
       onComplete={completeChallenge}
       onEditConfig={() => setStage("create")}
       onBack={onExit}
