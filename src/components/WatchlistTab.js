@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Card } from "./Card";
+import { ListRow } from "./ListRow";
 import { ageBucketFromDate, fmtUSD } from "../utils";
 import { importLocalData } from "../supabase";
 import { SubTabIntro } from "./SubTabIntro";
@@ -465,7 +466,10 @@ export function WatchlistTab(props) {
     // surface from "I made this collection." Still excluded from
     // CollectionPickerModal (manual adds shouldn't go to the inbox).
     const sharedInbox  = cols.find(c => c.isSharedInbox) || null;
-    const userCols     = cols.filter(c => !c.isSharedInbox);
+    // Mark 2026-05-06: "I don't want to see the collection challenge
+    // watches show up as lists - just manage them in the collections
+    // tab." Challenges live under Cool Stuff > Watch Challenges only.
+    const userCols     = cols.filter(c => !c.isSharedInbox && c.type !== "challenge");
     // Synthetic "Hidden" collection — surfaced in the list when the
     // user has any hidden listings. Drill-in renders the items grid
     // with isHidden so the "..." menu's Hide entry reads as "Unhide"
@@ -609,63 +613,36 @@ export function WatchlistTab(props) {
               const count = isHiddenRow
                 ? hiddenItems.length
                 : (itemsByColl[c.id] || []).length;
-              // Default-list (user-created) cards get a folder glyph
-              // on the left — same accent blue as the inbox + hidden
-              // glyphs. Treats every row visually consistently.
-              const defaultIcon = !isInbox && !isHiddenRow;
+              const icon = isInbox ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+                  <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+                </svg>
+              ) : isHiddenRow ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17.94 17.94A10.06 10.06 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+              );
+              const subtitle = isInbox
+                ? `${count} listing${count === 1 ? "" : "s"} shared with you`
+                : isHiddenRow
+                  ? `${count} listing${count === 1 ? "" : "s"} hidden from feed`
+                  : `${count} watch${count === 1 ? "" : "es"}`;
               return (
-                <button
+                <ListRow
                   key={c.id}
+                  icon={icon}
+                  title={c.name}
+                  subtitle={subtitle}
                   onClick={() => setSelectedCollectionId(c.id)}
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "14px 16px", borderRadius: 12,
-                    border: "0.5px solid var(--border)",
-                    background: "var(--card-bg)",
-                    color: "var(--text1)", cursor: "pointer",
-                    fontFamily: "inherit", textAlign: "left",
-                  }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    {/* Icon disc — same surface treatment regardless of
-                        list kind so the row reads visually consistent.
-                        Glyph swaps based on list kind. */}
-                    <div style={{
-                      flexShrink: 0,
-                      width: 36, height: 36, borderRadius: "50%",
-                      background: "rgba(24,95,165,0.08)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      {isInbox ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
-                          <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
-                        </svg>
-                      ) : isHiddenRow ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M17.94 17.94A10.06 10.06 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                          <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/>
-                          <line x1="1" y1="1" x2="23" y2="23"/>
-                        </svg>
-                      ) : defaultIcon && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                        </svg>
-                      )}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 2 }}>{c.name}</div>
-                      <div style={{ fontSize: 12, color: "var(--text2)" }}>
-                        {isInbox
-                          ? `${count} listing${count === 1 ? "" : "s"} shared with you`
-                          : isHiddenRow
-                            ? `${count} listing${count === 1 ? "" : "s"} hidden from feed`
-                            : `${count} watch${count === 1 ? "" : "es"}`}
-                      </div>
-                    </div>
-                  </div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-                </button>
+                />
               );
             })}
           </div>
