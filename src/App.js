@@ -267,14 +267,21 @@ export default function Watchlist() {
   // receive params (`shared=1`) are present so the share flow
   // controls the URL until it acts. Uses replaceState so browser
   // history isn't polluted on every tab click.
+  //
+  // PR #95 (2026-05-06): browser-back parity. Real navigations
+  // (tab change, sub-tab change) now use pushState so the back
+  // button walks the user backwards through Watchlist instead of
+  // exiting the site. Initial mount + URL normalization (e.g.
+  // stripping `col` when leaving Collections) stays on
+  // replaceState. The popstate listener below mirrors browser
+  // back/forward into state.
+  const isFirstNavSync = useRef(true);
+  const prevNavRef = useRef({ tab, watchTopTab, listingsSubTab });
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("shared") === "1") return;
     if (tab === "listings") params.delete("tab"); else params.set("tab", tab);
-    // `sub` is per-active-tab — Listings + Watchlist each have their
-    // own sub-tab set. Default values ("live" for Listings, "listings"
-    // for Watchlist) get omitted from the URL to keep deep links short.
     if (tab === "listings" && listingsSubTab !== "live") {
       params.set("sub", listingsSubTab);
     } else if (tab === "watchlist" && watchTopTab !== "listings") {
@@ -282,17 +289,73 @@ export default function Watchlist() {
     } else {
       params.delete("sub");
     }
-    // `col` is the drill-in id for both Watchlist > Lists (legacy)
-    // and the new top-level Collections tab. Now that Lists has
-    // moved out of Watchlist (2026-05-06 PR #86), only Collections
-    // owns the param.
+    // `col` is the drill-in id for the Collections tab. App.js
+    // strips it on tab-change-out; CollectionsTab itself owns
+    // the push when the user drills in.
     if (tab !== "collections") params.delete("col");
     const qs = params.toString();
     const newUrl = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
-    if (newUrl !== window.location.pathname + window.location.search + window.location.hash) {
-      window.history.replaceState({}, "", newUrl);
+    const currentUrl = window.location.pathname + window.location.search + window.location.hash;
+    if (newUrl === currentUrl) {
+      // No-op write — usually means popstate already moved us to
+      // this URL and state is just catching up. Skip the history
+      // mutation entirely (a no-op pushState would still create
+      // a phantom history entry).
+      prevNavRef.current = { tab, watchTopTab, listingsSubTab };
+      return;
     }
+    const prev = prevNavRef.current;
+    const navChanged =
+      prev.tab !== tab ||
+      prev.watchTopTab !== watchTopTab ||
+      prev.listingsSubTab !== listingsSubTab;
+    if (isFirstNavSync.current || !navChanged) {
+      window.history.replaceState({}, "", newUrl);
+    } else {
+      window.history.pushState({}, "", newUrl);
+    }
+    isFirstNavSync.current = false;
+    prevNavRef.current = { tab, watchTopTab, listingsSubTab };
   }, [tab, watchTopTab, listingsSubTab]);
+
+  // popstate listener: when the user hits browser back / forward,
+  // re-derive tab + sub-tab + listingsSubTab state from the
+  // restored URL. The URL-sync effect above sees the URL already
+  // matches and skips the history mutation, so this doesn't loop.
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const onPop = () => {
+      const params = new URLSearchParams(window.location.search);
+      // Skip while a share-receive surface is taking over the URL.
+      if (params.get("shared") === "1") return;
+      const tParam = params.get("tab");
+      const sub = params.get("sub");
+      // Compute the target tab. Migration: pre-PR-#86 collections
+      // Lists URL is honoured as a redirect target.
+      let nextTab = "listings";
+      if (tParam === "watchlist" && sub === "collections") {
+        nextTab = "collections";
+      } else if (TAB_VALUES.includes(tParam)) {
+        nextTab = tParam;
+      }
+      setTab(nextTab);
+      // Sub-tab routing depends on which main tab is active.
+      if (nextTab === "listings") {
+        setListingsSubTab(LISTINGS_SUB_VALUES.includes(sub) ? sub : "live");
+      } else if (nextTab === "watchlist") {
+        const norm = (v) => (v === "calendar" || v === "challenges" || v === "collections") ? "listings" : v;
+        const w = norm(sub);
+        setWatchTopTab(SUB_VALUES.includes(w) ? w : "listings");
+      }
+      // Collections drill-in (`?col=…`) is owned by CollectionsTab —
+      // it has its own popstate handler / URL-derived effect.
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+    // TAB_VALUES / SUB_VALUES / LISTINGS_SUB_VALUES are module-level
+    // const arrays so they're stable references across renders.
+    // eslint-disable-next-line
+  }, []);
   const [page, setPage] = useState(1);
   // (filterSources, filterBrands, filterRefs, filterAuctionsOnly, sort,
   // search, minPriceText, maxPriceText, newDays, statusMode all moved

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card } from "./Card";
 import { ListRow } from "./ListRow";
 import { SubTabIntro } from "./SubTabIntro";
@@ -76,6 +76,13 @@ export function CollectionsTab({
   });
   // URL sync for the drill-in id. Skipped during share-receive flows
   // (the share controller owns the URL until it acts).
+  //
+  // PR #95 (2026-05-06): drill-in / drill-out is a real navigation,
+  // so it pushState's a new history entry — browser back returns
+  // the user to the list view. Initial mount + URLs that already
+  // match (popstate-driven re-derivation) stay on replaceState.
+  const isFirstColSync = useRef(true);
+  const prevColRef = useRef(selectedId);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -84,10 +91,35 @@ export function CollectionsTab({
     else            params.delete("col");
     const qs = params.toString();
     const newUrl = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
-    if (newUrl !== window.location.pathname + window.location.search + window.location.hash) {
-      window.history.replaceState({}, "", newUrl);
+    const currentUrl = window.location.pathname + window.location.search + window.location.hash;
+    if (newUrl === currentUrl) {
+      // popstate already moved us here; state catching up.
+      prevColRef.current = selectedId;
+      return;
     }
+    const colChanged = prevColRef.current !== selectedId;
+    if (isFirstColSync.current || !colChanged) {
+      window.history.replaceState({}, "", newUrl);
+    } else {
+      window.history.pushState({}, "", newUrl);
+    }
+    isFirstColSync.current = false;
+    prevColRef.current = selectedId;
   }, [selectedId]);
+
+  // popstate: re-derive the drill-in id from the URL when the user
+  // hits browser back/forward.
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const onPop = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("shared") === "1") return;
+      const col = params.get("col") || null;
+      setSelectedId(col);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   // Take-this-challenge → drill straight into the challenges surface
   // with the new draft pre-selected. App.js sets pendingChallengeDrillId
