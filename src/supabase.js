@@ -460,6 +460,10 @@ export function useCollections(user) {
         descriptionLong:     r.description_long,
         state:               r.state || 'complete',
         parentChallengeId:   r.parent_challenge_id,
+        // Sender attribution (PR #90). Set when the recipient took
+        // a shared challenge that carried &from=<name>; null on
+        // self-created challenges and pre-PR-#90 rows.
+        senderName:          r.sender_name || null,
         createdAt:           r.created_at,
         updatedAt:           r.updated_at,
       }));
@@ -965,9 +969,14 @@ export function useCollections(user) {
   // is_pick boolean distinguishing the shortlist from the final picks
   // and a `reasoning` text per pick. Drafts (state='draft') aren't
   // shareable; completing flips state to 'complete'.
-  const createChallenge = useCallback(async ({ name, targetCount, budget, descriptionLong, parentChallengeId } = {}) => {
+  const createChallenge = useCallback(async ({ name, targetCount, budget, descriptionLong, parentChallengeId, senderName } = {}) => {
     if (!user || !supabase) return { error: 'not signed in' };
-    const cleanName = (name || '').trim() || `${targetCount || 3} watches for $${Math.round((budget || 50000) / 1000)}k`;
+    const sender = (senderName || '').trim() || null;
+    // Default name: "James's 3 watches for $50k" if there's a sender,
+    // else just "3 watches for $50k". Mark's example exact (PR #90).
+    const baseName = `${targetCount || 3} watches for $${Math.round((budget || 50000) / 1000)}k`;
+    const cleanName = (name || '').trim()
+      || (sender ? `${sender}'s ${baseName}` : baseName);
     const payload = {
       user_id:               user.id,
       name:                  cleanName,
@@ -977,6 +986,7 @@ export function useCollections(user) {
       budget:                budget || null,
       description_long:      descriptionLong || null,
       parent_challenge_id:   parentChallengeId || null,
+      sender_name:           sender,
     };
     const { data, error } = await supabase.from('collections').insert(payload).select().single();
     if (error) return { error: error.message };
@@ -987,6 +997,7 @@ export function useCollections(user) {
       targetCount: data.target_count, budget: data.budget,
       descriptionLong: data.description_long, state: data.state,
       parentChallengeId: data.parent_challenge_id,
+      senderName: data.sender_name || null,
       createdAt: data.created_at, updatedAt: data.updated_at,
     }]);
     return { error: null, id: data.id };
