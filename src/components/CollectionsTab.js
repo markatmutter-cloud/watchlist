@@ -271,6 +271,18 @@ export function CollectionsTab({
               )}
             </div>
           </div>
+        ) : selected.type === "wishlist" ? (
+          // Wishlist drill-in renders as a ranked list (not a grid)
+          // since rank ordering is the point. PR #89, 2026-05-06 —
+          // Mark's "force ranking" applies to wishlist only. Each
+          // row carries ↑/↓ controls; tap reorders by swapping
+          // positions with the adjacent item via reorderItems.
+          <WishlistRankedList
+            items={items}
+            collectionId={selected.id}
+            onReorder={(orderedIds) => collectionsApi.reorderItems(selected.id, orderedIds)}
+            onRemove={(item) => collectionsApi.removeItemFromCollection(selected.id, item.id)}
+          />
         ) : (
           <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
             {items.map(item => {
@@ -572,6 +584,109 @@ const targetIcon = (
 // auto-fill) but with only: photo + brand+model + meta line +
 // remove menu. Edit affordances (rename / change photo / update
 // price) come in PR #88 alongside the Owned→Sold transition flow.
+// ── WishlistRankedList ────────────────────────────────────────────
+// Vertical ranked list for the Wishlist drill-in. Each row shows
+// rank number + photo + name + meta + ↑/↓ controls. ↑/↓ swap the
+// row with the adjacent neighbor and persist via reorderItems
+// (PR #89, 2026-05-06).
+//
+// Tap-based controls (not drag-drop) — same model Mark settled on
+// for challenges in PR #75: works on every device with no touch-
+// gesture flakiness. Optimistic local updates in the hook make
+// the swap feel instant.
+function WishlistRankedList({ items, onReorder, onRemove }) {
+  if (items.length === 0) return null;
+  const move = (idx, direction) => {
+    const target = idx + direction;
+    if (target < 0 || target >= items.length) return;
+    const next = [...items];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    onReorder(next.map(it => it.rowId));
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {items.map((item, idx) => {
+        const title = item.title
+          || [item.brand, item.model].filter(Boolean).join(" ").trim()
+          || "Untitled";
+        const meta = [
+          item.ref && `Ref ${item.ref}`,
+          item.material,
+          item.price != null && `${item.currency || ""} ${Number(item.price).toLocaleString()}`.trim(),
+        ].filter(Boolean).join(" · ");
+        return (
+          <div key={item.id} style={{
+            display: "flex", alignItems: "center", gap: 12,
+            padding: "10px 12px", borderRadius: 10,
+            border: "0.5px solid var(--border)", background: "var(--card-bg)",
+          }}>
+            <div style={{
+              flexShrink: 0, width: 28, fontSize: 16, fontWeight: 600,
+              color: "var(--text2)", textAlign: "center",
+            }}>{idx + 1}</div>
+            <div style={{
+              flexShrink: 0, width: 56, height: 56, borderRadius: 6,
+              background: "var(--surface)", overflow: "hidden",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {item.img ? (
+                <img src={item.img} alt="" loading="lazy"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <span style={{ fontSize: 18, color: "var(--text3)" }}>⌚</span>
+              )}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{
+                fontSize: 14, fontWeight: 500, color: "var(--text1)",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>{title}</div>
+              {meta && (
+                <div style={{
+                  fontSize: 12, color: "var(--text2)",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}>{meta}</div>
+              )}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
+              <button onClick={() => move(idx, -1)} disabled={idx === 0}
+                aria-label="Move up" title="Move up"
+                style={rankBtnStyle(idx === 0)}>↑</button>
+              <button onClick={() => move(idx, +1)} disabled={idx === items.length - 1}
+                aria-label="Move down" title="Move down"
+                style={rankBtnStyle(idx === items.length - 1)}>↓</button>
+            </div>
+            <button onClick={async () => {
+              if (window.confirm(`Remove "${title}" from Wishlist?`)) {
+                await onRemove(item);
+              }
+            }} aria-label="Remove" title="Remove"
+              style={{
+                flexShrink: 0,
+                border: "none", background: "transparent",
+                color: "var(--text3)", padding: 4,
+                cursor: "pointer", fontFamily: "inherit", fontSize: 16,
+                display: "flex", alignItems: "center",
+              }}>×</button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const rankBtnStyle = (disabled) => ({
+  width: 24, height: 22,
+  border: "0.5px solid var(--border)",
+  background: "var(--surface)",
+  color: disabled ? "var(--text3)" : "var(--text1)",
+  cursor: disabled ? "default" : "pointer",
+  fontFamily: "inherit", fontSize: 12,
+  borderRadius: 4,
+  display: "flex", alignItems: "center", justifyContent: "center",
+  opacity: disabled ? 0.5 : 1,
+});
+
 function ManualItemCard({ item, onRemove, onMarkSold }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const title = item.title || [item.brand, item.model].filter(Boolean).join(" ").trim() || "Untitled";

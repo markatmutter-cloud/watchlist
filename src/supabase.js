@@ -498,6 +498,9 @@ export function useCollections(user) {
           sourceOfEntry:   row.source_of_entry,
           sharedByHandle:  row.shared_by_handle,
           savedAt:         row.added_at,
+          // Wishlist force-rank position (PR #89). Null on non-
+          // wishlist rows. Lower = higher rank (1 = most wanted).
+          position:        row.position,
           // Challenge-specific item fields
           isPick:          !!row.is_pick,
           reasoning:       row.reasoning || '',
@@ -505,6 +508,24 @@ export function useCollections(user) {
           ...manualShape,
         };
         (grouped[row.collection_id] ||= []).push(item);
+      }
+      // Sort items per-collection. Default: added_at desc (newest
+      // first) — already true since the SELECT was ordered desc and
+      // we push() in order. For Wishlist, override with position
+      // ascending (rank 1 first), nulls (newly added, never ranked)
+      // sliding to the bottom. This stable ordering is what the
+      // Wishlist drill-in renders.
+      const wishlistIds = new Set(
+        cols.filter(c => c.type === 'wishlist').map(c => c.id)
+      );
+      for (const cid of wishlistIds) {
+        if (grouped[cid]) {
+          grouped[cid] = [...grouped[cid]].sort((a, b) => {
+            const ap = a.position ?? Number.POSITIVE_INFINITY;
+            const bp = b.position ?? Number.POSITIVE_INFINITY;
+            return ap - bp;
+          });
+        }
       }
       setCollections(cols);
       setItemsByCollection(grouped);
@@ -801,6 +822,53 @@ export function useCollections(user) {
     return { error: null };
   }, [user, collections]);
 
+  // ── Wishlist force-rank (PR #89, 2026-05-06) ─────────────────
+  // Caller passes the full new ordering as an array of rowIds (the
+  // collection_items.id of each wishlist item). We assign positions
+  // 1..N in order and write all in one round-trip via individual
+  // updates — Supabase doesn't support bulk-update-with-different-
+  // values in one call, but the writes parallelise and Postgres
+  // handles N small updates fine for reasonable wishlist sizes
+  // (the practical cap is dozens, not thousands).
+  //
+  // Used for the ↑/↓ row-shuffle on the Wishlist drill-in: caller
+  // computes the swapped order and passes it in. Single source of
+  // truth for the final positions.
+  const reorderItems = useCallback(async (collectionId, orderedRowIds) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    if (!collectionId || !Array.isArray(orderedRowIds)) {
+      return { error: 'collection + ordered row ids required' };
+    }
+    // Optimistic local update first so the UI feels instant. Roll
+    // back if the server rejects.
+    const prev = itemsByCollection[collectionId] || [];
+    const indexByRow = new Map(orderedRowIds.map((id, i) => [id, i + 1]));
+    const updated = [...prev]
+      .map(it => indexByRow.has(it.rowId)
+        ? { ...it, position: indexByRow.get(it.rowId) }
+        : it)
+      .sort((a, b) => {
+        const ap = a.position ?? Number.POSITIVE_INFINITY;
+        const bp = b.position ?? Number.POSITIVE_INFINITY;
+        return ap - bp;
+      });
+    setItemsByCollection(p => ({ ...p, [collectionId]: updated }));
+    // Persist. Parallel updates, one per row.
+    const writes = orderedRowIds.map((rowId, i) =>
+      supabase.from('collection_items')
+        .update({ position: i + 1 })
+        .eq('id', rowId)
+    );
+    const results = await Promise.all(writes);
+    const failed = results.find(r => r.error);
+    if (failed) {
+      // Roll back the optimistic update.
+      setItemsByCollection(p => ({ ...p, [collectionId]: prev }));
+      return { error: failed.error.message };
+    }
+    return { error: null };
+  }, [user, itemsByCollection]);
+
   // ── Shared-inbox helpers ─────────────────────────────────────
   // The Shared-with-me collection is created lazily on first received
   // share. ensureSharedInbox returns its id (creating it if missing).
@@ -1056,6 +1124,8 @@ export function useCollections(user) {
     addManualItem,
     // Owned → Sold transition (PR #88).
     markItemAsSold,
+    // Wishlist force-rank (PR #89).
+    reorderItems,
     // Challenge-specific:
     createChallenge,
     updateChallenge,
