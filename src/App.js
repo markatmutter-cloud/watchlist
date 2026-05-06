@@ -1347,14 +1347,19 @@ export default function Watchlist() {
   // (hasFilters now derived inside useFilters.)
 
   const savedSearchStats = useMemo(() => {
-    const forSale = items.filter(i => !i.sold);
+    // Count = matches in the same set the user sees when they tap
+    // the row (runSearch lands on Listings > Live listings, which
+    // is dealer-only items minus the user's hidden set). Without
+    // the hidden filter the count is rosier than the visible grid.
+    // Mark's report 2026-05-06.
+    const forSale = items.filter(i => !i.sold && !hidden[i.id]);
     return userSearches.map(({ id, label, query }) => {
       const q = (query || "").trim();
       const matches = q ? forSale.filter(i => matchesSearch(i, q)) : [];
       const newCount = matches.filter(i => daysAgo(freshDate(i)) <= 7 && !i.backfilled).length;
       return { id, label, query, count: matches.length, newCount };
     });
-  }, [items, userSearches]);
+  }, [items, hidden, userSearches]);
 
 
   // (resetFilters now provided by useFilters.)
@@ -1494,7 +1499,18 @@ export default function Watchlist() {
   // Saved searches aren't their own tab — they render as a subsection
   // inside WatchlistTab. This just handles the "tap a search chip → jump
   // to Available with the query applied" handoff.
-  const runSearch = (s) => { setSearch(s.query); setSort("date"); setTab("listings"); setPage(1); };
+  // runSearch jumps to Listings with the query applied. Forces the
+  // sub-tab to "live" so the visible set matches the count shown on
+  // the saved-search row. Without this, a user on (say) Live auctions
+  // who taps a search row sees auction-only matches while the row
+  // count shows dealer-only matches — Mark's report 2026-05-06.
+  const runSearch = (s) => {
+    setSearch(s.query);
+    setSort("date");
+    setListingsSubTab("live");
+    setTab("listings");
+    setPage(1);
+  };
 
   // Inline editor row for add/edit. Rendered as a JSX helper (not a sub-
   // component) so React doesn't remount the inputs on every parent re-render
