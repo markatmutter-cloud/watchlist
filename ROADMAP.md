@@ -1,6 +1,6 @@
 # Watchlist Roadmap
 
-Last updated: 2026-05-04
+Last updated: 2026-05-06
 Living document. Updated as priorities shift.
 
 For project context and architecture, see [README.md](README.md). For
@@ -262,6 +262,45 @@ apple-touch-icon as placeholder; want a proper 1200×630), and the
 gap: a stranger hitting `the-watch-list.app` from search currently
 sees the Listings feed with no context for what the site is or
 how to use it. Half-session of mostly-content work.
+
+### Privacy notice (legal/compliance)
+
+Added to the roadmap 2026-05-06. Nothing is shipped yet.
+
+The product collects per-user state in Supabase (watchlist items,
+saved searches, hidden listings, lists, challenges, manual-entry
+photos uploaded to Storage) plus anonymous telemetry (`listing_events`
+keyed by an anon UUID in `dial_watch_anon_id` localStorage) and
+admin-side analytics. None of this is currently disclosed in a
+user-facing privacy notice. Auth-via-Google plus uploaded photos
+also raise the bar for what should be in writing.
+
+Minimum viable shape:
+
+- A `/privacy` page (one-pager) covering: what's stored per-user,
+  where (Supabase + Vercel Blob), retention, what's NOT stored
+  (no sale data, no account credentials, no payment info), how to
+  delete an account.
+- A `/terms` companion (one-pager) — minimal, "use at your own
+  risk, listings come from third parties, we don't broker sales."
+- Linked from the user-dropdown footer + the welcome page once
+  that ships.
+
+When this becomes load-bearing: before Watchlist gets actively
+shared with users outside Mark's circle, OR before any feature
+that handles payment / personal data beyond the current scope.
+
+### User feedback / bug report surface (parked)
+
+Added 2026-05-06 — Mark's question: "Is there a place to put a bug
+report on pages?" Currently there isn't one in-app. The minimum
+shape would be a small "Report a bug" link in the user dropdown
+that opens a mailto: or a Supabase-backed form.
+
+Parked rather than active because the current loop (Mark + Claude
+in the same session) is fast enough that an in-app channel adds
+overhead without much yield. Revisit when others start using
+Watchlist regularly.
 
 ### Mac mini infrastructure (future hardware tier)
 
@@ -607,10 +646,56 @@ layer: default Favorites stays backed by `watchlist_items`; new
 `collections` + `collection_items` tables hold user-created lists +
 an auto "Shared with me" inbox.
 
-Hidden listings render as a synthetic "Hidden" row inside Lists —
-data stays in `hidden_listings` table; UI presents it as a virtual
-list with the Card's "..." menu Hide entry flipping to "Unhide" on
-drill-in.
+Hidden listings render as a synthetic "Hidden" row inside the
+Collections tab — data stays in `hidden_listings` table; UI presents
+it as a virtual list with the Card's "..." menu Hide entry flipping
+to "Unhide" on drill-in.
+
+### Collections refactor ✓ shipped 2026-05-06 (PRs #85–#90)
+
+End-of-day pivot: "everything is a list." Mark's locked plan put
+**Owned, Sold, and Wishlist** alongside Lists and Challenges as
+sibling kinds, all surfaced under a new top-level **Collections**
+tab. Watchlist tab now holds only the heart-on-feed surfaces;
+Cool Stuff is back to tools + curated links.
+
+Six PRs landed in sequence:
+
+- **#85 Schema + hook** — `is_system` flag on `collections`
+  (defense-in-depth: `prevent_system_collection_delete` BEFORE
+  DELETE trigger). Three hard system lists (Owned/Sold/Wishlist)
+  auto-create per user via `useCollections` first-load.
+- **#86 Top-level Collections tab** — TAB_VALUES gains
+  `"collections"`. URL migration: old `?tab=watchlist&sub=collections`
+  redirects to `?tab=collections`. WatchlistTab drops the Lists
+  sub-tab; ReferencesTab drops the Watch Challenges resource
+  (challenges live under Collections now). New `HardListRow`
+  prominent card with a 64×64 thumbnail strip. Mobile bottom-bar
+  grows from 2 → 3 pills.
+- **#87 Manual entry + photo upload** — `is_manual` boolean +
+  `manual_*` columns on `collection_items` (nullable on every
+  row). New `watch-photos` Supabase Storage bucket with RLS
+  per-user folders. Client-side canvas resize to 1600px JPEG q0.85
+  before upload — typical 5-10× cut on phone photos. Slim
+  `ManualItemCard` for items without a dealer URL.
+- **#88 Archive picker + Owned→Sold transition** — new
+  `ListingPickerModal` (Favorites / All listings / each user
+  list / Paste link). New `MarkAsSoldModal` captures sold price
+  + sold date. `markItemAsSold` mutator UPDATE's collection_id
+  + the manual_sold_* columns in one shot. Card extended with
+  optional `extraMenuItems` so the "..." menu can carry "Mark
+  sold" without Card knowing about collection semantics.
+- **#89 Wishlist force-rank** — `position` column on
+  `collection_items` + composite index. `WishlistRankedList`
+  renders as a vertical list with rank number + ↑/↓ controls
+  per row + remove ×. Optimistic local update on swap; parallel
+  UPDATEs persist. Tap-based controls (no drag-drop) for
+  cross-device parity.
+- **#90 Saved challenges with sender's name** — `sender_name`
+  column on `collections`. Spec link appends `&from=<senderName>`;
+  `createChallenge` accepts `senderName` and labels the saved
+  draft "James's 3 watches for $50k". ChallengesView splits
+  into "Sent to you" + "Yours" sections with attribution chip.
 
 (*Sharing of lists is in Epic 4. Watch Challenges as a list-shaped
 feature is in Epic 6 — Collection mentality.*)
@@ -931,27 +1016,49 @@ immutable post-share.
   listing-shape AND a pre-built `{ url, title? }` shape so
   challenge shares no longer no-op.
 
-**v1.5 (next session):**
-- **`?newchallenge=1` receive flow.** Sender side currently
-  generates `/?newchallenge=1&t=…&n=…&b=…` URLs but the recipient
-  SPA doesn't parse them — Mark's clipboard works but pasting
-  the link lands on the home page. Ship a focused share-receive
-  surface for challenges that mirrors the listing share-receive
-  landing (#63). Probably also new `api/share-challenge.js` for
-  dynamic OG preview mirroring `api/share.js`. Half-session.
-- Public read of `state='complete'` challenges (RLS surgery on
-  `public.collections` to permit anon SELECT for completed rows).
-- Open question: should completed challenges be editable? v1
-  says no (immutable for share-stability). Revisit if usage
-  demands.
+**v1.5 ✓ shipped 2026-05-06 (PRs #78, #80, #90):**
+- **`?newchallenge=1` receive flow** + **`?challenge=<id>&shared=1`
+  complete-link receive** (PR #78). ChallengeReceiver parses both
+  shapes, public read of `state='complete'` challenges via
+  `get_public_challenge` RPC (RLS-safe — state gate is inside
+  the security-definer function).
+- **D5 polish** (PR #80): copy ("Share my collection" / "Share
+  the challenge"), `setTabWithReceiveEscape` so the Watchlist
+  logo + main tabs let you out of the receive surface,
+  pendingChallengeDrillId so "Take this challenge" lands you
+  inside the new draft, sign-in CTA on receivers via
+  `OrientationAnchors`.
+- **Saved-challenges with sender's name** (PR #90). Spec link
+  appends `&from=<senderName>` (derived from auth metadata);
+  `createChallenge` accepts `senderName` and labels the saved
+  draft "James's 3 watches for $50k". ChallengesView splits the
+  list into "Sent to you" + "Yours" sections + adds a small
+  "from <name>" attribution chip per row.
+- **Receive surface polish** (PR #80 + PR #92): no more "Shared
+  with you" chip on mobile, three-action bar on the receive
+  card (Take / Just browse / Sign in to save).
+
+**Future — open question, not in priority order:**
+- Should completed challenges be editable? v1 says no (immutable
+  for share-stability). Revisit if usage demands.
+- "Save this collection back to me" — when a friend takes my
+  challenge and shares their completion back, I'd ideally see
+  their picks nested under the original challenge with their name.
+  PR #90 already wires `parent_challenge_id` on the schema; the
+  receive-surface UI for saving someone else's complete-share is
+  the missing piece.
 
 **Held — Mark's "Collection Planner" pivot consideration
 (2026-05-06).** Mid-session reframe: Watch Challenges is
 fundamentally social (sender attribution, shared-with-me inbox,
 recipient responses, response collection). Possibly merges with
-Watchbox v2 as one feature: wishlist → buy → into watchbox. Mark
-paused the pivot and asked for tactical fixes (D1→D4) instead.
-Stays an open question; not in priority order until Mark revisits.
+Watchbox v2 as one feature: wishlist → buy → into watchbox. The
+Collections build (PRs #85-#90, see below) materially advanced
+the underlying data model in this direction — Owned, Sold, and
+Wishlist are now hard system lists, and Wishlist is force-rankable.
+The pivot is now de facto in progress; what remains is the
+strategic question of whether to fold Challenges fully into the
+Collection Planner mental model or keep them as siblings.
 
 **v2 (deferred — design exploration ongoing):**
 - Source from current AND past listings (sold archive becomes a
@@ -1186,69 +1293,77 @@ price-per-reference. Use it; build what it doesn't.
 ## Priority order
 
 Current best-guess sequence. Will shift; update this doc when it does.
-Epic numbers reflect the 2026-05-05 restructure.
+Epic numbers reflect the 2026-05-05 restructure. Last refreshed
+2026-05-06 evening — the Collections build (PRs #85–#90) shipped
+between updates, which closed out several previously-#1 items.
 
-1. **Watch Challenges v1.5 — receive flow (Epic 6).** Sender side
-   is polished (D1→D4 shipped 2026-05-06: `/?newchallenge=1&t=…&n=…
-   &b=…` URL). Recipient SPA doesn't parse those params yet —
-   click a share link and you land on the home page. Ship a focused
-   share-receive surface for challenges that mirrors the listing
-   share-receive landing (#63 / #67): "Mark sent you a challenge:
-   3 watches for $50k. Take it on / Just browse / About Watchlist."
-   Plus an `api/share-challenge.js` for dynamic OG preview
-   mirroring `api/share.js`. Half-session.
-2. **Welcome page + og:image (Epic 0).** First-impression page
-   for non-share visitors. og:image still the 1024×1024 apple-
-   touch-icon placeholder. Half-session.
+1. **Welcome page + og:image (Epic 0).** First-impression page for
+   non-share visitors. og:image still the 1024×1024 apple-touch-icon
+   placeholder. Half-session. Was already #2 — promotes to #1 now
+   that Watch Challenges v1.5 has shipped.
+2. **Privacy notice + minimal terms (Epic 0).** Added to the
+   roadmap 2026-05-06. Becomes load-bearing before Watchlist gets
+   shared with users outside Mark's circle. One-pager `/privacy`
+   covering Supabase + Vercel Blob storage, retention, deletion;
+   companion `/terms` ("use at your own risk, listings come from
+   third parties"). Linked from the user dropdown footer.
 3. **References as first-class entities (Epic 0).** The remaining
    foundation. Several downstream features (Epic 5 encyclopedia,
    per-reference comparison views, auction lot grouping, Discover
    mode quality) gate on this.
-4. **Image cache for List items (Epic 3).** Extend
+4. **Collections sub-tab restructure (Epic 3 follow-up).** Mark's
+   end-of-2026-05-06 ask: Collections > My Collection (Owned +
+   Sold) / Lists / Challenges sub-tabs, mirroring the Watchlist +
+   Listings tab structures. Open question on exact shape (combined
+   Owned+Sold drill-in vs stacked sections under "My Collection").
+   Half-session once the design is locked.
+5. **Image cache for List items (Epic 3).** Extend
    `cache_watchlist_images.mjs` to cover `collection_items`, not
-   just `watchlist_items`. Promoted by Mark 2026-05-05.
-5. **Site analytics — Source stats extensions (Epic 8).** User
-   stats + throughput-in-value + auction-house quality all shipped
-   2026-05-05/06. Remaining: sales by watch type per dealer (gated
-   on Epic 0 references for "type" classification), cross-source
-   live inventory (also Epic-0-gated), listing-quality signals,
-   taste-relative pricing.
-6. **Watch Challenges further polish (Epic 6).** Audit-deferred
-   items from 2026-05-06 sessions: drop-into-shortlist demote zone,
-   autosave indicator, hoist hardcoded colors to tokens, mobile
-   tap-confirm on slot remove, target=7-style orphan-row layout,
-   share-success state, sticky-pick-shrink-on-scroll, unified card
-   theme on Cool Stuff resource cards + Challenges list rows.
-7. **References as first-class entities (Epic 0).** The remaining
-   foundation. Several downstream features (Epic 5 encyclopedia,
-   per-reference comparison views, auction lot grouping, Discover
-   mode quality) gate on this.
-8. **Welcome page + og:image (Epic 0).** SEO basics shipped (PRs
-   #39, #43, #51). Still pending: og:image refresh (currently the
-   1024×1024 apple-touch-icon as placeholder) + first-time-visitor
-   welcome page. Half-session.
-9. **Strength-of-save model (Epic 3 + Epic 7 entry point).** Two-tier
-   (Love / Watch) is the gesture entry point to the broader
+   just `watchlist_items`. Promoted by Mark 2026-05-05; deferred
+   through the Collections build.
+6. **Catalog-order sort for auction lots (Epic 2).** Mark's
+   question 2026-05-06 — `lot_number` is captured in the scrape
+   but the Listings tab doesn't expose a "browse this auction in
+   catalog order" sort. Small UI lift: a fourth Date/Price-style
+   pill or a per-auction sort affordance.
+7. **Site analytics — remaining Source-stats extensions (Epic 8).**
+   User stats + throughput-in-value + auction-house quality all
+   shipped 2026-05-05/06. Remaining: sales by watch type per dealer
+   (gated on Epic 0 references for "type" classification),
+   cross-source live inventory (also Epic-0-gated), listing-quality
+   signals, taste-relative pricing.
+8. **Strength-of-save model (Epic 3 + Epic 7 entry point).**
+   Two-tier (Love / Watch) is the gesture entry point to the broader
    Multi-signal taste capture. Small UI lift; the feature is *the
    gesture*, not the underlying data.
-10. **Source pruning (Epic 1 Stop rule).** At ~50 dealers, audit
-    with the click + save data from #1 (now flowing) and prune.
-    Currently at 38; adding remains the active mode until we hit
-    threshold.
-11. **Mac mini Phase A (Epic 0).** When Tropical Watch hits a
+9. **Source pruning (Epic 1 Stop rule).** At ~50 dealers, audit
+   with the click + save data and prune. Currently at 38; adding
+   remains the active mode until we hit threshold.
+10. **Mac mini Phase A (Epic 0).** When Tropical Watch hits a
     Browse AI snag OR when Heritage / Bonhams / Monaco Legend need
     a Playwright runner OR when ready to start Epic 5 encyclopedia
     generation.
-12. **Watchbox v2 — reflection layer (Epic 6).** Highest personal
+11. **Watchbox v2 — reflection layer (Epic 6).** Highest personal
     value of any roadmap item. The collection-mentality flagship.
     Reflection notes + per-watch journey + the AI reflection bot
-    delighter.
-13. **Epic 5 encyclopedia.** Built incrementally as dealer
+    delighter. Note: PRs #85–#90 already moved the data model
+    significantly in this direction (Owned + Sold are real now);
+    what remains is the reflective UX layer.
+12. **Epic 5 encyclopedia.** Built incrementally as dealer
     descriptions accumulate. Depends on Epic 0 references + Mac
     mini A.5 for local LLM generation (or cloud LLM access).
-14. **Multi-signal taste capture + Discover mode + AI recommendations
+13. **Multi-signal taste capture + Discover mode + AI recommendations
     (Epic 7).** Stack progressively. Multi-signal first; Discover
     and recommendations layer on top once signals are rich.
+14. **Watch Challenges further polish (Epic 6).** Audit-deferred
+    items from 2026-05-06: drop-into-shortlist demote zone,
+    autosave indicator, hoist hardcoded colors to tokens, mobile
+    tap-confirm on slot remove, target=7-style orphan-row layout,
+    share-success state, sticky-pick-shrink-on-scroll. Cool Stuff
+    resource cards already unified with ListRow style 2026-05-06.
+    Plus: "save someone's complete-share back as a child challenge
+    under my original" (the parent_challenge_id linkage exists in
+    schema; the receive-side UI doesn't yet expose it).
 15. **Watch Challenges v2 (Epic 6).** Past-listings as a source,
     value-over-time tracking, challenge response threads — once
     Epic 0 references land.
@@ -1354,6 +1469,61 @@ becomes confusion.
 > analytics) became Epic 8; old Epic 6 (Mac mini) folded into Epic 0.
 > Epic 0/1/2/5 numbering unchanged. Entries below dated before
 > 2026-05-05 evening reference the pre-restructure scheme.
+
+- 2026-05-06: **Collections build (PRs #85–#90) + auction-scrape
+  fixes + UX polish.** Major arc of work captured in the priority
+  order + Epic 3 Collections refactor section.
+  - **Watch Challenges v1.5 ✓ shipped** (PRs #78, #80, #90):
+    `?newchallenge=1` and `?challenge=<id>&shared=1` receive
+    flows, sender attribution via `&from=<senderName>`,
+    "Sent to you" / "Yours" sections, sign-in CTA on receivers,
+    `setTabWithReceiveEscape` so the logo + main tabs let you
+    out of share-receive surfaces. Closed out the previously-#1
+    priority.
+  - **Collections becomes a top-level tab** (PR #86) — Mark's
+    locked plan "everything is a list." Owned, Sold, Wishlist
+    auto-create as hard system lists (PR #85). Lists moved out
+    of Watchlist; Watch Challenges moved out of Cool Stuff;
+    both now live under Collections. Mobile bottom-bar grows
+    from 2 → 3 pills. Old `?tab=watchlist&sub=collections`
+    redirects to `?tab=collections`.
+  - **Manual entry + photo upload** (PR #87) on Owned/Sold —
+    `is_manual` boolean + `manual_*` columns, new `watch-photos`
+    Supabase Storage bucket with RLS per-user folders, client-
+    side canvas resize to 1600px JPEG q0.85 before upload
+    (typical 5-10× cut on phone photos).
+  - **Archive picker + Owned→Sold transition** (PR #88) —
+    `ListingPickerModal` for picking from Favorites/Lists/feed/
+    paste-link. `MarkAsSoldModal` captures sold price + date.
+    Card extended with optional `extraMenuItems` so the "..."
+    menu can carry "Mark sold" without Card knowing about
+    collection semantics.
+  - **Wishlist force-rank** (PR #89) — `position` column,
+    vertical ranked list with ↑/↓ controls, optimistic local
+    update + parallel UPDATE persistence.
+  - **Auction-scrape coverage gap fixes** (PRs #93, #94) —
+    Christie's full pagination via `lot_search` API + Phillips
+    WAF retry-with-backoff; Sotheby's full enumeration via the
+    apolloCache `lotCards` array on any single lot page (151
+    lots vs the previous 48-lot SSR ceiling). Mark's report
+    that auction coverage was at ~50% across the board for the
+    upcoming May 9-10 Geneva sales — fixed in time for the
+    sales to land in the data.
+  - **Smaller wins.** Saved-search count + sub-tab fix (PR
+    #91) — the "17 for sale but only 3 shown" bug. UI fixes
+    bundle (PR #92) — HardListRow image strip width, picker
+    chip overflow, restored Share + Delete buttons on
+    challenges list rows. Browser back/forward parity (PR #96)
+    — pushState on real navigations + popstate listener;
+    fixes "back leaves the site" behaviour. Listings divider
+    deduplication (PR #95) — backfilled items collapse under
+    one "Earlier additions" header so duplicate "Last week"
+    headers can't appear.
+  - **Roadmap additions**: privacy-notice section under Epic 0
+    (legal/compliance, becomes load-bearing before broader
+    sharing); user-feedback / bug-report surface parked under
+    Epic 0; catalog-order sort for auction lots added at
+    priority #6.
 
 - 2026-05-05 (evening): **Roadmap section-by-section review.** Per
   Mark, the roadmap had drifted from how he was actually thinking
