@@ -466,9 +466,32 @@ export function useCollections(user) {
       const grouped = {};
       for (const row of (itemRes.data || [])) {
         const snap = row.listing_snapshot || {};
+        // Manual entries (PR #87, 2026-05-06) have no listing_id —
+        // build a synthetic snapshot from the manual_* columns so
+        // the UI can render them through similar-shape props as
+        // listing-backed rows.
+        const isManual = !!row.is_manual;
+        const manualShape = isManual ? {
+          isManual:       true,
+          img:            row.manual_image_url || null,
+          title:          [row.manual_brand, row.manual_model].filter(Boolean).join(' ').trim() || 'Untitled',
+          brand:          row.manual_brand     || null,
+          model:          row.manual_model     || null,
+          ref:            row.manual_reference || null,
+          material:       row.manual_material  || null,
+          price:          row.manual_price_paid || null,
+          currency:       row.manual_price_currency || null,
+          soldPrice:      row.manual_sold_price || null,
+          soldDate:       row.manual_sold_date  || null,
+          comments:       row.manual_comments   || null,
+        } : {};
         const item = {
           rowId:           row.id,                 // collection_items.id (for delete)
-          id:              row.listing_id,
+          // Manual items use the row UUID as their app-facing id —
+          // listing_id is null, but the UI needs a stable React key
+          // and a target for delete. UUIDs don't collide with the
+          // shortHash listing IDs (different lengths + character set).
+          id:              row.listing_id || row.id,
           savedPrice:      row.saved_price,
           savedCurrency:   row.saved_currency,
           savedPriceUSD:   row.saved_price_usd,
@@ -479,6 +502,7 @@ export function useCollections(user) {
           isPick:          !!row.is_pick,
           reasoning:       row.reasoning || '',
           ...snap,
+          ...manualShape,
         };
         (grouped[row.collection_id] ||= []).push(item);
       }
@@ -620,17 +644,109 @@ export function useCollections(user) {
     return { error: null };
   }, [user]);
 
-  const removeItemFromCollection = useCallback(async (collectionId, listingId) => {
+  // Accept either a listing_id (legacy callers) or the row's own
+  // app-facing id (which equals the row UUID for manual entries
+  // since they have no listing_id). Resolves the row by matching
+  // on either column — works for both shapes.
+  const removeItemFromCollection = useCallback(async (collectionId, idOrListingId) => {
     if (!user || !supabase) return { error: 'not signed in' };
-    const { error } = await supabase.from('collection_items')
-      .delete()
-      .match({ collection_id: collectionId, listing_id: listingId });
+    // Resolve the row by either listing_id or row id (uuid). For
+    // manual entries `idOrListingId` IS the row id; for listing-
+    // backed it's the shortHash listing id which the unique index
+    // ties to one row per collection.
+    const local = (itemsByCollection[collectionId] || []).find(it => it.id === idOrListingId);
+    const rowId = local?.rowId;
+    let error;
+    if (rowId) {
+      ({ error } = await supabase.from('collection_items').delete().eq('id', rowId));
+    } else {
+      // Fallback: match on listing_id (older callers without local cache).
+      ({ error } = await supabase.from('collection_items')
+        .delete()
+        .match({ collection_id: collectionId, listing_id: idOrListingId }));
+    }
     if (error) return { error: error.message };
     setItemsByCollection(prev => ({
       ...prev,
-      [collectionId]: (prev[collectionId] || []).filter(it => it.id !== listingId),
+      [collectionId]: (prev[collectionId] || []).filter(it => it.id !== idOrListingId),
     }));
     return { error: null };
+  }, [user, itemsByCollection]);
+
+  // ── Manual entries (PR #87, 2026-05-06) ──────────────────────
+  // Upload a (resized) photo to the watch-photos storage bucket
+  // under <auth.uid>/<random>.jpg. RLS on storage.objects enforces
+  // the per-user folder boundary so concurrent users can't overwrite
+  // each other. Returns the public URL on success.
+  const uploadWatchPhoto = useCallback(async (file) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    if (!file) return { error: 'no file' };
+    const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage
+      .from('watch-photos')
+      .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false });
+    if (error) return { error: error.message };
+    const { data: pub } = supabase.storage.from('watch-photos').getPublicUrl(path);
+    return { error: null, url: pub?.publicUrl, path };
+  }, [user]);
+
+  // Add a manual entry to a collection (Owned / Sold typically).
+  // `manual` is the form's submission shape — see ManualEntryForm.
+  // Photo is OPTIONAL — Mark explicitly wants the "add later" path
+  // for users who don't have a photo at hand. The schema's check
+  // constraint requires either listing_id or is_manual=true; we
+  // leave listing_id null and set is_manual=true.
+  const addManualItem = useCallback(async (collectionId, manual = {}) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    if (!collectionId) return { error: 'collection required' };
+    const payload = {
+      collection_id:           collectionId,
+      listing_id:              null,
+      is_manual:               true,
+      manual_image_url:        manual.imageUrl || null,
+      manual_brand:            manual.brand     || null,
+      manual_model:            manual.model     || null,
+      manual_reference:        manual.reference || null,
+      manual_material:         manual.material  || null,
+      manual_price_paid:       manual.pricePaid != null ? Number(manual.pricePaid) : null,
+      manual_price_currency:   manual.priceCurrency || null,
+      manual_sold_price:       manual.soldPrice != null ? Number(manual.soldPrice) : null,
+      manual_sold_date:        manual.soldDate || null,
+      manual_comments:         manual.comments  || null,
+      source_of_entry:         'manual',
+    };
+    const { data, error } = await supabase.from('collection_items')
+      .insert(payload).select().single();
+    if (error) return { error: error.message };
+    // Insert into the local cache in the same shape the load mapper
+    // produces so renders work without a refetch.
+    const item = {
+      rowId:           data.id,
+      id:              data.id,
+      savedPrice:      null,
+      savedCurrency:   null,
+      savedPriceUSD:   null,
+      sourceOfEntry:   data.source_of_entry,
+      savedAt:         data.added_at,
+      isManual:        true,
+      img:             data.manual_image_url,
+      title:           [data.manual_brand, data.manual_model].filter(Boolean).join(' ').trim() || 'Untitled',
+      brand:           data.manual_brand,
+      model:           data.manual_model,
+      ref:             data.manual_reference,
+      material:        data.manual_material,
+      price:           data.manual_price_paid,
+      currency:        data.manual_price_currency,
+      soldPrice:       data.manual_sold_price,
+      soldDate:        data.manual_sold_date,
+      comments:        data.manual_comments,
+    };
+    setItemsByCollection(prev => ({
+      ...prev,
+      [collectionId]: [item, ...(prev[collectionId] || [])],
+    }));
+    return { error: null, id: data.id };
   }, [user]);
 
   // ── Shared-inbox helpers ─────────────────────────────────────
@@ -883,6 +999,9 @@ export function useCollections(user) {
     removeItemFromCollection,
     ensureSharedInbox,
     addToSharedInbox,
+    // Manual entries (PR #87) — Owned/Sold drill-ins use these.
+    uploadWatchPhoto,
+    addManualItem,
     // Challenge-specific:
     createChallenge,
     updateChallenge,
