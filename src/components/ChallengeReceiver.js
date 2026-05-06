@@ -59,8 +59,11 @@ export function ChallengeReceiver({
         const n = parseInt(params.get("n") || "0", 10);
         const b = parseInt(params.get("b") || "0", 10);
         const d = params.get("d") || "";
+        // Sender attribution (PR #90). When present, the saved
+        // draft's name will read as "James's 3 watches for $50k".
+        const from = (params.get("from") || "").trim() || null;
         if (n > 0 && b > 0) {
-          setIntent({ mode: "spec", spec: { name: t, targetCount: n, budget: b, descriptionLong: d } });
+          setIntent({ mode: "spec", spec: { name: t, targetCount: n, budget: b, descriptionLong: d, senderName: from } });
         }
       } else if (params.get("challenge") && params.get("shared") === "1") {
         setIntent({ mode: "complete", id: params.get("challenge") });
@@ -119,6 +122,7 @@ export function ChallengeReceiver({
       url.searchParams.delete("n");
       url.searchParams.delete("b");
       url.searchParams.delete("d");
+      url.searchParams.delete("from");
       window.history.replaceState({}, "", url.toString());
     } catch {}
   }, []);
@@ -144,17 +148,25 @@ export function ChallengeReceiver({
         targetCount:     completeData.targetCount,
         budget:          completeData.budget,
         descriptionLong: completeData.descriptionLong || null,
+        senderName:      completeData.senderName || null,
       };
     }
     if (!spec) return;
     setBusy(true);
     let createdId = null;
     try {
+      // PR #90: pass senderName when present so the saved draft is
+      // labelled "James's 3 watches for $50k". Pass an empty `name`
+      // so createChallenge derives the labelled default from
+      // targetCount + budget + senderName. If the spec carried a
+      // user-set name (rare on receive flows — most spec links
+      // omit it), preserve that as a higher-priority override.
       const res = await collectionsApi.createChallenge({
-        name:            spec.name || `${spec.targetCount} watches for $${(spec.budget / 1000).toFixed(0)}k`,
+        name:            spec.name || "",
         targetCount:     spec.targetCount,
         budget:          spec.budget,
         descriptionLong: spec.descriptionLong || null,
+        senderName:      spec.senderName || null,
       });
       if (res?.error) {
         console.warn("take-challenge create failed", res.error);

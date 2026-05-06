@@ -93,6 +93,7 @@ export function ChallengesView({
           primaryCurrency={primaryCurrency}
           collectionsApi={collectionsApi}
           handleShare={handleShare}
+          user={user}
           onExit={() => setSelectedChallengeId(null)}
         />
       </div>
@@ -171,9 +172,43 @@ export function ChallengesView({
             same under your constraints.
           </div>
         </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {allChallenges.map(c => {
+      ) : (() => {
+        // PR #90 grouping: split sender-attributed (Sent to you) from
+        // self-created (Yours). Within each group, ordering matches
+        // the underlying allChallenges order. Mark's framing: "Be
+        // good to save a completed challenge with a name - James's 3
+        // watch collection for $50k and have a saved challenges
+        // section."
+        const sentToYou = allChallenges.filter(c => c.senderName);
+        const yours     = allChallenges.filter(c => !c.senderName);
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {sentToYou.length > 0 && (
+              <div>
+                <SectionHeader>Sent to you · {sentToYou.length}</SectionHeader>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {sentToYou.map(renderChallengeRow)}
+                </div>
+              </div>
+            )}
+            {yours.length > 0 && (
+              <div>
+                {sentToYou.length > 0 && <SectionHeader>Yours · {yours.length}</SectionHeader>}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {yours.map(renderChallengeRow)}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+    </div>
+  );
+
+  // Single render for both groupings — keeps the row visual identical
+  // whether it's "from you" or "sent to you" except for the small
+  // attribution chip in the title.
+  function renderChallengeRow(c) {
             const items = itemsByColl[c.id] || [];
             const picks = items.filter(it => it.isPick);
             const totalSpend = picks.reduce((s, p) => s + (p.savedPriceUSD || p.priceUSD || 0), 0);
@@ -193,17 +228,29 @@ export function ChallengesView({
             ) : (
               <>Set the constraints to start</>
             );
-            const title = isDraft ? (
+            const title = (
               <>
                 {c.name}
-                <span style={{
-                  marginLeft: 8, fontSize: 10, fontWeight: 600,
-                  padding: "1px 6px", borderRadius: 3,
-                  background: "rgba(201,162,39,0.15)", color: "#c9a227",
-                  textTransform: "uppercase", letterSpacing: "0.04em",
-                }}>Draft</span>
+                {isDraft && (
+                  <span style={{
+                    marginLeft: 8, fontSize: 10, fontWeight: 600,
+                    padding: "1px 6px", borderRadius: 3,
+                    background: "rgba(201,162,39,0.15)", color: "#c9a227",
+                    textTransform: "uppercase", letterSpacing: "0.04em",
+                  }}>Draft</span>
+                )}
+                {/* Attribution chip — small inline badge so each row
+                    can stand alone if the section header scrolls
+                    off. PR #90. */}
+                {c.senderName && (
+                  <span style={{
+                    marginLeft: 8, fontSize: 10, fontWeight: 500,
+                    padding: "1px 6px", borderRadius: 3,
+                    background: "rgba(24,95,165,0.10)", color: "#185FA5",
+                  }}>from {c.senderName}</span>
+                )}
               </>
-            ) : c.name;
+            );
             // Target glyph (concentric circles) — challenge concept.
             const icon = (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -222,9 +269,15 @@ export function ChallengesView({
                 onClick={() => setSelectedChallengeId(c.id)}
               />
             );
-          })}
-        </div>
-      )}
-    </div>
+  }
+}
+
+function SectionHeader({ children }) {
+  return (
+    <div style={{
+      fontSize: 11, fontWeight: 600, color: "var(--text3)",
+      textTransform: "uppercase", letterSpacing: "0.04em",
+      padding: "0 4px 8px",
+    }}>{children}</div>
   );
 }

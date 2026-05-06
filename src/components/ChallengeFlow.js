@@ -945,6 +945,7 @@ export function ChallengeFlow({
   allListings, watchlist, hidden, primaryCurrency,
   collectionsApi,                  // useCollections() return value
   handleShare,                     // App.js share handler — called with the challenge URL
+  user,                            // for &from=<sender name> attribution on shares (PR #90)
   onExit,                          // back to ChallengesList
 }) {
   // Delete affordance lives inside the drill-in (StageHeader) since
@@ -1014,6 +1015,13 @@ export function ChallengeFlow({
   // Spec mode — recipient sees only the constraints and is invited
   // to build their own answer. Existing behaviour, used everywhere
   // pre-v1.5 and still the only mode for draft challenges.
+  //
+  // PR #90 (2026-05-06): append &from=<senderName> so the recipient
+  // can attribute the saved draft to the sender. Sender name is
+  // derived from auth metadata — Google sign-in surfaces full_name;
+  // we fall back to the email's local part. Users without a usable
+  // name skip the param.
+  const senderName = useMemo(() => deriveSenderName(user), [user]);
   const shareChallengeSpec = useCallback(async () => {
     if (!handleShare) return { copied: false };
     const params = new URLSearchParams();
@@ -1022,9 +1030,10 @@ export function ChallengeFlow({
     if (challenge.targetCount)      params.set("n", String(challenge.targetCount));
     if (challenge.budget)           params.set("b", String(challenge.budget));
     if (challenge.descriptionLong)  params.set("d", challenge.descriptionLong);
+    if (senderName)                 params.set("from", senderName);
     const url = `${window.location.origin}/?${params.toString()}`;
     return await handleShare({ title: `Watch challenge: ${challenge.name}`, url });
-  }, [challenge.id, challenge.name, challenge.targetCount, challenge.budget, challenge.descriptionLong, handleShare]);
+  }, [challenge.id, challenge.name, challenge.targetCount, challenge.budget, challenge.descriptionLong, handleShare, senderName]);
 
   // Complete mode (v1.5) — recipient sees the sender's picks via
   // the public-read RPC. Only meaningful when state='complete'; the
@@ -1080,4 +1089,29 @@ export function ChallengeFlow({
 // challenge. Used by WatchlistTab to filter the Collections list.
 export function isChallenge(collection) {
   return collection?.type === "challenge";
+}
+
+// Derive a public-facing display name from the auth user object.
+// Used as the &from=<name> query param on shared spec links so the
+// recipient can attribute the saved draft. PR #90, 2026-05-06.
+//
+// Order of preference:
+//   1. user.user_metadata.full_name (Google sign-in surfaces this)
+//   2. user.user_metadata.name      (some providers use this key)
+//   3. email local-part, capitalized (last resort)
+//   4. null — no usable name; the share link omits &from=
+//
+// Display name is intentionally derived rather than stored — Mark
+// hasn't asked for a separate "Your sharing name" setting yet, and
+// the auth display name is what users would expect to see anyway.
+function deriveSenderName(user) {
+  if (!user) return null;
+  const meta = user.user_metadata || {};
+  const fromMeta = (meta.full_name || meta.name || "").trim();
+  if (fromMeta) return fromMeta;
+  const email = user.email || "";
+  const local = email.split("@")[0];
+  if (!local) return null;
+  // Capitalize first character so "james" → "James".
+  return local.charAt(0).toUpperCase() + local.slice(1);
 }
