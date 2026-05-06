@@ -445,6 +445,11 @@ export function useCollections(user) {
         description:         r.description,
         type:                r.type,
         isSharedInbox:       r.is_shared_inbox,
+        // Hard system lists (Owned / Sold / Wishlist) — auto-created
+        // per user, can't be deleted. is_system added in
+        // 2026-05-06_collections_hard_lists.sql; pre-migration rows
+        // come back as undefined and read as falsy.
+        isSystem:            !!r.is_system,
         // Challenge-specific fields (null/undefined for non-challenges).
         // 2026-05-03_challenges.sql adds these columns; pre-migration
         // collections come back with `undefined` and the UI code below
@@ -479,6 +484,40 @@ export function useCollections(user) {
       }
       setCollections(cols);
       setItemsByCollection(grouped);
+
+      // After the initial load, lazy-create any missing hard system
+      // lists (Owned / Sold / Wishlist). Same idempotent pattern as
+      // the shared-inbox: if all three already exist, this is a
+      // no-op; otherwise insert just the missing ones.
+      const want = ['owned', 'sold', 'wishlist'];
+      const haveTypes = new Set(cols.map(c => c.type));
+      const missing = want.filter(t => !haveTypes.has(t));
+      if (missing.length > 0) {
+        const labels = { owned: 'Owned', sold: 'Sold', wishlist: 'Wishlist' };
+        const payload = missing.map(t => ({
+          user_id:   user.id,
+          name:      labels[t],
+          type:      t,
+          is_system: true,
+        }));
+        const { data: hardRows, error: hardErr } = await supabase
+          .from('collections').insert(payload).select();
+        if (cancelled) return;
+        if (hardErr) {
+          console.warn('hard-list create failed', hardErr);
+          return;
+        }
+        const hardCols = (hardRows || []).map(r => ({
+          id: r.id, name: r.name, description: r.description,
+          type: r.type, isSharedInbox: r.is_shared_inbox,
+          isSystem: !!r.is_system,
+          createdAt: r.created_at, updatedAt: r.updated_at,
+        }));
+        setCollections(prev => {
+          const existing = new Set(prev.map(c => c.id));
+          return [...prev, ...hardCols.filter(c => !existing.has(c.id))];
+        });
+      }
     })();
     return () => { cancelled = true; };
   }, [user?.id]);
@@ -500,6 +539,7 @@ export function useCollections(user) {
     setCollections(prev => [...prev, {
       id: data.id, name: data.name, description: data.description,
       type: data.type, isSharedInbox: data.is_shared_inbox,
+      isSystem: !!data.is_system,
       createdAt: data.created_at, updatedAt: data.updated_at,
     }]);
     return { error: null, id: data.id };
@@ -519,10 +559,13 @@ export function useCollections(user) {
 
   const deleteCollection = useCallback(async (id) => {
     if (!user || !supabase) return { error: 'not signed in' };
-    // Don't let the user delete the shared-inbox; spec says it's
-    // perma. Clearing items inside it is allowed.
+    // Hard rules: shared-inbox is perma; hard system lists (Owned /
+    // Sold / Wishlist) are perma. The DB trigger
+    // prevent_system_collection_delete_trigger is the defense if
+    // this client guard is bypassed.
     const target = collections.find(c => c.id === id);
     if (target?.isSharedInbox) return { error: 'cannot delete shared inbox' };
+    if (target?.isSystem)      return { error: 'cannot delete system list' };
     const { error } = await supabase.from('collections').delete().eq('id', id);
     if (error) return { error: error.message };
     setCollections(prev => prev.filter(c => c.id !== id));
@@ -614,6 +657,7 @@ export function useCollections(user) {
         setCollections(prev => prev.find(c => c.id === row.id) ? prev : [...prev, {
           id: row.id, name: row.name, description: row.description,
           type: row.type, isSharedInbox: row.is_shared_inbox,
+          isSystem: !!row.is_system,
           createdAt: row.created_at, updatedAt: row.updated_at,
         }]);
         return { error: null, id: row.id };
@@ -623,9 +667,48 @@ export function useCollections(user) {
     setCollections(prev => [...prev, {
       id: data.id, name: data.name, description: data.description,
       type: data.type, isSharedInbox: data.is_shared_inbox,
+      isSystem: !!data.is_system,
       createdAt: data.created_at, updatedAt: data.updated_at,
     }]);
     return { error: null, id: data.id };
+  }, [user, collections]);
+
+  // ── Hard system lists (Owned / Sold / Wishlist) ──────────────
+  // Three system-flagged collections that auto-create per user and
+  // can't be deleted. Same lazy-create pattern as ensureSharedInbox.
+  // 23505 unique-violation isn't expected here (no partial unique
+  // index — type+is_system isn't unique by design — but we de-dup
+  // client-side by checking the local cache first).
+  const ensureHardLists = useCallback(async () => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const want = [
+      { type: 'owned',    name: 'Owned'    },
+      { type: 'sold',     name: 'Sold'     },
+      { type: 'wishlist', name: 'Wishlist' },
+    ];
+    const missing = want.filter(w => !collections.some(c => c.type === w.type));
+    if (missing.length === 0) return { error: null };
+    const payload = missing.map(w => ({
+      user_id:    user.id,
+      name:       w.name,
+      type:       w.type,
+      is_system:  true,
+    }));
+    const { data, error } = await supabase.from('collections').insert(payload).select();
+    if (error) return { error: error.message };
+    setCollections(prev => {
+      const existing = new Set(prev.map(c => c.id));
+      const inserted = (data || [])
+        .filter(r => !existing.has(r.id))
+        .map(r => ({
+          id: r.id, name: r.name, description: r.description,
+          type: r.type, isSharedInbox: r.is_shared_inbox,
+          isSystem: !!r.is_system,
+          createdAt: r.created_at, updatedAt: r.updated_at,
+        }));
+      return [...prev, ...inserted];
+    });
+    return { error: null };
   }, [user, collections]);
 
   // Convenience for the share-receive flow — finds-or-creates the
@@ -664,6 +747,7 @@ export function useCollections(user) {
     setCollections(prev => [...prev, {
       id: data.id, name: data.name, description: data.description,
       type: data.type, isSharedInbox: false,
+      isSystem: !!data.is_system,
       targetCount: data.target_count, budget: data.budget,
       descriptionLong: data.description_long, state: data.state,
       parentChallengeId: data.parent_challenge_id,
