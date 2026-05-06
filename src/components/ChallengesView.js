@@ -162,10 +162,27 @@ export function ChallengesView({
             const items = itemsByColl[c.id] || [];
             const picks = items.filter(it => it.isPick);
             const totalSpend = picks.reduce((s, p) => s + (p.savedPriceUSD || p.priceUSD || 0), 0);
+            const remaining = (c.budget || 0) - totalSpend;
             const isDraft = c.state === "draft";
+            const handleDelete = async (e) => {
+              e.stopPropagation();
+              if (!collectionsApi?.deleteCollection) return;
+              const ok = window.confirm(
+                `Delete "${c.name}"? This can't be undone.`
+              );
+              if (!ok) return;
+              await collectionsApi.deleteCollection(c.id);
+            };
             return (
-              <button key={c.id}
+              <div key={c.id}
                 onClick={() => setSelectedChallengeId(c.id)}
+                role="button" tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedChallengeId(c.id);
+                  }
+                }}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "14px 16px", borderRadius: 12,
@@ -191,15 +208,39 @@ export function ChallengesView({
                   <div style={{ fontSize: 12, color: "var(--text2)" }}>
                     {c.targetCount && c.budget ? (
                       <>
-                        {picks.length} of {c.targetCount} picks · {fmtUSD(totalSpend)} of {fmtUSD(c.budget)}
+                        {picks.length} of {c.targetCount} picks
+                        {" · "}{fmtUSD(totalSpend)} spent
+                        {" · "}<strong style={{ color: remaining < 0 ? "#c9a227" : "var(--text2)", fontWeight: 500 }}>
+                          {remaining < 0 ? `${fmtUSD(-remaining)} over` : `${fmtUSD(remaining)} left`}
+                        </strong>
                       </>
                     ) : (
                       <>Set the constraints to start</>
                     )}
                   </div>
                 </div>
+                {/* Delete affordance — small × button. Stops click
+                    propagation so it doesn't drill in. window.confirm
+                    matches the rest of the app's confirm pattern; can
+                    swap for an inline confirm row later. */}
+                {collectionsApi?.deleteCollection && (
+                  <button
+                    onClick={handleDelete}
+                    aria-label={`Delete ${c.name}`}
+                    title="Delete challenge"
+                    style={{
+                      flexShrink: 0,
+                      width: 30, height: 30, borderRadius: "50%",
+                      border: "none", background: "transparent",
+                      color: "var(--text3)", cursor: "pointer",
+                      fontFamily: "inherit", fontSize: 16, lineHeight: 1,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      padding: 0,
+                    }}
+                  >×</button>
+                )}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
+              </div>
             );
           })}
         </div>
