@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useAuth, useWatchlist, useHidden, useSearches, useTrackedLots, useCollections, useUserSettings, importLocalData, isAuthConfigured } from "./supabase";
 import { useEventTelemetry } from "./hooks/useEventTelemetry";
+import { useUserLimit } from "./hooks/useUserLimit";
+import { UserLimitBanner } from "./components/UserLimitBanner";
 import {
   GLOBAL_MAX,
   daysAgo, freshDate,
@@ -302,6 +304,11 @@ export default function Watchlist() {
   // for reads. See supabase/schema/2026-05-05_listing_events.sql.
   const { recordEvent, observeCard } = useEventTelemetry(user);
   const onClickListing = useCallback((item) => recordEvent("click", item), [recordEvent]);
+  // User limit (Epic 3 — defensive engineering). Reads the per-user
+  // override from public.user_limits (default 2500). The DB also
+  // enforces the cap via a BEFORE INSERT trigger on watchlist_items;
+  // this hook is purely UX. See supabase/schema/2026-05-06_user_limits.sql.
+  const userLimit = useUserLimit(user, Object.keys(watchlist).length);
   // Saved searches are per-user (stored in Supabase). Signed-out visitors
   // get an empty list, and the whole Searches subsection is hidden inside
   // the Watchlist tab.
@@ -778,10 +785,16 @@ export default function Watchlist() {
     // user's hearted set and the trackedLotUrls projection, so the
     // duplicate-card bug from before Phase B2 doesn't recur.
     const wasWished = !!watchlist[item.id];
+    // Cap gate (Epic 3). The DB trigger is the line of defense, but
+    // we no-op early in the UI so users get the persistent banner
+    // instead of an invisibly-failed insert + stale optimistic state.
+    // Un-favorite (wasWished=true) is always allowed — that's how
+    // people clear room.
+    if (!wasWished && userLimit.isAtHardCap) return;
     toggleWatchlist(item);
     // Telemetry on the on-direction only — same shape as toggleHide.
     if (!wasWished) recordEvent("save", item);
-  }, [user, watchlist, toggleWatchlist, requireSignIn, recordEvent]);
+  }, [user, watchlist, toggleWatchlist, requireSignIn, recordEvent, userLimit.isAtHardCap]);
 
   // Replay a pending heart/hide once the user is back from OAuth and
   // the items list has loaded (so we can resolve the saved id to the
@@ -1867,6 +1880,19 @@ export default function Watchlist() {
     />
   );
 
+  // User-limit banner (Epic 3). Self-contained — renders nothing
+  // unless the user is at ≥80% of their cap. Mounted next to
+  // shareReceiverJSX in both shells so it surfaces regardless of
+  // which tab the user is on.
+  const userLimitBannerJSX = (
+    <UserLimitBanner
+      count={userLimit.count}
+      cap={userLimit.cap}
+      isAtSoftWarn={userLimit.isAtSoftWarn}
+      isAtHardCap={userLimit.isAtHardCap}
+    />
+  );
+
   // Both shells consume the same props bag. App.js owns state and the
   // top-level JSX consts (authJSX, listingsGridJSX, watchSubTabsJSX,
   // watchlistTabJSX, plus the modal JSX consts) — the shells just
@@ -1918,6 +1944,7 @@ export default function Watchlist() {
     trackNewItemModalJSX, watchSubTabsJSX,
     watchlistTabJSX, adminTabJSX, referencesTabJSX,
     lotMigrationBannerJSX,
+    userLimitBannerJSX,
   };
 
   return isMobile

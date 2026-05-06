@@ -315,6 +315,24 @@ the dashboard** — read from the rollup via the
 next rollup; admin can trigger one early via
 `select public.rollup_and_prune_listing_events();` in the SQL editor.
 
+**User limits (Epic 3, 2026-05-06).** Default cap of 2,500 hearts
+per user, enforced by a BEFORE INSERT trigger on `watchlist_items`
+(`enforce_watchlist_cap`). Per-user overrides live in `user_limits`
+(admin-only mutate via RLS). System default lives in one place —
+the `default_watchlist_cap()` SQL function — bump there if it ever
+changes. Frontend hook `useUserLimit(user, count)` returns
+`{ cap, count, isAtSoftWarn, isAtHardCap }`; the soft-warn
+threshold is 80% of cap. UI surface is `<UserLimitBanner/>`,
+mounted next to `<ShareReceiver/>` in both shells (so it's visible
+on every tab). `handleWish` no-ops on the add-direction when at
+hard cap so the user gets the persistent banner instead of an
+invisibly-failed insert. Admin expansion via the AdminTab "User
+limits" section or the `set_watchlist_cap_by_email(email, cap, note)`
+RPC (admin-only on the SQL side). Schema:
+`supabase/schema/2026-05-06_user_limits.sql`. Hook:
+`src/hooks/useUserLimit.js`. Banner:
+`src/components/UserLimitBanner.js`.
+
 ## Scraper conventions
 
 - Each dealer / auction house has its own `*_scraper.py` at repo root.

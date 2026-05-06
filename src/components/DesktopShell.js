@@ -47,6 +47,7 @@ export function DesktopShell(props) {
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
     referencesTabJSX,
     lotMigrationBannerJSX,
+    userLimitBannerJSX,
   } = props;
 
   // Listings sub-tab gates filter exposure: Live listings hides
@@ -370,6 +371,9 @@ export function DesktopShell(props) {
           {shareReceiverJSX}
           {/* Phase B2 lot-migration banner. */}
           {lotMigrationBannerJSX}
+          {/* User-limit banner (Epic 3). Renders null below soft-warn
+              threshold. Fixed-position so it surfaces on any tab. */}
+          {userLimitBannerJSX}
           {/* (Ending-soon pinned section retired 2026-05-04 — Watchlist
               > Saved auctions sub-tab IS the ending-soon view now.) */}
           {tab === "listings" ? listingsTabContentJSX

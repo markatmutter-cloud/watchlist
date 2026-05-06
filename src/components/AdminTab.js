@@ -142,6 +142,31 @@ const HOUSE_COLUMNS = [
   { key: "health",        label: "Health",         align: "center",fmt: (r) => <ChipDot kind={r.health} /> },
 ];
 
+// Per-user watchlist limits + engagement — listed via
+// list_user_limits RPC, cap edited via set_watchlist_cap_by_email.
+// Both are admin-only on the SQL side. The table is sorted by
+// hearts count by default (power users surface first); cap edits
+// are inline via the form at the bottom of the section.
+//
+// Engagement columns (Views / Clicks / Shares) are 30-day rolling
+// from raw listing_events — the rollup table doesn't carry user_id.
+// Saved-search and Lists columns are lifetime (counts of current
+// rows in saved_searches / collections).
+const USER_COLUMNS = [
+  { key: "email",         label: "Email",          align: "left",  fmt: (r) => r.email },
+  { key: "hearts_count",  label: "♥",              align: "right", fmt: (r) => Number(r.hearts_count).toLocaleString() },
+  { key: "hides_count",   label: "✕",              align: "right", fmt: (r) => Number(r.hides_count).toLocaleString() },
+  { key: "lists_count",   label: "Lists",          align: "right", fmt: (r) => Number(r.lists_count).toLocaleString() },
+  { key: "searches_count",label: "Searches",       align: "right", fmt: (r) => Number(r.searches_count).toLocaleString() },
+  { key: "views_30d",     label: "Views (30d)",    align: "right", fmt: (r) => Number(r.views_30d).toLocaleString() },
+  { key: "clicks_30d",    label: "Clicks (30d)",   align: "right", fmt: (r) => Number(r.clicks_30d).toLocaleString() },
+  { key: "shares_30d",    label: "Shares (30d)",   align: "right", fmt: (r) => Number(r.shares_30d).toLocaleString() },
+  { key: "top_brand",     label: "Top brand",      align: "left",  fmt: (r) => r.top_brand || "—" },
+  { key: "watchlist_cap", label: "Cap",            align: "right", fmt: (r) => r.watchlist_cap.toLocaleString() },
+  { key: "is_default_cap",label: "Default?",       align: "center",fmt: (r) => r.is_default_cap ? "—" : "override" },
+  { key: "notes",         label: "Notes",          align: "left",  fmt: (r) => r.notes || "" },
+];
+
 export function AdminTab({ watchItems, hiddenItems }) {
   const [verification, setVerification] = useState(null);
   const [history, setHistory] = useState([]);
@@ -160,6 +185,14 @@ export function AdminTab({ watchItems, hiddenItems }) {
   const [auctions, setAuctions] = useState([]);
   const [auctionLots, setAuctionLots] = useState({});
   const [houseSort, setHouseSort] = useState({ key: "totalLots", dir: "desc" });
+  // Per-user limits via list_user_limits RPC. setCapForm holds the
+  // bound input values for the inline expansion form below the
+  // table; setCapError is rendered in red after a failed RPC.
+  const [userLimits, setUserLimits] = useState([]);
+  const [userLimitsTick, setUserLimitsTick] = useState(0);
+  const [capForm, setCapForm] = useState({ email: "", cap: "5000", note: "" });
+  const [capError, setCapError] = useState("");
+  const [capBusy, setCapBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -200,6 +233,45 @@ export function AdminTab({ watchItems, hiddenItems }) {
       });
     return () => { cancelled = true; };
   }, []);
+
+  // Per-user limits fetch — admin-only RPC. Re-runs whenever
+  // userLimitsTick is bumped (set after a successful cap update so
+  // the table reflects the change). Same silent-fail pattern as
+  // engagement: non-admin callers get empty rows.
+  useEffect(() => {
+    if (!supabase) return undefined;
+    let cancelled = false;
+    supabase.rpc("list_user_limits")
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) return;
+        setUserLimits(data || []);
+      });
+    return () => { cancelled = true; };
+  }, [userLimitsTick]);
+
+  const submitCapChange = async (e) => {
+    e.preventDefault();
+    setCapError("");
+    if (!supabase) { setCapError("Supabase not configured"); return; }
+    const email = capForm.email.trim();
+    const cap = parseInt(capForm.cap, 10);
+    if (!email) { setCapError("Email required"); return; }
+    if (!Number.isFinite(cap) || cap < 0) { setCapError("Cap must be a positive integer"); return; }
+    setCapBusy(true);
+    const { error } = await supabase.rpc("set_watchlist_cap_by_email", {
+      user_email: email,
+      new_cap: cap,
+      note: capForm.note.trim() || null,
+    });
+    setCapBusy(false);
+    if (error) {
+      setCapError(error.message || "Failed");
+      return;
+    }
+    setCapForm({ email: "", cap: String(cap), note: "" });
+    setUserLimitsTick((n) => n + 1);
+  };
 
   const rows = useMemo(() => {
     if (!listings.length) return [];
@@ -663,6 +735,125 @@ export function AdminTab({ watchItems, hiddenItems }) {
         <strong style={{ color: "var(--text2)" }}>$ sold (90d)</strong> is rolling 90 days
         (vs 30 on dealers) — auction calendars run at lower cadence so a 30-day window
         is usually empty for any given house.
+      </div>
+
+      {/* ── User limits ───────────────────────────────────────────── */}
+      <div style={{
+        display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
+        marginTop: 32, marginBottom: 14,
+      }}>
+        <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
+          User limits
+        </h1>
+        <span style={{ fontSize: 12, color: "var(--text2)" }}>
+          {userLimits.length} users with watchlist data ·
+          {" "}{userLimits.filter((u) => !u.is_default_cap).length} with overrides
+        </span>
+      </div>
+
+      {userLimits.length === 0 ? (
+        <div style={{ color: "var(--text2)", fontSize: 13, padding: 20 }}>
+          {supabase ? "No user data yet (or RPC denied for non-admins)." : "Supabase not configured."}
+        </div>
+      ) : (
+        <div style={{ overflowX: "auto", border: "0.5px solid var(--border)", borderRadius: 8 }}>
+          <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 800 }}>
+            <thead>
+              <tr>
+                {USER_COLUMNS.map((c) => (
+                  <th key={c.key} style={{ ...headerBase, textAlign: c.align, cursor: "default" }}>
+                    {c.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {userLimits.map((r) => (
+                <tr key={r.user_id}>
+                  {USER_COLUMNS.map((c) => (
+                    <td key={c.key} style={{ ...cellBase, textAlign: c.align, color: "var(--text1)" }}>
+                      {c.fmt(r)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Inline cap-edit form. Calls set_watchlist_cap_by_email RPC
+          which is admin-only on the SQL side, so the same admin gate
+          guards the form even if a non-admin saw it. */}
+      <form onSubmit={submitCapChange} style={{
+        marginTop: 16,
+        padding: "12px 14px",
+        border: "0.5px solid var(--border)",
+        borderRadius: 8,
+        display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end",
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", flex: "2 1 240px", minWidth: 200 }}>
+          <label style={{ fontSize: 11, color: "var(--text2)", marginBottom: 4 }}>User email</label>
+          <input
+            type="email"
+            value={capForm.email}
+            onChange={(e) => setCapForm((f) => ({ ...f, email: e.target.value }))}
+            placeholder="user@example.com"
+            style={{ ...cellBase, fontFamily: "inherit", fontSize: 13, padding: "6px 8px", border: "0.5px solid var(--border)", borderRadius: 6, background: "var(--bg)", color: "var(--text1)" }}
+            required
+          />
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", flex: "1 1 100px", minWidth: 90 }}>
+          <label style={{ fontSize: 11, color: "var(--text2)", marginBottom: 4 }}>New cap</label>
+          <input
+            type="number"
+            min="0"
+            max="100000"
+            value={capForm.cap}
+            onChange={(e) => setCapForm((f) => ({ ...f, cap: e.target.value }))}
+            style={{ ...cellBase, fontFamily: "inherit", fontSize: 13, padding: "6px 8px", border: "0.5px solid var(--border)", borderRadius: 6, background: "var(--bg)", color: "var(--text1)" }}
+            required
+          />
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", flex: "3 1 240px", minWidth: 200 }}>
+          <label style={{ fontSize: 11, color: "var(--text2)", marginBottom: 4 }}>Note (optional)</label>
+          <input
+            type="text"
+            value={capForm.note}
+            onChange={(e) => setCapForm((f) => ({ ...f, note: e.target.value }))}
+            placeholder="why the override"
+            style={{ ...cellBase, fontFamily: "inherit", fontSize: 13, padding: "6px 8px", border: "0.5px solid var(--border)", borderRadius: 6, background: "var(--bg)", color: "var(--text1)" }}
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={capBusy}
+          style={{
+            padding: "8px 14px",
+            border: "0.5px solid var(--border)",
+            borderRadius: 6,
+            background: "var(--text1)",
+            color: "var(--bg)",
+            fontSize: 13, fontWeight: 500,
+            cursor: capBusy ? "wait" : "pointer",
+            opacity: capBusy ? 0.6 : 1,
+          }}
+        >
+          {capBusy ? "Saving…" : "Set cap"}
+        </button>
+        {capError && (
+          <div style={{ flex: "1 1 100%", color: "#c0392b", fontSize: 12, marginTop: 4 }}>
+            {capError}
+          </div>
+        )}
+      </form>
+
+      <div style={{ marginTop: 12, fontSize: 11, color: "var(--text3)", lineHeight: 1.6 }}>
+        Default cap: <strong>2,500</strong> hearts per user. Soft warning fires at 80%
+        of cap (2,000 by default). The DB enforces the cap via a BEFORE INSERT trigger
+        on watchlist_items, so a malicious or buggy frontend can't bypass it.
+        Lowering a user's cap below their current count doesn't remove existing items —
+        they just can't add more until they un-favorite.
       </div>
     </div>
   );
