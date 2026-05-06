@@ -3,10 +3,10 @@
   "alerts": [],
   "counts": {
     "Antiquorum": 540,
-    "Christie's": 82,
-    "Phillips": 7,
+    "Christie's": 226,
+    "Phillips": 6,
     "Sotheby's": 94
   },
-  "total_live_lots": 723,
+  "total_live_lots": 866,
   "houses_tracked": 4
 }
