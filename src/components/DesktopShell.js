@@ -48,6 +48,7 @@ export function DesktopShell(props) {
     referencesTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
+    shareActive,
   } = props;
 
   // Listings sub-tab gates filter exposure: Live listings hides
@@ -374,12 +375,22 @@ export function DesktopShell(props) {
           {/* User-limit banner (Epic 3). Renders null below soft-warn
               threshold. Fixed-position so it surfaces on any tab. */}
           {userLimitBannerJSX}
-          {/* (Ending-soon pinned section retired 2026-05-04 — Watchlist
-              > Saved auctions sub-tab IS the ending-soon view now.) */}
-          {tab === "listings" ? listingsTabContentJSX
-            : tab === "references" ? referencesTabJSX
-            : tab === "admin" ? adminTabJSX
-            : watchlistTabJSX}
+          {/* When ShareReceiver is showing the focused landing
+              surface (an inbound share link), skip the regular tab
+              content so the recipient gets a clean first-impression
+              page rather than a card stacked over an unrelated
+              browse view. */}
+          {!shareActive && (
+            <>
+              {/* (Ending-soon pinned section retired 2026-05-04 —
+                  Watchlist > Saved auctions sub-tab IS the
+                  ending-soon view now.) */}
+              {tab === "listings" ? listingsTabContentJSX
+                : tab === "references" ? referencesTabJSX
+                : tab === "admin" ? adminTabJSX
+                : watchlistTabJSX}
+            </>
+          )}
         </div>
       </div>
       {trackNewItemModalJSX}

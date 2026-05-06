@@ -121,10 +121,26 @@ would touch every read path that already uses `useWatchlist().hidden`.
 
 **Share URL format.** Inbound share links use
 `?listing=<id>&shared=1` on the root URL — no `react-router`, no
-`/share/*` route. App.js parses on mount and renders a non-modal
-banner + the listing's Card above `listingsGridJSX` in both shells.
-URL is rewritten via `history.replaceState` after action so a
-refresh doesn't re-trigger.
+`/share/*` route. URL is rewritten via `history.replaceState` after
+action so a refresh doesn't re-trigger.
+
+**Share-receive landing surface (2026-05-06 redesign).**
+ShareReceiver detects share intent in a `useEffect` on mount, sets
+its own `shareIntent` state, AND mirrors a one-bit `shareActive`
+flag back up to App.js via the `setShareActive` prop. App.js stores
+that in a `useState` at the TOP of its hook list (before the
+loading/loadError early returns — adding hooks past those triggers
+React #310, see Things-to-never-do). Both shells gate their regular
+tab content on `shareActive`: when true, only the focused share
+surface renders in the main content area; when false, business as
+usual. ShareReceiver itself owns all share-related hooks (the v3
+isolation pattern after v2's React #310 in production) — only the
+single `shareActive` mirror lives at the parent. The focused
+surface is two-column on desktop (image left, details + Save /
+Dismiss + onboarding text right) and stacked on mobile, with three
+orientation anchors below ("Browse all listings", "Go to your
+saved list", "Cool stuff") for first-time visitors. Bottom padding
+on the surface is 110px so it clears the mobile tab bar.
 
 **Listings tab structure (sub-tabs, 2026-05-04, PR #33).** Four
 sub-tabs replace the earlier blend-sort + tri-state pill experiment:
