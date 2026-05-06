@@ -3,6 +3,7 @@ import { Card } from "./Card";
 import { ListRow } from "./ListRow";
 import { SubTabIntro } from "./SubTabIntro";
 import { ChallengesView } from "./ChallengesView";
+import { ManualEntryForm } from "./ManualEntryForm";
 import { fmtUSD } from "../utils";
 
 // Top-level Collections tab — landed 2026-05-06 (PR #86) when Mark
@@ -43,6 +44,7 @@ export function CollectionsTab({
   handleWish,
   compact,
   gridStyle,
+  inp,
   setEditingCollection,
   openCollectionPicker,
   startCreateCollection,
@@ -54,6 +56,10 @@ export function CollectionsTab({
   pendingChallengeDrillId,
   clearPendingChallengeDrill,
 }) {
+  // Manual-entry modal state — open while the user is filling in
+  // brand/model/photo for an Owned or Sold drill-in row. Closed
+  // by default; opened via the "+ Add a watch" CTA.
+  const [manualEntryOpen, setManualEntryOpen] = useState(false);
   // Drill-in selection. null = list view; uuid OR sentinel = drilled.
   const [selectedId, setSelectedId] = useState(() => {
     if (typeof window === "undefined") return null;
@@ -148,6 +154,9 @@ export function CollectionsTab({
   if (selected) {
     const isHiddenColl = selected.id === HIDDEN_COLLECTION_ID;
     const isHardSystem = !!selected.isSystem;
+    // Manual-entry CTA shows on Owned + Sold (not Wishlist — Mark
+    // 2026-05-06: "wishlist should be from feed" only).
+    const acceptsManualEntry = selected.type === "owned" || selected.type === "sold";
     const items = isHiddenColl ? hiddenItems : (itemsByColl[selected.id] || []);
     return (
       <div style={{ paddingTop: 4 }}>
@@ -167,6 +176,18 @@ export function CollectionsTab({
           <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
             {items.length}
           </span>
+          {/* +Add CTA on Owned/Sold drill-ins — opens the manual
+              entry modal. Sits in the header so it's reachable from
+              both empty + populated states. PR #88 will add an
+              "or pick from archive" path beside it. */}
+          {acceptsManualEntry && (
+            <button onClick={() => setManualEntryOpen(true)}
+              style={{
+                border: "none", background: "#185FA5", color: "#fff",
+                padding: "4px 10px", borderRadius: 6,
+                cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
+              }}>+ Add a watch</button>
+          )}
           {/* Rename + Delete hidden for hard system lists, the
               shared-inbox, and the synthetic Hidden row. Hard lists
               are non-deletable by design (defense-in-depth via DB
@@ -200,37 +221,62 @@ export function CollectionsTab({
             <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
               {isHiddenColl ? "Nothing hidden" : isHardSystem ? hardListEmptyTitle(selected.type) : "Empty list"}
             </div>
-            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto" }}>
+            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto 16px" }}>
               {isHiddenColl
                 ? "Listings you hide from the Available feed land here. Use the \"…\" menu on any card to unhide it."
                 : isHardSystem
                   ? hardListEmptyBlurb(selected.type)
                   : "Add watches via the \"…\" menu on any listing card → \"Add to list…\"."}
             </div>
+            {acceptsManualEntry && (
+              <button onClick={() => setManualEntryOpen(true)}
+                style={{
+                  border: "none", background: "#185FA5", color: "#fff",
+                  padding: "8px 16px", borderRadius: 8,
+                  cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+                }}>+ Add a watch</button>
+            )}
           </div>
         ) : (
           <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
             {items.map(item => (
-              <Card
-                key={item.id}
-                item={item}
-                wished={!!watchlist[item.id]}
-                onWish={handleWish}
-                compact={compact}
-                onHide={isHiddenColl
-                  ? toggleHide
-                  : () => collectionsApi.removeItemFromCollection(selected.id, item.id)}
-                hideLabel={isHiddenColl ? undefined : "Remove from list"}
-                isHidden={isHiddenColl}
-                onAddToCollection={openCollectionPicker}
-                primaryCurrency={primaryCurrency}
-                onShare={handleShare}
-                onView={observeCard}
-                onClickListing={onClickListing}
-              />
+              item.isManual ? (
+                <ManualItemCard
+                  key={item.id}
+                  item={item}
+                  onRemove={() => collectionsApi.removeItemFromCollection(selected.id, item.id)}
+                />
+              ) : (
+                <Card
+                  key={item.id}
+                  item={item}
+                  wished={!!watchlist[item.id]}
+                  onWish={handleWish}
+                  compact={compact}
+                  onHide={isHiddenColl
+                    ? toggleHide
+                    : () => collectionsApi.removeItemFromCollection(selected.id, item.id)}
+                  hideLabel={isHiddenColl ? undefined : "Remove from list"}
+                  isHidden={isHiddenColl}
+                  onAddToCollection={openCollectionPicker}
+                  primaryCurrency={primaryCurrency}
+                  onShare={handleShare}
+                  onView={observeCard}
+                  onClickListing={onClickListing}
+                />
+              )
             ))}
           </div>
         )}
+        <ManualEntryForm
+          open={manualEntryOpen}
+          onClose={() => setManualEntryOpen(false)}
+          kind={selected.type}
+          inp={inp}
+          uploadWatchPhoto={collectionsApi.uploadWatchPhoto}
+          addManualItem={collectionsApi.addManualItem}
+          collectionId={selected.id}
+        />
       </div>
     );
   }
@@ -459,3 +505,100 @@ const targetIcon = (
     <circle cx="12" cy="12" r="2"/>
   </svg>
 );
+
+// ── ManualItemCard ────────────────────────────────────────────────
+// Manual entries don't have a dealer URL, so the standard Card's
+// heart / share / "view on dealer" affordances don't apply. This is
+// a slim card matching the Card grid's column width (gridStyle's
+// auto-fill) but with only: photo + brand+model + meta line +
+// remove menu. Edit affordances (rename / change photo / update
+// price) come in PR #88 alongside the Owned→Sold transition flow.
+function ManualItemCard({ item, onRemove }) {
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const title = item.title || [item.brand, item.model].filter(Boolean).join(" ").trim() || "Untitled";
+  // Meta line composes ref / material / price as available.
+  const metaParts = [];
+  if (item.ref) metaParts.push(`Ref ${item.ref}`);
+  if (item.material) metaParts.push(item.material);
+  const meta = metaParts.join(" · ");
+  const priceLine = item.price != null
+    ? `${item.currency || ""} ${Number(item.price).toLocaleString()}`.trim()
+    : null;
+  const soldLine = item.soldPrice != null
+    ? `Sold ${item.currency || ""} ${Number(item.soldPrice).toLocaleString()}${item.soldDate ? ` · ${item.soldDate}` : ""}`.trim()
+    : null;
+
+  return (
+    <div style={{
+      position: "relative",
+      border: "0.5px solid var(--border)", borderRadius: 10,
+      background: "var(--card-bg)", overflow: "hidden",
+      display: "flex", flexDirection: "column",
+    }}>
+      <div style={{
+        aspectRatio: "1 / 1", background: "var(--surface)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        {item.img ? (
+          <img src={item.img} alt={title} loading="lazy"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <span style={{ fontSize: 36, color: "var(--text3)" }}>⌚</span>
+        )}
+      </div>
+      <div style={{ padding: "10px 12px 12px", flex: 1 }}>
+        <div style={{
+          fontSize: 13, fontWeight: 500, color: "var(--text1)",
+          marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>{title}</div>
+        {meta && (
+          <div style={{ fontSize: 11, color: "var(--text2)", marginBottom: 2 }}>{meta}</div>
+        )}
+        {priceLine && (
+          <div style={{ fontSize: 11, color: "var(--text2)" }}>Paid {priceLine}</div>
+        )}
+        {soldLine && (
+          <div style={{ fontSize: 11, color: "var(--text2)" }}>{soldLine}</div>
+        )}
+        {item.comments && (
+          <div style={{
+            fontSize: 11, color: "var(--text3)", marginTop: 6,
+            lineHeight: 1.4, fontStyle: "italic",
+            overflow: "hidden", display: "-webkit-box",
+            WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+          }}>{item.comments}</div>
+        )}
+      </div>
+      <div style={{ position: "absolute", top: 6, right: 6 }}>
+        <button onClick={() => setMenuOpen(o => !o)}
+          aria-label="More" style={{
+            border: "none", background: "rgba(0,0,0,0.5)",
+            color: "#fff", width: 26, height: 26, borderRadius: "50%",
+            cursor: "pointer", fontSize: 14, fontFamily: "inherit",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>⋯</button>
+        {menuOpen && (
+          <div style={{
+            position: "absolute", top: 30, right: 0,
+            background: "var(--card-bg)",
+            border: "0.5px solid var(--border)", borderRadius: 8,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            minWidth: 140, zIndex: 10,
+          }}>
+            <button onClick={async () => {
+              setMenuOpen(false);
+              if (window.confirm("Remove this watch from the list?")) {
+                await onRemove();
+              }
+            }} style={{
+              width: "100%", border: "none", background: "transparent",
+              padding: "10px 12px", textAlign: "left",
+              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+              color: "#c0392b",
+            }}>Remove</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

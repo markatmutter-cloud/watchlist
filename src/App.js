@@ -1823,6 +1823,7 @@ export default function Watchlist() {
       handleWish={handleWish}
       compact={compact}
       gridStyle={gridStyle}
+      inp={inp}
       setEditingCollection={setEditingCollection}
       openCollectionPicker={openCollectionPicker}
       startCreateCollection={startCreateCollection}
