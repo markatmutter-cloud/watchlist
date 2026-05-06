@@ -73,6 +73,14 @@ function ChipDot({ kind }) {
 
 const fmtPct = (n) => (n ? `${(n * 100).toFixed(1)}%` : "—");
 const fmtPer100 = (n) => (n ? n.toFixed(1) : "—");
+// Compact $ — switches between $X.XK / $X.XM so a wide range of
+// values reads cleanly in a fixed-width column.
+const fmtMoney = (n) => {
+  if (!n) return "—";
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000)     return `$${(n / 1_000).toFixed(1)}K`;
+  return `$${Math.round(n)}`;
+};
 
 const COLUMNS = [
   { key: "source",      label: "Source",      align: "left",  fmt: (r) => r.source },
@@ -85,6 +93,15 @@ const COLUMNS = [
   { key: "hides",       label: "✕",           align: "right", fmt: (r) => r.hides.toLocaleString() },
   { key: "hideRate",    label: "✕ %",         align: "right", fmt: (r) => fmtPct(r.hideRate) },
   { key: "avgPrice",    label: "Avg $",       align: "right", fmt: (r) => r.avgPrice ? `$${(r.avgPrice/1000).toFixed(1)}K` : "—" },
+  // Throughput in $ — supply-side rolling 30d. $ added is the sum of
+  // priceUSD across listings that first appeared in the last 30 days
+  // (regardless of current sold state — a listing is "added" once
+  // even if it later sells). $ sold is the sum of lastMeaningfulPrice
+  // for listings that went sold within 30 days. Together they give
+  // a velocity read that the unit-count + heart-rate columns miss
+  // for high-value-low-volume dealers.
+  { key: "addedUsd30d", label: "$ added (30d)", align: "right", fmt: (r) => fmtMoney(r.addedUsd30d) },
+  { key: "soldUsd30d",  label: "$ sold (30d)",  align: "right", fmt: (r) => fmtMoney(r.soldUsd30d) },
   { key: "topBrand",    label: "Top brand",   align: "left",  fmt: (r) => r.topBrand ? `${r.topBrand} ${(r.topBrandPct*100).toFixed(0)}%` : "—" },
   // Demand-side columns from listing_events (Epic 8). 30-day rolling
   // window, sourced from listing_events_daily via the
@@ -99,6 +116,32 @@ const COLUMNS = [
   { key: "earning",     label: "Earning?",    align: "center",fmt: (r) => <ChipDot kind={r.earning} /> },
 ];
 
+// Auction-house quality table. Different signal set than dealer
+// sources: houses publish in batches around scheduled sales rather
+// than rolling inventory, so unit-count / new-per-week / heart-rate
+// don't carry the same meaning. Instead surface what actually matters:
+// scrape coverage, sold-rate, $ throughput, estimate calibration.
+const HOUSE_COLUMNS = [
+  { key: "house",         label: "House",          align: "left",  fmt: (r) => r.house },
+  { key: "scrapeMode",    label: "Scrape mode",    align: "left",  fmt: (r) => r.scrapeMode },
+  { key: "liveSales",     label: "Live sales",     align: "right", fmt: (r) => r.liveSales.toLocaleString() },
+  { key: "upcomingSales", label: "Upcoming",       align: "right", fmt: (r) => r.upcomingSales.toLocaleString() },
+  { key: "totalLots",     label: "Lots",           align: "right", fmt: (r) => r.totalLots.toLocaleString() },
+  { key: "soldLots",      label: "Sold",           align: "right", fmt: (r) => r.soldLots.toLocaleString() },
+  { key: "soldRate",      label: "Sold %",         align: "right", fmt: (r) => fmtPct(r.soldRate) },
+  // $ sold is rolling 90d here (vs 30d on dealers) — auction calendars
+  // run at lower cadence so a 30-day window is usually empty for any
+  // given house.
+  { key: "soldUsd90d",    label: "$ sold (90d)",   align: "right", fmt: (r) => fmtMoney(r.soldUsd90d) },
+  // Hammer ÷ low estimate. ~1.0 = estimates calibrated to where bidding
+  // lands. <0.7 = systematically optimistic (Antiquorum runs here);
+  // >1.3 = systematically conservative. Median across all sold lots
+  // we have data for, so dominant houses dominate but the per-house
+  // value still reads.
+  { key: "estimateRatio", label: "Hammer/Low",     align: "right", fmt: (r) => r.estimateRatio ? r.estimateRatio.toFixed(2) : "—" },
+  { key: "health",        label: "Health",         align: "center",fmt: (r) => <ChipDot kind={r.health} /> },
+];
+
 export function AdminTab({ watchItems, hiddenItems }) {
   const [verification, setVerification] = useState(null);
   const [history, setHistory] = useState([]);
@@ -109,6 +152,14 @@ export function AdminTab({ watchItems, hiddenItems }) {
   // Empty Map until the RPC resolves; engagement columns render "—"
   // for sources without rolled-up events yet.
   const [engagement, setEngagement] = useState(new Map());
+  // Auction calendar + lots, used for the per-house quality table
+  // below the dealer source table. Both static JSON files served
+  // alongside listings.json. Manual archive lots are merged into the
+  // lots map so historical hammer prices contribute to the
+  // estimate-ratio + sold-rate signals.
+  const [auctions, setAuctions] = useState([]);
+  const [auctionLots, setAuctionLots] = useState({});
+  const [houseSort, setHouseSort] = useState({ key: "totalLots", dir: "desc" });
 
   useEffect(() => {
     let cancelled = false;
@@ -116,11 +167,16 @@ export function AdminTab({ watchItems, hiddenItems }) {
       fetch("/verification.json").then((r) => r.ok ? r.json() : null).catch(() => null),
       fetch("/verification_history.json").then((r) => r.ok ? r.json() : { history: [] }).catch(() => ({ history: [] })),
       fetch("/listings.json").then((r) => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([v, h, l]) => {
+      fetch("/auctions.json").then((r) => r.ok ? r.json() : []).catch(() => []),
+      fetch("/auction_lots.json").then((r) => r.ok ? r.json() : {}).catch(() => ({})),
+      fetch("/manual_archive_lots.json").then((r) => r.ok ? r.json() : {}).catch(() => ({})),
+    ]).then(([v, h, l, a, lots, archive]) => {
       if (cancelled) return;
       setVerification(v);
       setHistory((h && h.history) || []);
       setListings(l);
+      setAuctions(Array.isArray(a) ? a : []);
+      setAuctionLots({ ...(lots || {}), ...(archive || {}) });
     }).catch((e) => {
       if (!cancelled) setLoadError(String(e));
     });
@@ -150,13 +206,18 @@ export function AdminTab({ watchItems, hiddenItems }) {
 
     const today = new Date();
     const FOUR_WEEKS_MS = 28 * 24 * 60 * 60 * 1000;
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
     const DAY_MS = 86400000;
 
     const bySource = new Map();
     for (const it of listings) {
       const s = it.source || "?";
       if (!bySource.has(s)) {
-        bySource.set(s, { live: 0, prices: [], brands: new Map(), newRecent: 0, latestFirstSeen: "" });
+        bySource.set(s, {
+          live: 0, prices: [], brands: new Map(),
+          newRecent: 0, latestFirstSeen: "",
+          addedUsd30d: 0, soldUsd30d: 0,
+        });
       }
       const agg = bySource.get(s);
       if (!it.sold) agg.live += 1;
@@ -168,6 +229,28 @@ export function AdminTab({ watchItems, hiddenItems }) {
       if (fs) {
         const fsDate = new Date(fs);
         if (today - fsDate <= FOUR_WEEKS_MS) agg.newRecent += 1;
+        // Throughput — $ added rolling 30d. Counts a listing once at
+        // its firstSeen date regardless of current sold state, so a
+        // dealer that lists + sells fast still gets credit for the
+        // initial supply.
+        if (today - fsDate <= THIRTY_DAYS_MS && it.priceUSD) {
+          agg.addedUsd30d += it.priceUSD;
+        }
+      }
+      // $ sold (30d) — value of inventory that converted in the last
+      // 30 days. Falls back through the price hierarchy: priceUSD if
+      // still set on a sold record, otherwise lastMeaningfulPrice
+      // (which merge.py emits as the last non-zero priceHistory entry
+      // — see CLAUDE.md "Backend-emitted display fields").
+      if (it.sold) {
+        const sa = it.soldAt || "";
+        if (sa) {
+          const sd = new Date(sa);
+          if (today - sd <= THIRTY_DAYS_MS) {
+            const v = it.priceUSD || it.lastMeaningfulPrice || 0;
+            if (v) agg.soldUsd30d += v;
+          }
+        }
       }
     }
 
@@ -190,7 +273,11 @@ export function AdminTab({ watchItems, hiddenItems }) {
     const sources = new Set([...bySource.keys(), ...heartsBy.keys(), ...hidesBy.keys()]);
     const out = [];
     for (const src of sources) {
-      const agg = bySource.get(src) || { live: 0, prices: [], brands: new Map(), newRecent: 0, latestFirstSeen: "" };
+      const agg = bySource.get(src) || {
+        live: 0, prices: [], brands: new Map(),
+        newRecent: 0, latestFirstSeen: "",
+        addedUsd30d: 0, soldUsd30d: 0,
+      };
       const hearts = heartsBy.get(src) || 0;
       const hides = hidesBy.get(src) || 0;
       const everSeen = Math.max(agg.live, hearts + hides, 1);
@@ -228,6 +315,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
       out.push({
         source: src, live: agg.live, newPerWeek, daysStale, hearts, heartRate, hides, hideRate,
         avgPrice: median, topBrand, topBrandPct, trend, health, earning, alert,
+        addedUsd30d: agg.addedUsd30d, soldUsd30d: agg.soldUsd30d,
         views30d, clicks30d, saves30d, listAdds30d, shares30d,
         ctr, savePer100v, listAddPer100v, sharePer100v,
       });
@@ -257,6 +345,105 @@ export function AdminTab({ watchItems, hiddenItems }) {
     });
     return r;
   }, [rows, sort]);
+
+  // Per-house aggregates for the auction-house quality table.
+  // Drawn from auctions.json (calendar status) + auction_lots.json
+  // ∪ manual_archive_lots.json (lot detail). tracked_lots.json is
+  // user-specific so it's intentionally excluded.
+  const houseRows = useMemo(() => {
+    const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+    const today = new Date();
+
+    // Houses that have lot-level scrapers; everything else is
+    // calendar-only per CLAUDE.md "Comprehensive auction-lot scraping".
+    const SCRAPED_HOUSES = new Set(["Antiquorum", "Christie's", "Sotheby's", "Phillips"]);
+
+    const byHouse = new Map();
+    const ensure = (h) => {
+      if (!byHouse.has(h)) {
+        byHouse.set(h, {
+          liveSales: 0, upcomingSales: 0,
+          totalLots: 0, soldLots: 0, soldUsd90d: 0,
+          ratios: [],
+        });
+      }
+      return byHouse.get(h);
+    };
+
+    for (const sale of auctions) {
+      const h = sale.house || "?";
+      const agg = ensure(h);
+      if (sale.status === "live") agg.liveSales += 1;
+      else if (sale.status === "upcoming") agg.upcomingSales += 1;
+    }
+    for (const lot of Object.values(auctionLots)) {
+      const h = lot.house || "?";
+      const agg = ensure(h);
+      agg.totalLots += 1;
+      if (lot.sold_price_usd) {
+        agg.soldLots += 1;
+        const end = lot.auction_end ? new Date(lot.auction_end) : null;
+        if (end && today - end <= NINETY_DAYS_MS) {
+          agg.soldUsd90d += Number(lot.sold_price_usd) || 0;
+        }
+        if (lot.estimate_low_usd) {
+          agg.ratios.push(Number(lot.sold_price_usd) / Number(lot.estimate_low_usd));
+        }
+      }
+    }
+
+    const houseAlerts = new Map();
+    // Verification.json carries auction-house alerts in the same
+    // alerts[] array as dealer alerts; the verify_auction_lots step
+    // emits them with the house name in `source`.
+    for (const a of (verification?.alerts || [])) {
+      if (a.source && byHouse.has(a.source)) houseAlerts.set(a.source, a);
+    }
+
+    const out = [];
+    for (const [house, agg] of byHouse) {
+      const soldRate = agg.totalLots ? agg.soldLots / agg.totalLots : 0;
+      const sortedRatios = agg.ratios.slice().sort((a, b) => a - b);
+      const median = sortedRatios.length
+        ? sortedRatios[Math.floor(sortedRatios.length / 2)]
+        : 0;
+      const alert = houseAlerts.get(house);
+      const health = !alert ? "ok" : (alert.level === "ERROR" ? "error" : "warn");
+      const scrapeMode = SCRAPED_HOUSES.has(house) ? "lot-level" : "calendar-only";
+      out.push({
+        house, scrapeMode,
+        liveSales: agg.liveSales, upcomingSales: agg.upcomingSales,
+        totalLots: agg.totalLots, soldLots: agg.soldLots, soldRate,
+        soldUsd90d: agg.soldUsd90d,
+        estimateRatio: median,
+        health, alert,
+      });
+    }
+    return out;
+  }, [auctions, auctionLots, verification]);
+
+  const sortedHouseRows = useMemo(() => {
+    const r = houseRows.slice();
+    const k = houseSort.key;
+    const sign = houseSort.dir === "asc" ? 1 : -1;
+    const healthOrder = { ok: 0, warn: 1, error: 2 };
+    r.sort((a, b) => {
+      if (k === "house" || k === "scrapeMode") {
+        return sign * String(a[k] || "").localeCompare(String(b[k] || ""));
+      }
+      if (k === "health") return sign * (healthOrder[a.health] - healthOrder[b.health]);
+      return sign * ((a[k] || 0) - (b[k] || 0));
+    });
+    return r;
+  }, [houseRows, houseSort]);
+
+  const onHouseSortClick = (key) => {
+    setHouseSort((prev) => {
+      if (prev.key === key) return { key, dir: prev.dir === "asc" ? "desc" : "asc" };
+      const isText = key === "house" || key === "scrapeMode";
+      return { key, dir: isText ? "asc" : "desc" };
+    });
+  };
 
   const onSortClick = (key) => {
     setSort((prev) => {
@@ -396,11 +583,86 @@ export function AdminTab({ watchItems, hiddenItems }) {
         <strong style={{ color: "var(--text2)" }}>Caveats:</strong> hide counts cover only currently-active listings (the schema doesn't snapshot at hide time);
         heart/hide rates use max(live, hearts+hides) as the denominator (proxy for "ever seen") to avoid loading state.json. Both reasonable for v1.
         <br />
+        <strong style={{ color: "var(--text2)" }}>Throughput</strong> ($ added / $ sold) is a 30-day rolling sum
+        from listings.json. $ added counts a listing once at firstSeen,
+        $ sold uses lastMeaningfulPrice if priceUSD is 0 on the sold
+        record (the merge.py-emitted "last non-zero ask" field).
+        <br />
         <strong style={{ color: "var(--text2)" }}>Engagement</strong> (Views / CTR / ♥/100v / +List/100v / Sh/100v) is a 30-day rolling
         window from the listing_events_daily rollup. Today's events
         appear after the next nightly rollup; trigger one early via
         <code style={{ marginLeft: 4, marginRight: 4, padding: "0 4px", background: "var(--surface)", borderRadius: 3 }}>select public.rollup_and_prune_listing_events();</code>
         in the SQL editor.
+      </div>
+
+      {/* ── Auction-house quality ──────────────────────────────────── */}
+      <div style={{
+        display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
+        marginTop: 32, marginBottom: 14,
+      }}>
+        <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
+          Auction house quality
+        </h1>
+        <span style={{ fontSize: 12, color: "var(--text2)" }}>
+          {houseRows.length} houses · {houseRows.reduce((a, r) => a + r.totalLots, 0).toLocaleString()} lots tracked
+        </span>
+      </div>
+
+      {houseRows.length === 0 ? (
+        <div style={{ color: "var(--text2)", fontSize: 13, padding: 20 }}>
+          Loading auction data…
+        </div>
+      ) : (
+        <div style={{ overflowX: "auto", border: "0.5px solid var(--border)", borderRadius: 8 }}>
+          <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 900 }}>
+            <thead>
+              <tr>
+                {HOUSE_COLUMNS.map((c) => (
+                  <th
+                    key={c.key}
+                    onClick={() => onHouseSortClick(c.key)}
+                    style={{ ...headerBase, textAlign: c.align }}
+                    title="Click to sort"
+                  >
+                    {c.label}
+                    {houseSort.key === c.key && (
+                      <span style={{ marginLeft: 4, color: "var(--text1)" }}>
+                        {houseSort.dir === "asc" ? "▲" : "▼"}
+                      </span>
+                    )}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sortedHouseRows.map((r) => (
+                <tr key={r.house}>
+                  {HOUSE_COLUMNS.map((c) => (
+                    <td key={c.key} style={{ ...cellBase, textAlign: c.align, color: "var(--text1)" }}>
+                      {c.fmt(r)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div style={{ marginTop: 16, fontSize: 11, color: "var(--text3)", lineHeight: 1.6 }}>
+        <strong style={{ color: "var(--text2)" }}>Scrape mode:</strong> "lot-level" houses (Antiquorum, Christie's,
+        Sotheby's, Phillips) have working detail scrapers; "calendar-only" houses (Bonhams,
+        Monaco Legend) only contribute upcoming-sale tiles, no per-lot data — the lots/sold
+        columns will read 0 for them.
+        <br />
+        <strong style={{ color: "var(--text2)" }}>Hammer/Low</strong> is the median ratio of
+        sold price to low estimate across all sold lots we have data for. ~1.0 means
+        estimates are calibrated to where bidding lands; &lt;0.7 systematically optimistic;
+        &gt;1.3 systematically conservative.
+        <br />
+        <strong style={{ color: "var(--text2)" }}>$ sold (90d)</strong> is rolling 90 days
+        (vs 30 on dealers) — auction calendars run at lower cadence so a 30-day window
+        is usually empty for any given house.
       </div>
     </div>
   );
