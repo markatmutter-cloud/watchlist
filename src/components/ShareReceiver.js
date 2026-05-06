@@ -157,63 +157,77 @@ export function ShareReceiver({
   return (
     <div style={{
       // Take over the parent content area. Bottom padding sized to
-      // clear the mobile bottom tab bar (~80px tall) — the focused
-      // landing surface mounts at the same level the regular feed
-      // does, so it has to apply that padding itself.
-      padding: "20px 16px 110px",
-      maxWidth: 1100,
+      // clear the mobile bottom tab bar (~80px tall). maxWidth lifted
+      // to 1320 (was 1100) so the 3-column wide layout uses the
+      // available horizontal real estate instead of forcing scroll.
+      padding: "16px 16px 110px",
+      maxWidth: 1320,
       margin: "0 auto",
       width: "100%",
     }}>
-      {/* Onboarding header ─────────────────────────────────────── */}
+      {/* Compact onboarding header — single line + badge so the rest
+          of the surface fits in viewport on a typical desktop. */}
       <div style={{
-        marginBottom: 18,
+        display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+        marginBottom: 14,
       }}>
-        <div style={{
+        <span style={{
           display: "inline-block",
-          fontSize: 11, fontWeight: 600,
+          fontSize: 10, fontWeight: 600,
           textTransform: "uppercase", letterSpacing: "0.06em",
           color: "#fff", background: "#185FA5",
           padding: "3px 8px", borderRadius: 4,
-          marginBottom: 8,
+          flexShrink: 0,
         }}>
           Shared with you
-        </div>
+        </span>
         <h1 style={{
-          fontSize: 22, fontWeight: 600,
-          color: "var(--text1)", margin: 0, lineHeight: 1.25,
+          fontSize: 17, fontWeight: 600,
+          color: "var(--text1)", margin: 0, lineHeight: 1.3,
         }}>
-          Someone sent you this watch on Watchlist.
+          Someone sent you a watch on Watchlist.
         </h1>
-        <p style={{
-          marginTop: 8, marginBottom: 0,
-          fontSize: 14, color: "var(--text2)", lineHeight: 1.5,
-          maxWidth: 720,
-        }}>
-          {user
-            ? <>Save it to your list, or dismiss to keep it only in your <strong style={{ color: "var(--text1)" }}>Shared with me</strong> inbox.</>
-            : <>Sign in to save it for later. Or follow the dealer link from the card below — no account needed.</>
-          }
-        </p>
       </div>
 
       {sharedItem ? (
-        <FocusedShareCard
-          item={sharedItem}
-          isAlreadySaved={!!isAlreadySaved}
-          user={user}
-          busy={busy}
-          isAuthConfigured={isAuthConfigured}
-          signInWithGoogle={signInWithGoogle}
-          onSave={onSave}
-          onDismiss={onDismiss}
-          onClickListing={onClickListing}
-          fmtPriceLine={fmtPriceLine}
-        />
+        <div className="share-receiver-wide-grid" style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr)",
+          gap: 16,
+          alignItems: "stretch",
+        }}>
+          <style>{`
+            @media (min-width: 1100px) {
+              .share-receiver-wide-grid {
+                grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr) !important;
+              }
+            }
+          `}</style>
+          <FocusedShareCard
+            item={sharedItem}
+            isAlreadySaved={!!isAlreadySaved}
+            user={user}
+            busy={busy}
+            isAuthConfigured={isAuthConfigured}
+            signInWithGoogle={signInWithGoogle}
+            onSave={onSave}
+            onDismiss={onDismiss}
+            onClickListing={onClickListing}
+            fmtPriceLine={fmtPriceLine}
+          />
+          <OrientationAnchors
+            signedIn={!!user}
+            onClickAnchor={onClickAnchor}
+          />
+        </div>
       ) : (
         <div style={{
           padding: "32px 24px", borderRadius: 12,
           border: "0.5px solid var(--border)", background: "var(--card-bg)",
+          // Light-mode lift: --card-bg is #fff (same as page) in light
+          // mode, so without a shadow the card has no tone shift. The
+          // shadow disappears against #000 in dark mode (no harm).
+          boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)",
           fontSize: 14, color: "var(--text2)", lineHeight: 1.6,
           maxWidth: 720,
         }}>
@@ -226,12 +240,6 @@ export function ShareReceiver({
           </div>
         </div>
       )}
-
-      {/* Orientation anchors — first-time-visitor onboarding. */}
-      <OrientationAnchors
-        signedIn={!!user}
-        onClickAnchor={onClickAnchor}
-      />
     </div>
   );
 }
@@ -263,9 +271,10 @@ function FocusedShareCard({
       overflow: "hidden",
       border: "0.5px solid var(--border)",
       background: "var(--card-bg)",
-      // CSS @container would be cleaner; sticking with media query
-      // since the rest of the app uses inline styles + matchMedia
-      // patterns anyway.
+      // Light-mode lift: --card-bg is #fff (same as page bg) in
+      // light mode, so without a shadow the card has no tone shift.
+      // Shadow disappears against #000 in dark mode (no harm).
+      boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)",
     }}
     className="share-receiver-focused-card"
     >
@@ -286,7 +295,12 @@ function FocusedShareCard({
         style={{
           position: "relative",
           display: "block",
-          aspectRatio: "1 / 1",
+          // 4:3 instead of 1:1 — tighter vertical so the whole
+          // surface fits a typical desktop viewport. On the wide
+          // 3-column layout the card itself becomes the dominant
+          // element (1.6fr alongside 1fr orientation) and a 4:3
+          // image still feels generous.
+          aspectRatio: "4 / 3",
           background: "var(--surface)",
           textDecoration: "none",
         }}
@@ -426,33 +440,41 @@ function FocusedShareCard({
 }
 
 // ── OrientationAnchors ─────────────────────────────────────────────
-// First-time visitor onboarding. Three CTAs that orient anyone who
-// hasn't been to Watchlist before: see the rest of the inventory,
-// jump to their saved list (post-sign-in), or read about the project.
+// First-time-visitor onboarding. Lives in the right column on wide
+// desktop (≥1100px), beside the focused share card; stacks below
+// the card on narrower / mobile. Stacked-button layout reads well
+// in either column orientation — no internal flex-wrap needed.
 function OrientationAnchors({ signedIn, onClickAnchor }) {
   return (
     <div style={{
-      marginTop: 32,
-      paddingTop: 22,
-      borderTop: "0.5px solid var(--border)",
+      borderRadius: 12,
+      border: "0.5px solid var(--border)",
+      background: "var(--card-bg)",
+      // Same lift treatment as the focused card so the two read as
+      // a paired surface in light mode where --card-bg = --bg.
+      boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)",
+      padding: "18px 18px 16px",
+      display: "flex", flexDirection: "column",
+      // Stretch to match the focused card height on wide so the two
+      // panes are visually balanced.
+      minHeight: 0,
     }}>
       <div style={{
-        fontSize: 11, fontWeight: 600,
+        fontSize: 10, fontWeight: 600,
         textTransform: "uppercase", letterSpacing: "0.06em",
-        color: "var(--text3)", marginBottom: 12,
+        color: "var(--text3)", marginBottom: 8,
       }}>
         First time on Watchlist?
       </div>
       <p style={{
-        margin: "0 0 14px", fontSize: 14, color: "var(--text2)", lineHeight: 1.55,
-        maxWidth: 720,
+        margin: "0 0 14px", fontSize: 13, color: "var(--text2)",
+        lineHeight: 1.5,
       }}>
-        Watchlist is an aggregator for vintage watches from independent dealers and auction
-        houses. One feed, no ads, free. New listings + price drops surface across runs so
-        you can keep an eye on what's coming through the market.
+        An aggregator for vintage watches from independent dealers and auction houses.
+        One feed, no ads, free. New listings + price drops surface across runs.
       </p>
       <div style={{
-        display: "flex", flexWrap: "wrap", gap: 10,
+        display: "flex", flexDirection: "column", gap: 8,
       }}>
         <button onClick={() => onClickAnchor("listings")} style={anchorBtnStyle}>
           Browse all listings →
@@ -463,7 +485,7 @@ function OrientationAnchors({ signedIn, onClickAnchor }) {
           </button>
         )}
         <button onClick={() => onClickAnchor("references")} style={anchorBtnStyle}>
-          Cool stuff → tools, links, references
+          Cool stuff (tools + links) →
         </button>
       </div>
     </div>
