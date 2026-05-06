@@ -486,8 +486,8 @@ function OrientationAnchors({ signedIn, onClickAnchor }) {
         margin: "0 0 14px", fontSize: 13, color: "var(--text2)",
         lineHeight: 1.5,
       }}>
-        An aggregator for vintage watches from independent dealers and auction houses.
-        One feed, no ads, free. New listings + price drops surface across runs.
+        Watchlist is a vintage watch aggregator from independent dealers and auction houses.
+        One feed to manage watchlists, no ads, and it's free.
       </p>
       <div style={{
         display: "flex", flexDirection: "column", gap: 8,
