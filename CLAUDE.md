@@ -9,7 +9,7 @@ how to behave for the rest of it.
 - [README.md](README.md) — what the project is + architecture. Public-facing.
 - [ROADMAP.md](ROADMAP.md) — priorities, epics, what's explicitly out of scope.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
-  The current one is [SESSION_HANDOFF_2026-05-05.md](SESSION_HANDOFF_2026-05-05.md);
+  The current one is [SESSION_HANDOFF_2026-05-06.md](SESSION_HANDOFF_2026-05-06.md);
   older ones live in `archive/`.
 
 If a gotcha or convention is durable (still true next session), graduate
@@ -81,18 +81,37 @@ comment refers to "the Collections sub-tab", read it as "the Lists
 sub-tab"; the UI label moved, the data model didn't.
 
 **Watch Challenges (Build-a-collection v1, 2026-05-03; relocated
-2026-05-04).** Challenges are collections with `type='challenge'`.
-Schema additions in `supabase/schema/2026-05-03_challenges.sql`:
-`target_count`, `budget`, `description_long`, `state`
-(draft|complete), `parent_challenge_id` on collections; `is_pick`
-(shortlist vs final pick) + `reasoning` on collection_items. ONE
-collection per challenge — picks and shortlist live in the same
-items table, distinguished by the boolean. Picks snapshot
+2026-05-04; rebuilt 2026-05-06).** Challenges are collections with
+`type='challenge'`. Schema additions in
+`supabase/schema/2026-05-03_challenges.sql`: `target_count`, `budget`,
+`description_long`, `state` (draft|complete), `parent_challenge_id`
+on collections; `is_pick` (legacy shortlist vs pick) + `reasoning`
+on collection_items. ONE collection per challenge. Picks snapshot
 `saved_price`/`saved_currency`/`saved_price_usd` so the total is
 immutable once shared. Drafts persist as you go via useCollections.
-Multi-stage UI flow lives in `ChallengeFlow.js`; stage is
-component-local state. Drag-drop on desktop (HTML5 DnD; gated on
-`(pointer: fine)`), tap-to-select on mobile.
+
+**D3 paradigm shift (2026-05-06).** The shortlist concept is gone
+in the UI — Lists + Favorites ARE the shortlist. Tap a tile in
+the source picker → adds straight as a pick at the next empty
+slot via `addToShortlist(..., { isPick: true })`. Drag-drop is
+gone everywhere; click-pick is the single interaction model. The
+`is_pick=false` rows in older challenges still exist in the DB
+but the UI doesn't surface them — harmless ghost data. Sticky
+stat row at the top of the picking page; one page-scroll (no
+nested overflow on the source picker). Single challenge-wide note
+in `challenges.descriptionLong` replaces the per-pick reasoning
+column (which still exists for older data but isn't surfaced).
+Stepper is 3 stages: Set / Pick / Share — the standalone
+Reasoning stage was retired.
+
+**Pivot consideration (held).** Mark mid-session 2026-05-06
+floated a "Collection Planner" reframe (wishlist → buy → into
+watchbox) that would merge Watch Challenges with Watchbox v2 and
+embrace social loops (sender attribution, shared-with-me inbox,
+recipient responses). He paused that pivot and asked for tactical
+fixes (D1→D4) instead. The pivot stays an open question for a
+future session — not in ROADMAP yet. If a future Mark message
+revisits it, that's the entry point.
 
 **Surface (2026-05-04, PR #36):** Challenges moved from a Watchlist
 sub-tab to a resource under the **Cool Stuff tab** (UI label;

@@ -707,13 +707,27 @@ anonymous user gets a passive Sign-in CTA, no nag. "Shared with me"
 auto-collection lazy-created on first received share; items tagged
 `source_of_entry='shared_with_me'`.
 
-### Pending — Shared-link landing surface (richer than today)
+### Shared-link landing surface ✓ shipped 2026-05-06
 
-The current Save / Dismiss banner is functional but minimal. Mark
-wants a richer arrival surface: still single-listing-anchored, but
-with more sense of "someone curated this for you" — without
-re-introducing the rejected social layer (no sender name, no reply,
-no reaction). Open design question for the next session.
+Focused full-width landing card replaces the cramped thumbnail-
+above-feed pattern from v1. Two-column on desktop (image left,
+details + Save / Dismiss + onboarding right), stacked on mobile
+with action buttons above the fold. Browse chrome (filter pills,
+sub-tabs, watch count, sort row) hides while a share-receive is
+active. Light-mode card lift via box-shadow. Maxwidth bumped to
+1600 so the surface fills wide screens. Multiple iterations
+(#63 → #65 → #66 → #67 → #69 → #72).
+
+### Dynamic OG preview ✓ shipped 2026-05-06
+
+`api/share.js` Vercel function emits per-listing og:image / og:title
+for share links so iMessage / Slack rich-link cards show the actual
+watch + a "Watchlist — Vintage watches in one feed" caption instead
+of the site logo. Vercel rewrites `/share/:id` → the function;
+real browsers redirect to the SPA's existing share-receive surface
+unchanged; preview-bots stop after the head-scrape and never see
+the redirect. Watchfid + other PROXIED_IMG_HOSTS get routed through
+`/api/img` for the OG image too. (#70.)
 
 ### Pending — Sharing collections (extends v1 share primitive)
 
@@ -877,35 +891,67 @@ real teeth — it's the home for everything that would feel
 inappropriate in Chrono24 or eBay because those tools optimize for
 transactions, not reflection.
 
-### Watch Challenges (v1 ✓ shipped 2026-05-03; v1.5 + v2 below)
+### Watch Challenges (v1 ✓ shipped 2026-05-03; rebuilt 2026-05-06; v1.5 next)
 
 Constrained hypothetical collections — "3 watches for $50k", "5-watch
-starter", "3 watches for business", etc. Multi-stage flow (Create →
-Picking → Reasoning → Complete) with a 20% budget guardrail. ONE
-collection per challenge, picks vs shortlist split via `is_pick`
-boolean. Drag-drop on desktop, tap-to-select on mobile. Drafts
-persist as you go; state flips draft → complete on Finish. Picks
-snapshot saved_price/_currency/_price_usd so totals are immutable
-post-share.
+starter", etc. ONE collection per challenge with `type='challenge'`;
+picks live in `collection_items` with `is_pick=true`; price
+snapshotted into `saved_price/_currency/_price_usd` so totals are
+immutable post-share.
 
-Schema: `supabase/schema/2026-05-03_challenges.sql` extends
-collections (target_count, budget, description_long, state,
-parent_challenge_id) and collection_items (is_pick, reasoning).
-Surfaces under Cool Stuff > Watch challenges (was Watchlist
-sub-tab; moved 2026-05-04).
+**2026-05-06 rebuild (PRs #71, #73, #74, #75, #76):**
+- **CreateStage simplified** — title + count + budget. Description
+  field dropped. Budget input formats with commas as you type.
+  Soft-cap copy ("Soft cap of 20% over budget").
+- **Stepper drops 4→3.** Set / Pick / Share. Reasoning stage
+  retired — per-pick textareas folded into PickingStage.
+- **Per-pick reasoning replaced with single challenge-wide note**
+  in `challenges.descriptionLong` (the column repurposed from the
+  dropped create-form description). Debounced write-through.
+- **Source picker over Lists / Favorites + URL paste.** Replaces
+  the search-allListings drawer Mark flagged as bad UX. Tap a
+  source chip (♥ Favorites / each List / + Paste link) → tile
+  grid below. Tap a tile → adds straight as a pick at the next
+  empty slot.
+- **Click-pick everywhere; drag-drop gone.** SlotPickerModal +
+  ShortlistTile + hasFinePointer all retired. Tap × on a slot to
+  remove a pick.
+- **Shortlist concept dropped.** Lists/Favorites ARE the
+  shortlist. Older challenges with `is_pick=false` rows in the DB
+  still exist but the new UI doesn't surface them.
+- **Sticky stat row** + single page-scroll (source picker no
+  longer has its own overflow).
+- **CompleteStage redesign** — Reopen + Share lifted to top of
+  card, polished card-theme with shadow, compact pick rows.
+  Share-feedback toast ("Link copied!" / "Shared.").
+- **Challenges list rows** — labeled Delete + Share buttons, no
+  more dart 🎯 emoji, budget remaining display ("$X spent · $Y
+  left" / "$Z over").
+- **Share-bug fix.** App.js `handleShare` accepts both the
+  listing-shape AND a pre-built `{ url, title? }` shape so
+  challenge shares no longer no-op.
 
-Share generates a spec-encoded URL
-(`?newchallenge=1&n=N&b=B&t=TITLE&d=DESC`) — recipients build their
-own response under the same constraints.
-
-**v1.5 (next):**
-- `?newchallenge=1` receive flow — auto-prompt a draft response
-  pre-filling Create-stage fields when a recipient lands on a
-  spec URL.
+**v1.5 (next session):**
+- **`?newchallenge=1` receive flow.** Sender side currently
+  generates `/?newchallenge=1&t=…&n=…&b=…` URLs but the recipient
+  SPA doesn't parse them — Mark's clipboard works but pasting
+  the link lands on the home page. Ship a focused share-receive
+  surface for challenges that mirrors the listing share-receive
+  landing (#63). Probably also new `api/share-challenge.js` for
+  dynamic OG preview mirroring `api/share.js`. Half-session.
 - Public read of `state='complete'` challenges (RLS surgery on
   `public.collections` to permit anon SELECT for completed rows).
 - Open question: should completed challenges be editable? v1
-  says no (immutable for share-stability). Revisit if usage demands.
+  says no (immutable for share-stability). Revisit if usage
+  demands.
+
+**Held — Mark's "Collection Planner" pivot consideration
+(2026-05-06).** Mid-session reframe: Watch Challenges is
+fundamentally social (sender attribution, shared-with-me inbox,
+recipient responses, response collection). Possibly merges with
+Watchbox v2 as one feature: wishlist → buy → into watchbox. Mark
+paused the pivot and asked for tactical fixes (D1→D4) instead.
+Stays an open question; not in priority order until Mark revisits.
 
 **v2 (deferred — design exploration ongoing):**
 - Source from current AND past listings (sold archive becomes a
@@ -1142,32 +1188,37 @@ price-per-reference. Use it; build what it doesn't.
 Current best-guess sequence. Will shift; update this doc when it does.
 Epic numbers reflect the 2026-05-05 restructure.
 
-1. **Site analytics — Source stats extensions (Epic 8).** User stats
-   half shipped 2026-05-05. Throughput-in-value + auction-house
-   quality dashboard also shipped 2026-05-05. Remaining: sales by
-   watch type per dealer (gated on Epic 0 references for "type"
-   classification), cross-source live inventory (also Epic-0-gated),
-   listing-quality signals, taste-relative pricing.
-2. **User limits + user-management dashboard (Epic 3 + Epic 8).**
-   ✓ shipped 2026-05-06. 2,500 default cap (soft warn at 80%);
-   admin grants per-user expansions via the AdminTab "User limits"
-   section. DB trigger as defense-in-depth.
-3. **Shared link landing surface (Epic 4).** A first-class welcome
-   surface for recipients who arrive via a `?listing=…&shared=1` URL
-   — currently they get the regular feed with a banner. Improve the
-   "you've just been shared a watch" moment without reintroducing a
-   separate `/share/*` route.
-4. **Watch Challenges UI/workflow polish (Epic 6).** Pre-v1.5
-   refinements: smoother stage transitions in `ChallengeFlow`,
-   clearer add-to-shortlist drawer, drag-drop affordances on
-   desktop, and the rough edges Mark has flagged in use.
-5. **Image cache for List items (Epic 3).** Extend
+1. **Watch Challenges v1.5 — receive flow (Epic 6).** Sender side
+   is polished (D1→D4 shipped 2026-05-06: `/?newchallenge=1&t=…&n=…
+   &b=…` URL). Recipient SPA doesn't parse those params yet —
+   click a share link and you land on the home page. Ship a focused
+   share-receive surface for challenges that mirrors the listing
+   share-receive landing (#63 / #67): "Mark sent you a challenge:
+   3 watches for $50k. Take it on / Just browse / About Watchlist."
+   Plus an `api/share-challenge.js` for dynamic OG preview
+   mirroring `api/share.js`. Half-session.
+2. **Welcome page + og:image (Epic 0).** First-impression page
+   for non-share visitors. og:image still the 1024×1024 apple-
+   touch-icon placeholder. Half-session.
+3. **References as first-class entities (Epic 0).** The remaining
+   foundation. Several downstream features (Epic 5 encyclopedia,
+   per-reference comparison views, auction lot grouping, Discover
+   mode quality) gate on this.
+4. **Image cache for List items (Epic 3).** Extend
    `cache_watchlist_images.mjs` to cover `collection_items`, not
    just `watchlist_items`. Promoted by Mark 2026-05-05.
-6. **Watch Challenges v1.5 (Epic 6).** Close the social loop left
-   by v1: `?newchallenge=1` receive flow + public read of completed
-   challenges (RLS surgery). Half-session — sequenced after the
-   challenge UX polish in #4.
+5. **Site analytics — Source stats extensions (Epic 8).** User
+   stats + throughput-in-value + auction-house quality all shipped
+   2026-05-05/06. Remaining: sales by watch type per dealer (gated
+   on Epic 0 references for "type" classification), cross-source
+   live inventory (also Epic-0-gated), listing-quality signals,
+   taste-relative pricing.
+6. **Watch Challenges further polish (Epic 6).** Audit-deferred
+   items from 2026-05-06 sessions: drop-into-shortlist demote zone,
+   autosave indicator, hoist hardcoded colors to tokens, mobile
+   tap-confirm on slot remove, target=7-style orphan-row layout,
+   share-success state, sticky-pick-shrink-on-scroll, unified card
+   theme on Cool Stuff resource cards + Challenges list rows.
 7. **References as first-class entities (Epic 0).** The remaining
    foundation. Several downstream features (Epic 5 encyclopedia,
    per-reference comparison views, auction lot grouping, Discover
