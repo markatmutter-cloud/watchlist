@@ -165,29 +165,17 @@ export function ShareReceiver({
       margin: "0 auto",
       width: "100%",
     }}>
-      {/* Compact onboarding header — single line + badge so the rest
-          of the surface fits in viewport on a typical desktop. */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
-        marginBottom: 14,
+      {/* Compact onboarding header — h1 alone carries the context.
+          Earlier iterations had a "Shared with you" pill chip beside
+          the heading; Mark dropped it 2026-05-06 because the h1
+          already says the same thing and the chip ate vertical room
+          on mobile. */}
+      <h1 style={{
+        fontSize: 17, fontWeight: 600,
+        color: "var(--text1)", margin: "0 0 14px", lineHeight: 1.3,
       }}>
-        <span style={{
-          display: "inline-block",
-          fontSize: 10, fontWeight: 600,
-          textTransform: "uppercase", letterSpacing: "0.06em",
-          color: "#fff", background: "#185FA5",
-          padding: "3px 8px", borderRadius: 4,
-          flexShrink: 0,
-        }}>
-          Shared with you
-        </span>
-        <h1 style={{
-          fontSize: 17, fontWeight: 600,
-          color: "var(--text1)", margin: 0, lineHeight: 1.3,
-        }}>
-          Someone sent you a watch on Watchlist.
-        </h1>
-      </div>
+        Someone sent you a watch on Watchlist.
+      </h1>
 
       {sharedItem ? (
         <div className="share-receiver-wide-grid" style={{
