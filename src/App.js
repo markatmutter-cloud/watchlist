@@ -1783,13 +1783,19 @@ export default function Watchlist() {
   // Wrap addItemToCollection so the picker fires a list_add telemetry
   // event each time a user adds the target listing into a collection.
   // Forwards args + return identity unchanged.
-  const addItemToCollectionWithTelemetry = useCallback(
-    (collectionId, item) => {
-      recordEvent("list_add", item);
-      return collectionsApi.addItemToCollection(collectionId, item);
-    },
-    [recordEvent, collectionsApi],
-  );
+  //
+  // Plain function, NOT useCallback — App.js's loading + loadError
+  // early returns above mean any hook past line ~1328 is conditionally
+  // skipped on the first render, then called on subsequent renders,
+  // which triggers React error #310 ("rendered more hooks than during
+  // the previous render"). This is the rule documented in CLAUDE.md
+  // "Things to never do" — don't add new useCallback/useState/useMemo
+  // deep into App.js. Function identity churns each render, but
+  // CollectionPickerModal isn't memo'd in a way that minds.
+  const addItemToCollectionWithTelemetry = (collectionId, item) => {
+    recordEvent("list_add", item);
+    return collectionsApi.addItemToCollection(collectionId, item);
+  };
   const collectionPickerModalJSX = (
     <CollectionPickerModal
       target={pickerTarget}
