@@ -32,6 +32,7 @@ Design notes:
 import csv
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -57,6 +58,31 @@ APPROX_FX_TO_USD = {
     "JPY": 0.0067, "CAD": 0.73, "AUD": 0.66, "HKD": 0.13,
     "SEK": 0.094, "NOK": 0.092, "DKK": 0.145,
 }
+
+# Title-level exclusion patterns. Currently just one: TAG Heuer.
+# Rationale (Mark 2026-05-06): vintage Heuer (pre-1985) is the
+# brand a vintage-watch person cares about; TAG Heuer (1985+) is a
+# modern conglomerate and routinely shows up in Heuer-keyword
+# searches like "Heuer Autavia GMT" because eBay treats them as
+# the same maker. Vintage-feed credibility takes a hit when these
+# slip through, so drop them at scrape time.
+#
+# Pattern matches "TAG Heuer", "Tag-Heuer", "TAGHeuer" — any
+# whitespace, hyphen, or no-separator between the two tokens.
+# Word boundaries so it won't match unrelated "tag" or "heuer".
+_TAG_HEUER_RE = re.compile(r"\btag[\s\-]*heuer\b", re.IGNORECASE)
+
+
+def _excluded_by_title(title):
+    """Title-level filter at scrape time. Currently only flags
+    TAG Heuer to keep the modern brand out of the vintage feed.
+    Returns the matching pattern label for logging, or None.
+    """
+    if not title:
+        return None
+    if _TAG_HEUER_RE.search(title):
+        return "TAG Heuer"
+    return None
 
 
 def _load_searches():
@@ -219,6 +245,7 @@ def main():
 
     rows = []
     seen_urls = set()  # Same eBay item across different searches → dedupe.
+    excluded_total = 0  # Title-level exclusions across all searches.
     for search in searches:
         label = search.get("label", "(unlabelled)")
         countries = _country_list(search.get("country"))
@@ -230,25 +257,36 @@ def main():
                 print(f"  ERR ({tag}): {e}")
                 continue
             kept = 0
+            excluded = 0
             for it in items:
                 url = it.get("itemWebUrl") or ""
                 if not url or url in seen_urls:
                     continue
                 row = _row_for(it, search)
+                # Title-level exclusion (currently TAG Heuer only).
+                # Done before price + dedupe so the count reflects
+                # actual brand-level filtering volume.
+                excl = _excluded_by_title(row.get("title", ""))
+                if excl:
+                    excluded += 1
+                    continue
                 usd = _approx_usd(row["price"], row["currency"])
                 if not _within_price_filter(usd, search):
                     continue
                 seen_urls.add(url)
                 rows.append(row)
                 kept += 1
-            print(f"  {tag}: {len(items)} returned, {kept} kept")
+            excluded_total += excluded
+            extra = f", {excluded} excluded by title" if excluded else ""
+            print(f"  {tag}: {len(items)} returned, {kept} kept{extra}")
         # Tiny pause between distinct searches to be polite to the
         # Browse API — well under the 5,000/day limit but easy on
         # the rate-limit signal.
         time.sleep(0.3)
 
     _write_csv(rows)
-    print(f"\n✓ Wrote {len(rows)} eBay row(s) to {OUTPUT_CSV}")
+    suffix = f" ({excluded_total} dropped by title filter)" if excluded_total else ""
+    print(f"\n✓ Wrote {len(rows)} eBay row(s) to {OUTPUT_CSV}{suffix}")
 
 
 def _write_csv(rows):
