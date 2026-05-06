@@ -48,6 +48,7 @@ export function MobileShell(props) {
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
     referencesTabJSX,
     lotMigrationBannerJSX,
+    userLimitBannerJSX,
   } = props;
 
   // Listings sub-tab gates filter exposure (mirror of DesktopShell).
@@ -183,6 +184,10 @@ export function MobileShell(props) {
             ShareReceiver — renders null until the one-shot migration
             actually moves at least one tracked URL into Favorites. */}
         {lotMigrationBannerJSX}
+        {/* User-limit banner (Epic 3). Self-contained, renders null
+            below the soft-warn threshold. Fixed-position so visible
+            on every tab. */}
+        {userLimitBannerJSX}
         <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
           {/* (Ending-soon pinned section retired 2026-05-04 — Watchlist
               > Saved auctions sub-tab IS the ending-soon view now.) */}

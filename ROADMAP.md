@@ -648,20 +648,30 @@ Implementation: extend the cache cron to query
 and cache for both sets. Same blob path, same dedup-by-listing-id —
 a single cached image can satisfy a heart AND multiple list memberships.
 
-### Pending — User limits
+### User limits ✓ shipped 2026-05-06
 
 Defensive engineering for an open public site:
-- Soft cap: 500 hearted items per user, with a friendly warning.
-- Hard cap: 2,500 items, with a "request more" prompt — Mark can
-  grant individuals expanded limits via the user-management
-  dashboard (Epic 8).
-- Lists themselves unbounded but bounded by the item caps (a list
-  can't hold an item beyond your total).
-- Hard line of defense: a Supabase trigger on `watchlist_items`
-  insert that rejects writes past 2,500 even if the frontend
-  check is bypassed.
+- **Default cap: 2,500** hearts per user, configurable per-user via
+  the `user_limits` table.
+- **Soft warn at 80% of cap** (= 2,000 by default). Persistent
+  banner appears via `<UserLimitBanner/>` mounted in both shells.
+- **Hard cap blocks heart adds** in the UI; the BEFORE INSERT
+  trigger `enforce_watchlist_cap` on `watchlist_items` is the line
+  of defense if the frontend check is bypassed.
+- **Lists implicitly bounded** by the item cap (collection_items
+  references the same listings; a user at cap can't add new ones
+  through any path).
+- **Admin grants expansion** via the AdminTab "User limits" section
+  (per-user table with email, hearts/hides/lists/searches counts,
+  30-day views/clicks/shares, top saved brand, current cap, notes)
+  + an inline form. The form calls the
+  `set_watchlist_cap_by_email(email, cap, note)` admin-only RPC so
+  Mark doesn't have to look up auth user_ids by hand.
 
-Mark's wife is the seed case for needing manual expansion.
+Schema lives in
+[supabase/schema/2026-05-06_user_limits.sql](supabase/schema/2026-05-06_user_limits.sql).
+Mark's wife is the seed case — Mark expands her cap from the admin
+form once she signs up.
 
 ### Pending — Strength-of-save (reinstated 2026-05-03)
 
@@ -1139,8 +1149,9 @@ Epic numbers reflect the 2026-05-05 restructure.
    classification), cross-source live inventory (also Epic-0-gated),
    listing-quality signals, taste-relative pricing.
 2. **User limits + user-management dashboard (Epic 3 + Epic 8).**
-   500 soft / 2,500 hard cap; admin grants individuals expanded
-   limits. Defensive engineering for an open public site.
+   ✓ shipped 2026-05-06. 2,500 default cap (soft warn at 80%);
+   admin grants per-user expansions via the AdminTab "User limits"
+   section. DB trigger as defense-in-depth.
 3. **Shared link landing surface (Epic 4).** A first-class welcome
    surface for recipients who arrive via a `?listing=…&shared=1` URL
    — currently they get the regular feed with a banner. Improve the
