@@ -88,16 +88,40 @@ function Stepper({ activeStage }) {
   );
 }
 
-function StageHeader({ onBack, label, title, subtitle, activeStage }) {
+function StageHeader({ onBack, label, title, subtitle, activeStage, onDelete }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      {onBack && (
-        <button onClick={onBack} style={{
-          background: "none", border: "none", cursor: "pointer",
-          display: "flex", alignItems: "center", gap: 6,
-          fontSize: 13, color: "var(--text2)", marginBottom: 8,
-          fontFamily: "inherit", padding: 0,
-        }}>← {label || "back"}</button>
+      {(onBack || onDelete) && (
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          marginBottom: 8,
+        }}>
+          {onBack ? (
+            <button onClick={onBack} style={{
+              background: "none", border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 6,
+              fontSize: 13, color: "var(--text2)",
+              fontFamily: "inherit", padding: 0,
+            }}>← {label || "back"}</button>
+          ) : <span/>}
+          {onDelete && (
+            <button onClick={onDelete} aria-label="Delete challenge"
+              title="Delete challenge"
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: "var(--text3)", padding: 4,
+                display: "flex", alignItems: "center",
+              }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/>
+                <path d="M14 11v6"/>
+                <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </button>
+          )}
+        </div>
       )}
       <Stepper activeStage={activeStage} />
       <h1 style={{
@@ -118,7 +142,7 @@ function StageHeader({ onBack, label, title, subtitle, activeStage }) {
 // challenge" flow without first creating an empty Supabase row.
 // Same component the in-flow "Edit constraints" link uses; the
 // `challenge` prop is null for new-challenge mode.
-export function CreateStage({ challenge, onSubmit, onCancel }) {
+export function CreateStage({ challenge, onSubmit, onCancel, onDelete }) {
   const [count, setCount] = useState(challenge?.targetCount || 3);
   const [budget, setBudget] = useState(challenge?.budget || 50000);
   const [title, setTitle] = useState(challenge?.name || "");
@@ -177,6 +201,7 @@ export function CreateStage({ challenge, onSubmit, onCancel }) {
         onBack={onCancel}
         title={challenge ? "Edit constraints" : "New challenge"}
         activeStage="create"
+        onDelete={challenge ? onDelete : undefined}
       />
 
       <div style={{ marginBottom: 16 }}>
@@ -248,7 +273,7 @@ function PickingStage({
   challenge, items, allListings, watchlist, hidden,
   collections, itemsByCollection,
   onAddAsPick, onRemovePick, onUpdateChallenge,
-  onComplete, onEditConfig, onBack,
+  onComplete, onEditConfig, onBack, onDelete,
   primaryCurrency,
 }) {
   // Picks ordered by added_at ascending — first-added → leftmost
@@ -383,6 +408,7 @@ function PickingStage({
         onBack={onBack}
         title={challenge.name}
         activeStage="picking"
+        onDelete={onDelete}
       />
 
       {/* Sticky stat row — stays visible while content scrolls
@@ -765,7 +791,7 @@ function StatCard({ label, value, sub, progress, warn, hardWarn, warnLabel }) {
 
 
 // ── Complete stage ──────────────────────────────────────────────────
-function CompleteStage({ challenge, items, onShareSpec, onShareComplete, onBack, onReopen }) {
+function CompleteStage({ challenge, items, onShareSpec, onShareComplete, onBack, onReopen, onDelete }) {
   const picks = useMemo(() => items.filter(it => it.isPick), [items]);
   const totalSpend = picks.reduce((s, p) => s + (p.savedPriceUSD || p.priceUSD || 0), 0);
   const overBy = Math.max(0, totalSpend - challenge.budget);
@@ -789,7 +815,8 @@ function CompleteStage({ challenge, items, onShareSpec, onShareComplete, onBack,
     <div>
       <StageHeader label="back to challenges" onBack={onBack} title={challenge.name}
         subtitle={challenge.descriptionLong}
-        activeStage="complete" />
+        activeStage="complete"
+        onDelete={onDelete} />
 
       {/* Action bar — Reopen + Share at the TOP of the card so the
           user doesn't have to scroll past the picks list to find
@@ -920,6 +947,18 @@ export function ChallengeFlow({
   handleShare,                     // App.js share handler — called with the challenge URL
   onExit,                          // back to ChallengesList
 }) {
+  // Delete affordance lives inside the drill-in (StageHeader) since
+  // 2026-05-06 PR #84 dropped the inline list-row delete to match
+  // the Lists card style. Confirms, deletes, then exits to the list.
+  const handleDelete = useCallback(async () => {
+    if (!collectionsApi?.deleteCollection) return;
+    const ok = window.confirm(
+      `Delete "${challenge.name}"? This can't be undone.`
+    );
+    if (!ok) return;
+    await collectionsApi.deleteCollection(challenge.id);
+    if (typeof onExit === "function") onExit();
+  }, [challenge.id, challenge.name, collectionsApi, onExit]);
   // Stage is local component state, derived from data on initial
   // mount. The user's explicit navigation overrides; refresh re-derives.
   const [stage, setStage] = useState(() => inferStage(challenge, items));
@@ -1002,7 +1041,8 @@ export function ChallengeFlow({
     return (
       <CreateStage challenge={challenge}
         onSubmit={submitConfig}
-        onCancel={onExit} />
+        onCancel={onExit}
+        onDelete={handleDelete} />
     );
   }
   if (stage === "complete") {
@@ -1011,7 +1051,8 @@ export function ChallengeFlow({
         onShareSpec={shareChallengeSpec}
         onShareComplete={shareChallengeComplete}
         onReopen={reopenChallenge}
-        onBack={onExit} />
+        onBack={onExit}
+        onDelete={handleDelete} />
     );
   }
   // Default: picking. D3: drag-drop + shortlist concept retired —
@@ -1030,6 +1071,7 @@ export function ChallengeFlow({
       onComplete={completeChallenge}
       onEditConfig={() => setStage("create")}
       onBack={onExit}
+      onDelete={handleDelete}
     />
   );
 }

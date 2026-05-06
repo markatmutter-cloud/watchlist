@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ChallengeFlow, CreateStage } from "./ChallengeFlow";
+import { ListRow } from "./ListRow";
 import { fmtUSD } from "../utils";
 
 // Challenges view — extracted from WatchlistTab.js on 2026-05-04
@@ -178,151 +179,48 @@ export function ChallengesView({
             const totalSpend = picks.reduce((s, p) => s + (p.savedPriceUSD || p.priceUSD || 0), 0);
             const remaining = (c.budget || 0) - totalSpend;
             const isDraft = c.state === "draft";
-            const handleDelete = async (e) => {
-              e.stopPropagation();
-              if (!collectionsApi?.deleteCollection) return;
-              const ok = window.confirm(
-                `Delete "${c.name}"? This can't be undone.`
-              );
-              if (!ok) return;
-              await collectionsApi.deleteCollection(c.id);
-            };
-            // Quick-share from the list row — same URL shape as
-            // ChallengeFlow.shareChallenge so the recipient experience
-            // is consistent. Mark 2026-05-06: "Share button should
-            // also be where you have delete on challenges."
-            // List-row share. v1.5: completed challenges share with
-            // picks visible (?challenge=<id>&shared=1 — fetched via
-            // get_public_challenge RPC); drafts can only share the
-            // constraints since there are no picks to surface yet.
-            // For more granular control (constraints-only on a
-            // completed challenge), the user drills in and uses
-            // CompleteStage which exposes both buttons.
-            const handleShareRow = async (e) => {
-              e.stopPropagation();
-              if (!handleShare) return;
-              let url;
-              if (c.state === "complete") {
-                url = `${window.location.origin}/?challenge=${encodeURIComponent(c.id)}&shared=1`;
-              } else {
-                const params = new URLSearchParams();
-                params.set("newchallenge", "1");
-                if (c.name)             params.set("t", c.name);
-                if (c.targetCount)      params.set("n", String(c.targetCount));
-                if (c.budget)           params.set("b", String(c.budget));
-                if (c.descriptionLong)  params.set("d", c.descriptionLong);
-                url = `${window.location.origin}/?${params.toString()}`;
-              }
-              await handleShare({ title: `Watch challenge: ${c.name}`, url });
-            };
-            // Disc tint signals draft vs complete (replaces the
-            // left-border accent in the prior design, which made the
-            // row look distinct from Lists rows). Gold for draft,
-            // blue for complete — same tokens as before.
+            // Disc tint carries the draft-vs-complete signal —
+            // gold for draft, blue for complete.
             const accent = isDraft ? "#c9a227" : "#185FA5";
-            const accentTint = isDraft ? "rgba(201,162,39,0.10)" : "rgba(24,95,165,0.08)";
+            const subtitle = c.targetCount && c.budget ? (
+              <>
+                {picks.length} of {c.targetCount} picks
+                {" · "}{fmtUSD(totalSpend)} spent
+                {" · "}<strong style={{ color: remaining < 0 ? "#c9a227" : "var(--text2)", fontWeight: 500 }}>
+                  {remaining < 0 ? `${fmtUSD(-remaining)} over` : `${fmtUSD(remaining)} left`}
+                </strong>
+              </>
+            ) : (
+              <>Set the constraints to start</>
+            );
+            const title = isDraft ? (
+              <>
+                {c.name}
+                <span style={{
+                  marginLeft: 8, fontSize: 10, fontWeight: 600,
+                  padding: "1px 6px", borderRadius: 3,
+                  background: "rgba(201,162,39,0.15)", color: "#c9a227",
+                  textTransform: "uppercase", letterSpacing: "0.04em",
+                }}>Draft</span>
+              </>
+            ) : c.name;
+            // Target glyph (concentric circles) — challenge concept.
+            const icon = (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="6"/>
+                <circle cx="12" cy="12" r="2"/>
+              </svg>
+            );
             return (
-              <div key={c.id}
+              <ListRow key={c.id}
+                icon={icon}
+                accent={accent}
+                title={title}
+                subtitle={subtitle}
+                ariaLabel={`Open challenge: ${c.name}`}
                 onClick={() => setSelectedChallengeId(c.id)}
-                role="button" tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setSelectedChallengeId(c.id);
-                  }
-                }}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "14px 16px", borderRadius: 12,
-                  border: "0.5px solid var(--border)",
-                  background: "var(--card-bg)",
-                  color: "var(--text1)", cursor: "pointer",
-                  fontFamily: "inherit", textAlign: "left", gap: 10,
-                }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
-                  {/* Icon disc — matches Lists row pattern. Tinted
-                      with the draft/complete accent so the state
-                      signal lives on the disc instead of a left
-                      border. Glyph is a target (challenge concept). */}
-                  <div style={{
-                    flexShrink: 0,
-                    width: 36, height: 36, borderRadius: "50%",
-                    background: accentTint,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"/>
-                      <circle cx="12" cy="12" r="6"/>
-                      <circle cx="12" cy="12" r="2"/>
-                    </svg>
-                  </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 2,
-                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {c.name}
-                      {isDraft && (
-                        <span style={{
-                          marginLeft: 8, fontSize: 10, fontWeight: 600,
-                          padding: "1px 6px", borderRadius: 3,
-                          background: "rgba(201,162,39,0.15)", color: "#c9a227",
-                          textTransform: "uppercase", letterSpacing: "0.04em",
-                        }}>Draft</span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--text2)" }}>
-                      {c.targetCount && c.budget ? (
-                        <>
-                          {picks.length} of {c.targetCount} picks
-                          {" · "}{fmtUSD(totalSpend)} spent
-                          {" · "}<strong style={{ color: remaining < 0 ? "#c9a227" : "var(--text2)", fontWeight: 500 }}>
-                            {remaining < 0 ? `${fmtUSD(-remaining)} over` : `${fmtUSD(remaining)} left`}
-                          </strong>
-                        </>
-                      ) : (
-                        <>Set the constraints to start</>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-                  {/* Icon-only action buttons — same visual weight as
-                      the trailing chevron so they don't dominate the
-                      row. Keeps the share + delete affordances Mark
-                      added in PR #71/#76 without breaking the Lists
-                      row aesthetic. */}
-                  {handleShare && (
-                    <button
-                      onClick={handleShareRow}
-                      aria-label={`Share ${c.name}`}
-                      title="Share challenge"
-                      style={iconBtnStyle}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                        <polyline points="16 6 12 2 8 6"/>
-                        <line x1="12" y1="2" x2="12" y2="15"/>
-                      </svg>
-                    </button>
-                  )}
-                  {collectionsApi?.deleteCollection && (
-                    <button
-                      onClick={handleDelete}
-                      aria-label={`Delete ${c.name}`}
-                      title="Delete challenge"
-                      style={iconBtnStyle}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                        <path d="M10 11v6"/>
-                        <path d="M14 11v6"/>
-                        <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
-                      </svg>
-                    </button>
-                  )}
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ marginLeft: 4 }}><path d="M9 18l6-6-6-6"/></svg>
-                </div>
-              </div>
+              />
             );
           })}
         </div>
@@ -330,15 +228,3 @@ export function ChallengesView({
     </div>
   );
 }
-
-const iconBtnStyle = {
-  width: 28, height: 28,
-  display: "flex", alignItems: "center", justifyContent: "center",
-  border: "none",
-  background: "transparent",
-  color: "var(--text2)",
-  cursor: "pointer",
-  borderRadius: 6,
-  padding: 0,
-  fontFamily: "inherit",
-};
