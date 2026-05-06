@@ -43,20 +43,21 @@ function inferStage(challenge, items) {
   if (!challenge) return "create";
   if (challenge.state === "complete") return "complete";
   if (!challenge.targetCount || !challenge.budget) return "create";
-  const picks = items.filter(it => it.isPick);
-  if (picks.length < challenge.targetCount) return "picking";
-  return "reasoning";
+  // Picking now owns notes too — there's no separate Reasoning
+  // stage. Even when all slots are filled, stay on picking until the
+  // user explicitly hits "Mark complete →".
+  return "picking";
 }
 
 // Container with the standard back-button + title block. Used by
 // every stage for visual consistency with the rest of the app.
-// 4-stage progression. The stepper component below highlights the
-// active stage so users know where they are in the flow.
+// 3-stage progression. Reasoning was its own stage in the v1 flow;
+// folded back into Picking on 2026-05-06 (notes inline, one less
+// step).
 const STEPPER_STAGES = [
-  { key: "create",    label: "Set" },
-  { key: "picking",   label: "Pick" },
-  { key: "reasoning", label: "Reason" },
-  { key: "complete",  label: "Share" },
+  { key: "create",   label: "Set" },
+  { key: "picking",  label: "Pick" },
+  { key: "complete", label: "Share" },
 ];
 
 function Stepper({ activeStage }) {
@@ -66,7 +67,7 @@ function Stepper({ activeStage }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
-      marginBottom: 14,
+      marginBottom: 10,
     }}>
       {STEPPER_STAGES.map((s, i) => {
         const isActive = i === activeIdx;
@@ -99,22 +100,22 @@ function Stepper({ activeStage }) {
 
 function StageHeader({ onBack, label, title, subtitle, activeStage }) {
   return (
-    <div style={{ marginBottom: 18 }}>
+    <div style={{ marginBottom: 12 }}>
       {onBack && (
         <button onClick={onBack} style={{
           background: "none", border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", gap: 6,
-          fontSize: 13, color: "var(--text2)", marginBottom: 12,
+          fontSize: 13, color: "var(--text2)", marginBottom: 8,
           fontFamily: "inherit", padding: 0,
         }}>← {label || "back"}</button>
       )}
       <Stepper activeStage={activeStage} />
       <h1 style={{
-        fontSize: 20, fontWeight: 600, margin: 0, color: "var(--text1)",
+        fontSize: 18, fontWeight: 600, margin: 0, color: "var(--text1)",
         letterSpacing: "-0.01em",
       }}>{title}</h1>
       {subtitle && (
-        <p style={{ fontSize: 13, color: "var(--text2)", margin: "4px 0 0", lineHeight: 1.5 }}>
+        <p style={{ fontSize: 12, color: "var(--text2)", margin: "3px 0 0", lineHeight: 1.4 }}>
           {subtitle}
         </p>
       )}
@@ -131,7 +132,13 @@ export function CreateStage({ challenge, onSubmit, onCancel }) {
   const [count, setCount] = useState(challenge?.targetCount || 3);
   const [budget, setBudget] = useState(challenge?.budget || 50000);
   const [title, setTitle] = useState(challenge?.name || "");
-  const [description, setDescription] = useState(challenge?.descriptionLong || "");
+  // Comma-formatted display value for the budget input. The numeric
+  // `budget` state is the source of truth; this string is what the
+  // user sees + types in. Re-derives whenever budget changes (e.g.
+  // an Edit-constraints flow loads existing budget).
+  const [budgetText, setBudgetText] = useState(() =>
+    new Intl.NumberFormat("en-US").format(challenge?.budget || 50000),
+  );
 
   const titlePlaceholder = `${count} watch${count === 1 ? "" : "es"} for $${(budget / 1000).toFixed(0)}k`;
 
@@ -150,12 +157,26 @@ export function CreateStage({ challenge, onSubmit, onCancel }) {
     fontSize: 12, color: "var(--text3)", margin: "5px 0 0", lineHeight: 1.4,
   };
 
+  const handleBudgetChange = (e) => {
+    // Strip everything that isn't a digit; reformat with commas.
+    // Letting the user type anything else (commas, $, periods) is
+    // tolerated — we just normalise on each keystroke.
+    const raw = (e.target.value || "").replace(/[^\d]/g, "");
+    const n = raw === "" ? 0 : parseInt(raw, 10);
+    setBudget(Number.isFinite(n) ? n : 0);
+    setBudgetText(raw === "" ? "" : new Intl.NumberFormat("en-US").format(n));
+  };
+
   const handleSubmit = () => {
     onSubmit({
       name: (title || titlePlaceholder).trim(),
       targetCount: Math.max(1, Math.min(10, count | 0)),
       budget: Math.max(0, budget | 0),
-      descriptionLong: description.trim() || null,
+      // Description field dropped from the form (Mark 2026-05-06: too
+      // many fields). descriptionLong stays null on creates; Edit
+      // flows on existing challenges that already had a description
+      // preserve it via the spread on the existing row server-side.
+      descriptionLong: null,
     });
   };
 
@@ -165,25 +186,8 @@ export function CreateStage({ challenge, onSubmit, onCancel }) {
         label={challenge ? "back to challenge" : "back to challenges"}
         onBack={onCancel}
         title={challenge ? "Edit constraints" : "New challenge"}
-        subtitle="Set the constraints. You can change them mid-flow if you change your mind."
         activeStage="create"
       />
-
-      <div style={{ marginBottom: 16 }}>
-        <p style={labelStyle}>Number of watches</p>
-        <input type="number" min={1} max={10} value={count}
-          onChange={e => setCount(Math.max(1, Math.min(10, parseInt(e.target.value || "1") | 0)))}
-          style={inputStyle} />
-        <p style={hintStyle}>1 to 10. Most people pick 3 or 5.</p>
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <p style={labelStyle}>Budget (USD)</p>
-        <input type="number" value={budget} step={1000}
-          onChange={e => setBudget(parseInt(e.target.value || "0") | 0)}
-          style={inputStyle} />
-        <p style={hintStyle}>You can pick up to {fmtUSD(Math.round(budget * 1.2))} (20% over) before it hard-blocks.</p>
-      </div>
 
       <div style={{ marginBottom: 16 }}>
         <p style={labelStyle}>Title</p>
@@ -193,13 +197,24 @@ export function CreateStage({ challenge, onSubmit, onCancel }) {
           style={inputStyle} />
       </div>
 
+      <div style={{ marginBottom: 16 }}>
+        <p style={labelStyle}>Number of watches</p>
+        <input type="number" min={1} max={10} value={count}
+          onChange={e => setCount(Math.max(1, Math.min(10, parseInt(e.target.value || "1") | 0)))}
+          style={inputStyle} />
+        <p style={hintStyle}>1 to 10. Most people pick 3 or 5.</p>
+      </div>
+
       <div style={{ marginBottom: 20 }}>
-        <p style={labelStyle}>Description (optional)</p>
-        <textarea value={description}
-          onChange={e => setDescription(e.target.value)}
-          placeholder="Frame the challenge. Birthday hunt for my mum. Watches I'd actually wear."
-          rows={2}
-          style={{ ...inputStyle, resize: "vertical" }} />
+        <p style={labelStyle}>Budget (USD)</p>
+        <input
+          type="text" inputMode="numeric"
+          value={budgetText ? `$${budgetText}` : ""}
+          onChange={handleBudgetChange}
+          placeholder="$50,000"
+          style={inputStyle}
+        />
+        <p style={hintStyle}>Soft cap of 20% over budget — you can complete with a confirm above that, but no further.</p>
       </div>
 
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -277,9 +292,14 @@ function SlotPickerModal({ slotsTotal, picks, watch, onPick, onCancel }) {
 }
 
 // ── Picking stage ───────────────────────────────────────────────────
+// Mark 2026-05-06: separate Reasoning stage felt like an extra step.
+// Comments are now inline notes below the slot grid right here in
+// Picking, and "Mark complete →" jumps straight to Complete. The
+// Reasoning stage component is gone — this used to live there.
 function PickingStage({
   challenge, items, allListings, watchlist, hidden,
   onPlaceInSlot, onMoveToShortlist, onAddToShortlist, onComplete, onEditConfig, onBack,
+  onUpdateReasoning,
   primaryCurrency,
 }) {
   const picks = useMemo(
@@ -337,7 +357,7 @@ function PickingStage({
     border: isDragOver
       ? "1.5px solid #185FA5"
       : occupied ? "0.5px solid var(--border)" : "1.5px dashed var(--border)",
-    borderRadius: 8, padding: 10, minHeight: 180,
+    borderRadius: 8, padding: 8, minHeight: 140,
     display: "flex", flexDirection: "column",
     transition: "all 0.12s ease",
   });
@@ -391,7 +411,10 @@ function PickingStage({
         label="back to challenges"
         onBack={onBack}
         title={challenge.name}
-        subtitle={challenge.descriptionLong || `${challenge.targetCount} watches for ${fmtUSD(challenge.budget)}`}
+        // No subtitle — the StatCard row right below covers
+        // "{N} watches for {budget}" already; the auto-generated
+        // line was filler. descriptionLong stayed null since we
+        // dropped that field in the create form.
         activeStage="picking"
       />
 
@@ -401,7 +424,7 @@ function PickingStage({
           much budget is left, just how much you've spent"). When
           over budget the same slot flips to the warn label so the
           two states share one visual position. */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
         <StatCard
           label="Total spend"
           value={fmtUSD(totalSpend)}
@@ -426,7 +449,7 @@ function PickingStage({
       </div>
 
       {/* Picks slot grid */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 18 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text2)", textTransform: "uppercase", letterSpacing: "0.04em", margin: 0 }}>
             Final picks
@@ -483,6 +506,16 @@ function PickingStage({
           </p>
         )}
       </div>
+
+      {/* Notes / reasoning — inline. Was a separate Reasoning stage
+          but Mark 2026-05-06: too many steps. Each filled pick gets a
+          one-line text input here; debounced 800ms write-through to
+          collection_items.reasoning so users don't lose typing if
+          they navigate away. Optional (Mark: "maybe someone wants to
+          write something in there"). */}
+      {picks.length > 0 && onUpdateReasoning && (
+        <PicksNotes picks={picks} onUpdateReasoning={onUpdateReasoning} />
+      )}
 
       {/* Complete CTA */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
@@ -573,7 +606,7 @@ function PickingStage({
             </p>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 6 }}>
             {shortlist.map(item => (
               <ShortlistTile key={item.rowId} item={item}
                 desktop={desktop}
@@ -593,6 +626,88 @@ function PickingStage({
           onPick={handleSlotPick}
           onCancel={() => setPickerOpenForItem(null)} />
       )}
+    </div>
+  );
+}
+
+// Inline picks-notes block — replaces the standalone Reasoning
+// stage. Local-first edit with debounced write-through so typing
+// isn't latency-bound to the round-trip to Supabase. On unmount the
+// debounce flushes any pending writes.
+function PicksNotes({ picks, onUpdateReasoning }) {
+  const [drafts, setDrafts] = useState(() =>
+    Object.fromEntries(picks.map(p => [p.rowId, p.reasoning || ""])),
+  );
+  const [pendingFlush, setPendingFlush] = useState({});
+
+  useEffect(() => {
+    setDrafts(prev => {
+      const next = { ...prev };
+      for (const p of picks) {
+        if (next[p.rowId] === undefined) next[p.rowId] = p.reasoning || "";
+      }
+      return next;
+    });
+    // eslint-disable-next-line
+  }, [picks.length]);
+
+  useEffect(() => {
+    const ids = Object.keys(pendingFlush);
+    if (!ids.length) return;
+    const timer = setTimeout(() => {
+      for (const id of ids) onUpdateReasoning(id, drafts[id]);
+      setPendingFlush({});
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [pendingFlush, drafts, onUpdateReasoning]);
+
+  const setDraft = (id, value) => {
+    setDrafts(prev => ({ ...prev, [id]: value }));
+    setPendingFlush(prev => ({ ...prev, [id]: true }));
+  };
+
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <p style={{
+        fontSize: 12, fontWeight: 600, color: "var(--text2)",
+        textTransform: "uppercase", letterSpacing: "0.04em",
+        margin: "0 0 8px",
+      }}>
+        Notes <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "var(--text3)" }}>· optional</span>
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {picks.map((p, i) => (
+          <div key={p.rowId} style={{
+            display: "grid", gridTemplateColumns: "minmax(120px, 30%) 1fr",
+            alignItems: "center", gap: 10,
+            padding: "8px 10px",
+            border: "0.5px solid var(--border)",
+            borderRadius: 6,
+            background: "var(--card-bg)",
+          }}>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: 11, color: "var(--text3)", margin: "0 0 1px" }}>Pick {i + 1}</p>
+              <p style={{
+                fontSize: 13, color: "var(--text1)", margin: 0,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>{p.brand}{p.ref ? ` ${p.ref}` : ""}</p>
+            </div>
+            <input
+              type="text"
+              value={drafts[p.rowId] ?? ""}
+              onChange={e => setDraft(p.rowId, e.target.value)}
+              onBlur={() => onUpdateReasoning(p.rowId, drafts[p.rowId] ?? "")}
+              placeholder="Why this one? (optional)"
+              style={{
+                width: "100%", boxSizing: "border-box",
+                border: "0.5px solid var(--border)", borderRadius: 6,
+                background: "var(--bg)", padding: "6px 9px",
+                fontSize: 13, fontFamily: "inherit", color: "var(--text1)", outline: "none",
+              }}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -751,100 +866,6 @@ function StatCard({ label, value, sub, progress, warn, hardWarn, warnLabel }) {
   );
 }
 
-// ── Reasoning stage ─────────────────────────────────────────────────
-function ReasoningStage({ challenge, items, onUpdateReasoning, onBack, onFinish }) {
-  const picks = useMemo(() => items.filter(it => it.isPick), [items]);
-  // Local mirror so typing isn't latency-bound to Supabase. Debounced
-  // write-through on blur or explicit Save (via the 800ms timer
-  // below). On unmount, flush any pending writes.
-  const [drafts, setDrafts] = useState(() =>
-    Object.fromEntries(picks.map(p => [p.rowId, p.reasoning || ""])));
-  const [pendingFlush, setPendingFlush] = useState({});
-
-  useEffect(() => {
-    // Sync new picks into drafts when items change.
-    setDrafts(prev => {
-      const next = { ...prev };
-      for (const p of picks) {
-        if (next[p.rowId] === undefined) next[p.rowId] = p.reasoning || "";
-      }
-      return next;
-    });
-    // eslint-disable-next-line
-  }, [picks.length]);
-
-  // Debounce write-through.
-  useEffect(() => {
-    const ids = Object.keys(pendingFlush);
-    if (!ids.length) return;
-    const timer = setTimeout(() => {
-      for (const id of ids) {
-        onUpdateReasoning(id, drafts[id]);
-      }
-      setPendingFlush({});
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [pendingFlush, drafts, onUpdateReasoning]);
-
-  const setDraft = (id, value) => {
-    setDrafts(prev => ({ ...prev, [id]: value }));
-    setPendingFlush(prev => ({ ...prev, [id]: true }));
-  };
-
-  return (
-    <div>
-      <StageHeader
-        label="back to picking"
-        onBack={onBack}
-        title={`Why these ${picks.length}?`}
-        subtitle="One line each. Optional, but it's the part people read."
-        activeStage="reasoning" />
-
-      {picks.map((p, i) => (
-        <div key={p.rowId} style={{
-          background: "var(--card-bg)", border: "0.5px solid var(--border)", borderRadius: 8,
-          padding: 14, marginBottom: 10,
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8, gap: 8 }}>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: 11, fontWeight: 600, color: "var(--text2)", textTransform: "uppercase",
-                          letterSpacing: "0.04em", margin: "0 0 2px" }}>
-                Pick {i + 1}
-              </p>
-              <p style={{ fontSize: 14, fontWeight: 500, margin: 0, color: "var(--text1)",
-                          overflow: "hidden", textOverflow: "ellipsis" }}>
-                {p.brand} {p.ref || ""}
-              </p>
-            </div>
-            <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text1)", margin: 0, whiteSpace: "nowrap" }}>
-              {fmtUSD(p.savedPriceUSD || p.priceUSD || 0)}
-            </p>
-          </div>
-          <textarea value={drafts[p.rowId] ?? ""}
-            onChange={e => setDraft(p.rowId, e.target.value)}
-            onBlur={() => onUpdateReasoning(p.rowId, drafts[p.rowId] ?? "")}
-            placeholder="Why this one?"
-            rows={2}
-            style={{
-              width: "100%", boxSizing: "border-box",
-              border: "0.5px solid var(--border)", borderRadius: 6,
-              background: "var(--surface)", padding: "8px 10px",
-              fontFamily: "inherit", fontSize: 13, color: "var(--text1)",
-              resize: "vertical", outline: "none",
-            }} />
-        </div>
-      ))}
-
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 18 }}>
-        <button onClick={onFinish} style={{
-          padding: "10px 18px", borderRadius: 8, border: "none",
-          background: "#185FA5", color: "#fff", cursor: "pointer",
-          fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-        }}>Finish challenge →</button>
-      </div>
-    </div>
-  );
-}
 
 // ── Complete stage ──────────────────────────────────────────────────
 function CompleteStage({ challenge, items, onShare, onBack, onReopen }) {
@@ -1035,15 +1056,9 @@ export function ChallengeFlow({
         onBack={onExit} />
     );
   }
-  if (stage === "reasoning") {
-    return (
-      <ReasoningStage challenge={challenge} items={items}
-        onUpdateReasoning={updateReasoning}
-        onBack={() => setStage("picking")}
-        onFinish={completeChallenge} />
-    );
-  }
-  // Default: picking
+  // Default: picking. Reasoning stage was retired 2026-05-06 — notes
+  // happen inline below the slot grid (PicksNotes), and Mark
+  // complete → goes straight to the complete stage.
   return (
     <PickingStage
       challenge={challenge} items={items}
@@ -1052,11 +1067,8 @@ export function ChallengeFlow({
       onPlaceInSlot={placeInSlot}
       onMoveToShortlist={moveToShortlist}
       onAddToShortlist={addToShortlist}
-      onComplete={() => {
-        // From picking, jump to reasoning (let the user write
-        // rationales) before flipping state to 'complete'.
-        setStage("reasoning");
-      }}
+      onUpdateReasoning={updateReasoning}
+      onComplete={completeChallenge}
       onEditConfig={() => setStage("create")}
       onBack={onExit}
     />
