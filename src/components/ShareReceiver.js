@@ -219,6 +219,7 @@ export function ShareReceiver({
             signedIn={!!user}
             onClickAnchor={onClickAnchor}
             onSignIn={isAuthConfigured ? signInWithGoogle : undefined}
+            signInCopy="Sign in to save this listing, follow searches, and build your watchlist."
           />
         </div>
       ) : (
@@ -473,57 +474,74 @@ function FocusedShareCard({
 // desktop (≥1100px), beside the focused share card; stacks below
 // the card on narrower / mobile. Stacked-button layout reads well
 // in either column orientation — no internal flex-wrap needed.
-function OrientationAnchors({ signedIn, onClickAnchor, onSignIn }) {
+function OrientationAnchors({ signedIn, onClickAnchor, onSignIn, signInCopy }) {
+  const showSignIn = !signedIn && onSignIn;
   return (
     <div style={{
       borderRadius: 12,
       border: "0.5px solid var(--border)",
       background: "var(--card-bg)",
-      // Same lift treatment as the focused card so the two read as
-      // a paired surface in light mode where --card-bg = --bg.
       boxShadow: "0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)",
-      padding: "18px 18px 16px",
       display: "flex", flexDirection: "column",
-      // Stretch to match the focused card height on wide so the two
-      // panes are visually balanced.
       minHeight: 0,
+      overflow: "hidden",
     }}>
-      <div style={{
-        fontSize: 10, fontWeight: 600,
-        textTransform: "uppercase", letterSpacing: "0.06em",
-        color: "var(--text3)", marginBottom: 8,
-      }}>
-        First time on Watchlist?
-      </div>
-      <p style={{
-        margin: "0 0 14px", fontSize: 13, color: "var(--text2)",
-        lineHeight: 1.5,
-      }}>
-        Watchlist is a vintage watch aggregator from independent dealers and auction houses.
-        One feed to manage watchlists, no ads, and it's free.
-      </p>
-      <div style={{
-        display: "flex", flexDirection: "column", gap: 8,
-      }}>
-        <button onClick={() => onClickAnchor("listings")} style={anchorBtnStyle}>
-          Browse all listings →
-        </button>
-        {signedIn && (
-          <button onClick={() => onClickAnchor("watchlist")} style={anchorBtnStyle}>
-            Go to your saved list →
+      {showSignIn && (
+        <div style={{
+          padding: "18px 18px 16px",
+          borderBottom: "0.5px solid var(--border)",
+          background: "var(--surface)",
+        }}>
+          <div style={{
+            fontSize: 10, fontWeight: 600,
+            textTransform: "uppercase", letterSpacing: "0.06em",
+            color: "var(--text3)", marginBottom: 8,
+          }}>
+            Sign in
+          </div>
+          <p style={{
+            margin: "0 0 14px", fontSize: 13, color: "var(--text2)",
+            lineHeight: 1.5,
+          }}>
+            {signInCopy || (
+              <>Sign in to save listings, follow searches, and build your watchlist.</>
+            )}
+          </p>
+          <button onClick={onSignIn} style={primaryBtnStyle}>
+            Sign in to Watchlist →
           </button>
-        )}
-        <button onClick={() => onClickAnchor("references")} style={anchorBtnStyle}>
-          Cool stuff (tools + links) →
-        </button>
-        {/* Sign-in for anyone NOT signed in. Mark D5 (2026-05-06):
-            "I want there to be 'or sign in to your account' as an
-            option." */}
-        {!signedIn && onSignIn && (
-          <button onClick={onSignIn} style={anchorBtnStyle}>
-            Or sign in to your account →
+        </div>
+      )}
+      <div style={{ padding: "18px 18px 16px" }}>
+        <div style={{
+          fontSize: 10, fontWeight: 600,
+          textTransform: "uppercase", letterSpacing: "0.06em",
+          color: "var(--text3)", marginBottom: 8,
+        }}>
+          First time on Watchlist?
+        </div>
+        <p style={{
+          margin: "0 0 14px", fontSize: 13, color: "var(--text2)",
+          lineHeight: 1.5,
+        }}>
+          Watchlist is a vintage watch aggregator from independent dealers and auction houses.
+          One feed to manage watchlists, no ads, and it's free.
+        </p>
+        <div style={{
+          display: "flex", flexDirection: "column", gap: 8,
+        }}>
+          <button onClick={() => onClickAnchor("listings")} style={anchorBtnStyle}>
+            Browse all listings →
           </button>
-        )}
+          {signedIn && (
+            <button onClick={() => onClickAnchor("watchlist")} style={anchorBtnStyle}>
+              Go to your saved list →
+            </button>
+          )}
+          <button onClick={() => onClickAnchor("references")} style={anchorBtnStyle}>
+            Cool stuff (tools + links) →
+          </button>
+        </div>
       </div>
     </div>
   );

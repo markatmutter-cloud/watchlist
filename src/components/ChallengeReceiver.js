@@ -206,7 +206,12 @@ export function ChallengeReceiver({
             {completeError}
           </p>
         </div>
-        <OrientationAnchors signedIn={!!user} onClickAnchor={onClickAnchor} onSignIn={isAuthConfigured ? signInWithGoogle : undefined} />
+        <OrientationAnchors
+          signedIn={!!user}
+          onClickAnchor={onClickAnchor}
+          onSignIn={isAuthConfigured ? signInWithGoogle : undefined}
+          signInCopy="Sign in to save searches, take on challenges, and build your lists."
+        />
       </div>
     );
   }
@@ -359,7 +364,16 @@ export function ChallengeReceiver({
         </div>
       </div>
 
-      <OrientationAnchors signedIn={!!user} onClickAnchor={onClickAnchor} onSignIn={isAuthConfigured ? signInWithGoogle : undefined} />
+      <OrientationAnchors
+        signedIn={!!user}
+        onClickAnchor={onClickAnchor}
+        onSignIn={isAuthConfigured ? signInWithGoogle : undefined}
+        signInCopy={
+          isSpec
+            ? "Sign in to take this challenge, save searches, and build your lists."
+            : "Sign in to save this collection, follow searches, and build your lists."
+        }
+      />
     </div>
   );
 }
@@ -392,9 +406,36 @@ function PickThumbnail({ snapshot }) {
   );
 }
 
-function OrientationAnchors({ signedIn, onClickAnchor, onSignIn }) {
+function OrientationAnchors({ signedIn, onClickAnchor, onSignIn, signInCopy }) {
+  const showSignIn = !signedIn && onSignIn;
   return (
-    <div style={focusedCardStyle()}>
+    <div style={{ ...focusedCardStyle(), overflow: "hidden" }}>
+      {showSignIn && (
+        <div style={{
+          padding: "16px 18px 14px",
+          borderBottom: "0.5px solid var(--border)",
+          background: "var(--surface)",
+        }}>
+          <p style={{
+            fontSize: 11, fontWeight: 600, color: "var(--text3)",
+            textTransform: "uppercase", letterSpacing: "0.06em",
+            margin: "0 0 8px",
+          }}>
+            Sign in
+          </p>
+          <p style={{
+            fontSize: 13, color: "var(--text2)", margin: "0 0 12px",
+            lineHeight: 1.5,
+          }}>
+            {signInCopy || (
+              <>Sign in to take this challenge, save searches, and build your lists.</>
+            )}
+          </p>
+          <button onClick={onSignIn} style={primaryBtnStyle(false)}>
+            Sign in to Watchlist →
+          </button>
+        </div>
+      )}
       <div style={{ padding: "16px 18px 14px" }}>
         <p style={{
           fontSize: 11, fontWeight: 600, color: "var(--text3)",
@@ -422,14 +463,6 @@ function OrientationAnchors({ signedIn, onClickAnchor, onSignIn }) {
           <button onClick={() => onClickAnchor("references")} style={anchorBtnStyle}>
             Cool stuff (tools + links) →
           </button>
-          {/* Sign-in is shown to anyone NOT signed in — not just
-              true first-timers. Mark D5 (2026-05-06): "I want there
-              to be 'or sign in to your account' as an option." */}
-          {!signedIn && onSignIn && (
-            <button onClick={onSignIn} style={anchorBtnStyle}>
-              Or sign in to your account →
-            </button>
-          )}
         </div>
       </div>
     </div>
