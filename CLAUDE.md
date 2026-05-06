@@ -296,12 +296,14 @@ controls URL until it acts. Refresh on any of these lands the user
 back where they were. Stay on this query-param pattern — it's
 deliberate that we don't bring in `react-router`.
 
-**Admin tab (2026-05-02).** `tab=admin` is gated by
-`REACT_APP_ADMIN_EMAILS` (comma-separated, set in Vercel + .env.local).
-Empty / unset = nobody is admin and the tab is unreachable. The
-"Source quality" entry in the user dropdown is the only navigation
-affordance — intentionally NOT in the main tab strip per ROADMAP
-"Don't telegraph commercial intent publicly". Non-admins hitting
+**Admin tab (2026-05-02; renamed dropdown entry 2026-05-06).**
+`tab=admin` is gated by `REACT_APP_ADMIN_EMAILS` (comma-separated,
+set in Vercel + .env.local). Empty / unset = nobody is admin and
+the tab is unreachable. The "Site stats" entry in the user
+dropdown is the only navigation affordance — intentionally NOT in
+the main tab strip per ROADMAP "Don't telegraph commercial intent
+publicly". (Was labeled "Source quality" until the admin page
+grew Auction house quality + User limits sections.) Non-admins hitting
 `?tab=admin` get silently redirected to listings (App.js useEffect
 guards once `authReady` resolves, so signed-in admin users don't
 flicker). Admin data: verification.json + verification_history.json

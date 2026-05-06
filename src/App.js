@@ -1353,7 +1353,7 @@ export default function Watchlist() {
                       padding: "6px 8px", border: "none", background: "transparent",
                       color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
                       fontSize: 13, borderRadius: 6 }}>
-              Source quality →
+              Site stats →
             </button>
           )}
           <button onClick={() => { setShowUserMenu(false); signOut(); }}
