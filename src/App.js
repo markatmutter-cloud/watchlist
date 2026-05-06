@@ -1649,16 +1649,18 @@ export default function Watchlist() {
     if (!useFreshBuckets && !useSoldBuckets) {
       return visible.map(it => ({ kind: "card", item: it }));
     }
-    const labelFn = useSoldBuckets ? soldBucketLabel : ageBucketLabel;
+    const baseLabelFn = useSoldBuckets ? soldBucketLabel : ageBucketLabel;
+    // Mark's report 2026-05-06: backfilled items can produce a second
+    // "Last week" (or any) divider because they sort in a separate
+    // section below the non-backfilled run but get bucketed by the
+    // same date labels. Collapse all backfilled items under a single
+    // "Earlier additions" divider so they can't collide with the
+    // non-backfilled date dividers above.
+    const labelFn = (i) => i.backfilled ? "Earlier additions" : baseLabelFn(i);
     const out = [];
     let last = null;
     // Count the contiguous run in `allFiltered`, not the bucket total:
-    // backfilled items keep the firstSeen=today bucket label but always
-    // sort below non-backfilled (see allFiltered sort), so a bucket-total
-    // count would lump 100s of backfilled items into the divider for the
-    // non-backfilled run at the top, while a second "Today" divider
-    // further down the list double-counts them again. Run length is what
-    // the user actually sees between this header and the next.
+    // run length is what the user sees between this header and the next.
     for (let i = 0; i < visible.length; i++) {
       const it = visible[i];
       const bucket = labelFn(it);
