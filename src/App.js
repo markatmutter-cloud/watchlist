@@ -28,6 +28,7 @@ import { CollectionEditModal } from "./components/CollectionEditModal";
 import { CollectionPickerModal } from "./components/CollectionPickerModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { ShareReceiver } from "./components/ShareReceiver";
+import { ChallengeReceiver } from "./components/ChallengeReceiver";
 import { AuctionCalendar } from "./components/AuctionCalendar";
 import { LotMigrationBanner } from "./components/LotMigrationBanner";
 import { WatchlistTab } from "./components/WatchlistTab";
@@ -317,6 +318,10 @@ export default function Watchlist() {
   // Hook lives at the TOP of App.js's hook list (before any early
   // returns) per CLAUDE.md "don't add hooks deep" guidance.
   const [shareActive, setShareActive] = useState(false);
+  // Same one-bit mirror for Watch Challenges receive flow (v1.5).
+  // Either of these flips the shell into "focused landing surface"
+  // mode (regular browse chrome hidden).
+  const [challengeShareActive, setChallengeShareActive] = useState(false);
   // Saved searches are per-user (stored in Supabase). Signed-out visitors
   // get an empty list, and the whole Searches subsection is hidden inside
   // the Watchlist tab.
@@ -1889,6 +1894,21 @@ export default function Watchlist() {
     />
   );
 
+  // Watch Challenges receive surface (v1.5). Same isolation pattern
+  // as ShareReceiver — all hooks live inside the component, App.js
+  // only mirrors a one-bit `challengeShareActive` so the shells can
+  // gate their browse chrome.
+  const challengeReceiverJSX = (
+    <ChallengeReceiver
+      user={user}
+      isAuthConfigured={isAuthConfigured}
+      signInWithGoogle={signInWithGoogle}
+      collectionsApi={collectionsApi}
+      setChallengeShareActive={setChallengeShareActive}
+      setTab={setTab}
+    />
+  );
+
   // Phase B2 one-shot per-user migration of tracked auction-house URLs
   // → watchlist_items. Self-contained component (hooks isolated) so
   // App.js's hook count stays unchanged. Renders the dismissable
@@ -1966,14 +1986,17 @@ export default function Watchlist() {
     favSearchModalJSX, inp,
     listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX,
+    challengeReceiverJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX,
     watchlistTabJSX, adminTabJSX, referencesTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
-    // Whether the share-receive landing surface is taking over the
-    // content area. Shells gate their normal tab content on this.
+    // Whether a share-receive landing surface is taking over the
+    // content area. Shells gate their normal tab content on either
+    // flag — single-listing shares (#63) or challenge shares (v1.5).
     shareActive,
+    challengeShareActive,
   };
 
   return isMobile

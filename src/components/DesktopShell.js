@@ -43,13 +43,16 @@ export function DesktopShell(props) {
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
     adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX,
+    challengeReceiverJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
     referencesTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     shareActive,
+    challengeShareActive,
   } = props;
+  const anyShareActive = shareActive || challengeShareActive;
 
   // Listings sub-tab gates filter exposure: Live listings hides
   // auction-house chips (no live dealer items in those sources);
@@ -352,9 +355,9 @@ export function DesktopShell(props) {
           Hidden when a share-receive landing surface is taking over
           the content area, since the recipient has no use for the
           sub-tab + filter row chrome until they dismiss / save. */}
-      {!shareActive && listingsSubTabsJSX}
-      {!shareActive && watchSubTabsJSX}
-      {shareActive ? null : (
+      {!anyShareActive && listingsSubTabsJSX}
+      {!anyShareActive && watchSubTabsJSX}
+      {anyShareActive ? null : (
         (tab === "listings" && showListingsFilterRow) ||
         (tab === "watchlist" && watchTopTab !== "searches" && watchTopTab !== "collections")
       )
@@ -373,17 +376,17 @@ export function DesktopShell(props) {
         <div data-desktop-main style={{ flex: 1, overflowY: "auto", padding: `${tab === "watchlist" ? 0 : 14}px 16px 32px` }}>
           {/* Share-receive surface — self-contained component. */}
           {shareReceiverJSX}
+          {/* Watch Challenges receive surface (v1.5). */}
+          {challengeReceiverJSX}
           {/* Phase B2 lot-migration banner. */}
           {lotMigrationBannerJSX}
           {/* User-limit banner (Epic 3). Renders null below soft-warn
               threshold. Fixed-position so it surfaces on any tab. */}
           {userLimitBannerJSX}
-          {/* When ShareReceiver is showing the focused landing
-              surface (an inbound share link), skip the regular tab
-              content so the recipient gets a clean first-impression
-              page rather than a card stacked over an unrelated
-              browse view. */}
-          {!shareActive && (
+          {/* When EITHER receive surface is up (single-listing or
+              challenge), skip the regular tab content so the
+              recipient gets a clean first-impression page. */}
+          {!anyShareActive && (
             <>
               {/* (Ending-soon pinned section retired 2026-05-04 —
                   Watchlist > Saved auctions sub-tab IS the
