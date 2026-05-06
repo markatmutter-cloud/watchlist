@@ -46,7 +46,7 @@ export function DesktopShell(props) {
     challengeReceiverJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
-    referencesTabJSX,
+    referencesTabJSX, collectionsTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     shareActive,
@@ -304,7 +304,7 @@ export function DesktopShell(props) {
           Watchlist
         </button>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
-          {[["listings", "Listings"], ["watchlist", "Watchlist"], ["references", "Cool Stuff"]].map(([key, label]) => (
+          {[["listings", "Listings"], ["watchlist", "Watchlist"], ["collections", "Collections"], ["references", "Cool Stuff"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               padding: "6px 14px", borderRadius: 20, border: "0.5px solid var(--border)", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,
@@ -359,7 +359,7 @@ export function DesktopShell(props) {
       {!anyShareActive && watchSubTabsJSX}
       {anyShareActive ? null : (
         (tab === "listings" && showListingsFilterRow) ||
-        (tab === "watchlist" && watchTopTab !== "searches" && watchTopTab !== "collections")
+        (tab === "watchlist" && watchTopTab !== "searches")
       )
         ? filterRowJSX
         : (
@@ -392,6 +392,7 @@ export function DesktopShell(props) {
                   Watchlist > Saved auctions sub-tab IS the
                   ending-soon view now.) */}
               {tab === "listings" ? listingsTabContentJSX
+                : tab === "collections" ? collectionsTabJSX
                 : tab === "references" ? referencesTabJSX
                 : tab === "admin" ? adminTabJSX
                 : watchlistTabJSX}

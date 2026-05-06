@@ -21,6 +21,7 @@ import { Card } from "./components/Card";
 // Listings; calendar moved to Watchlist > Auction Calendar sub-tab via
 // the new AuctionCalendar component (AuctionsTab.js deleted 2026-04-30).
 import { ReferencesTab } from "./components/ReferencesTab";
+import { CollectionsTab } from "./components/CollectionsTab";
 import { TrackNewItemModal } from "./components/TrackNewItemModal";
 import { FavSearchModal } from "./components/FavSearchModal";
 import { AddSearchModal } from "./components/AddSearchModal";
@@ -175,15 +176,23 @@ export default function Watchlist() {
   // Watchlist sub-tab values. Restructured 2026-05-04 to mirror
   // Listings: separate sub-tabs for live saved listings, live saved
   // auctions, and saved-that-sold. "challenges" moved to the
-  // References tab; "calendar" already retired earlier the same day.
-  // Stale localStorage / URL values silently map to "listings" so
-  // bookmarked / persisted preferences don't land on a missing sub-tab.
-  const SUB_VALUES = ["listings", "auctions", "sold", "searches", "collections"];
+  // References tab on 2026-05-04; "collections" (Lists) moved to a
+  // top-level Collections tab on 2026-05-06. "calendar" already
+  // retired earlier on 2026-05-04. Stale localStorage / URL values
+  // silently map to "listings" so bookmarked / persisted preferences
+  // don't land on a missing sub-tab.
+  const SUB_VALUES = ["listings", "auctions", "sold", "searches"];
   const [watchTopTab, setWatchTopTab] = useState(() => {
-    const normalize = (v) => (v === "calendar" || v === "challenges") ? "listings" : v;
+    const normalize = (v) => (v === "calendar" || v === "challenges" || v === "collections") ? "listings" : v;
     if (typeof window !== "undefined") {
-      const sub = normalize(new URLSearchParams(window.location.search).get("sub"));
-      if (SUB_VALUES.includes(sub)) return sub;
+      // Only honour ?sub when we're on the watchlist tab — the
+      // Collections tab uses ?sub for its own (currently single)
+      // page and shouldn't bleed into watchTopTab.
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("tab") === "watchlist" || !params.get("tab")) {
+        const sub = normalize(params.get("sub"));
+        if (SUB_VALUES.includes(sub)) return sub;
+      }
     }
     try {
       const v = normalize(localStorage.getItem("dial_watch_top_tab"));
@@ -237,10 +246,18 @@ export default function Watchlist() {
   // a non-admin hitting `?tab=admin` silently falls back to listings
   // (the admin gate fires below in a useEffect once user resolves —
   // doing it here would break for users who haven't auth-loaded yet).
-  const TAB_VALUES = ["listings", "watchlist", "references", "admin"];
+  const TAB_VALUES = ["listings", "watchlist", "collections", "references", "admin"];
   const [tab, setTab] = useState(() => {
     if (typeof window !== "undefined") {
-      const t = new URLSearchParams(window.location.search).get("tab");
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get("tab");
+      // Migration: pre-2026-05-06 the Lists sub-tab lived under
+      // Watchlist (?tab=watchlist&sub=collections). Redirect to the
+      // new top-level Collections tab so old links + bookmarks land
+      // in the right place.
+      if (t === "watchlist" && params.get("sub") === "collections") {
+        return "collections";
+      }
       if (TAB_VALUES.includes(t)) return t;
     }
     return "listings";
@@ -265,7 +282,11 @@ export default function Watchlist() {
     } else {
       params.delete("sub");
     }
-    if (tab !== "watchlist") params.delete("col");
+    // `col` is the drill-in id for both Watchlist > Lists (legacy)
+    // and the new top-level Collections tab. Now that Lists has
+    // moved out of Watchlist (2026-05-06 PR #86), only Collections
+    // owns the param.
+    if (tab !== "collections") params.delete("col");
     const qs = params.toString();
     const newUrl = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
     if (newUrl !== window.location.pathname + window.location.search + window.location.hash) {
@@ -344,8 +365,9 @@ export default function Watchlist() {
   const [shareReceiveResetTick, setShareReceiveResetTick] = useState(0);
   // After "Take this challenge" the receiver creates a new
   // challenge for the recipient and we want to drop them into it,
-  // not leave them on the references-tab list. ChallengeReceiver
-  // sets this; ChallengesView reads it on mount and drills in.
+  // not leave them on the Collections list. ChallengeReceiver sets
+  // this; CollectionsTab forwards it to ChallengesView, which reads
+  // it on mount and drills in.
   const [pendingChallengeDrillId, setPendingChallengeDrillId] = useState(null);
 
   // setTab wrapper that auto-escapes any active share-receive
@@ -1769,26 +1791,43 @@ export default function Watchlist() {
     <AdminTab watchItems={watchItems} hiddenItems={hiddenItems} />
   );
 
-  // References tab JSX. Built here so the Challenges resource (moved
-  // from a Watchlist sub-tab to References on 2026-05-04) gets the
-  // same collectionsApi / watchlist / hidden / etc. props it needed
-  // when it lived inside WatchlistTab. The shells just render this
-  // const for tab === "references".
+  // References tab JSX. Watch Challenges moved out to the new
+  // Collections tab on 2026-05-06 (PR #86); References (Cool Stuff)
+  // now hosts only Watch size comparison + Links.
   const referencesTabJSX = (
     <ReferencesTab
       user={user}
       isAuthConfigured={isAuthConfigured}
       signInWithGoogle={signInWithGoogle}
+    />
+  );
+
+  // Collections tab JSX (new top-level tab — 2026-05-06 PR #86).
+  // Renders hard system lists (Owned/Sold/Wishlist) at the top with
+  // prominent treatment, then user-created lists, the synthetic
+  // Hidden row, and a Watch Challenges entry that drills into the
+  // existing ChallengesView. Owns drill-in routing via `?col=`.
+  const collectionsTabJSX = (
+    <CollectionsTab
+      user={user}
+      isAuthConfigured={isAuthConfigured}
+      signInWithGoogle={signInWithGoogle}
       collectionsApi={collectionsApi}
-      allListings={items}
+      hiddenItems={hiddenItems}
+      toggleHide={toggleHide}
       watchlist={watchlist}
       hidden={hidden}
+      allListings={items}
       primaryCurrency={primaryCurrency}
       handleShare={handleShare}
-      // Drill-into-new-challenge after the recipient hits "Take this
-      // challenge" on a shared receive surface. ReferencesTab forces
-      // the challenges view; ChallengesView reads the id and drills
-      // in, then clears the pending state.
+      handleWish={handleWish}
+      compact={compact}
+      gridStyle={gridStyle}
+      setEditingCollection={setEditingCollection}
+      openCollectionPicker={openCollectionPicker}
+      startCreateCollection={startCreateCollection}
+      observeCard={observeCard}
+      onClickListing={onClickListing}
       pendingChallengeDrillId={pendingChallengeDrillId}
       clearPendingChallengeDrill={() => setPendingChallengeDrillId(null)}
     />
@@ -1835,7 +1874,8 @@ export default function Watchlist() {
         ["auctions", isMobile ? "Auctions" : "Saved auctions"],
         ["sold",     isMobile ? "Sold"     : "Saved sold"],
         ["searches", isMobile ? "Searches" : "Favorite searches"],
-        ["collections", "Lists"],
+        // (Lists sub-tab removed 2026-05-06 PR #86 — moved to the
+        // new top-level Collections tab.)
       ].map(([key, label]) => {
         const active = watchTopTab === key;
         return (
@@ -1984,11 +2024,13 @@ export default function Watchlist() {
       resetTick={shareReceiveResetTick}
       onTakenChallenge={(id) => {
         // Drop the recipient straight into their freshly-created
-        // challenge instead of leaving them on the references-tab
-        // list. setTabWithReceiveEscape also clears URL params +
-        // dismisses the receive surface.
+        // challenge inside the Collections tab (challenges moved
+        // there from References on 2026-05-06 PR #86).
+        // setTabWithReceiveEscape also clears URL params + dismisses
+        // the receive surface; CollectionsTab + ChallengesView each
+        // read pendingChallengeDrillId to drill in.
         setPendingChallengeDrillId(id);
-        setTabWithReceiveEscape("references");
+        setTabWithReceiveEscape("collections");
       }}
     />
   );
@@ -2078,7 +2120,7 @@ export default function Watchlist() {
     challengeReceiverJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX,
-    watchlistTabJSX, adminTabJSX, referencesTabJSX,
+    watchlistTabJSX, adminTabJSX, referencesTabJSX, collectionsTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     // Whether a share-receive landing surface is taking over the

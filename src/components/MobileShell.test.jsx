@@ -57,4 +57,9 @@ describe("MobileShell", () => {
     render(<MobileShell {...buildMockShellProps({ tab: "listings" })} />);
     expect(screen.getByTestId("listings-tab-content")).toBeInTheDocument();
   });
+
+  test("renders the collections tab content when tab=collections", () => {
+    render(<MobileShell {...buildMockShellProps({ tab: "collections" })} />);
+    expect(screen.getByTestId("collections-tab")).toBeInTheDocument();
+  });
 });

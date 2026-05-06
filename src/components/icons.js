@@ -57,5 +57,14 @@ export function TabIcon({ kind }) {
       <path d="M22 4.5h-7a3 3 0 0 0-3 3v12a2.5 2.5 0 0 1 2.5-2.5H22z"/>
     </svg>
   );
+  if (kind === "collections") return (
+    // Folder-stack glyph — distinct from the Lists folder used inside
+    // the Collections tab so the bottom-tab icon doesn't read as
+    // "another list" but as "a place that holds lists".
+    <svg {...props}>
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+      <path d="M2 9h20"/>
+    </svg>
+  );
   return null;
 }

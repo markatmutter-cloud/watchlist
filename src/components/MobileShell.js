@@ -47,7 +47,7 @@ export function MobileShell(props) {
     challengeReceiverJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
-    referencesTabJSX,
+    referencesTabJSX, collectionsTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     shareActive,
@@ -59,11 +59,15 @@ export function MobileShell(props) {
   // Listings sub-tab gates filter exposure (mirror of DesktopShell).
   const showDealerSources  = !(tab === "listings" && listingsSubTab === "auctions");
   const showAuctionSources = !(tab === "listings" && listingsSubTab === "live");
-  // Filter button + sort row hidden on Calendar sub-tab and on
-  // Watchlist sub-tabs that don't show a filterable list.
+  // Filter button + sort row hidden on Calendar sub-tab, on
+  // Watchlist sub-tabs that don't show a filterable list, and
+  // anywhere in the Collections / References / Admin tabs.
   const noFilterableList =
     (tab === "listings" && listingsSubTab === "calendar") ||
-    (tab === "watchlist" && (watchTopTab === "searches" || watchTopTab === "collections"));
+    (tab === "watchlist" && watchTopTab === "searches") ||
+    tab === "collections" ||
+    tab === "references" ||
+    tab === "admin";
 
   return (
       <div style={baseStyle}>
@@ -208,6 +212,7 @@ export function MobileShell(props) {
                 Watchlist > Saved auctions sub-tab IS the ending-soon
                 view now.) */}
             {tab === "listings" ? listingsTabContentJSX
+              : tab === "collections" ? collectionsTabJSX
               : tab === "references" ? referencesTabJSX
               : tab === "admin" ? adminTabJSX
               : watchlistTabJSX}
@@ -223,9 +228,10 @@ export function MobileShell(props) {
             hugging the home bar when the app is launched standalone from
             the home screen. */}
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)" }}>
-          {/* References is desktop-only — bottom tab bar stays at 2
-              tabs to keep mobile labels readable. */}
-          {[["listings", "Listings"], ["watchlist", "Watchlist"]].map(([key, label]) => (
+          {/* References + Admin are desktop-only — mobile bottom bar
+              shows Listings / Watchlist / Collections (3 fits cleanly
+              on 375px viewports). Collections added 2026-05-06 PR #86. */}
+          {[["listings", "Listings"], ["watchlist", "Watchlist"], ["collections", "Collections"]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "8px 0 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               {tab === key
                 ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5" }} />

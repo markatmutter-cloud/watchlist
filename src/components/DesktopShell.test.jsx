@@ -15,12 +15,13 @@ describe("DesktopShell", () => {
     expect(watchlistButtons.length).toBeGreaterThanOrEqual(1);
   });
 
-  test("renders all three main tabs (Listings / Watchlist / Cool Stuff)", () => {
+  test("renders all four main tabs (Listings / Watchlist / Collections / Cool Stuff)", () => {
     render(<DesktopShell {...buildMockShellProps()} />);
     expect(screen.getByText("Listings")).toBeInTheDocument();
-    // The third top-tab was relabelled "Reference" → "Cool Stuff" on
-    // 2026-05-04. URL key (?tab=references) and component name
-    // (ReferencesTab) stayed unchanged; only the user-facing label moved.
+    // Collections added 2026-05-06 PR #86. The "Cool Stuff" tab
+    // (URL key `references`, component `ReferencesTab`) sits to its
+    // right.
+    expect(screen.getByText("Collections")).toBeInTheDocument();
     expect(screen.getByText("Cool Stuff")).toBeInTheDocument();
   });
 
@@ -49,5 +50,10 @@ describe("DesktopShell", () => {
   test("renders the watchlist tab content on Watchlist tab", () => {
     render(<DesktopShell {...buildMockShellProps({ tab: "watchlist" })} />);
     expect(screen.getByTestId("watchlist-tab")).toBeInTheDocument();
+  });
+
+  test("renders the collections tab content on Collections tab", () => {
+    render(<DesktopShell {...buildMockShellProps({ tab: "collections" })} />);
+    expect(screen.getByTestId("collections-tab")).toBeInTheDocument();
   });
 });
