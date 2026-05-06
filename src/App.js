@@ -1007,9 +1007,23 @@ export default function Watchlist() {
       // Live auctions: Date pill = ending order. date↓ = soonest first
       // (live → upcoming asc → ended desc → non-auction last). date↑
       // reverses the same axis so the user has an off-switch in the
-      // same control.
-      its.sort(endingSoonComparator);
-      if (sort === "date-asc") its.reverse();
+      // same control. Lot pill = catalog order — group by auction
+      // url then ascending lot_number within each auction (Mark's
+      // ask 2026-05-06 — "view a specific auction's lots in catalog
+      // order").
+      if (sort === "lot") {
+        its.sort((a, b) => {
+          const ua = a.auction_url || "";
+          const ub = b.auction_url || "";
+          if (ua !== ub) return ua.localeCompare(ub);
+          const la = parseInt(a.lot_number || "0", 10) || 0;
+          const lb = parseInt(b.lot_number || "0", 10) || 0;
+          return la - lb;
+        });
+      } else {
+        its.sort(endingSoonComparator);
+        if (sort === "date-asc") its.reverse();
+      }
     } else if (listingsSubTab === "sold") {
       // All sold: Date pill = sold-date. Most-recently-sold first by
       // default; date-asc flips to oldest-sold first. Sold dealer items
@@ -1229,9 +1243,22 @@ export default function Watchlist() {
       its.sort((a, b) => (b.savedPriceUSD || b.savedPrice) - (a.savedPriceUSD || a.savedPrice));
     } else if (watchTopTab === "auctions") {
       // Live saved auctions: Date pill = ending order. Date↓ soonest
-      // first; Date↑ reverses.
-      its.sort(endingSoonComparator);
-      if (sort === "date-asc") its.reverse();
+      // first; Date↑ reverses. Lot pill = catalog order grouped by
+      // auction (mirrors Listings > Live auctions; PR adds same
+      // pill on this surface for Saved auctions).
+      if (sort === "lot") {
+        its.sort((a, b) => {
+          const ua = a.auction_url || "";
+          const ub = b.auction_url || "";
+          if (ua !== ub) return ua.localeCompare(ub);
+          const la = parseInt(a.lot_number || "0", 10) || 0;
+          const lb = parseInt(b.lot_number || "0", 10) || 0;
+          return la - lb;
+        });
+      } else {
+        its.sort(endingSoonComparator);
+        if (sort === "date-asc") its.reverse();
+      }
     } else if (watchTopTab === "sold") {
       // Saved sold: Date pill = sold-date. Most-recent first by
       // default; Date↑ flips.
