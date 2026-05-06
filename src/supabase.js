@@ -237,6 +237,77 @@ export function useHidden(user) {
 }
 
 
+// ── ADMIN HIDDEN LISTINGS ──────────────────────────────────────────────────
+// Mark 2026-05-06: "I still want my hidden items to be deleted
+// rather than just hidden — me. as the taste maker I'm fine with."
+//
+// Global blocklist. When an admin user (Mark) hides a listing via
+// the regular Hide menu, the App.js toggleHide wrapper ALSO calls
+// toggleAdminHidden — the listing_id lands here, and every user's
+// frontend filters mainFeedItems by this set so the listing
+// disappears from the live feed for everyone.
+//
+// SELECT is anonymous so the filter applies to signed-out visitors
+// too. INSERT/DELETE is admin-only via the is_admin() RLS policy
+// on admin_hidden_listings.
+//
+// Returns a Set keyed by listing_id (truthy lookup is the only
+// access pattern frontend needs). Empty Set when Supabase isn't
+// configured or the table doesn't exist yet.
+
+export function useAdminHidden() {
+  const [ids, setIds] = useState(() => new Set());
+
+  useEffect(() => {
+    if (!supabase) return undefined;
+    let cancelled = false;
+    supabase.from('admin_hidden_listings').select('listing_id')
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          // Table may not exist yet (pre-migration) — silent.
+          return;
+        }
+        const next = new Set();
+        for (const row of data || []) if (row.listing_id) next.add(row.listing_id);
+        setIds(next);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Toggle a listing in the admin blocklist. Caller is responsible
+  // for gating on isAdmin — the RLS policy will reject non-admin
+  // writes regardless, but we don't want to surface an error in
+  // that path. Optimistic update; rollback on error.
+  const toggle = useCallback(async (listingId, currentHidden, opts = {}) => {
+    if (!supabase || !listingId) return { error: 'not configured' };
+    if (currentHidden) {
+      setIds(prev => { const n = new Set(prev); n.delete(listingId); return n; });
+      const { error } = await supabase.from('admin_hidden_listings').delete()
+        .eq('listing_id', listingId);
+      if (error) {
+        // Rollback
+        setIds(prev => { const n = new Set(prev); n.add(listingId); return n; });
+        return { error: error.message };
+      }
+    } else {
+      setIds(prev => { const n = new Set(prev); n.add(listingId); return n; });
+      const { error } = await supabase.from('admin_hidden_listings').insert({
+        listing_id: listingId,
+        reason: opts.reason || null,
+      });
+      if (error && error.code !== '23505') {
+        setIds(prev => { const n = new Set(prev); n.delete(listingId); return n; });
+        return { error: error.message };
+      }
+    }
+    return { error: null };
+  }, []);
+
+  return { ids, toggle };
+}
+
+
 // ── SAVED SEARCHES ──────────────────────────────────────────────────────────
 // Per-user, editable. Returns state + a built-in editor state to match the
 // pattern we had before Supabase — minimizes App.js churn on re-enabling.

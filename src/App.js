@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { useAuth, useWatchlist, useHidden, useSearches, useTrackedLots, useCollections, useUserSettings, importLocalData, isAuthConfigured } from "./supabase";
+import { useAuth, useWatchlist, useHidden, useAdminHidden, useSearches, useTrackedLots, useCollections, useUserSettings, importLocalData, isAuthConfigured } from "./supabase";
 import { useEventTelemetry } from "./hooks/useEventTelemetry";
 import { useUserLimit } from "./hooks/useUserLimit";
 import { UserLimitBanner } from "./components/UserLimitBanner";
@@ -300,6 +300,19 @@ export default function Watchlist() {
   // toggles no-op — we wrap the toggles below to kick off sign-in instead.
   const { items: watchlist, toggle: toggleWatchlist } = useWatchlist(user);
   const { items: hidden,   toggle: toggleHidden    } = useHidden(user);
+  // Global admin blocklist (Mark 2026-05-06). Loaded for every
+  // visitor — anonymous + signed-in — so the live feed filters
+  // out items Mark has hidden as taste-maker. toggle is admin-only
+  // (RLS-gated) and gets called from the toggleHide wrapper below
+  // when the current user is admin.
+  const { ids: adminHidden, toggle: toggleAdminHidden } = useAdminHidden();
+  // Admin gate, hoisted above toggleHide so the wrapper can decide
+  // whether to propagate a per-user hide into the global blocklist.
+  // Comma-separated emails in REACT_APP_ADMIN_EMAILS (Vercel + .env);
+  // empty default = nobody is admin.
+  const ADMIN_EMAILS = (process.env.REACT_APP_ADMIN_EMAILS || "")
+    .split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+  const isAdmin = !!user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
   // Demand-side telemetry — view / click / save / hide / list_add /
   // share. Anonymous-friendly (UUID in localStorage); admin-only RLS
   // for reads. See supabase/schema/2026-05-05_listing_events.sql.
@@ -686,10 +699,22 @@ export default function Watchlist() {
   // Main feed = dealer listings ∪ auction lots. Powers the Listings
   // tab's allFiltered memo; the listingsSubTab (live / auctions /
   // sold / calendar) narrows via predicate inside allFiltered, not here.
+  //
+  // Admin blocklist filter (Mark 2026-05-06): items in
+  // admin_hidden_listings get dropped here for EVERY user
+  // (anonymous + signed-in + admin alike) so Mark's hide action
+  // works as global curation, not just a per-user dismissal.
+  // Per-user `hidden_listings` keeps working alongside this; both
+  // tables are read independently.
   const mainFeedItems = useMemo(() => {
-    if (auctionLotItems.length === 0) return items;
-    return [...items, ...auctionLotItems];
-  }, [items, auctionLotItems]);
+    const hasAdminHide = adminHidden && adminHidden.size > 0;
+    const filterAdminHidden = (it) => !adminHidden.has(it.id);
+    if (auctionLotItems.length === 0) {
+      return hasAdminHide ? items.filter(filterAdminHidden) : items;
+    }
+    const merged = [...items, ...auctionLotItems];
+    return hasAdminHide ? merged.filter(filterAdminHidden) : merged;
+  }, [items, auctionLotItems, adminHidden]);
 
   // Sources for the filter UI, split by kind so the sidebar/drawer can
   // group them under Dealers / Auction houses sub-headers. SOURCES is
@@ -835,7 +860,16 @@ export default function Watchlist() {
     const wasHidden = !!hidden[item.id];
     toggleHidden(item);
     if (!wasHidden) recordEvent("hide", item);
-  }, [user, hidden, toggleHidden, requireSignIn, recordEvent]);
+    // Mark 2026-05-06 admin-hide: when the taste-maker hides a
+    // listing, ALSO add it to the global blocklist so it
+    // disappears from every user's live feed. Per-user
+    // hidden_listings still gets the row above (so the Hidden
+    // synthetic list under Watchlist > Lists keeps a record).
+    if (isAdmin) {
+      const wasGlobalHidden = adminHidden.has(item.id);
+      toggleAdminHidden(item.id, wasGlobalHidden);
+    }
+  }, [user, hidden, toggleHidden, requireSignIn, recordEvent, isAdmin, adminHidden, toggleAdminHidden]);
 
   const toggleFilterRef = (ref) =>
     setFilterRefs(p => p.includes(ref) ? p.filter(x => x !== ref) : [...p, ref]);
@@ -1333,13 +1367,8 @@ export default function Watchlist() {
     || user?.email
     || "";
 
-  // Admin gate. Comma-separated emails in REACT_APP_ADMIN_EMAILS env var
-  // (set in Vercel + .env.local). Empty default = nobody is admin and
-  // the source-quality dashboard is unreachable. Stays out of the main
-  // tab strip; access is via user-dropdown link or direct URL.
-  const ADMIN_EMAILS = (process.env.REACT_APP_ADMIN_EMAILS || "")
-    .split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
-  const isAdmin = !!user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
+  // (Admin gate `isAdmin` is hoisted up near the auth hook so
+  // toggleHide can use it; comment + computation moved with it.)
 
   // If the URL says ?tab=admin but the resolved user isn't an admin,
   // bounce to listings. Defer this until user has resolved (authReady)
