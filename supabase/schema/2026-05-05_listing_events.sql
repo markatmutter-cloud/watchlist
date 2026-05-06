@@ -99,15 +99,17 @@ create index if not exists listing_events_daily_source_idx
 create index if not exists listing_events_daily_listing_id_idx
   on public.listing_events_daily (listing_id, day);
 
-alter table public.listing_events_daily enable row level security;
-
-do $$ begin
-  if not exists (select 1 from pg_policies
-    where schemaname='public' and tablename='listing_events_daily' and policyname='Admins select listing events daily') then
-    create policy "Admins select listing events daily"
-      on public.listing_events_daily for select using (public.is_admin());
-  end if;
-end $$;
+-- listing_events_daily is internal — there is no legitimate direct-
+-- from-client access to it. Reads go through the
+-- source_engagement_summary RPC (security definer, admin-checking)
+-- and writes go through the rollup_and_prune function. We DON'T
+-- enable RLS here because the rollup function (security definer)
+-- otherwise can't insert without an INSERT policy, and the
+-- Supabase SQL editor session may not bypass RLS depending on the
+-- invoking role. Cleaner to lock down via REVOKE on the table and
+-- gate the only client-facing path (the RPC) explicitly.
+alter table public.listing_events_daily disable row level security;
+revoke all on public.listing_events_daily from anon, authenticated, public;
 
 -- ── rollup_and_prune_listing_events() ────────────────────────────────
 -- Idempotent. Aggregates the current contents of listing_events into
@@ -155,9 +157,11 @@ grant execute on function public.rollup_and_prune_listing_events(integer) to ser
 
 -- ── source_engagement_summary() ──────────────────────────────────────
 -- Per-source engagement counts over a rolling window. Used by the
--- AdminTab Source quality dashboard. security invoker so the
--- listing_events_daily SELECT RLS gates reads to admins; non-admin
--- callers get an empty result set without an error.
+-- AdminTab Source quality dashboard. The ONLY client-facing path to
+-- read listing_events_daily — direct table access is REVOKE'd from
+-- anon/authenticated above. security definer + an explicit
+-- is_admin() guard inside the body means non-admin callers get an
+-- empty result without exposing data, while admins read normally.
 --
 -- Reads only the rollup table — today's raw events show up after the
 -- next daily rollup runs. Tradeoff is cleanliness of the query vs.
@@ -174,22 +178,28 @@ returns table (
   list_adds  bigint,
   shares     bigint
 )
-language sql
-security invoker
+language plpgsql
+security definer
 stable
 set search_path = public
 as $$
+begin
+  if not public.is_admin() then
+    return;
+  end if;
+  return query
   select
-    coalesce(source, '')                                       as source,
-    sum(case when event_type='view'     then count else 0 end)::bigint as views,
-    sum(case when event_type='click'    then count else 0 end)::bigint as clicks,
-    sum(case when event_type='save'     then count else 0 end)::bigint as saves,
-    sum(case when event_type='hide'     then count else 0 end)::bigint as hides,
-    sum(case when event_type='list_add' then count else 0 end)::bigint as list_adds,
-    sum(case when event_type='share'    then count else 0 end)::bigint as shares
-  from public.listing_events_daily
-  where day >= ((now() at time zone 'UTC')::date - make_interval(days => window_days))
-  group by coalesce(source, '');
+    coalesce(d.source, '')                                                  as source,
+    sum(case when d.event_type='view'     then d.count else 0 end)::bigint as views,
+    sum(case when d.event_type='click'    then d.count else 0 end)::bigint as clicks,
+    sum(case when d.event_type='save'     then d.count else 0 end)::bigint as saves,
+    sum(case when d.event_type='hide'     then d.count else 0 end)::bigint as hides,
+    sum(case when d.event_type='list_add' then d.count else 0 end)::bigint as list_adds,
+    sum(case when d.event_type='share'    then d.count else 0 end)::bigint as shares
+  from public.listing_events_daily d
+  where d.day >= ((now() at time zone 'UTC')::date - make_interval(days => window_days))
+  group by coalesce(d.source, '');
+end;
 $$;
 
 -- ── Seed admin_emails (manual step) ──────────────────────────────────
