@@ -385,13 +385,18 @@ function PickingStage({
         activeStage="picking"
       />
 
-      {/* Sticky stat row — stays visible while the source-tile grid
-          scrolls below, so the user always sees spend + remaining. */}
+      {/* Sticky stat row — stays visible while content scrolls
+          below. Negative marginTop pulls the bg up to overlap the
+          StageHeader's bottom margin so when content scrolls past
+          there's no gap above the sticky. boxShadow gives a soft
+          separation. */}
       <div style={{
         position: "sticky", top: 0, zIndex: 5,
         background: "var(--bg)",
-        paddingTop: 4, paddingBottom: 8,
-        marginBottom: 4,
+        paddingTop: 10, paddingBottom: 10,
+        marginTop: -10,
+        marginBottom: 6,
+        boxShadow: "0 6px 8px -6px rgba(0,0,0,0.10)",
       }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <StatCard
@@ -484,7 +489,7 @@ function PickingStage({
           onClick={() => {
             flushNote();
             if (overBudget) {
-              if (window.confirm(`You're ${fmtUSD(overBy)} over budget. Mark complete anyway?`)) onComplete();
+              if (window.confirm(`You're ${fmtUSD(overBy)} over budget. Finish anyway?`)) onComplete();
             } else { onComplete(); }
           }}
           style={{
@@ -494,7 +499,7 @@ function PickingStage({
             fontFamily: "inherit", fontSize: 14, fontWeight: 500,
             opacity: canComplete ? 1 : 0.4,
           }}>
-          Mark complete →
+          Finish →
         </button>
       </div>
 
@@ -566,7 +571,7 @@ function PickingStage({
         ) : (
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
             gap: 6,
             opacity: allFilled ? 0.5 : 1,
           }}>
@@ -598,7 +603,7 @@ function SlotCell({ occupant, slotIdx, onRemove }) {
   const baseStyle = {
     background: occupant ? "var(--card-bg)" : "transparent",
     border: occupant ? "0.5px solid var(--border)" : "1.5px dashed var(--border)",
-    borderRadius: 8, padding: 8, minHeight: 140,
+    borderRadius: 8, padding: 6, minHeight: 110,
     display: "flex", flexDirection: "column",
     position: "relative",
   };
@@ -633,32 +638,32 @@ function SlotCell({ occupant, slotIdx, onRemove }) {
         }}
       >×</button>
       <div style={{
-        aspectRatio: "1", background: "var(--bg)", borderRadius: 4, marginBottom: 6,
+        aspectRatio: "4 / 3", background: "var(--bg)", borderRadius: 4, marginBottom: 4,
         overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         {occupant.img ? (
           <img src={imgSrc(occupant.img)} alt=""
             style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          <span style={{ fontSize: 22, color: "var(--text3)" }}>⌚</span>
+          <span style={{ fontSize: 18, color: "var(--text3)" }}>⌚</span>
         )}
       </div>
       <p style={{
-        fontSize: 12, fontWeight: 500, margin: "0 0 2px",
-        color: "var(--text1)", lineHeight: 1.25,
+        fontSize: 11, fontWeight: 500, margin: "0 0 1px",
+        color: "var(--text1)", lineHeight: 1.2,
         overflow: "hidden", textOverflow: "ellipsis",
-        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+        display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical",
       }}>
         {occupant.brand}
       </p>
       <p style={{
-        fontSize: 11, color: "var(--text2)", margin: "0 0 4px",
+        fontSize: 10, color: "var(--text2)", margin: "0 0 3px",
         overflow: "hidden", textOverflow: "ellipsis",
-        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+        display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical",
       }}>
         {occupant.ref || ""}
       </p>
-      <p style={{ fontSize: 12, fontWeight: 500, margin: 0, color: "var(--text1)" }}>
+      <p style={{ fontSize: 11, fontWeight: 500, margin: 0, color: "var(--text1)" }}>
         {fmtUSD(occupant.savedPriceUSD || occupant.priceUSD || 0)}
       </p>
     </div>
@@ -765,19 +770,77 @@ function CompleteStage({ challenge, items, onShare, onBack, onReopen }) {
   const totalSpend = picks.reduce((s, p) => s + (p.savedPriceUSD || p.priceUSD || 0), 0);
   const overBy = Math.max(0, totalSpend - challenge.budget);
 
+  // Share-click feedback. handleShare returns { copied: bool } — on
+  // mobile native-share path it resolves to copied=false (the share
+  // sheet is the user's confirmation), on desktop clipboard fallback
+  // it resolves true. Either way we flash a one-line confirmation
+  // for ~2s so the click feels acknowledged. Mark 2026-05-06 flagged
+  // "Share button doesn't work" — most likely the click WAS firing
+  // but the silent clipboard-write left him no feedback.
+  const [shareFeedback, setShareFeedback] = useState("");
+  const handleShareClick = async () => {
+    const res = await onShare();
+    if (res?.copied) setShareFeedback("Link copied!");
+    else setShareFeedback("Shared.");
+    setTimeout(() => setShareFeedback(""), 2200);
+  };
+
   return (
     <div>
       <StageHeader label="back to challenges" onBack={onBack} title={challenge.name}
         subtitle={challenge.descriptionLong}
         activeStage="complete" />
 
+      {/* Action bar — Reopen + Share at the TOP of the card so the
+          user doesn't have to scroll past the picks list to find
+          them. Mark 2026-05-06: "Share button should be higher so
+          no scroll needed same with reopen for edits." */}
       <div style={{
-        background: "var(--card-bg)", borderRadius: 8, border: "0.5px solid var(--border)",
-        padding: 18, marginBottom: 16,
+        display: "flex", justifyContent: "flex-end", alignItems: "center",
+        gap: 8, flexWrap: "wrap",
+        marginBottom: 12,
       }}>
-        <div style={{ textAlign: "center", borderBottom: "0.5px solid var(--border)", paddingBottom: 14, marginBottom: 14 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: "var(--text2)", textTransform: "uppercase",
-                      letterSpacing: "0.04em", margin: "0 0 4px" }}>
+        {shareFeedback && (
+          <span aria-live="polite" style={{
+            fontSize: 12, color: "var(--text2)", marginRight: "auto",
+            background: "var(--surface)", border: "0.5px solid var(--border)",
+            padding: "4px 10px", borderRadius: 999,
+          }}>{shareFeedback}</span>
+        )}
+        {onReopen && (
+          <button onClick={onReopen} style={{
+            padding: "9px 14px", borderRadius: 8,
+            border: "0.5px solid var(--border)", background: "transparent",
+            color: "var(--text2)", cursor: "pointer",
+            fontFamily: "inherit", fontSize: 13,
+          }}>Reopen for edits</button>
+        )}
+        <button onClick={handleShareClick} style={{
+          padding: "9px 16px", borderRadius: 8, border: "none",
+          background: "#185FA5", color: "#fff", cursor: "pointer",
+          fontFamily: "inherit", fontSize: 14, fontWeight: 500,
+        }}>Share →</button>
+      </div>
+
+      {/* Polished card surface. Same border + shadow treatment as
+          the share-receive landing card so completed challenges
+          feel like first-class artefacts. */}
+      <div style={{
+        background: "var(--card-bg)",
+        borderRadius: 12, border: "0.5px solid var(--border)",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)",
+        padding: 18,
+      }}>
+        <div style={{
+          textAlign: "center",
+          borderBottom: "0.5px solid var(--border)",
+          paddingBottom: 12, marginBottom: 14,
+        }}>
+          <p style={{
+            fontSize: 11, fontWeight: 600, color: "var(--text2)",
+            textTransform: "uppercase", letterSpacing: "0.04em",
+            margin: "0 0 4px",
+          }}>
             Watch challenge · complete
           </p>
           <p style={{ fontSize: 13, color: "var(--text2)", margin: 0 }}>
@@ -787,59 +850,46 @@ function CompleteStage({ challenge, items, onShare, onBack, onReopen }) {
         </div>
         {picks.map((p, i) => (
           <div key={p.rowId} style={{
-            display: "grid", gridTemplateColumns: "60px 1fr", gap: 14,
-            paddingBottom: 14, marginBottom: 14,
+            display: "grid", gridTemplateColumns: "56px 1fr auto", gap: 12,
+            alignItems: "center",
+            paddingBottom: 12, marginBottom: 12,
             borderBottom: i < picks.length - 1 ? "0.5px solid var(--border)" : "none",
           }}>
             <div style={{
-              aspectRatio: "1", background: "var(--bg)", borderRadius: 4,
+              aspectRatio: "1", background: "var(--bg)", borderRadius: 6,
               overflow: "hidden",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               {p.img ? (
-                <img src={p.img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={imgSrc(p.img)} alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
-                <span style={{ fontSize: 22, color: "var(--text3)" }}>⌚</span>
+                <span style={{ fontSize: 18, color: "var(--text3)" }}>⌚</span>
               )}
             </div>
-            <div>
-              <p style={{ fontSize: 11, fontWeight: 600, color: "var(--text2)", textTransform: "uppercase",
-                          letterSpacing: "0.04em", margin: "0 0 2px" }}>
-                Pick {i + 1} · {fmtUSD(p.savedPriceUSD || 0)}
-              </p>
-              <p style={{ fontSize: 15, fontWeight: 500, margin: "0 0 2px", color: "var(--text1)" }}>
-                {p.brand} {p.ref || ""}
-              </p>
-              <p style={{ fontSize: 12, color: "var(--text2)", margin: "0 0 6px" }}>
-                {p.source}
-              </p>
-              <p style={{ fontSize: 13, color: "var(--text1)", margin: 0, lineHeight: 1.5,
-                          fontStyle: p.reasoning ? "normal" : "italic", color: p.reasoning ? "var(--text1)" : "var(--text3)" }}>
-                {p.reasoning || "(no reasoning given)"}
-              </p>
+            <div style={{ minWidth: 0 }}>
+              <p style={{
+                fontSize: 14, fontWeight: 500, margin: 0, color: "var(--text1)",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>{p.brand} {p.ref || ""}</p>
+              <p style={{
+                fontSize: 12, color: "var(--text2)", margin: "1px 0 0",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>{p.source}</p>
             </div>
+            <p style={{
+              fontSize: 14, fontWeight: 500, margin: 0, color: "var(--text1)",
+              whiteSpace: "nowrap",
+            }}>
+              {fmtUSD(p.savedPriceUSD || 0)}
+            </p>
           </div>
         ))}
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        {onReopen ? (
-          <button onClick={onReopen} style={{
-            padding: "10px 16px", borderRadius: 8,
-            border: "0.5px solid var(--border)", background: "transparent",
-            color: "var(--text2)", cursor: "pointer",
-            fontFamily: "inherit", fontSize: 13,
-          }}>Reopen for edits</button>
-        ) : <span />}
-        <button onClick={onShare} style={{
-          padding: "10px 18px", borderRadius: 8, border: "none",
-          background: "#185FA5", color: "#fff", cursor: "pointer",
-          fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-        }}>Share →</button>
-      </div>
       <p style={{
-        marginTop: 14, fontSize: 11, color: "var(--text3)",
-        textAlign: "right", lineHeight: 1.5,
+        marginTop: 12, fontSize: 11, color: "var(--text3)",
+        textAlign: "center", lineHeight: 1.5,
       }}>
         Share sends the constraints — your picks stay private.
       </p>
@@ -907,13 +957,16 @@ export function ChallengeFlow({
     await collectionsApi.updateReasoning(rowId, reasoning);
   }, [collectionsApi]);
 
-  const shareChallenge = useCallback(() => {
-    if (!handleShare) return;
+  const shareChallenge = useCallback(async () => {
+    if (!handleShare) return { copied: false };
     // v1 shares the challenge SPEC (not the picks themselves) so the
     // recipient can build their own response under the same constraints
     // — Mark's "send-as-empty challenge" mode. Encoding in URL avoids
     // RLS-public-read schema surgery; v2 will swap to a real public
     // landing page for "see my picks" sharing.
+    //
+    // Return the handleShare promise so CompleteStage can show
+    // confirmation feedback when the share resolves.
     const params = new URLSearchParams();
     params.set("newchallenge", "1");
     if (challenge.name)             params.set("t", challenge.name);
@@ -921,7 +974,7 @@ export function ChallengeFlow({
     if (challenge.budget)           params.set("b", String(challenge.budget));
     if (challenge.descriptionLong)  params.set("d", challenge.descriptionLong);
     const url = `${window.location.origin}/?${params.toString()}`;
-    handleShare({ title: `Watch challenge: ${challenge.name}`, url });
+    return await handleShare({ title: `Watch challenge: ${challenge.name}`, url });
   }, [challenge.id, challenge.name, challenge.targetCount, challenge.budget, challenge.descriptionLong, handleShare]);
 
   // ── Render the active stage ────────────────────────────────
