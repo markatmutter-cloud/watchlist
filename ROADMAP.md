@@ -1053,12 +1053,19 @@ brand/model verticals are well-served, where the gaps are.
   table at `?tab=admin`: live count, new-per-week, sparkline,
   days stale, hearts/heart-rate, hides/hide-rate, avg price, top
   brand %, scrape health, "earning its keep" chip.
-- **Pending — total throughput in value.** Per-source rolling
-  view of $ added (sum of new-listing prices over a window),
-  $ sold (sum of `lastMeaningfulPrice` on items that disappeared
-  over the window). Surfaces dealers whose unit-count is low but
-  whose inventory cycles through high-value pieces vs dealers
-  whose unit-count is high but whose stock sits.
+- **Total throughput in value** ✓ shipped 2026-05-05. Per-source
+  rolling 30-day `$ added` and `$ sold` columns on the Source
+  quality table. `$ added` is sum of priceUSD across listings
+  whose firstSeen falls in the window; `$ sold` uses
+  `lastMeaningfulPrice` to handle the "Price on request" /
+  "$0 on disappearance" cases the merge.py field already
+  captures.
+- **Auction-house quality dashboard** ✓ shipped 2026-05-05. New
+  table below Source quality covering the 6 houses (4 lot-level
+  scrape, 2 calendar-only): live + upcoming sales counts, total
+  + sold lot counts, sold rate, $ sold (90d), median Hammer/Low
+  ratio. Anchors the Epic 2 "auction-house quality" cross-ref
+  that's been pending since the calendar shipped.
 - **Pending — sales by watch type per dealer.** For each dealer,
   break sold inventory down by brand × decade × type (chronograph
   / dive / dress / etc.). Two uses: (a) tells me which dealers
@@ -1126,11 +1133,11 @@ Current best-guess sequence. Will shift; update this doc when it does.
 Epic numbers reflect the 2026-05-05 restructure.
 
 1. **Site analytics — Source stats extensions (Epic 8).** User stats
-   half shipped 2026-05-05. Next: throughput in value, sales by watch
-   type per dealer / per house, cross-source live inventory, listing-
-   quality signals, taste-relative pricing, auction-house quality
-   dashboard. Some panels combine supply with the demand signal that
-   just landed.
+   half shipped 2026-05-05. Throughput-in-value + auction-house
+   quality dashboard also shipped 2026-05-05. Remaining: sales by
+   watch type per dealer (gated on Epic 0 references for "type"
+   classification), cross-source live inventory (also Epic-0-gated),
+   listing-quality signals, taste-relative pricing.
 2. **User limits + user-management dashboard (Epic 3 + Epic 8).**
    500 soft / 2,500 hard cap; admin grants individuals expanded
    limits. Defensive engineering for an open public site.
