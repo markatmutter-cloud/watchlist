@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { Card } from "./Card";
-import { fmtUSD } from "../utils";
+import { fmtUSD, imgSrc } from "../utils";
 
 // Watch Challenges (Build-a-collection v1) — multi-stage flow inside
 // Watchlist > Challenges. One collection per challenge with type=
@@ -298,6 +298,7 @@ function SlotPickerModal({ slotsTotal, picks, watch, onPick, onCancel }) {
 // Reasoning stage component is gone — this used to live there.
 function PickingStage({
   challenge, items, allListings, watchlist, hidden,
+  collections, itemsByCollection,
   onPlaceInSlot, onMoveToShortlist, onAddToShortlist, onComplete, onEditConfig, onBack,
   onUpdateReasoning,
   primaryCurrency,
@@ -333,24 +334,28 @@ function PickingStage({
   // it. Cleared on drop, leave, or end-of-drag.
   const [dragOverSlot, setDragOverSlot] = useState(null);
   const [pickerOpenForItem, setPickerOpenForItem] = useState(null);
+  // D2: source picker replaces the search-allListings drawer Mark
+  // flagged as bad UX ("images and search field to add to the
+  // challenge group is tiny and can't really be seen"). Watches now
+  // come from existing Favorites + Lists (already curated, already
+  // visual), or from pasting a Watchlist URL.
+  //
+  // addSource: "favorites" | `list:<id>` | "paste". Default = the
+  // most likely source the user has populated. Hidden when shortlist
+  // is non-empty so the picking grid + shortlist read tighter; user
+  // toggles via the "+ Add to shortlist" button.
+  const userLists = useMemo(
+    () => (collections || []).filter(c => c.type === "free-form" && !c.is_shared_inbox),
+    [collections],
+  );
   const [showAddDrawer, setShowAddDrawer] = useState(items.length === 0);
-  const [searchQuery, setSearchQuery] = useState("");
-  // Whether the shortlist search drawer should include sold listings.
-  // Default off — most builds are about live inventory — but a thought-
-  // experiment over historical results is a legitimate use-case (Mark's
-  // brief: "Pick 5 Heuers under $20k from any year"), so make it a
-  // checkbox. Persisted across drawer toggles via component state.
-  const [includeSold, setIncludeSold] = useState(false);
-
-  // Recompute "show drawer" when items first arrive — empty challenges
-  // get the drawer open by default; once any item exists we hide it
-  // unless the user opens it explicitly.
-  useEffect(() => {
-    if (items.length > 0 && showAddDrawer && !searchQuery) {
-      // Don't auto-close; let user explicitly toggle.
-    }
-  // eslint-disable-next-line
-  }, [items.length]);
+  const [addSource, setAddSource] = useState(() => {
+    if (watchlist && Object.keys(watchlist).length > 0) return "favorites";
+    if (userLists[0]) return `list:${userLists[0].id}`;
+    return "paste";
+  });
+  const [pasteUrl, setPasteUrl] = useState("");
+  const [pasteError, setPasteError] = useState("");
 
   const slotStyle = (occupied, isDragOver) => ({
     background: occupied ? "var(--card-bg)" : "transparent",
@@ -381,29 +386,71 @@ function PickingStage({
     }
   };
 
-  // Search results for the add drawer — listings.json filtered by
-  // the user's typed query, excluding items already in this challenge.
-  // Search haystack covers brand + ref + title + model + source so
-  // queries like "submariner" or "speedmaster" hit titles that don't
-  // include the brand string. Sold filter is opt-in via the toggle.
-  const filteredResults = useMemo(() => {
-    if (!searchQuery || searchQuery.length < 2) return [];
-    const q = searchQuery.toLowerCase().trim();
+  // Watches available in the currently-selected source (Favorites
+  // or one of the user's Lists). Already-in-challenge items are
+  // filtered out; hidden items too. Sorted savedAt desc.
+  const sourceWatches = useMemo(() => {
     const inThis = new Set(items.map(it => it.id));
-    return allListings
-      .filter(l => (includeSold || !l.sold) && !inThis.has(l.id) && !hidden[l.id])
-      .filter(l => {
-        const hay = (
-          (l.brand || "") + " " +
-          (l.ref || "") + " " +
-          (l.title || "") + " " +
-          (l.model || "") + " " +
-          (l.source || "")
-        ).toLowerCase();
-        return hay.includes(q);
-      })
-      .slice(0, 25);
-  }, [searchQuery, allListings, items, hidden, includeSold]);
+    let pool = [];
+    if (addSource === "favorites") {
+      pool = Object.values(watchlist || {});
+    } else if (addSource.startsWith("list:")) {
+      const id = addSource.slice(5);
+      pool = (itemsByCollection && itemsByCollection[id]) || [];
+    }
+    return pool
+      .filter(w => w && w.id && !inThis.has(w.id) && !hidden[w.id])
+      .sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")));
+  }, [addSource, watchlist, itemsByCollection, items, hidden]);
+
+  // Resolve a pasted URL or ID into a listing id. Accepts:
+  // - bare 8-16 char hex id
+  // - https://the-watch-list.app/share/<id>
+  // - https://the-watch-list.app/?listing=<id>(&shared=1)
+  // - external dealer URL → look up by exact or prefix match
+  const resolvePastedId = useCallback((raw) => {
+    if (!raw) return null;
+    const text = raw.trim();
+    if (!text) return null;
+    if (/^[0-9a-f]{8,16}$/i.test(text)) return text.toLowerCase();
+    let url;
+    try { url = new URL(text); } catch { return null; }
+    const isOurs = /(?:^|\.)the-watch-list\.app$/i.test(url.hostname);
+    if (isOurs) {
+      const m = url.pathname.match(/^\/share\/([^/?#]+)/);
+      if (m) return decodeURIComponent(m[1]);
+      const listing = url.searchParams.get("listing");
+      if (listing) return listing;
+    }
+    if (Array.isArray(allListings) && allListings.length) {
+      const exact = allListings.find(l => l && l.url === text);
+      if (exact) return exact.id;
+      const stripped = text.split("?")[0].split("#")[0];
+      const loose = allListings.find(l => l && l.url && l.url.split("?")[0].split("#")[0] === stripped);
+      if (loose) return loose.id;
+    }
+    return null;
+  }, [allListings]);
+
+  const handlePaste = useCallback(() => {
+    setPasteError("");
+    const id = resolvePastedId(pasteUrl);
+    if (!id) {
+      setPasteError("Couldn't parse that. Paste a Watchlist share URL, dealer URL, or 12-char ID.");
+      return;
+    }
+    if (items.some(it => it.id === id)) {
+      setPasteError("That watch is already in this challenge.");
+      return;
+    }
+    const listing = (allListings || []).find(l => l && l.id === id);
+    if (!listing) {
+      setPasteError("Found an ID but no matching listing in the current feed (might've sold or been removed).");
+      return;
+    }
+    onAddToShortlist(listing);
+    setPasteUrl("");
+  }, [pasteUrl, resolvePastedId, items, allListings, onAddToShortlist]);
 
   return (
     <div>
@@ -554,46 +601,92 @@ function PickingStage({
         {showAddDrawer && (
           <div style={{
             background: "var(--surface)", border: "0.5px solid var(--border)",
-            borderRadius: 8, padding: 12, marginBottom: 14,
+            borderRadius: 8, padding: 10, marginBottom: 14,
           }}>
-            <input type="text" value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search by brand, reference, title, model, dealer…"
-              autoFocus
-              style={{
-                width: "100%", boxSizing: "border-box",
-                border: "0.5px solid var(--border)", borderRadius: 6,
-                background: "var(--bg)", padding: "8px 10px",
-                fontFamily: "inherit", fontSize: 13, color: "var(--text1)", outline: "none",
-                marginBottom: 8,
-              }} />
-            <label style={{
-              display: "flex", alignItems: "center", gap: 6, marginBottom: 10,
-              fontSize: 12, color: "var(--text2)", cursor: "pointer", userSelect: "none",
+            {/* Source chips. Horizontal scroll on narrow viewports
+                so a long list of Lists doesn't wrap into a tall
+                stack. Each chip's count helps the user pick the
+                right source at a glance. */}
+            <div style={{
+              display: "flex", gap: 6, marginBottom: 10,
+              overflowX: "auto", paddingBottom: 2,
+              WebkitOverflowScrolling: "touch", scrollbarWidth: "none",
             }}>
-              <input type="checkbox" checked={includeSold}
-                onChange={e => setIncludeSold(e.target.checked)} />
-              Include sold listings
-              <span style={{ color: "var(--text3)" }}>
-                {includeSold ? "(searching all inventory, live + sold)" : "(searching live inventory)"}
-              </span>
-            </label>
-            {searchQuery.length >= 2 && filteredResults.length === 0 && (
-              <p style={{ fontSize: 13, color: "var(--text3)", margin: "16px 0", textAlign: "center", fontStyle: "italic" }}>
-                No matches.{!includeSold && " Try toggling \"Include sold\" above."}
+              <SourceChip
+                active={addSource === "favorites"}
+                onClick={() => setAddSource("favorites")}
+                label={`♥ Favorites · ${Object.keys(watchlist || {}).length}`}
+              />
+              {userLists.map(c => (
+                <SourceChip key={c.id}
+                  active={addSource === `list:${c.id}`}
+                  onClick={() => setAddSource(`list:${c.id}`)}
+                  label={`${c.name} · ${(itemsByCollection?.[c.id] || []).length}`}
+                />
+              ))}
+              <SourceChip
+                active={addSource === "paste"}
+                onClick={() => setAddSource("paste")}
+                label="+ Paste link"
+              />
+            </div>
+
+            {addSource === "paste" ? (
+              <div>
+                <p style={{ fontSize: 12, color: "var(--text2)", margin: "0 0 6px", lineHeight: 1.4 }}>
+                  Paste a Watchlist share URL, a dealer URL, or a 12-char watch ID.
+                </p>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input type="text" value={pasteUrl}
+                    onChange={e => { setPasteUrl(e.target.value); setPasteError(""); }}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handlePaste(); } }}
+                    placeholder="https://the-watch-list.app/share/…"
+                    style={{
+                      flex: 1, boxSizing: "border-box",
+                      border: "0.5px solid var(--border)", borderRadius: 6,
+                      background: "var(--bg)", padding: "8px 10px",
+                      fontFamily: "inherit", fontSize: 13, color: "var(--text1)", outline: "none",
+                    }}
+                  />
+                  <button onClick={handlePaste} style={{
+                    padding: "8px 14px", borderRadius: 6, border: "none",
+                    background: "#185FA5", color: "#fff", cursor: "pointer",
+                    fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+                  }}>Add</button>
+                </div>
+                {pasteError && (
+                  <p style={{ fontSize: 12, color: "#c0392b", margin: "6px 0 0", lineHeight: 1.4 }}>
+                    {pasteError}
+                  </p>
+                )}
+              </div>
+            ) : sourceWatches.length === 0 ? (
+              <p style={{ fontSize: 12, color: "var(--text3)", margin: "12px 4px", fontStyle: "italic" }}>
+                {addSource === "favorites"
+                  ? "No favorites available. Heart watches in Listings to populate this."
+                  : "This list is empty (or every item is already in your challenge)."}
               </p>
-            )}
-            {searchQuery.length < 2 && (
-              <p style={{ fontSize: 12, color: "var(--text3)", margin: "8px 0 0", fontStyle: "italic" }}>
-                Type at least 2 characters.{!includeSold && " Sold listings excluded — toggle above to include."} Hidden listings always excluded.
-              </p>
-            )}
-            {filteredResults.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 320, overflowY: "auto" }}>
-                {filteredResults.map(l => (
-                  <SearchRow key={l.id} listing={l}
-                    onAdd={() => { onAddToShortlist(l); setSearchQuery(""); }} />
+            ) : (
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))",
+                gap: 6,
+                maxHeight: 360,
+                overflowY: "auto",
+              }}>
+                {sourceWatches.slice(0, 80).map(w => (
+                  <SourceTile key={w.id} item={w}
+                    onTap={() => onAddToShortlist(w)}
+                    primaryCurrency={primaryCurrency} />
                 ))}
+                {sourceWatches.length > 80 && (
+                  <p style={{
+                    gridColumn: "1/-1", textAlign: "center",
+                    fontSize: 11, color: "var(--text3)", margin: "8px 0 0",
+                  }}>
+                    Showing first 80 — use the source chips above to switch.
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -801,41 +894,70 @@ function ShortlistTile({ item, desktop, onDragStart, onDragEnd, onTap, onRemove,
   );
 }
 
-function SearchRow({ listing, onAdd }) {
+// Tab-style chip for the source picker. Active = filled background.
+function SourceChip({ active, onClick, label }) {
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      padding: "8px 10px", background: "var(--bg)",
-      border: "0.5px solid var(--border)", borderRadius: 6,
-    }}>
-      <div style={{
-        width: 36, height: 36, background: "var(--surface)", borderRadius: 4,
-        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-        overflow: "hidden",
-      }}>
-        {listing.img ? (
-          <img src={listing.img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <span style={{ fontSize: 14, color: "var(--text3)" }}>⌚</span>
-        )}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: 13, fontWeight: 500, margin: "0 0 1px", color: "var(--text1)",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {listing.brand} {listing.ref || ""}
-        </p>
-        <p style={{ fontSize: 11, color: "var(--text2)", margin: 0 }}>
-          {listing.source} · {fmtUSD(listing.priceUSD || listing.price || 0)}
-        </p>
-      </div>
-      <button onClick={onAdd} style={{
-        padding: "4px 10px", borderRadius: 6, border: "none",
-        background: "#185FA5", color: "#fff", cursor: "pointer",
-        fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-      }}>Add</button>
-    </div>
+    <button onClick={onClick} style={{
+      flexShrink: 0,
+      padding: "5px 11px",
+      borderRadius: 999,
+      border: "0.5px solid var(--border)",
+      background: active ? "var(--text1)" : "transparent",
+      color: active ? "var(--bg)" : "var(--text1)",
+      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+      whiteSpace: "nowrap",
+    }}>{label}</button>
   );
 }
+
+// Compact card-tile for the source picker. Tap = add to shortlist.
+// Square image + brand + price in a tight stack so users can scan a
+// list of 60+ items quickly. Uses imgSrc() so hot-link-protected
+// dealer images route through the proxy.
+function SourceTile({ item, onTap, primaryCurrency }) {
+  return (
+    <button onClick={onTap}
+      title={`Add to shortlist: ${item.brand || ""}${item.ref ? ` ${item.ref}` : ""}`}
+      style={{
+        display: "flex", flexDirection: "column",
+        background: "var(--card-bg)",
+        border: "0.5px solid var(--border)", borderRadius: 6,
+        padding: 0, overflow: "hidden",
+        cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+      }}
+    >
+      <div style={{
+        aspectRatio: "1", background: "var(--bg)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        overflow: "hidden",
+      }}>
+        {item.img ? (
+          <img src={imgSrc(item.img)} alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+        ) : (
+          <span style={{ fontSize: 18, color: "var(--text3)" }}>⌚</span>
+        )}
+      </div>
+      <div style={{ padding: "5px 6px" }}>
+        <p style={{
+          fontSize: 11, fontWeight: 500, margin: "0 0 1px", color: "var(--text1)",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          lineHeight: 1.25,
+        }}>
+          {item.brand}{item.ref ? ` ${item.ref}` : ""}
+        </p>
+        <p style={{
+          fontSize: 11, color: "var(--text2)", margin: 0,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {fmtUSD(item.savedPriceUSD || item.priceUSD || item.price || 0)}
+        </p>
+      </div>
+    </button>
+  );
+}
+
 
 function StatCard({ label, value, sub, progress, warn, hardWarn, warnLabel }) {
   return (
@@ -1063,6 +1185,12 @@ export function ChallengeFlow({
     <PickingStage
       challenge={challenge} items={items}
       allListings={allListings} watchlist={watchlist} hidden={hidden}
+      // D2: Lists + Favorites are the new source for adding watches
+      // — replaces the old search-allListings drawer. Pass through
+      // the collection metadata so the source picker can render
+      // tabs per List with their items.
+      collections={collectionsApi?.collections || []}
+      itemsByCollection={collectionsApi?.itemsByCollection || {}}
       primaryCurrency={primaryCurrency}
       onPlaceInSlot={placeInSlot}
       onMoveToShortlist={moveToShortlist}
