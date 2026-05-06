@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Card } from "./Card";
-import { ListRow } from "./ListRow";
 import { ageBucketFromDate, fmtUSD } from "../utils";
 import { importLocalData } from "../supabase";
 import { SubTabIntro } from "./SubTabIntro";
@@ -32,33 +31,17 @@ export function WatchlistTab(props) {
     legacyLocal, importState, setImportState, legacyKeys,
     // Navigation
     setTab, setPage,
-    // Collections (Session 2). collectionsApi is the full
-    // useCollections return value; setEditingCollection opens the
-    // create/rename modal (rendered in the parent shell);
     // openCollectionPicker opens the add-to-collection modal for a
-    // listing. startCreateCollection opens the create modal directly
-    // (lifted from the sub-tab strip into the Lists intro banner on
-    // 2026-05-04); openTrackModal opens the Track-eBay-item flow
-    // (same lift, into the Saved auctions intro banner).
-    collectionsApi, setEditingCollection, openCollectionPicker,
-    startCreateCollection, openTrackModal,
-    // User's primary display currency (USD/GBP/EUR), forwarded
-    // to every Card render so the new currency rule applies in the
-    // Watchlist > Favorites and Collection drill-in surfaces too.
+    // listing — still wired to every Card's "..." menu in the
+    // remaining sub-tabs (Saved listings / Saved auctions / Saved
+    // sold), so users can add a saved item to a list from here.
+    // The list-management surface itself moved to the new
+    // Collections tab (PR #86).
+    openCollectionPicker,
+    // User's primary display currency. Forwarded to Card renders.
     primaryCurrency,
-    // Outbound share handler — wired to every Card render below
-    // so the "..." menu's Share item works in Watchlist > Favorites
-    // and inside Collection drill-ins too.
+    // Outbound share handler — wired to every Card render below.
     handleShare,
-    // Hidden listings — surfaced as a synthetic collection in the
-    // Collections list (replacing the old user-dropdown "Manage
-    // hidden" modal). toggleHide unhides on the drill-in's "..."
-    // menu via the Card's existing isHidden semantics.
-    hiddenItems, toggleHide,
-    // Full listings.json content + the user's hidden map. Used by
-    // ChallengeFlow's add-to-shortlist search drawer (filter the
-    // global feed for picks).
-    allListings, hidden,
     // Telemetry hooks (Epic 8 — Site analytics). Both optional so
     // signed-out / non-Supabase environments degrade silently.
     observeCard, onClickListing,
@@ -68,42 +51,13 @@ export function WatchlistTab(props) {
   // comment in searchesTabJSX. Hook + import dropped along with it
   // since nothing else in this file consumed them.)
 
-  // Collections sub-tab drill-in selection. null = list view; <uuid>
-  // = drilled into that specific collection. Initial value reads
-  // from `?col=<id>` so a refresh on a drilled-in collection lands
-  // back on it. Reset when the user navigates away from the
-  // Collections sub-tab so a stale id doesn't surface a deleted
-  // collection on return.
-  const [selectedCollectionId, setSelectedCollectionId] = useState(() => {
-    if (typeof window === "undefined") return null;
-    return new URLSearchParams(window.location.search).get("col") || null;
-  });
-  useEffect(() => {
-    if (watchTopTab !== "collections") setSelectedCollectionId(null);
-  }, [watchTopTab]);
-  // URL sync for the drill-in id. App.js handles `tab` + `sub`; we
-  // only own `col`. Skipped when share-receive params are present
-  // (the share flow controls URL until it acts). App.js also clears
-  // `col` when tab leaves "watchlist", so we don't need to mirror
-  // that case here.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("shared") === "1") return;
-    if (selectedCollectionId && watchTopTab === "collections") {
-      params.set("col", selectedCollectionId);
-    } else {
-      params.delete("col");
-    }
-    const qs = params.toString();
-    const newUrl = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
-    if (newUrl !== window.location.pathname + window.location.search + window.location.hash) {
-      window.history.replaceState({}, "", newUrl);
-    }
-  }, [selectedCollectionId, watchTopTab]);
+  // (Lists sub-tab moved to top-level Collections tab 2026-05-06
+  // PR #86 — CollectionsTab.js owns its own drill-in state + the
+  // `?col=` URL sync. Watchlist no longer reads or writes that param.)
 
-  // (Challenges sub-tab moved to References tab 2026-05-04 —
-  // ChallengesView component owns its own selection state + render.)
+  // (Challenges sub-tab moved to References tab 2026-05-04, then to
+  // Collections tab 2026-05-06 PR #86 — ChallengesView is rendered
+  // by CollectionsTab.)
 
   // (Track New Item modal lifted to App.js on 2026-04-30 — its
   // trigger button now lives in the watchSubTabsJSX strip above
@@ -444,212 +398,10 @@ export function WatchlistTab(props) {
     </div>
   );
 
-  // ── COLLECTIONS SUB-TAB ────────────────────────────────────────────────
-  // Two views, controlled by local `selectedCollectionId` state:
-  //   null         → list of collections (each row = name + count)
-  //   <uuid>       → drill-in view of that collection's items as Cards
-  //
-  // The default Watchlist (backed by watchlist_items) is NOT a row in
-  // collectionsApi.collections — that's Approach A's intentional
-  // asymmetry. Default lives in the existing Watchlist > Listings
-  // sub-tab; this Collections sub-tab is for additional collections
-  // only.
-  // Signed-out fallback handled by the outer !user branch in render()
-  // via SIGNED_OUT_BY_SUBTAB; this body assumes a logged-in user.
-  const collectionsTabJSX = (() => {
-    const cols = (collectionsApi?.collections || []);
-    const itemsByColl = collectionsApi?.itemsByCollection || {};
-    // Surface the shared-inbox alongside user-created collections
-    // 2026-05-01 — was hidden in v2 of the spec, but with Session 3
-    // shipped that left received items invisible. Now pinned to the
-    // TOP of the list with an inbox icon so it reads as a different
-    // surface from "I made this collection." Still excluded from
-    // CollectionPickerModal (manual adds shouldn't go to the inbox).
-    const sharedInbox  = cols.find(c => c.isSharedInbox) || null;
-    // Mark 2026-05-06: "I don't want to see the collection challenge
-    // watches show up as lists - just manage them in the collections
-    // tab." Challenges live under Cool Stuff > Watch Challenges only.
-    const userCols     = cols.filter(c => !c.isSharedInbox && c.type !== "challenge");
-    // Synthetic "Hidden" collection — surfaced in the list when the
-    // user has any hidden listings. Drill-in renders the items grid
-    // with isHidden so the "..." menu's Hide entry reads as "Unhide"
-    // (Card already handles that label flip). Sentinel id avoids
-    // collision with real collection UUIDs.
-    const HIDDEN_COLLECTION_ID = "__hidden__";
-    const hiddenCol = (hiddenItems && hiddenItems.length > 0) ? {
-      id: HIDDEN_COLLECTION_ID, name: "Hidden", isHidden: true,
-    } : null;
-    const visibleCols  = [
-      ...(sharedInbox ? [sharedInbox] : []),
-      ...userCols,
-      ...(hiddenCol ? [hiddenCol] : []),
-    ];
-    const selected = selectedCollectionId === HIDDEN_COLLECTION_ID
-      ? hiddenCol
-      : (selectedCollectionId ? cols.find(c => c.id === selectedCollectionId) : null);
+  // (COLLECTIONS SUB-TAB block removed 2026-05-06 PR #86 —
+  //  the Lists sub-tab moved to a top-level Collections tab.
+  //  CollectionsTab.js renders what used to live here.)
 
-    if (selected) {
-      const isHiddenColl = selected.id === HIDDEN_COLLECTION_ID;
-      const items = isHiddenColl ? hiddenItems : (itemsByColl[selected.id] || []);
-      return (
-        <div style={{ paddingTop: 4 }}>
-          <div style={{
-            display: "flex", alignItems: "baseline", gap: 12,
-            padding: "14px 14px 12px",
-            borderBottom: "0.5px solid var(--border)",
-            marginBottom: 12,
-          }}>
-            <button onClick={() => setSelectedCollectionId(null)} style={{
-              border: "none", background: "transparent", cursor: "pointer",
-              color: "#185FA5", fontFamily: "inherit", fontSize: 13, padding: 0,
-            }}>← All lists</button>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
-              {selected.name}
-            </span>
-            <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
-              {items.length}
-            </span>
-            {/* Rename + Delete hidden for the shared-inbox + Hidden
-                collections — both are managed surfaces, not user-named.
-                The user can empty Hidden by unhiding individual items
-                via the "..." menu, just as they empty the shared inbox
-                by removing items individually. */}
-            {!selected.isSharedInbox && !isHiddenColl && (
-              <>
-                <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
-                  title="Rename list"
-                  style={{
-                    border: "0.5px solid var(--border)", background: "transparent",
-                    color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
-                    cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                  }}>Rename</button>
-                <button onClick={async () => {
-                    if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
-                    await collectionsApi.deleteCollection(selected.id);
-                    setSelectedCollectionId(null);
-                  }}
-                  style={{
-                    border: "0.5px solid var(--border)", background: "transparent",
-                    color: "#c0392b", padding: "4px 10px", borderRadius: 6,
-                    cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                  }}>Delete</button>
-              </>
-            )}
-          </div>
-          {items.length === 0 ? (
-            <div style={{ padding: "48px 20px", textAlign: "center" }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>{isHiddenColl ? "👁" : "📂"}</div>
-              <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-                {isHiddenColl ? "Nothing hidden" : "Empty list"}
-              </div>
-              <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 320, margin: "0 auto" }}>
-                {isHiddenColl
-                  ? "Listings you hide from the Available feed land here. Use the \"…\" menu on any card to unhide it."
-                  : "Add watches via the \"…\" menu on any listing card → \"Add to list…\"."}
-              </div>
-            </div>
-          ) : (
-            <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-              {items.map(item => (
-                <Card
-                  key={item.id}
-                  item={item}
-                  wished={!!watchlist[item.id]}
-                  onWish={handleWish}
-                  compact={compact}
-                  // Card flips the Hide menu label based on isHidden:
-                  // - Hidden drill-in: isHidden=true → label "Unhide",
-                  //   onHide toggles the row off the hidden_listings table.
-                  // - Regular collection: hideLabel forces "Remove from
-                  //   collection" semantics.
-                  onHide={isHiddenColl
-                    ? toggleHide
-                    : () => collectionsApi.removeItemFromCollection(selected.id, item.id)}
-                  hideLabel={isHiddenColl ? undefined : "Remove from list"}
-                  isHidden={isHiddenColl}
-                  onAddToCollection={openCollectionPicker}
-                  primaryCurrency={primaryCurrency}
-                  onShare={handleShare}
-                  onView={observeCard}
-                  onClickListing={onClickListing}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // List view. Intro banner uses the shared SubTabIntro shape
-    // with the +New list action embedded on the right (was a separate
-    // trailing button in the Watchlist sub-tab strip until 2026-05-04;
-    // moved inline so the strip stays narrow enough on mobile).
-    const helpBanner = (
-      <SubTabIntro
-        title="Lists group watches your way"
-        blurb={<>Reference threads, dealer comps, "Rolex 5513s", "Vintage divers" — whatever cut helps you think. Add watches via the <strong style={{ color: "var(--text1)" }}>…</strong> menu on any card → <em>Add to list…</em>.</>}
-        actionLabel="+ New list"
-        onAction={startCreateCollection}
-      />
-    );
-    return (
-      <div style={{ paddingTop: 4 }}>
-        {helpBanner}
-        {visibleCols.length === 0 ? (
-          <div style={{ padding: "32px 20px 48px", textAlign: "center" }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>📂</div>
-            <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-              No lists yet
-            </div>
-            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto" }}>
-              You haven't created any lists. Tap <strong style={{ color: "var(--text1)" }}>+ New list</strong> above to start one.
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {visibleCols.map(c => {
-              const isInbox = c.isSharedInbox;
-              const isHiddenRow = c.id === HIDDEN_COLLECTION_ID;
-              const count = isHiddenRow
-                ? hiddenItems.length
-                : (itemsByColl[c.id] || []).length;
-              const icon = isInbox ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
-                  <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
-                </svg>
-              ) : isHiddenRow ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17.94 17.94A10.06 10.06 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                  <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                </svg>
-              );
-              const subtitle = isInbox
-                ? `${count} listing${count === 1 ? "" : "s"} shared with you`
-                : isHiddenRow
-                  ? `${count} listing${count === 1 ? "" : "s"} hidden from feed`
-                  : `${count} watch${count === 1 ? "" : "es"}`;
-              return (
-                <ListRow
-                  key={c.id}
-                  icon={icon}
-                  title={c.name}
-                  subtitle={subtitle}
-                  onClick={() => setSelectedCollectionId(c.id)}
-                />
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  })();
 
 
   // ── RENDER ─────────────────────────────────────────────────────────────
@@ -773,7 +525,8 @@ export function WatchlistTab(props) {
           )}
           </>)}
 
-          {watchTopTab === "collections" && collectionsTabJSX}
+          {/* (Lists sub-tab removed 2026-05-06 PR #86 — moved to the
+              new top-level Collections tab.) */}
           {watchTopTab === "searches" && searchesTabJSX}
           {/* Auction calendar sub-tab retired 2026-05-04 — calendar
               moved into the Listings tab's Auctions filter as a

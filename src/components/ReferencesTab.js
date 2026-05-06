@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { SizeCompare } from "./SizeCompare";
-import { ChallengesView } from "./ChallengesView";
 import { Links } from "./Links";
 import { SubTabIntro } from "./SubTabIntro";
 
@@ -9,23 +8,17 @@ import { SubTabIntro } from "./SubTabIntro";
 // aggregator + further calculators land here over time. See
 // ROADMAP.md "References" for the parking lot of future ideas.
 //
-// 2026-05-04: Watch Challenges moved here from a Watchlist sub-tab
-// per Mark's restructure — challenges are a reflective collector
-// resource (constrained-set thought experiments), not a saved-items
-// surface. The list / drill-in flow lives in ChallengesView.
+// 2026-05-04: Watch Challenges moved here from a Watchlist sub-tab.
+// 2026-05-06 (PR #86): Watch Challenges moved OUT of here into the
+// new top-level Collections tab — Mark's framing has settled on
+// "everything is a list," and challenges are one kind of list. Cool
+// Stuff goes back to being just tools + curated links.
 //
 // 2026-05-05: landing visual aligned with Watchlist > Saved searches
 // + Lists. Same SubTabIntro banner shape; same row shell as the Lists
 // row (icon disc on the left, label + sub-label, chevron on the right).
-//
-// No client-side URL routing in this app, so navigation between the
-// landing list and an individual tool happens via local state on this
-// component. Add a new resource by adding a row below and branching
-// the render on the matching `view` value.
 
-// Resource row glyphs — match the Lists / Searches visual shell on
-// the Watchlist tab so Cool Stuff reads as a sibling surface. Each
-// glyph is a 18×18 SVG centred in the 36×36 disc.
+// Resource row glyphs.
 function RulerIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5"
@@ -34,16 +27,6 @@ function RulerIcon() {
       <path d="M7.5 12.5l1.5 1.5"/>
       <path d="M10.5 9.5l1.5 1.5"/>
       <path d="M13.5 6.5l1.5 1.5"/>
-    </svg>
-  );
-}
-function TargetIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5"
-         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="10"/>
-      <circle cx="12" cy="12" r="6"/>
-      <circle cx="12" cy="12" r="2"/>
     </svg>
   );
 }
@@ -65,12 +48,6 @@ const RESOURCES = [
     Icon: RulerIcon,
   },
   {
-    key: "challenges",
-    title: "Watch challenges",
-    desc: "Pick N watches under a budget. A thought experiment, a way to surface taste, or a question to send a friend.",
-    Icon: TargetIcon,
-  },
-  {
     key: "links",
     title: "Links",
     desc: "Outbound links — every dealer in the feed, plus per-reference research clusters and curated lists for art, straps, editorial.",
@@ -81,41 +58,10 @@ const RESOURCES = [
 export function ReferencesTab(props) {
   const [view, setView] = useState("list");
 
-  // External nudge: when the user takes a shared challenge, App.js
-  // sets pendingChallengeDrillId and we want to land them straight
-  // on the Challenges view (drilled into the new row). Force the
-  // view switch as soon as the prop arrives.
-  useEffect(() => {
-    if (props.pendingChallengeDrillId) {
-      setView("challenges");
-    }
-  }, [props.pendingChallengeDrillId]);
-
   if (view === "size-compare") {
     return (
       <div style={{ paddingTop: 4 }}>
         <SizeCompare onBack={() => setView("list")} />
-      </div>
-    );
-  }
-
-  if (view === "challenges") {
-    return (
-      <div style={{ paddingTop: 4 }}>
-        <ChallengesView
-          user={props.user}
-          isAuthConfigured={props.isAuthConfigured}
-          signInWithGoogle={props.signInWithGoogle}
-          collectionsApi={props.collectionsApi}
-          allListings={props.allListings}
-          watchlist={props.watchlist}
-          hidden={props.hidden}
-          primaryCurrency={props.primaryCurrency}
-          handleShare={props.handleShare}
-          pendingChallengeDrillId={props.pendingChallengeDrillId}
-          clearPendingChallengeDrill={props.clearPendingChallengeDrill}
-          onBack={() => setView("list")}
-        />
       </div>
     );
   }
