@@ -1816,6 +1816,7 @@ export default function Watchlist() {
       hiddenItems={hiddenItems}
       toggleHide={toggleHide}
       watchlist={watchlist}
+      watchItems={watchItems}
       hidden={hidden}
       allListings={items}
       primaryCurrency={primaryCurrency}

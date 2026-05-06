@@ -749,6 +749,58 @@ export function useCollections(user) {
     return { error: null, id: data.id };
   }, [user]);
 
+  // ── Owned → Sold transition (PR #88, 2026-05-06) ─────────────
+  // Moves a single collection_items row to the user's Sold hard
+  // list, capturing the sold price + date (both optional). Works
+  // for both manual and listing-backed rows — manual_sold_price /
+  // manual_sold_date are stored on whatever row carries them. The
+  // shape is just a UPDATE of collection_id + the two manual_sold_*
+  // columns; no row delete + re-insert (which would lose the
+  // snapshot + savedAt + rowId).
+  const markItemAsSold = useCallback(async (rowId, opts = {}) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const sold = collections.find(c => c.type === 'sold' && c.isSystem);
+    if (!sold) return { error: 'Sold list not found' };
+    const patch = {
+      collection_id:      sold.id,
+      manual_sold_price:  opts.soldPrice != null ? Number(opts.soldPrice) : null,
+      manual_sold_date:   opts.soldDate || null,
+    };
+    // If the user gave a currency for the sold price, mirror it
+    // onto manual_price_currency too — keeps the displayed currency
+    // consistent on the Sold card.
+    if (opts.currency) patch.manual_price_currency = opts.currency;
+    const { data, error } = await supabase.from('collection_items')
+      .update(patch).eq('id', rowId).select().single();
+    if (error) return { error: error.message };
+    // Move the local cache: drop from the source collection, add to
+    // Sold with the updated fields. The source could be Owned, a
+    // user-created list, even another sentinel — find it by rowId.
+    setItemsByCollection(prev => {
+      const next = { ...prev };
+      let moved = null;
+      for (const cid of Object.keys(next)) {
+        const idx = next[cid].findIndex(it => it.rowId === rowId);
+        if (idx >= 0) {
+          moved = next[cid][idx];
+          next[cid] = [...next[cid].slice(0, idx), ...next[cid].slice(idx + 1)];
+          break;
+        }
+      }
+      if (moved) {
+        const updated = {
+          ...moved,
+          soldPrice: data.manual_sold_price,
+          soldDate:  data.manual_sold_date,
+          ...(opts.currency ? { currency: opts.currency } : {}),
+        };
+        next[sold.id] = [updated, ...(next[sold.id] || [])];
+      }
+      return next;
+    });
+    return { error: null };
+  }, [user, collections]);
+
   // ── Shared-inbox helpers ─────────────────────────────────────
   // The Shared-with-me collection is created lazily on first received
   // share. ensureSharedInbox returns its id (creating it if missing).
@@ -1002,6 +1054,8 @@ export function useCollections(user) {
     // Manual entries (PR #87) — Owned/Sold drill-ins use these.
     uploadWatchPhoto,
     addManualItem,
+    // Owned → Sold transition (PR #88).
+    markItemAsSold,
     // Challenge-specific:
     createChallenge,
     updateChallenge,
