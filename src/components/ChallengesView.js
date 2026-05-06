@@ -41,7 +41,6 @@ export function ChallengesView({
   if (!user) {
     return (
       <div style={{ padding: "60px 20px", textAlign: "center" }}>
-        <div style={{ fontSize: 32, marginBottom: 12 }}>🎯</div>
         <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>Sign in to build a challenge</div>
         <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto 18px" }}>
           Build a constrained list: pick N watches under a budget. Save it, share it, ask a friend to fill in their own answer. Your challenges sync across every device you use.
@@ -147,7 +146,6 @@ export function ChallengesView({
 
       {allChallenges.length === 0 ? (
         <div style={{ padding: "48px 20px", textAlign: "center" }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>🎯</div>
           <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
             No challenges yet
           </div>
@@ -172,6 +170,22 @@ export function ChallengesView({
               );
               if (!ok) return;
               await collectionsApi.deleteCollection(c.id);
+            };
+            // Quick-share from the list row — same URL shape as
+            // ChallengeFlow.shareChallenge so the recipient experience
+            // is consistent. Mark 2026-05-06: "Share button should
+            // also be where you have delete on challenges."
+            const handleShareRow = async (e) => {
+              e.stopPropagation();
+              if (!handleShare) return;
+              const params = new URLSearchParams();
+              params.set("newchallenge", "1");
+              if (c.name)             params.set("t", c.name);
+              if (c.targetCount)      params.set("n", String(c.targetCount));
+              if (c.budget)           params.set("b", String(c.budget));
+              if (c.descriptionLong)  params.set("d", c.descriptionLong);
+              const url = `${window.location.origin}/?${params.toString()}`;
+              await handleShare({ title: `Watch challenge: ${c.name}`, url });
             };
             return (
               <div key={c.id}
@@ -219,11 +233,26 @@ export function ChallengesView({
                     )}
                   </div>
                 </div>
-                {/* Delete affordance — labeled "Delete" button.
-                    Was a small × originally; Mark flagged "delete not
-                    that clear (small x)". Stops click propagation so
-                    it doesn't drill in. window.confirm matches the
-                    rest of the app's confirm pattern. */}
+                {/* Quick share — sits next to Delete so both are
+                    one tap away without drilling in. */}
+                {handleShare && (
+                  <button
+                    onClick={handleShareRow}
+                    aria-label={`Share ${c.name}`}
+                    title="Share challenge"
+                    style={{
+                      flexShrink: 0,
+                      padding: "5px 10px", borderRadius: 6,
+                      border: "0.5px solid var(--border)",
+                      background: "transparent",
+                      color: "var(--text2)", cursor: "pointer",
+                      fontFamily: "inherit", fontSize: 12,
+                    }}
+                  >Share</button>
+                )}
+                {/* Delete affordance. Stops click propagation so it
+                    doesn't drill in. window.confirm matches the rest
+                    of the app's confirm pattern. */}
                 {collectionsApi?.deleteCollection && (
                   <button
                     onClick={handleDelete}
