@@ -4,6 +4,8 @@ import { ListRow } from "./ListRow";
 import { SubTabIntro } from "./SubTabIntro";
 import { ChallengesView } from "./ChallengesView";
 import { ManualEntryForm } from "./ManualEntryForm";
+import { ListingPickerModal } from "./ListingPickerModal";
+import { MarkAsSoldModal } from "./MarkAsSoldModal";
 import { fmtUSD } from "../utils";
 
 // Top-level Collections tab — landed 2026-05-06 (PR #86) when Mark
@@ -37,6 +39,7 @@ export function CollectionsTab({
   hiddenItems,
   toggleHide,
   watchlist,
+  watchItems,            // user's hearted items (snapshots) — for the picker's Favorites source
   hidden,
   allListings,
   primaryCurrency,
@@ -60,6 +63,12 @@ export function CollectionsTab({
   // brand/model/photo for an Owned or Sold drill-in row. Closed
   // by default; opened via the "+ Add a watch" CTA.
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
+  // Listing-picker modal state — open while the user is choosing
+  // a listing from Favorites / Lists / paste-link. PR #88.
+  const [pickerOpen, setPickerOpen] = useState(false);
+  // Mark-as-sold modal state — { rowId, item } when open, null when
+  // closed. The wrapped item drives the modal's display copy.
+  const [soldTarget, setSoldTarget] = useState(null);
   // Drill-in selection. null = list view; uuid OR sentinel = drilled.
   const [selectedId, setSelectedId] = useState(() => {
     if (typeof window === "undefined") return null;
@@ -157,6 +166,14 @@ export function CollectionsTab({
     // Manual-entry CTA shows on Owned + Sold (not Wishlist — Mark
     // 2026-05-06: "wishlist should be from feed" only).
     const acceptsManualEntry = selected.type === "owned" || selected.type === "sold";
+    // Listing-picker CTA on hard lists (Owned + Sold + Wishlist).
+    // For Wishlist this is the ONLY add path (no manual entries
+    // by spec); for Owned/Sold it's an alternative to manual entry
+    // when the user bought from a tracked dealer.
+    const acceptsListingPicker = selected.type === "owned" || selected.type === "sold" || selected.type === "wishlist";
+    // Mark-as-sold action only on Owned drill-in. Wraps the row id
+    // + a display item so the modal can render contextual copy.
+    const ownedShowsSoldAction = selected.type === "owned";
     const items = isHiddenColl ? hiddenItems : (itemsByColl[selected.id] || []);
     return (
       <div style={{ paddingTop: 4 }}>
@@ -176,10 +193,17 @@ export function CollectionsTab({
           <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
             {items.length}
           </span>
-          {/* +Add CTA on Owned/Sold drill-ins — opens the manual
-              entry modal. Sits in the header so it's reachable from
-              both empty + populated states. PR #88 will add an
-              "or pick from archive" path beside it. */}
+          {/* +Pick from feed — Owned/Sold/Wishlist (uses
+              ListingPickerModal). PR #88. */}
+          {acceptsListingPicker && (
+            <button onClick={() => setPickerOpen(true)}
+              style={{
+                border: "0.5px solid var(--border)", background: "transparent",
+                color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
+                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+              }}>+ From feed</button>
+          )}
+          {/* +Add a watch — manual entry on Owned/Sold (PR #87). */}
           {acceptsManualEntry && (
             <button onClick={() => setManualEntryOpen(true)}
               style={{
@@ -228,23 +252,39 @@ export function CollectionsTab({
                   ? hardListEmptyBlurb(selected.type)
                   : "Add watches via the \"…\" menu on any listing card → \"Add to list…\"."}
             </div>
-            {acceptsManualEntry && (
-              <button onClick={() => setManualEntryOpen(true)}
-                style={{
-                  border: "none", background: "#185FA5", color: "#fff",
-                  padding: "8px 16px", borderRadius: 8,
-                  cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-                }}>+ Add a watch</button>
-            )}
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+              {acceptsListingPicker && (
+                <button onClick={() => setPickerOpen(true)}
+                  style={{
+                    border: "0.5px solid var(--border)", background: "transparent",
+                    color: "var(--text2)", padding: "8px 16px", borderRadius: 8,
+                    cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+                  }}>+ From feed</button>
+              )}
+              {acceptsManualEntry && (
+                <button onClick={() => setManualEntryOpen(true)}
+                  style={{
+                    border: "none", background: "#185FA5", color: "#fff",
+                    padding: "8px 16px", borderRadius: 8,
+                    cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+                  }}>+ Add a watch</button>
+              )}
+            </div>
           </div>
         ) : (
           <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-            {items.map(item => (
-              item.isManual ? (
+            {items.map(item => {
+              // Build menu actions per surface. Owned drill-in
+              // gets a "Mark as sold" entry that opens the modal.
+              const onMarkSold = ownedShowsSoldAction
+                ? () => setSoldTarget({ rowId: item.rowId, item })
+                : null;
+              return item.isManual ? (
                 <ManualItemCard
                   key={item.id}
                   item={item}
                   onRemove={() => collectionsApi.removeItemFromCollection(selected.id, item.id)}
+                  onMarkSold={onMarkSold}
                 />
               ) : (
                 <Card
@@ -263,9 +303,10 @@ export function CollectionsTab({
                   onShare={handleShare}
                   onView={observeCard}
                   onClickListing={onClickListing}
+                  extraMenuItems={onMarkSold ? [{ label: "Mark sold", onClick: () => onMarkSold() }] : undefined}
                 />
-              )
-            ))}
+              );
+            })}
           </div>
         )}
         <ManualEntryForm
@@ -276,6 +317,24 @@ export function CollectionsTab({
           uploadWatchPhoto={collectionsApi.uploadWatchPhoto}
           addManualItem={collectionsApi.addManualItem}
           collectionId={selected.id}
+        />
+        <ListingPickerModal
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          title={`Add to ${selected.name}`}
+          watchItems={watchItems}
+          collections={collectionsApi.collections}
+          itemsByCollection={collectionsApi.itemsByCollection}
+          allListings={allListings}
+          primaryCurrency={primaryCurrency}
+          onPick={(listing) => collectionsApi.addItemToCollection(selected.id, listing)}
+        />
+        <MarkAsSoldModal
+          open={!!soldTarget}
+          onClose={() => setSoldTarget(null)}
+          item={soldTarget?.item}
+          inp={inp}
+          onConfirm={(opts) => collectionsApi.markItemAsSold(soldTarget.rowId, opts)}
         />
       </div>
     );
@@ -513,7 +572,7 @@ const targetIcon = (
 // auto-fill) but with only: photo + brand+model + meta line +
 // remove menu. Edit affordances (rename / change photo / update
 // price) come in PR #88 alongside the Owned→Sold transition flow.
-function ManualItemCard({ item, onRemove }) {
+function ManualItemCard({ item, onRemove, onMarkSold }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const title = item.title || [item.brand, item.model].filter(Boolean).join(" ").trim() || "Untitled";
   // Meta line composes ref / material / price as available.
@@ -585,6 +644,15 @@ function ManualItemCard({ item, onRemove }) {
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
             minWidth: 140, zIndex: 10,
           }}>
+            {onMarkSold && (
+              <button onClick={() => { setMenuOpen(false); onMarkSold(); }}
+                style={{
+                  width: "100%", border: "none", background: "transparent",
+                  padding: "10px 12px", textAlign: "left",
+                  cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+                  color: "var(--text1)",
+                }}>Mark sold</button>
+            )}
             <button onClick={async () => {
               setMenuOpen(false);
               if (window.confirm("Remove this watch from the list?")) {

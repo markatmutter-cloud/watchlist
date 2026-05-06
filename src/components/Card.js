@@ -50,6 +50,13 @@ export const Card = memo(function Card({
   // skip telemetry without per-Card guards.
   onView,
   onClickListing,
+  // Optional: extra "..." menu actions injected by the surface.
+  // Each entry is { label, onClick } — Card just renders them
+  // as menu rows below the built-in Add/Hide/Share entries.
+  // Used by Collections > Owned drill-in to add "Mark as sold"
+  // (PR #88, 2026-05-06). Keeps Card unaware of collection
+  // semantics — the surface owns the action wiring.
+  extraMenuItems,
 }) {
   // When the dealer's image URL goes 404 (e.g. they cleaned up their CDN
   // for a sold listing), the browser shows an ugly broken-image icon.
@@ -346,7 +353,7 @@ export const Card = memo(function Card({
             available (so signed-out browsing keeps the card clean).
             Anchored top-right with the dropdown opening down-and-left
             so it doesn't fall off the screen on rightmost cards. */}
-        {(onAddToCollection || onHide || onShare) && (
+        {(onAddToCollection || onHide || onShare || (extraMenuItems && extraMenuItems.length > 0)) && (
           <div ref={menuRef} style={{ position: "relative" }}>
             <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(o => !o); }}
               aria-label="More actions"
@@ -402,6 +409,13 @@ export const Card = memo(function Card({
                       : (hideLabel || (isHidden ? "Unhide" : "Hide"))}
                   </button>
                 )}
+                {(extraMenuItems || []).map((entry, i) => (
+                  <button key={i} onClick={e => {
+                    e.preventDefault(); e.stopPropagation();
+                    setMenuOpen(false);
+                    entry.onClick(item);
+                  }} style={menuItemStyle}>{entry.label}</button>
+                ))}
               </div>
             )}
           </div>
