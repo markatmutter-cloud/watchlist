@@ -26,11 +26,11 @@ Three top-level tabs:
 - **Watchlist** — five sub-tabs:
   - **Favorites** — items you've hearted (your default list), with price-at-save preserved.
   - **Lists** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you. Anything you've hidden from the Available feed surfaces here too as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
-  - **Challenges** — build-a-collection v1. Pick N watches under a budget, write a one-line rationale per pick, share the spec so a friend can build their own answer. Multi-stage flow with a 20% over-budget soft-warn / hard-block guardrail. Drag-drop between shortlist and slots on desktop; tap-to-select on mobile.
+  - **Challenges** — build-a-collection. Pick N watches under a budget from your own Lists / Favorites (or by pasting a watch URL), add a single note for the whole challenge, share the spec so a friend can build their own answer. 20% over-budget soft-warn guardrail. Click-pick on every device — tap a tile in your Lists or Favorites to fill the next slot, tap × to remove.
   - **Searches** — saved queries you can re-run with one tap, plus a read-only view of the eBay source-searches feeding the main feed.
   - **Auction Calendar** — upcoming + recently-closed sales from 6 houses, grouped by month.
 - **References** — collector resource tools (currently: a print-to-scale watch size comparison tool; encyclopedia and curated-link aggregator are roadmap'd).
-- **Source quality** *(admin only — invisible to other users)* — dense per-source dashboard at `?tab=admin`: live count, new-per-week, hearts/hides, avg price, top brand, scraper health, and an "earning its keep" suggestion. Reachable via the user dropdown for users whose email is in `REACT_APP_ADMIN_EMAILS`.
+- **Site stats** *(admin only — invisible to other users)* — dense admin dashboard at `?tab=admin` covering three sections: per-source quality (live count, new-per-week, hearts/hides, avg price, top brand, $ added/sold over 30d, 30-day engagement, scraper health, "earning its keep" chip), auction-house quality (live + upcoming sales, lots, sold rate, $ sold over 90d, median Hammer/Low ratio), and per-user limits (hearts / hides / lists / saved-searches counts, 30-day clicks/views/shares/list-adds, top saved brand, current cap, with an inline form to set a user's cap by email). Engagement signals come from a `listing_events` table seeded by anonymous + signed-in views/clicks/saves/hides/list-adds/shares; daily rollup at 09:15 UTC. Reachable via the user dropdown for users whose email is in `REACT_APP_ADMIN_EMAILS`.
 
 Plus:
 
