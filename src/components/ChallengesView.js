@@ -29,9 +29,25 @@ export function ChallengesView({
   hidden,
   primaryCurrency,
   handleShare,
+  // After "Take this challenge" on a shared receive surface the
+  // recipient gets a freshly-created challenge — App.js sets this
+  // and we drill straight in (instead of leaving them on the list).
+  // Mark D5 (2026-05-06): "When I click take this challenge it
+  // goes to cool stuff not the challenge — this needs fixing!"
+  pendingChallengeDrillId,
+  clearPendingChallengeDrill,
   onBack,
 }) {
   const [selectedChallengeId, setSelectedChallengeId] = useState(null);
+
+  React.useEffect(() => {
+    if (pendingChallengeDrillId) {
+      setSelectedChallengeId(pendingChallengeDrillId);
+      if (typeof clearPendingChallengeDrill === "function") {
+        clearPendingChallengeDrill();
+      }
+    }
+  }, [pendingChallengeDrillId, clearPendingChallengeDrill]);
   // "+ New challenge" used to insert an empty Supabase row immediately
   // and route the user into the now-orphaned-on-cancel CreateStage.
   // creatingNew=true now renders CreateStage WITHOUT a row, and the

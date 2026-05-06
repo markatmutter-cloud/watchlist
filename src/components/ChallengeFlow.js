@@ -817,22 +817,22 @@ function CompleteStage({ challenge, items, onShareSpec, onShareComplete, onBack,
         )}
         {onShareSpec && (
           <button onClick={() => handleShareClick(onShareSpec, "spec")}
-            title="Share just the constraints — recipient builds their own answer"
+            title="Send just the constraints — recipient builds their own answer"
             style={{
               padding: "9px 14px", borderRadius: 8,
               border: "0.5px solid var(--border)", background: "transparent",
               color: "var(--text1)", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,
-            }}>Share constraints</button>
+            }}>Share the challenge</button>
         )}
         {onShareComplete && (
           <button onClick={() => handleShareClick(onShareComplete, "complete")}
-            title="Share with your picks visible — recipient sees what you chose"
+            title="Send with your picks visible — recipient sees what you chose"
             style={{
               padding: "9px 16px", borderRadius: 8, border: "none",
               background: "#185FA5", color: "#fff", cursor: "pointer",
               fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-            }}>Share with picks →</button>
+            }}>Share my collection →</button>
         )}
       </div>
 
@@ -905,8 +905,8 @@ function CompleteStage({ challenge, items, onShareSpec, onShareComplete, onBack,
         marginTop: 12, fontSize: 11, color: "var(--text3)",
         textAlign: "center", lineHeight: 1.5,
       }}>
-        <strong style={{ color: "var(--text2)" }}>Share constraints</strong> sends only the spec — recipient builds their own answer.
-        {" "}<strong style={{ color: "var(--text2)" }}>Share with picks</strong> reveals your selection.
+        <strong style={{ color: "var(--text2)" }}>Share the challenge</strong> sends only the spec — recipient builds their own answer.
+        {" "}<strong style={{ color: "var(--text2)" }}>Share my collection</strong> reveals your picks.
       </p>
     </div>
   );

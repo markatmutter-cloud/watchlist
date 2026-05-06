@@ -32,6 +32,16 @@ export function ChallengeReceiver({
   setChallengeShareActive,
   // Navigation hooks for orientation CTAs.
   setTab,
+  // App.js increments this when the user explicitly navigates away
+  // from the share-receive surface via main-nav (Watchlist logo,
+  // top tabs). We watch it and clear our intent state — the flag
+  // alone going to false isn't enough because we control it.
+  resetTick,
+  // After "Take this challenge" creates a fresh challenge owned by
+  // the recipient, App.js wants to drill straight in (instead of
+  // dropping them on the references-tab list). We hand back the
+  // new challenge id; App.js handles the navigation + drill.
+  onTakenChallenge,
 }) {
   // intent: { mode: "spec" | "complete", spec?, id? }
   const [intent, setIntent] = useState(null);
@@ -66,6 +76,15 @@ export function ChallengeReceiver({
       setChallengeShareActive(!!intent);
     }
   }, [intent, setChallengeShareActive]);
+
+  // External escape signal — clear intent on bump.
+  useEffect(() => {
+    if (resetTick && resetTick > 0) {
+      setIntent(null);
+      setCompleteData(null);
+      setCompleteError("");
+    }
+  }, [resetTick]);
 
   // Fetch the public-read challenge for "complete" mode. Anonymous-
   // safe (RPC's anon grant). state='complete' gate is inside the
@@ -129,6 +148,7 @@ export function ChallengeReceiver({
     }
     if (!spec) return;
     setBusy(true);
+    let createdId = null;
     try {
       const res = await collectionsApi.createChallenge({
         name:            spec.name || `${spec.targetCount} watches for $${(spec.budget / 1000).toFixed(0)}k`,
@@ -138,14 +158,23 @@ export function ChallengeReceiver({
       });
       if (res?.error) {
         console.warn("take-challenge create failed", res.error);
+      } else if (res?.id) {
+        createdId = res.id;
       }
     } catch (e) {
       console.warn("take-challenge", e);
     }
     setBusy(false);
     clearIntent();
-    if (typeof setTab === "function") setTab("references");
-  }, [user, collectionsApi, intent, completeData, clearIntent, setTab]);
+    // Hand the new challenge back to App.js so it can drill straight
+    // in. Falls back to the references-tab list if the parent didn't
+    // wire onTakenChallenge.
+    if (createdId && typeof onTakenChallenge === "function") {
+      onTakenChallenge(createdId);
+    } else if (typeof setTab === "function") {
+      setTab("references");
+    }
+  }, [user, collectionsApi, intent, completeData, clearIntent, setTab, onTakenChallenge]);
 
   if (!intent) return null;
 
@@ -177,7 +206,7 @@ export function ChallengeReceiver({
             {completeError}
           </p>
         </div>
-        <OrientationAnchors signedIn={!!user} onClickAnchor={onClickAnchor} />
+        <OrientationAnchors signedIn={!!user} onClickAnchor={onClickAnchor} onSignIn={isAuthConfigured ? signInWithGoogle : undefined} />
       </div>
     );
   }
@@ -330,7 +359,7 @@ export function ChallengeReceiver({
         </div>
       </div>
 
-      <OrientationAnchors signedIn={!!user} onClickAnchor={onClickAnchor} />
+      <OrientationAnchors signedIn={!!user} onClickAnchor={onClickAnchor} onSignIn={isAuthConfigured ? signInWithGoogle : undefined} />
     </div>
   );
 }
@@ -363,7 +392,7 @@ function PickThumbnail({ snapshot }) {
   );
 }
 
-function OrientationAnchors({ signedIn, onClickAnchor }) {
+function OrientationAnchors({ signedIn, onClickAnchor, onSignIn }) {
   return (
     <div style={focusedCardStyle()}>
       <div style={{ padding: "16px 18px 14px" }}>
@@ -393,6 +422,14 @@ function OrientationAnchors({ signedIn, onClickAnchor }) {
           <button onClick={() => onClickAnchor("references")} style={anchorBtnStyle}>
             Cool stuff (tools + links) →
           </button>
+          {/* Sign-in is shown to anyone NOT signed in — not just
+              true first-timers. Mark D5 (2026-05-06): "I want there
+              to be 'or sign in to your account' as an option." */}
+          {!signedIn && onSignIn && (
+            <button onClick={onSignIn} style={anchorBtnStyle}>
+              Or sign in to your account →
+            </button>
+          )}
         </div>
       </div>
     </div>

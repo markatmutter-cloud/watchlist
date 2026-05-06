@@ -322,6 +322,43 @@ export default function Watchlist() {
   // Either of these flips the shell into "focused landing surface"
   // mode (regular browse chrome hidden).
   const [challengeShareActive, setChallengeShareActive] = useState(false);
+  // Bumps each time the user explicitly navigates away from a
+  // share-receive surface via main-nav (Watchlist logo, top tabs).
+  // Receivers watch this and clear their internal intent state,
+  // since they otherwise hold onto it across `setShareActive(false)`
+  // calls. Mark D5 (2026-05-06): "I can't click on watchlist logo
+  // to get back to homepage … feels like I'm stuck or trapped."
+  const [shareReceiveResetTick, setShareReceiveResetTick] = useState(0);
+  // After "Take this challenge" the receiver creates a new
+  // challenge for the recipient and we want to drop them into it,
+  // not leave them on the references-tab list. ChallengeReceiver
+  // sets this; ChallengesView reads it on mount and drills in.
+  const [pendingChallengeDrillId, setPendingChallengeDrillId] = useState(null);
+
+  // setTab wrapper that auto-escapes any active share-receive
+  // surface — clears URL share params, drops both shareActive
+  // flags, bumps the resetTick so receivers clear their internal
+  // intent state. Top-level nav (Watchlist logo + main tab buttons
+  // in both shells) uses this; deep-internal callers (e.g. the
+  // sign-in flow's tab switch) keep using the raw setTab.
+  //
+  // Defined as a plain function (not useCallback) — App.js has
+  // loading/loadError early returns past line ~1330 and adding
+  // hooks past those triggers React #310 (CLAUDE.md "Things to
+  // never do"). Identity churn each render is fine.
+  const setTabWithReceiveEscape = (newTab) => {
+    try {
+      const url = new URL(window.location.href);
+      ["listing", "shared", "newchallenge", "challenge", "t", "n", "b", "d"]
+        .forEach((k) => url.searchParams.delete(k));
+      window.history.replaceState({}, "", url.toString());
+    } catch {}
+    setShareActive(false);
+    setChallengeShareActive(false);
+    setShareReceiveResetTick((n) => n + 1);
+    setTab(newTab);
+  };
+
   // Saved searches are per-user (stored in Supabase). Signed-out visitors
   // get an empty list, and the whole Searches subsection is hidden inside
   // the Watchlist tab.
@@ -1719,6 +1756,12 @@ export default function Watchlist() {
       hidden={hidden}
       primaryCurrency={primaryCurrency}
       handleShare={handleShare}
+      // Drill-into-new-challenge after the recipient hits "Take this
+      // challenge" on a shared receive surface. ReferencesTab forces
+      // the challenges view; ChallengesView reads the id and drills
+      // in, then clears the pending state.
+      pendingChallengeDrillId={pendingChallengeDrillId}
+      clearPendingChallengeDrill={() => setPendingChallengeDrillId(null)}
     />
   );
 
@@ -1890,7 +1933,10 @@ export default function Watchlist() {
       setShareActive={setShareActive}
       // Powers the orientation CTAs at the bottom of the surface
       // ("Browse all listings", "Go to your list", etc.).
-      setTab={setTab}
+      // setTabWithReceiveEscape clears URL params + dismisses the
+      // receive surface so the user can navigate away cleanly.
+      setTab={setTabWithReceiveEscape}
+      resetTick={shareReceiveResetTick}
     />
   );
 
@@ -1905,7 +1951,16 @@ export default function Watchlist() {
       signInWithGoogle={signInWithGoogle}
       collectionsApi={collectionsApi}
       setChallengeShareActive={setChallengeShareActive}
-      setTab={setTab}
+      setTab={setTabWithReceiveEscape}
+      resetTick={shareReceiveResetTick}
+      onTakenChallenge={(id) => {
+        // Drop the recipient straight into their freshly-created
+        // challenge instead of leaving them on the references-tab
+        // list. setTabWithReceiveEscape also clears URL params +
+        // dismisses the receive surface.
+        setPendingChallengeDrillId(id);
+        setTabWithReceiveEscape("references");
+      }}
     />
   );
 
@@ -1977,7 +2032,12 @@ export default function Watchlist() {
     setMaxPriceText, setMinPriceText,
     setPage, setSearch, setShowUserMenu,
     setSort, setSourcePickerOpen, setSourcesExpanded,
-    setTab,
+    // Wrapped: top-level nav from shells uses the wrapper so that
+    // clicking the Watchlist logo or a main tab while a share-receive
+    // surface is up auto-escapes (clears URL params + dismisses the
+    // receiver) rather than leaving the recipient stuck. Internal
+    // setTab callsites in App.js use the raw setTab.
+    setTab: setTabWithReceiveEscape,
     toggleBrand, toggleHide, toggleSource,
     // Style tokens / pre-built JSX
     addSearchModalJSX,
