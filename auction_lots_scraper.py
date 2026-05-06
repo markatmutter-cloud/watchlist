@@ -75,6 +75,19 @@ PER_LOT_SLEEP_SECONDS = 0.6
 # even across multiple concurrent sales.
 PHILLIPS_LOTS_PER_SALE = 1000
 
+# Phillips WAF mitigation (2026-05-06). Phillips' edge starts
+# returning 403 after ~7 successful per-lot fetches in a row from
+# GitHub Actions IPs. The flagship May Geneva sale was capturing 7
+# of 227 lots before the rest 403'd. enumerate_phillips() retries
+# on 403 with a linear backoff; if a streak of consecutive 403s
+# crosses _BACKOFF_TRIPS, it sleeps _LONG_COOLDOWN_SECONDS to let
+# the WAF window roll over. After two such cooldowns on one sale
+# it gives up — avoids burning the whole CI run on a tarpit.
+PHILLIPS_BACKOFF_SECONDS       = 30
+PHILLIPS_MAX_RETRIES           = 2
+PHILLIPS_BACKOFF_TRIPS         = 5
+PHILLIPS_LONG_COOLDOWN_SECONDS = 90
+
 # Date window for which sales we attempt to scrape:
 #   end >= today - RECENT_SOLD_WINDOW_DAYS (so recently closed sales
 #     stay scrape-able for the "recently sold" bucket in the unified
@@ -385,8 +398,15 @@ def enumerate_christies(sale_url, sale=None):
     """Return a list of (url, lot dict) tuples for a Christie's sale.
 
     Christie's auction page embeds `window.chrComponents.lots.data.lots`
-    as a fully-formed JSON list of lot objects — title, estimates,
-    URL, images, sale dates, status. No per-lot fetch needed.
+    as the FIRST PAGE of lots (typically pagesize=84) — fields are
+    title, estimates, URL, images, sale dates, status. The same
+    inline blob carries `total_hits_filtered` (the true lot count)
+    and `lot_search_api_endpoint` — a JSON spec for the paginated
+    REST API the frontend uses to load page 2+. We follow that
+    endpoint for any sale that has more lots than the inline page.
+    Pre-2026-05-06 the scraper only saw the inline page-1 lots and
+    silently dropped the rest (Christie's flagship May sale was
+    showing 82/229).
     """
     try:
         r = requests.get(sale_url, headers=HEADERS, timeout=30)
@@ -406,8 +426,39 @@ def enumerate_christies(sale_url, sale=None):
     except Exception as e:
         print(f"  [Christie's] JSON parse failed: {e}")
         return []
-    lots = (blob.get("data") or {}).get("lots") or []
-    sale = (blob.get("data") or {}).get("sale") or {}
+    data = blob.get("data") or {}
+    lots = data.get("lots") or []
+    sale = data.get("sale") or {}
+    total = data.get("total_hits_filtered") or len(lots)
+    page_size = len(lots) or 84
+
+    # If the inline page didn't carry every lot, re-fetch the auction
+    # page with `?page=N` — Christie's `?page=N` returns lots 1..N*pagesize
+    # in one shot (cumulative, not just page N alone). Verified
+    # 2026-05-06: ?page=2 → 168 lots, ?page=3 → 229 lots on a 229-
+    # lot sale. So we compute how many pages cover the total and ask
+    # for that one URL — single extra request for the entire tail.
+    if total > len(lots) and page_size > 0:
+        pages_needed = (total + page_size - 1) // page_size
+        sep = "&" if "?" in sale_url else "?"
+        page_url = f"{sale_url}{sep}page={pages_needed}"
+        try:
+            time.sleep(PER_LOT_SLEEP_SECONDS)
+            pr = requests.get(page_url, headers=HEADERS, timeout=30)
+            pr.raise_for_status()
+            pm = re.search(r"window\.chrComponents\.lots\s*=\s*", pr.text)
+            if pm:
+                praw = _brace_match_json(pr.text, pm.end())
+                if praw:
+                    pblob = json.loads(praw)
+                    pdata = pblob.get("data") or {}
+                    page_lots = pdata.get("lots") or []
+                    if len(page_lots) > len(lots):
+                        lots = page_lots
+        except Exception as e:
+            print(f"  [Christie's] paginated fetch failed: {e}")
+        if len(lots) < total:
+            print(f"  [Christie's] paginated to {len(lots)}/{total} lots")
     out = []
     for lot in lots:
         title_primary = (lot.get("title_primary_txt") or "").strip()
@@ -538,8 +589,23 @@ def enumerate_sothebys(sale_url, sale=None):
     Sotheby's auction page embeds an Algolia query payload at
     `__NEXT_DATA__.props.pageProps.algoliaJson` with hits[] that carry
     every field we need (title, estimates, currency, slug, lot number,
-    dates). nbHits is the total; iterate pages via &page=N until the
-    hits dry up or we hit nbPages.
+    dates). nbHits is the total.
+
+    KNOWN LIMITATION (2026-05-06): the SSR endpoint hardcodes `page=0`
+    in its Algolia params. `?page=N` query strings on the auction
+    URL are ignored server-side — every page fetch returns the same
+    first 48 hits. This means we currently capture max 48 lots per
+    Sotheby's sale (the page-0 set, minus excluded titles).
+
+    To paginate properly we'd need to call Algolia REST directly
+    using the `algoliaSearchKey` exposed in pageProps + an Algolia
+    App ID. The App ID isn't visible in the page source or any
+    public JS bundle Sotheby's loads — they proxy Algolia through
+    their own SSR so the App ID stays server-side. A workaround
+    would require either (a) sniffing the App ID via an authenticated
+    network request, or (b) Sotheby's exposing a public catalog API.
+    Filed as a follow-up; the May Geneva sale (ge2601: 151 lots)
+    will land 48 lots in the unified feed for now.
     """
     out = []
     seen_object_ids = set()
@@ -667,6 +733,18 @@ def enumerate_phillips(sale_url, sale=None):
     doesn't carry estimates / titles in a parseable way — those come
     from a per-lot page fetch. Capped at PHILLIPS_LOTS_PER_SALE so a
     single sale doesn't dominate the CI run.
+
+    WAF behaviour (verified 2026-05-06): Phillips' edge starts
+    returning 403 after ~7 successful per-lot fetches in a row from
+    GitHub Actions IPs. The flagship May Geneva sale was capturing
+    7 of 227 lots before the rest 403'd. Mitigation:
+      - Wider PER_LOT_SLEEP_SECONDS (handled at module level).
+      - On 403, sleep PHILLIPS_BACKOFF_SECONDS and retry up to
+        PHILLIPS_MAX_RETRIES times. The WAF appears to release
+        after ~30s of quiet.
+      - After PHILLIPS_BACKOFF_TRIPS consecutive whole-batch
+        retries, give up on that sale (avoids burning the whole
+        CI run on a tarpit).
     """
     try:
         r = requests.get(sale_url, headers=HEADERS, timeout=30)
@@ -678,13 +756,50 @@ def enumerate_phillips(sale_url, sale=None):
     paths = paths[:PHILLIPS_LOTS_PER_SALE]
     base = "https://www.phillips.com"
     out = []
+    consecutive_403 = 0
+    cooled_down_count = 0
     for path in paths:
         url = base + path
-        try:
-            time.sleep(PER_LOT_SLEEP_SECONDS)
-            data = scrape_phillips_lot(url)
-        except Exception as e:
-            print(f"    [Phillips] lot fetch failed {path}: {e}")
+        attempt = 0
+        data = None
+        while attempt <= PHILLIPS_MAX_RETRIES:
+            try:
+                time.sleep(PER_LOT_SLEEP_SECONDS)
+                data = scrape_phillips_lot(url)
+                consecutive_403 = 0
+                break
+            except requests.HTTPError as e:
+                code = getattr(e.response, "status_code", None)
+                if code == 403:
+                    consecutive_403 += 1
+                    attempt += 1
+                    if attempt > PHILLIPS_MAX_RETRIES:
+                        print(f"    [Phillips] 403 after {PHILLIPS_MAX_RETRIES} retries on {path} — skipping")
+                        break
+                    # Bigger sleep when WAF is hot. Linear backoff —
+                    # the WAF looks sliding-window, so a single longer
+                    # pause works better than exponential growth.
+                    backoff = PHILLIPS_BACKOFF_SECONDS * attempt
+                    print(f"    [Phillips] 403 on {path} (attempt {attempt}/{PHILLIPS_MAX_RETRIES}) — sleeping {backoff}s before retry")
+                    time.sleep(backoff)
+                    continue
+                print(f"    [Phillips] HTTP {code} on {path}: {e}")
+                break
+            except Exception as e:
+                print(f"    [Phillips] lot fetch failed {path}: {e}")
+                break
+        if data is None:
+            # If we've been hammering the WAF and still failing, take
+            # a long cooldown before continuing through the rest of
+            # the paths. Avoids torching the whole sale on a bad run.
+            if consecutive_403 >= PHILLIPS_BACKOFF_TRIPS:
+                cooled_down_count += 1
+                if cooled_down_count > 2:
+                    print(f"  [Phillips] giving up on {sale_url} after multiple cooldowns")
+                    break
+                print(f"  [Phillips] {consecutive_403} consecutive 403s — cooling down for {PHILLIPS_LONG_COOLDOWN_SECONDS}s")
+                time.sleep(PHILLIPS_LONG_COOLDOWN_SECONDS)
+                consecutive_403 = 0
             continue
         if is_excluded_title(data.get("title")):
             continue
