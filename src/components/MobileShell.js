@@ -44,13 +44,17 @@ export function MobileShell(props) {
     favSearchModalJSX, inp,
     adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX,
+    challengeReceiverJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
     referencesTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     shareActive,
+    challengeShareActive,
   } = props;
+  // Either receive-flow swallows the regular browse chrome.
+  const anyShareActive = shareActive || challengeShareActive;
 
   // Listings sub-tab gates filter exposure (mirror of DesktopShell).
   const showDealerSources  = !(tab === "listings" && listingsSubTab === "auctions");
@@ -122,12 +126,12 @@ export function MobileShell(props) {
             sub-tab switching doesn't pop content up. Hidden during
             share-receive landing so the recipient sees the focused
             card without browse chrome above it. */}
-        {!shareActive && noFilterableList && (
+        {!anyShareActive && noFilterableList && (
           <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", alignItems: "center" }}>
             <span style={{ fontSize: 13, padding: "9px 14px", borderRadius: 20, border: "0.5px solid transparent", visibility: "hidden" }}>placeholder</span>
           </div>
         )}
-        {!shareActive && !noFilterableList && (
+        {!anyShareActive && !noFilterableList && (
         <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
           <span style={{ fontSize: 12, color: "var(--text3)", marginRight: 2, flexShrink: 0 }}>{displayedCount}</span>
           {/* Date sort pill — semantics depend on the active Listings
@@ -178,12 +182,15 @@ export function MobileShell(props) {
             strip on tab=watchlist. Both lifted into the sticky stack
             so they survive scroll. Hidden during share-receive landing
             for the same reason as the sort row above. */}
-        {!shareActive && listingsSubTabsJSX}
-        {!shareActive && watchSubTabsJSX}
+        {!anyShareActive && listingsSubTabsJSX}
+        {!anyShareActive && watchSubTabsJSX}
         </div>
         {/* Share-receive surface — self-contained component, hooks
             isolated. Renders null when no share intent in URL. */}
         {shareReceiverJSX}
+        {/* Watch Challenges receive surface (v1.5). Same isolation
+            pattern as ShareReceiver. */}
+        {challengeReceiverJSX}
         {/* Phase B2 lot-migration banner. Same isolation pattern as
             ShareReceiver — renders null until the one-shot migration
             actually moves at least one tracked URL into Favorites. */}
@@ -192,11 +199,10 @@ export function MobileShell(props) {
             below the soft-warn threshold. Fixed-position so visible
             on every tab. */}
         {userLimitBannerJSX}
-        {/* When ShareReceiver is showing the focused landing surface
-            (an inbound share link), skip the regular tab content so
-            the recipient gets a clean first-impression page rather
-            than a card stacked over an unrelated browse view. */}
-        {!shareActive && (
+        {/* When EITHER receive surface is up (single-listing or
+            challenge), skip the regular tab content so the recipient
+            sees a clean first-impression page. */}
+        {!anyShareActive && (
           <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
             {/* (Ending-soon pinned section retired 2026-05-04 —
                 Watchlist > Saved auctions sub-tab IS the ending-soon

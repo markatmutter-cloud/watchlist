@@ -175,16 +175,28 @@ export function ChallengesView({
             // ChallengeFlow.shareChallenge so the recipient experience
             // is consistent. Mark 2026-05-06: "Share button should
             // also be where you have delete on challenges."
+            // List-row share. v1.5: completed challenges share with
+            // picks visible (?challenge=<id>&shared=1 — fetched via
+            // get_public_challenge RPC); drafts can only share the
+            // constraints since there are no picks to surface yet.
+            // For more granular control (constraints-only on a
+            // completed challenge), the user drills in and uses
+            // CompleteStage which exposes both buttons.
             const handleShareRow = async (e) => {
               e.stopPropagation();
               if (!handleShare) return;
-              const params = new URLSearchParams();
-              params.set("newchallenge", "1");
-              if (c.name)             params.set("t", c.name);
-              if (c.targetCount)      params.set("n", String(c.targetCount));
-              if (c.budget)           params.set("b", String(c.budget));
-              if (c.descriptionLong)  params.set("d", c.descriptionLong);
-              const url = `${window.location.origin}/?${params.toString()}`;
+              let url;
+              if (c.state === "complete") {
+                url = `${window.location.origin}/?challenge=${encodeURIComponent(c.id)}&shared=1`;
+              } else {
+                const params = new URLSearchParams();
+                params.set("newchallenge", "1");
+                if (c.name)             params.set("t", c.name);
+                if (c.targetCount)      params.set("n", String(c.targetCount));
+                if (c.budget)           params.set("b", String(c.budget));
+                if (c.descriptionLong)  params.set("d", c.descriptionLong);
+                url = `${window.location.origin}/?${params.toString()}`;
+              }
               await handleShare({ title: `Watch challenge: ${c.name}`, url });
             };
             return (

@@ -765,24 +765,24 @@ function StatCard({ label, value, sub, progress, warn, hardWarn, warnLabel }) {
 
 
 // ── Complete stage ──────────────────────────────────────────────────
-function CompleteStage({ challenge, items, onShare, onBack, onReopen }) {
+function CompleteStage({ challenge, items, onShareSpec, onShareComplete, onBack, onReopen }) {
   const picks = useMemo(() => items.filter(it => it.isPick), [items]);
   const totalSpend = picks.reduce((s, p) => s + (p.savedPriceUSD || p.priceUSD || 0), 0);
   const overBy = Math.max(0, totalSpend - challenge.budget);
 
-  // Share-click feedback. handleShare returns { copied: bool } — on
-  // mobile native-share path it resolves to copied=false (the share
-  // sheet is the user's confirmation), on desktop clipboard fallback
-  // it resolves true. Either way we flash a one-line confirmation
-  // for ~2s so the click feels acknowledged. Mark 2026-05-06 flagged
-  // "Share button doesn't work" — most likely the click WAS firing
-  // but the silent clipboard-write left him no feedback.
+  // Share feedback. Two share modes (v1.5):
+  //   "Send as challenge" → constraints only (?newchallenge=…).
+  //   "Send as completed" → picks visible (?challenge=<id>&shared=1)
+  //                         via the public-read RPC.
+  // handleShare returns { copied: bool } — desktop clipboard true,
+  // mobile native-share false. Flash a confirmation pill either way.
   const [shareFeedback, setShareFeedback] = useState("");
-  const handleShareClick = async () => {
-    const res = await onShare();
-    if (res?.copied) setShareFeedback("Link copied!");
-    else setShareFeedback("Shared.");
-    setTimeout(() => setShareFeedback(""), 2200);
+  const handleShareClick = async (handler, mode) => {
+    const res = await handler();
+    const tag = mode === "complete" ? "with picks" : "constraints";
+    if (res?.copied) setShareFeedback(`${tag === "with picks" ? "Picks link" : "Constraints link"} copied!`);
+    else setShareFeedback(`Shared (${tag}).`);
+    setTimeout(() => setShareFeedback(""), 2400);
   };
 
   return (
@@ -815,11 +815,25 @@ function CompleteStage({ challenge, items, onShare, onBack, onReopen }) {
             fontFamily: "inherit", fontSize: 13,
           }}>Reopen for edits</button>
         )}
-        <button onClick={handleShareClick} style={{
-          padding: "9px 16px", borderRadius: 8, border: "none",
-          background: "#185FA5", color: "#fff", cursor: "pointer",
-          fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-        }}>Share →</button>
+        {onShareSpec && (
+          <button onClick={() => handleShareClick(onShareSpec, "spec")}
+            title="Share just the constraints — recipient builds their own answer"
+            style={{
+              padding: "9px 14px", borderRadius: 8,
+              border: "0.5px solid var(--border)", background: "transparent",
+              color: "var(--text1)", cursor: "pointer",
+              fontFamily: "inherit", fontSize: 13,
+            }}>Share constraints</button>
+        )}
+        {onShareComplete && (
+          <button onClick={() => handleShareClick(onShareComplete, "complete")}
+            title="Share with your picks visible — recipient sees what you chose"
+            style={{
+              padding: "9px 16px", borderRadius: 8, border: "none",
+              background: "#185FA5", color: "#fff", cursor: "pointer",
+              fontFamily: "inherit", fontSize: 14, fontWeight: 500,
+            }}>Share with picks →</button>
+        )}
       </div>
 
       {/* Polished card surface. Same border + shadow treatment as
@@ -891,7 +905,8 @@ function CompleteStage({ challenge, items, onShare, onBack, onReopen }) {
         marginTop: 12, fontSize: 11, color: "var(--text3)",
         textAlign: "center", lineHeight: 1.5,
       }}>
-        Share sends the constraints — your picks stay private.
+        <strong style={{ color: "var(--text2)" }}>Share constraints</strong> sends only the spec — recipient builds their own answer.
+        {" "}<strong style={{ color: "var(--text2)" }}>Share with picks</strong> reveals your selection.
       </p>
     </div>
   );
@@ -957,16 +972,11 @@ export function ChallengeFlow({
     await collectionsApi.updateReasoning(rowId, reasoning);
   }, [collectionsApi]);
 
-  const shareChallenge = useCallback(async () => {
+  // Spec mode — recipient sees only the constraints and is invited
+  // to build their own answer. Existing behaviour, used everywhere
+  // pre-v1.5 and still the only mode for draft challenges.
+  const shareChallengeSpec = useCallback(async () => {
     if (!handleShare) return { copied: false };
-    // v1 shares the challenge SPEC (not the picks themselves) so the
-    // recipient can build their own response under the same constraints
-    // — Mark's "send-as-empty challenge" mode. Encoding in URL avoids
-    // RLS-public-read schema surgery; v2 will swap to a real public
-    // landing page for "see my picks" sharing.
-    //
-    // Return the handleShare promise so CompleteStage can show
-    // confirmation feedback when the share resolves.
     const params = new URLSearchParams();
     params.set("newchallenge", "1");
     if (challenge.name)             params.set("t", challenge.name);
@@ -976,6 +986,16 @@ export function ChallengeFlow({
     const url = `${window.location.origin}/?${params.toString()}`;
     return await handleShare({ title: `Watch challenge: ${challenge.name}`, url });
   }, [challenge.id, challenge.name, challenge.targetCount, challenge.budget, challenge.descriptionLong, handleShare]);
+
+  // Complete mode (v1.5) — recipient sees the sender's picks via
+  // the public-read RPC. Only meaningful when state='complete'; the
+  // RPC silently returns null otherwise. Surface as a separate
+  // button on CompleteStage; not exposed on draft challenges.
+  const shareChallengeComplete = useCallback(async () => {
+    if (!handleShare) return { copied: false };
+    const url = `${window.location.origin}/?challenge=${encodeURIComponent(challenge.id)}&shared=1`;
+    return await handleShare({ title: `Watch challenge: ${challenge.name}`, url });
+  }, [challenge.id, challenge.name, handleShare]);
 
   // ── Render the active stage ────────────────────────────────
   if (stage === "create") {
@@ -988,7 +1008,8 @@ export function ChallengeFlow({
   if (stage === "complete") {
     return (
       <CompleteStage challenge={challenge} items={items}
-        onShare={shareChallenge}
+        onShareSpec={shareChallengeSpec}
+        onShareComplete={shareChallengeComplete}
         onReopen={reopenChallenge}
         onBack={onExit} />
     );
