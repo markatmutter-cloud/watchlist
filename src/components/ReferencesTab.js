@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SizeCompare } from "./SizeCompare";
 import { ChallengesView } from "./ChallengesView";
 import { Links } from "./Links";
@@ -81,6 +81,16 @@ const RESOURCES = [
 export function ReferencesTab(props) {
   const [view, setView] = useState("list");
 
+  // External nudge: when the user takes a shared challenge, App.js
+  // sets pendingChallengeDrillId and we want to land them straight
+  // on the Challenges view (drilled into the new row). Force the
+  // view switch as soon as the prop arrives.
+  useEffect(() => {
+    if (props.pendingChallengeDrillId) {
+      setView("challenges");
+    }
+  }, [props.pendingChallengeDrillId]);
+
   if (view === "size-compare") {
     return (
       <div style={{ paddingTop: 4 }}>
@@ -102,6 +112,8 @@ export function ReferencesTab(props) {
           hidden={props.hidden}
           primaryCurrency={props.primaryCurrency}
           handleShare={props.handleShare}
+          pendingChallengeDrillId={props.pendingChallengeDrillId}
+          clearPendingChallengeDrill={props.clearPendingChallengeDrill}
           onBack={() => setView("list")}
         />
       </div>

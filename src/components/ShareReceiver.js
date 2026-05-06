@@ -50,6 +50,10 @@ export function ShareReceiver({
   onClickListing,
   // Navigation hooks for the orientation CTAs at the bottom.
   setTab,
+  // App.js increments this when the user explicitly navigates away
+  // via main-nav (Watchlist logo, top tabs). We watch it and clear
+  // our intent state. Mark D5 (2026-05-06).
+  resetTick,
 }) {
   const [shareIntent, setShareIntent] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -77,6 +81,14 @@ export function ShareReceiver({
       setShareActive(!!shareIntent);
     }
   }, [shareIntent, setShareActive]);
+
+  // External escape — bumped by App.js when the user clicks a main
+  // nav target. Clear our intent so the next render returns null.
+  useEffect(() => {
+    if (resetTick && resetTick > 0) {
+      setShareIntent(null);
+    }
+  }, [resetTick]);
 
   const sharedItem = useMemo(() => {
     if (!shareIntent || !shareIntent.id) return null;
@@ -206,6 +218,7 @@ export function ShareReceiver({
           <OrientationAnchors
             signedIn={!!user}
             onClickAnchor={onClickAnchor}
+            onSignIn={isAuthConfigured ? signInWithGoogle : undefined}
           />
         </div>
       ) : (
@@ -460,7 +473,7 @@ function FocusedShareCard({
 // desktop (≥1100px), beside the focused share card; stacks below
 // the card on narrower / mobile. Stacked-button layout reads well
 // in either column orientation — no internal flex-wrap needed.
-function OrientationAnchors({ signedIn, onClickAnchor }) {
+function OrientationAnchors({ signedIn, onClickAnchor, onSignIn }) {
   return (
     <div style={{
       borderRadius: 12,
@@ -503,6 +516,14 @@ function OrientationAnchors({ signedIn, onClickAnchor }) {
         <button onClick={() => onClickAnchor("references")} style={anchorBtnStyle}>
           Cool stuff (tools + links) →
         </button>
+        {/* Sign-in for anyone NOT signed in. Mark D5 (2026-05-06):
+            "I want there to be 'or sign in to your account' as an
+            option." */}
+        {!signedIn && onSignIn && (
+          <button onClick={onSignIn} style={anchorBtnStyle}>
+            Or sign in to your account →
+          </button>
+        )}
       </div>
     </div>
   );
