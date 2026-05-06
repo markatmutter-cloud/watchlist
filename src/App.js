@@ -373,24 +373,33 @@ export default function Watchlist() {
   // after v2's React error #310 in production.
   // Returns { copied } so Card can flash "Copied!" on the
   // clipboard fallback path.
-  const handleShare = async (item) => {
-    if (!item || !item.id) return { copied: false };
-    // Telemetry: count the share intent the moment the user invokes
-    // the menu item. Counting after the share completes would miss
-    // dismissed share-sheets, which are still engagement signal.
-    recordEvent("share", item);
+  const handleShare = async (input) => {
+    // Two call shapes:
+    //   - Listing card share: pass the listing item — URL built
+    //     server-side as /share/<id> so preview-bots get per-listing
+    //     OG tags (api/share.js).
+    //   - Pre-built share (challenges, future surfaces): pass
+    //     `{ url, title? }` with the URL already constructed. This
+    //     path skips the listing telemetry event since it's not a
+    //     listing-share. Without this, ChallengeFlow's shareChallenge
+    //     used to no-op silently because handleShare returned early
+    //     on the missing-id branch (Mark 2026-05-06: "Share still
+    //     doesn't work").
     let shareUrl;
-    try {
-      // Use the /share/<id> path so the iMessage/Slack/Discord
-      // preview-bot scrapes per-listing OG tags via api/share.js
-      // instead of the static index.html's site-wide tags. Real
-      // browsers get a tiny redirect HTML that bounces them to
-      // ?listing=<id>&shared=1 which ShareReceiver already handles
-      // — recipients land on the focused share surface unchanged.
-      const url = new URL(window.location.origin);
-      url.pathname = `/share/${encodeURIComponent(item.id)}`;
-      shareUrl = url.toString();
-    } catch {
+    let shareTitle;
+    if (input && typeof input.url === "string") {
+      shareUrl = input.url;
+      shareTitle = input.title;
+    } else if (input && input.id) {
+      recordEvent("share", input);
+      try {
+        const url = new URL(window.location.origin);
+        url.pathname = `/share/${encodeURIComponent(input.id)}`;
+        shareUrl = url.toString();
+      } catch {
+        return { copied: false };
+      }
+    } else {
       return { copied: false };
     }
     // Mobile OS (iPhone / iPad / Android phone) gets the native
@@ -420,7 +429,7 @@ export default function Watchlist() {
       || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1);
     if (isMobileOS && typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ url: shareUrl });
+        await navigator.share(shareTitle ? { url: shareUrl, title: shareTitle } : { url: shareUrl });
         return { copied: false };
       } catch (e) {
         if (e?.name === "AbortError") return { copied: false };

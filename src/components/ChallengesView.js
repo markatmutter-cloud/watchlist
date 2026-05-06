@@ -152,8 +152,8 @@ export function ChallengesView({
             No challenges yet
           </div>
           <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto" }}>
-            Pick N watches under a budget. Useful as a thought experiment, a way to surface taste,
-            or a question to send a friend. Tap "+ New challenge" to start.
+            Create a virtual collection. Share your picks. Challenge someone else to do the
+            same under your constraints.
           </div>
         </div>
       ) : (
@@ -219,10 +219,11 @@ export function ChallengesView({
                     )}
                   </div>
                 </div>
-                {/* Delete affordance — small × button. Stops click
-                    propagation so it doesn't drill in. window.confirm
-                    matches the rest of the app's confirm pattern; can
-                    swap for an inline confirm row later. */}
+                {/* Delete affordance — labeled "Delete" button.
+                    Was a small × originally; Mark flagged "delete not
+                    that clear (small x)". Stops click propagation so
+                    it doesn't drill in. window.confirm matches the
+                    rest of the app's confirm pattern. */}
                 {collectionsApi?.deleteCollection && (
                   <button
                     onClick={handleDelete}
@@ -230,14 +231,13 @@ export function ChallengesView({
                     title="Delete challenge"
                     style={{
                       flexShrink: 0,
-                      width: 30, height: 30, borderRadius: "50%",
-                      border: "none", background: "transparent",
-                      color: "var(--text3)", cursor: "pointer",
-                      fontFamily: "inherit", fontSize: 16, lineHeight: 1,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      padding: 0,
+                      padding: "5px 10px", borderRadius: 6,
+                      border: "0.5px solid var(--border)",
+                      background: "transparent",
+                      color: "var(--text2)", cursor: "pointer",
+                      fontFamily: "inherit", fontSize: 12,
                     }}
-                  >×</button>
+                  >Delete</button>
                 )}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
               </div>
