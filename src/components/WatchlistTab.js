@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Card } from "./Card";
 import { ageBucketFromDate, fmtUSD } from "../utils";
-import { useEBaySearches, EBAY_SEARCHES_EDIT_URL } from "../hooks/useEBaySearches";
 import { importLocalData } from "../supabase";
 import { SubTabIntro } from "./SubTabIntro";
 
@@ -64,12 +63,9 @@ export function WatchlistTab(props) {
     observeCard, onClickListing,
   } = props;
 
-  // eBay source-search config (read-only display in the Searches
-  // sub-tab). Surfaces what the scraper is currently pulling from
-  // eBay; edits go through the GitHub editor link in the section
-  // header. Loading state is non-blocking — the saved-searches list
-  // below still renders normally.
-  const { searches: ebaySearches, loading: ebayLoading, error: ebayError } = useEBaySearches();
+  // (eBay source-search read-only block removed 2026-05-06 — see
+  // comment in searchesTabJSX. Hook + import dropped along with it
+  // since nothing else in this file consumed them.)
 
   // Collections sub-tab drill-in selection. null = list view; <uuid>
   // = drilled into that specific collection. Initial value reads
@@ -354,106 +350,17 @@ export function WatchlistTab(props) {
         onAction={startAddSearch}
       />
 
-      {/* eBay source-searches — read-only view of data/ebay_searches.json.
-          These configure what the scraper pulls into the feed (vs the
-          saved searches below, which filter what's already in the feed).
-          Edits go through GitHub. */}
-      {(ebaySearches.length > 0 || ebayLoading || ebayError) && (
-        <div style={{ marginBottom: 24 }}>
-          {/* Section divider — matches the Listings + Calendar treatment
-              (fontSize 14, fontWeight 600, borderBottom 0.5px). The
-              earlier small-uppercase header read as a different
-              visual system from the bold "Today" / "April 2026"
-              dividers in the sibling sub-tabs. Right side carries the
-              count + the Edit-on-GitHub link, replacing the old
-              two-line "N searches feeding..." subtitle. */}
-          <div style={{
-            display: "flex", alignItems: "baseline", gap: 12,
-            padding: "14px 14px 12px",
-            borderBottom: "0.5px solid var(--border)",
-            marginBottom: 4,
-          }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
-              Source · eBay
-            </span>
-            <span style={{ fontSize: 12, color: "var(--text3)" }}>
-              {ebayLoading ? "loading…"
-                : ebayError ? "couldn't load"
-                : `feeding the Available feed`}
-            </span>
-            <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-              {!ebayLoading && !ebayError && ebaySearches.length}
-              <a href={EBAY_SEARCHES_EDIT_URL} target="_blank" rel="noopener noreferrer"
-                 style={{
-                   fontSize: 12, color: "#185FA5", textDecoration: "none",
-                   fontFamily: "inherit", whiteSpace: "nowrap",
-                 }}>
-                Edit on GitHub ↗
-              </a>
-            </span>
-          </div>
+      {/* eBay source-searches block (data/ebay_searches.json + GitHub
+          edit link) was removed from this view 2026-05-06 per Mark
+          ("remove the source ebay section from this page. I want to
+          manage these searches directly in the code"). The data
+          still feeds the scraper from data/ebay_searches.json — only
+          the UI surface is gone. The hook is left out for now; if
+          the surface is restored, re-add useEBaySearches +
+          EBAY_SEARCHES_EDIT_URL imports and the JSX block from git
+          history. */}
 
-          {/* eBay rows mirror the saved-search row visual below (same
-              border-radius, padding, type scale) so the two lists
-              read as siblings. eBay rows are read-only — primary
-              click opens the search on eBay's site (whole row is the
-              link target). Saved-search rows have the same outer
-              shell but split into a left button (run search) + right
-              edit/delete column. */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {ebaySearches.map(s => {
-              const RowInner = (
-                <>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 2,
-                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {s.label}
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--text2)",
-                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {s.query
-                        ? `${s.count} on eBay${s.query !== s.label ? ` · "${s.query}"` : ""}`
-                        : `${s.count} on eBay · seller: ${s.seller}`}
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                    {/* External-link arrow as the affordance — the
-                        whole row is clickable, this is just the
-                        wayfinder. */}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                      <polyline points="15 3 21 3 21 9"/>
-                      <line x1="10" y1="14" x2="21" y2="3"/>
-                    </svg>
-                  </div>
-                </>
-              );
-              const sharedShell = {
-                display: "flex", alignItems: "center", gap: 12,
-                padding: "14px 16px",
-                borderRadius: 12,
-                border: "0.5px solid var(--border)",
-                background: "var(--card-bg)",
-                color: "inherit", textDecoration: "none",
-                fontFamily: "inherit",
-              };
-              return s.ebayUrl ? (
-                <a key={s.label} href={s.ebayUrl} target="_blank" rel="noopener noreferrer"
-                   style={sharedShell}>
-                  {RowInner}
-                </a>
-              ) : (
-                <div key={s.label} style={sharedShell}>{RowInner}</div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Saved searches — user-defined filters over the existing feed.
-          Different from eBay source-searches above (which add to the
-          feed). Same UI affordance is fine since both are
-          "named queries you run with one tap." */}
+      {/* Saved searches — user-defined filters over the existing feed. */}
       {savedSearchStats.length > 0 && (
         // Same divider treatment as the Source · eBay header above
         // and the Listings / Calendar sub-tab dividers — fontSize 14,
