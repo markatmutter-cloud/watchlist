@@ -49,6 +49,7 @@ export function MobileShell(props) {
     referencesTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
+    shareActive,
   } = props;
 
   // Listings sub-tab gates filter exposure (mirror of DesktopShell).
@@ -188,14 +189,21 @@ export function MobileShell(props) {
             below the soft-warn threshold. Fixed-position so visible
             on every tab. */}
         {userLimitBannerJSX}
-        <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
-          {/* (Ending-soon pinned section retired 2026-05-04 — Watchlist
-              > Saved auctions sub-tab IS the ending-soon view now.) */}
-          {tab === "listings" ? listingsTabContentJSX
-            : tab === "references" ? referencesTabJSX
-            : tab === "admin" ? adminTabJSX
-            : watchlistTabJSX}
-        </div>
+        {/* When ShareReceiver is showing the focused landing surface
+            (an inbound share link), skip the regular tab content so
+            the recipient gets a clean first-impression page rather
+            than a card stacked over an unrelated browse view. */}
+        {!shareActive && (
+          <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
+            {/* (Ending-soon pinned section retired 2026-05-04 —
+                Watchlist > Saved auctions sub-tab IS the ending-soon
+                view now.) */}
+            {tab === "listings" ? listingsTabContentJSX
+              : tab === "references" ? referencesTabJSX
+              : tab === "admin" ? adminTabJSX
+              : watchlistTabJSX}
+          </div>
+        )}
         {trackNewItemModalJSX}
         {addSearchModalJSX}
         {collectionEditModalJSX}

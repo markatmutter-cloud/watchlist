@@ -309,6 +309,14 @@ export default function Watchlist() {
   // enforces the cap via a BEFORE INSERT trigger on watchlist_items;
   // this hook is purely UX. See supabase/schema/2026-05-06_user_limits.sql.
   const userLimit = useUserLimit(user, Object.keys(watchlist).length);
+  // Share-receive surface state (Epic 4). When ShareReceiver detects
+  // ?listing=&shared=1 on mount it flips this to true so the shell
+  // hides the regular feed and lets the focused landing surface take
+  // over the content area. ShareReceiver itself owns the share-intent
+  // hooks — this is just a one-bit mirror so the shell can branch.
+  // Hook lives at the TOP of App.js's hook list (before any early
+  // returns) per CLAUDE.md "don't add hooks deep" guidance.
+  const [shareActive, setShareActive] = useState(false);
   // Saved searches are per-user (stored in Supabase). Signed-out visitors
   // get an empty list, and the whole Searches subsection is hidden inside
   // the Watchlist tab.
@@ -1854,12 +1862,16 @@ export default function Watchlist() {
       watchlist={watchlist}
       toggleWatchlist={toggleWatchlist}
       addToSharedInbox={collectionsApi?.addToSharedInbox}
-      handleWish={handleWish}
-      handleShare={handleShare}
       isAuthConfigured={isAuthConfigured}
       signInWithGoogle={signInWithGoogle}
       primaryCurrency={primaryCurrency}
       onClickListing={onClickListing}
+      // Mirrors active state up so the shell can hide the regular
+      // feed when the focused landing surface is up.
+      setShareActive={setShareActive}
+      // Powers the orientation CTAs at the bottom of the surface
+      // ("Browse all listings", "Go to your list", etc.).
+      setTab={setTab}
     />
   );
 
@@ -1945,6 +1957,9 @@ export default function Watchlist() {
     watchlistTabJSX, adminTabJSX, referencesTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
+    // Whether the share-receive landing surface is taking over the
+    // content area. Shells gate their normal tab content on this.
+    shareActive,
   };
 
   return isMobile
