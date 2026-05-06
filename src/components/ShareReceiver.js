@@ -279,9 +279,38 @@ function FocusedShareCard({
     className="share-receiver-focused-card"
     >
       <style>{`
+        /* Mobile-first defaults are tight so action buttons sit
+           above the fold on a typical phone (~670px viewport).
+           Both desktop expansions kick in together at 720px. */
+        .share-receiver-focused-card .share-receiver-image-pane {
+          aspect-ratio: 16 / 10;
+        }
+        .share-receiver-focused-card .share-receiver-details-pane {
+          padding: 14px 14px 16px;
+          gap: 9px;
+        }
+        .share-receiver-focused-card .share-receiver-action-hint {
+          display: none;
+        }
+        .share-receiver-focused-card .share-receiver-spacer {
+          display: none;
+        }
         @media (min-width: 720px) {
           .share-receiver-focused-card {
             grid-template-columns: 1fr 1fr !important;
+          }
+          .share-receiver-focused-card .share-receiver-image-pane {
+            aspect-ratio: 4 / 3;
+          }
+          .share-receiver-focused-card .share-receiver-details-pane {
+            padding: 24px 22px;
+            gap: 14px;
+          }
+          .share-receiver-focused-card .share-receiver-action-hint {
+            display: block;
+          }
+          .share-receiver-focused-card .share-receiver-spacer {
+            display: block;
           }
         }
       `}</style>
@@ -292,15 +321,12 @@ function FocusedShareCard({
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => { if (onClickListing) onClickListing(item); }}
+        className="share-receiver-image-pane"
         style={{
           position: "relative",
           display: "block",
-          // 4:3 instead of 1:1 — tighter vertical so the whole
-          // surface fits a typical desktop viewport. On the wide
-          // 3-column layout the card itself becomes the dominant
-          // element (1.6fr alongside 1fr orientation) and a 4:3
-          // image still feels generous.
-          aspectRatio: "4 / 3",
+          // aspect-ratio handled by CSS class so the mobile (16:10)
+          // and desktop (4:3) values can swap at the breakpoint.
           background: "var(--surface)",
           textDecoration: "none",
         }}
@@ -335,11 +361,10 @@ function FocusedShareCard({
         )}
       </a>
 
-      {/* Details pane */}
-      <div style={{
-        padding: "24px 22px",
+      {/* Details pane — padding + gap handled by CSS class so they
+          can tighten on mobile and expand on desktop. */}
+      <div className="share-receiver-details-pane" style={{
         display: "flex", flexDirection: "column",
-        gap: 14,
         minWidth: 0,
       }}>
         {/* Source + brand */}
@@ -388,8 +413,11 @@ function FocusedShareCard({
           Open on {item.source || "dealer site"} →
         </a>
 
-        {/* Spacer + actions sit at the bottom of the pane */}
-        <div style={{ flex: 1, minHeight: 12 }} />
+        {/* Spacer pushes actions to the bottom of the pane on
+            desktop. Hidden on mobile (CSS class) so the actions
+            sit immediately under the dealer link and stay above
+            the fold on phone viewports. */}
+        <div className="share-receiver-spacer" style={{ flex: 1, minHeight: 12 }} />
 
         {/* Action buttons */}
         <div style={{
@@ -426,7 +454,7 @@ function FocusedShareCard({
           )}
         </div>
 
-        <div style={{
+        <div className="share-receiver-action-hint" style={{
           fontSize: 12, color: "var(--text3)", lineHeight: 1.5, marginTop: 4,
         }}>
           {user
