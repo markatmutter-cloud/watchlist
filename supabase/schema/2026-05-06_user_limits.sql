@@ -242,9 +242,15 @@ begin
     from brand_counts bc
     order by bc.user_id, bc.n desc, bc.brand
   )
+  -- Explicit text casts: auth.users.email is varchar(255) and
+  -- the JSONB-extracted brand is also varchar-ish, but the function
+  -- signature declares both as text. Postgres is strict here in
+  -- RETURN QUERY from a RETURNS TABLE function and throws 42804
+  -- ("structure of query does not match function result type")
+  -- without the casts. Don't drop them.
   select
     u.id                                                       as user_id,
-    u.email                                                    as email,
+    u.email::text                                              as email,
     coalesce(h.n, 0)                                           as hearts_count,
     coalesce(hd.n, 0)                                          as hides_count,
     coalesce(s.n, 0)                                           as searches_count,
@@ -253,7 +259,7 @@ begin
     coalesce(e.clicks, 0)                                      as clicks_30d,
     coalesce(e.shares, 0)                                      as shares_30d,
     coalesce(e.list_adds, 0)                                   as list_adds_30d,
-    tb.brand                                                   as top_brand,
+    tb.brand::text                                             as top_brand,
     coalesce(ul.watchlist_cap, public.default_watchlist_cap()) as watchlist_cap,
     (ul.user_id is null)                                       as is_default_cap,
     ul.notes                                                   as notes,
