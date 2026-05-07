@@ -165,6 +165,13 @@ export function MobileShell(props) {
               }} style={pillBase(active)}>{label}</button>
             );
           })()}
+          {/* Lot # pill — catalog order. Only on auction sub-tabs
+              (lot numbers are meaningless for dealer items). PR #98. */}
+          {((tab === "listings" && listingsSubTab === "auctions")
+            || (tab === "watchlist" && watchTopTab === "auctions")) && (
+            <button onClick={() => setSort(sort === "lot" ? "date" : "lot")}
+              style={pillBase(sort === "lot")}>{sort === "lot" ? "Lot # ↑" : "Lot #"}</button>
+          )}
           {/* Compact "clear filters" — just a small × icon to keep the
               row from wrapping when filters are set. The text version
               ("× Clear") got cropped at narrow widths. */}

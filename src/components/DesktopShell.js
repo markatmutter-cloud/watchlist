@@ -145,6 +145,25 @@ export function DesktopShell(props) {
             }}>{label}</button>
           );
         })()}
+        {/* Lot # pill — catalog order, only meaningful on auction
+            sub-tabs (Listings > Live auctions, Watchlist > Saved
+            auctions). Hidden on dealer-listing sub-tabs since
+            dealer items have no lot numbers. PR #98 (Mark's
+            2026-05-06 ask: "view a specific auction's lots in
+            catalog order"). */}
+        {((tab === "listings" && listingsSubTab === "auctions")
+          || (tab === "watchlist" && watchTopTab === "auctions")) && (
+          <button onClick={() => setSort(sort === "lot" ? "date" : "lot")}
+            style={{
+              padding: "6px 12px", borderRadius: 20,
+              border: "0.5px solid var(--border)",
+              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+              background: sort === "lot" ? "var(--text1)" : "var(--surface)",
+              color:      sort === "lot" ? "var(--bg)"    : "var(--text2)",
+              fontWeight: sort === "lot" ? 600 : 500,
+              whiteSpace: "nowrap",
+            }}>{sort === "lot" ? "Lot # ↑" : "Lot #"}</button>
+        )}
       </div>
 
       {/* Price — inline min/max inputs. USD-only labels because the
