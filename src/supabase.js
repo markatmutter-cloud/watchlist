@@ -488,6 +488,8 @@ export function useCollections(user) {
           soldPrice:      row.manual_sold_price || null,
           soldDate:       row.manual_sold_date  || null,
           comments:       row.manual_comments   || null,
+          sourceUrl:      row.manual_source_url || null,
+          url:            row.manual_source_url || null,
         } : {};
         const item = {
           rowId:           row.id,                 // collection_items.id (for delete)
@@ -739,6 +741,7 @@ export function useCollections(user) {
       manual_sold_price:       manual.soldPrice != null ? Number(manual.soldPrice) : null,
       manual_sold_date:        manual.soldDate || null,
       manual_comments:         manual.comments  || null,
+      manual_source_url:       manual.sourceUrl || null,
       source_of_entry:         'manual',
     };
     const { data, error } = await supabase.from('collection_items')
@@ -766,6 +769,8 @@ export function useCollections(user) {
       soldPrice:       data.manual_sold_price,
       soldDate:        data.manual_sold_date,
       comments:        data.manual_comments,
+      sourceUrl:       data.manual_source_url,
+      url:             data.manual_source_url,  // ManualItemCard reads `url` for the dealer-link affordance
     };
     setItemsByCollection(prev => ({
       ...prev,

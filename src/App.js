@@ -88,8 +88,18 @@ function endingSoonComparator(a, b) {
   if (ta === 3) return 0;
   const ae = a.auction_end || "";
   const be = b.auction_end || "";
-  if (ta === 2) return be.localeCompare(ae);
-  return ae.localeCompare(be);
+  const dateCmp = ta === 2 ? be.localeCompare(ae) : ae.localeCompare(be);
+  if (dateCmp !== 0) return dateCmp;
+  // Mark feedback 2026-05-07: within the same auction (same
+  // auction_end), order by lot_number ascending so the feed reads
+  // as catalog order — i.e. how the user would see the lots on the
+  // auction house's own site. Christie's May 9 lots stay grouped
+  // together AND in catalog order, then Phillips May 11, etc.
+  // Falls back to stable when both lot_numbers are missing.
+  const la = parseInt(a.lot_number || "0", 10) || 0;
+  const lb = parseInt(b.lot_number || "0", 10) || 0;
+  if (la !== lb) return la - lb;
+  return 0;
 }
 
 export default function Watchlist() {
@@ -503,6 +513,16 @@ export default function Watchlist() {
   // this; CollectionsTab forwards it to ChallengesView, which reads
   // it on mount and drills in.
   const [pendingChallengeDrillId, setPendingChallengeDrillId] = useState(null);
+
+  // Two-phase sign-in: every "Sign in" CTA in the app fires the
+  // SignInPromptModal first (the explainer + Google button). Mark
+  // feedback 2026-05-07: receivers + signed-out feature prompts were
+  // bypassing the prompt and going straight to OAuth — that's
+  // jarring on first visit. The wrapper below opens the modal; the
+  // modal's primary button is wired to the real `signInWithGoogle`
+  // (passed through shellProps unchanged so the modal still has a
+  // working OAuth path).
+  const triggerSignInPrompt = () => setSignInPromptOpen(true);
 
   // Tab re-tap → return to landing. Mark feedback 2026-05-07: when
   // the user is in a sub-view (e.g. Learn > SizeCompare, Saved >
@@ -1173,23 +1193,13 @@ export default function Watchlist() {
       // Live auctions: Date pill = ending order. date↓ = soonest first
       // (live → upcoming asc → ended desc → non-auction last). date↑
       // reverses the same axis so the user has an off-switch in the
-      // same control. Lot pill = catalog order — group by auction
-      // url then ascending lot_number within each auction (Mark's
-      // ask 2026-05-06 — "view a specific auction's lots in catalog
-      // order").
-      if (sort === "lot") {
-        its.sort((a, b) => {
-          const ua = a.auction_url || "";
-          const ub = b.auction_url || "";
-          if (ua !== ub) return ua.localeCompare(ub);
-          const la = parseInt(a.lot_number || "0", 10) || 0;
-          const lb = parseInt(b.lot_number || "0", 10) || 0;
-          return la - lb;
-        });
-      } else {
-        its.sort(endingSoonComparator);
-        if (sort === "date-asc") its.reverse();
-      }
+      // same control. Catalog-order behavior (group by auction date,
+      // then sort by lot_number ascending within the same auction)
+      // is now baked into `endingSoonComparator` itself — Mark
+      // 2026-05-07. The standalone Lot # pill was retired in the
+      // same change.
+      its.sort(endingSoonComparator);
+      if (sort === "date-asc") its.reverse();
     } else if (listingsSubTab === "sold") {
       // All sold: Date pill = sold-date. Most-recently-sold first by
       // default; date-asc flips to oldest-sold first. Sold dealer items
@@ -1415,23 +1425,12 @@ export default function Watchlist() {
     } else if (sort === "price-desc") {
       its.sort((a, b) => (b.savedPriceUSD || b.savedPrice) - (a.savedPriceUSD || a.savedPrice));
     } else if (watchTopTab === "auctions") {
-      // Live saved auctions: Date pill = ending order. Date↓ soonest
-      // first; Date↑ reverses. Lot pill = catalog order grouped by
-      // auction (mirrors Listings > Live auctions; PR adds same
-      // pill on this surface for Saved auctions).
-      if (sort === "lot") {
-        its.sort((a, b) => {
-          const ua = a.auction_url || "";
-          const ub = b.auction_url || "";
-          if (ua !== ub) return ua.localeCompare(ub);
-          const la = parseInt(a.lot_number || "0", 10) || 0;
-          const lb = parseInt(b.lot_number || "0", 10) || 0;
-          return la - lb;
-        });
-      } else {
-        its.sort(endingSoonComparator);
-        if (sort === "date-asc") its.reverse();
-      }
+      // Saved auctions: Date pill = ending order. Date↓ soonest
+      // first; Date↑ reverses. Catalog-order behavior is baked
+      // into `endingSoonComparator` (within the same auction
+      // sort by lot_number ascending) — see the comparator note.
+      its.sort(endingSoonComparator);
+      if (sort === "date-asc") its.reverse();
     } else if (watchTopTab === "sold") {
       // Saved sold: Date pill = sold-date. Most-recent first by
       // default; Date↑ flips.
@@ -2016,7 +2015,7 @@ export default function Watchlist() {
   const watchlistTabJSX_inner = (
     <WatchlistTab
       user={user}
-      signInWithGoogle={signInWithGoogle}
+      signInWithGoogle={triggerSignInPrompt}
       isAuthConfigured={isAuthConfigured}
       watchlist={watchlist}
       watchItems={watchItems}
@@ -2077,7 +2076,7 @@ export default function Watchlist() {
     <ReferencesTab
       user={user}
       isAuthConfigured={isAuthConfigured}
-      signInWithGoogle={signInWithGoogle}
+      signInWithGoogle={triggerSignInPrompt}
       allListings={items}
       tabResetTick={tab === "references" ? tabResetTick : 0}
     />
@@ -2094,7 +2093,7 @@ export default function Watchlist() {
     <CollectionsTab
       user={user}
       isAuthConfigured={isAuthConfigured}
-      signInWithGoogle={signInWithGoogle}
+      signInWithGoogle={triggerSignInPrompt}
       collectionsApi={collectionsApi}
       hiddenItems={hiddenItems}
       toggleHide={toggleHide}
@@ -2313,7 +2312,7 @@ export default function Watchlist() {
       toggleWatchlist={toggleWatchlist}
       addToSharedInbox={collectionsApi?.addToSharedInbox}
       isAuthConfigured={isAuthConfigured}
-      signInWithGoogle={signInWithGoogle}
+      signInWithGoogle={triggerSignInPrompt}
       primaryCurrency={primaryCurrency}
       onClickListing={onClickListing}
       // Mirrors active state up so the shell can hide the regular
@@ -2336,7 +2335,7 @@ export default function Watchlist() {
     <ChallengeReceiver
       user={user}
       isAuthConfigured={isAuthConfigured}
-      signInWithGoogle={signInWithGoogle}
+      signInWithGoogle={triggerSignInPrompt}
       collectionsApi={collectionsApi}
       setChallengeShareActive={setChallengeShareActive}
       setTab={setTabWithReceiveEscape}

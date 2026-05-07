@@ -80,13 +80,15 @@ export function MobileShell(props) {
         {/* "Watchlist" title sits OUTSIDE the sticky wrapper — it scrolls
             off screen as you pan down, leaving just the sticky search +
             sort rows pinned to the top. No JS needed; this is pure CSS
-            flow + sticky positioning. */}
-        <div style={{ padding: "10px 14px 4px" }}>
+            flow + sticky positioning. Padding tightened 2026-05-07
+            (Mark feedback: top of mobile browser had too much padding
+            around the title block). */}
+        <div style={{ padding: "4px 14px 2px" }}>
           {/* Tap the title to jump back to Available (home). */}
           <button onClick={() => { setTab("listings"); setPage(1); }}
             style={{ background: "none", border: "none", cursor: "pointer",
                     padding: 0, fontFamily: "inherit",
-                    fontSize: 22, fontWeight: 600, letterSpacing: "-0.5px",
+                    fontSize: 18, fontWeight: 600, letterSpacing: "-0.5px",
                     color: "var(--text1)" }}>
             Watchlist
           </button>
@@ -95,7 +97,7 @@ export function MobileShell(props) {
             sort/clear pills row. Stays pinned to the viewport top so
             filters are one tap away at any scroll depth. */}
         <div style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--bg)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px 6px", borderBottom: "0.5px solid var(--border)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 14px 4px", borderBottom: "0.5px solid var(--border)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 0 }}>
             <SearchIcon />
             <input value={search} onChange={e => setSearch(e.target.value)}
@@ -137,12 +139,12 @@ export function MobileShell(props) {
             share-receive landing so the recipient sees the focused
             card without browse chrome above it. */}
         {!anyShareActive && noFilterableList && (
-          <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 6, padding: "4px 14px 6px", borderBottom: "0.5px solid var(--border)", alignItems: "center" }}>
             <span style={{ fontSize: 13, padding: "9px 14px", borderRadius: 20, border: "0.5px solid transparent", visibility: "hidden" }}>placeholder</span>
           </div>
         )}
         {!anyShareActive && !noFilterableList && (
-        <div style={{ display: "flex", gap: 6, padding: "6px 14px 8px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+        <div style={{ display: "flex", gap: 6, padding: "4px 14px 6px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
           <span style={{ fontSize: 12, color: "var(--text3)", marginRight: 2, flexShrink: 0 }}>{displayedCount}</span>
           {/* Date sort pill — semantics depend on the active Listings
               sub-tab (newest firstSeen on Live; ending order on Live
@@ -249,7 +251,7 @@ export function MobileShell(props) {
             safe area PLUS a fixed extra padding, so the buttons aren't
             hugging the home bar when the app is launched standalone from
             the home screen. */}
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)" }}>
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}>
           {/* Admin is desktop-only — mobile bottom bar shows
               Listings / Saved / Learn (3 pills, fits cleanly on
               375px viewports). Bundle 2A.2 (2026-05-07) collapsed
