@@ -561,10 +561,15 @@ export default function Watchlist() {
     //     doesn't work").
     let shareUrl;
     let shareTitle;
-    if (input && typeof input.url === "string") {
-      shareUrl = input.url;
-      shareTitle = input.title;
-    } else if (input && input.id) {
+    // Branch order matters. Pre-fix the listing-share path was
+    // never reached because the dual-shape branch checked
+    // `input.url` first — and listings have a `url` field set to
+    // the dealer/auction URL. Every Card share emitted the dealer
+    // URL instead of /share/<id> (Mark's report 2026-05-07).
+    // Check `input.id` FIRST: if the caller passed a listing item,
+    // we always want the /share/<id> URL. Pre-built `{url, title}`
+    // payloads from ChallengeFlow / future surfaces fall through.
+    if (input && input.id) {
       recordEvent("share", input);
       try {
         const url = new URL(window.location.origin);
@@ -573,6 +578,9 @@ export default function Watchlist() {
       } catch {
         return { copied: false };
       }
+    } else if (input && typeof input.url === "string") {
+      shareUrl = input.url;
+      shareTitle = input.title;
     } else {
       return { copied: false };
     }
@@ -805,6 +813,7 @@ export default function Watchlist() {
         estimate_low_usd: data.estimate_low_usd,
         estimate_high_usd: data.estimate_high_usd,
         starting_price: data.starting_price,
+        starting_price_usd: data.starting_price_usd,
         auction_end: data.auction_end,
         auction_start: data.auction_start,
         auction_title: data.auction_title,
@@ -1289,6 +1298,7 @@ export default function Watchlist() {
         estimate_low_usd: data.estimate_low_usd,
         estimate_high_usd: data.estimate_high_usd,
         starting_price: data.starting_price,
+        starting_price_usd: data.starting_price_usd,
         auction_end: data.auction_end,
         auction_title: data.auction_title,
         lot_number: data.lot_number,

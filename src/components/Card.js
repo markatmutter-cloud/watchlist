@@ -181,9 +181,18 @@ export const Card = memo(function Card({
     : item.sold
         ? (item.sold_price ?? item.price)
         : (item.current_bid ?? item.starting_price ?? item.price);
+  // Fallback chain: pre-auction lots have null current_bid /
+  // current_bid_usd; previously this fell straight through to
+  // `lotNativeValue` (the native CHF/HKD/etc. amount), which then
+  // got rendered with a `~$` prefix — Mark's "CHF doesn't actually
+  // convert 1:1 to USD" report 2026-05-07. Walk every USD field
+  // we have (sold/bid/starting/estimate-low USD), then `priceUSD`
+  // (already FX-converted at projection time in App.js's
+  // auctionLotItems memo), and only fall back to the native value
+  // as a last resort.
   const lotUsdValue = !isLot ? null
-    : item.sold ? (item.sold_price_usd ?? lotNativeValue)
-    : (item.current_bid_usd ?? lotNativeValue);
+    : item.sold ? (item.sold_price_usd ?? item.priceUSD ?? lotNativeValue)
+    : (item.current_bid_usd ?? item.starting_price_usd ?? item.estimate_low_usd ?? item.priceUSD ?? lotNativeValue);
   // Same currency rule as dealer cards: lot's native shows as primary
   // when it matches user's primaryCurrency; otherwise convert via
   // lotUsdValue → primaryCurrency (FX rates in utils). Native price
