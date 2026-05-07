@@ -1187,11 +1187,17 @@ export default function Watchlist() {
 
   // Lookup map of current scrape state by listing id, used to determine
   // whether each watchlisted item is still live or has gone sold/inactive.
+  // Includes auction-house lots so hearted Antiquorum/Phillips/Christie's/
+  // Sotheby's items resolve to a live entry — without them, the
+  // `!live || !!live.sold` check in watchItems incorrectly marks every
+  // hearted auction-house lot as sold and the Watchlist > Auctions sub-tab
+  // drops them.
   const liveStateById = useMemo(() => {
     const m = new Map();
     for (const it of items) m.set(it.id, it);
+    for (const it of auctionLotItems) m.set(it.id, it);
     return m;
-  }, [items]);
+  }, [items, auctionLotItems]);
 
   const watchItems = useMemo(() => {
     // Hearted dealer items from `watchlist_items`.
