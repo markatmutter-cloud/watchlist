@@ -875,23 +875,27 @@ def _scrape_sothebys_lot_full(lot_url):
 def enumerate_phillips(sale_url, sale=None):
     """Return a list of (url, lot dict) tuples for a Phillips sale.
 
-    Phillips' auction page server-renders a tile per lot with class
-    `seldon-object-tile` and href `/detail/<slug>/<id>`. The tile
-    doesn't carry estimates / titles in a parseable way — those come
-    from a per-lot page fetch. Capped at PHILLIPS_LOTS_PER_SALE so a
-    single sale doesn't dominate the CI run.
+    NEW STRATEGY (PR #100, 2026-05-06): pull every lot's full data
+    from the auction page itself in a single fetch, parsing the
+    React Router Turbo-Stream payload that's embedded in the HTML.
 
-    WAF behaviour (verified 2026-05-06): Phillips' edge starts
-    returning 403 after ~7 successful per-lot fetches in a row from
-    GitHub Actions IPs. The flagship May Geneva sale was capturing
-    7 of 227 lots before the rest 403'd. Mitigation:
-      - Wider PER_LOT_SLEEP_SECONDS (handled at module level).
-      - On 403, sleep PHILLIPS_BACKOFF_SECONDS and retry up to
-        PHILLIPS_MAX_RETRIES times. The WAF appears to release
-        after ~30s of quiet.
-      - After PHILLIPS_BACKOFF_TRIPS consecutive whole-batch
-        retries, give up on that sale (avoids burning the whole
-        CI run on a tarpit).
+    Background: Phillips uses a Cloudflare-style WAF that 403s
+    per-lot detail-page fetches from GitHub Actions IPs after about
+    seven consecutive requests. PR #93 added retry-with-backoff;
+    that didn't break through. Per-lot fetches are dead from CI.
+
+    But the auction-page response (which is allowed) ships ALL lot
+    data inline: each `streamController.enqueue("...")` call
+    delivers a chunk of a flat JSON array using the
+    `{"_<key-idx>": <value-idx>}` reference format that React
+    Router 7 / Remix v3 use for hydration. The array contains the
+    auction object whose `lots[]` field is every lot with title,
+    estimates, currency, image, lotNumber, status — everything the
+    per-lot fetch was returning. Roughly 5,000 entries for a
+    225-lot sale; a single resolver walk is fast.
+
+    No per-lot fetches → no WAF triggers → full coverage from the
+    single auction-page fetch.
     """
     try:
         r = requests.get(sale_url, headers=HEADERS, timeout=30)
@@ -899,59 +903,209 @@ def enumerate_phillips(sale_url, sale=None):
     except Exception as e:
         print(f"  [Phillips] auction page fetch failed: {e}")
         return []
-    paths = sorted(set(re.findall(r'/detail/[a-z0-9-]+/\d+', r.text)))
-    paths = paths[:PHILLIPS_LOTS_PER_SALE]
-    base = "https://www.phillips.com"
+    lots = _phillips_extract_lots(r.text)
+    if not lots:
+        print("  [Phillips] no lots found in auction-page payload")
+        return []
+    print(f"  [Phillips] auction-page payload: {len(lots)} lots")
+
+    auction_obj = _phillips_extract_auction_meta(r.text) or {}
+    auction_title = auction_obj.get("auctionName") or sale.get("title") if isinstance(sale, dict) else None
+    auction_start = auction_obj.get("auctionStartDateTime")
+    auction_end   = auction_obj.get("auctionEndDateTime")
+
     out = []
-    consecutive_403 = 0
-    cooled_down_count = 0
-    for path in paths:
-        url = base + path
-        attempt = 0
-        data = None
-        while attempt <= PHILLIPS_MAX_RETRIES:
-            try:
-                time.sleep(PER_LOT_SLEEP_SECONDS)
-                data = scrape_phillips_lot(url)
-                consecutive_403 = 0
-                break
-            except requests.HTTPError as e:
-                code = getattr(e.response, "status_code", None)
-                if code == 403:
-                    consecutive_403 += 1
-                    attempt += 1
-                    if attempt > PHILLIPS_MAX_RETRIES:
-                        print(f"    [Phillips] 403 after {PHILLIPS_MAX_RETRIES} retries on {path} — skipping")
-                        break
-                    # Bigger sleep when WAF is hot. Linear backoff —
-                    # the WAF looks sliding-window, so a single longer
-                    # pause works better than exponential growth.
-                    backoff = PHILLIPS_BACKOFF_SECONDS * attempt
-                    print(f"    [Phillips] 403 on {path} (attempt {attempt}/{PHILLIPS_MAX_RETRIES}) — sleeping {backoff}s before retry")
-                    time.sleep(backoff)
-                    continue
-                print(f"    [Phillips] HTTP {code} on {path}: {e}")
-                break
-            except Exception as e:
-                print(f"    [Phillips] lot fetch failed {path}: {e}")
-                break
-        if data is None:
-            # If we've been hammering the WAF and still failing, take
-            # a long cooldown before continuing through the rest of
-            # the paths. Avoids torching the whole sale on a bad run.
-            if consecutive_403 >= PHILLIPS_BACKOFF_TRIPS:
-                cooled_down_count += 1
-                if cooled_down_count > 2:
-                    print(f"  [Phillips] giving up on {sale_url} after multiple cooldowns")
-                    break
-                print(f"  [Phillips] {consecutive_403} consecutive 403s — cooling down for {PHILLIPS_LONG_COOLDOWN_SECONDS}s")
-                time.sleep(PHILLIPS_LONG_COOLDOWN_SECONDS)
-                consecutive_403 = 0
+    for lot in lots:
+        lot_data = _phillips_lot_to_record(lot, auction_title, auction_start, auction_end, sale_url)
+        if not lot_data:
             continue
-        if is_excluded_title(data.get("title")):
+        if is_excluded_title(lot_data.get("title")):
             continue
-        out.append((url, data))
-    return out
+        out.append((lot_data["_url"], lot_data))
+    return [(u, {k: v for k, v in d.items() if not k.startswith("_")}) for u, d in out]
+
+
+def _phillips_extract_lots(html):
+    """Resolve the React Router Turbo-Stream payload and return the
+    flat list of lot dicts. Empty list on any parse failure (we'd
+    rather skip a sale than hard-error the whole batch)."""
+    chunks = re.findall(r'streamController\.enqueue\("((?:[^"\\]|\\.)*)"\)', html)
+    if not chunks:
+        return []
+    # Each chunk is JSON-string-encoded inside a JS double-quoted
+    # string. Re-wrap and let json.loads handle the unescape — using
+    # encode/decode("unicode_escape") would mangle multi-byte UTF-8
+    # (verified 2026-05-06: 'Élégante' rendered as 'Ã‰lÃ©gante').
+    try:
+        parts = [json.loads('"' + c + '"') for c in chunks]
+    except Exception as e:
+        print(f"  [Phillips] stream chunk JSON-string decode failed: {e}")
+        return []
+    combined = "".join(parts)
+    try:
+        arr = json.loads(combined)
+    except Exception as e:
+        print(f"  [Phillips] stream payload parse failed: {e}")
+        return []
+    if not isinstance(arr, list):
+        return []
+
+    # The payload uses a denormalized graph: every value lives at its
+    # own index in the flat array, and dict keys/values + array
+    # elements are integer references back into the array. The
+    # `{"_K_idx": V_idx}` shape encodes a key-value pair where both
+    # K and V are array indices. Walk + memoize.
+    memo = {}
+    def resolve(idx, stack=frozenset()):
+        if idx in memo: return memo[idx]
+        if idx in stack: return None  # cycle
+        if not isinstance(idx, int) or idx < 0 or idx >= len(arr):
+            return idx
+        v = arr[idx]
+        s2 = stack | {idx}
+        if isinstance(v, dict):
+            out = {}
+            for k, w in v.items():
+                if k.startswith("_"):
+                    try:
+                        key_idx = int(k[1:])
+                    except ValueError:
+                        continue
+                    key = arr[key_idx] if 0 <= key_idx < len(arr) else None
+                    if not isinstance(key, str):
+                        continue
+                    out[key] = resolve(w, s2) if isinstance(w, int) else w
+                else:
+                    out[k] = w
+            memo[idx] = out
+            return out
+        if isinstance(v, list):
+            out = [resolve(e, s2) if isinstance(e, int) else e for e in v]
+            memo[idx] = out
+            return out
+        memo[idx] = v
+        return v
+
+    root = resolve(0)
+    if not isinstance(root, dict):
+        return []
+
+    # Walk the loaderData object and find any key matching the
+    # auction-route pattern. Keys are Remix route ids that include
+    # `auctionCode` in the name. Inside that, `auction.lots` is the
+    # array we want.
+    loader = root.get("loaderData") or {}
+    for k, v in loader.items():
+        if "auction" not in k:
+            continue
+        a = (v or {}).get("auction") if isinstance(v, dict) else None
+        if isinstance(a, dict):
+            lots = a.get("lots")
+            if isinstance(lots, list) and lots:
+                return lots
+    return []
+
+
+def _phillips_extract_auction_meta(html):
+    """Return the auction object (auctionName + dates) from the same
+    Turbo-Stream payload `_phillips_extract_lots` walks. Used to
+    enrich lot records with sale-level metadata."""
+    # Reuse the same parse — the cost is negligible vs. the network
+    # fetch. Could memoize across calls but in practice the
+    # orchestrator calls _phillips_extract_lots and _phillips_extract_auction_meta
+    # back-to-back on the same html, both go through the same json
+    # parse + resolve, and both return quickly.
+    chunks = re.findall(r'streamController\.enqueue\("((?:[^"\\]|\\.)*)"\)', html)
+    if not chunks: return None
+    try:
+        parts = [json.loads('"' + c + '"') for c in chunks]
+        arr = json.loads("".join(parts))
+    except Exception:
+        return None
+    if not isinstance(arr, list): return None
+    memo = {}
+    def resolve(idx, stack=frozenset()):
+        if idx in memo: return memo[idx]
+        if idx in stack: return None
+        if not isinstance(idx, int) or idx < 0 or idx >= len(arr): return idx
+        v = arr[idx]; s2 = stack | {idx}
+        if isinstance(v, dict):
+            out = {}
+            for k, w in v.items():
+                if k.startswith("_"):
+                    try: key_idx = int(k[1:])
+                    except ValueError: continue
+                    key = arr[key_idx] if 0 <= key_idx < len(arr) else None
+                    if not isinstance(key, str): continue
+                    out[key] = resolve(w, s2) if isinstance(w, int) else w
+                else: out[k] = w
+            memo[idx] = out; return out
+        if isinstance(v, list):
+            out = [resolve(e, s2) if isinstance(e, int) else e for e in v]
+            memo[idx] = out; return out
+        memo[idx] = v; return v
+    root = resolve(0)
+    if not isinstance(root, dict): return None
+    loader = root.get("loaderData") or {}
+    for k, v in loader.items():
+        if "auction" not in k: continue
+        a = (v or {}).get("auction") if isinstance(v, dict) else None
+        if isinstance(a, dict): return a
+    return None
+
+
+def _phillips_lot_to_record(lot, auction_title, auction_start, auction_end, sale_url):
+    """Map a Phillips Turbo-Stream lot dict into the canonical
+    auction-lot record shape (matches Christie's / Sotheby's output)."""
+    if not isinstance(lot, dict): return None
+    detail_link = lot.get("detailLink") or ""
+    if not detail_link: return None
+    maker = (lot.get("makerName") or "").strip()
+    model = (lot.get("modelName") or "").strip()
+    title_parts = [p for p in (maker, model) if p]
+    title = " ".join(title_parts).strip() or model or maker or "Untitled"
+    description = (lot.get("description") or "").strip()
+    est_main = ((lot.get("estimate") or {}).get("mainEstimate")) or {}
+    currency = (est_main.get("currencyCode") or "CHF").upper()
+    low = est_main.get("lowEstimate")
+    high = est_main.get("highEstimate")
+    sold_price = lot.get("soldPrice") or lot.get("hammerPrice") or None
+    if sold_price == 0: sold_price = None
+    status_raw = (lot.get("lotStatus") or "").lower()
+    parent_status = (lot.get("parentAuctionStatus") or "").lower()
+    is_ended = (
+        status_raw in {"sold", "passed", "withdrawn", "unsold"}
+        or parent_status in {"closed", "ended", "completed"}
+    )
+    image = lot.get("imagePath") or None
+    lot_number = lot.get("lotNumberFull") or (str(lot.get("lotNumber")) if lot.get("lotNumber") is not None else None)
+    return {
+        "_url": detail_link,  # caller strips _-prefixed keys
+        "house": "Phillips",
+        "lot_id": lot.get("objectNumber"),
+        "lot_number": lot_number,
+        "title": title,
+        "maker": maker or None,
+        "description": (description or title)[:600],
+        "currency": currency,
+        "estimate_low": low,
+        "estimate_high": high,
+        "starting_price": lot.get("startBidAmount") or None,
+        "current_bid": None,
+        "sold_price": sold_price,
+        "estimate_low_usd":  to_usd(low,  currency),
+        "estimate_high_usd": to_usd(high, currency),
+        "starting_price_usd": to_usd(lot.get("startBidAmount") or 0, currency) or None,
+        "current_bid_usd":    None,
+        "sold_price_usd":    to_usd(sold_price, currency),
+        "status": "ended" if is_ended else "active",
+        "image": image,
+        "auction_title": auction_title,
+        "auction_start": auction_start,
+        "auction_end":   auction_end,
+        "auction_url":   sale_url,
+        "scraped_at":    time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────
