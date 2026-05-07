@@ -10,8 +10,16 @@ import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow } from "../s
 // the share/challenge receivers and the per-feature signed-out prompts
 // already carry their own explanatory copy and fire signInWithGoogle
 // directly. Adding this modal there would be redundant.
+//
+// 2026-05-07 copy fix: "What sign-in adds" reads as if it's about
+// inserting ads (Mark feedback) — replaced with "Why sign in". Contact
+// line switched from email to Instagram (Mark's preferred reachout
+// channel; the feedback link in the AboutModal still carries the
+// contextualized mailto for bug reports that benefit from URL/currency
+// auto-fill).
 
-const FEEDBACK_EMAIL = "hello@the-watch-list.app";
+const INSTAGRAM_HANDLE = "the_watch_list.app";
+const INSTAGRAM_URL = "https://instagram.com/the_watch_list.app";
 
 const primaryBtn = {
   display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
@@ -51,7 +59,7 @@ export function SignInPromptModal({ open, onClose, onSignIn }) {
           free, and you can keep browsing without an account.
         </div>
 
-        <div style={sectionLabel}>What sign-in adds</div>
+        <div style={sectionLabel}>Why sign in</div>
         <ul style={{
           margin: 0, paddingLeft: 18,
           fontSize: 13, color: "var(--text2)", lineHeight: 1.6,
@@ -67,8 +75,8 @@ export function SignInPromptModal({ open, onClose, onSignIn }) {
           No ads, no tracking, no fees. Saves and likes help build a
           recommender that learns your taste — they stay yours. I don't
           sell data and I don't run ads. Questions:{" "}
-          <a href={`mailto:${FEEDBACK_EMAIL}`} style={{ color: "var(--text1)" }}>
-            {FEEDBACK_EMAIL}
+          <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" style={{ color: "var(--text1)" }}>
+            @{INSTAGRAM_HANDLE}
           </a>.
         </div>
 
