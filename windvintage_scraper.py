@@ -123,16 +123,33 @@ def get_price_and_status(url):
                         sold = True
                         break
 
-        # Extract price - handles ON HOLD variants
+        # Extract price - handles ON HOLD variants. Two-tier:
+        #
+        # 1. Precise: "PRICE: $X" anchor — Wind Vintage's normal
+        #    template puts the dealer price immediately after a
+        #    "PRICE" label. Requires the literal word PRICE within
+        #    ~60 chars of the $-amount.
+        # 2. Fallback: scan the whole text for $-amounts and take
+        #    the LAST one. Mark feedback 2026-05-07: a Speedmaster
+        #    listing was scraping $1,906,954 (a historical auction
+        #    price quoted in the description) instead of $45,000
+        #    (the actual ask) because the precise pattern missed
+        #    on this page and the fallback had been taking the
+        #    FIRST $-amount it saw. Last-$ flips that — Wind
+        #    Vintage's prose-then-price layout means the dealer's
+        #    asking price is consistently the last $-amount in the
+        #    page text.
         price = None
         price_match = re.search(
             r'PRICE[:\s\-]*(?:ON HOLD[^$\d]*)?[\$]([0-9][0-9,]+)',
             text, re.IGNORECASE
         )
-        if not price_match:
-            price_match = re.search(r'\$([0-9][0-9,]+)', text)
         if price_match:
             price = int(price_match.group(1).replace(',', ''))
+        else:
+            all_prices = re.findall(r'\$([0-9][0-9,]+)', text)
+            if all_prices:
+                price = int(all_prices[-1].replace(',', ''))
 
         # Extract description
         desc_match = re.search(r'(The [A-Z][^.]{20,}\..*?)(?:PRICE|\Z)', text, re.DOTALL)
