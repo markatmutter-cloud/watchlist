@@ -65,9 +65,15 @@ jobs:
         run: python auctionlots_scraper.py
 
       - name: Set up Node (for watchlist image cache)
+        # Node 22+ ships native WebSocket. supabase-js v2 boots a
+        # RealtimeClient unconditionally even though the cache script
+        # never subscribes — Node 20 throws at construction time
+        # ("Node.js 20 detected without native WebSocket support")
+        # which kills the cache step. 22 is in actions/setup-node's
+        # supported set; safe pin.
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install Node deps for cache script
         # We only need @vercel/blob and @supabase/supabase-js. The full

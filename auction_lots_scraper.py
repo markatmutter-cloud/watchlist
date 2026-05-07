@@ -686,7 +686,38 @@ def enumerate_sothebys(sale_url, sale=None):
     auction_title = auction_obj.get("title")
     auction_year = (auction_obj.get("slug") or {}).get("year") if isinstance(auction_obj.get("slug"), dict) else None
     auction_name = (auction_obj.get("slug") or {}).get("name") if isinstance(auction_obj.get("slug"), dict) else None
-    print(f"  [Sotheby's] lotCards: {len(lot_cards)} lots — fetching missing ones")
+    # Hoist a sale-level "approximately when this sale ends" date.
+    # Used as a fallback for lots that algoliaJson didn't cover and
+    # whose per-lot LotV2 didn't carry a date — without this, ~100 lots
+    # land with auction_end=null on the frontend and the
+    # endingSoonComparator drops them to tier 3 (mis-sorting the whole
+    # "Live auctions" view per Mark's report 2026-05-07).
+    #
+    # Three potential sources, preferred in order:
+    #   1. Auction.dates.closed — usually null for live sales until
+    #      the day-of, but populated for online auctions.
+    #   2. LotV2.session.scheduledOpeningDate from the bootstrap lot —
+    #      for live sales this is when the live session starts, which
+    #      is approximately when the sale ends (close enough for tier
+    #      classification).
+    #   3. None.
+    auction_dates = auction_obj.get("dates") or {}
+    sale_auction_end = None
+    if isinstance(auction_dates, dict):
+        cb = auction_dates.get("closed")
+        if isinstance(cb, str): sale_auction_end = cb
+    if not sale_auction_end:
+        # The bootstrap lot's LotV2 was the same parse — find it and
+        # extract its session date.
+        for v in apollo.values():
+            if isinstance(v, dict) and v.get("__typename") == "LotV2":
+                sess = v.get("session") or {}
+                if isinstance(sess, dict):
+                    sd = sess.get("scheduledOpeningDate")
+                    if isinstance(sd, str):
+                        sale_auction_end = sd
+                        break
+    print(f"  [Sotheby's] lotCards: {len(lot_cards)} lots — fetching missing ones (sale-end fallback: {sale_auction_end or 'none'})")
 
     # ── Build per-lot data ────────────────────────────────────────
     for card in lot_cards:
@@ -721,7 +752,21 @@ def enumerate_sothebys(sale_url, sale=None):
         status_state = ((hit.get("lotState") or "").lower()) if hit else ""
         auction_state = ((hit.get("auctionState") or "").lower()) if hit else ""
         status = "ended" if auction_state in ("closed", "complete", "completed") or status_state == "sold" else "active"
-        auction_start = hit.get("openDate") if hit else None
+        # auction_start was previously taken from algoliaJson's
+        # `openDate` — Sotheby's online portion opens days/weeks
+        # before the live session, so this triggered the `tier 0
+        # (currently live)` branch in `endingSoonComparator` for
+        # lots that aren't actually live yet, mis-sorting the Live
+        # auctions view (PR fix 2026-05-07). Drop it: leave null
+        # so all upcoming Sotheby's lots cluster in tier 1 and
+        # sort by auction_end ascending alongside other houses.
+        auction_start = None
+        # auction_end falls back to the sale-level Auction.dates.closed
+        # when algoliaJson + the per-lot LotV2 both omit it. Without
+        # this fallback, ~100 lotCards-only lots ended up with
+        # auction_end=null and dropped to tier 3 (no date) instead
+        # of tier 1 (upcoming) — visible to the user as "undefined"
+        # in the days-left chip + scattered sort order.
         auction_end = (hit.get("closingTime") or hit.get("auctionDate")) if hit else None
         img_url = None
 
@@ -739,8 +784,8 @@ def enumerate_sothebys(sale_url, sale=None):
                     if high is None: high = lot_data.get("high")
                     if sold_price is None: sold_price = lot_data.get("sold")
                     img_url = lot_data.get("image")
-                    if not auction_start: auction_start = lot_data.get("auction_start")
                     if not auction_end:   auction_end   = lot_data.get("auction_end")
+                    # auction_start intentionally left null (see comment above).
                     description = lot_data.get("description") or title
                 else:
                     description = title
@@ -751,6 +796,11 @@ def enumerate_sothebys(sale_url, sale=None):
         except Exception as e:
             print(f"    [Sotheby's] lot fetch failed for {full_url}: {e}")
             description = title
+        # Sale-level fallback: if neither algoliaJson nor the per-lot
+        # fetch surfaced an auction_end, use the bootstrap Auction
+        # object's `dates.closed`. Same date for every lot in the sale.
+        if not auction_end and sale_auction_end:
+            auction_end = sale_auction_end
         lot_data_out = {
             "house": "Sotheby's",
             "lot_id": lot_id,
