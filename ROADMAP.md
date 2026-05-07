@@ -823,6 +823,51 @@ list links also live here. Depends on RLS surgery on
 `public.collections` to permit anon SELECT for `state='complete'`
 or `is_public=true` rows.
 
+### Pending — Collaborator lists (Plan B — co-edit between users)
+
+Mark + wife flow: "Watches for our wedding" / "Family wishlist"
+where two named users can both view AND add items to one list.
+Distinct from the read-only share primitive above — collaborators
+keep their identity, and item attribution surfaces "M added" /
+"J added" chips so contributions are legible.
+
+**Schema:** new `collection_collaborators(collection_id, user_id,
+role[viewer|editor], invited_by, invited_email, status[pending|
+accepted|declined], created_at, responded_at)` plus a `who_added
+uuid` column on `collection_items`. Email-by-invite resolves at
+accept-time via Google sign-in's email so invitee doesn't need to
+exist yet when invited.
+
+**RLS:** two helper SQL functions (`can_view_collection`,
+`can_edit_collection`) so the collections + collection_items
+policies expand from `owner_id = auth.uid()` to "owner OR accepted
+collaborator." Editor role inserts items; viewer is read-only;
+delete gated to `who_added = auth.uid()` OR owner.
+
+**UI:** Manage-list sheet on collection drill-in with
+collaborator list + email invite + role picker; pending-invite
+badge in user dropdown leading to an Accept/Decline modal;
+initial-chip ("M" / "J") on each item card showing who added it.
+
+**Notifications:** none push or email — only the in-app
+pending-invite badge. Keeps consistent with the "share = artifact,
+not real-time" rule and the Epic 4 explicit-NOT list. The invite
+itself is the artifact.
+
+**Slicing (each its own PR):**
+- Slice 1: schema + RLS + smoke-test SQL (no UI; backend-only,
+  no user impact)
+- Slice 2: RPCs (`invite_collaborator`, `accept_invite`,
+  `decline_invite`, `revoke_collaborator`) + `useCollaborators`
+  hook + Manage-list sheet
+- Slice 3: pending-invite badge + accept/decline modal
+- Slice 4: `who_added` attribution chip on item cards
+
+Mark picked Plan B over the lighter "anyone with the link" token
+approach 2026-05-07 because the recurring use-case (couples /
+family) wants persistent identity per contributor, not viral
+reach.
+
 ### Things explicitly NOT in scope (reaffirmed)
 
 - In-app messaging, reactions, replies — chosen messenger handles.

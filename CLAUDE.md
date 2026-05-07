@@ -9,7 +9,7 @@ how to behave for the rest of it.
 - [README.md](README.md) — what the project is + architecture. Public-facing.
 - [ROADMAP.md](ROADMAP.md) — priorities, epics, what's explicitly out of scope.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
-  The current one is [SESSION_HANDOFF_2026-05-06.md](SESSION_HANDOFF_2026-05-06.md);
+  The current one is [SESSION_HANDOFF_2026-05-07.md](SESSION_HANDOFF_2026-05-07.md);
   older ones live in `archive/`.
 
 If a gotcha or convention is durable (still true next session), graduate
@@ -537,6 +537,21 @@ RPC (admin-only on the SQL side). Schema:
 - Each scraper writes a CSV to `<name>_listings.csv` in cwd; the workflow
   step then moves it to `data/<name>.csv`. `merge.py`'s SOURCES list maps
   CSV path → display name → currency.
+- **Verify a dealer's display currency from the storefront, not
+  the domain TLD.** A `.com` domain doesn't mean USD — Hong Kong-
+  based shops on Shopify often serve `.com` while their checkout
+  is HKD. The Shopify `products.json` variant `price` field
+  carries raw amounts in the store's display currency with no
+  per-row label, so a wrong source-currency mapping in
+  `merge.py`'s SOURCES list goes silently bad: prices look 8×
+  too high (HKD) or 0.13× too low (treating HKD as USD by
+  accident the other way). Source of truth: the storefront's
+  `<meta data-currency="…">` and the `"currency":"…"` JSON in
+  the storefront markup. Swiss Hours bit us on 2026-05-07
+  (PR #111) — Cartier showing as "$395,000" instead of "HKD
+  395,000 / ~$50,560" until the SOURCES mapping was corrected.
+  When adding a new dealer, scrape the storefront homepage once
+  and grep for `data-currency` before guessing.
 - Auction calendars produce `*_auctions_listings.csv` and land in
   `data/<name>_auctions.csv`; `merge.py` auto-globs `data/*_auctions.csv`
   so adding a new auction scraper doesn't require touching merge.py.
