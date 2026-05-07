@@ -8,28 +8,24 @@ import { ListingPickerModal } from "./ListingPickerModal";
 import { MarkAsSoldModal } from "./MarkAsSoldModal";
 import { fmtUSD } from "../utils";
 
-// Top-level Collections tab — landed 2026-05-06 (PR #86) when Mark
-// chose Option A from the Collections plan: a new tab rather than
-// Watchlist sub-tabs. Holds:
-//   - Three hard system lists (Owned / Sold / Wishlist) pinned at
-//     the top with prominent treatment (these can't be deleted; they
-//     auto-create per user via useCollections).
-//   - Shared-with-me inbox (when present).
-//   - User-created lists (formerly Watchlist > Lists).
-//   - Synthetic "Hidden" row when the user has any hidden listings.
-//   - Watch Challenges (formerly Cool Stuff > Watch Challenges).
+// Top-level Collections tab — restructured 2026-05-06 (PR #99) into
+// four sub-tabs per Mark's plan:
 //
-// Drill-ins:
-//   - hard list / regular list / shared-inbox / Hidden → Card grid.
-//   - challenges row → ChallengesView (which owns its own drill-in
-//     into ChallengeFlow).
+//   my-collection — Owned + Sold combined view with a toggle.
+//                   Single grid of items + +Add controls. No
+//                   drill-in.
+//   wishlist      — standalone Wishlist ranked list (no list-of-list
+//                   wrapper).
+//   lists         — user-created lists + shared inbox + Hidden
+//                   synthetic row. Drilling into a row shows that
+//                   list's items as a Card grid.
+//   challenges    — Watch Challenges (delegates to ChallengesView).
 //
-// Selection state is component-local + URL-synced via `?col=<uuid>`
-// (or sentinel ids `__hidden__` / `__challenges__`). Same pattern
-// the Watchlist > Lists sub-tab used pre-restructure, lifted here.
+// Sub-tab dispatch is driven by `collectionsSubTab` from App.js.
+// `?col=<uuid>` URL param is now used only in the Lists sub-tab —
+// other sub-tabs don't have a drill-in concept.
 
-const HIDDEN_COLLECTION_ID    = "__hidden__";
-const CHALLENGES_COLLECTION_ID = "__challenges__";
+const HIDDEN_COLLECTION_ID = "__hidden__";
 
 export function CollectionsTab({
   user,
@@ -39,7 +35,7 @@ export function CollectionsTab({
   hiddenItems,
   toggleHide,
   watchlist,
-  watchItems,            // user's hearted items (snapshots) — for the picker's Favorites source
+  watchItems,
   hidden,
   allListings,
   primaryCurrency,
@@ -53,90 +49,95 @@ export function CollectionsTab({
   startCreateCollection,
   observeCard,
   onClickListing,
-  // App.js owns these for the cross-receiver "Take this challenge"
-  // → drill-in flow (was wired through ReferencesTab pre-restructure;
-  // now lives here since challenges moved into Collections).
   pendingChallengeDrillId,
   clearPendingChallengeDrill,
+  collectionsSubTab,
+  setCollectionsSubTab,
 }) {
-  // Manual-entry modal state — open while the user is filling in
-  // brand/model/photo for an Owned or Sold drill-in row. Closed
-  // by default; opened via the "+ Add a watch" CTA.
+  // Sub-tab routing: the parent owns the state but if for some reason
+  // it isn't passed (smoke tests, signed-out flows), fall back to a
+  // sensible default so nothing crashes.
+  const subTab = collectionsSubTab || "my-collection";
+
+  // Modal states are shared across sub-tabs so the same picker /
+  // manual-entry / mark-sold modals can be opened from any view.
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
-  // Listing-picker modal state — open while the user is choosing
-  // a listing from Favorites / Lists / paste-link. PR #88.
+  const [manualEntryKind, setManualEntryKind] = useState("owned");
   const [pickerOpen, setPickerOpen] = useState(false);
-  // Mark-as-sold modal state — { rowId, item } when open, null when
-  // closed. The wrapped item drives the modal's display copy.
+  const [pickerCollectionId, setPickerCollectionId] = useState(null);
+  const [pickerTitle, setPickerTitle] = useState("Add to collection");
   const [soldTarget, setSoldTarget] = useState(null);
-  // Drill-in selection. null = list view; uuid OR sentinel = drilled.
-  const [selectedId, setSelectedId] = useState(() => {
+
+  // Lists sub-tab drill-in selection — moved here from the top-level
+  // CollectionsTab pre-restructure. URL-synced via `?col=`. Only
+  // active when subTab === "lists"; cleared on sub-tab change so a
+  // stale id doesn't surface a deleted collection on return.
+  const [selectedListId, setSelectedListId] = useState(() => {
     if (typeof window === "undefined") return null;
     return new URLSearchParams(window.location.search).get("col") || null;
   });
-  // URL sync for the drill-in id. Skipped during share-receive flows
-  // (the share controller owns the URL until it acts).
-  //
-  // PR #95 (2026-05-06): drill-in / drill-out is a real navigation,
-  // so it pushState's a new history entry — browser back returns
-  // the user to the list view. Initial mount + URLs that already
-  // match (popstate-driven re-derivation) stay on replaceState.
+  useEffect(() => {
+    if (subTab !== "lists") setSelectedListId(null);
+  }, [subTab]);
+
+  // URL-sync drill-in id (Lists sub-tab only). Same pattern as
+  // App.js's nav sync — pushState on real drill-in/out, replaceState
+  // on first mount + popstate-driven re-derivation. Browser back
+  // walks out of the drill-in instead of leaving the site.
   const isFirstColSync = useRef(true);
-  const prevColRef = useRef(selectedId);
+  const prevColRef = useRef(selectedListId);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("shared") === "1") return;
-    if (selectedId) params.set("col", selectedId);
-    else            params.delete("col");
+    if (selectedListId && subTab === "lists") params.set("col", selectedListId);
+    else                                       params.delete("col");
     const qs = params.toString();
     const newUrl = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
     const currentUrl = window.location.pathname + window.location.search + window.location.hash;
     if (newUrl === currentUrl) {
-      // popstate already moved us here; state catching up.
-      prevColRef.current = selectedId;
+      prevColRef.current = selectedListId;
       return;
     }
-    const colChanged = prevColRef.current !== selectedId;
+    const colChanged = prevColRef.current !== selectedListId;
     if (isFirstColSync.current || !colChanged) {
       window.history.replaceState({}, "", newUrl);
     } else {
       window.history.pushState({}, "", newUrl);
     }
     isFirstColSync.current = false;
-    prevColRef.current = selectedId;
-  }, [selectedId]);
+    prevColRef.current = selectedListId;
+  }, [selectedListId, subTab]);
 
-  // popstate: re-derive the drill-in id from the URL when the user
-  // hits browser back/forward.
+  // popstate handler for the Lists drill-in.
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     const onPop = () => {
       const params = new URLSearchParams(window.location.search);
       if (params.get("shared") === "1") return;
       const col = params.get("col") || null;
-      setSelectedId(col);
+      setSelectedListId(col);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  // Take-this-challenge → drill straight into the challenges surface
-  // with the new draft pre-selected. App.js sets pendingChallengeDrillId
-  // after the receive flow creates the challenge; ChallengesView's
-  // own effect (separate from this) handles the inner drill via the
-  // same prop forwarded below. We only need to surface the
-  // challenges row.
+  // Take-this-challenge → drill straight into the challenges
+  // surface. App.js sets pendingChallengeDrillId after the receive
+  // flow creates the challenge; switch to the challenges sub-tab so
+  // ChallengesView mounts and reads the prop.
   useEffect(() => {
-    if (pendingChallengeDrillId) setSelectedId(CHALLENGES_COLLECTION_ID);
-  }, [pendingChallengeDrillId]);
+    if (pendingChallengeDrillId && setCollectionsSubTab) {
+      setCollectionsSubTab("challenges");
+    }
+  }, [pendingChallengeDrillId, setCollectionsSubTab]);
 
   if (!user) {
     return (
       <div style={{ padding: "60px 20px", textAlign: "center" }}>
         <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>Sign in to use Collections</div>
         <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto 18px" }}>
-          Owned watches, watches you've sold, your wishlist, and any custom lists you build — all in one place. Sync across every device.
+          Owned watches, watches you've sold, your wishlist, custom lists, challenges — all in one place. Sync across every device.
         </div>
         {isAuthConfigured && (
           <button onClick={signInWithGoogle} style={{
@@ -151,30 +152,81 @@ export function CollectionsTab({
 
   const cols = collectionsApi?.collections || [];
   const itemsByColl = collectionsApi?.itemsByCollection || {};
-  // Pre-sort: hard lists in fixed order (Owned, Sold, Wishlist), then
-  // the shared-inbox row, then user-created lists, then the Hidden
-  // synthetic, then the Challenges entry.
+
   const hardOwned    = cols.find(c => c.type === "owned"    && c.isSystem) || null;
   const hardSold     = cols.find(c => c.type === "sold"     && c.isSystem) || null;
   const hardWishlist = cols.find(c => c.type === "wishlist" && c.isSystem) || null;
-  const sharedInbox  = cols.find(c => c.isSharedInbox) || null;
-  const userCols     = cols.filter(c =>
-    !c.isSharedInbox && !c.isSystem && c.type !== "challenge"
-  );
-  const hiddenRow = (hiddenItems && hiddenItems.length > 0) ? {
-    id: HIDDEN_COLLECTION_ID, name: "Hidden", isHidden: true,
-  } : null;
 
-  // Drill-in routing.
-  const selected = (() => {
-    if (!selectedId) return null;
-    if (selectedId === HIDDEN_COLLECTION_ID)     return hiddenRow;
-    if (selectedId === CHALLENGES_COLLECTION_ID) return { id: CHALLENGES_COLLECTION_ID, isChallenges: true };
-    return cols.find(c => c.id === selectedId) || null;
-  })();
+  const openManualEntry = (kind) => {
+    setManualEntryKind(kind);
+    setManualEntryOpen(true);
+  };
+  const openPicker = (cid, title) => {
+    setPickerCollectionId(cid);
+    setPickerTitle(title || "Add to collection");
+    setPickerOpen(true);
+  };
 
-  if (selected?.isChallenges) {
-    return (
+  // ── Sub-tab dispatch ──────────────────────────────────────────
+  let body;
+  if (subTab === "my-collection") {
+    body = (
+      <MyCollectionView
+        owned={hardOwned}
+        sold={hardSold}
+        ownedItems={hardOwned ? (itemsByColl[hardOwned.id] || []) : []}
+        soldItems={hardSold   ? (itemsByColl[hardSold.id]   || []) : []}
+        watchlist={watchlist}
+        compact={compact}
+        gridStyle={gridStyle}
+        primaryCurrency={primaryCurrency}
+        handleShare={handleShare}
+        handleWish={handleWish}
+        observeCard={observeCard}
+        onClickListing={onClickListing}
+        openCollectionPicker={openCollectionPicker}
+        onAddManual={openManualEntry}
+        onAddFromFeed={(cid, title) => openPicker(cid, title)}
+        onMarkSold={(rowId, item) => setSoldTarget({ rowId, item })}
+        onRemoveItem={(cid, item) => collectionsApi.removeItemFromCollection(cid, item.id)}
+      />
+    );
+  } else if (subTab === "wishlist") {
+    body = (
+      <WishlistView
+        wishlist={hardWishlist}
+        wishlistItems={hardWishlist ? (itemsByColl[hardWishlist.id] || []) : []}
+        onAddFromFeed={() => hardWishlist && openPicker(hardWishlist.id, "Add to Wishlist")}
+        onReorder={(orderedIds) => hardWishlist && collectionsApi.reorderItems(hardWishlist.id, orderedIds)}
+        onRemove={(item) => hardWishlist && collectionsApi.removeItemFromCollection(hardWishlist.id, item.id)}
+      />
+    );
+  } else if (subTab === "lists") {
+    body = (
+      <ListsView
+        cols={cols}
+        itemsByColl={itemsByColl}
+        hiddenItems={hiddenItems}
+        watchlist={watchlist}
+        toggleHide={toggleHide}
+        compact={compact}
+        gridStyle={gridStyle}
+        primaryCurrency={primaryCurrency}
+        handleShare={handleShare}
+        handleWish={handleWish}
+        openCollectionPicker={openCollectionPicker}
+        observeCard={observeCard}
+        onClickListing={onClickListing}
+        startCreateCollection={startCreateCollection}
+        setEditingCollection={setEditingCollection}
+        deleteCollection={collectionsApi?.deleteCollection}
+        removeItemFromCollection={collectionsApi?.removeItemFromCollection}
+        selectedListId={selectedListId}
+        setSelectedListId={setSelectedListId}
+      />
+    );
+  } else if (subTab === "challenges") {
+    body = (
       <ChallengesView
         user={user}
         isAuthConfigured={isAuthConfigured}
@@ -187,450 +239,254 @@ export function CollectionsTab({
         handleShare={handleShare}
         pendingChallengeDrillId={pendingChallengeDrillId}
         clearPendingChallengeDrill={clearPendingChallengeDrill}
-        onBack={() => setSelectedId(null)}
       />
     );
   }
 
-  if (selected) {
-    const isHiddenColl = selected.id === HIDDEN_COLLECTION_ID;
-    const isHardSystem = !!selected.isSystem;
-    // Manual-entry CTA shows on Owned + Sold (not Wishlist — Mark
-    // 2026-05-06: "wishlist should be from feed" only).
-    const acceptsManualEntry = selected.type === "owned" || selected.type === "sold";
-    // Listing-picker CTA on hard lists (Owned + Sold + Wishlist).
-    // For Wishlist this is the ONLY add path (no manual entries
-    // by spec); for Owned/Sold it's an alternative to manual entry
-    // when the user bought from a tracked dealer.
-    const acceptsListingPicker = selected.type === "owned" || selected.type === "sold" || selected.type === "wishlist";
-    // Mark-as-sold action only on Owned drill-in. Wraps the row id
-    // + a display item so the modal can render contextual copy.
-    const ownedShowsSoldAction = selected.type === "owned";
-    const items = isHiddenColl ? hiddenItems : (itemsByColl[selected.id] || []);
-    return (
-      <div style={{ paddingTop: 4 }}>
-        <div style={{
-          display: "flex", alignItems: "baseline", gap: 12,
-          padding: "14px 14px 12px",
-          borderBottom: "0.5px solid var(--border)",
-          marginBottom: 12,
-        }}>
-          <button onClick={() => setSelectedId(null)} style={{
-            border: "none", background: "transparent", cursor: "pointer",
-            color: "#185FA5", fontFamily: "inherit", fontSize: 13, padding: 0,
-          }}>← All collections</button>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
-            {selected.name}
-          </span>
-          <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
-            {items.length}
-          </span>
-          {/* +Pick from feed — Owned/Sold/Wishlist (uses
-              ListingPickerModal). PR #88. */}
-          {acceptsListingPicker && (
-            <button onClick={() => setPickerOpen(true)}
+  return (
+    <div style={{ paddingTop: 4 }}>
+      {body}
+      <ManualEntryForm
+        open={manualEntryOpen}
+        onClose={() => setManualEntryOpen(false)}
+        kind={manualEntryKind}
+        inp={inp}
+        uploadWatchPhoto={collectionsApi?.uploadWatchPhoto}
+        addManualItem={collectionsApi?.addManualItem}
+        collectionId={
+          manualEntryKind === "sold" ? hardSold?.id : hardOwned?.id
+        }
+      />
+      <ListingPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        title={pickerTitle}
+        watchItems={watchItems}
+        collections={cols}
+        itemsByCollection={itemsByColl}
+        allListings={allListings}
+        primaryCurrency={primaryCurrency}
+        onPick={(listing) => collectionsApi?.addItemToCollection(pickerCollectionId, listing)}
+      />
+      <MarkAsSoldModal
+        open={!!soldTarget}
+        onClose={() => setSoldTarget(null)}
+        item={soldTarget?.item}
+        inp={inp}
+        onConfirm={(opts) => collectionsApi?.markItemAsSold(soldTarget.rowId, opts)}
+      />
+    </div>
+  );
+}
+
+// ── My Collection sub-tab ────────────────────────────────────────
+// Owned + Sold combined into one grid with a three-state toggle
+// (Owned / Sold / All). The toggle drives both the visible items
+// AND the +Add CTAs (so + From feed and + Add a watch target the
+// active list). When toggle = "all", the grid shows owned items
+// first, then sold items, with a divider; +Add CTAs target Owned
+// (sensible default — "all" is a viewing mode, not an adding mode).
+function MyCollectionView({
+  owned, sold,
+  ownedItems, soldItems,
+  watchlist, compact, gridStyle, primaryCurrency,
+  handleShare, handleWish, observeCard, onClickListing,
+  openCollectionPicker,
+  onAddManual, onAddFromFeed, onMarkSold, onRemoveItem,
+}) {
+  const [toggle, setToggle] = useState("owned"); // "owned" | "sold" | "all"
+  const targetCollectionId = toggle === "sold" ? sold?.id : owned?.id;
+  const targetKind = toggle === "sold" ? "sold" : "owned";
+  const targetName = toggle === "sold" ? "Sold" : "Owned";
+
+  const ownedTotal = ownedItems.reduce(
+    (s, it) => s + (Number(it.savedPriceUSD) || Number(it.price) || 0), 0);
+  const soldTotal = soldItems.reduce(
+    (s, it) => s + (Number(it.soldPrice) || Number(it.savedPriceUSD) || Number(it.price) || 0), 0);
+
+  return (
+    <div>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "14px 14px 12px",
+        borderBottom: "0.5px solid var(--border)",
+        marginBottom: 12, flexWrap: "wrap",
+      }}>
+        {/* Toggle pills — Owned / Sold / All */}
+        <div style={{ display: "flex", gap: 4 }}>
+          {[
+            ["owned", `Owned (${ownedItems.length})`],
+            ["sold",  `Sold (${soldItems.length})`],
+            ["all",   `All (${ownedItems.length + soldItems.length})`],
+          ].map(([key, label]) => (
+            <button key={key} onClick={() => setToggle(key)}
+              style={{
+                padding: "5px 12px", borderRadius: 999,
+                border: "0.5px solid var(--border)",
+                background: toggle === key ? "var(--text1)" : "transparent",
+                color: toggle === key ? "var(--bg)" : "var(--text2)",
+                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                fontWeight: toggle === key ? 600 : 500,
+              }}>{label}</button>
+          ))}
+        </div>
+        <div style={{ flex: 1 }} />
+        {targetCollectionId && (
+          <>
+            <button onClick={() => onAddFromFeed(targetCollectionId, `Add to ${targetName}`)}
               style={{
                 border: "0.5px solid var(--border)", background: "transparent",
                 color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
                 cursor: "pointer", fontFamily: "inherit", fontSize: 12,
               }}>+ From feed</button>
-          )}
-          {/* +Add a watch — manual entry on Owned/Sold (PR #87). */}
-          {acceptsManualEntry && (
-            <button onClick={() => setManualEntryOpen(true)}
+            <button onClick={() => onAddManual(targetKind)}
               style={{
                 border: "none", background: "#185FA5", color: "#fff",
                 padding: "4px 10px", borderRadius: 6,
                 cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
               }}>+ Add a watch</button>
-          )}
-          {/* Rename + Delete hidden for hard system lists, the
-              shared-inbox, and the synthetic Hidden row. Hard lists
-              are non-deletable by design (defense-in-depth via DB
-              trigger); shared-inbox is perma; Hidden is a synthetic
-              view, no row to rename. */}
-          {!selected.isSharedInbox && !isHiddenColl && !isHardSystem && (
-            <>
-              <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
-                title="Rename list"
-                style={{
-                  border: "0.5px solid var(--border)", background: "transparent",
-                  color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
-                  cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                }}>Rename</button>
-              <button onClick={async () => {
-                  if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
-                  await collectionsApi.deleteCollection(selected.id);
-                  setSelectedId(null);
-                }}
-                style={{
-                  border: "0.5px solid var(--border)", background: "transparent",
-                  color: "#c0392b", padding: "4px 10px", borderRadius: 6,
-                  cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                }}>Delete</button>
-            </>
-          )}
+          </>
+        )}
+      </div>
+
+      {/* Empty state */}
+      {ownedItems.length === 0 && soldItems.length === 0 ? (
+        <div style={{ padding: "48px 20px", textAlign: "center" }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>🕰</div>
+          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
+            Build your collection
+          </div>
+          <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 380, margin: "0 auto 16px" }}>
+            Add watches you currently own and watches you've sold. Pick from the feed for anything bought via a tracked dealer, or enter manually with a photo for off-platform watches.
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            <button onClick={() => onAddFromFeed(owned?.id, "Add to Owned")}
+              style={{
+                border: "0.5px solid var(--border)", background: "transparent",
+                color: "var(--text2)", padding: "8px 16px", borderRadius: 8,
+                cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+              }}>+ From feed</button>
+            <button onClick={() => onAddManual("owned")}
+              style={{
+                border: "none", background: "#185FA5", color: "#fff",
+                padding: "8px 16px", borderRadius: 8,
+                cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+              }}>+ Add a watch</button>
+          </div>
         </div>
-        {items.length === 0 ? (
-          <div style={{ padding: "48px 20px", textAlign: "center" }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>{isHiddenColl ? "👁" : isHardSystem ? hardListEmptyIcon(selected.type) : "📂"}</div>
-            <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-              {isHiddenColl ? "Nothing hidden" : isHardSystem ? hardListEmptyTitle(selected.type) : "Empty list"}
-            </div>
-            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto 16px" }}>
-              {isHiddenColl
-                ? "Listings you hide from the Available feed land here. Use the \"…\" menu on any card to unhide it."
-                : isHardSystem
-                  ? hardListEmptyBlurb(selected.type)
-                  : "Add watches via the \"…\" menu on any listing card → \"Add to list…\"."}
-            </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-              {acceptsListingPicker && (
-                <button onClick={() => setPickerOpen(true)}
-                  style={{
-                    border: "0.5px solid var(--border)", background: "transparent",
-                    color: "var(--text2)", padding: "8px 16px", borderRadius: 8,
-                    cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-                  }}>+ From feed</button>
-              )}
-              {acceptsManualEntry && (
-                <button onClick={() => setManualEntryOpen(true)}
-                  style={{
-                    border: "none", background: "#185FA5", color: "#fff",
-                    padding: "8px 16px", borderRadius: 8,
-                    cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-                  }}>+ Add a watch</button>
-              )}
-            </div>
-          </div>
-        ) : selected.type === "wishlist" ? (
-          // Wishlist drill-in renders as a ranked list (not a grid)
-          // since rank ordering is the point. PR #89, 2026-05-06 —
-          // Mark's "force ranking" applies to wishlist only. Each
-          // row carries ↑/↓ controls; tap reorders by swapping
-          // positions with the adjacent item via reorderItems.
-          <WishlistRankedList
-            items={items}
-            collectionId={selected.id}
-            onReorder={(orderedIds) => collectionsApi.reorderItems(selected.id, orderedIds)}
-            onRemove={(item) => collectionsApi.removeItemFromCollection(selected.id, item.id)}
-          />
-        ) : (
-          <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-            {items.map(item => {
-              // Build menu actions per surface. Owned drill-in
-              // gets a "Mark as sold" entry that opens the modal.
-              const onMarkSold = ownedShowsSoldAction
-                ? () => setSoldTarget({ rowId: item.rowId, item })
-                : null;
-              return item.isManual ? (
-                <ManualItemCard
-                  key={item.id}
-                  item={item}
-                  onRemove={() => collectionsApi.removeItemFromCollection(selected.id, item.id)}
-                  onMarkSold={onMarkSold}
-                />
+      ) : (
+        <>
+          {(toggle === "owned" || toggle === "all") && (
+            <Section
+              label={`Owned · ${ownedItems.length}${ownedTotal > 0 ? ` · ${fmtUSD(ownedTotal)} total` : ""}`}
+              show={toggle === "all"}
+            >
+              {ownedItems.length === 0 ? (
+                <EmptyHardListSection text="No watches in Owned yet." />
               ) : (
-                <Card
-                  key={item.id}
-                  item={item}
-                  wished={!!watchlist[item.id]}
-                  onWish={handleWish}
+                <CollectionGrid
+                  items={ownedItems}
+                  collectionId={owned?.id}
+                  watchlist={watchlist}
                   compact={compact}
-                  onHide={isHiddenColl
-                    ? toggleHide
-                    : () => collectionsApi.removeItemFromCollection(selected.id, item.id)}
-                  hideLabel={isHiddenColl ? undefined : "Remove from list"}
-                  isHidden={isHiddenColl}
-                  onAddToCollection={openCollectionPicker}
+                  gridStyle={gridStyle}
                   primaryCurrency={primaryCurrency}
-                  onShare={handleShare}
-                  onView={observeCard}
+                  handleShare={handleShare}
+                  handleWish={handleWish}
+                  observeCard={observeCard}
                   onClickListing={onClickListing}
-                  extraMenuItems={onMarkSold ? [{ label: "Mark sold", onClick: () => onMarkSold() }] : undefined}
+                  openCollectionPicker={openCollectionPicker}
+                  hideLabel="Remove from list"
+                  onMarkSold={onMarkSold}
+                  onRemoveItem={onRemoveItem}
                 />
-              );
-            })}
-          </div>
-        )}
-        <ManualEntryForm
-          open={manualEntryOpen}
-          onClose={() => setManualEntryOpen(false)}
-          kind={selected.type}
-          inp={inp}
-          uploadWatchPhoto={collectionsApi.uploadWatchPhoto}
-          addManualItem={collectionsApi.addManualItem}
-          collectionId={selected.id}
-        />
-        <ListingPickerModal
-          open={pickerOpen}
-          onClose={() => setPickerOpen(false)}
-          title={`Add to ${selected.name}`}
-          watchItems={watchItems}
-          collections={collectionsApi.collections}
-          itemsByCollection={collectionsApi.itemsByCollection}
-          allListings={allListings}
-          primaryCurrency={primaryCurrency}
-          onPick={(listing) => collectionsApi.addItemToCollection(selected.id, listing)}
-        />
-        <MarkAsSoldModal
-          open={!!soldTarget}
-          onClose={() => setSoldTarget(null)}
-          item={soldTarget?.item}
-          inp={inp}
-          onConfirm={(opts) => collectionsApi.markItemAsSold(soldTarget.rowId, opts)}
-        />
-      </div>
-    );
-  }
-
-  // ── List view ─────────────────────────────────────────────────
-  // Hard lists at the top with prominent treatment, then a thin
-  // divider, then everything else as standard ListRows.
-  const challengeCount = cols.filter(c => c.type === "challenge").length;
-
-  return (
-    <div style={{ paddingTop: 4 }}>
-      <SubTabIntro
-        title="Your collections in one place"
-        blurb={<>Owned, Sold, and Wishlist are pinned for you. Add a custom list — reference threads, dealer comps, "Vintage divers" — anytime via <strong style={{ color: "var(--text1)" }}>+ New list</strong>.</>}
-        actionLabel="+ New list"
-        onAction={startCreateCollection}
-      />
-
-      {/* Hard lists — pinned at top, prominent treatment. */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-        {hardOwned    && <HardListRow kind="owned"    coll={hardOwned}    items={itemsByColl[hardOwned.id]    || []} onClick={() => setSelectedId(hardOwned.id)} />}
-        {hardWishlist && <HardListRow kind="wishlist" coll={hardWishlist} items={itemsByColl[hardWishlist.id] || []} onClick={() => setSelectedId(hardWishlist.id)} />}
-        {hardSold     && <HardListRow kind="sold"     coll={hardSold}     items={itemsByColl[hardSold.id]     || []} onClick={() => setSelectedId(hardSold.id)} />}
-      </div>
-
-      {/* Other lists — shared inbox, user lists, Hidden, Challenges. */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {sharedInbox && (
-          <ListRow
-            key={sharedInbox.id}
-            icon={inboxIcon}
-            title={sharedInbox.name}
-            subtitle={(() => {
-              const n = (itemsByColl[sharedInbox.id] || []).length;
-              return `${n} listing${n === 1 ? "" : "s"} shared with you`;
-            })()}
-            onClick={() => setSelectedId(sharedInbox.id)}
-          />
-        )}
-        {userCols.map(c => {
-          const n = (itemsByColl[c.id] || []).length;
-          return (
-            <ListRow
-              key={c.id}
-              icon={folderIcon}
-              title={c.name}
-              subtitle={`${n} watch${n === 1 ? "" : "es"}`}
-              onClick={() => setSelectedId(c.id)}
-            />
-          );
-        })}
-        {hiddenRow && (
-          <ListRow
-            key={hiddenRow.id}
-            icon={eyeOffIcon}
-            title={hiddenRow.name}
-            subtitle={`${hiddenItems.length} listing${hiddenItems.length === 1 ? "" : "s"} hidden from feed`}
-            onClick={() => setSelectedId(hiddenRow.id)}
-          />
-        )}
-        {/* Challenges entry — drills into ChallengesView (which keeps
-            its own list + create + drill-in). One row keeps the
-            Collections tab's structure consistent (everything is a
-            collection-shaped row). */}
-        <ListRow
-          key={CHALLENGES_COLLECTION_ID}
-          icon={targetIcon}
-          title="Watch Challenges"
-          subtitle={challengeCount === 0
-            ? "Constrained-set thought experiments — pick N watches under a budget"
-            : `${challengeCount} challenge${challengeCount === 1 ? "" : "s"}`}
-          onClick={() => setSelectedId(CHALLENGES_COLLECTION_ID)}
-        />
-      </div>
+              )}
+            </Section>
+          )}
+          {(toggle === "sold" || toggle === "all") && (
+            <Section
+              label={`Sold · ${soldItems.length}${soldTotal > 0 ? ` · ${fmtUSD(soldTotal)} total` : ""}`}
+              show={toggle === "all"}
+            >
+              {soldItems.length === 0 ? (
+                <EmptyHardListSection text="No watches in Sold yet." />
+              ) : (
+                <CollectionGrid
+                  items={soldItems}
+                  collectionId={sold?.id}
+                  watchlist={watchlist}
+                  compact={compact}
+                  gridStyle={gridStyle}
+                  primaryCurrency={primaryCurrency}
+                  handleShare={handleShare}
+                  handleWish={handleWish}
+                  observeCard={observeCard}
+                  onClickListing={onClickListing}
+                  openCollectionPicker={openCollectionPicker}
+                  hideLabel="Remove from list"
+                  onRemoveItem={onRemoveItem}
+                />
+              )}
+            </Section>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
-// ── HardListRow ──────────────────────────────────────────────────
-// Bigger card variant for the three pinned hard lists. Header (icon
-// + name + count + chevron) + a thin image strip sampling the first
-// few items so the row feels like a collection card rather than a
-// nav row. Empty state still reads cleanly.
-function HardListRow({ kind, coll, items, onClick }) {
-  const accent = HARD_LIST_ACCENTS[kind];
-  const tint   = HARD_LIST_TINTS[kind];
-  const previews = items.slice(0, 6);
-  const totalUSD = items.reduce((s, it) => s + (Number(it.savedPriceUSD) || Number(it.priceUSD) || 0), 0);
-  const subtitle = items.length === 0
-    ? hardListEmptySubtitle(kind)
-    : (totalUSD > 0
-        ? `${items.length} watch${items.length === 1 ? "" : "es"} · ${fmtUSD(totalUSD)} total`
-        : `${items.length} watch${items.length === 1 ? "" : "es"}`);
-  return (
-    <button onClick={onClick} aria-label={`Open ${coll.name}`} style={{
-      display: "block", width: "100%", padding: 0,
-      border: "0.5px solid var(--border)", borderRadius: 12,
-      background: "var(--card-bg)", color: "var(--text1)",
-      cursor: "pointer", fontFamily: "inherit", textAlign: "left",
-      overflow: "hidden",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", padding: "14px 16px", gap: 12 }}>
-        <div style={{
-          flexShrink: 0,
-          width: 40, height: 40, borderRadius: "50%",
-          background: tint,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          {hardListGlyph(kind, accent)}
-        </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 2 }}>
-            {coll.name}
-          </div>
-          <div style={{ fontSize: 12, color: "var(--text2)" }}>{subtitle}</div>
-        </div>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+// ── Wishlist sub-tab ─────────────────────────────────────────────
+function WishlistView({ wishlist, wishlistItems, onAddFromFeed, onReorder, onRemove }) {
+  if (!wishlist) {
+    return (
+      <div style={{ padding: "48px 20px", textAlign: "center", color: "var(--text2)", fontSize: 13 }}>
+        Wishlist not yet ready — refresh to retry the auto-create.
       </div>
-      {previews.length > 0 && (
-        // Fixed-size thumbnail strip so a hard list with 1 watch
-        // doesn't render a full-width square preview on desktop.
-        // Mark's report 2026-05-06: Owned with one item rendered a
-        // ~1900px-tall image. Each thumb caps at 64px on a side.
-        <div style={{
-          display: "flex", gap: 4, padding: "0 16px 14px",
-          overflow: "hidden",
-        }}>
-          {previews.map(it => (
-            <div key={it.id || it.rowId} style={{
-              flexShrink: 0,
-              width: 64, height: 64, borderRadius: 6,
-              background: "var(--surface)", overflow: "hidden",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              {it.img ? (
-                <img src={it.img} alt="" loading="lazy"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : (
-                <span style={{ fontSize: 14, color: "var(--text3)" }}>⌚</span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </button>
-  );
-}
-
-const HARD_LIST_ACCENTS = {
-  owned:    "#185FA5",
-  sold:     "#7d8a93",
-  wishlist: "#a35e15",
-};
-const HARD_LIST_TINTS = {
-  owned:    "rgba(24,95,165,0.10)",
-  sold:     "rgba(125,138,147,0.12)",
-  wishlist: "rgba(163,94,21,0.10)",
-};
-
-function hardListGlyph(kind, accent) {
-  if (kind === "owned") {
-    return (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <polyline points="9 12 11 14 15 10"/>
-      </svg>
     );
   }
-  if (kind === "sold") {
-    return (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="12 6 12 12 16 14"/>
-      </svg>
-    );
-  }
-  // wishlist
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/>
-    </svg>
+    <div>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "14px 14px 12px",
+        borderBottom: "0.5px solid var(--border)",
+        marginBottom: 12,
+      }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
+          Wishlist
+        </span>
+        <span style={{ fontSize: 12, color: "var(--text3)" }}>
+          {wishlistItems.length} watch{wishlistItems.length === 1 ? "" : "es"}
+        </span>
+        <div style={{ flex: 1 }} />
+        <button onClick={onAddFromFeed}
+          style={{
+            border: "none", background: "#185FA5", color: "#fff",
+            padding: "4px 10px", borderRadius: 6,
+            cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
+          }}>+ From feed</button>
+      </div>
+      {wishlistItems.length === 0 ? (
+        <div style={{ padding: "48px 20px", textAlign: "center" }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>★</div>
+          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
+            Wishlist is empty
+          </div>
+          <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto 16px" }}>
+            Pin the best representative listing for any watch you'd like to acquire — live or sold from the feed. Drag with the up/down buttons to rank.
+          </div>
+        </div>
+      ) : (
+        <WishlistRankedList
+          items={wishlistItems}
+          onReorder={onReorder}
+          onRemove={onRemove}
+        />
+      )}
+    </div>
   );
 }
 
-function hardListEmptyIcon(kind) {
-  return kind === "owned" ? "🕰" : kind === "sold" ? "📦" : "★";
-}
-function hardListEmptyTitle(kind) {
-  return kind === "owned" ? "No watches yet" : kind === "sold" ? "Nothing sold yet" : "Wishlist is empty";
-}
-function hardListEmptyBlurb(kind) {
-  if (kind === "owned")    return "Add watches you own — manual entry coming soon, or pick from the archive if you bought from a tracked dealer.";
-  if (kind === "sold")     return "Watches you've sold land here, freezing the price + date. Move from Owned via the \"…\" menu (coming soon).";
-  return "Watches you'd like to acquire. Pin the best representative listing per reference. Ranking comes in a follow-up.";
-}
-function hardListEmptySubtitle(kind) {
-  if (kind === "owned")    return "Watches you currently own";
-  if (kind === "sold")     return "Watches you've sold — your collecting history";
-  return "Watches you'd like to acquire";
-}
-
-// Inline SVG glyphs reused from WatchlistTab's pre-restructure
-// implementation. Stroke #185FA5 to match the existing Lists row
-// pattern that's now in ListRow.
-const inboxIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
-    <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
-  </svg>
-);
-
-const folderIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-  </svg>
-);
-
-const eyeOffIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17.94 17.94A10.06 10.06 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-    <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/>
-    <line x1="1" y1="1" x2="23" y2="23"/>
-  </svg>
-);
-
-const targetIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/>
-    <circle cx="12" cy="12" r="6"/>
-    <circle cx="12" cy="12" r="2"/>
-  </svg>
-);
-
-// ── ManualItemCard ────────────────────────────────────────────────
-// Manual entries don't have a dealer URL, so the standard Card's
-// heart / share / "view on dealer" affordances don't apply. This is
-// a slim card matching the Card grid's column width (gridStyle's
-// auto-fill) but with only: photo + brand+model + meta line +
-// remove menu. Edit affordances (rename / change photo / update
-// price) come in PR #88 alongside the Owned→Sold transition flow.
-// ── WishlistRankedList ────────────────────────────────────────────
-// Vertical ranked list for the Wishlist drill-in. Each row shows
-// rank number + photo + name + meta + ↑/↓ controls. ↑/↓ swap the
-// row with the adjacent neighbor and persist via reorderItems
-// (PR #89, 2026-05-06).
-//
-// Tap-based controls (not drag-drop) — same model Mark settled on
-// for challenges in PR #75: works on every device with no touch-
-// gesture flakiness. Optimistic local updates in the hook make
-// the swap feel instant.
 function WishlistRankedList({ items, onReorder, onRemove }) {
   if (items.length === 0) return null;
   const move = (idx, direction) => {
@@ -694,9 +550,7 @@ function WishlistRankedList({ items, onReorder, onRemove }) {
                 style={rankBtnStyle(idx === items.length - 1)}>↓</button>
             </div>
             <button onClick={async () => {
-              if (window.confirm(`Remove "${title}" from Wishlist?`)) {
-                await onRemove(item);
-              }
+              if (window.confirm(`Remove "${title}" from Wishlist?`)) await onRemove(item);
             }} aria-label="Remove" title="Remove"
               style={{
                 flexShrink: 0,
@@ -724,10 +578,250 @@ const rankBtnStyle = (disabled) => ({
   opacity: disabled ? 0.5 : 1,
 });
 
+// ── Lists sub-tab ─────────────────────────────────────────────────
+// Existing list-of-lists pattern. Hard system lists (Owned/Sold/
+// Wishlist) are excluded — they live in My Collection and Wishlist
+// sub-tabs now. Shared inbox + user-created lists + Hidden synthetic
+// row are surfaced.
+function ListsView({
+  cols, itemsByColl, hiddenItems,
+  watchlist, toggleHide,
+  compact, gridStyle, primaryCurrency,
+  handleShare, handleWish,
+  openCollectionPicker, observeCard, onClickListing,
+  startCreateCollection, setEditingCollection,
+  deleteCollection, removeItemFromCollection,
+  selectedListId, setSelectedListId,
+}) {
+  const sharedInbox = cols.find(c => c.isSharedInbox) || null;
+  const userCols = cols.filter(c =>
+    !c.isSharedInbox && !c.isSystem && c.type !== "challenge"
+  );
+  const hiddenRow = (hiddenItems && hiddenItems.length > 0) ? {
+    id: HIDDEN_COLLECTION_ID, name: "Hidden", isHidden: true,
+  } : null;
+
+  const selected = (() => {
+    if (!selectedListId) return null;
+    if (selectedListId === HIDDEN_COLLECTION_ID) return hiddenRow;
+    return cols.find(c => c.id === selectedListId) || null;
+  })();
+
+  if (selected) {
+    const isHiddenColl = selected.id === HIDDEN_COLLECTION_ID;
+    const items = isHiddenColl ? hiddenItems : (itemsByColl[selected.id] || []);
+    return (
+      <div style={{ paddingTop: 4 }}>
+        <div style={{
+          display: "flex", alignItems: "baseline", gap: 12,
+          padding: "14px 14px 12px",
+          borderBottom: "0.5px solid var(--border)",
+          marginBottom: 12,
+        }}>
+          <button onClick={() => setSelectedListId(null)} style={{
+            border: "none", background: "transparent", cursor: "pointer",
+            color: "#185FA5", fontFamily: "inherit", fontSize: 13, padding: 0,
+          }}>← All lists</button>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
+            {selected.name}
+          </span>
+          <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
+            {items.length}
+          </span>
+          {!selected.isSharedInbox && !isHiddenColl && (
+            <>
+              <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
+                title="Rename list"
+                style={{
+                  border: "0.5px solid var(--border)", background: "transparent",
+                  color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
+                  cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                }}>Rename</button>
+              <button onClick={async () => {
+                  if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
+                  await deleteCollection(selected.id);
+                  setSelectedListId(null);
+                }}
+                style={{
+                  border: "0.5px solid var(--border)", background: "transparent",
+                  color: "#c0392b", padding: "4px 10px", borderRadius: 6,
+                  cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                }}>Delete</button>
+            </>
+          )}
+        </div>
+        {items.length === 0 ? (
+          <div style={{ padding: "48px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>{isHiddenColl ? "👁" : "📂"}</div>
+            <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
+              {isHiddenColl ? "Nothing hidden" : "Empty list"}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto" }}>
+              {isHiddenColl
+                ? "Listings you hide from the Available feed land here. Use the \"…\" menu on any card to unhide it."
+                : "Add watches via the \"…\" menu on any listing card → \"Add to list…\"."}
+            </div>
+          </div>
+        ) : (
+          <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+            {items.map(item => (
+              <Card
+                key={item.id}
+                item={item}
+                wished={!!watchlist[item.id]}
+                onWish={handleWish}
+                compact={compact}
+                onHide={isHiddenColl
+                  ? toggleHide
+                  : () => removeItemFromCollection(selected.id, item.id)}
+                hideLabel={isHiddenColl ? undefined : "Remove from list"}
+                isHidden={isHiddenColl}
+                onAddToCollection={openCollectionPicker}
+                primaryCurrency={primaryCurrency}
+                onShare={handleShare}
+                onView={observeCard}
+                onClickListing={onClickListing}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const visibleCols = [
+    ...(sharedInbox ? [sharedInbox] : []),
+    ...userCols,
+    ...(hiddenRow ? [hiddenRow] : []),
+  ];
+
+  return (
+    <div style={{ paddingTop: 4 }}>
+      <SubTabIntro
+        title="Lists group watches your way"
+        blurb={<>Reference threads, dealer comps, "Rolex 5513s", "Vintage divers" — whatever cut helps you think. Add via the <strong style={{ color: "var(--text1)" }}>…</strong> menu on any card → <em>Add to list…</em>.</>}
+        actionLabel="+ New list"
+        onAction={startCreateCollection}
+      />
+      {visibleCols.length === 0 ? (
+        <div style={{ padding: "32px 20px 48px", textAlign: "center" }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>📂</div>
+          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
+            No lists yet
+          </div>
+          <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto" }}>
+            You haven't created any lists. Tap <strong style={{ color: "var(--text1)" }}>+ New list</strong> above to start one.
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {visibleCols.map(c => {
+            const isInbox = c.isSharedInbox;
+            const isHiddenRowItem = c.id === HIDDEN_COLLECTION_ID;
+            const count = isHiddenRowItem
+              ? hiddenItems.length
+              : (itemsByColl[c.id] || []).length;
+            const icon = isInbox ? inboxIcon : isHiddenRowItem ? eyeOffIcon : folderIcon;
+            const subtitle = isInbox
+              ? `${count} listing${count === 1 ? "" : "s"} shared with you`
+              : isHiddenRowItem
+                ? `${count} listing${count === 1 ? "" : "s"} hidden from feed`
+                : `${count} watch${count === 1 ? "" : "es"}`;
+            return (
+              <ListRow
+                key={c.id}
+                icon={icon}
+                title={c.name}
+                subtitle={subtitle}
+                onClick={() => setSelectedListId(c.id)}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+
+function Section({ label, show, children }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      {show && (
+        <div style={{
+          display: "flex", alignItems: "baseline", gap: 12,
+          padding: "10px 14px",
+          borderBottom: "0.5px solid var(--border)",
+          marginBottom: 8,
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text1)" }}>{label}</span>
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+function EmptyHardListSection({ text }) {
+  return (
+    <div style={{
+      padding: "32px 20px", textAlign: "center",
+      fontSize: 12, color: "var(--text3)",
+    }}>{text}</div>
+  );
+}
+
+// CollectionGrid: shared grid render for hard-list items. Renders
+// manual entries via ManualItemCard, listing-backed entries via Card
+// with an optional Mark-sold action.
+function CollectionGrid({
+  items, collectionId, watchlist,
+  compact, gridStyle, primaryCurrency,
+  handleShare, handleWish, observeCard, onClickListing,
+  openCollectionPicker,
+  hideLabel,
+  onMarkSold,
+  onRemoveItem,
+}) {
+  return (
+    <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+      {items.map(item => {
+        const markSoldHandler = onMarkSold
+          ? () => onMarkSold(item.rowId, item)
+          : null;
+        return item.isManual ? (
+          <ManualItemCard
+            key={item.id}
+            item={item}
+            onRemove={() => onRemoveItem(collectionId, item)}
+            onMarkSold={markSoldHandler}
+          />
+        ) : (
+          <Card
+            key={item.id}
+            item={item}
+            wished={!!watchlist[item.id]}
+            onWish={handleWish}
+            compact={compact}
+            onHide={() => onRemoveItem(collectionId, item)}
+            hideLabel={hideLabel}
+            onAddToCollection={openCollectionPicker}
+            primaryCurrency={primaryCurrency}
+            onShare={handleShare}
+            onView={observeCard}
+            onClickListing={onClickListing}
+            extraMenuItems={markSoldHandler ? [{ label: "Mark sold", onClick: () => markSoldHandler() }] : undefined}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 function ManualItemCard({ item, onRemove, onMarkSold }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const title = item.title || [item.brand, item.model].filter(Boolean).join(" ").trim() || "Untitled";
-  // Meta line composes ref / material / price as available.
   const metaParts = [];
   if (item.ref) metaParts.push(`Ref ${item.ref}`);
   if (item.material) metaParts.push(item.material);
@@ -738,7 +832,6 @@ function ManualItemCard({ item, onRemove, onMarkSold }) {
   const soldLine = item.soldPrice != null
     ? `Sold ${item.currency || ""} ${Number(item.soldPrice).toLocaleString()}${item.soldDate ? ` · ${item.soldDate}` : ""}`.trim()
     : null;
-
   return (
     <div style={{
       position: "relative",
@@ -762,15 +855,9 @@ function ManualItemCard({ item, onRemove, onMarkSold }) {
           fontSize: 13, fontWeight: 500, color: "var(--text1)",
           marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         }}>{title}</div>
-        {meta && (
-          <div style={{ fontSize: 11, color: "var(--text2)", marginBottom: 2 }}>{meta}</div>
-        )}
-        {priceLine && (
-          <div style={{ fontSize: 11, color: "var(--text2)" }}>Paid {priceLine}</div>
-        )}
-        {soldLine && (
-          <div style={{ fontSize: 11, color: "var(--text2)" }}>{soldLine}</div>
-        )}
+        {meta && <div style={{ fontSize: 11, color: "var(--text2)", marginBottom: 2 }}>{meta}</div>}
+        {priceLine && <div style={{ fontSize: 11, color: "var(--text2)" }}>Paid {priceLine}</div>}
+        {soldLine && <div style={{ fontSize: 11, color: "var(--text2)" }}>{soldLine}</div>}
         {item.comments && (
           <div style={{
             fontSize: 11, color: "var(--text3)", marginTop: 6,
@@ -798,27 +885,45 @@ function ManualItemCard({ item, onRemove, onMarkSold }) {
           }}>
             {onMarkSold && (
               <button onClick={() => { setMenuOpen(false); onMarkSold(); }}
-                style={{
-                  width: "100%", border: "none", background: "transparent",
-                  padding: "10px 12px", textAlign: "left",
-                  cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-                  color: "var(--text1)",
-                }}>Mark sold</button>
+                style={menuItemStyle("var(--text1)")}>Mark sold</button>
             )}
             <button onClick={async () => {
               setMenuOpen(false);
-              if (window.confirm("Remove this watch from the list?")) {
-                await onRemove();
-              }
-            }} style={{
-              width: "100%", border: "none", background: "transparent",
-              padding: "10px 12px", textAlign: "left",
-              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              color: "#c0392b",
-            }}>Remove</button>
+              if (window.confirm("Remove this watch from the list?")) await onRemove();
+            }} style={menuItemStyle("#c0392b")}>Remove</button>
           </div>
         )}
       </div>
     </div>
   );
 }
+
+const menuItemStyle = (color) => ({
+  width: "100%", border: "none", background: "transparent",
+  padding: "10px 12px", textAlign: "left",
+  cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+  color,
+});
+
+// ── Inline icons (SVG) ──────────────────────────────────────────
+const inboxIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+    <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+  </svg>
+);
+
+const folderIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+  </svg>
+);
+
+const eyeOffIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.06 10.06 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+    <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+);

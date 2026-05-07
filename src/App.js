@@ -238,6 +238,35 @@ export default function Watchlist() {
     const desktopMain = document.querySelector("[data-desktop-main]");
     if (desktopMain) desktopMain.scrollTop = 0;
   }, [listingsSubTab]);
+  // Collections tab sub-tabs (PR #99, 2026-05-06). Four values:
+  //   "my-collection" — Owned + Sold combined view with a toggle
+  //   "wishlist"      — standalone Wishlist ranked list
+  //   "lists"         — user-created lists + shared inbox + Hidden
+  //   "challenges"    — Watch Challenges
+  // URL sync uses `?sub=` like the other tabs. Persisted under its
+  // own localStorage key so the Collections sub-tab choice survives
+  // across visits.
+  const COLLECTIONS_SUB_VALUES = ["my-collection", "wishlist", "lists", "challenges"];
+  const [collectionsSubTab, setCollectionsSubTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get("tab");
+      const sub = params.get("sub");
+      if (t === "collections" && COLLECTIONS_SUB_VALUES.includes(sub)) {
+        return sub;
+      }
+    }
+    try {
+      const v = localStorage.getItem("dial_collections_sub_tab");
+      return COLLECTIONS_SUB_VALUES.includes(v) ? v : "my-collection";
+    } catch { return "my-collection"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("dial_collections_sub_tab", collectionsSubTab); } catch {}
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" });
+    const desktopMain = document.querySelector("[data-desktop-main]");
+    if (desktopMain) desktopMain.scrollTop = 0;
+  }, [collectionsSubTab]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   // Main tab. Same URL-first init as watchTopTab — refresh on
@@ -276,7 +305,7 @@ export default function Watchlist() {
   // replaceState. The popstate listener below mirrors browser
   // back/forward into state.
   const isFirstNavSync = useRef(true);
-  const prevNavRef = useRef({ tab, watchTopTab, listingsSubTab });
+  const prevNavRef = useRef({ tab, watchTopTab, listingsSubTab, collectionsSubTab });
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -286,6 +315,8 @@ export default function Watchlist() {
       params.set("sub", listingsSubTab);
     } else if (tab === "watchlist" && watchTopTab !== "listings") {
       params.set("sub", watchTopTab);
+    } else if (tab === "collections" && collectionsSubTab !== "my-collection") {
+      params.set("sub", collectionsSubTab);
     } else {
       params.delete("sub");
     }
@@ -301,12 +332,13 @@ export default function Watchlist() {
       // this URL and state is just catching up. Skip the history
       // mutation entirely (a no-op pushState would still create
       // a phantom history entry).
-      prevNavRef.current = { tab, watchTopTab, listingsSubTab };
+      prevNavRef.current = { tab, watchTopTab, listingsSubTab, collectionsSubTab };
       return;
     }
     const prev = prevNavRef.current;
     const navChanged =
       prev.tab !== tab ||
+      prev.collectionsSubTab !== collectionsSubTab ||
       prev.watchTopTab !== watchTopTab ||
       prev.listingsSubTab !== listingsSubTab;
     if (isFirstNavSync.current || !navChanged) {
@@ -315,8 +347,8 @@ export default function Watchlist() {
       window.history.pushState({}, "", newUrl);
     }
     isFirstNavSync.current = false;
-    prevNavRef.current = { tab, watchTopTab, listingsSubTab };
-  }, [tab, watchTopTab, listingsSubTab]);
+    prevNavRef.current = { tab, watchTopTab, listingsSubTab, collectionsSubTab };
+  }, [tab, watchTopTab, listingsSubTab, collectionsSubTab]);
 
   // popstate listener: when the user hits browser back / forward,
   // re-derive tab + sub-tab + listingsSubTab state from the
@@ -346,6 +378,8 @@ export default function Watchlist() {
         const norm = (v) => (v === "calendar" || v === "challenges" || v === "collections") ? "listings" : v;
         const w = norm(sub);
         setWatchTopTab(SUB_VALUES.includes(w) ? w : "listings");
+      } else if (nextTab === "collections") {
+        setCollectionsSubTab(COLLECTIONS_SUB_VALUES.includes(sub) ? sub : "my-collection");
       }
       // Collections drill-in (`?col=…`) is owned by CollectionsTab —
       // it has its own popstate handler / URL-derived effect.
@@ -1940,6 +1974,8 @@ export default function Watchlist() {
       onClickListing={onClickListing}
       pendingChallengeDrillId={pendingChallengeDrillId}
       clearPendingChallengeDrill={() => setPendingChallengeDrillId(null)}
+      collectionsSubTab={collectionsSubTab}
+      setCollectionsSubTab={setCollectionsSubTab}
     />
   );
 
@@ -1990,6 +2026,32 @@ export default function Watchlist() {
         const active = watchTopTab === key;
         return (
           <button key={key} onClick={() => { setWatchTopTab(key); setDrawerOpen(false); }} style={{ ...tabPill(active), flexShrink: 0 }}>{label}</button>
+        );
+      })}
+    </div>
+  );
+
+  // Collections sub-tab strip (PR #99, 2026-05-06). Mirrors the
+  // watchSubTabsJSX shape — same tabPill style, same flex layout,
+  // same "set sub-tab + close mobile drawer" handler. Hidden on
+  // any other main tab.
+  const collectionsSubTabsJSX = tab !== "collections" ? null : (
+    <div style={{
+      display: "flex", gap: 20, alignItems: "center",
+      padding: "0 16px",
+      background: "var(--bg)",
+      borderBottom: "0.5px solid var(--border)",
+      flexShrink: 0,
+    }}>
+      {[
+        ["my-collection", isMobile ? "My collection" : "My collection"],
+        ["wishlist",      "Wishlist"],
+        ["lists",         "Lists"],
+        ["challenges",    "Challenges"],
+      ].map(([key, label]) => {
+        const active = collectionsSubTab === key;
+        return (
+          <button key={key} onClick={() => { setCollectionsSubTab(key); setDrawerOpen(false); }} style={{ ...tabPill(active), flexShrink: 0 }}>{label}</button>
         );
       })}
     </div>
@@ -2229,7 +2291,7 @@ export default function Watchlist() {
     settingsModalJSX, shareReceiverJSX,
     challengeReceiverJSX,
     listingsSubTabsJSX,
-    trackNewItemModalJSX, watchSubTabsJSX,
+    trackNewItemModalJSX, watchSubTabsJSX, collectionsSubTabsJSX,
     watchlistTabJSX, adminTabJSX, referencesTabJSX, collectionsTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
