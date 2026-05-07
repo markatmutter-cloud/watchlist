@@ -2160,7 +2160,12 @@ export default function Watchlist() {
   // intent is present, so it's effectively free in the common path.
   const shareReceiverJSX = (
     <ShareReceiver
-      items={items}
+      // mainFeedItems = items + auctionLotItems, so an auction-lot
+      // share id resolves the same way a dealer-listing one does.
+      // Pre-2026-05-07 this was `items` (dealer feed only) and any
+      // auction-lot recipient saw the orientation page with a null
+      // focused-card — Mark's report.
+      items={mainFeedItems}
       user={user}
       watchlist={watchlist}
       toggleWatchlist={toggleWatchlist}
