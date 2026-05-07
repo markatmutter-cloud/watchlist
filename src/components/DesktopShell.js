@@ -45,6 +45,7 @@ export function DesktopShell(props) {
     favSearchModalJSX,
     adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX,
     challengeReceiverJSX,
+    listReceiverJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, collectionsSubTabsJSX, watchlistTabJSX,
     referencesTabJSX, collectionsTabJSX,
@@ -52,8 +53,9 @@ export function DesktopShell(props) {
     userLimitBannerJSX,
     shareActive,
     challengeShareActive,
+    listShareActive,
   } = props;
-  const anyShareActive = shareActive || challengeShareActive;
+  const anyShareActive = shareActive || challengeShareActive || listShareActive;
 
   // Listings sub-tab gates filter exposure: Live listings hides
   // auction-house chips (no live dealer items in those sources);
@@ -428,6 +430,8 @@ export function DesktopShell(props) {
           {shareReceiverJSX}
           {/* Watch Challenges receive surface (v1.5). */}
           {challengeReceiverJSX}
+          {/* List-share receive surface (v1, 2026-05-07). */}
+          {listReceiverJSX}
           {/* Phase B2 lot-migration banner. */}
           {lotMigrationBannerJSX}
           {/* User-limit banner (Epic 3). Renders null below soft-warn
