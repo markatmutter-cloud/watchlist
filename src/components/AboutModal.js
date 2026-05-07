@@ -1,5 +1,6 @@
 import React from "react";
 import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow } from "../styles";
+import { buildFeedbackMailto, captureFeedbackContext } from "../utils";
 
 // AboutModal doubles as the welcome surface (first-visit auto-open) and
 // the About surface (always accessible from the header info icon + the
@@ -14,11 +15,11 @@ import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow } from "../s
 // 2026-05-07 redesign expanded the modal from a 5-line about-blurb
 // into the welcome page. Old Get-in-touch Instagram link is preserved;
 // added a feedback mailto for "suggest a dealer / report a bug / send
-// feedback" per Mark's reachout brief.
-
-const FEEDBACK_EMAIL = "hello@the-watch-list.app";
-const FEEDBACK_SUBJECT = "Watchlist feedback";
-const FEEDBACK_BODY = "Suggest a dealer, report a bug, or share feedback:%0D%0A%0D%0A";
+// feedback" per Mark's reachout brief. The mailto auto-fills current
+// URL, currency, and browser into the body so reporters don't have to
+// type the surface every time. See `buildFeedbackMailto` in utils.js
+// for the shared helper used here and from the user-dropdown
+// "Report a bug" entry.
 
 const sectionLabel = {
   fontSize: 11, fontWeight: 600, color: "var(--text3)",
@@ -43,8 +44,11 @@ const linkButton = {
   fontFamily: "inherit", fontSize: 14, fontWeight: 500,
 };
 
-export function AboutModal({ open, onClose }) {
+export function AboutModal({ open, onClose, primaryCurrency }) {
   if (!open) return null;
+  const feedbackMailto = buildFeedbackMailto({
+    contextLines: captureFeedbackContext({ primaryCurrency }),
+  });
   return (
     <div onClick={onClose} style={modalBackdrop}>
       <div onClick={e => e.stopPropagation()} style={{
@@ -119,7 +123,7 @@ export function AboutModal({ open, onClose }) {
             </svg>
             @lagunabeachwatch
           </a>
-          <a href={`mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(FEEDBACK_SUBJECT)}&body=${FEEDBACK_BODY}`} style={linkButton}>
+          <a href={feedbackMailto} style={linkButton}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
               <polyline points="22,6 12,13 2,6"/>

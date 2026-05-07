@@ -355,6 +355,7 @@ export function MobileShell(props) {
         <AboutModal
           open={aboutModalOpen}
           onClose={() => setAboutModalOpen(false)}
+          primaryCurrency={primaryCurrency}
         />
         <SignInPromptModal
           open={!!signInPromptOpen}

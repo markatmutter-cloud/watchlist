@@ -419,3 +419,33 @@ export function extractRef(title) {
   }
   return null;
 }
+
+// ── Feedback / bug-report mailto builder ─────────────────────────────
+// Single source of truth for the "Suggest a dealer / Report a bug /
+// Send feedback" mailto used in two places:
+//   - AboutModal's feedback link (generic surface)
+//   - User dropdown's "Report a bug" entry (in-context surface)
+// Adding context inline (URL, currency, UA) means Mark + future
+// reporters don't have to type the bug surface every time.
+export const FEEDBACK_EMAIL = "hello@the-watch-list.app";
+
+export function captureFeedbackContext({ primaryCurrency } = {}) {
+  if (typeof window === "undefined") return [];
+  const lines = [];
+  try { lines.push(`URL: ${window.location.href}`); } catch {}
+  if (primaryCurrency) lines.push(`Currency: ${primaryCurrency}`);
+  try { lines.push(`Browser: ${navigator.userAgent}`); } catch {}
+  return lines;
+}
+
+export function buildFeedbackMailto({
+  subject = "Watchlist feedback",
+  opening = "Suggest a dealer, report a bug, or share feedback:\n\n",
+  contextLines = [],
+} = {}) {
+  const ctxBlock = contextLines.length
+    ? `\n\n— Context (helps with debugging, edit if you'd rather not share) —\n${contextLines.join("\n")}\n`
+    : "";
+  const body = `${opening}${ctxBlock}`;
+  return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}

@@ -10,6 +10,7 @@ import {
   shortHash,
   matchesSearch,
   FORCE_OTHER_BRANDS, SUPPRESS_AT_SOLD_BRANDS,
+  buildFeedbackMailto, captureFeedbackContext,
 } from "./utils";
 import { useWidth, useSystemDark } from "./hooks";
 import { useTrackModal } from "./hooks/useTrackModal";
@@ -406,10 +407,12 @@ export default function Watchlist() {
   // current scope. localStorage key dial_group_v1 is left untouched
   // for any users who might roll back.)
 
-  // Hidden listings surface as a synthetic "Hidden" collection inside
-  // Watchlist > Collections (replaced the old user-dropdown modal on
-  // 2026-05-01). Drill-in lives in WatchlistTab.js — App.js just owns
-  // the data via useWatchlist's hiddenItems + toggleHide.
+  // Hidden listings surface as a synthetic "Hidden" row inside
+  // Collections > Lists (PR #99 moved the surface from Watchlist >
+  // Collections to its current home). Drill-in lives in
+  // CollectionsTab.js / WatchlistTab.js depending on access path —
+  // App.js just owns the data via useWatchlist's hiddenItems +
+  // toggleHide.
   // AboutModal doubles as the welcome surface (first-visit auto-open
   // gated by `dial_visited_v1` localStorage flag) and the always-on
   // About surface (header link + Settings entry). Same content, two
@@ -1649,6 +1652,25 @@ export default function Watchlist() {
               Site stats →
             </button>
           )}
+          {/* Report-a-bug entry — fires the contextualized mailto so
+              Mark + future reporters get URL + currency + browser
+              prefilled in the body. Same helper backs the AboutModal
+              feedback link so the two surfaces stay in lockstep. */}
+          <button onClick={() => {
+            setShowUserMenu(false);
+            const href = buildFeedbackMailto({
+              subject: "Watchlist bug report",
+              opening: "Describe what you saw and what you expected:\n\n",
+              contextLines: captureFeedbackContext({ primaryCurrency }),
+            });
+            try { window.location.href = href; } catch {}
+          }}
+            style={{ display: "block", width: "100%", textAlign: "left",
+                    padding: "6px 8px", border: "none", background: "transparent",
+                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                    fontSize: 13, borderRadius: 6 }}>
+            Report a bug
+          </button>
           <button onClick={() => { setShowUserMenu(false); signOut(); }}
             style={{ display: "block", width: "100%", textAlign: "left",
                     padding: "6px 8px", border: "none", background: "transparent",
