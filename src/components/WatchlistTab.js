@@ -157,11 +157,15 @@ export function WatchlistTab(props) {
         {blurb}
       </div>
       {isAuthConfigured && (
+        // Brand-blue primary style — consistent across every signed-
+        // out sign-in CTA in the app (top bar, ShareReceiver,
+        // ChallengeReceiver, per-feature prompts). The actual OAuth
+        // fires from inside SignInPromptModal which this opens.
         <button onClick={signInWithGoogle} style={{
-          padding: "8px 16px", borderRadius: 8, border: "0.5px solid var(--border)",
-          background: "var(--card-bg)", color: "var(--text1)", cursor: "pointer",
-          fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-        }}>Sign in with Google</button>
+          padding: "10px 18px", borderRadius: 10, border: "none",
+          background: "#185FA5", color: "#fff", cursor: "pointer",
+          fontFamily: "inherit", fontSize: 14, fontWeight: 500,
+        }}>Sign in</button>
       )}
     </div>
   );

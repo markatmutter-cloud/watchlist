@@ -64,10 +64,10 @@ export function ChallengesView({
         </div>
         {isAuthConfigured && (
           <button onClick={signInWithGoogle} style={{
-            padding: "8px 16px", borderRadius: 8, border: "0.5px solid var(--border)",
-            background: "var(--card-bg)", color: "var(--text1)", cursor: "pointer",
-            fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-          }}>Sign in with Google</button>
+            padding: "10px 18px", borderRadius: 10, border: "none",
+            background: "#185FA5", color: "#fff", cursor: "pointer",
+            fontFamily: "inherit", fontSize: 14, fontWeight: 500,
+          }}>Sign in</button>
         )}
       </div>
     );
@@ -251,12 +251,17 @@ export function ChallengesView({
                 )}
               </>
             );
-            // Target glyph (concentric circles) — challenge concept.
+            // Mark feedback 2026-05-07: dropped the bullseye/target
+            // glyph. Glyph swapped for a clean stack-of-watches mark
+            // (same outline weight + accent color as the prior
+            // concentric-circles target). If a future challenge
+            // typology needs a glyph, ship one specific to the
+            // challenge — don't bring back the bullseye.
             const icon = (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <circle cx="12" cy="12" r="6"/>
-                <circle cx="12" cy="12" r="2"/>
+                <rect x="4" y="4" width="16" height="4" rx="1"/>
+                <rect x="4" y="10" width="16" height="4" rx="1"/>
+                <rect x="4" y="16" width="16" height="4" rx="1"/>
               </svg>
             );
             // PR #92 (Mark 2026-05-06): "On the challenges list it

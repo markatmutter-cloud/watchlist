@@ -415,7 +415,11 @@ function PickingStage({
           below. Negative marginTop pulls the bg up to overlap the
           StageHeader's bottom margin so when content scrolls past
           there's no gap above the sticky. boxShadow gives a soft
-          separation. */}
+          separation. Mark feedback 2026-05-07: the Finish CTA now
+          lives inside the sticky alongside the stats so it stays
+          visible while the user scrolls the source picker below.
+          (The picker can be tall — having to scroll back up to
+          confirm picks read as awkward.) */}
       <div style={{
         position: "sticky", top: 0, zIndex: 5,
         background: "var(--bg)",
@@ -446,6 +450,27 @@ function PickingStage({
             sub={`of ${challenge.targetCount}`}
             progress={(picks.length / challenge.targetCount) * 100}
           />
+        </div>
+        {/* Finish CTA — full width, sits in the sticky so it's
+            always visible regardless of where the user is scrolled. */}
+        <div style={{ marginTop: 10 }}>
+          <button disabled={!canComplete}
+            onClick={() => {
+              flushNote();
+              if (overBudget) {
+                if (window.confirm(`You're ${fmtUSD(overBy)} over budget. Finish anyway?`)) onComplete();
+              } else { onComplete(); }
+            }}
+            style={{
+              width: "100%",
+              padding: "10px 18px", borderRadius: 8, border: "none",
+              background: "#185FA5", color: "#fff",
+              cursor: canComplete ? "pointer" : "not-allowed",
+              fontFamily: "inherit", fontSize: 14, fontWeight: 500,
+              opacity: canComplete ? 1 : 0.4,
+            }}>
+            Finish →
+          </button>
         </div>
       </div>
 
@@ -509,25 +534,9 @@ function PickingStage({
         />
       </div>
 
-      {/* Mark complete CTA */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 18 }}>
-        <button disabled={!canComplete}
-          onClick={() => {
-            flushNote();
-            if (overBudget) {
-              if (window.confirm(`You're ${fmtUSD(overBy)} over budget. Finish anyway?`)) onComplete();
-            } else { onComplete(); }
-          }}
-          style={{
-            padding: "10px 18px", borderRadius: 8, border: "none",
-            background: "#185FA5", color: "#fff",
-            cursor: canComplete ? "pointer" : "not-allowed",
-            fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-            opacity: canComplete ? 1 : 0.4,
-          }}>
-          Finish →
-        </button>
-      </div>
+      {/* (Bottom Finish CTA retired 2026-05-07 — moved into the
+          sticky stat row above so it stays visible while the user
+          scrolls the source picker.) */}
 
       {/* Source picker — Lists / Favorites tile grid + URL paste.
           Always visible, no overflow cap, no toggle. The page is the
