@@ -47,6 +47,14 @@ export function useFilters() {
   // Tri-state status: 'live' / 'sold' / 'all'.
   const [statusMode, setStatusMode] = useState("live");
 
+  // ♥ Saved-only filter — Listings tab in-context view of "show me
+  // only the items I've already hearted, here in the live feed/auction
+  // calendar/sold view I'm currently looking at." Same data as the
+  // Saved tab sub-tabs; this is the in-flow alternate access path
+  // (Bundle 2B, 2026-05-07). Off by default; doesn't interfere with
+  // any other filter — applies as an AND.
+  const [filterHearted, setFilterHearted] = useState(false);
+
   // Chip-cluster "+N more" expansion toggles.
   const [brandsExpanded,  setBrandsExpanded]  = useState(false);
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
@@ -107,7 +115,8 @@ export function useFilters() {
     !!search ||
     newDays > 0 ||
     !!minPriceText ||
-    !!maxPriceText
+    !!maxPriceText ||
+    filterHearted
   );
 
   // One-shot "clear all filters" — does NOT touch sort, status, or
@@ -120,6 +129,7 @@ export function useFilters() {
     setNewDays(0);
     setMinPriceText("");
     setMaxPriceText("");
+    setFilterHearted(false);
   }, []);
 
   return {
@@ -138,6 +148,8 @@ export function useFilters() {
     // Recency + status
     newDays, setNewDays,
     statusMode, setStatusMode,
+    // Hearted-only toggle (Listings in-flow view of saved items)
+    filterHearted, setFilterHearted,
     // Expansion toggles
     brandsExpanded,  setBrandsExpanded,
     sourcesExpanded, setSourcesExpanded,

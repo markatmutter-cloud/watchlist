@@ -136,6 +136,7 @@ export default function Watchlist() {
     refsExpanded,    setRefsExpanded,
     activeFilterPop, setActiveFilterPop,
     filterPopRef,
+    filterHearted, setFilterHearted,
     hasFilters, resetFilters,
   } = useFilters();
   // Desktop column count: user override wins; otherwise the fluid default
@@ -1131,6 +1132,11 @@ export default function Watchlist() {
     }
     if (minPrice > 0) its = its.filter(i => (i.priceUSD || i.price) >= minPrice);
     if (maxPrice < GLOBAL_MAX) its = its.filter(i => (i.priceUSD || i.price) <= maxPrice);
+    // Hearted-only filter (Bundle 2B). When the toggle is on, narrow
+    // the active sub-tab to items the user has saved. No-op when the
+    // user is signed out (watchlist is empty), so the toggle is
+    // hidden in that case at the UI layer.
+    if (filterHearted) its = its.filter(i => !!watchlist[i.id]);
 
     // Sort dispatch — interpretation of the Date pill depends on
     // sub-tab. Price pill is uniform.
@@ -1197,7 +1203,7 @@ export default function Watchlist() {
       });
     }
     return its;
-  }, [mainFeedItems, filterSources, filterBrands, filterRefs, hidden, watchlist, search, sort, minPrice, maxPrice, newDays, listingsSubTab]);
+  }, [mainFeedItems, filterSources, filterBrands, filterRefs, hidden, watchlist, search, sort, minPrice, maxPrice, newDays, listingsSubTab, filterHearted]);
 
   const visible = useMemo(() => allFiltered.slice(0, page * PAGE_SIZE), [allFiltered, page]);
   const hasMore = visible.length < allFiltered.length;
@@ -2381,6 +2387,7 @@ export default function Watchlist() {
     listingsSubTab,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
+    filterHearted,
     search, signInPromptOpen, signInWithGoogle, sort, sourcesExpanded, tab, user,
     visibleBrands, visibleSources,
     watchTopTab, watchlist,
@@ -2388,7 +2395,7 @@ export default function Watchlist() {
     handleWish, openFavPrompt, resetFilters,
     setAboutModalOpen, setActiveFilterPop, setBrandsExpanded,
     setDrawerOpen,
-    setFilterBrands, setFilterSources,
+    setFilterBrands, setFilterHearted, setFilterSources,
     setListingsSubTab,
     setMaxPriceText, setMinPriceText,
     setPage, setSearch, setShowUserMenu, setSignInPromptOpen,
