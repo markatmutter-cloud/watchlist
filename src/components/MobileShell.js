@@ -26,6 +26,7 @@ export function MobileShell(props) {
     listingsSubTab,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
+    filterHearted,
     search, signInPromptOpen, signInWithGoogle, sort, sourcesExpanded,
     tab, user, visibleBrands, visibleSources,
     watchTopTab, watchlist,
@@ -33,6 +34,7 @@ export function MobileShell(props) {
     handleWish, openFavPrompt, resetFilters,
     setAboutModalOpen, setBrandsExpanded,
     setDrawerOpen,
+    setFilterHearted,
     setMaxPriceText, setMinPriceText,
     setPage, setSearch, setSignInPromptOpen, setSort,
     setSourcePickerOpen, setSourcesExpanded,
@@ -272,6 +274,36 @@ export function MobileShell(props) {
                 {/* Status + Auctions-only sections retired 2026-05-04
                     — both Listings AND Watchlist now use sub-tabs that
                     cover Live / Sold and Dealers / Auctions scope. */}
+
+                {/* ♥ Saved-only toggle (Bundle 2B) — Listings tab
+                    only, signed-in users only. Same data as Saved tab
+                    sub-tabs; this is the in-flow alternate access
+                    path. Hidden on Calendar sub-tab (no items there). */}
+                {tab === "listings" && user && listingsSubTab !== "calendar" && (
+                  <div style={{ padding: "10px 16px 6px" }}>
+                    <button onClick={() => setFilterHearted && setFilterHearted(!filterHearted)}
+                      aria-pressed={!!filterHearted}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px", borderRadius: 10,
+                        border: "0.5px solid var(--border)",
+                        cursor: "pointer", fontFamily: "inherit", fontSize: 14,
+                        background: filterHearted ? "#185FA5" : "var(--surface)",
+                        color:      filterHearted ? "#fff"    : "var(--text1)",
+                        fontWeight: filterHearted ? 600 : 500,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        gap: 8,
+                      }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24"
+                        fill={filterHearted ? "#fff" : "none"}
+                        stroke={filterHearted ? "#fff" : "currentColor"}
+                        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                      </svg>
+                      {filterHearted ? "Showing only saved" : "Show only saved"}
+                    </button>
+                  </div>
+                )}
 
                 <div style={{ padding: "10px 16px 10px" }}>
                   <div style={sectionHeadingStyle}>Source</div>

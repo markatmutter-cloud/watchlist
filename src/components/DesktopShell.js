@@ -27,7 +27,7 @@ export function DesktopShell(props) {
     allFiltered, displayedCount,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
-    search, signInPromptOpen, signInWithGoogle, sort,
+    filterHearted, search, signInPromptOpen, signInWithGoogle, sort,
     tab, user, visibleBrands,
     watchTopTab, watchlist,
     // Setters / handlers
@@ -35,7 +35,7 @@ export function DesktopShell(props) {
     setAboutModalOpen, setActiveFilterPop, setBrandsExpanded,
     setFilterBrands, setFilterSources,
     setMaxPriceText, setMinPriceText,
-    setPage, setSearch, setSignInPromptOpen, setSort,
+    setFilterHearted, setPage, setSearch, setSignInPromptOpen, setSort,
     setTab,
     toggleBrand, toggleHide, toggleSource,
     // Pre-built JSX
@@ -164,6 +164,32 @@ export function DesktopShell(props) {
               fontWeight: sort === "lot" ? 600 : 500,
               whiteSpace: "nowrap",
             }}>{sort === "lot" ? "Lot # ↑" : "Lot #"}</button>
+        )}
+        {/* ♥ Saved-only filter pill (Bundle 2B) — Listings tab
+            only, signed-in users only. Same data as the Saved tab
+            sub-tabs; this is the in-flow alternate access path. */}
+        {tab === "listings" && user && listingsSubTab !== "calendar" && (
+          <button onClick={() => setFilterHearted && setFilterHearted(!filterHearted)}
+            aria-pressed={!!filterHearted}
+            title={filterHearted ? "Show all" : "Show only saved"}
+            style={{
+              padding: "6px 12px", borderRadius: 20,
+              border: "0.5px solid var(--border)",
+              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+              background: filterHearted ? "#185FA5" : "var(--surface)",
+              color:      filterHearted ? "#fff"    : "var(--text2)",
+              fontWeight: filterHearted ? 600 : 500,
+              whiteSpace: "nowrap",
+              display: "flex", alignItems: "center", gap: 5,
+            }}>
+            <svg width="11" height="11" viewBox="0 0 24 24"
+              fill={filterHearted ? "#fff" : "none"}
+              stroke={filterHearted ? "#fff" : "currentColor"}
+              strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            Saved
+          </button>
         )}
       </div>
 
