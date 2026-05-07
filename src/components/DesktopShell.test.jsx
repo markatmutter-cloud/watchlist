@@ -15,20 +15,18 @@ describe("DesktopShell", () => {
     expect(watchlistButtons.length).toBeGreaterThanOrEqual(1);
   });
 
-  test("renders all four main tabs (Listings / Saved / Collections / Learn)", () => {
+  test("renders the three main tabs (Listings / Saved / Learn)", () => {
     render(<DesktopShell {...buildMockShellProps()} />);
     expect(screen.getByText("Listings")).toBeInTheDocument();
-    // Collections added 2026-05-06 PR #86. Bundle 2A.1 (2026-05-07)
-    // renamed the "Watchlist" tab → "Saved" and the "Cool Stuff" tab
-    // (URL key still `references`, component still `ReferencesTab`) →
-    // "Learn". Internal/external naming divergence is documented in
-    // CLAUDE.md.
+    // Bundle 2A.2 (2026-05-07) collapsed the standalone Collections
+    // tab into Saved; nav pill is now Listings / Saved / Learn.
     // The "Saved" UI label clashes with the "Saved" filter pill on
     // Listings sub-tabs, so use getAllByText and assert >= 1 — the
-    // top-bar tab pill is always present on the default Listings tab.
+    // top-bar tab pill is always present.
     expect(screen.getAllByText("Saved").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Collections")).toBeInTheDocument();
     expect(screen.getByText("Learn")).toBeInTheDocument();
+    // Collections is no longer a top-level tab pill.
+    expect(screen.queryByText("Collections")).not.toBeInTheDocument();
   });
 
   test("renders the filter row on Listings tab", () => {
@@ -58,8 +56,21 @@ describe("DesktopShell", () => {
     expect(screen.getByTestId("watchlist-tab")).toBeInTheDocument();
   });
 
-  test("renders the collections tab content on Collections tab", () => {
-    render(<DesktopShell {...buildMockShellProps({ tab: "collections" })} />);
+  test("renders the collections-style content on Saved > my-collection sub-tab", () => {
+    // Bundle 2A.2 (2026-05-07): Collections collapsed into Saved.
+    // The dispatch in App.js maps watchTopTab=my-collection (and the
+    // other collections-style subs) to the CollectionsTab content,
+    // surfaced via the `watchlistTabJSX` prop slot. The mock fixture
+    // sets `watchlistTabJSX` to the dispatched value; testing the
+    // dispatch itself requires App.js, so here we just confirm the
+    // content area renders the expected mock testid.
+    render(<DesktopShell {...buildMockShellProps({
+      tab: "watchlist",
+      watchTopTab: "my-collection",
+      // Simulate App.js's dispatch by passing collections content
+      // through watchlistTabJSX (the prop name shells render).
+      watchlistTabJSX: <div data-testid="collections-tab" />,
+    })} />);
     expect(screen.getByTestId("collections-tab")).toBeInTheDocument();
   });
 });

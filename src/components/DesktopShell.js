@@ -350,12 +350,16 @@ export function DesktopShell(props) {
           Watchlist
         </button>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
-          {/* 2026-05-07 IA pass — UI labels only this slice. Internals
-              (URL keys `?tab=watchlist`, `?tab=references`, file names,
-              state vars) stay unchanged until Slice 2A.2 does the
-              structural collapse. See CLAUDE.md "Internal-vs-external
-              naming divergence" for the documented rationale. */}
-          {[["listings", "Listings"], ["watchlist", "Saved"], ["collections", "Collections"], ["references", "Learn"]].map(([key, label]) => (
+          {/* 2026-05-07 IA pass:
+              - 2A.1 renamed UI labels: Watchlist → Saved, Cool Stuff
+                → Learn (URL key `?tab=watchlist`, `?tab=references`,
+                state vars unchanged — internal/external naming
+                divergence documented in CLAUDE.md).
+              - 2A.2 collapsed standalone Collections tab into Saved.
+                Its sub-tabs (my-collection / wishlist / lists /
+                challenges) are now part of the Saved sub-tab strip.
+                `?tab=collections` redirects to `?tab=watchlist`. */}
+          {[["listings", "Listings"], ["watchlist", "Saved"], ["references", "Learn"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               padding: "6px 14px", borderRadius: 20, border: "0.5px solid var(--border)", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,
@@ -408,10 +412,15 @@ export function DesktopShell(props) {
           sub-tab + filter row chrome until they dismiss / save. */}
       {!anyShareActive && listingsSubTabsJSX}
       {!anyShareActive && watchSubTabsJSX}
-      {!anyShareActive && collectionsSubTabsJSX}
+      {/* collectionsSubTabsJSX retired in Bundle 2A.2 (renders null) —
+          the four collections-style sub-tabs are now part of
+          watchSubTabsJSX. Prop kept on destructure for backward
+          compat with the mock fixture. */}
       {anyShareActive ? null : (
         (tab === "listings" && showListingsFilterRow) ||
-        (tab === "watchlist" && watchTopTab !== "searches")
+        (tab === "watchlist" && watchTopTab !== "searches" &&
+          watchTopTab !== "my-collection" && watchTopTab !== "wishlist" &&
+          watchTopTab !== "lists" && watchTopTab !== "challenges")
       )
         ? filterRowJSX
         : (
@@ -443,8 +452,13 @@ export function DesktopShell(props) {
               {/* (Ending-soon pinned section retired 2026-05-04 —
                   Watchlist > Saved auctions sub-tab IS the
                   ending-soon view now.) */}
+              {/* Bundle 2A.2 (2026-05-07): Collections is no longer
+                  a top-level tab — its content renders inside the
+                  Saved tab (`tab === "watchlist"`) via the
+                  `watchlistTabJSX` prop, which App.js dispatches
+                  between Watchlist and Collections content based on
+                  the active sub-tab. */}
               {tab === "listings" ? listingsTabContentJSX
-                : tab === "collections" ? collectionsTabJSX
                 : tab === "references" ? referencesTabJSX
                 : tab === "admin" ? adminTabJSX
                 : watchlistTabJSX}

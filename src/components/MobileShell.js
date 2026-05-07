@@ -68,7 +68,10 @@ export function MobileShell(props) {
   const noFilterableList =
     (tab === "listings" && listingsSubTab === "calendar") ||
     (tab === "watchlist" && watchTopTab === "searches") ||
-    tab === "collections" ||
+    // Bundle 2A.2: Collections folded into Saved (tab=watchlist).
+    // Sub-tabs my-collection / wishlist / lists / challenges all
+    // render their own non-filterable content surfaces.
+    (tab === "watchlist" && (watchTopTab === "my-collection" || watchTopTab === "wishlist" || watchTopTab === "lists" || watchTopTab === "challenges")) ||
     tab === "references" ||
     tab === "admin";
 
@@ -192,13 +195,17 @@ export function MobileShell(props) {
           )}
         </div>
         )}
-        {/* Sub-tab strips — Listings strip on tab=listings, Watchlist
-            strip on tab=watchlist. Both lifted into the sticky stack
-            so they survive scroll. Hidden during share-receive landing
-            for the same reason as the sort row above. */}
+        {/* Sub-tab strips — Listings strip on tab=listings, the
+            unified Saved strip on tab=watchlist (which now combines
+            the Watchlist + old Collections sub-tabs after Bundle 2A.2
+            collapsed Collections into Saved). Lifted into the sticky
+            stack so they survive scroll. Hidden during share-receive
+            landing for the same reason as the sort row above. */}
         {!anyShareActive && listingsSubTabsJSX}
         {!anyShareActive && watchSubTabsJSX}
-        {!anyShareActive && collectionsSubTabsJSX}
+        {/* collectionsSubTabsJSX retired in Bundle 2A.2 (renders null);
+            the prop is kept on the destructure for backward compat
+            with the mock fixture. */}
         </div>
         {/* Share-receive surface — self-contained component, hooks
             isolated. Renders null when no share intent in URL. */}
@@ -222,8 +229,12 @@ export function MobileShell(props) {
             {/* (Ending-soon pinned section retired 2026-05-04 —
                 Watchlist > Saved auctions sub-tab IS the ending-soon
                 view now.) */}
+            {/* Bundle 2A.2 (2026-05-07): Collections is no longer a
+                top-level tab — its content renders inside the Saved
+                tab (`tab === "watchlist"`) via the `watchlistTabJSX`
+                prop, which App.js dispatches between Watchlist and
+                Collections content based on the active sub-tab. */}
             {tab === "listings" ? listingsTabContentJSX
-              : tab === "collections" ? collectionsTabJSX
               : tab === "references" ? referencesTabJSX
               : tab === "admin" ? adminTabJSX
               : watchlistTabJSX}
@@ -239,14 +250,14 @@ export function MobileShell(props) {
             hugging the home bar when the app is launched standalone from
             the home screen. */}
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--bg)", borderTop: "0.5px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)" }}>
-          {/* References + Admin are desktop-only — mobile bottom bar
-              shows Listings / Watchlist / Collections (3 fits cleanly
-              on 375px viewports). Collections added 2026-05-06 PR #86. */}
-          {/* 2026-05-07 IA pass — UI label "Watchlist" → "Saved". URL
-              key `?tab=watchlist` and state var `tab === "watchlist"`
-              stay unchanged this slice; structural collapse follows
-              in Slice 2A.2. */}
-          {[["listings", "Listings"], ["watchlist", "Saved"], ["collections", "Collections"]].map(([key, label]) => (
+          {/* Admin is desktop-only — mobile bottom bar shows
+              Listings / Saved / Learn (3 pills, fits cleanly on
+              375px viewports). Bundle 2A.2 (2026-05-07) collapsed
+              the standalone Collections tab into Saved; Learn
+              replaces what used to be the Collections pill on
+              mobile (Mark's call: Learn deserves bottom-nav
+              prominence over the now-folded Collections). */}
+          {[["listings", "Listings"], ["watchlist", "Saved"], ["references", "Learn"]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "8px 0 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               {tab === key
                 ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5" }} />
