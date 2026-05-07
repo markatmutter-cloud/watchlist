@@ -641,6 +641,10 @@ export function useCollections(user) {
       listing_snapshot: listing,
       source_of_entry:  opts.sourceOfEntry || 'manual',
       shared_by_handle: opts.sharedByHandle || null,
+      // Collaborator slice 1: who_added drives the attribution chip
+      // (slice 4) and the per-row delete gate. Always set explicitly
+      // even though the column has a default — explicit is clearer.
+      who_added:        user.id,
     };
     const { data, error } = await supabase.from('collection_items')
       .insert(payload)
@@ -743,6 +747,8 @@ export function useCollections(user) {
       manual_comments:         manual.comments  || null,
       manual_source_url:       manual.sourceUrl || null,
       source_of_entry:         'manual',
+      // Collaborator slice 1: see addItemToCollection for rationale.
+      who_added:               user.id,
     };
     const { data, error } = await supabase.from('collection_items')
       .insert(payload).select().single();
@@ -1125,6 +1131,63 @@ export function useCollections(user) {
     return { error: null };
   }, [user]);
 
+  // ── Collaborators (List Sharing v2 / slice 2, 2026-05-07) ────
+  // All gated through SECURITY DEFINER RPCs in 2026-05-07_collaborator_rpcs.sql.
+  // No state cached locally — each call re-fetches; the Manage-list
+  // sheet is short-lived enough that staleness isn't a worry.
+
+  const inviteCollaborator = useCallback(async (collectionId, email, role = 'editor') => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const { data, error } = await supabase.rpc('invite_collaborator', {
+      p_collection_id: collectionId,
+      p_email: email,
+      p_role: role,
+    });
+    if (error) return { error: error.message };
+    return { error: null, id: data };
+  }, [user]);
+
+  const revokeCollaborator = useCallback(async (collectionId, opts = {}) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const { error } = await supabase.rpc('revoke_collaborator', {
+      p_collection_id: collectionId,
+      p_user_id:       opts.userId   || null,
+      p_invite_id:     opts.inviteId || null,
+    });
+    if (error) return { error: error.message };
+    return { error: null };
+  }, [user]);
+
+  const acceptInvite = useCallback(async (inviteId) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const { error } = await supabase.rpc('accept_invite', { p_invite_id: inviteId });
+    if (error) return { error: error.message };
+    return { error: null };
+  }, [user]);
+
+  const declineInvite = useCallback(async (inviteId) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const { error } = await supabase.rpc('decline_invite', { p_invite_id: inviteId });
+    if (error) return { error: error.message };
+    return { error: null };
+  }, [user]);
+
+  const listCollaborators = useCallback(async (collectionId) => {
+    if (!user || !supabase) return { error: 'not signed in', rows: [] };
+    const { data, error } = await supabase.rpc('list_collaborators', {
+      p_collection_id: collectionId,
+    });
+    if (error) return { error: error.message, rows: [] };
+    return { error: null, rows: data || [] };
+  }, [user]);
+
+  const fetchPendingInvitesForMe = useCallback(async () => {
+    if (!user || !supabase) return { error: 'not signed in', rows: [] };
+    const { data, error } = await supabase.rpc('pending_invites_for_me');
+    if (error) return { error: error.message, rows: [] };
+    return { error: null, rows: data || [] };
+  }, [user]);
+
   return {
     collections,
     itemsByCollection,
@@ -1148,6 +1211,13 @@ export function useCollections(user) {
     addToShortlist,
     togglePickStatus,
     updateReasoning,
+    // Collaborators (List Sharing v2 / slice 2)
+    inviteCollaborator,
+    revokeCollaborator,
+    acceptInvite,
+    declineInvite,
+    listCollaborators,
+    fetchPendingInvitesForMe,
   };
 }
 
