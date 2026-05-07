@@ -124,7 +124,7 @@ export function SettingsModal({
           padding: "12px 0", border: "none", background: "transparent",
           color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
           fontSize: 13,
-        }}>About & Contact</button>
+        }}>About Watchlist</button>
       </div>
     </div>
   );

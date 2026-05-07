@@ -2,6 +2,7 @@ import React from "react";
 import { SearchIcon, FilterIcon, TabIcon } from "./icons";
 import { Chip } from "./Chip";
 import { AboutModal } from "./AboutModal";
+import { SignInPromptModal } from "./SignInPromptModal";
 import { iconButton, pillBase } from "../styles";
 
 // Mobile shell — receives everything the mobile branch needs from
@@ -25,7 +26,7 @@ export function MobileShell(props) {
     listingsSubTab,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
-    search, sort, sourcesExpanded,
+    search, signInPromptOpen, signInWithGoogle, sort, sourcesExpanded,
     tab, user, visibleBrands, visibleSources,
     watchTopTab, watchlist,
     // Setters / handlers
@@ -33,7 +34,7 @@ export function MobileShell(props) {
     setAboutModalOpen, setBrandsExpanded,
     setDrawerOpen,
     setMaxPriceText, setMinPriceText,
-    setPage, setSearch, setSort,
+    setPage, setSearch, setSignInPromptOpen, setSort,
     setSourcePickerOpen, setSourcesExpanded,
     setTab,
     toggleBrand, toggleHide, toggleSource,
@@ -354,6 +355,11 @@ export function MobileShell(props) {
         <AboutModal
           open={aboutModalOpen}
           onClose={() => setAboutModalOpen(false)}
+        />
+        <SignInPromptModal
+          open={!!signInPromptOpen}
+          onClose={() => setSignInPromptOpen && setSignInPromptOpen(false)}
+          onSignIn={() => signInWithGoogle && signInWithGoogle()}
         />
         {favSearchModalJSX}
       </div>
