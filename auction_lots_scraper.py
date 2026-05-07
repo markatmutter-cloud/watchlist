@@ -801,11 +801,27 @@ def enumerate_sothebys(sale_url, sale=None):
         # object's `dates.closed`. Same date for every lot in the sale.
         if not auction_end and sale_auction_end:
             auction_end = sale_auction_end
+        # Display title — prepend the maker so the card's prominent
+        # line says "Cartier Tank Cintrée …" instead of just
+        # "Tank Cintrée | …" (Mark's report 2026-05-07: filters
+        # work because brand is detected separately, but the
+        # visible title was dropping the maker for every Sotheby's
+        # lot since the algoliaJson + lotCards titles are pure
+        # model + description). Skip the prepend if the maker
+        # already appears in the title (rare but possible). Strip
+        # any "Brand, Country" → "Brand" so the maker reads
+        # cleanly when prepended (creatorsDisplayTitle is
+        # "Cartier, Paris" but we want "Cartier" up front).
+        maker_short = (creator.split(",")[0].strip() if creator else "")
+        if maker_short and maker_short.lower() not in title.lower():
+            display_title = f"{maker_short} {title}"
+        else:
+            display_title = title
         lot_data_out = {
             "house": "Sotheby's",
             "lot_id": lot_id,
             "lot_number": lot_display,
-            "title": title,
+            "title": display_title,
             "maker": creator or None,
             "description": (description or "")[:600],
             "currency": currency,
@@ -1112,9 +1128,25 @@ def _phillips_lot_to_record(lot, auction_title, auction_start, auction_end, sale
     if not detail_link: return None
     maker = (lot.get("makerName") or "").strip()
     model = (lot.get("modelName") or "").strip()
-    title_parts = [p for p in (maker, model) if p]
-    title = " ".join(title_parts).strip() or model or maker or "Untitled"
     description = (lot.get("description") or "").strip()
+    # Display title — match the old per-lot path's richness (Mark
+    # 2026-05-07: post-#100 Turbo-Stream lots showed concise
+    # "Maker Model" while pre-#100 per-lot lots showed
+    # "Maker + long descriptive description"). The description
+    # carries the dial/case/movement/provenance line that's the
+    # bulk of the value on a Phillips card; combine maker + that.
+    # Falls back to "Maker Model" when description is missing.
+    if maker and description:
+        title = f"{maker} {description}"
+    elif maker and model:
+        title = f"{maker} {model}"
+    else:
+        title = description or model or maker or "Untitled"
+    # Cap to 240 chars so the JSON file stays compact (Card's CSS
+    # clamps to 2 lines anyway). Same shape the old per-lot
+    # `scrape_phillips_lot` used.
+    if len(title) > 240:
+        title = title[:237].rstrip() + "…"
     est_main = ((lot.get("estimate") or {}).get("mainEstimate")) or {}
     currency = (est_main.get("currencyCode") or "CHF").upper()
     low = est_main.get("lowEstimate")
