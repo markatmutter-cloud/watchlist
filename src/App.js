@@ -10,6 +10,7 @@ import {
   shortHash,
   matchesSearch,
   FORCE_OTHER_BRANDS, SUPPRESS_AT_SOLD_BRANDS,
+  buildFeedbackMailto, captureFeedbackContext,
 } from "./utils";
 import { useWidth, useSystemDark } from "./hooks";
 import { useTrackModal } from "./hooks/useTrackModal";
@@ -406,13 +407,41 @@ export default function Watchlist() {
   // current scope. localStorage key dial_group_v1 is left untouched
   // for any users who might roll back.)
 
-  // Hidden listings surface as a synthetic "Hidden" collection inside
-  // Watchlist > Collections (replaced the old user-dropdown modal on
-  // 2026-05-01). Drill-in lives in WatchlistTab.js — App.js just owns
-  // the data via useWatchlist's hiddenItems + toggleHide.
-  // available to signed-out visitors too. Contact = Instagram link;
-  // no email or form (keeps email out of the bundle and avoids spam).
+  // Hidden listings surface as a synthetic "Hidden" row inside
+  // Collections > Lists (PR #99 moved the surface from Watchlist >
+  // Collections to its current home). Drill-in lives in
+  // CollectionsTab.js / WatchlistTab.js depending on access path —
+  // App.js just owns the data via useWatchlist's hiddenItems +
+  // toggleHide.
+  // AboutModal doubles as the welcome surface (first-visit auto-open
+  // gated by `dial_visited_v1` localStorage flag) and the always-on
+  // About surface (header link + Settings entry). Same content, two
+  // access paths. (2026-05-07)
   const [aboutModalOpen, setAboutModalOpen] = useState(false);
+  // Sign-in prompt modal — 2-step explainer fired by the top-bar
+  // "Sign in" button. Receivers (ShareReceiver / ChallengeReceiver /
+  // signed-out feature prompts) keep firing signInWithGoogle directly;
+  // they already carry their own context. (2026-05-07)
+  const [signInPromptOpen, setSignInPromptOpen] = useState(false);
+  // First-visit auto-show of the welcome (AboutModal). Defer one tick
+  // past mount so we don't fire during loading early-return. Hook lives
+  // here near the other top-of-list state — well before App.js's
+  // loading + loadError early returns; adding hooks past those triggers
+  // React #310 (see Things-to-never-do in CLAUDE.md).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (!window.localStorage.getItem("dial_visited_v1")) {
+        // Slight delay so the welcome doesn't flash on top of the
+        // listings loading state.
+        const t = setTimeout(() => {
+          setAboutModalOpen(true);
+          window.localStorage.setItem("dial_visited_v1", "1");
+        }, 400);
+        return () => clearTimeout(t);
+      }
+    } catch {}
+  }, []);
   // Watchlist + hidden now live server-side (Supabase) per authenticated
   // user. When signed out, these hooks return empty objects and their
   // toggles no-op — we wrap the toggles below to kick off sign-in instead.
@@ -1549,20 +1578,35 @@ export default function Watchlist() {
   const authJSX = !isAuthConfigured ? null : !authReady ? (
     <div style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--surface)" }} />
   ) : !user ? (
-    <button onClick={() => signInWithGoogle()} style={{
-      fontSize: 12, padding: "5px 12px", borderRadius: 20,
-      border: "0.5px solid var(--border)", background: "var(--surface)",
-      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-      whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6,
-    }}>
-      <svg width="12" height="12" viewBox="0 0 48 48" aria-hidden="true">
-        <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.6 2.1 30.1 0 24 0 14.8 0 6.8 5.3 3 13l7.8 6C12.7 13.5 17.8 9.5 24 9.5z"/>
-        <path fill="#4285F4" d="M46.5 24.5c0-1.6-.2-3.1-.5-4.5H24v9h12.7c-.6 3-2.3 5.5-4.9 7.2l7.6 5.9c4.4-4.1 7.1-10.1 7.1-17.6z"/>
-        <path fill="#FBBC05" d="M10.8 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7l-7.8-6C1.1 16.3 0 20 0 24s1.1 7.7 3 11.2l7.8-6.5z"/>
-        <path fill="#34A853" d="M24 48c6.1 0 11.3-2 15.1-5.5l-7.6-5.9c-2.1 1.4-4.8 2.2-7.5 2.2-6.2 0-11.3-4-13.2-9.5l-7.8 6C6.8 42.7 14.8 48 24 48z"/>
-      </svg>
-      Sign in
-    </button>
+    // Signed-out: small "About" text link + the Sign-in button. The
+    // About link is the always-on access path for signed-out users
+    // (signed-in users reach About via Settings dropdown). Sign-in
+    // routes through SignInPromptModal — 2-step explainer before the
+    // OAuth fires.
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <button onClick={() => setAboutModalOpen(true)} style={{
+        fontSize: 12, padding: "5px 10px", borderRadius: 20,
+        border: "none", background: "transparent",
+        color: "var(--text2)", cursor: "pointer", fontFamily: "inherit",
+        whiteSpace: "nowrap",
+      }}>
+        About
+      </button>
+      <button onClick={() => setSignInPromptOpen(true)} style={{
+        fontSize: 12, padding: "5px 12px", borderRadius: 20,
+        border: "0.5px solid var(--border)", background: "var(--surface)",
+        color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+        whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6,
+      }}>
+        <svg width="12" height="12" viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.6 2.1 30.1 0 24 0 14.8 0 6.8 5.3 3 13l7.8 6C12.7 13.5 17.8 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.5 24.5c0-1.6-.2-3.1-.5-4.5H24v9h12.7c-.6 3-2.3 5.5-4.9 7.2l7.6 5.9c4.4-4.1 7.1-10.1 7.1-17.6z"/>
+          <path fill="#FBBC05" d="M10.8 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7l-7.8-6C1.1 16.3 0 20 0 24s1.1 7.7 3 11.2l7.8-6.5z"/>
+          <path fill="#34A853" d="M24 48c6.1 0 11.3-2 15.1-5.5l-7.6-5.9c-2.1 1.4-4.8 2.2-7.5 2.2-6.2 0-11.3-4-13.2-9.5l-7.8 6C6.8 42.7 14.8 48 24 48z"/>
+        </svg>
+        Sign in
+      </button>
+    </div>
   ) : (
     <div style={{ position: "relative" }}>
       <button onClick={() => setShowUserMenu(o => !o)} aria-label="Account menu"
@@ -1608,6 +1652,25 @@ export default function Watchlist() {
               Site stats →
             </button>
           )}
+          {/* Report-a-bug entry — fires the contextualized mailto so
+              Mark + future reporters get URL + currency + browser
+              prefilled in the body. Same helper backs the AboutModal
+              feedback link so the two surfaces stay in lockstep. */}
+          <button onClick={() => {
+            setShowUserMenu(false);
+            const href = buildFeedbackMailto({
+              subject: "Watchlist bug report",
+              opening: "Describe what you saw and what you expected:\n\n",
+              contextLines: captureFeedbackContext({ primaryCurrency }),
+            });
+            try { window.location.href = href; } catch {}
+          }}
+            style={{ display: "block", width: "100%", textAlign: "left",
+                    padding: "6px 8px", border: "none", background: "transparent",
+                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                    fontSize: 13, borderRadius: 6 }}>
+            Report a bug
+          </button>
           <button onClick={() => { setShowUserMenu(false); signOut(); }}
             style={{ display: "block", width: "100%", textAlign: "left",
                     padding: "6px 8px", border: "none", background: "transparent",
@@ -2284,7 +2347,7 @@ export default function Watchlist() {
     listingsSubTab,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
-    search, sort, sourcesExpanded, tab, user,
+    search, signInPromptOpen, signInWithGoogle, sort, sourcesExpanded, tab, user,
     visibleBrands, visibleSources,
     watchTopTab, watchlist,
     // Setters / handlers
@@ -2294,7 +2357,7 @@ export default function Watchlist() {
     setFilterBrands, setFilterSources,
     setListingsSubTab,
     setMaxPriceText, setMinPriceText,
-    setPage, setSearch, setShowUserMenu,
+    setPage, setSearch, setShowUserMenu, setSignInPromptOpen,
     setSort, setSourcePickerOpen, setSourcesExpanded,
     // Wrapped: top-level nav from shells uses the wrapper so that
     // clicking the Watchlist logo or a main tab while a share-receive

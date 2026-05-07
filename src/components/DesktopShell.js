@@ -2,6 +2,7 @@ import React from "react";
 import { SearchIcon, TabIcon } from "./icons";
 import { Chip } from "./Chip";
 import { AboutModal } from "./AboutModal";
+import { SignInPromptModal } from "./SignInPromptModal";
 import { pillBase } from "../styles";
 
 // Desktop shell — receives everything the desktop branch needs from
@@ -26,7 +27,7 @@ export function DesktopShell(props) {
     allFiltered, displayedCount,
     hasFilters, hiddenItems,
     maxPriceText, minPriceText,
-    search, sort,
+    search, signInPromptOpen, signInWithGoogle, sort,
     tab, user, visibleBrands,
     watchTopTab, watchlist,
     // Setters / handlers
@@ -34,7 +35,7 @@ export function DesktopShell(props) {
     setAboutModalOpen, setActiveFilterPop, setBrandsExpanded,
     setFilterBrands, setFilterSources,
     setMaxPriceText, setMinPriceText,
-    setPage, setSearch, setSort,
+    setPage, setSearch, setSignInPromptOpen, setSort,
     setTab,
     toggleBrand, toggleHide, toggleSource,
     // Pre-built JSX
@@ -428,6 +429,12 @@ export function DesktopShell(props) {
       <AboutModal
           open={aboutModalOpen}
           onClose={() => setAboutModalOpen(false)}
+          primaryCurrency={primaryCurrency}
+        />
+        <SignInPromptModal
+          open={!!signInPromptOpen}
+          onClose={() => setSignInPromptOpen && setSignInPromptOpen(false)}
+          onSignIn={() => signInWithGoogle && signInWithGoogle()}
         />
         {favSearchModalJSX}
     </div>

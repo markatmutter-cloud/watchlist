@@ -68,17 +68,43 @@ intentional: it limits code churn and keeps `useWatchlist` /
 heart-on-Card working without a migration. Schema lives in
 `supabase/schema/2026-05-01_collections.sql`.
 
-**UI rename Collections → Lists (2026-05-04, PR #24).** The Watchlist
-sub-tab is now labeled "Lists" in the UI (and "+ New list", "Add to
-list…", "Remove from list", etc. throughout). **Internals stayed
-unchanged**: DB tables (`collections`, `collection_items`), hook
-(`useCollections`), URL params (`?sub=collections`, `?col=<uuid>`),
-localStorage value (`dial_watch_top_tab=collections`), sub-tab key
-in `SUB_VALUES`, mutator names (`addItemToCollection`, etc.). The
-Watch Challenges feature still says "challenge" in copy; only the
-Lists sub-tab + its modals use the new label. When a future doc or
-comment refers to "the Collections sub-tab", read it as "the Lists
-sub-tab"; the UI label moved, the data model didn't.
+**Internal-vs-external naming divergence (intentional, documented).**
+Two places where DB / URL / hook / localStorage names use a different
+word than the user-facing UI. Both are deliberate; both have a clear
+"why" so future-anyone (Mark, Claude, a teammate) can read the code
+without surprise.
+
+1. **DB `collections` ↔ UI "Lists"** (since 2026-05-04, PR #24).
+   The DB tables (`collections`, `collection_items`), hook
+   (`useCollections`), URL params (`?col=<uuid>`), localStorage value
+   (`dial_collections_sub_tab`), sub-tab keys in `SUB_VALUES`, and
+   mutator names (`addItemToCollection`, etc.) all say "collections".
+   The UI says "Lists" for the user-created sub-tab inside
+   Collections. **Why intentional:** the `collections` table stores
+   ALL grouping types — user-created lists, the Wishlist, Owned, Sold,
+   Challenges, the Shared-with-me inbox, plus eventually
+   collaborator-shared lists. "Collections" is the umbrella term that
+   covers all of those; "Lists" is the specific user-facing label for
+   the user-created subset. Renaming the DB to `lists` would lose
+   that umbrella, plus the rename would touch every read path that
+   hits `useCollections`. Don't bump.
+
+2. **URL `?tab=references` ↔ UI "Cool Stuff"** (since 2026-05-04,
+   PR #39). The URL key, component file (`ReferencesTab.js`),
+   `TAB_VALUES` entry, icon kind, and schema files all say
+   "references". **Why intentional:** the internal "watch reference
+   number" data concept (Rolex 1675, Tudor 7021, etc.) is also
+   called "reference" — Epic 0's references-as-entities work hangs
+   off this. Renaming the tab internally would force prefixes
+   ("ref-tab" / "watch-ref") on every reference-to-the-other to keep
+   them distinct. Cool Stuff is the UI label; "references" stays
+   internal. Bundle 2 (the IA pass) renames Cool Stuff → Learn at
+   the UI layer, which gives an opportunity to re-evaluate the
+   internal naming alongside it.
+
+When a doc or comment refers to "the Collections sub-tab", read it as
+"the Lists sub-tab" if the context is the user-facing UI. Same shape
+for "the References tab" / "Cool Stuff".
 
 **Watch Challenges (Build-a-collection v1, 2026-05-03; relocated
 2026-05-04; rebuilt 2026-05-06).** Challenges are collections with
@@ -278,8 +304,10 @@ The Listings tab no longer has a Status (Live/Sold/All) segment —
 the sub-tabs cover that role. (Watchlist also dropped the segment
 2026-05-04 PR #36 — see Watchlist sub-tabs note below.)
 
-**Watchlist tab structure (sub-tabs, 2026-05-04, PR #36).** Mirrors
-the Listings tab restructure. Five sub-tabs:
+**Watchlist tab structure (sub-tabs, 2026-05-04 PR #36; Lists moved
+out 2026-05-06 PR #86).** Mirrors the Listings tab restructure.
+**Four** sub-tabs (was five before PR #86 lifted Lists into the new
+top-level Collections tab):
 - **Saved listings** (key `listings`) — currently-active hearted
   dealer items. Default sort = `savedAt` desc. Date dividers
   ("Today saved" / weekday saved / "Last week saved" / "Older saved").
@@ -294,8 +322,12 @@ the Listings tab restructure. Five sub-tabs:
 - **Saved sold** (key `sold`) — saved items that went sold (dealer
   or lot). Default sort = sold-date desc. Sold-date dividers.
 - **Favorite searches** (key `searches`) — saved-search editor.
-- **Lists** (key `collections`) — user-created collections + Shared
-  inbox + synthetic Hidden row.
+
+(Lists are in **Collections > Lists** now — the user-created lists,
+the Shared-with-me inbox, and the synthetic Hidden row all live there.
+URL `?tab=watchlist&sub=collections` redirects to `?tab=collections`
+on init. The Bundle 2 IA pass folds Watchlist back into Saved
+alongside Lists; this section captures the post-PR-#86 state.)
 
 Sub-tab routing in `App.js`'s watchItems memo: filter by
 watchTopTab BEFORE applying source/brand/ref/search/price filters.
@@ -927,12 +959,15 @@ To add a new printable tool: render its sheet via `createPortal` to
   one click). Adding the strip back puts the same data in two
   places — the strip and the sub-tab — and re-creates the heart-
   click duplicate-card class of bug it had on its first ship.
-- **Don't put Watch Challenges back under a Watchlist sub-tab.**
-  Lives under References tab now (PR #36). Mark's framing:
-  challenges are a *reflective collector resource* (constrained-set
-  thought experiments), not a saved-items surface — the Watchlist
-  tab is for things you own/want, References is for tools that help
-  you think about collecting.
+- **Don't put Watch Challenges back under Watchlist or References.**
+  Lives under **Collections > Challenges** now (PR #86 moved them
+  out of References, where they had briefly lived per PR #36).
+  Mark's framing: challenges are a list-shaped collector exercise
+  (constrained-set thought experiments) and "everything is a list"
+  is the locked plan — they belong alongside the other collection
+  sub-tabs (My collection / Wishlist / Lists), not on Watchlist
+  (saved-items surface) or References (now Cool Stuff: tools +
+  curated links).
 - **Don't add new `useState`/`useMemo`/`useCallback` deep into App.js**
   near render-conditional code paths. Adding hooks to the back of
   App.js's already-large hook list triggered React error #310
