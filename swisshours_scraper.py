@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
-Swiss Hours scraper — Shopify, USD-priced.
+Swiss Hours scraper — Shopify, HKD-priced (Hong Kong-based dealer).
+
+The storefront metadata declares HKD as its display currency
+(`data-currency="HKD"` on the storefront, `"currency":"HKD"` in
+the storefront JSON). The Shopify products.json variant `price`
+field carries the raw HKD amount; merge.py converts to USD via the
+FX dict (PR #109 ensures HKD is in there).
 
 Scopes to /collections/watches so straps and accessories don't leak.
 Mirrors the bulangandsons_scraper Shopify pattern.
