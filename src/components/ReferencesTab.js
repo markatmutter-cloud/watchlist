@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SizeCompare } from "./SizeCompare";
 import { Links } from "./Links";
 import { SubTabIntro } from "./SubTabIntro";
@@ -58,6 +58,16 @@ const RESOURCES = [
 export function ReferencesTab(props) {
   const [view, setView] = useState("list");
 
+  // Tab re-tap → return to landing. App.js bumps `tabResetTick`
+  // whenever the user clicks the active main tab pill (Mark feedback
+  // 2026-05-07: tapping Learn while inside SizeCompare should return
+  // to the Learn landing). Skip the initial mount so we don't reset
+  // a deep-link drill-in.
+  useEffect(() => {
+    if (props.tabResetTick && props.tabResetTick > 0) setView("list");
+    // eslint-disable-next-line
+  }, [props.tabResetTick]);
+
   if (view === "size-compare") {
     return (
       <div style={{ paddingTop: 4 }}>
@@ -77,7 +87,7 @@ export function ReferencesTab(props) {
   return (
     <div style={{ paddingTop: 4 }}>
       <SubTabIntro
-        title="Cool Stuff"
+        title="Learn"
         blurb={<>Tools, calculators, and curated link sets for vintage-watch collectors. New tools land here as they come together — calculators for lug-to-lug fit and strap sizing, and a reference encyclopedia, are on the roadmap.</>}
       />
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

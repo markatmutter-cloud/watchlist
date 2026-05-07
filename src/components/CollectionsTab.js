@@ -80,6 +80,15 @@ export function CollectionsTab({
     if (subTab !== "lists") setSelectedListId(null);
   }, [subTab]);
 
+  // Tab re-tap → return to the Lists landing. App.js bumps
+  // `tabResetTick` whenever the user clicks the active main tab pill;
+  // when we're on a collections-style sub-tab, we clear the drill-in
+  // id so the user lands back on the list-of-lists view.
+  useEffect(() => {
+    if (props.tabResetTick && props.tabResetTick > 0) setSelectedListId(null);
+    // eslint-disable-next-line
+  }, [props.tabResetTick]);
+
   // URL-sync drill-in id (Lists sub-tab only). Same pattern as
   // App.js's nav sync — pushState on real drill-in/out, replaceState
   // on first mount + popstate-driven re-derivation. Browser back
@@ -141,10 +150,10 @@ export function CollectionsTab({
         </div>
         {isAuthConfigured && (
           <button onClick={signInWithGoogle} style={{
-            padding: "8px 16px", borderRadius: 8, border: "0.5px solid var(--border)",
-            background: "var(--card-bg)", color: "var(--text1)", cursor: "pointer",
-            fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-          }}>Sign in with Google</button>
+            padding: "10px 18px", borderRadius: 10, border: "none",
+            background: "#185FA5", color: "#fff", cursor: "pointer",
+            fontFamily: "inherit", fontSize: 14, fontWeight: 500,
+          }}>Sign in</button>
         )}
       </div>
     );
@@ -333,18 +342,22 @@ function MyCollectionView({
         <div style={{ flex: 1 }} />
         {targetCollectionId && (
           <>
-            <button onClick={() => onAddFromFeed(targetCollectionId, `Add to ${targetName}`)}
+            {/* Mark feedback 2026-05-07: From feed is the more
+                common path and should be the highlighted primary
+                button; Add a watch is the secondary fallback for
+                manual entry of pieces not in the feed. */}
+            <button onClick={() => onAddManual(targetKind)}
               style={{
                 border: "0.5px solid var(--border)", background: "transparent",
                 color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
                 cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-              }}>+ From feed</button>
-            <button onClick={() => onAddManual(targetKind)}
+              }}>+ Add a watch</button>
+            <button onClick={() => onAddFromFeed(targetCollectionId, `Add to ${targetName}`)}
               style={{
                 border: "none", background: "#185FA5", color: "#fff",
                 padding: "4px 10px", borderRadius: 6,
                 cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-              }}>+ Add a watch</button>
+              }}>+ From feed</button>
           </>
         )}
       </div>
@@ -597,9 +610,14 @@ function ListsView({
   const userCols = cols.filter(c =>
     !c.isSharedInbox && !c.isSystem && c.type !== "challenge"
   );
-  const hiddenRow = (hiddenItems && hiddenItems.length > 0) ? {
-    id: HIDDEN_COLLECTION_ID, name: "Hidden", isHidden: true,
-  } : null;
+  // Hidden synthetic row retired 2026-05-07 (Mark feedback): user-
+  // facing Hide affordance was already removed in Bundle 2A.1
+  // (admin-only); admin hides drop globally for everyone via the
+  // `admin_hidden_listings` table; surfacing a per-user Hidden row
+  // alongside Lists no longer adds value. Existing hidden_listings
+  // rows in the DB are preserved (this is a UI-only change) — Mark
+  // can drop them via the SQL editor when ready.
+  const hiddenRow = null;
 
   const selected = (() => {
     if (!selectedListId) return null;

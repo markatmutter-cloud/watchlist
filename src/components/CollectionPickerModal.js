@@ -1,18 +1,21 @@
 import React, { useState } from "react";
 import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle } from "../styles";
 
-// Picker that opens when a user taps "Add to collection…" in any
-// Card's "..." menu. Shows existing user-created collections (the
-// shared-inbox is hidden from the picker — items land there only via
-// the share-receive flow). Tap a row → addItemToCollection +
-// dismiss. "+ New collection" inlines a name input that creates and
-// adds in one go.
+// Picker that opens when a user taps "Add to list..." in any Card's
+// "..." menu. Shows existing user-created lists (the shared-inbox is
+// hidden — items land there only via the share-receive flow).
 //
-// `target` is the listing being added; null = closed.
+// 2026-05-07 multi-select redesign (Mark feedback): tap a row to
+// toggle the listing in / out of that list. Modal stays open so the
+// user can adjust multiple memberships in one pass. "Done" button
+// dismisses. "+ Create new list" inlines a name input that creates
+// and adds in one go (still single-shot since the user just made it).
+//
+// `target` is the listing being toggled; null = closed.
 export function CollectionPickerModal({
   target, setTarget,
   collections, itemsByCollection,
-  addItemToCollection, createCollection,
+  addItemToCollection, removeItemFromCollection, createCollection,
   inp,
 }) {
   const [creating, setCreating] = useState(false);
@@ -36,12 +39,24 @@ export function CollectionPickerModal({
     .filter(c => !c.isSharedInbox)
     .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
 
-  const addTo = async (collectionId) => {
+  // Toggle membership: add if not in the list, remove if already in.
+  // Modal stays open after each toggle so the user can adjust
+  // multiple lists in one pass before tapping Done.
+  const toggleIn = async (collectionId, alreadyHere) => {
     setBusy(true);
-    const res = await addItemToCollection(collectionId, target);
+    setError("");
+    let res;
+    if (alreadyHere) {
+      // Remove uses the listing id; supabase.js resolves to rowId
+      // via the local cache.
+      res = removeItemFromCollection
+        ? await removeItemFromCollection(collectionId, target.id)
+        : { error: "remove handler missing" };
+    } else {
+      res = await addItemToCollection(collectionId, target);
+    }
     setBusy(false);
-    if (res?.error) { setError(res.error); return; }
-    close();
+    if (res?.error) setError(res.error);
   };
 
   const submitNew = async () => {
@@ -84,23 +99,40 @@ export function CollectionPickerModal({
             return (
               <button
                 key={c.id}
-                onClick={() => !alreadyHere && addTo(c.id)}
-                disabled={busy || alreadyHere}
-                title={alreadyHere ? "Already in this list" : ""}
+                onClick={() => toggleIn(c.id, alreadyHere)}
+                disabled={busy}
+                title={alreadyHere ? "Tap to remove from this list" : "Tap to add to this list"}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "12px 14px", borderRadius: 10,
-                  border: "0.5px solid var(--border)",
-                  background: alreadyHere ? "var(--surface)" : "var(--card-bg)",
-                  color: alreadyHere ? "var(--text3)" : "var(--text1)",
-                  cursor: alreadyHere ? "default" : (busy ? "wait" : "pointer"),
+                  border: alreadyHere ? "1px solid #185FA5" : "0.5px solid var(--border)",
+                  background: alreadyHere ? "rgba(24,95,165,0.08)" : "var(--card-bg)",
+                  color: "var(--text1)",
+                  cursor: busy ? "wait" : "pointer",
                   fontFamily: "inherit", fontSize: 14, textAlign: "left",
                   width: "100%",
-                  opacity: alreadyHere ? 0.7 : 1,
                 }}>
-                <span style={{ fontWeight: 500 }}>{c.name}</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {/* Checkbox-style indicator — filled when included,
+                      outline when not. Tap toggles. */}
+                  <span style={{
+                    width: 18, height: 18, borderRadius: 4,
+                    border: alreadyHere ? "none" : "1.5px solid var(--text3)",
+                    background: alreadyHere ? "#185FA5" : "transparent",
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
+                  }}>
+                    {alreadyHere && (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    )}
+                  </span>
+                  <span style={{ fontWeight: alreadyHere ? 600 : 500 }}>{c.name}</span>
+                </span>
                 <span style={{ fontSize: 12, color: "var(--text3)" }}>
-                  {alreadyHere ? "already added" : `${count} item${count === 1 ? "" : "s"}`}
+                  {`${count} item${count === 1 ? "" : "s"}`}
                 </span>
               </button>
             );
@@ -145,6 +177,22 @@ export function CollectionPickerModal({
             fontFamily: "inherit", fontSize: 14, fontWeight: 500,
           }}>+ Create new list</button>
         )}
+
+        {/* Done footer — dismisses the modal after the user has
+            toggled list memberships. (The modal stays open after each
+            toggle so multiple lists can be adjusted in one pass.) */}
+        <div style={{
+          display: "flex", justifyContent: "flex-end",
+          marginTop: 14,
+          paddingTop: 14,
+          borderTop: "0.5px solid var(--border)",
+        }}>
+          <button onClick={close} disabled={busy} style={{
+            border: "none", background: "#185FA5", color: "#fff",
+            padding: "10px 22px", borderRadius: 10, cursor: "pointer",
+            fontFamily: "inherit", fontSize: 14, fontWeight: 500,
+          }}>Done</button>
+        </div>
       </div>
     </div>
   );

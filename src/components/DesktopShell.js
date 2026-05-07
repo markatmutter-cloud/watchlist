@@ -146,25 +146,14 @@ export function DesktopShell(props) {
             }}>{label}</button>
           );
         })()}
-        {/* Lot # pill — catalog order, only meaningful on auction
-            sub-tabs (Listings > Live auctions, Watchlist > Saved
-            auctions). Hidden on dealer-listing sub-tabs since
-            dealer items have no lot numbers. PR #98 (Mark's
-            2026-05-06 ask: "view a specific auction's lots in
-            catalog order"). */}
-        {((tab === "listings" && listingsSubTab === "auctions")
-          || (tab === "watchlist" && watchTopTab === "auctions")) && (
-          <button onClick={() => setSort(sort === "lot" ? "date" : "lot")}
-            style={{
-              padding: "6px 12px", borderRadius: 20,
-              border: "0.5px solid var(--border)",
-              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              background: sort === "lot" ? "var(--text1)" : "var(--surface)",
-              color:      sort === "lot" ? "var(--bg)"    : "var(--text2)",
-              fontWeight: sort === "lot" ? 600 : 500,
-              whiteSpace: "nowrap",
-            }}>{sort === "lot" ? "Lot # ↑" : "Lot #"}</button>
-        )}
+        {/* Lot # pill retired 2026-05-07 (Mark feedback): the
+            catalog-order behavior is now baked into the default
+            Date sort — within a single auction (same auction_end),
+            lots order by lot_number ascending. Christie's lots
+            stay grouped + in catalog order, then Phillips, etc.
+            Toggle UI removed because there's no longer a meaningful
+            alternate ordering — the sort always reads as you'd see
+            it on the auction house's own site. */}
         {/* ♥ Saved-only filter pill (Bundle 2B) — Listings tab
             only, signed-in users only. Same data as the Saved tab
             sub-tabs; this is the in-flow alternate access path. */}

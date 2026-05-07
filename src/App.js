@@ -88,8 +88,18 @@ function endingSoonComparator(a, b) {
   if (ta === 3) return 0;
   const ae = a.auction_end || "";
   const be = b.auction_end || "";
-  if (ta === 2) return be.localeCompare(ae);
-  return ae.localeCompare(be);
+  const dateCmp = ta === 2 ? be.localeCompare(ae) : ae.localeCompare(be);
+  if (dateCmp !== 0) return dateCmp;
+  // Mark feedback 2026-05-07: within the same auction (same
+  // auction_end), order by lot_number ascending so the feed reads
+  // as catalog order — i.e. how the user would see the lots on the
+  // auction house's own site. Christie's May 9 lots stay grouped
+  // together AND in catalog order, then Phillips May 11, etc.
+  // Falls back to stable when both lot_numbers are missing.
+  const la = parseInt(a.lot_number || "0", 10) || 0;
+  const lb = parseInt(b.lot_number || "0", 10) || 0;
+  if (la !== lb) return la - lb;
+  return 0;
 }
 
 export default function Watchlist() {
@@ -227,6 +237,32 @@ export default function Watchlist() {
     const desktopMain = document.querySelector("[data-desktop-main]");
     if (desktopMain) desktopMain.scrollTop = 0;
   }, [watchTopTab]);
+
+  // Saved-view staleness snapshot. Mark feedback 2026-05-07: when a
+  // user un-hearts a card by accident on Saved listings/auctions/sold,
+  // the card vanishes immediately — no recovery without reloading the
+  // page and remembering what was there. Fix: snapshot the watchlist
+  // contents whenever the user enters or switches between saved
+  // sub-tabs, and merge the snapshot with the live watchlist so
+  // un-hearted items stay visible until the next sub-tab change /
+  // refresh. Currently-hearted items always render off the live
+  // watchlist (so price / lastSeen updates flow through); only
+  // un-hearted items lean on the snapshot.
+  const [savedItemsSnapshot, setSavedItemsSnapshot] = useState({});
+  useEffect(() => {
+    const onSavedView = tab === "watchlist" &&
+      (watchTopTab === "listings" || watchTopTab === "auctions" || watchTopTab === "sold");
+    if (onSavedView) {
+      // Re-snapshot from the live watchlist on entry / sub-tab switch.
+      // Intentionally NOT depending on watchlist — the whole point is
+      // for the snapshot to lag updates so un-hearts stay visible.
+      setSavedItemsSnapshot({ ...watchlist });
+    } else if (Object.keys(savedItemsSnapshot).length > 0) {
+      // Clear when leaving so re-entry rebuilds fresh.
+      setSavedItemsSnapshot({});
+    }
+    // eslint-disable-next-line
+  }, [tab, watchTopTab]);
   // Listings tab sub-tabs (2026-05-04 restructure). Four values:
   //   "live"     — currently-active dealer listings (default)
   //   "auctions" — currently-active auction lots
@@ -504,12 +540,34 @@ export default function Watchlist() {
   // it on mount and drills in.
   const [pendingChallengeDrillId, setPendingChallengeDrillId] = useState(null);
 
+  // Two-phase sign-in: every "Sign in" CTA in the app fires the
+  // SignInPromptModal first (the explainer + Google button). Mark
+  // feedback 2026-05-07: receivers + signed-out feature prompts were
+  // bypassing the prompt and going straight to OAuth — that's
+  // jarring on first visit. The wrapper below opens the modal; the
+  // modal's primary button is wired to the real `signInWithGoogle`
+  // (passed through shellProps unchanged so the modal still has a
+  // working OAuth path).
+  const triggerSignInPrompt = () => setSignInPromptOpen(true);
+
+  // Tab re-tap → return to landing. Mark feedback 2026-05-07: when
+  // the user is in a sub-view (e.g. Learn > SizeCompare, Saved >
+  // Lists drilled into a list) and taps the active tab pill again,
+  // they expect to return to the tab's landing. Each tab component
+  // (ReferencesTab, CollectionsTab) watches this counter and resets
+  // its internal drill-in state when bumped.
+  const [tabResetTick, setTabResetTick] = useState(0);
+
   // setTab wrapper that auto-escapes any active share-receive
   // surface — clears URL share params, drops both shareActive
   // flags, bumps the resetTick so receivers clear their internal
   // intent state. Top-level nav (Watchlist logo + main tab buttons
   // in both shells) uses this; deep-internal callers (e.g. the
   // sign-in flow's tab switch) keep using the raw setTab.
+  //
+  // Bundle 2A.2 polish (2026-05-07): same-tab click bumps
+  // `tabResetTick` so child tab components can reset their
+  // drill-in state to the landing.
   //
   // Defined as a plain function (not useCallback) — App.js has
   // loading/loadError early returns past line ~1330 and adding
@@ -525,6 +583,12 @@ export default function Watchlist() {
     setShareActive(false);
     setChallengeShareActive(false);
     setShareReceiveResetTick((n) => n + 1);
+    if (newTab === tab) {
+      // Already on this tab — bump the reset counter so child
+      // components can return to their landing without changing tab.
+      setTabResetTick((n) => n + 1);
+      return;
+    }
     setTab(newTab);
   };
 
@@ -1155,23 +1219,13 @@ export default function Watchlist() {
       // Live auctions: Date pill = ending order. date↓ = soonest first
       // (live → upcoming asc → ended desc → non-auction last). date↑
       // reverses the same axis so the user has an off-switch in the
-      // same control. Lot pill = catalog order — group by auction
-      // url then ascending lot_number within each auction (Mark's
-      // ask 2026-05-06 — "view a specific auction's lots in catalog
-      // order").
-      if (sort === "lot") {
-        its.sort((a, b) => {
-          const ua = a.auction_url || "";
-          const ub = b.auction_url || "";
-          if (ua !== ub) return ua.localeCompare(ub);
-          const la = parseInt(a.lot_number || "0", 10) || 0;
-          const lb = parseInt(b.lot_number || "0", 10) || 0;
-          return la - lb;
-        });
-      } else {
-        its.sort(endingSoonComparator);
-        if (sort === "date-asc") its.reverse();
-      }
+      // same control. Catalog-order behavior (group by auction date,
+      // then sort by lot_number ascending within the same auction)
+      // is now baked into `endingSoonComparator` itself — Mark
+      // 2026-05-07. The standalone Lot # pill was retired in the
+      // same change.
+      its.sort(endingSoonComparator);
+      if (sort === "date-asc") its.reverse();
     } else if (listingsSubTab === "sold") {
       // All sold: Date pill = sold-date. Most-recently-sold first by
       // default; date-asc flips to oldest-sold first. Sold dealer items
@@ -1242,8 +1296,14 @@ export default function Watchlist() {
   }, [items, auctionLotItems]);
 
   const watchItems = useMemo(() => {
-    // Hearted dealer items from `watchlist_items`.
-    let its = Object.values(watchlist);
+    // Hearted dealer items from `watchlist_items`. Mark 2026-05-07
+    // un-heart staleness fix: merge the live watchlist with the
+    // savedItemsSnapshot captured on saved-view entry. Spread order
+    // means watchlist values WIN where keys collide, so currently-
+    // hearted items get their fresh data; un-hearted items fall back
+    // to the snapshot value (the original render-time copy) so the
+    // card stays on screen until the next sub-tab change / refresh.
+    let its = Object.values({ ...savedItemsSnapshot, ...watchlist });
     // Tag each entry with its current liveness so we can split into
     // Live/Sold sub-views below. An item is "sold" if the live scrape
     // says it's sold/on-hold OR if it's no longer in the scrape at all
@@ -1397,23 +1457,12 @@ export default function Watchlist() {
     } else if (sort === "price-desc") {
       its.sort((a, b) => (b.savedPriceUSD || b.savedPrice) - (a.savedPriceUSD || a.savedPrice));
     } else if (watchTopTab === "auctions") {
-      // Live saved auctions: Date pill = ending order. Date↓ soonest
-      // first; Date↑ reverses. Lot pill = catalog order grouped by
-      // auction (mirrors Listings > Live auctions; PR adds same
-      // pill on this surface for Saved auctions).
-      if (sort === "lot") {
-        its.sort((a, b) => {
-          const ua = a.auction_url || "";
-          const ub = b.auction_url || "";
-          if (ua !== ub) return ua.localeCompare(ub);
-          const la = parseInt(a.lot_number || "0", 10) || 0;
-          const lb = parseInt(b.lot_number || "0", 10) || 0;
-          return la - lb;
-        });
-      } else {
-        its.sort(endingSoonComparator);
-        if (sort === "date-asc") its.reverse();
-      }
+      // Saved auctions: Date pill = ending order. Date↓ soonest
+      // first; Date↑ reverses. Catalog-order behavior is baked
+      // into `endingSoonComparator` (within the same auction
+      // sort by lot_number ascending) — see the comparator note.
+      its.sort(endingSoonComparator);
+      if (sort === "date-asc") its.reverse();
     } else if (watchTopTab === "sold") {
       // Saved sold: Date pill = sold-date. Most-recent first by
       // default; Date↑ flips.
@@ -1434,7 +1483,7 @@ export default function Watchlist() {
         : (b.savedAt || "").localeCompare(a.savedAt || ""));
     }
     return its;
-  }, [watchlist, liveStateById, sort, filterSources, filterBrands, filterRefs, search,
+  }, [watchlist, savedItemsSnapshot, liveStateById, sort, filterSources, filterBrands, filterRefs, search,
       minPrice, maxPrice, watchTopTab,
       trackedLotUrls, trackedLotsState, trackedLotAddedAt]);
 
@@ -1622,31 +1671,23 @@ export default function Watchlist() {
     </div>
   ) : (
     <div style={{ position: "relative" }}>
-      {/* Avatar + chevron — the chevron is the visual hint that this
-          opens a menu (Mark feedback 2026-05-07: "the initial that
-          shows you're logged in to Google needs a label so they know
-          it's the settings menu"). Keeps the recognizable initial
-          treatment while signaling the menu affordance. */}
+      {/* Avatar — circle initial, no chevron. Mark feedback
+          2026-05-07: chevron didn't read as a menu hint as
+          intended; reverted to plain initial circle. The
+          aria-label + title still convey "Account menu" for
+          assistive tech / hover. */}
       <button onClick={() => setShowUserMenu(o => !o)}
         aria-label="Account menu"
         title="Account menu"
         style={{
-          height: isMobile ? 40 : 32,
-          padding: isMobile ? "0 10px 0 12px" : "0 8px 0 10px",
-          borderRadius: 999,
+          width: isMobile ? 40 : 32, height: isMobile ? 40 : 32, borderRadius: "50%",
           border: "0.5px solid var(--border)", background: "var(--surface)",
           color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
           fontSize: isMobile ? 14 : 13, fontWeight: 600,
           display: "flex", alignItems: "center", justifyContent: "center",
-          gap: isMobile ? 6 : 4,
           flexShrink: 0,
         }}>
-        <span>{userInitial.toUpperCase()}</span>
-        <span aria-hidden="true" style={{
-          fontSize: isMobile ? 10 : 9, color: "var(--text3)",
-          transform: showUserMenu ? "rotate(180deg)" : "none",
-          transition: "transform 120ms ease",
-        }}>▾</span>
+        {userInitial.toUpperCase()}
       </button>
       {showUserMenu && (
         <div style={{
@@ -1683,12 +1724,16 @@ export default function Watchlist() {
             Settings
           </button>
           {isAdmin && (
+            // Site Stats is admin-only — shown only to Mark. Mark
+            // feedback 2026-05-07: shade it and drop the trailing
+            // arrow so it reads as "yours" rather than the same
+            // weight as user-facing entries.
             <button onClick={() => { setShowUserMenu(false); setTab("admin"); setPage(1); }}
               style={{ display: "block", width: "100%", textAlign: "left",
                       padding: "6px 8px", border: "none", background: "transparent",
-                      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                      fontSize: 13, borderRadius: 6 }}>
-              Site stats →
+                      color: "var(--text3)", cursor: "pointer", fontFamily: "inherit",
+                      fontSize: 12, borderRadius: 6, fontStyle: "italic" }}>
+              Site stats
             </button>
           )}
           {/* Report-a-bug entry — fires the contextualized mailto so
@@ -1998,7 +2043,7 @@ export default function Watchlist() {
   const watchlistTabJSX_inner = (
     <WatchlistTab
       user={user}
-      signInWithGoogle={signInWithGoogle}
+      signInWithGoogle={triggerSignInPrompt}
       isAuthConfigured={isAuthConfigured}
       watchlist={watchlist}
       watchItems={watchItems}
@@ -2059,7 +2104,9 @@ export default function Watchlist() {
     <ReferencesTab
       user={user}
       isAuthConfigured={isAuthConfigured}
-      signInWithGoogle={signInWithGoogle}
+      signInWithGoogle={triggerSignInPrompt}
+      allListings={items}
+      tabResetTick={tab === "references" ? tabResetTick : 0}
     />
   );
 
@@ -2074,7 +2121,7 @@ export default function Watchlist() {
     <CollectionsTab
       user={user}
       isAuthConfigured={isAuthConfigured}
-      signInWithGoogle={signInWithGoogle}
+      signInWithGoogle={triggerSignInPrompt}
       collectionsApi={collectionsApi}
       hiddenItems={hiddenItems}
       toggleHide={toggleHide}
@@ -2097,6 +2144,7 @@ export default function Watchlist() {
       clearPendingChallengeDrill={() => setPendingChallengeDrillId(null)}
       collectionsSubTab={collectionsSubTab}
       setCollectionsSubTab={setCollectionsSubTab}
+      tabResetTick={tab === "watchlist" && SUB_VALUES_COLLECTIONS.includes(watchTopTab) ? tabResetTick : 0}
     />
   );
 
@@ -2248,6 +2296,7 @@ export default function Watchlist() {
       collections={collectionsApi.collections}
       itemsByCollection={collectionsApi.itemsByCollection}
       addItemToCollection={addItemToCollectionWithTelemetry}
+      removeItemFromCollection={collectionsApi.removeItemFromCollection}
       createCollection={collectionsApi.createCollection}
       inp={inp}
     />
@@ -2292,7 +2341,7 @@ export default function Watchlist() {
       toggleWatchlist={toggleWatchlist}
       addToSharedInbox={collectionsApi?.addToSharedInbox}
       isAuthConfigured={isAuthConfigured}
-      signInWithGoogle={signInWithGoogle}
+      signInWithGoogle={triggerSignInPrompt}
       primaryCurrency={primaryCurrency}
       onClickListing={onClickListing}
       // Mirrors active state up so the shell can hide the regular
@@ -2315,7 +2364,7 @@ export default function Watchlist() {
     <ChallengeReceiver
       user={user}
       isAuthConfigured={isAuthConfigured}
-      signInWithGoogle={signInWithGoogle}
+      signInWithGoogle={triggerSignInPrompt}
       collectionsApi={collectionsApi}
       setChallengeShareActive={setChallengeShareActive}
       setTab={setTabWithReceiveEscape}

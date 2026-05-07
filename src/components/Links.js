@@ -224,10 +224,10 @@ export function Links({ allListings = [], onBack }) {
     <div style={{ paddingTop: 4 }}>
       {onBack && (
         <div style={{ marginBottom: 10 }}>
-          <button onClick={onBack} aria-label="Back to Cool Stuff" style={{
+          <button onClick={onBack} aria-label="Back to Learn" style={{
             border: "none", background: "transparent", color: "var(--text2)",
             fontFamily: "inherit", fontSize: 13, cursor: "pointer", padding: "4px 0",
-          }}>← Cool Stuff</button>
+          }}>← Learn</button>
         </div>
       )}
 

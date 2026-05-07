@@ -41,6 +41,7 @@ export function ManualEntryForm({
   const [soldPrice, setSoldPrice] = useState("");
   const [soldDate, setSoldDate] = useState("");
   const [comments, setComments] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -59,6 +60,7 @@ export function ManualEntryForm({
       setSoldPrice("");
       setSoldDate("");
       setComments("");
+      setSourceUrl("");
       setPhotoFile(null);
       setPhotoPreview(null);
       setBusy(false);
@@ -117,6 +119,7 @@ export function ManualEntryForm({
         soldPrice:    kind === "sold" && soldPrice !== "" ? Number(soldPrice) : null,
         soldDate:     kind === "sold" && soldDate          ? soldDate          : null,
         comments:     comments.trim() || null,
+        sourceUrl:    sourceUrl.trim() || null,
       });
       if (res?.error) {
         setError(res.error);
@@ -198,10 +201,19 @@ export function ManualEntryForm({
               placeholder="5513" style={{ ...inp, fontSize: 14 }} />
           </div>
         </div>
-        <div style={{ marginBottom: 14 }}>
+        <div style={{ marginBottom: 10 }}>
           <Label>Material</Label>
           <input value={material} onChange={e => setMaterial(e.target.value)}
             placeholder="Steel · 18k yellow gold · etc." style={{ ...inp, fontSize: 14 }} />
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <Label>Link (optional)</Label>
+          <input
+            type="url"
+            value={sourceUrl}
+            onChange={e => setSourceUrl(e.target.value)}
+            placeholder="https://example.com/listing — dealer / eBay / auction lot"
+            style={{ ...inp, fontSize: 14 }} />
         </div>
 
         {/* Price paid */}
