@@ -27,16 +27,65 @@ let listingsCache = null;
 let listingsCacheTime = 0;
 const CACHE_TTL_MS = 60 * 1000;
 
+// Mirrors `shortHash` in src/utils.js — keep in sync. FNV-style
+// double-hash producing a stable 12-char hex id from a URL. Used so
+// auction-lot share URLs map to the same `shortHash(url)` id the
+// frontend uses.
+function shortHash(str) {
+  if (!str) return '';
+  let h1 = 0x811c9dc5 | 0;
+  let h2 = 0x9e3779b9 | 0;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 0x01000193);
+    h2 = Math.imul((h2 ^ c) + ((h2 << 5) | 0), 0x85ebca6b);
+  }
+  const a = (h1 >>> 0).toString(16).padStart(8, '0');
+  const b = (h2 >>> 0).toString(16).padStart(8, '0');
+  return (a + b).slice(0, 12);
+}
+
+function readJson(filePath) {
+  try { return JSON.parse(fs.readFileSync(filePath, 'utf8')); }
+  catch (e) { return null; }
+}
+
 function loadListings() {
   const now = Date.now();
   if (listingsCache && now - listingsCacheTime < CACHE_TTL_MS) return listingsCache;
-  try {
-    const file = path.join(process.cwd(), 'public', 'listings.json');
-    listingsCache = JSON.parse(fs.readFileSync(file, 'utf8'));
-    listingsCacheTime = now;
-  } catch (e) {
-    listingsCache = [];
+  const out = [];
+  // 1. Dealer feed (already array-shaped, has `id`).
+  const dealers = readJson(path.join(process.cwd(), 'public', 'listings.json'));
+  if (Array.isArray(dealers)) {
+    for (const d of dealers) if (d) out.push(d);
   }
+  // 2. Auction lots (comprehensive scrape + manual archive). Both
+  //    files are keyed `{url: lot_data}` — flatten into the same
+  //    array shape as `listings.json` so the lookup-by-id below works
+  //    uniformly. id is shortHash(url) to match the frontend's
+  //    auctionLotItems projection in App.js.
+  for (const fname of ['auction_lots.json', 'manual_archive_lots.json']) {
+    const blob = readJson(path.join(process.cwd(), 'public', fname));
+    if (!blob || typeof blob !== 'object') continue;
+    for (const url of Object.keys(blob)) {
+      const data = blob[url] || {};
+      out.push({
+        id: shortHash(url),
+        url,
+        brand: data.maker || data.house || '',
+        ref: data.title || '',
+        title: data.title || '',
+        img: data.cached_img_url || data.image || '',
+        // Carry the source so OG copy can hint at what kind of share
+        // this is ("Sotheby's lot", "Phillips lot") — currently the
+        // OG description is site-wide, but a future iteration may
+        // want this field.
+        source: data.house || '',
+      });
+    }
+  }
+  listingsCache = out;
+  listingsCacheTime = now;
   return listingsCache;
 }
 
