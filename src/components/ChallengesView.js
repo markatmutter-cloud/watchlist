@@ -138,7 +138,7 @@ export function ChallengesView({
       }}>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           {onBack && (
-            <button onClick={onBack} aria-label="Back to Cool Stuff" style={{
+            <button onClick={onBack} aria-label="Back" style={{
               border: "none", background: "transparent", color: "var(--text2)",
               cursor: "pointer", fontFamily: "inherit", fontSize: 13,
               padding: 0, display: "flex", alignItems: "center", gap: 4,

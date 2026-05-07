@@ -80,6 +80,15 @@ export function CollectionsTab({
     if (subTab !== "lists") setSelectedListId(null);
   }, [subTab]);
 
+  // Tab re-tap → return to the Lists landing. App.js bumps
+  // `tabResetTick` whenever the user clicks the active main tab pill;
+  // when we're on a collections-style sub-tab, we clear the drill-in
+  // id so the user lands back on the list-of-lists view.
+  useEffect(() => {
+    if (props.tabResetTick && props.tabResetTick > 0) setSelectedListId(null);
+    // eslint-disable-next-line
+  }, [props.tabResetTick]);
+
   // URL-sync drill-in id (Lists sub-tab only). Same pattern as
   // App.js's nav sync — pushState on real drill-in/out, replaceState
   // on first mount + popstate-driven re-derivation. Browser back

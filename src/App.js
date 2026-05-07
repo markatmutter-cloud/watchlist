@@ -504,12 +504,24 @@ export default function Watchlist() {
   // it on mount and drills in.
   const [pendingChallengeDrillId, setPendingChallengeDrillId] = useState(null);
 
+  // Tab re-tap → return to landing. Mark feedback 2026-05-07: when
+  // the user is in a sub-view (e.g. Learn > SizeCompare, Saved >
+  // Lists drilled into a list) and taps the active tab pill again,
+  // they expect to return to the tab's landing. Each tab component
+  // (ReferencesTab, CollectionsTab) watches this counter and resets
+  // its internal drill-in state when bumped.
+  const [tabResetTick, setTabResetTick] = useState(0);
+
   // setTab wrapper that auto-escapes any active share-receive
   // surface — clears URL share params, drops both shareActive
   // flags, bumps the resetTick so receivers clear their internal
   // intent state. Top-level nav (Watchlist logo + main tab buttons
   // in both shells) uses this; deep-internal callers (e.g. the
   // sign-in flow's tab switch) keep using the raw setTab.
+  //
+  // Bundle 2A.2 polish (2026-05-07): same-tab click bumps
+  // `tabResetTick` so child tab components can reset their
+  // drill-in state to the landing.
   //
   // Defined as a plain function (not useCallback) — App.js has
   // loading/loadError early returns past line ~1330 and adding
@@ -525,6 +537,12 @@ export default function Watchlist() {
     setShareActive(false);
     setChallengeShareActive(false);
     setShareReceiveResetTick((n) => n + 1);
+    if (newTab === tab) {
+      // Already on this tab — bump the reset counter so child
+      // components can return to their landing without changing tab.
+      setTabResetTick((n) => n + 1);
+      return;
+    }
     setTab(newTab);
   };
 
@@ -2060,6 +2078,8 @@ export default function Watchlist() {
       user={user}
       isAuthConfigured={isAuthConfigured}
       signInWithGoogle={signInWithGoogle}
+      allListings={items}
+      tabResetTick={tab === "references" ? tabResetTick : 0}
     />
   );
 
@@ -2097,6 +2117,7 @@ export default function Watchlist() {
       clearPendingChallengeDrill={() => setPendingChallengeDrillId(null)}
       collectionsSubTab={collectionsSubTab}
       setCollectionsSubTab={setCollectionsSubTab}
+      tabResetTick={tab === "watchlist" && SUB_VALUES_COLLECTIONS.includes(watchTopTab) ? tabResetTick : 0}
     />
   );
 
