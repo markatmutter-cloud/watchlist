@@ -31,6 +31,7 @@ import { CollectionPickerModal } from "./components/CollectionPickerModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { ShareReceiver } from "./components/ShareReceiver";
 import { ChallengeReceiver } from "./components/ChallengeReceiver";
+import { ListReceiver } from "./components/ListReceiver";
 import { AuctionCalendar } from "./components/AuctionCalendar";
 import { LotMigrationBanner } from "./components/LotMigrationBanner";
 import { WatchlistTab } from "./components/WatchlistTab";
@@ -526,6 +527,10 @@ export default function Watchlist() {
   // Either of these flips the shell into "focused landing surface"
   // mode (regular browse chrome hidden).
   const [challengeShareActive, setChallengeShareActive] = useState(false);
+  // List-share receive flow (List Sharing v1, 2026-05-07). Same
+  // pattern — one-bit mirror; the ListReceiver component owns its
+  // own intent state.
+  const [listShareActive, setListShareActive] = useState(false);
   // Bumps each time the user explicitly navigates away from a
   // share-receive surface via main-nav (Watchlist logo, top tabs).
   // Receivers watch this and clear their internal intent state,
@@ -576,12 +581,13 @@ export default function Watchlist() {
   const setTabWithReceiveEscape = (newTab) => {
     try {
       const url = new URL(window.location.href);
-      ["listing", "shared", "newchallenge", "challenge", "t", "n", "b", "d"]
+      ["listing", "shared", "newchallenge", "challenge", "t", "n", "b", "d", "list"]
         .forEach((k) => url.searchParams.delete(k));
       window.history.replaceState({}, "", url.toString());
     } catch {}
     setShareActive(false);
     setChallengeShareActive(false);
+    setListShareActive(false);
     setShareReceiveResetTick((n) => n + 1);
     if (newTab === tab) {
       // Already on this tab — bump the reset counter so child
@@ -2385,6 +2391,24 @@ export default function Watchlist() {
     />
   );
 
+  // List-share receive surface (List Sharing v1, 2026-05-07). Same
+  // isolation pattern as ShareReceiver / ChallengeReceiver — all
+  // hooks live inside the component; App.js only mirrors a one-bit
+  // `listShareActive` so the shells can gate browse chrome.
+  const listReceiverJSX = (
+    <ListReceiver
+      user={user}
+      isAuthConfigured={isAuthConfigured}
+      signInWithGoogle={triggerSignInPrompt}
+      collectionsApi={collectionsApi}
+      items={mainFeedItems}
+      primaryCurrency={primaryCurrency}
+      setListShareActive={setListShareActive}
+      setTab={setTabWithReceiveEscape}
+      resetTick={shareReceiveResetTick}
+    />
+  );
+
   // Phase B2 one-shot per-user migration of tracked auction-house URLs
   // → watchlist_items. Self-contained component (hooks isolated) so
   // App.js's hook count stays unchanged. Renders the dismissable
@@ -2469,6 +2493,7 @@ export default function Watchlist() {
     listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX,
     challengeReceiverJSX,
+    listReceiverJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, collectionsSubTabsJSX,
     // Bundle 2A.2: shells render `watchlistTabJSX` for the Saved
@@ -2479,10 +2504,12 @@ export default function Watchlist() {
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     // Whether a share-receive landing surface is taking over the
-    // content area. Shells gate their normal tab content on either
-    // flag — single-listing shares (#63) or challenge shares (v1.5).
+    // content area. Shells gate their normal tab content on any of
+    // these flags — single-listing shares (#63), challenge shares
+    // (v1.5), or list shares (List Sharing v1, 2026-05-07).
     shareActive,
     challengeShareActive,
+    listShareActive,
   };
 
   return isMobile

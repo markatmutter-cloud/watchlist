@@ -648,6 +648,37 @@ function ListsView({
           </span>
           {!selected.isSharedInbox && !isHiddenColl && (
             <>
+              {/* Share — copies a `?list=<id>&shared=1` link via the
+                  Web Share API (or clipboard fallback). Recipients
+                  land on ListReceiver which fetches via the public
+                  `get_public_list` RPC. List Sharing v1, 2026-05-07. */}
+              <button onClick={async () => {
+                  const url = `${window.location.origin}/?list=${encodeURIComponent(selected.id)}&shared=1`;
+                  const shareData = {
+                    title: `${selected.name} — Watchlist`,
+                    text: `${selected.name} — a list on Watchlist`,
+                    url,
+                  };
+                  try {
+                    if (navigator.share) {
+                      await navigator.share(shareData);
+                    } else if (navigator.clipboard) {
+                      await navigator.clipboard.writeText(url);
+                      window.alert("Link copied. Paste it anywhere to share this list.");
+                    }
+                  } catch (e) {
+                    if (e?.name !== "AbortError") {
+                      try { await navigator.clipboard?.writeText(url); window.alert("Link copied."); }
+                      catch { window.prompt("Copy this link to share:", url); }
+                    }
+                  }
+                }}
+                title="Share this list"
+                style={{
+                  border: "none", background: "#185FA5",
+                  color: "#fff", padding: "4px 10px", borderRadius: 6,
+                  cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
+                }}>Share</button>
               <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
                 title="Rename list"
                 style={{

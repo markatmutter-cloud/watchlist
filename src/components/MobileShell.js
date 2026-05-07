@@ -48,6 +48,7 @@ export function MobileShell(props) {
     adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX,
     challengeReceiverJSX,
+    listReceiverJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, collectionsSubTabsJSX, watchlistTabJSX,
     referencesTabJSX, collectionsTabJSX,
@@ -55,9 +56,10 @@ export function MobileShell(props) {
     userLimitBannerJSX,
     shareActive,
     challengeShareActive,
+    listShareActive,
   } = props;
-  // Either receive-flow swallows the regular browse chrome.
-  const anyShareActive = shareActive || challengeShareActive;
+  // Any of the three receive-flows swallows the regular browse chrome.
+  const anyShareActive = shareActive || challengeShareActive || listShareActive;
 
   // Listings sub-tab gates filter exposure (mirror of DesktopShell).
   const showDealerSources  = !(tab === "listings" && listingsSubTab === "auctions");
@@ -236,6 +238,10 @@ export function MobileShell(props) {
         {/* Watch Challenges receive surface (v1.5). Same isolation
             pattern as ShareReceiver. */}
         {challengeReceiverJSX}
+        {/* List-share receive surface (v1, 2026-05-07). Same
+            isolation pattern. Renders null when no `?list=…&shared=1`
+            in URL. */}
+        {listReceiverJSX}
         {/* Phase B2 lot-migration banner. Same isolation pattern as
             ShareReceiver — renders null until the one-shot migration
             actually moves at least one tracked URL into Favorites. */}
