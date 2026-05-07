@@ -35,17 +35,18 @@ describe("MobileShell", () => {
     expect(screen.queryByLabelText("Filters")).not.toBeInTheDocument();
   });
 
-  test("renders the bottom tab bar with Listings + Saved", () => {
+  test("renders the bottom tab bar with Listings + Saved + Learn", () => {
     render(<MobileShell {...buildMockShellProps()} />);
-    // Bundle 2A.1 — bottom-nav tab is now "Saved" (UI label) backed
-    // by `?tab=watchlist` (URL key). Brand title at the top stays
-    // "Watchlist".
     // Bundle 2A.2 — Collections nav pill removed from bottom bar
-    // (collapsed into Saved); only Listings + Saved remain.
+    // (collapsed into Saved); Learn (URL key `references`) replaces
+    // the Collections slot. Three pills: Listings / Saved / Learn.
+    // Brand title at the top stays "Watchlist".
     expect(screen.getAllByText("Watchlist").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Saved").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Listings")).toBeInTheDocument();
+    expect(screen.getByText("Learn")).toBeInTheDocument();
     expect(screen.queryByText("Collections")).not.toBeInTheDocument();
+    expect(screen.queryByText("Cool Stuff")).not.toBeInTheDocument();
   });
 
   test("renders the drawer when drawerOpen is true", () => {
