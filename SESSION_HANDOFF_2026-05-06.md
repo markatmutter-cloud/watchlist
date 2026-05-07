@@ -7,11 +7,28 @@ graduate to ROADMAP.md.
 
 ## TL;DR
 
-Another long day. **Twenty-five PRs (#57 → #81)**, all merged.
-Production current. Bundle hash floats with each Vercel deploy. The
-afternoon block (PRs #77–#81) extended the morning's challenges work
-with the recipient-side flow and a few sharp-edges fixes — see
-**Continuation — afternoon work** below.
+Marathon day. **Forty-four PRs (#57 → #100)**, all merged. Production
+current. Bundle hash floats with each Vercel deploy. The day arc:
+
+1. **Morning** (#57 → #76) — Listings divider count fix; site
+   analytics user stats half + source stats extensions; user limits;
+   shared-link landing surface (5 iterations); dynamic OG preview;
+   Watch Challenges polish (D1→D4).
+2. **Afternoon** (#77 → #81) — EOD docs round 1; Watch Challenges
+   v1.5 receive flow; eBay TAG Heuer filter; D5 polish; admin-hide
+   global blocklist.
+3. **Evening / late night** (#82 → #100) — **Collections build**
+   (six PRs: hard system lists, top-level tab, manual entry, archive
+   picker, wishlist rank, sender attribution); saved-search count
+   fix; UI fixes bundle; **auction-scrape coverage rebuild** for the
+   May 9–10 Geneva sales (Christie's pagination, Sotheby's apolloCache
+   lotCards, Phillips Turbo-Stream — none of the four houses at ≤50%
+   capture anymore); listings divider dedup; browser back/forward
+   parity; lot-number catalog-sort pill; Collections four-sub-tab
+   restructure; ROADMAP refresh.
+
+See **Continuation — afternoon work** + **Continuation — evening /
+late night** below.
 
 The session arc, plain English:
 
@@ -171,12 +188,196 @@ sharp-edges items:
    existing `is_admin()` helper. Rollback is one row delete from
    the SQL editor; the per-user hide row is preserved alongside.
 
-After #81 Mark flagged two new items he wants to start with next
-session — see **Next session** below.
+After #81 Mark flagged two new items as next-session work — sign-in
+CTA prominence + saved challenges with sender's name. Both ended up
+shipping the same day (see continuation below); the actual roll-over
+work is now what's at the top of **Next session**.
+
+## Continuation — evening / late night (PRs #82 → #100)
+
+After #81 Mark merged the EOD-docs PR (#77 was the prior continuation)
+and pivoted to a wider plan: **"this is the time to build out the
+collections feature."** The 19 PRs from this block are dominated by
+the Collections build, plus three other arcs that came up during /
+after it.
+
+### Collections build (PRs #85 → #90)
+
+Mark's locked plan: "everything is a list." Four kinds — Owned, Sold,
+Wishlist, Challenges — surfaced together under a new top-level
+**Collections** tab. Six PRs in sequence:
+
+- **#85 Schema + hook** — `is_system` flag on `collections` +
+  `prevent_system_collection_delete` BEFORE-DELETE trigger
+  (defense-in-depth so even an accidental DELETE on a hard list
+  fails). Three hard lists (Owned/Sold/Wishlist) auto-create per
+  user via the `useCollections` first-load effect, with a lazy
+  retry if the auto-create fails (Mark hit this — the SQL hadn't
+  been run yet, hook silently warned; running the migration after
+  the fact let the next page-load fix everything).
+- **#86 Top-level Collections tab + nav restructure** —
+  `TAB_VALUES` gains `"collections"`. Migration: old
+  `?tab=watchlist&sub=collections` redirects to `?tab=collections`.
+  WatchlistTab drops the Lists sub-tab; ReferencesTab drops the
+  Watch Challenges resource. Mobile bottom-bar grows from 2 → 3
+  pills (Listings / Watchlist / Collections).
+- **#87 Manual entry + photo upload** — `is_manual` boolean +
+  `manual_*` columns on `collection_items` (nullable on every row;
+  check constraint requires `listing_id IS NOT NULL OR is_manual`).
+  New `watch-photos` Supabase Storage bucket with RLS per-user
+  folders (`{auth.uid}/{random}.jpg`). Client-side canvas resize
+  to 1600px JPEG q0.85 (5–10× cut on phone photos). Slim
+  `ManualItemCard` for items without a dealer URL.
+- **#88 Archive picker + Owned→Sold transition** — new
+  `ListingPickerModal` (Favorites / All listings / each user list
+  / Paste link). New `MarkAsSoldModal` captures sold price + sold
+  date. `markItemAsSold` mutator UPDATEs `collection_id` + the
+  manual_sold_* columns in one shot — preserves snapshot + savedAt
+  + rowId. Card extended with optional `extraMenuItems` so the
+  "..." menu can carry "Mark sold" without Card knowing about
+  collection semantics.
+- **#89 Wishlist force-rank** — `position` integer column on
+  `collection_items` + composite index. New `WishlistRankedList`
+  vertical-list render with rank number + ↑/↓ controls per row +
+  remove ×. Optimistic local update on swap; parallel UPDATEs
+  persist. Tap-based controls (no drag-drop) for cross-device
+  parity with the challenges D3 model.
+- **#90 Saved challenges with sender's name** — `sender_name`
+  column on `collections`. Spec link appends `&from=<senderName>`;
+  `createChallenge` accepts `senderName` and labels the saved draft
+  "James's 3 watches for $50k". ChallengesView splits into
+  **Sent to you** + **Yours** sections + adds a small `from <name>`
+  attribution chip per row.
+
+### Auction-scrape coverage rebuild (PRs #93, #94, #100)
+
+Mark flagged that all four auction houses were undercapturing for
+the upcoming **May 9–10 Geneva sales** (Phillips CH080226, Christie's
+31080, Sotheby's GE2601 + GE2611). Three PRs landed full coverage:
+
+- **#93 Christie's pagination + Phillips WAF backoff (first attempt).**
+  Christie's auction page only embedded ~80 lots; switched to their
+  `lot_search` paginated REST API which exposes the full set.
+  Phillips got per-lot retry-with-backoff to dodge their WAF. (The
+  Phillips approach didn't break through in practice — see #100.)
+- **#94 Sotheby's full enumeration via apolloCache lotCards.** The
+  algoliaJson SSR endpoint hardcodes `page=0` server-side, so we
+  could only ever see the first 48 lots. Workaround: each Sotheby's
+  lot page's `__NEXT_DATA__.props.pageProps.apolloCache` ships a
+  full Auction object whose `lotCards` field has every lot in the
+  sale. Two-pass strategy: fetch the auction page → get one slug
+  via algoliaJson → fetch that lot page → harvest lotCards (151+
+  lots) → for each lot, per-lot fetch grabs estimateV2 + media +
+  description from its own LotV2 in apolloCache. UTF-8 unpacked
+  via `Amount` object (`{__typename: "Amount", amount: "55000"}`).
+- **#100 Phillips Turbo-Stream payload (the one that worked).**
+  WAF backoff from #93 didn't break through Phillips' edge — only
+  6 of 225 lots got captured on the next CI run. Pivot: parse the
+  React Router 7 / Remix v3 Turbo-Stream payload that's INLINE in
+  the auction-page response. Multiple `streamController.enqueue("…")`
+  chunks deliver a flat JSON array using
+  `{"_K_idx": V_idx}` references; resolve the graph and the
+  auction object's `lots[]` field is every lot with title +
+  estimates + image + status + lot_number — everything per-lot
+  fetches were returning, in **one** request that the WAF doesn't
+  block. Live result: 6 → 224 lots. UTF-8 fixed by re-parsing
+  chunks via `json.loads('"' + c + '"')` instead of
+  `encode/decode("unicode_escape")` (which mangles multi-byte
+  characters; verified Élégante → Ã‰lÃ©gante before the fix).
+
+Final coverage check post-#100 (live data):
+- Antiquorum: 540 lots ✓
+- Christie's: 226 lots ✓
+- Sotheby's: 324 lots ✓ (was 94 before #94)
+- Phillips: ~224 lots ✓ (was 6 before #100)
+
+### Other evening work (PRs #82, #91, #92, #95, #96, #97, #98, #99)
+
+- **#82 EOD docs continuation** — extension of the morning's
+  handoff doc covering #77–#81.
+- **#91 Saved-search count + sub-tab match** — Mark's report:
+  saved search showed "17 for sale" but tapping landed on a view
+  with 3 results. Two compounding bugs: (a) count computed off
+  `items.filter(!sold)` (dealers) but `runSearch` didn't reset
+  `listingsSubTab`, so a user on Live auctions saw 3 auction
+  matches with the count reflecting dealer-side matches; (b) the
+  count omitted the hidden filter. Fix: `runSearch` now also
+  `setListingsSubTab("live")` and the count filter adds
+  `!hidden[i.id]`.
+- **#92 UI fixes bundle** — three small reports:
+  - HardListRow image strip rendered ~1900px on desktop with one
+    item (`flex:1 + aspectRatio:1/1`). Switched to fixed 64×64
+    thumbnails.
+  - `ListingPickerModal` source chips were vertically clipped via
+    `overflowX:auto`'s implicit Y-clipping in some browsers.
+    Switched to `flexWrap:wrap + flexShrink:0` — no scroll, no
+    clipping.
+  - Restored Share + Delete on challenges list rows (had been
+    removed in PR #84). Done by extending `ListRow` with an
+    optional `actions` prop. Outer flips from `<button>` to
+    `<div role="button">` when actions are present (nested
+    `<button>`s would be invalid HTML).
+- **#95 Listings divider dedup** — Mark saw two "Last week"
+  dividers stacked at top. Root cause: `allFiltered` puts
+  non-backfilled items first, backfilled second; both subsections
+  bucket by the same date labels, so when each section starts in
+  "Last week" you get two consecutive same-name dividers. Fix:
+  return a single "Earlier additions" label for every backfilled
+  item regardless of date. Non-backfilled section keeps its
+  natural date dividers; backfilled all collapse under one header.
+- **#96 Browser back/forward parity** — every URL writer used
+  `history.replaceState`, so the browser stack only had one
+  Watchlist entry; back jumped straight to whatever opened
+  Watchlist. New shape: `pushState` on real navigations (tab,
+  sub-tab, drill-in change after first mount) + a `popstate`
+  listener that re-derives state from URL. Both App.js and
+  CollectionsTab follow the same `useRef(prev) + useRef(isFirst)`
+  pattern. Other writers (ShareReceiver / ChallengeReceiver /
+  setTabWithReceiveEscape) stay on `replaceState` — they're URL
+  cleanup, not navigations.
+- **#97 ROADMAP refresh** — Privacy notice section added under
+  Epic 0; user-feedback / bug-report surface parked under Epic 0
+  in response to Mark's question "is there a place to put a bug
+  report on pages?"; today's progress captured in the update log
+  + Epic 3 Collections refactor section + Epic 6 Watch Challenges
+  v1.5 marked shipped; priority order rewritten.
+- **#98 Lot # sort pill (catalog order)** — Mark's lot-number
+  question. New sort value `"lot"` + a third pill rendered on
+  Listings > Live auctions and Watchlist > Saved auctions only.
+  Sort dispatch groups by `auction_url` then ascending
+  `lot_number`. Toggles between `sort="lot"` and `sort="date"`.
+- **#99 Collections four-sub-tab restructure** — Mark's request
+  after living with #86's stacked-index design for an hour. New
+  structure: **My collection** (Owned/Sold/All toggle, single
+  grid, no drill-in) / **Wishlist** (standalone ranked list) /
+  **Lists** (user lists + shared inbox + Hidden synthetic) /
+  **Challenges** (delegates to ChallengesView). New
+  `collectionsSubTab` state + `?sub=` URL sync + `localStorage`
+  persistence. CollectionsTab fully rewritten as a sub-tab
+  dispatcher.
 
 ## What shipped (in order)
 
 ```
+[2026-05-06 evening / late night]
+PR #100 Auction lots: full Phillips enumeration via Turbo-Stream (6 → 224 lots)
+PR #99  Collections: four sub-tabs (My collection / Wishlist / Lists / Challenges)
+PR #98  Sort: Lot # pill on auction sub-tabs (catalog order)
+PR #97  ROADMAP: capture Collections build + privacy notice + refresh priorities
+PR #96  Browser back/forward parity: pushState + popstate listener
+PR #95  Listings dividers: collapse backfilled under "Earlier additions"
+PR #94  Auction lots: full Sotheby's enumeration via apolloCache lotCards (94 → 324)
+PR #93  Auction lots: Christie's full pagination + Phillips WAF backoff
+PR #92  Collections UI: HardListRow image / picker chips / share+delete restore
+PR #91  Saved searches: count + sub-tab match what the user sees on tap
+PR #90  Collections: saved challenges with sender's name
+PR #89  Collections: Wishlist force-rank with ↑/↓ controls
+PR #88  Collections: archive-listing picker + Owned→Sold transition
+PR #87  Collections: manual entry form + photo upload (Owned/Sold)
+PR #86  Collections: top-level tab + nav restructure
+PR #85  Collections: schema + hook for hard system lists (Owned/Sold/Wishlist)
+PR #82  SESSION_HANDOFF: extend 2026-05-06 with afternoon PRs (#77–#81)
+
 [2026-05-06 afternoon]
 PR #81  Admin-hide: taste-maker hides drop the listing globally
 PR #80  Watch Challenges D5 — copy + escape + drill + sign-in
@@ -393,74 +594,49 @@ Two new items flagged at end of session, queued for next session:
 
 ## Next session
 
-Top of the priority list, in epic-numbered form. The v1.5 receive
-flow that used to be #1 shipped this afternoon (#78 + #80); two
-new top-of-list items came out of Mark's end-of-session feedback.
+Refreshed end-of-evening — both the morning's top items (sign-in
+CTA, saved challenges with sender) shipped today via PRs #80 + #90,
+and the entire Collections build slotted in around them. New top of
+the queue:
 
-1. **Sign-in CTA prominence on share-receive surfaces (Epic 4 +
-   Epic 6).** Both ShareReceiver (listing) and ChallengeReceiver
-   (spec + complete) currently lead with "First time on Watchlist?"
-   and bury the sign-in path. Mark wants sign-in raised to a
-   first-class option with copy explaining what it unlocks ("Sign
-   in here — to add searches, complete this challenge, save lists").
-   Both options visible side-by-side, not either/or. Touches
-   `OrientationAnchors` (the shared block both receivers render),
-   the `onSignIn` prop already wired in #80, and probably the
-   first-timer copy. Half-session.
-
-2. **Saved-challenges with sender's name + section (Epic 6).**
-   When a recipient hits a `?newchallenge=…` link and clicks "Take
-   this challenge", the draft is currently anonymous. Save it
-   labeled with the sender ("James's 3 watch collection for $50k").
-   Then build a saved-challenges section in the Cool-Stuff
-   challenges view that groups: the original challenge, your
-   completion, and friends' responses sent back to you. Likely
-   shape:
-   - Add `sender_name` (text, nullable) to `collections` rows
-     created via the take-this-challenge flow. Captured from a
-     new `&from=…` URL param appended to the spec share link by
-     `shareChallengeSpec`.
-   - Add `parent_challenge_id` linkage when a recipient takes a
-     challenge → original challenge (already on the schema from
-     2026-05-03; previously unused). Reuse it.
-   - New "Sent to you" / "Sent back to you" groupings in
-     ChallengesView.
-   Multi-PR. Probably worth a planning step at the top of the
-   session before coding.
-
-3. **Welcome page + og:image (Epic 0).** First-impression page for
-   non-share visitors. Half-session.
-
-4. **References as first-class entities (Epic 0).** Big substrate
+1. **Welcome page + og:image (Epic 0).** First-impression page for
+   non-share visitors. og:image still the 1024×1024 apple-touch-icon
+   placeholder. Half-session.
+2. **Privacy notice + minimal terms (Epic 0).** Added to the
+   roadmap during today's #97 update. Becomes load-bearing before
+   Watchlist gets shared with users outside Mark's circle. One-pager
+   `/privacy` + companion `/terms`, linked from the user-dropdown
+   footer.
+3. **References as first-class entities (Epic 0).** Big substrate
    work; gates Epic 5 (encyclopedia) + Epic 7 (recommender).
    Multi-session.
-
-5. **Image cache for List items (Epic 3).** Extend
+4. **Image cache for List items (Epic 3).** Extend
    `cache_watchlist_images.mjs` to cover `collection_items` rows.
-   Soon-ish per Mark.
-
-6. **Strength-of-save model (Epic 3 + 7).** Two-tier hearts.
-
-7. **Source pruning at 50-dealer threshold (Epic 1 Stop rule).**
-   Currently at 38; engagement data now flowing so the prune-vs-
-   keep decision is data-backed.
-
-8. **Card unification — Cool Stuff resource cards + challenges
-   list rows.** Mark's "small thing" from this afternoon: cards in
-   the Cool Stuff tab should match Favorites/Lists card style and
-   drop the clip-art icons. Cosmetic; can be slipped into another
-   PR if a relevant file is open.
+   Promoted by Mark earlier in the day; deferred through the
+   Collections build.
+5. **Strength-of-save model (Epic 3 + 7).** Two-tier hearts.
+6. **Source pruning at 50-dealer threshold (Epic 1 Stop rule).**
+   Currently at 38.
+7. **"Save this collection back" — child-challenge linkage (Epic 6).**
+   When a friend shares THEIR completion of MY challenge back to me,
+   I should be able to save it as a child challenge with
+   `parent_challenge_id` linkage. Schema column already exists from
+   2026-05-03; the receive-side UI to surface "save this collection"
+   on the complete-receive page hasn't been built. Closes the social
+   loop fully — Mark's "three other friends' solutions sent back to
+   you" framing.
+8. **Card unification carry-over.** Cool Stuff resource cards still
+   need to match Favorites/Lists card style; drop the clip-art icons
+   (referenced 2026-05-06 morning, still pending). Cosmetic.
 
 Plus the maintenance-rhythm beat: every 4th-5th session is hygiene
 only.
 
-**Strong recommendation: start with #1 (sign-in CTA prominence) —
-small, well-scoped, builds momentum — then move to #2 (saved
-challenges with sender name) which is the more substantive piece
-and benefits from a planning step.** #2 closes the social loop
-Mark's been circling all session: outbound share polished, inbound
-landing surface done, now persistent recipient-side state +
-attribution.
+**Strong recommendation: start with #1 (Welcome page + og:image).**
+Small, well-scoped, ships in one PR. After today's marathon Mark
+should have an easy roll-back-in. The Privacy notice (#2) is the
+right second item — same shape (single-page content) and it gets
+the legal/compliance baseline in place before any wider sharing.
 
 ## Getting started in next session
 
@@ -478,64 +654,79 @@ Read order, top to bottom — should take ~3 minutes:
    they landed. Skim any PR you want context on via `gh pr view <N>`.
 
 Production state at end of session:
-- All 25 PRs merged. No open PRs. No stale branches.
+- All 44 PRs merged. No open PRs. No stale branches.
 - Vercel green on the latest deploy. Bundle hash floats; verify a
   fresh deploy is serving before claiming any new PR is shipped
   (the `index.html` hash changes per deploy — that's the canary).
-- Supabase schema files added today (none need re-running unless
-  you reset the DB):
+- Supabase schema files added today — Mark ran them all via the
+  Supabase SQL editor (none need re-running unless you reset the DB):
   - `supabase/schema/2026-05-05_listing_events.sql`
   - `supabase/schema/2026-05-06_user_limits.sql`
   - `supabase/schema/2026-05-06_public_challenge.sql`
   - `supabase/schema/2026-05-06_admin_hidden_listings.sql`
+  - `supabase/schema/2026-05-06_collections_hard_lists.sql` (#85)
+  - `supabase/schema/2026-05-06_collection_items_manual.sql` (#87)
+  - `supabase/schema/2026-05-06_collection_items_position.sql` (#89)
+  - `supabase/schema/2026-05-06_collections_sender_name.sql` (#90)
 - Admin gate (`admin_emails` table) is seeded with Mark's email.
   Don't surface admin existence in any user-facing copy.
+- **Auction coverage post-#100**: all four houses at full counts
+  (Antiquorum 540, Christie's 226, Sotheby's 324, Phillips 224)
+  for the May 9-10 Geneva sales. Phillips is no longer
+  WAF-blocked — the Turbo-Stream payload pattern means we don't
+  hit per-lot detail pages from CI at all.
 
 Immediate verifications before starting work:
 - `npm test` (jest single-run) and `pytest` should both be green.
   CI runs both on push, but a local pass before opening a PR
   saves a round-trip.
-- Open the site signed-in as Mark, hit Cool Stuff → Watch
-  Challenges, take one challenge end-to-end, share both modes,
-  paste each share link in a new tab. That's the smoke test for
-  everything the afternoon shipped — if any step feels broken,
-  flag it before adding new code.
+- Open the site signed-in as Mark, hit Collections (the new
+  top-level tab), step through each sub-tab (My collection /
+  Wishlist / Lists / Challenges), confirm Owned/Sold/All toggle
+  works, +Add controls work, ranked Wishlist controls work, and
+  the four-house auction-lot data is visible on Listings > Live
+  auctions. That's the smoke test for everything the evening
+  shipped — if any step feels broken, flag it before adding new
+  code.
 
 Where the queued work is captured:
-- Top two items (sign-in CTA, saved challenges with sender) — in
-  this file's `## Next session` block above. The "Open
-  user-reported issues — afternoon additions" section also has
-  Mark's framing in his own words, useful for sanity-checking
-  scope.
+- Top items — in this file's `## Next session` block above.
 - Older items — ROADMAP.md.
 
 Suggested first action of next session: confirm Mark wants to start
-with #1 sign-in CTA (low-friction, ships in one PR) rather than
-#2 saved-challenges (multi-PR, benefits from a planning step). If
-he wants #2, propose the schema shape (`sender_name` column +
-reuse of `parent_challenge_id`) and the URL param shape
-(`&from=<name>`) before writing code — Mark will iterate on the
-naming.
+with #1 (Welcome page + og:image) — small, well-scoped — rather
+than #2 (Privacy notice). Both are single-page content work and
+can ship in the same arc.
 
 ## Open questions left from this session
 
-- **Mark's "social rethink" memo is not yet captured in ROADMAP.**
-  His mid-session message argued Watch Challenges is fundamentally
-  social (sender attribution, shared-with-me inbox, recipient
-  responses, per-challenge response collection) and might re-frame
-  as a "Collection Planner" (wishlist → buy → into watchbox). He
-  paused that pivot ("forget the collector wishlist thing for the
-  moment") and asked for tactical fixes instead — D1 through D4.
-  The pivot stays a question for a future session: do we ship the
-  social features under "Watch Challenges v2" without re-framing,
-  or carry through the Collection Planner re-conception that
-  merges Challenges + Watchbox? Holding without action.
+- **Mark's "social rethink" memo, partly resolved.** Mid-session
+  pivot argued Watch Challenges is fundamentally social (sender
+  attribution, recipient responses, response collection). The
+  Collections build (#85-#90) materially advanced this — Owned,
+  Sold, Wishlist are real now, sender_name on challenges captures
+  attribution, parent_challenge_id linkage exists in schema. What
+  remains: the "save someone's complete-share back as a child
+  challenge nested under my original" UI on the receive surface
+  (in next session's queue at #7).
 - **Older challenges with shortlist rows in the DB.** D3 dropped
-  the shortlist concept; the new UI doesn't surface
-  `is_pick=false` rows. Existing DB rows from earlier challenges
-  are harmless but invisible. Acceptable for a feature in heavy
-  iteration; if Mark revisits an old challenge and notices ghost
-  data, we can write a one-shot migration.
+  the shortlist concept; new UI doesn't surface `is_pick=false`
+  rows. Existing DB rows from earlier challenges are harmless but
+  invisible. One-shot migration if Mark revisits and notices.
+- **Phillips per-lot fetches still 403 from CI.** PR #100 sidesteps
+  by parsing the auction-page Turbo-Stream payload — works for the
+  comprehensive batch scrape. But the tracked-lots flow
+  (`auctionlots_scraper.scrape_phillips_lot`) is single-URL and
+  user-triggered, so it doesn't hit the WAF the same way (verified
+  in the field). If WAF tightens further and starts blocking
+  even single-URL fetches, the only option is a different IP
+  source (paid scrape proxy, headed Playwright runner).
+- **Auction-archive Phillips lots, post-Turbo-Stream.** Old archive
+  Phillips sales captured via the per-lot path stayed correct;
+  future archive runs should use the same Turbo-Stream extractor
+  so they don't hit the 403 wall. Likely one-line change to
+  `manual_archive_scraper.py` to call `enumerate_phillips`
+  instead of per-lot.
 
 ## Things to remember when running with this codebase
 

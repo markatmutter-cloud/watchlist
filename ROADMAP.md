@@ -1294,80 +1294,79 @@ price-per-reference. Use it; build what it doesn't.
 
 Current best-guess sequence. Will shift; update this doc when it does.
 Epic numbers reflect the 2026-05-05 restructure. Last refreshed
-2026-05-06 evening — the Collections build (PRs #85–#90) shipped
-between updates, which closed out several previously-#1 items.
+end of 2026-05-06 — Collections build + four-sub-tab restructure +
+auction-scrape coverage rebuild + lot-number sort all shipped after
+the morning roadmap pass; closed out several previously-#1 items.
 
 1. **Welcome page + og:image (Epic 0).** First-impression page for
    non-share visitors. og:image still the 1024×1024 apple-touch-icon
-   placeholder. Half-session. Was already #2 — promotes to #1 now
-   that Watch Challenges v1.5 has shipped.
-2. **Privacy notice + minimal terms (Epic 0).** Added to the
-   roadmap 2026-05-06. Becomes load-bearing before Watchlist gets
-   shared with users outside Mark's circle. One-pager `/privacy`
-   covering Supabase + Vercel Blob storage, retention, deletion;
-   companion `/terms` ("use at your own risk, listings come from
-   third parties"). Linked from the user dropdown footer.
+   placeholder. Half-session.
+2. **Privacy notice + minimal terms (Epic 0).** Becomes load-bearing
+   before Watchlist gets shared with users outside Mark's circle.
+   One-pager `/privacy` covering Supabase + Vercel Blob storage,
+   retention, deletion; companion `/terms` ("use at your own risk,
+   listings come from third parties"). Linked from the user dropdown
+   footer.
 3. **References as first-class entities (Epic 0).** The remaining
    foundation. Several downstream features (Epic 5 encyclopedia,
    per-reference comparison views, auction lot grouping, Discover
    mode quality) gate on this.
-4. **Collections sub-tab restructure (Epic 3 follow-up).** Mark's
-   end-of-2026-05-06 ask: Collections > My Collection (Owned +
-   Sold) / Lists / Challenges sub-tabs, mirroring the Watchlist +
-   Listings tab structures. Open question on exact shape (combined
-   Owned+Sold drill-in vs stacked sections under "My Collection").
-   Half-session once the design is locked.
-5. **Image cache for List items (Epic 3).** Extend
+4. **Image cache for List items (Epic 3).** Extend
    `cache_watchlist_images.mjs` to cover `collection_items`, not
    just `watchlist_items`. Promoted by Mark 2026-05-05; deferred
-   through the Collections build.
-6. **Catalog-order sort for auction lots (Epic 2).** Mark's
-   question 2026-05-06 — `lot_number` is captured in the scrape
-   but the Listings tab doesn't expose a "browse this auction in
-   catalog order" sort. Small UI lift: a fourth Date/Price-style
-   pill or a per-auction sort affordance.
-7. **Site analytics — remaining Source-stats extensions (Epic 8).**
+   through the Collections build. Newly-relevant after the
+   Collections build because Owned/Sold/Wishlist all live in
+   `collection_items` and benefit from the cache.
+5. **"Save someone's complete-share back" — child-challenge linkage
+   (Epic 6).** When a friend shares THEIR completion of MY
+   challenge back to me, I should be able to save it as a child
+   challenge with `parent_challenge_id` linkage. Schema column
+   already exists from 2026-05-03; the receive-side UI to surface
+   "save this collection" on the complete-receive page hasn't been
+   built. Closes the social loop fully — Mark's "three other
+   friends' solutions sent back to you" framing.
+6. **Site analytics — remaining Source-stats extensions (Epic 8).**
    User stats + throughput-in-value + auction-house quality all
    shipped 2026-05-05/06. Remaining: sales by watch type per dealer
    (gated on Epic 0 references for "type" classification),
    cross-source live inventory (also Epic-0-gated), listing-quality
    signals, taste-relative pricing.
-8. **Strength-of-save model (Epic 3 + Epic 7 entry point).**
+7. **Strength-of-save model (Epic 3 + Epic 7 entry point).**
    Two-tier (Love / Watch) is the gesture entry point to the broader
    Multi-signal taste capture. Small UI lift; the feature is *the
    gesture*, not the underlying data.
-9. **Source pruning (Epic 1 Stop rule).** At ~50 dealers, audit
-   with the click + save data and prune. Currently at 38; adding
-   remains the active mode until we hit threshold.
-10. **Mac mini Phase A (Epic 0).** When Tropical Watch hits a
-    Browse AI snag OR when Heritage / Bonhams / Monaco Legend need
-    a Playwright runner OR when ready to start Epic 5 encyclopedia
-    generation.
-11. **Watchbox v2 — reflection layer (Epic 6).** Highest personal
+8. **Source pruning (Epic 1 Stop rule).** At ~50 dealers, audit
+   with the click + save data and prune. Currently at 38.
+9. **Mac mini Phase A (Epic 0).** When Tropical Watch hits a Browse
+   AI snag OR when Heritage / Bonhams / Monaco Legend need a
+   Playwright runner OR when ready to start Epic 5 encyclopedia
+   generation. Also potentially relevant if Phillips' WAF tightens
+   to block single-URL fetches too — the auction-page Turbo-Stream
+   pattern from PR #100 buys time, but tracked-lot detail-fetches
+   are still single-URL today.
+10. **Watchbox v2 — reflection layer (Epic 6).** Highest personal
     value of any roadmap item. The collection-mentality flagship.
     Reflection notes + per-watch journey + the AI reflection bot
-    delighter. Note: PRs #85–#90 already moved the data model
-    significantly in this direction (Owned + Sold are real now);
-    what remains is the reflective UX layer.
-12. **Epic 5 encyclopedia.** Built incrementally as dealer
+    delighter. Note: the Collections build already moved the data
+    model significantly in this direction (Owned + Sold are real
+    now); what remains is the reflective UX layer.
+11. **Epic 5 encyclopedia.** Built incrementally as dealer
     descriptions accumulate. Depends on Epic 0 references + Mac
     mini A.5 for local LLM generation (or cloud LLM access).
-13. **Multi-signal taste capture + Discover mode + AI recommendations
+12. **Multi-signal taste capture + Discover mode + AI recommendations
     (Epic 7).** Stack progressively. Multi-signal first; Discover
     and recommendations layer on top once signals are rich.
-14. **Watch Challenges further polish (Epic 6).** Audit-deferred
-    items from 2026-05-06: drop-into-shortlist demote zone,
-    autosave indicator, hoist hardcoded colors to tokens, mobile
-    tap-confirm on slot remove, target=7-style orphan-row layout,
-    share-success state, sticky-pick-shrink-on-scroll. Cool Stuff
-    resource cards already unified with ListRow style 2026-05-06.
-    Plus: "save someone's complete-share back as a child challenge
-    under my original" (the parent_challenge_id linkage exists in
-    schema; the receive-side UI doesn't yet expose it).
-15. **Watch Challenges v2 (Epic 6).** Past-listings as a source,
+13. **Watch Challenges further polish (Epic 6).** Audit-deferred
+    items from 2026-05-06: autosave indicator, hoist hardcoded
+    colors to tokens, mobile tap-confirm on slot remove, target=7-
+    style orphan-row layout, share-success state, sticky-pick-
+    shrink-on-scroll. (Cool Stuff resource cards card-unification
+    is the only remaining cosmetic carry-over; "save complete-share
+    back" graduated to its own #5 priority above.)
+14. **Watch Challenges v2 (Epic 6).** Past-listings as a source,
     value-over-time tracking, challenge response threads — once
     Epic 0 references land.
-16. **Comprehensive auction inventory capture beyond active sales
+15. **Comprehensive auction inventory capture beyond active sales
     (Epic 2).** Substrate for serendipitous discovery + reference
     research at scale.
 
@@ -1469,6 +1468,15 @@ becomes confusion.
 > analytics) became Epic 8; old Epic 6 (Mac mini) folded into Epic 0.
 > Epic 0/1/2/5 numbering unchanged. Entries below dated before
 > 2026-05-05 evening reference the pre-restructure scheme.
+
+- 2026-05-06 (late evening, addendum): **Three more shipped after
+  the EOD doc pass:** Collections four-sub-tab restructure (PR #99,
+  My collection / Wishlist / Lists / Challenges — replacing the
+  flat hard-lists-on-top index from PR #86); Lot # catalog-order
+  sort pill on auction sub-tabs (PR #98); **Phillips full
+  enumeration via Turbo-Stream** (PR #100, 6 → 224 lots — see
+  CLAUDE.md "Scraper conventions" for the mechanic). All four
+  auction houses now at full coverage for the May 9-10 sales.
 
 - 2026-05-06: **Collections build (PRs #85–#90) + auction-scrape
   fixes + UX polish.** Major arc of work captured in the priority

@@ -20,25 +20,26 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 ## What it does
 
-Three top-level tabs:
+Four top-level tabs:
 
-- **Listings** — aggregates 38 curated dealer sources + targeted eBay searches into one feed (see table below). Live/Sold/All status pill defaults to live.
-- **Watchlist** — five sub-tabs:
-  - **Favorites** — items you've hearted (your default list), with price-at-save preserved.
-  - **Lists** — group watches by reference, theme, or research thread ("Rolex 5513s", "Vintage divers"). Auto-populates a "Shared with me" inbox when other users share listings with you. Anything you've hidden from the Available feed surfaces here too as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
-  - **Challenges** — build-a-collection. Pick N watches under a budget from your own Lists / Favorites (or by pasting a watch URL), add a single note for the whole challenge, share the spec so a friend can build their own answer. 20% over-budget soft-warn guardrail. Click-pick on every device — tap a tile in your Lists or Favorites to fill the next slot, tap × to remove.
-  - **Searches** — saved queries you can re-run with one tap, plus a read-only view of the eBay source-searches feeding the main feed.
-  - **Auction Calendar** — upcoming + recently-closed sales from 6 houses, grouped by month.
-- **References** — collector resource tools (currently: a print-to-scale watch size comparison tool; encyclopedia and curated-link aggregator are roadmap'd).
+- **Listings** — aggregates 38 curated dealer sources + targeted eBay searches + the four major auction houses' active lots (Antiquorum, Christie's, Sotheby's, Phillips) into one feed. Sub-tabs: Live listings (dealer items) / Live auctions (auction lots, ending-soonest) / All sold / Auction calendar. Lot # sort pill on auction sub-tabs renders catalog order grouped by sale.
+- **Watchlist** — heart-on-feed surfaces only: Favorites (saved listings) / Saved auctions / Saved sold / Favorite searches.
+- **Collections** — four sub-tabs that collect Mark's framing of "everything is a list":
+  - **My collection** *(default)* — Owned + Sold combined view with an Owned / Sold / All toggle. Add a watch by picking from the tracked feed or via manual entry (photo + brand/model/ref/material + price paid + comments). One-tap "Mark sold" moves any owned item to Sold with sold price + date capture.
+  - **Wishlist** — ranked list of watches you'd like to acquire. Each row is a representative listing pinned from the feed. ↑/↓ buttons reorder.
+  - **Lists** — user-created lists by reference, theme, or research thread. Auto-populates a "Shared with me" inbox when other users share with you. Anything you've hidden from the Listings feed surfaces here as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
+  - **Challenges** — build-a-collection. Pick N watches under a budget from your own Lists / Favorites (or by pasting a URL), share the spec so a friend can build their own answer; or share the completed picks. Saved challenges are attributed to the sender's name when received via a share link ("James's 3 watches for $50k"). 20% over-budget soft-warn. Click-pick on every device.
+- **Cool Stuff** — collector resource tools (print-to-scale watch size comparison + curated link aggregator; encyclopedia is roadmap'd).
 - **Site stats** *(admin only — invisible to other users)* — dense admin dashboard at `?tab=admin` covering three sections: per-source quality (live count, new-per-week, hearts/hides, avg price, top brand, $ added/sold over 30d, 30-day engagement, scraper health, "earning its keep" chip), auction-house quality (live + upcoming sales, lots, sold rate, $ sold over 90d, median Hammer/Low ratio), and per-user limits (hearts / hides / lists / saved-searches counts, 30-day clicks/views/shares/list-adds, top saved brand, current cap, with an inline form to set a user's cap by email). Engagement signals come from a `listing_events` table seeded by anonymous + signed-in views/clicks/saves/hides/list-adds/shares; daily rollup at 09:15 UTC. Reachable via the user dropdown for users whose email is in `REACT_APP_ADMIN_EMAILS`.
 
 Plus:
 
 - Cross-device sync via Google sign-in (Supabase auth + tables, RLS-protected).
-- Per-user **saved searches** — add/edit/delete your own queries, with live counts of matching listings.
+- Per-user **saved searches** — add/edit/delete your own queries, with live counts of matching listings. Tap a saved search to land on Live listings filtered to that query.
 - Per-user **tracked lots** — paste an auction-house lot URL to follow it through to hammer (Antiquorum, Christie's, Sotheby's, eBay).
-- Per-user **lists** + **share** — organise hearted watches into named lists, share any listing with anyone via the native share sheet. Recipients see the listing in the same UI with a Save / Dismiss banner; signed-in saves auto-populate a "Shared with me" inbox. No in-app messaging — the user's chosen messaging tool handles replies.
-- **Hide** any listing with the × button — it stays out of the live feed but its history is preserved. Hidden items show up in Watchlist > Lists > Hidden so you can unhide them later.
+- Per-user **lists + share** — organise hearted watches into named lists, share any listing with anyone via the native share sheet. Recipients see the listing in the same UI with a Save / Dismiss banner; signed-in saves auto-populate a "Shared with me" inbox. No in-app messaging — the user's chosen messaging tool handles replies.
+- **Browser back/forward parity** — back walks you backwards through Watchlist instead of leaving the site (proper pushState / popstate handling).
+- **Hide** any listing with the × button — it stays out of the live feed but its history is preserved. Hidden items show up in Collections > Lists > Hidden so you can unhide them later.
 - Runs a Python scrape pipeline daily via GitHub Actions — no server to babysit.
 - Tracks listings across runs with **stable URL-hash IDs**, so:
   - "NEW" badges only show for listings actually new in the last 24 hours.

@@ -113,30 +113,100 @@ fixes (D1→D4) instead. The pivot stays an open question for a
 future session — not in ROADMAP yet. If a future Mark message
 revisits it, that's the entry point.
 
-**Surface (2026-05-04, PR #36):** Challenges moved from a Watchlist
-sub-tab to a resource under the **Cool Stuff tab** (UI label;
-internal route + component name are still `references` /
-`ReferencesTab` per the rename note above). Mark's framing:
-challenges are a reflective collector resource, not a saved-items
-surface. The list + drill-in flow lives in
-`src/components/ChallengesView.js`; ReferencesTab adds it as a
-resource card alongside Watch size comparison + Cool Stuff > Links.
-Selection state is component-local (no URL persistence in this
-iteration). Stale `?sub=challenges` / `dial_watch_top_tab=challenges`
-values silently map to "listings" via the watchTopTab normalize().
+**Surface (Collections tab, 2026-05-06 PRs #86 + #99).** Challenges
+moved from Cool Stuff (where they briefly lived per PR #36) into
+the new **Collections** top-level tab as one of four sub-tabs:
+**My collection** / **Wishlist** / **Lists** / **Challenges**.
+Collections > Challenges renders `<ChallengesView/>` directly (the
+component owns its own list + drill-in flow). Stale URL values for
+the old surfaces (`?tab=watchlist&sub=collections`,
+`?tab=references&sub=challenges`) redirect or silently map to
+sensible defaults via App.js init.
 
-**Hidden listings as a virtual list (2026-05-01).** Hidden follows
-the same Approach A pattern as Favorites: data stays in the existing
-`hidden_listings` table, but the UI surface is a synthetic "Hidden"
-row inside Watchlist > Lists (rendered by WatchlistTab.js, not a
-real DB row). Sentinel id `__hidden__` keeps the synthetic row from
+**Hidden listings as a virtual list.** Approach A pattern, like
+Favorites: data stays in the existing `hidden_listings` table, but
+the UI surface is a synthetic "Hidden" row inside Collections >
+Lists. Sentinel id `__hidden__` keeps the synthetic row from
 colliding with real collection UUIDs. The drill-in renders the
 items grid with `isHidden={true}` so each Card's "..." menu Hide
 entry flips to "Unhide" automatically. There is no `HiddenModal`
-anymore — the old user-dropdown "Manage hidden" item was removed
-and the file deleted. Don't migrate `hidden_listings` into
-`collection_items` for the same reason as Favorites: the migration
-would touch every read path that already uses `useWatchlist().hidden`.
+anymore — old user-dropdown "Manage hidden" item was removed.
+Don't migrate `hidden_listings` into `collection_items` for the
+same reason as Favorites: the migration would touch every read
+path that already uses `useWatchlist().hidden`.
+
+**Collections tab — top-level, four sub-tabs (2026-05-06 PR #99).**
+"Everything is a list" — Mark's locked plan. Sub-tabs:
+
+- **My collection** (default) — Owned + Sold combined view with an
+  Owned / Sold / All toggle. Single grid, no drill-in. +Add CTAs
+  (+ From feed / + Add a watch) target whichever list the toggle
+  is on.
+- **Wishlist** — standalone ranked list. WishlistRankedList renders
+  directly (no list-of-list wrapper). + From feed at top.
+- **Lists** — user-created lists + shared-with-me inbox + Hidden
+  synthetic row. Drill-in shows the list's items as a Card grid.
+  `?col=<uuid>` URL persistence.
+- **Challenges** — delegates to ChallengesView.
+
+App.js owns `collectionsSubTab` state, persisted under
+`dial_collections_sub_tab` localStorage. URL: `?sub=` honoured when
+`?tab=collections`. Modal state (manual entry, listing picker,
+mark-as-sold) lives at the CollectionsTab level so any sub-tab can
+open them.
+
+**Hard system lists (Owned/Sold/Wishlist, 2026-05-06 PR #85).**
+Three `is_system=true` collections auto-create per user via
+`useCollections` first-load. Type values `owned` / `sold` /
+`wishlist`. Schema:
+`supabase/schema/2026-05-06_collections_hard_lists.sql`. Defense-
+in-depth via `prevent_system_collection_delete` BEFORE-DELETE
+trigger — even an accidental DELETE on a hard list fails. If the
+SQL hasn't run, the auto-create silently `console.warn`s; the
+next page-load after running the migration retries successfully.
+
+**Manual entries on collection_items (2026-05-06 PR #87).**
+`is_manual=true` rows have null `listing_id` + `manual_*` columns:
+`manual_brand`, `manual_model`, `manual_reference`, `manual_material`,
+`manual_image_url`, `manual_price_paid`, `manual_price_currency`,
+`manual_sold_price`, `manual_sold_date`, `manual_comments`. Check
+constraint requires `listing_id IS NOT NULL OR is_manual = true`.
+The unique index on (collection_id, listing_id) is partial (where
+`listing_id IS NOT NULL`) so manual entries can repeat freely.
+Photo upload goes to the `watch-photos` Supabase Storage bucket
+under `{auth.uid}/{random}.{ext}` — RLS enforces per-user folders.
+Client-side canvas resize to 1600px JPEG q0.85 before upload (5-10×
+cut on phone photos). Render via the slim `ManualItemCard` (no
+heart/share/dealer-link, since there's no source URL).
+
+**Wishlist force-rank (2026-05-06 PR #89).** `position` integer
+column on `collection_items`, nullable on every row (only used in
+wishlist context). Composite index on (collection_id, position).
+Lower position = higher rank (1 = most wanted). `WishlistRankedList`
+component renders the wishlist as a vertical list with rank +
+↑/↓ buttons + remove ×. Optimistic local update on swap; parallel
+UPDATE writes persist. Tap-based controls (no drag-drop) for
+cross-device parity.
+
+**Owned → Sold transition (2026-05-06 PR #88).** `markItemAsSold(rowId, opts)`
+mutator UPDATEs the row's `collection_id` to the user's Sold list
++ writes the `manual_sold_*` columns. Single UPDATE, no
+delete+re-insert (preserves snapshot + savedAt + rowId). Works for
+both manual and listing-backed rows since `manual_sold_*` columns
+are nullable on every row.
+
+**Sender attribution on shared challenges (2026-05-06 PR #90).**
+`sender_name` text column on `collections`, nullable. Set when the
+recipient took a shared challenge that carried `&from=<name>` on
+the spec link; null on self-created challenges. ChallengeFlow's
+`shareChallengeSpec` derives the sender name from
+`user.user_metadata.full_name` → `name` → email local-part
+(capitalized) and appends `&from=<senderName>`. ChallengeReceiver
+parses `&from` and threads it through to `createChallenge`, which
+labels the saved draft "James's 3 watches for $50k" instead of
+the unattributed default. ChallengesView splits the list into
+"Sent to you" (sender_name set) vs "Yours" sections + adds a
+small "from <name>" attribution chip per row.
 
 **Share URL format (post-2026-05-06).** Outbound share links built
 by `handleShare` use the `/share/<id>` path. Vercel rewrites that
@@ -311,19 +381,27 @@ admin) and `sub` (per-active-tab) reflect navigation state via
 `history.replaceState`. `sub` values:
 - `tab=listings` → live | auctions | sold | calendar (default
   "live" stripped from URL)
-- `tab=watchlist` → listings | auctions | sold | searches |
-  collections (default "listings" stripped from URL; key stays
-  `collections` for the Lists sub-tab — see UI rename note above;
-  `challenges` was retired with PR #36)
+- `tab=watchlist` → listings | auctions | sold | searches (default
+  "listings" stripped). The `collections` value retired 2026-05-06
+  PR #86 — Lists moved to the new top-level Collections tab.
+  Pre-PR-#86 URLs (`?tab=watchlist&sub=collections`) redirect to
+  `?tab=collections` on init. `challenges` was retired with PR #36.
+- `tab=collections` → my-collection | wishlist | lists | challenges
+  (default "my-collection" stripped). Persisted under
+  `dial_collections_sub_tab`.
 
 `col` (collection UUID, or `__hidden__` for the synthetic Hidden
-list) is Watchlist-only. App.js owns `tab` + `sub`; WatchlistTab
-owns `col`. App.js's effect clears `col` when leaving the watchlist
-tab so the URL stays clean. All URL-sync effects skip when
-share-receive params (`shared=1`) are present so the share flow
-controls URL until it acts. Refresh on any of these lands the user
-back where they were. Stay on this query-param pattern — it's
-deliberate that we don't bring in `react-router`.
+list) is Collections-only since 2026-05-06. App.js owns `tab` +
+`sub`; CollectionsTab owns `col` and only emits it when on the
+Lists sub-tab. App.js's effect clears `col` when leaving the
+collections tab so the URL stays clean. All URL-sync effects skip
+when share-receive params (`shared=1`) are present so the share
+flow controls URL until it acts. Refresh on any of these lands
+the user back where they were. Real navigations (tab / sub-tab /
+drill-in change) use `pushState` so browser back walks backwards
+through Watchlist; cleanup writes use `replaceState`. Stay on
+this query-param pattern — it's deliberate that we don't bring
+in `react-router`.
 
 **Admin tab (2026-05-02; renamed dropdown entry 2026-05-06).**
 `tab=admin` is gated by `REACT_APP_ADMIN_EMAILS` (comma-separated,
@@ -339,6 +417,67 @@ flicker). Admin data: verification.json + verification_history.json
 + listings.json (all public on the static site) + Supabase
 watchlist_items / hidden_listings (RLS-gated to the user's own rows).
 Don't surface admin existence to non-admin users in any UI text.
+
+**Browser back/forward parity (2026-05-06 PR #96).** Watchlist
+isn't a Server-Side-Routed app — we hand-roll URL sync with
+`history.replaceState` for most updates. Real navigations (tab
+change, sub-tab change, drill-in change) use `history.pushState`
+instead so the browser back button walks the user backwards through
+Watchlist instead of leaving the site. The pattern in App.js +
+CollectionsTab is identical:
+
+```js
+const isFirstSync = useRef(true);
+const prevRef = useRef(<nav state>);
+useEffect(() => {
+  // ... compute newUrl ...
+  if (newUrl === currentUrl) {
+    // popstate already moved us here; state catching up.
+    prevRef.current = ...;
+    return;                          // no-op write — skip
+  }
+  const navChanged = ...;
+  if (isFirstSync.current || !navChanged) {
+    window.history.replaceState({}, "", newUrl);
+  } else {
+    window.history.pushState({}, "", newUrl);
+  }
+  isFirstSync.current = false;
+  prevRef.current = ...;
+}, [...]);
+```
+
+Plus a `popstate` listener on each surface that re-derives state
+from URL. The URL-sync effect then sees the URL already matches
+and no-ops — no infinite loop. Cleanup writers (ShareReceiver /
+ChallengeReceiver / setTabWithReceiveEscape) stay on `replaceState`
+— they're not navigations.
+
+**Listings divider — backfilled items collapse under "Earlier
+additions" (2026-05-06 PR #95).** `allFiltered` puts non-backfilled
+items first and backfilled items second; both subsections bucket
+by the same date labels, so when each section starts in the same
+bucket (e.g. both starting in "Last week") you'd get two
+consecutive same-name dividers. Fix: in `visibleWithDividers`,
+return a single "Earlier additions" label for every backfilled
+item regardless of date. Non-backfilled section keeps its natural
+date dividers; backfilled all collapse under one header. If you
+add a new sort that mixes backfilled state non-monotonically, this
+collapsing rule breaks down — flag it before shipping.
+
+**Saved-search count must match the visible set (2026-05-06 PR #91).**
+Two compounding bugs landed Mark a "17 for sale" count vs 3 visible
+results: `runSearch` didn't reset `listingsSubTab`, AND the count
+omitted the user's hidden filter. Fix:
+- `runSearch` now `setListingsSubTab("live")` before
+  `setTab("listings")` so the user always lands on the dealer-only
+  Live listings sub-tab when tapping a saved search.
+- `savedSearchStats` filters `items` by `!sold && !hidden[i.id]` —
+  matches what Live listings renders before search/source/brand
+  chips narrow it further.
+
+If you add a new sub-tab that runSearch could conceivably target,
+mirror the count's filter against that sub-tab's filter.
 
 **Listing events telemetry (Epic 8 — User stats half, 2026-05-05).**
 Six event types written to `listing_events` from the frontend:
@@ -482,6 +621,50 @@ RPC (admin-only on the SQL side). Schema:
   from the `og:image` meta. Body-scan fallback (largest-resize
   brightspotcdn URL anywhere in the body) catches the small minority
   of older lots without a social preview. Cost: ~1.5s per lot.
+- **Sotheby's full enumeration uses apolloCache lotCards, NOT
+  algoliaJson alone (2026-05-06 PR #94).** algoliaJson SSR
+  hardcodes `page=0` server-side; `?page=N` is silently ignored,
+  capping enumeration at 48 lots even on 150+ lot sales. Workaround:
+  any single lot page's `__NEXT_DATA__.props.pageProps.apolloCache`
+  ships an Auction object whose
+  `lotCards({"countryOfOrigin":"US","filter":"ALL"})` field carries
+  EVERY lot's `lotId / slug / lotNumber / title / creator`.
+  `enumerate_sothebys` runs two passes: (1) auction-page algoliaJson
+  → harvest first 48 hits + bootstrap slug; (2) fetch bootstrap lot
+  → harvest lotCards (151+ lots) → for lots not in algoliaJson,
+  per-lot fetch grabs estimateV2 + media + description from the
+  lot's own LotV2. Sotheby's wraps estimates in `Amount` objects
+  (`{__typename: "Amount", amount: "55000"}`) — unpack via the
+  helper or you'll write GraphQL-shape garbage into `to_usd`.
+- **Phillips full enumeration uses the auction-page Turbo-Stream
+  payload — NEVER per-lot fetches from CI (2026-05-06 PR #100).**
+  Phillips' WAF 403s detail-page fetches from GitHub Actions IPs
+  after ~7 consecutive requests; retry-with-backoff (PR #93)
+  didn't break through. Pivot: parse the React Router 7 / Remix v3
+  Turbo-Stream payload INLINE in the auction-page response. The
+  payload format is multiple `streamController.enqueue("…")`
+  chunks delivering a flat JSON array using the
+  `{"_K_idx": V_idx}` reference shape (where K_idx and V_idx are
+  both array indices). Resolve the graph and the auction object's
+  `lots[]` field is every lot — title (from `makerName +
+  modelName`), `description`, `estimate.mainEstimate.{lowEstimate,
+  highEstimate, currencyCode}`, `imagePath`, `lotStatus`,
+  `lotNumber`, `detailLink`. **One request, zero WAF triggers,
+  full coverage.**
+
+  Two gotchas: (a) decode chunks via `json.loads('"' + c + '"')`,
+  NOT `encode/decode("unicode_escape")` — the latter mangles
+  multi-byte UTF-8 (verified: 'Élégante' → 'Ã‰lÃ©gante'). (b) the
+  resolver is `_phillips_extract_lots` in `auction_lots_scraper.py`;
+  reuse that helper instead of writing a new walker. The per-lot
+  `scrape_phillips_lot` in `auctionlots_scraper.py` stays for
+  tracked-lot user-triggered flows (single URL, doesn't trip the
+  WAF the same way).
+
+  If a future Remix upgrade changes the payload format, the
+  `streamController.enqueue("…")` regex + `_K_idx: V_idx` resolver
+  is the brittle layer. The fix is to find the new payload shape
+  and swap the resolver — the surrounding pipeline is stable.
 - **Per-sale lot caps are CI-time guards, not policy.** Phillips
   was capped at 60/sale before 2026-05-05 (CH080226 = 227, HK080226
   = 308 — missing 70-80% of every large sale). Cap raised to 1000.
@@ -613,6 +796,44 @@ To add a new printable tool: render its sheet via `createPortal` to
 - **Don't bump `LEGACY_WATCHLIST_KEY` / `LEGACY_HIDDEN_KEY`** in App.js —
   they're stable storage keys for users' pre-Supabase localStorage data
   that the import banner reads on first sign-in.
+- **Don't bump `dial_collections_sub_tab` / `dial_listings_sub_tab` /
+  `dial_watch_top_tab` localStorage keys.** Each persists a per-user
+  sub-tab choice across visits; renaming resets everyone's preference.
+- **Don't fetch Phillips lot detail pages from CI.** The WAF 403s
+  after ~7 consecutive requests. Use `_phillips_extract_lots` in
+  `auction_lots_scraper.py` to pull every lot from the auction
+  page's Turbo-Stream payload instead. The per-lot
+  `scrape_phillips_lot` in `auctionlots_scraper.py` is for
+  user-triggered tracked-lot flows (single URL — doesn't trip
+  the WAF the same way).
+- **Don't replace pushState with replaceState on real navigations.**
+  Tab change, sub-tab change, drill-in change all use pushState so
+  browser back walks backwards through Watchlist. The
+  `useRef(prev) + useRef(isFirst) + currentUrl === newUrl no-op`
+  pattern in App.js + CollectionsTab is the reference shape — copy
+  it for any new navigation axis.
+- **Don't write to `?col=` from outside CollectionsTab.** It's the
+  drill-in id for Collections > Lists, owned by that component
+  exclusively since 2026-05-06 PR #86 + #99. App.js strips it on
+  tab-change-out as a safety net; CollectionsTab handles the push
+  on drill-in/out + the popstate restore on browser back.
+- **Don't allow `manual_*` columns to be written without
+  `is_manual=true` set.** The check constraint
+  `collection_items_listing_or_manual` requires
+  `listing_id IS NOT NULL OR is_manual = true`, so a row with
+  null `listing_id` AND `is_manual=false` will be rejected.
+  `addManualItem` always sets is_manual=true; a future "convert
+  manual to listing-backed" flow would have to clear the manual_*
+  AND set listing_id in the same UPDATE.
+- **Don't auto-resolve integers in arrays as Phillips Turbo-Stream
+  references unless they actually are.** The format encodes refs
+  via the `{"_K": V}` shape on dicts; arrays in the same payload
+  contain integer references too BUT the resolver also has to
+  handle `-N` sentinels (deferred / pending / loaded markers).
+  The current `_phillips_extract_lots` resolver guards on
+  `0 <= idx < len(arr)` — keep that bounds check; without it the
+  -7 / -5 sentinels become out-of-bounds resolves that nuke
+  values silently.
 - **Don't bump `dial_watch_anon_id`.** It's the stable per-browser
   UUID for `listing_events` telemetry. Bumping resets every visitor's
   identity in the rollup, breaking 30-day per-source comparisons.
