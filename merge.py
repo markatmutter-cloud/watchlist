@@ -220,7 +220,7 @@ KNOWN_BRANDS_SET = (
     | {'Other'}  # Treat literal "Other" as known so we don't loop on it.
 )
 
-FX = {'GBP': 1.27, 'EUR': 1.08, 'CHF': 1.13, 'JPY': 0.0067, 'CNY': 0.14, 'USD': 1.0}
+FX = {'GBP': 1.27, 'EUR': 1.08, 'CHF': 1.13, 'JPY': 0.0067, 'CNY': 0.14, 'HKD': 0.128, 'USD': 1.0}
 
 STATE_PATH = 'public/state.json'
 LISTINGS_PATH = 'public/listings.json'
