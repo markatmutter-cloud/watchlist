@@ -15,14 +15,20 @@ describe("DesktopShell", () => {
     expect(watchlistButtons.length).toBeGreaterThanOrEqual(1);
   });
 
-  test("renders all four main tabs (Listings / Watchlist / Collections / Cool Stuff)", () => {
+  test("renders all four main tabs (Listings / Saved / Collections / Learn)", () => {
     render(<DesktopShell {...buildMockShellProps()} />);
     expect(screen.getByText("Listings")).toBeInTheDocument();
-    // Collections added 2026-05-06 PR #86. The "Cool Stuff" tab
-    // (URL key `references`, component `ReferencesTab`) sits to its
-    // right.
+    // Collections added 2026-05-06 PR #86. Bundle 2A.1 (2026-05-07)
+    // renamed the "Watchlist" tab → "Saved" and the "Cool Stuff" tab
+    // (URL key still `references`, component still `ReferencesTab`) →
+    // "Learn". Internal/external naming divergence is documented in
+    // CLAUDE.md.
+    // The "Saved" UI label clashes with the "Saved" filter pill on
+    // Listings sub-tabs, so use getAllByText and assert >= 1 — the
+    // top-bar tab pill is always present on the default Listings tab.
+    expect(screen.getAllByText("Saved").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Collections")).toBeInTheDocument();
-    expect(screen.getByText("Cool Stuff")).toBeInTheDocument();
+    expect(screen.getByText("Learn")).toBeInTheDocument();
   });
 
   test("renders the filter row on Listings tab", () => {
