@@ -183,22 +183,40 @@ export default function Watchlist() {
   // retired earlier on 2026-05-04. Stale localStorage / URL values
   // silently map to "listings" so bookmarked / persisted preferences
   // don't land on a missing sub-tab.
-  const SUB_VALUES = ["listings", "auctions", "sold", "searches"];
+  // SUB_VALUES split into two style groups by which Tab component
+  // owns the render. Bundle 2A.2 (2026-05-07) collapsed the standalone
+  // top-level Collections tab into Saved (was Watchlist) — what used
+  // to be `?tab=collections&sub=X` is now `?tab=watchlist&sub=X` with
+  // the same sub-tab key. The render dispatch downstream (in shellProps)
+  // picks WatchlistTab for the watchlist-style subs and CollectionsTab
+  // for the collections-style subs.
+  const SUB_VALUES_WATCHLIST = ["listings", "auctions", "sold", "searches"];
+  const SUB_VALUES_COLLECTIONS = ["my-collection", "wishlist", "lists", "challenges"];
+  const SUB_VALUES = [...SUB_VALUES_WATCHLIST, ...SUB_VALUES_COLLECTIONS];
   const [watchTopTab, setWatchTopTab] = useState(() => {
-    const normalize = (v) => (v === "calendar" || v === "challenges" || v === "collections") ? "listings" : v;
+    const normalize = (v) => (v === "calendar") ? "listings" : v;
     if (typeof window !== "undefined") {
-      // Only honour ?sub when we're on the watchlist tab — the
-      // Collections tab uses ?sub for its own (currently single)
-      // page and shouldn't bleed into watchTopTab.
       const params = new URLSearchParams(window.location.search);
-      if (params.get("tab") === "watchlist" || !params.get("tab")) {
-        const sub = normalize(params.get("sub"));
+      const t = params.get("tab");
+      const sub = normalize(params.get("sub"));
+      // Honour ?sub on tab=watchlist (default) AND tab=collections
+      // (legacy URL — Bundle 2A.2 redirect target).
+      if (t === "watchlist" || t === "collections" || !t) {
         if (SUB_VALUES.includes(sub)) return sub;
       }
     }
     try {
+      // Prefer the unified `dial_watch_top_tab` key; only fall back to
+      // the legacy `dial_collections_sub_tab` if the unified key is
+      // missing (true first-time-after-collapse migration). Without
+      // this preference order, a user who navigates from Lists →
+      // Saved listings within a session and refreshes would get
+      // bounced back to Lists by the legacy read.
       const v = normalize(localStorage.getItem("dial_watch_top_tab"));
-      return SUB_VALUES.includes(v) ? v : "listings";
+      if (SUB_VALUES.includes(v)) return v;
+      const collectionsLegacy = normalize(localStorage.getItem("dial_collections_sub_tab"));
+      if (SUB_VALUES_COLLECTIONS.includes(collectionsLegacy)) return collectionsLegacy;
+      return "listings";
     } catch { return "listings"; }
   });
   useEffect(() => {
@@ -240,35 +258,21 @@ export default function Watchlist() {
     const desktopMain = document.querySelector("[data-desktop-main]");
     if (desktopMain) desktopMain.scrollTop = 0;
   }, [listingsSubTab]);
-  // Collections tab sub-tabs (PR #99, 2026-05-06). Four values:
-  //   "my-collection" — Owned + Sold combined view with a toggle
-  //   "wishlist"      — standalone Wishlist ranked list
-  //   "lists"         — user-created lists + shared inbox + Hidden
-  //   "challenges"    — Watch Challenges
-  // URL sync uses `?sub=` like the other tabs. Persisted under its
-  // own localStorage key so the Collections sub-tab choice survives
-  // across visits.
-  const COLLECTIONS_SUB_VALUES = ["my-collection", "wishlist", "lists", "challenges"];
-  const [collectionsSubTab, setCollectionsSubTab] = useState(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const t = params.get("tab");
-      const sub = params.get("sub");
-      if (t === "collections" && COLLECTIONS_SUB_VALUES.includes(sub)) {
-        return sub;
-      }
-    }
-    try {
-      const v = localStorage.getItem("dial_collections_sub_tab");
-      return COLLECTIONS_SUB_VALUES.includes(v) ? v : "my-collection";
-    } catch { return "my-collection"; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem("dial_collections_sub_tab", collectionsSubTab); } catch {}
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" });
-    const desktopMain = document.querySelector("[data-desktop-main]");
-    if (desktopMain) desktopMain.scrollTop = 0;
-  }, [collectionsSubTab]);
+  // Bundle 2A.2 (2026-05-07) — the standalone `collectionsSubTab`
+  // state was dropped. Its sub-tab values (my-collection / wishlist /
+  // lists / challenges) are now part of `watchTopTab` (see SUB_VALUES
+  // above). When `watchTopTab` is one of those values the render
+  // dispatch in shellProps shows CollectionsTab content; otherwise
+  // it shows WatchlistTab content. CollectionsTab still expects
+  // its own `collectionsSubTab` / `setCollectionsSubTab` props —
+  // App.js threads `watchTopTab` / `setWatchTopTab` through under
+  // those names so the component stays unchanged.
+  // localStorage `dial_collections_sub_tab` reads still work as a
+  // legacy read in the watchTopTab init above; writes now go to
+  // `dial_watch_top_tab`.
+  const COLLECTIONS_SUB_VALUES = SUB_VALUES_COLLECTIONS;
+  const collectionsSubTab = watchTopTab;
+  const setCollectionsSubTab = setWatchTopTab;
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   // Main tab. Same URL-first init as watchTopTab — refresh on
@@ -277,18 +281,20 @@ export default function Watchlist() {
   // a non-admin hitting `?tab=admin` silently falls back to listings
   // (the admin gate fires below in a useEffect once user resolves —
   // doing it here would break for users who haven't auth-loaded yet).
-  const TAB_VALUES = ["listings", "watchlist", "collections", "references", "admin"];
+  // Bundle 2A.2 (2026-05-07) collapsed the standalone `collections`
+  // top-level tab into Saved (internal `watchlist`). Old URLs using
+  // `?tab=collections` redirect to `?tab=watchlist` with the same
+  // sub-tab key (the sub-tab values were already preserved when
+  // SUB_VALUES_COLLECTIONS was folded into watchTopTab above).
+  const TAB_VALUES = ["listings", "watchlist", "references", "admin"];
   const [tab, setTab] = useState(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const t = params.get("tab");
-      // Migration: pre-2026-05-06 the Lists sub-tab lived under
-      // Watchlist (?tab=watchlist&sub=collections). Redirect to the
-      // new top-level Collections tab so old links + bookmarks land
-      // in the right place.
-      if (t === "watchlist" && params.get("sub") === "collections") {
-        return "collections";
-      }
+      // Bundle 2A.2 redirect: ?tab=collections lands on Saved (still
+      // `?tab=watchlist` internally). Sub-tab key carries through —
+      // watchTopTab init above already accepts collections-style subs.
+      if (t === "collections") return "watchlist";
       if (TAB_VALUES.includes(t)) return t;
     }
     return "listings";
@@ -317,15 +323,16 @@ export default function Watchlist() {
       params.set("sub", listingsSubTab);
     } else if (tab === "watchlist" && watchTopTab !== "listings") {
       params.set("sub", watchTopTab);
-    } else if (tab === "collections" && collectionsSubTab !== "my-collection") {
-      params.set("sub", collectionsSubTab);
     } else {
       params.delete("sub");
     }
-    // `col` is the drill-in id for the Collections tab. App.js
-    // strips it on tab-change-out; CollectionsTab itself owns
-    // the push when the user drills in.
-    if (tab !== "collections") params.delete("col");
+    // `col` is the drill-in id for the Lists sub-tab inside Saved.
+    // CollectionsTab itself owns the push when the user drills in;
+    // App.js strips it whenever the active sub-tab isn't a
+    // collections-style sub.
+    if (tab !== "watchlist" || !SUB_VALUES_COLLECTIONS.includes(watchTopTab)) {
+      params.delete("col");
+    }
     const qs = params.toString();
     const newUrl = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
     const currentUrl = window.location.pathname + window.location.search + window.location.hash;
@@ -340,7 +347,8 @@ export default function Watchlist() {
     const prev = prevNavRef.current;
     const navChanged =
       prev.tab !== tab ||
-      prev.collectionsSubTab !== collectionsSubTab ||
+      // collectionsSubTab is now an alias for watchTopTab — the
+    // explicit comparison stays for clarity but is redundant.
       prev.watchTopTab !== watchTopTab ||
       prev.listingsSubTab !== listingsSubTab;
     if (isFirstNavSync.current || !navChanged) {
@@ -364,11 +372,12 @@ export default function Watchlist() {
       if (params.get("shared") === "1") return;
       const tParam = params.get("tab");
       const sub = params.get("sub");
-      // Compute the target tab. Migration: pre-PR-#86 collections
-      // Lists URL is honoured as a redirect target.
+      // Compute the target tab. Bundle 2A.2 (2026-05-07): old
+      // `?tab=collections` URLs collapse onto `?tab=watchlist` with
+      // the sub-tab key preserved.
       let nextTab = "listings";
-      if (tParam === "watchlist" && sub === "collections") {
-        nextTab = "collections";
+      if (tParam === "collections") {
+        nextTab = "watchlist";
       } else if (TAB_VALUES.includes(tParam)) {
         nextTab = tParam;
       }
@@ -377,13 +386,11 @@ export default function Watchlist() {
       if (nextTab === "listings") {
         setListingsSubTab(LISTINGS_SUB_VALUES.includes(sub) ? sub : "live");
       } else if (nextTab === "watchlist") {
-        const norm = (v) => (v === "calendar" || v === "challenges" || v === "collections") ? "listings" : v;
+        const norm = (v) => (v === "calendar") ? "listings" : v;
         const w = norm(sub);
         setWatchTopTab(SUB_VALUES.includes(w) ? w : "listings");
-      } else if (nextTab === "collections") {
-        setCollectionsSubTab(COLLECTIONS_SUB_VALUES.includes(sub) ? sub : "my-collection");
       }
-      // Collections drill-in (`?col=…`) is owned by CollectionsTab —
+      // Lists drill-in (`?col=…`) is owned by CollectionsTab —
       // it has its own popstate handler / URL-derived effect.
     };
     window.addEventListener("popstate", onPop);
@@ -1985,9 +1992,10 @@ export default function Watchlist() {
   // now flow into Watchlist > Listings; calendar lives at Watchlist >
   // Auction Calendar via AuctionCalendar.js.
 
-  // Watchlist tab JSX. Built once so both mobile + desktop returns can
-  // reference the same instance without re-spelling the long prop list.
-  const watchlistTabJSX = (
+  // Watchlist tab content JSX (was `watchlistTabJSX` pre-2A.2). The
+  // dispatch in `savedContentJSX` below picks between this and the
+  // CollectionsTab content based on which Saved sub-tab is active.
+  const watchlistTabJSX_inner = (
     <WatchlistTab
       user={user}
       signInWithGoogle={signInWithGoogle}
@@ -2055,11 +2063,13 @@ export default function Watchlist() {
     />
   );
 
-  // Collections tab JSX (new top-level tab — 2026-05-06 PR #86).
-  // Renders hard system lists (Owned/Sold/Wishlist) at the top with
-  // prominent treatment, then user-created lists, the synthetic
-  // Hidden row, and a Watch Challenges entry that drills into the
-  // existing ChallengesView. Owns drill-in routing via `?col=`.
+  // Collections-style tab content. Bundle 2A.2 (2026-05-07): the
+  // standalone Collections top-level tab folded into Saved (internal
+  // `tab=watchlist`); CollectionsTab itself renders unchanged but
+  // it's now reached via Saved sub-tabs (my-collection / wishlist /
+  // lists / challenges). The dispatch between WatchlistTab and
+  // CollectionsTab content lives in `savedContentJSX` below — shells
+  // just render whichever the dispatch chose.
   const collectionsTabJSX = (
     <CollectionsTab
       user={user}
@@ -2089,6 +2099,16 @@ export default function Watchlist() {
       setCollectionsSubTab={setCollectionsSubTab}
     />
   );
+
+  // Bundle 2A.2 dispatch: when the active Saved sub-tab is one of
+  // the collections-style values (my-collection / wishlist / lists /
+  // challenges), render the CollectionsTab content; otherwise render
+  // the WatchlistTab content (saved listings / auctions / sold /
+  // searches). Shells render this via the existing `watchlistTabJSX`
+  // prop name so the two render paths stay one-place-to-debug.
+  const savedContentJSX = SUB_VALUES_COLLECTIONS.includes(watchTopTab)
+    ? collectionsTabJSX
+    : watchlistTabJSX_inner;
 
   // ── MOBILE ────────────────────────────────────────────────────────────────
   // (EndingSoon pinned strip retired 2026-05-04 — Watchlist > Saved
@@ -2123,16 +2143,25 @@ export default function Watchlist() {
         // Sub-tab key "listings" preserved for localStorage compat
         // (dial_watch_top_tab); display label "Saved listings" makes
         // the saved-set scope explicit alongside Saved auctions /
-        // Saved sold. Restructured 2026-05-04 to mirror Listings tab
-        // (Mark's call: "as close to listings as possible to keep
-        // clean"). Mobile labels drop the "Saved" prefix to fit a
-        // five-pill strip on 375px viewports.
-        ["listings", isMobile ? "Listings" : "Saved listings"],
-        ["auctions", isMobile ? "Auctions" : "Saved auctions"],
-        ["sold",     isMobile ? "Sold"     : "Saved sold"],
-        ["searches", isMobile ? "Searches" : "Favorite searches"],
-        // (Lists sub-tab removed 2026-05-06 PR #86 — moved to the
-        // new top-level Collections tab.)
+        // Saved sold. Restructured 2026-05-04 to mirror Listings tab.
+        // Mobile labels drop the "Saved" prefix to fit a multi-pill
+        // strip on 375px viewports — Bundle 2A.2 (2026-05-07) added
+        // the four collections-style sub-tabs after Searches so the
+        // strip overflow-scrolls horizontally on narrow viewports
+        // (the wrapper has scrollbar-hiding CSS already).
+        ["listings",      isMobile ? "Listings" : "Saved listings"],
+        ["auctions",      isMobile ? "Auctions" : "Saved auctions"],
+        ["sold",          isMobile ? "Sold"     : "Saved sold"],
+        ["searches",      isMobile ? "Searches" : "Favorite searches"],
+        // Bundle 2A.2 (2026-05-07): Collections top-level tab folded
+        // into Saved. The four sub-tab keys below kept their original
+        // values (my-collection / wishlist / lists / challenges) for
+        // localStorage compat with users who had a Collections sub-tab
+        // preference saved before the collapse.
+        ["my-collection", "My watches"],
+        ["wishlist",      "Shortlist"],
+        ["lists",         "Lists"],
+        ["challenges",    "Challenges"],
       ].map(([key, label]) => {
         const active = watchTopTab === key;
         return (
@@ -2142,39 +2171,12 @@ export default function Watchlist() {
     </div>
   );
 
-  // Collections sub-tab strip (PR #99, 2026-05-06). Mirrors the
-  // watchSubTabsJSX shape — same tabPill style, same flex layout,
-  // same "set sub-tab + close mobile drawer" handler. Hidden on
-  // any other main tab.
-  const collectionsSubTabsJSX = tab !== "collections" ? null : (
-    <div style={{
-      display: "flex", gap: 20, alignItems: "center",
-      padding: "0 16px",
-      background: "var(--bg)",
-      borderBottom: "0.5px solid var(--border)",
-      flexShrink: 0,
-    }}>
-      {/* 2026-05-07 IA pass — UI labels only. Sub-tab keys stay
-          stable (my-collection / wishlist / lists / challenges) so
-          `dial_collections_sub_tab` localStorage + URL `?sub=` keep
-          working. The "Wishlist" → "Shortlist" rename reflects Mark's
-          framing of the deck as exemplar references for collection
-          planning, not specific listings to buy. The "My collection"
-          → "My watches" rename ducks the "collection inside
-          Collections" name doubling. */}
-      {[
-        ["my-collection", "My watches"],
-        ["wishlist",      "Shortlist"],
-        ["lists",         "Lists"],
-        ["challenges",    "Challenges"],
-      ].map(([key, label]) => {
-        const active = collectionsSubTab === key;
-        return (
-          <button key={key} onClick={() => { setCollectionsSubTab(key); setDrawerOpen(false); }} style={{ ...tabPill(active), flexShrink: 0 }}>{label}</button>
-        );
-      })}
-    </div>
-  );
+  // collectionsSubTabsJSX retired in Bundle 2A.2 (2026-05-07) —
+  // Collections collapsed into Saved (internal `tab=watchlist`); the
+  // four collections-style sub-tabs are now part of `watchSubTabsJSX`
+  // above. Shells receive a `null` here for backward compat (the
+  // shellProps key still exists but is never assigned a JSX value).
+  const collectionsSubTabsJSX = null;
 
   // Track new item modal — single-URL paste flow with source-list
   // instructions. Trigger lives in the watchSubTabsJSX strip above the
@@ -2320,13 +2322,16 @@ export default function Watchlist() {
       resetTick={shareReceiveResetTick}
       onTakenChallenge={(id) => {
         // Drop the recipient straight into their freshly-created
-        // challenge inside the Collections tab (challenges moved
-        // there from References on 2026-05-06 PR #86).
-        // setTabWithReceiveEscape also clears URL params + dismisses
-        // the receive surface; CollectionsTab + ChallengesView each
+        // challenge. Bundle 2A.2 (2026-05-07): Collections tab
+        // collapsed into Saved; challenges live at
+        // `?tab=watchlist&sub=challenges`. setTabWithReceiveEscape
+        // clears URL params + dismisses the receive surface;
+        // setting watchTopTab to "challenges" lands the user on
+        // the right sub-tab; CollectionsTab + ChallengesView each
         // read pendingChallengeDrillId to drill in.
         setPendingChallengeDrillId(id);
-        setTabWithReceiveEscape("collections");
+        setWatchTopTab("challenges");
+        setTabWithReceiveEscape("watchlist");
       }}
     />
   );
@@ -2417,7 +2422,11 @@ export default function Watchlist() {
     challengeReceiverJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, collectionsSubTabsJSX,
-    watchlistTabJSX, adminTabJSX, referencesTabJSX, collectionsTabJSX,
+    // Bundle 2A.2: shells render `watchlistTabJSX` for the Saved
+    // tab — the value is now the dispatched content (Watchlist or
+    // Collections style) computed by `savedContentJSX`.
+    watchlistTabJSX: savedContentJSX,
+    adminTabJSX, referencesTabJSX, collectionsTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     // Whether a share-receive landing surface is taking over the

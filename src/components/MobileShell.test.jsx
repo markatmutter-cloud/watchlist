@@ -40,9 +40,12 @@ describe("MobileShell", () => {
     // Bundle 2A.1 — bottom-nav tab is now "Saved" (UI label) backed
     // by `?tab=watchlist` (URL key). Brand title at the top stays
     // "Watchlist".
+    // Bundle 2A.2 — Collections nav pill removed from bottom bar
+    // (collapsed into Saved); only Listings + Saved remain.
     expect(screen.getAllByText("Watchlist").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Saved").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Listings")).toBeInTheDocument();
+    expect(screen.queryByText("Collections")).not.toBeInTheDocument();
   });
 
   test("renders the drawer when drawerOpen is true", () => {
@@ -61,8 +64,15 @@ describe("MobileShell", () => {
     expect(screen.getByTestId("listings-tab-content")).toBeInTheDocument();
   });
 
-  test("renders the collections tab content when tab=collections", () => {
-    render(<MobileShell {...buildMockShellProps({ tab: "collections" })} />);
+  test("renders the collections-style content on Saved > my-collection sub-tab", () => {
+    // Bundle 2A.2 — same pattern as DesktopShell: the dispatch lives
+    // in App.js, so the test simulates it by passing collections
+    // content through the `watchlistTabJSX` prop slot.
+    render(<MobileShell {...buildMockShellProps({
+      tab: "watchlist",
+      watchTopTab: "my-collection",
+      watchlistTabJSX: <div data-testid="collections-tab" />,
+    })} />);
     expect(screen.getByTestId("collections-tab")).toBeInTheDocument();
   });
 });
