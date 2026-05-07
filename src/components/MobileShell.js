@@ -46,7 +46,7 @@ export function MobileShell(props) {
     settingsModalJSX, shareReceiverJSX,
     challengeReceiverJSX,
     listingsSubTabsJSX,
-    trackNewItemModalJSX, watchSubTabsJSX, watchlistTabJSX,
+    trackNewItemModalJSX, watchSubTabsJSX, collectionsSubTabsJSX, watchlistTabJSX,
     referencesTabJSX, collectionsTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
@@ -188,6 +188,7 @@ export function MobileShell(props) {
             for the same reason as the sort row above. */}
         {!anyShareActive && listingsSubTabsJSX}
         {!anyShareActive && watchSubTabsJSX}
+        {!anyShareActive && collectionsSubTabsJSX}
         </div>
         {/* Share-receive surface — self-contained component, hooks
             isolated. Renders null when no share intent in URL. */}
