@@ -239,31 +239,14 @@ export default function Watchlist() {
     if (desktopMain) desktopMain.scrollTop = 0;
   }, [watchTopTab]);
 
-  // Saved-view staleness snapshot. Mark feedback 2026-05-07: when a
-  // user un-hearts a card by accident on Saved listings/auctions/sold,
-  // the card vanishes immediately — no recovery without reloading the
-  // page and remembering what was there. Fix: snapshot the watchlist
-  // contents whenever the user enters or switches between saved
-  // sub-tabs, and merge the snapshot with the live watchlist so
-  // un-hearted items stay visible until the next sub-tab change /
-  // refresh. Currently-hearted items always render off the live
-  // watchlist (so price / lastSeen updates flow through); only
-  // un-hearted items lean on the snapshot.
-  const [savedItemsSnapshot, setSavedItemsSnapshot] = useState({});
-  useEffect(() => {
-    const onSavedView = tab === "watchlist" &&
-      (watchTopTab === "listings" || watchTopTab === "auctions" || watchTopTab === "sold");
-    if (onSavedView) {
-      // Re-snapshot from the live watchlist on entry / sub-tab switch.
-      // Intentionally NOT depending on watchlist — the whole point is
-      // for the snapshot to lag updates so un-hearts stay visible.
-      setSavedItemsSnapshot({ ...watchlist });
-    } else if (Object.keys(savedItemsSnapshot).length > 0) {
-      // Clear when leaving so re-entry rebuilds fresh.
-      setSavedItemsSnapshot({});
-    }
-    // eslint-disable-next-line
-  }, [tab, watchTopTab]);
+  // (Saved-view staleness snapshot moved to AFTER `tab` is declared
+  // — referencing `tab` from a useEffect deps array up here triggered
+  // a TDZ "Cannot access before initialization" crash on first render
+  // because const declarations execute top-to-bottom and `tab` was
+  // declared further down. Lesson for future-me: when adding a new
+  // useEffect that references existing state, place it AFTER all the
+  // states it touches.)
+
   // Listings tab sub-tabs (2026-05-04 restructure). Four values:
   //   "live"     — currently-active dealer listings (default)
   //   "auctions" — currently-active auction lots
@@ -336,6 +319,37 @@ export default function Watchlist() {
     }
     return "listings";
   });
+
+  // Saved-view staleness snapshot. Mark feedback 2026-05-07: when a
+  // user un-hearts a card by accident on Saved listings/auctions/sold,
+  // the card vanishes immediately — no recovery without reloading.
+  // Fix: snapshot the watchlist contents whenever the user enters or
+  // switches between saved sub-tabs, then merge the snapshot with
+  // the live watchlist so un-hearted items stay visible until the
+  // next sub-tab change / refresh. Currently-hearted items always
+  // render off the live watchlist (so price / lastSeen updates flow
+  // through); only un-hearted items lean on the snapshot.
+  //
+  // Placement note: this useEffect references `tab` (declared just
+  // above). The earlier placement above the `tab` useState crashed
+  // with a TDZ "Cannot access before initialization" — const
+  // bindings execute top-to-bottom and the deps array is constructed
+  // synchronously when useEffect is called.
+  const [savedItemsSnapshot, setSavedItemsSnapshot] = useState({});
+  useEffect(() => {
+    const onSavedView = tab === "watchlist" &&
+      (watchTopTab === "listings" || watchTopTab === "auctions" || watchTopTab === "sold");
+    if (onSavedView) {
+      // Intentionally NOT depending on watchlist — the whole point is
+      // for the snapshot to lag updates so un-hearts stay visible.
+      setSavedItemsSnapshot({ ...watchlist });
+    } else if (Object.keys(savedItemsSnapshot).length > 0) {
+      // Clear when leaving so re-entry rebuilds fresh.
+      setSavedItemsSnapshot({});
+    }
+    // eslint-disable-next-line
+  }, [tab, watchTopTab]);
+
   // URL sync — reflect tab + sub-tab in the query string so refresh
   // preserves location and direct links work. Skipped when share-
   // receive params (`shared=1`) are present so the share flow
