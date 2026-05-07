@@ -286,37 +286,54 @@ export function ChallengeReceiver({
           {/* Picks (complete mode only) */}
           {!isSpec && Array.isArray(completeData?.picks) && completeData.picks.length > 0 ? (
             <div style={{ padding: "14px 18px" }}>
-              {completeData.picks.map((p, i) => (
-                <div key={p.rowId || i} style={{
+              {completeData.picks.map((p, i) => {
+                const url = p.snapshot?.url || "";
+                const lastPick = i >= completeData.picks.length - 1;
+                const rowStyle = {
                   display: "grid", gridTemplateColumns: "56px 1fr auto",
                   gap: 12, alignItems: "center",
                   paddingBottom: 12, marginBottom: 12,
-                  borderBottom: i < completeData.picks.length - 1
-                    ? "0.5px solid var(--border)" : "none",
-                }}>
-                  <PickThumbnail snapshot={p.snapshot} />
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{
-                      fontSize: 14, fontWeight: 500, margin: 0, color: "var(--text1)",
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>
-                      {p.snapshot?.brand || ""} {p.snapshot?.ref || ""}
+                  borderBottom: lastPick ? "none" : "0.5px solid var(--border)",
+                };
+                const titleStyle = {
+                  fontSize: 14, fontWeight: 500, margin: 0, color: "var(--text1)",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                };
+                const sourceStyle = {
+                  fontSize: 12, color: "var(--text2)", margin: "1px 0 0",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                };
+                const priceStyle = {
+                  fontSize: 14, fontWeight: 500, margin: 0, color: "var(--text1)",
+                  whiteSpace: "nowrap",
+                };
+                const inner = (
+                  <>
+                    <PickThumbnail snapshot={p.snapshot} />
+                    <div style={{ minWidth: 0 }}>
+                      <p style={titleStyle}>
+                        {p.snapshot?.brand || ""} {p.snapshot?.ref || ""}
+                      </p>
+                      <p style={sourceStyle}>
+                        {p.snapshot?.source || ""}
+                      </p>
+                    </div>
+                    <p style={priceStyle}>
+                      {fmtUSD(p.savedPriceUSD || 0)}
                     </p>
-                    <p style={{
-                      fontSize: 12, color: "var(--text2)", margin: "1px 0 0",
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>
-                      {p.snapshot?.source || ""}
-                    </p>
+                  </>
+                );
+                return url ? (
+                  <a key={p.rowId || i} href={url} target="_blank" rel="noopener noreferrer"
+                    style={{ ...rowStyle, textDecoration: "none", color: "inherit" }}>
+                    {inner}
+                  </a>
+                ) : (
+                  <div key={p.rowId || i} style={rowStyle}>
+                    {inner}
                   </div>
-                  <p style={{
-                    fontSize: 14, fontWeight: 500, margin: 0, color: "var(--text1)",
-                    whiteSpace: "nowrap",
-                  }}>
-                    {fmtUSD(p.savedPriceUSD || 0)}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
               {completeData?.descriptionLong && (
                 <p style={{
                   fontSize: 13, color: "var(--text2)", lineHeight: 1.5,
