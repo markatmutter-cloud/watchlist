@@ -237,6 +237,32 @@ export default function Watchlist() {
     const desktopMain = document.querySelector("[data-desktop-main]");
     if (desktopMain) desktopMain.scrollTop = 0;
   }, [watchTopTab]);
+
+  // Saved-view staleness snapshot. Mark feedback 2026-05-07: when a
+  // user un-hearts a card by accident on Saved listings/auctions/sold,
+  // the card vanishes immediately — no recovery without reloading the
+  // page and remembering what was there. Fix: snapshot the watchlist
+  // contents whenever the user enters or switches between saved
+  // sub-tabs, and merge the snapshot with the live watchlist so
+  // un-hearted items stay visible until the next sub-tab change /
+  // refresh. Currently-hearted items always render off the live
+  // watchlist (so price / lastSeen updates flow through); only
+  // un-hearted items lean on the snapshot.
+  const [savedItemsSnapshot, setSavedItemsSnapshot] = useState({});
+  useEffect(() => {
+    const onSavedView = tab === "watchlist" &&
+      (watchTopTab === "listings" || watchTopTab === "auctions" || watchTopTab === "sold");
+    if (onSavedView) {
+      // Re-snapshot from the live watchlist on entry / sub-tab switch.
+      // Intentionally NOT depending on watchlist — the whole point is
+      // for the snapshot to lag updates so un-hearts stay visible.
+      setSavedItemsSnapshot({ ...watchlist });
+    } else if (Object.keys(savedItemsSnapshot).length > 0) {
+      // Clear when leaving so re-entry rebuilds fresh.
+      setSavedItemsSnapshot({});
+    }
+    // eslint-disable-next-line
+  }, [tab, watchTopTab]);
   // Listings tab sub-tabs (2026-05-04 restructure). Four values:
   //   "live"     — currently-active dealer listings (default)
   //   "auctions" — currently-active auction lots
@@ -1270,8 +1296,14 @@ export default function Watchlist() {
   }, [items, auctionLotItems]);
 
   const watchItems = useMemo(() => {
-    // Hearted dealer items from `watchlist_items`.
-    let its = Object.values(watchlist);
+    // Hearted dealer items from `watchlist_items`. Mark 2026-05-07
+    // un-heart staleness fix: merge the live watchlist with the
+    // savedItemsSnapshot captured on saved-view entry. Spread order
+    // means watchlist values WIN where keys collide, so currently-
+    // hearted items get their fresh data; un-hearted items fall back
+    // to the snapshot value (the original render-time copy) so the
+    // card stays on screen until the next sub-tab change / refresh.
+    let its = Object.values({ ...savedItemsSnapshot, ...watchlist });
     // Tag each entry with its current liveness so we can split into
     // Live/Sold sub-views below. An item is "sold" if the live scrape
     // says it's sold/on-hold OR if it's no longer in the scrape at all
@@ -1451,7 +1483,7 @@ export default function Watchlist() {
         : (b.savedAt || "").localeCompare(a.savedAt || ""));
     }
     return its;
-  }, [watchlist, liveStateById, sort, filterSources, filterBrands, filterRefs, search,
+  }, [watchlist, savedItemsSnapshot, liveStateById, sort, filterSources, filterBrands, filterRefs, search,
       minPrice, maxPrice, watchTopTab,
       trackedLotUrls, trackedLotsState, trackedLotAddedAt]);
 
@@ -2264,6 +2296,7 @@ export default function Watchlist() {
       collections={collectionsApi.collections}
       itemsByCollection={collectionsApi.itemsByCollection}
       addItemToCollection={addItemToCollectionWithTelemetry}
+      removeItemFromCollection={collectionsApi.removeItemFromCollection}
       createCollection={collectionsApi.createCollection}
       inp={inp}
     />
