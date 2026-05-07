@@ -324,7 +324,12 @@ export function DesktopShell(props) {
           Watchlist
         </button>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
-          {[["listings", "Listings"], ["watchlist", "Watchlist"], ["collections", "Collections"], ["references", "Cool Stuff"]].map(([key, label]) => (
+          {/* 2026-05-07 IA pass — UI labels only this slice. Internals
+              (URL keys `?tab=watchlist`, `?tab=references`, file names,
+              state vars) stay unchanged until Slice 2A.2 does the
+              structural collapse. See CLAUDE.md "Internal-vs-external
+              naming divergence" for the documented rationale. */}
+          {[["listings", "Listings"], ["watchlist", "Saved"], ["collections", "Collections"], ["references", "Learn"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               padding: "6px 14px", borderRadius: 20, border: "0.5px solid var(--border)", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,

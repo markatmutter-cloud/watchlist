@@ -196,7 +196,7 @@ export function CollectionsTab({
       <WishlistView
         wishlist={hardWishlist}
         wishlistItems={hardWishlist ? (itemsByColl[hardWishlist.id] || []) : []}
-        onAddFromFeed={() => hardWishlist && openPicker(hardWishlist.id, "Add to Wishlist")}
+        onAddFromFeed={() => hardWishlist && openPicker(hardWishlist.id, "Add to Shortlist")}
         onReorder={(orderedIds) => hardWishlist && collectionsApi.reorderItems(hardWishlist.id, orderedIds)}
         onRemove={(item) => hardWishlist && collectionsApi.removeItemFromCollection(hardWishlist.id, item.id)}
       />
@@ -279,7 +279,7 @@ export function CollectionsTab({
   );
 }
 
-// ── My Collection sub-tab ────────────────────────────────────────
+// ── My watches sub-tab (UI label — internal `my-collection`) ─────
 // Owned + Sold combined into one grid with a three-state toggle
 // (Owned / Sold / All). The toggle drives both the visible items
 // AND the +Add CTAs (so + From feed and + Add a watch target the
@@ -440,7 +440,7 @@ function WishlistView({ wishlist, wishlistItems, onAddFromFeed, onReorder, onRem
   if (!wishlist) {
     return (
       <div style={{ padding: "48px 20px", textAlign: "center", color: "var(--text2)", fontSize: 13 }}>
-        Wishlist not yet ready — refresh to retry the auto-create.
+        Shortlist not yet ready — refresh to retry the auto-create.
       </div>
     );
   }
@@ -453,7 +453,7 @@ function WishlistView({ wishlist, wishlistItems, onAddFromFeed, onReorder, onRem
         marginBottom: 12,
       }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
-          Wishlist
+          Shortlist
         </span>
         <span style={{ fontSize: 12, color: "var(--text3)" }}>
           {wishlistItems.length} watch{wishlistItems.length === 1 ? "" : "es"}
@@ -470,10 +470,10 @@ function WishlistView({ wishlist, wishlistItems, onAddFromFeed, onReorder, onRem
         <div style={{ padding: "48px 20px", textAlign: "center" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>★</div>
           <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-            Wishlist is empty
+            Shortlist is empty
           </div>
           <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto 16px" }}>
-            Pin the best representative listing for any watch you'd like to acquire — live or sold from the feed. Drag with the up/down buttons to rank.
+            Pin a representative example — live or recently-sold from the feed — for each reference you'd like to add to your collection. Force-rank with the up/down buttons. The Shortlist is the deck you scenario-plan against your owned set.
           </div>
         </div>
       ) : (
@@ -550,7 +550,7 @@ function WishlistRankedList({ items, onReorder, onRemove }) {
                 style={rankBtnStyle(idx === items.length - 1)}>↓</button>
             </div>
             <button onClick={async () => {
-              if (window.confirm(`Remove "${title}" from Wishlist?`)) await onRemove(item);
+              if (window.confirm(`Remove "${title}" from Shortlist?`)) await onRemove(item);
             }} aria-label="Remove" title="Remove"
               style={{
                 flexShrink: 0,

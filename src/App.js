@@ -1852,7 +1852,7 @@ export default function Watchlist() {
               </span>
             </div>
           ) : (
-            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={toggleHide} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} primaryCurrency={primaryCurrency} onShare={handleShare} onView={observeCard} onClickListing={onClickListing} />
+            <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={isAdmin ? toggleHide : undefined} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} primaryCurrency={primaryCurrency} onShare={handleShare} onView={observeCard} onClickListing={onClickListing} />
           )
         ))}
         {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>
@@ -2122,9 +2122,17 @@ export default function Watchlist() {
       borderBottom: "0.5px solid var(--border)",
       flexShrink: 0,
     }}>
+      {/* 2026-05-07 IA pass — UI labels only. Sub-tab keys stay
+          stable (my-collection / wishlist / lists / challenges) so
+          `dial_collections_sub_tab` localStorage + URL `?sub=` keep
+          working. The "Wishlist" → "Shortlist" rename reflects Mark's
+          framing of the deck as exemplar references for collection
+          planning, not specific listings to buy. The "My collection"
+          → "My watches" rename ducks the "collection inside
+          Collections" name doubling. */}
       {[
-        ["my-collection", isMobile ? "My collection" : "My collection"],
-        ["wishlist",      "Wishlist"],
+        ["my-collection", "My watches"],
+        ["wishlist",      "Shortlist"],
         ["lists",         "Lists"],
         ["challenges",    "Challenges"],
       ].map(([key, label]) => {

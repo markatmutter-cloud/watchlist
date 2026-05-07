@@ -240,7 +240,11 @@ export function MobileShell(props) {
           {/* References + Admin are desktop-only — mobile bottom bar
               shows Listings / Watchlist / Collections (3 fits cleanly
               on 375px viewports). Collections added 2026-05-06 PR #86. */}
-          {[["listings", "Listings"], ["watchlist", "Watchlist"], ["collections", "Collections"]].map(([key, label]) => (
+          {/* 2026-05-07 IA pass — UI label "Watchlist" → "Saved". URL
+              key `?tab=watchlist` and state var `tab === "watchlist"`
+              stay unchanged this slice; structural collapse follows
+              in Slice 2A.2. */}
+          {[["listings", "Listings"], ["watchlist", "Saved"], ["collections", "Collections"]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "8px 0 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               {tab === key
                 ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5" }} />
