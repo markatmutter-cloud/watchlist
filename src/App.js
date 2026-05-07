@@ -1609,16 +1609,31 @@ export default function Watchlist() {
     </div>
   ) : (
     <div style={{ position: "relative" }}>
-      <button onClick={() => setShowUserMenu(o => !o)} aria-label="Account menu"
+      {/* Avatar + chevron — the chevron is the visual hint that this
+          opens a menu (Mark feedback 2026-05-07: "the initial that
+          shows you're logged in to Google needs a label so they know
+          it's the settings menu"). Keeps the recognizable initial
+          treatment while signaling the menu affordance. */}
+      <button onClick={() => setShowUserMenu(o => !o)}
+        aria-label="Account menu"
+        title="Account menu"
         style={{
-          width: isMobile ? 40 : 32, height: isMobile ? 40 : 32, borderRadius: "50%",
+          height: isMobile ? 40 : 32,
+          padding: isMobile ? "0 10px 0 12px" : "0 8px 0 10px",
+          borderRadius: 999,
           border: "0.5px solid var(--border)", background: "var(--surface)",
           color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
           fontSize: isMobile ? 14 : 13, fontWeight: 600,
           display: "flex", alignItems: "center", justifyContent: "center",
+          gap: isMobile ? 6 : 4,
           flexShrink: 0,
         }}>
-        {userInitial.toUpperCase()}
+        <span>{userInitial.toUpperCase()}</span>
+        <span aria-hidden="true" style={{
+          fontSize: isMobile ? 10 : 9, color: "var(--text3)",
+          transform: showUserMenu ? "rotate(180deg)" : "none",
+          transition: "transform 120ms ease",
+        }}>▾</span>
       </button>
       {showUserMenu && (
         <div style={{
@@ -1636,6 +1651,17 @@ export default function Watchlist() {
             {userName}
           </div>
           <div style={{ height: "0.5px", background: "var(--border)", margin: "4px -8px 4px" }} />
+          {/* About Watchlist — surfaced as a top-level dropdown entry
+              (Mark feedback 2026-05-07: "have About Watchlist not
+              hidden under Settings"). Settings keeps a fallback entry
+              too so existing muscle memory still works. */}
+          <button onClick={() => { setShowUserMenu(false); setAboutModalOpen(true); }}
+            style={{ display: "block", width: "100%", textAlign: "left",
+                    padding: "6px 8px", border: "none", background: "transparent",
+                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                    fontSize: 13, borderRadius: 6 }}>
+            About Watchlist
+          </button>
           <button onClick={() => { setShowUserMenu(false); setSettingsModalOpen(true); }}
             style={{ display: "block", width: "100%", textAlign: "left",
                     padding: "6px 8px", border: "none", background: "transparent",
