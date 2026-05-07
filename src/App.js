@@ -1510,7 +1510,7 @@ export default function Watchlist() {
     background: "var(--bg)", color: "var(--text1)",
     ...Object.fromEntries(Object.entries(c).map(([k, v]) => [k, v]))
   };
-  const gridStyle = { display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 1, background: "var(--border)" };
+  const gridStyle = { display: "grid", gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: 1, background: "var(--border)" };
 
   // ── AUTH UI ─────────────────────────────────────────────────────────────
   // One block of JSX used by both the desktop sidebar footer and the mobile
