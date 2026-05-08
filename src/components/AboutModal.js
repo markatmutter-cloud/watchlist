@@ -154,7 +154,7 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
             </div>
             <div style={bodyText}>
               Watchlist aggregates new listings from across independent
-              dealers and auction houses to make your watch passion (problem)
+              dealers and auction houses to make your watch 'problem'
               more manageable.
             </div>
             <div style={{ ...bodyText, marginTop: 10 }}>

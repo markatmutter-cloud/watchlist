@@ -72,42 +72,60 @@ heart-on-Card working without a migration. Schema lives in
 `supabase/schema/2026-05-01_collections.sql`.
 
 **Internal-vs-external naming divergence (intentional, documented).**
-Two places where DB / URL / hook / localStorage names use a different
-word than the user-facing UI. Both are deliberate; both have a clear
-"why" so future-anyone (Mark, Claude, a teammate) can read the code
-without surprise.
+Three places where DB / URL / component-file / hook / localStorage
+names use a different word than the user-facing UI. All deliberate;
+all have a clear "why" so future-anyone (Mark, Claude, a teammate)
+can read the code without surprise.
 
 1. **DB `collections` ↔ UI "Lists"** (since 2026-05-04, PR #24).
    The DB tables (`collections`, `collection_items`), hook
    (`useCollections`), URL params (`?col=<uuid>`), localStorage value
    (`dial_collections_sub_tab`), sub-tab keys in `SUB_VALUES`, and
    mutator names (`addItemToCollection`, etc.) all say "collections".
-   The UI says "Lists" for the user-created sub-tab inside
-   Collections. **Why intentional:** the `collections` table stores
-   ALL grouping types — user-created lists, the Wishlist, Owned, Sold,
-   Challenges, the Shared-with-me inbox, plus eventually
-   collaborator-shared lists. "Collections" is the umbrella term that
-   covers all of those; "Lists" is the specific user-facing label for
-   the user-created subset. Renaming the DB to `lists` would lose
-   that umbrella, plus the rename would touch every read path that
-   hits `useCollections`. Don't bump.
+   The UI says "Lists" for the user-created sub-tab inside the Saved
+   tab. **Why intentional:** the `collections` table stores ALL
+   grouping types — user-created lists, the Wishlist, Owned, Sold,
+   Challenges, the Shared-with-me inbox, plus collaborator-shared
+   lists. "Collections" is the umbrella term that covers all of
+   those; "Lists" is the specific user-facing label for the
+   user-created subset. Renaming the DB to `lists` would lose that
+   umbrella, plus the rename would touch every read path that hits
+   `useCollections`. Don't bump.
 
-2. **URL `?tab=references` ↔ UI "Cool Stuff"** (since 2026-05-04,
-   PR #39). The URL key, component file (`ReferencesTab.js`),
-   `TAB_VALUES` entry, icon kind, and schema files all say
-   "references". **Why intentional:** the internal "watch reference
-   number" data concept (Rolex 1675, Tudor 7021, etc.) is also
-   called "reference" — Epic 0's references-as-entities work hangs
-   off this. Renaming the tab internally would force prefixes
-   ("ref-tab" / "watch-ref") on every reference-to-the-other to keep
-   them distinct. Cool Stuff is the UI label; "references" stays
-   internal. Bundle 2 (the IA pass) renames Cool Stuff → Learn at
-   the UI layer, which gives an opportunity to re-evaluate the
-   internal naming alongside it.
+2. **Internal `references` ↔ UI "Learn"** (URL renamed 2026-05-08
+   PR #130; component file + internal state names unchanged).
+   The component file (`ReferencesTab.js`), the internal `TAB_VALUES`
+   entry stays `"references"`, icon kind, and schema files all say
+   "references". The URL key was migrated to `?tab=learn` in PR #130
+   with a translate-at-the-boundary map for old links. **Why
+   intentional:** the internal "watch reference number" data concept
+   (Rolex 1675, Tudor 7021, etc.) is also called "reference" — Epic 0's
+   references-as-entities work hangs off this. Renaming the tab
+   internally would force prefixes ("ref-tab" / "watch-ref") on every
+   reference-to-the-other to keep them distinct. Learn is the UI
+   label; "references" stays internal. Re-evaluating the internal
+   naming is a parked roadmap item (see ROADMAP Epic 0 / Bundle 2A
+   structural rename).
+
+3. **Internal `watchlist` ↔ UI "Saved"** (URL renamed 2026-05-08
+   PR #130; component file + internal state + hook names unchanged).
+   The component file (`WatchlistTab.js`), the App.js state value
+   `tab="watchlist"`, hook (`useWatchlist`), localStorage key
+   (`dial_watch_top_tab`), URL param sub-key (`watchTopTab`), and
+   the `LEGACY_WATCHLIST_KEY` localStorage key all say "watchlist".
+   The URL key migrated to `?tab=saved` in PR #130. The UI label is
+   "Saved". **Why intentional:** the legacy localStorage key for the
+   pre-Supabase data import (`LEGACY_WATCHLIST_KEY`) is the original
+   naming and is named "Don't bump" in Things-to-never-do — bumping
+   resets every user's pre-Supabase import. The hook name
+   `useWatchlist` is wired into `watchlist_items` (the DB table for
+   hearted listings) and is referenced from many call paths.
+   Renaming the file + hook + state value is a mechanical sweep but
+   a big diff, parked alongside item 2 above.
 
 When a doc or comment refers to "the Collections sub-tab", read it as
 "the Lists sub-tab" if the context is the user-facing UI. Same shape
-for "the References tab" / "Cool Stuff".
+for "the References tab" / "Learn" and "Watchlist" / "Saved".
 
 **Watch Challenges (Build-a-collection v1, 2026-05-03; relocated
 2026-05-04; rebuilt 2026-05-06).** Challenges are collections with
