@@ -624,22 +624,28 @@ export function useCollections(user) {
     if (!user || !supabase) return { error: 'not signed in' };
     const cleanName = (name || '').trim();
     if (!cleanName) return { error: 'name required' };
-    const payload = {
-      user_id:          user.id,
-      name:             cleanName,
-      description:      opts.description || null,
-      type:             opts.type || 'free-form',
-      is_shared_inbox:  !!opts.isSharedInbox,
-    };
-    const { data, error } = await supabase.from('collections').insert(payload).select().single();
+    // 2026-05-08 — route through the security-definer RPC instead of a
+    // direct INSERT. Mark hit the same RLS-under-authenticated-role
+    // rejection that blocked challenge create on this project. See
+    // create_collection_v2 in supabase/schema/2026-05-08_collection_create_rpc.sql
+    // for the rationale; pattern mirrors create_challenge_v2.
+    const description     = opts.description || null;
+    const type            = opts.type || 'free-form';
+    const isSharedInbox   = !!opts.isSharedInbox;
+    const { data: newId, error } = await supabase.rpc('create_collection_v2', {
+      p_name:             cleanName,
+      p_description:      description,
+      p_type:             type,
+      p_is_shared_inbox:  isSharedInbox,
+    });
     if (error) return { error: error.message };
     setCollections(prev => [...prev, {
-      id: data.id, name: data.name, description: data.description,
-      type: data.type, userId: data.user_id, isSharedInbox: data.is_shared_inbox,
-      isSystem: !!data.is_system,
-      createdAt: data.created_at, updatedAt: data.updated_at,
+      id: newId, name: cleanName, description,
+      type, userId: user.id, isSharedInbox,
+      isSystem: false,
+      createdAt: undefined, updatedAt: undefined,
     }]);
-    return { error: null, id: data.id };
+    return { error: null, id: newId };
   }, [user]);
 
   const renameCollection = useCallback(async (id, name) => {
