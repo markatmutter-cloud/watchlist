@@ -41,7 +41,11 @@ function buildProps(overrides = {}) {
     sort: "date",
     watchTopTab: "listings",
     setWatchTopTab: noop,
-    legacyLocal: null,
+    // legacyLocal is always { watchlist: {}, hidden: {} } in App.js's
+    // initializer (it parses LEGACY_WATCHLIST_KEY / LEGACY_HIDDEN_KEY
+    // from localStorage with a `|| "{}"` fallback). Mirror that shape
+    // here — passing null crashes WatchlistTab's `legacyCounts` deref.
+    legacyLocal: { watchlist: {}, hidden: {} },
     importState: { phase: "idle" },
     setImportState: noop,
     legacyKeys: { watchlist: "x", hidden: "y" },

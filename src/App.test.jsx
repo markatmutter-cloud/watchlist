@@ -90,18 +90,19 @@ beforeEach(() => {
       json: () => Promise.resolve({}),
     });
   });
-  // matchMedia is used by useSystemDark.
-  if (typeof window.matchMedia === "undefined") {
-    Object.defineProperty(window, "matchMedia", {
-      writable: true,
-      value: jest.fn().mockImplementation(query => ({
-        matches: false, media: query, onchange: null,
-        addListener: jest.fn(), removeListener: jest.fn(),
-        addEventListener: jest.fn(), removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-      })),
-    });
-  }
+  // matchMedia is used by useSystemDark. jsdom does NOT provide
+  // matchMedia by default, so always assign (the previous typeof
+  // guard skipped on jsdom because matchMedia was undefined-but-
+  // accessible-as-property).
+  Object.defineProperty(window, "matchMedia", {
+    writable: true, configurable: true,
+    value: jest.fn().mockImplementation(query => ({
+      matches: false, media: query, onchange: null,
+      addListener: jest.fn(), removeListener: jest.fn(),
+      addEventListener: jest.fn(), removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
   // IntersectionObserver — used by Card via useEventTelemetry.
   if (typeof window.IntersectionObserver === "undefined") {
     window.IntersectionObserver = class {
