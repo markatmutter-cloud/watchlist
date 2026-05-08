@@ -1038,30 +1038,42 @@ export function useCollections(user) {
     const baseName = `${targetCount || 3} watches for $${Math.round((budget || 50000) / 1000)}k`;
     const cleanName = (name || '').trim()
       || (sender ? `${sender}'s ${baseName}` : baseName);
-    const payload = {
-      user_id:               user.id,
-      name:                  cleanName,
-      type:                  'challenge',
-      state:                 'draft',
-      target_count:          targetCount || null,
-      budget:                budget || null,
-      description_long:      descriptionLong || null,
-      parent_challenge_id:   parentChallengeId || null,
-      sender_name:           sender,
-    };
-    const { data, error } = await supabase.from('collections').insert(payload).select().single();
+
+    // 2026-05-08 — go through the security-definer RPC instead of a
+    // direct INSERT. Mark's project hit a state where the RLS WITH
+    // CHECK on `collections` rejects every authenticated INSERT
+    // regardless of policy expression — confirmed by isolated SQL
+    // tests where even `with check (true)` failed under role
+    // `authenticated`. The RPC runs as the function owner
+    // (security definer) so RLS doesn't apply, while still
+    // resolving `auth.uid()` from the JWT to set user_id correctly.
+    // See create_challenge_v2 in supabase/schema/2026-05-08_challenge_rpc.sql.
+    const { data: newId, error } = await supabase.rpc('create_challenge_v2', {
+      p_name:                  cleanName,
+      p_target_count:          targetCount || null,
+      p_budget:                budget || null,
+      p_description_long:      descriptionLong || null,
+      p_parent_challenge_id:   parentChallengeId || null,
+      p_sender_name:           sender,
+    });
     if (error) return { error: error.message };
+
+    // The RPC returns the new id; build the same row shape we used to
+    // splice into setCollections, but with the values we sent (so we
+    // don't need a follow-up SELECT round-trip). created_at /
+    // updated_at default at the DB but we don't surface them in the
+    // UI so leaving them undefined here is fine.
     setCollections(prev => [...prev, {
-      id: data.id, name: data.name, description: data.description,
-      type: data.type, userId: data.user_id, isSharedInbox: false,
-      isSystem: !!data.is_system,
-      targetCount: data.target_count, budget: data.budget,
-      descriptionLong: data.description_long, state: data.state,
-      parentChallengeId: data.parent_challenge_id,
-      senderName: data.sender_name || null,
-      createdAt: data.created_at, updatedAt: data.updated_at,
+      id: newId, name: cleanName, description: null,
+      type: 'challenge', userId: user.id, isSharedInbox: false,
+      isSystem: false,
+      targetCount: targetCount || null, budget: budget || null,
+      descriptionLong: descriptionLong || null, state: 'draft',
+      parentChallengeId: parentChallengeId || null,
+      senderName: sender,
+      createdAt: undefined, updatedAt: undefined,
     }]);
-    return { error: null, id: data.id };
+    return { error: null, id: newId };
   }, [user]);
 
   const updateChallenge = useCallback(async (id, patch) => {
