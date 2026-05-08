@@ -54,6 +54,7 @@ export function CollectionsTab({
   clearPendingChallengeDrill,
   collectionsSubTab,
   setCollectionsSubTab,
+  tabResetTick,
 }) {
   // Sub-tab routing: the parent owns the state but if for some reason
   // it isn't passed (smoke tests, signed-out flows), fall back to a
@@ -87,10 +88,14 @@ export function CollectionsTab({
   // `tabResetTick` whenever the user clicks the active main tab pill;
   // when we're on a collections-style sub-tab, we clear the drill-in
   // id so the user lands back on the list-of-lists view.
+  // (Hotfix 2026-05-07: was `props.tabResetTick`, but the component
+  // destructures props at the top so `props` doesn't exist as a
+  // variable — production white-screened with "props is not
+  // defined". `tabResetTick` is now in the destructure list above.)
   useEffect(() => {
-    if (props.tabResetTick && props.tabResetTick > 0) setSelectedListId(null);
+    if (tabResetTick && tabResetTick > 0) setSelectedListId(null);
     // eslint-disable-next-line
-  }, [props.tabResetTick]);
+  }, [tabResetTick]);
 
   // URL-sync drill-in id (Lists sub-tab only). Same pattern as
   // App.js's nav sync — pushState on real drill-in/out, replaceState
