@@ -2272,12 +2272,24 @@ export default function Watchlist() {
         );
       })()}
       {[
-        // Remaining sub-tabs after the hearted-collapse. Six total
-        // (Saved above + these five) — fits on desktop without
+        // Remaining sub-tabs after the hearted-collapse. Five total
+        // (Saved above + these four) — fits on desktop without
         // scroll, scrolls on mobile.
+        //
+        // Bundle 2A.2 (2026-05-07): Collections top-level tab folded
+        // into Saved. The four sub-tab keys below kept their original
+        // values (my-collection / wishlist / lists / challenges) for
+        // localStorage compat with users who had a Collections sub-tab
+        // preference saved before the collapse.
+        //
+        // Bundle 2A.2b 5→4 (2026-05-08): Shortlist consolidated into
+        // My watches as a fourth Owned/Sold/All/Shortlist toggle.
+        // Standalone "Shortlist" pill removed from the strip; the
+        // "wishlist" sub-tab key still routes to MyCollectionView (in
+        // shortlist-toggle mode) for backward-compat URLs and stale
+        // localStorage values.
         ["searches",      isMobile ? "Searches" : "Favorite searches"],
         ["my-collection", "My watches"],
-        ["wishlist",      "Shortlist"],
         ["lists",         "Lists"],
         ["challenges",    "Challenges"],
       ].map(([key, label]) => {

@@ -3,7 +3,11 @@ import { render, screen } from "@testing-library/react";
 import { CollectionsTab } from "./CollectionsTab";
 
 // Render-without-crash smoke tests for CollectionsTab + its sub-views
-// (MyCollectionView / WishlistView / ListsView / ChallengesView).
+// (MyCollectionView / ListsView / ChallengesView). The Shortlist
+// view consolidated into MyCollectionView in 2026-05-08 (Bundle
+// 2A.2b 5→4) — the "wishlist" sub-tab still routes through here for
+// URL backward-compat, hitting MyCollectionView with the toggle in
+// shortlist mode.
 //
 // Why these exist: production white-screened twice on this component
 // in a single session — once from a `props.tabResetTick` typo (props
