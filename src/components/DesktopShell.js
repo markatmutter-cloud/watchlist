@@ -361,7 +361,7 @@ export function DesktopShell(props) {
           ))}
         </div>
         <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 8, padding: "7px 12px", width: "100%", maxWidth: 640 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "7px 12px", width: "100%", maxWidth: 640 }}>
             <SearchIcon />
             <input value={search} onChange={e => setSearch(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}

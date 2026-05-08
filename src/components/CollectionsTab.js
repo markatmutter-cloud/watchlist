@@ -153,7 +153,7 @@ export function CollectionsTab({
   if (!user) {
     return (
       <div style={{ padding: "60px 20px", textAlign: "center" }}>
-        <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>Sign in to use Collections</div>
+        <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>Sign in to organize your watches</div>
         <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto 18px" }}>
           Owned watches, watches you've sold, your wishlist, custom lists, challenges — all in one place. Sync across every device.
         </div>
@@ -401,7 +401,7 @@ function MyCollectionView({
           <button onClick={onShortlistAddFromFeed}
             style={{
               border: "none", background: "var(--brand)", color: "#fff",
-              padding: "4px 10px", borderRadius: 6,
+              padding: "8px 12px", borderRadius: 6,
               cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
             }}>+ From feed</button>
         )}
@@ -414,13 +414,13 @@ function MyCollectionView({
             <button onClick={() => onAddManual(targetKind)}
               style={{
                 border: "0.5px solid var(--border)", background: "transparent",
-                color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
+                color: "var(--text2)", padding: "8px 12px", borderRadius: 6,
                 cursor: "pointer", fontFamily: "inherit", fontSize: 12,
               }}>+ Add a watch</button>
             <button onClick={() => onAddFromFeed(targetCollectionId, `Add to ${targetName}`)}
               style={{
                 border: "none", background: "var(--brand)", color: "#fff",
-                padding: "4px 10px", borderRadius: 6,
+                padding: "8px 12px", borderRadius: 6,
                 cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
               }}>+ From feed</button>
           </>
@@ -749,7 +749,7 @@ function ListsView({
                 title="Share this list"
                 style={{
                   border: "none", background: "var(--brand)",
-                  color: "#fff", padding: "4px 10px", borderRadius: 6,
+                  color: "#fff", padding: "8px 12px", borderRadius: 6,
                   cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
                 }}>Share</button>
               {/* Manage / Rename / Delete are owner-only. Collaborators
@@ -760,14 +760,14 @@ function ListsView({
                     title="Manage collaborators"
                     style={{
                       border: "0.5px solid var(--border)", background: "transparent",
-                      color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
+                      color: "var(--text2)", padding: "8px 12px", borderRadius: 6,
                       cursor: "pointer", fontFamily: "inherit", fontSize: 12,
                     }}>Manage</button>
                   <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
                     title="Rename list"
                     style={{
                       border: "0.5px solid var(--border)", background: "transparent",
-                      color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
+                      color: "var(--text2)", padding: "8px 12px", borderRadius: 6,
                       cursor: "pointer", fontFamily: "inherit", fontSize: 12,
                     }}>Rename</button>
                   <button onClick={async () => {
@@ -777,7 +777,7 @@ function ListsView({
                     }}
                     style={{
                       border: "0.5px solid var(--border)", background: "transparent",
-                      color: "var(--danger)", padding: "4px 10px", borderRadius: 6,
+                      color: "var(--danger)", padding: "8px 12px", borderRadius: 6,
                       cursor: "pointer", fontFamily: "inherit", fontSize: 12,
                     }}>Delete</button>
                 </>
