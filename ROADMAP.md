@@ -712,6 +712,17 @@ longer hosts the original page.
 the last non-zero entry from priceHistory — so items that went POR
 before disappearing still show a usable display value.
 
+### Saved searches — \$ Min / \$ Max persistence ✓ shipped 2026-05-08 (PRs #136 + #137)
+
+`saved_searches` table gained `min_price` / `max_price` numeric
+nullable columns + non-negative check constraints. Add-search
+modal + inline editor have explicit numeric inputs; the search-bar
+heart captures the active band alongside the query. `runSearch`
+re-applies the saved guard on tap; `savedSearchStats` filters by
+the band so the row count + "X new this week" badge agree with the
+visible grid. Fixes Mark's long-flagged "I still can't save \$
+filters to the searches" report.
+
 ### Pending — Alerts on saved-search matches
 
 Turn Watchlist from a browse tool into a daily-open tool. Built after
@@ -814,16 +825,16 @@ unchanged; preview-bots stop after the head-scrape and never see
 the redirect. Watchfid + other PROXIED_IMG_HOSTS get routed through
 `/api/img` for the OG image too. (#70.)
 
-### Pending — Sharing collections (extends v1 share primitive)
+### Sharing collections ✓ shipped 2026-05-07 (List Share v1, PR #119)
 
 Share an entire list by link, not just a single listing. URL shape
-mirrors v1: `?collection=<id>&shared=1`. Recipient banner gives
-"Save copy to my collections" / "Just browsing". Public read-only
-list links also live here. Depends on RLS surgery on
-`public.collections` to permit anon SELECT for `state='complete'`
-or `is_public=true` rows.
+`?list=<id>&shared=1`. Read-only landing surface with "Save a copy"
+flow. `is_public` column on collections + RLS expansion to permit
+anon SELECT for `is_public=true` rows. ListReceiver component
+mirrors ShareReceiver / ChallengeReceiver isolation pattern (own
+hooks, single mirror prop to App.js).
 
-### Pending — Collaborator lists (Plan B — co-edit between users)
+### Collaborator lists ✓ slices 1–3 shipped 2026-05-07/08 (Plan B)
 
 Mark + wife flow: "Watches for our wedding" / "Family wishlist"
 where two named users can both view AND add items to one list.
@@ -854,14 +865,32 @@ pending-invite badge. Keeps consistent with the "share = artifact,
 not real-time" rule and the Epic 4 explicit-NOT list. The invite
 itself is the artifact.
 
-**Slicing (each its own PR):**
-- Slice 1: schema + RLS + smoke-test SQL (no UI; backend-only,
-  no user impact)
-- Slice 2: RPCs (`invite_collaborator`, `accept_invite`,
-  `decline_invite`, `revoke_collaborator`) + `useCollaborators`
-  hook + Manage-list sheet
-- Slice 3: pending-invite badge + accept/decline modal
-- Slice 4: `who_added` attribution chip on item cards
+**Slicing — current status:**
+- ✓ Slice 1 (PR #121): schema + RLS + smoke-test SQL.
+- ✓ Slice 2 (PR #122): RPCs (`invite_collaborator`, `accept_invite`,
+  `decline_invite`, `revoke_collaborator`, `pending_invites_for_me`,
+  `list_collaborators`) + `useCollaborators` hook surface +
+  Manage-list sheet.
+- ✓ Slice 3 (PR #123): accept-invite **on the share link**
+  (`?list=<id>&shared=1`) with a focused share-receive surface.
+  Pending-invite badge in the user dropdown also lives here.
+- ⏳ Slice 4 (deferred): `who_added` attribution chip on item cards.
+  The column landed in slice 1, but slice-2 mid-build accidentally
+  shipped `who_added: user.id` on inserts before Mark's DB had the
+  column applied (caused widespread "could not find column" errors
+  → hotfix #127 removed the column write). Slice 4 needs to re-add
+  the column write after confirming slice-1 SQL is live in the
+  target DB, then add the chip rendering.
+
+**Known follow-up:** other inserts into `public.collections` (system
+list auto-create, manual user-list create) currently use direct
+INSERT. Mark's project hit a state on 2026-05-08 where direct INSERT
+under role `authenticated` was rejected by RLS regardless of policy
+expression — fix was to route challenge create through a SECURITY
+DEFINER RPC (`create_challenge_v2`, schema in
+`supabase/schema/2026-05-08_challenge_rpc.sql`). If/when other
+direct INSERTs hit the same rejection, copy that pattern. See
+CLAUDE.md "Challenge create via SECURITY DEFINER RPC" for details.
 
 Mark picked Plan B over the lighter "anyone with the link" token
 approach 2026-05-07 because the recurring use-case (couples /
@@ -1513,6 +1542,76 @@ becomes confusion.
 > analytics) became Epic 8; old Epic 6 (Mac mini) folded into Epic 0.
 > Epic 0/1/2/5 numbering unchanged. Entries below dated before
 > 2026-05-05 evening reference the pre-restructure scheme.
+
+- 2026-05-08: **Bundle 2A IA shipped end-to-end + List Sharing v2
+  collaborator slices 1–3 + saved-search \$ filters + RLS investigation
+  + a flotilla of hotfixes.** ~20 PRs (#121 → #140), 9 SQL migrations
+  applied. Three arcs:
+  - **Bundle 2A.2b — Saved tab consolidation (5 sub-tabs).** PRs
+    #133 (collapse hearted Listings/Auctions/Sold into one Saved
+    pill with a toggle), #134 (consolidate Shortlist into My
+    watches as a fourth Owned/Sold/All/Shortlist toggle + enlarge
+    Shortlist row cards), #135 (merge the toggle into the filter
+    row). End-state Saved strip: Saved / Searches / My watches /
+    Lists / Challenges (5 pills). Plus #117/#118 (label + structural
+    collapse from 2026-05-07 evening), #130 (URL key alignment:
+    `?tab=saved` / `?tab=learn`), #129 ("X new" → "X new this
+    week"), #131 (add-to-list sort + mobile sub-tab horizontal
+    scroll).
+  - **List Sharing v2 — Collaborator lists, slices 1–3.** PR #121
+    (schema + RLS expansion via `can_view_collection` /
+    `can_edit_collection` security-definer functions), PR #122
+    (RPCs + `useCollaborators` hook surface + Manage-list sheet
+    on collection drill-in), PR #123 (accept-invite **on the share
+    link** at `?list=<id>&shared=1` with focused share-receive
+    surface — same hooks-isolation pattern as ShareReceiver /
+    ChallengeReceiver). Slice 4 (`who_added` attribution chip on
+    item cards) deferred — needs to re-add the column write that
+    was removed in hotfix #127, after confirming slice-1 SQL is
+    live in target DBs.
+  - **Saved-search \$ filter persistence (the long-flagged bug).**
+    PR #136 (SQL: `min_price` / `max_price` nullable numeric
+    columns) + PR #137 (JS: full wiring across `useSearches` hook,
+    AddSearchModal, inline editor, FavSearchModal heart capture,
+    `runSearch` re-apply, `savedSearchStats` count, `currentIsSaved`
+    dedup). End-to-end so a saved "Speedmaster pro under \$5k"
+    actually persists + restores the band on tap.
+  - **The deep RLS investigation (PR #138 + #139).** Mark hit
+    "Couldn't create challenge: new row violates row-level
+    security policy for table 'collections'" even after applying
+    PR #132's INSERT policy fix. 40 minutes of SQL probing (full
+    findings preserved in PR #139's description) established that
+    `with check (true)` ALSO fails under the simulated authenticated
+    session, while RLS-disabled INSERT works fine. Never fully
+    diagnosed root cause — likely a project-specific relcache /
+    policy-evaluation quirk. Pragmatic fix: route challenge create
+    through a SECURITY DEFINER RPC (`create_challenge_v2`) that
+    bypasses RLS while still resolving `auth.uid()` to set
+    `user_id`. CLAUDE.md gained a note about this pattern as the
+    fallback when direct INSERT hits the same RLS rejection in
+    future. Plus PR #138 aligned the INSERT policy roles from
+    `{authenticated}` → `{public}` (the policy-creation half of
+    the fix that didn't end up sufficient on its own).
+  - **Production white-screen hotfixes.** PR #120 (TDZ: useEffect's
+    deps array referenced a state variable declared LATER), PR
+    #124 (referenced `props.X` after destructuring props at the
+    top), PR #126 (`user undefined` inside ListsView; collections
+    mapper dropped `user_id`), PR #127 (`who_added` column missing
+    on Mark's DB — JS payload included the column before slice-1
+    SQL was applied). Four white-screens in one session because
+    shell smoke tests use `mockShellProps` with pre-built JSX
+    consts that never render the actual component trees. PR #128
+    added render-without-crash tests for App / CollectionsTab /
+    WatchlistTab to close that gap, plus three new
+    Things-to-never-do entries in CLAUDE.md.
+  - **End-of-session ambiguous-column SQL bug** (PR #140) —
+    `list_collaborators` RPC had unqualified `select user_id from
+    public.collections` shadowing the OUT parameter; alias the
+    table + qualify the column.
+  - **Cleanup pass:** 27 merged-PR local branches deleted, dead
+    `ShareBanner.js` removed, dead `extractRef` / `logToPrice`
+    exports stripped from utils, `.gitignore` rules for macOS
+    Finder dupes added.
 
 - 2026-05-06 (late evening, addendum): **Three more shipped after
   the EOD doc pass:** Collections four-sub-tab restructure (PR #99,

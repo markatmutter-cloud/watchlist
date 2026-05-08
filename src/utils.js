@@ -400,26 +400,6 @@ export function imgSrc(url) {
   return url;
 }
 
-export function logToPrice(pos) {
-  if (pos >= 100) return GLOBAL_MAX;
-  const minL = Math.log(500), maxL = Math.log(GLOBAL_MAX);
-  return Math.round(Math.exp(minL + (pos / 100) * (maxL - minL)));
-}
-
-// First non-year 3-6 digit number in a title, used for grouping the
-// watchlist by reference. Mirrors the regex behind the REFS chips.
-export function extractRef(title) {
-  const matches = (title || "").match(/\b\d{3,6}(?:\.\d{1,3})?\b/g) || [];
-  for (const m of matches) {
-    if (!m.includes(".")) {
-      const n = parseInt(m, 10);
-      if (n >= 1900 && n <= 2099 && m.length === 4) continue;
-    }
-    return m;
-  }
-  return null;
-}
-
 // ── Feedback / bug-report mailto builder ─────────────────────────────
 // Single source of truth for the "Suggest a dealer / Report a bug /
 // Send feedback" mailto used in two places:

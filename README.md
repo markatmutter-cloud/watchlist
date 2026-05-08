@@ -20,16 +20,16 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 ## What it does
 
-Four top-level tabs:
+Three top-level tabs (with internal-vs-UI naming divergence — see CLAUDE.md):
 
-- **Listings** — aggregates 38 curated dealer sources + targeted eBay searches + the four major auction houses' active lots (Antiquorum, Christie's, Sotheby's, Phillips) into one feed. Sub-tabs: Live listings (dealer items) / Live auctions (auction lots, ending-soonest) / All sold / Auction calendar. Lot # sort pill on auction sub-tabs renders catalog order grouped by sale.
-- **Watchlist** — heart-on-feed surfaces only: Favorites (saved listings) / Saved auctions / Saved sold / Favorite searches.
-- **Collections** — four sub-tabs that collect Mark's framing of "everything is a list":
-  - **My collection** *(default)* — Owned + Sold combined view with an Owned / Sold / All toggle. Add a watch by picking from the tracked feed or via manual entry (photo + brand/model/ref/material + price paid + comments). One-tap "Mark sold" moves any owned item to Sold with sold price + date capture.
-  - **Wishlist** — ranked list of watches you'd like to acquire. Each row is a representative listing pinned from the feed. ↑/↓ buttons reorder.
-  - **Lists** — user-created lists by reference, theme, or research thread. Auto-populates a "Shared with me" inbox when other users share with you. Anything you've hidden from the Listings feed surfaces here as a "Hidden" row — drill in, use the "..." menu's Unhide to put it back.
-  - **Challenges** — build-a-collection. Pick N watches under a budget from your own Lists / Favorites (or by pasting a URL), share the spec so a friend can build their own answer; or share the completed picks. Saved challenges are attributed to the sender's name when received via a share link ("James's 3 watches for $50k"). 20% over-budget soft-warn. Click-pick on every device.
-- **Cool Stuff** — collector resource tools (print-to-scale watch size comparison + curated link aggregator; encyclopedia is roadmap'd).
+- **Listings** *(URL `?tab=listings`)* — aggregates 38 curated dealer sources + targeted eBay searches + the four major auction houses' active lots (Antiquorum, Christie's, Sotheby's, Phillips) into one feed. Sub-tabs: Live listings (dealer items) / Live auctions (auction lots, ending-soonest) / All sold / Auction calendar. Lot # sort pill on auction sub-tabs renders catalog order grouped by sale.
+- **Saved** *(URL `?tab=saved`; internal key `watchlist`)* — five sub-tabs covering saved-from-feed surfaces, collection planning, and lists:
+  - **Saved** *(default)* — hearted listings with a Listings/Auctions/Sold toggle. Toggle pills sit inline with the filter row; Listings shows currently-active hearted dealer items, Auctions shows hearted auction lots + all eBay items (ending-soonest), Sold shows hearted items that went sold.
+  - **Searches** — saved searches editor. Each row stores label + query + optional `$ Min` / `$ Max` band; tapping a row applies all three to the Listings tab and lands you there. Live count + "X new this week" badge per row.
+  - **My watches** — Owned + Sold + Wishlist + Shortlist combined surface with a four-way toggle. Owned/Sold/All show your collection; Shortlist is a ranked list of representative listings you're scenario-planning against.
+  - **Lists** — user-created lists by reference, theme, or research thread. Auto-populates a "Shared with me" inbox when other users share lists with you. Email-invite collaborators with role (viewer / editor) — invitees accept via the share link.
+  - **Challenges** — build-a-collection. Pick N watches under a budget from your own Lists / Favorites (or by pasting a URL), share the spec so a friend can build their own answer; or share the completed picks. Sender attribution on shared challenges ("James's 3 watches for $50k"). 20% over-budget soft-warn. Click-pick on every device.
+- **Learn** *(URL `?tab=learn`; internal key `references`)* — collector resource tools (print-to-scale watch size comparison + curated link aggregator; encyclopedia is roadmap'd).
 - **Site stats** *(admin only — invisible to other users)* — dense admin dashboard at `?tab=admin` covering three sections: per-source quality (live count, new-per-week, hearts/hides, avg price, top brand, $ added/sold over 30d, 30-day engagement, scraper health, "earning its keep" chip), auction-house quality (live + upcoming sales, lots, sold rate, $ sold over 90d, median Hammer/Low ratio), and per-user limits (hearts / hides / lists / saved-searches counts, 30-day clicks/views/shares/list-adds, top saved brand, current cap, with an inline form to set a user's cap by email). Engagement signals come from a `listing_events` table seeded by anonymous + signed-in views/clicks/saves/hides/list-adds/shares; daily rollup at 09:15 UTC. Reachable via the user dropdown for users whose email is in `REACT_APP_ADMIN_EMAILS`.
 
 Plus:
@@ -37,7 +37,7 @@ Plus:
 - Cross-device sync via Google sign-in (Supabase auth + tables, RLS-protected).
 - Per-user **saved searches** — add/edit/delete your own queries, with live counts of matching listings. Tap a saved search to land on Live listings filtered to that query.
 - Per-user **tracked lots** — paste an auction-house lot URL to follow it through to hammer (Antiquorum, Christie's, Sotheby's, eBay).
-- Per-user **lists + share** — organise hearted watches into named lists, share any listing with anyone via the native share sheet. Recipients see the listing in the same UI with a Save / Dismiss banner; signed-in saves auto-populate a "Shared with me" inbox. No in-app messaging — the user's chosen messaging tool handles replies.
+- Per-user **lists + share** — organise hearted watches into named lists. Three share primitives: share any single listing via the native share sheet (recipient sees the listing in the same UI with a Save / Dismiss banner; signed-in saves auto-populate a "Shared with me" inbox); share an entire list read-only via `?list=<id>&shared=1`; OR invite collaborators to a list by email with viewer/editor roles (collaborators co-edit; attribution chip shows who added each item — landing in slice 4). No in-app messaging — the user's chosen messaging tool handles replies.
 - **Browser back/forward parity** — back walks you backwards through Watchlist instead of leaving the site (proper pushState / popstate handling).
 - **Hide** any listing with the × button — it stays out of the live feed but its history is preserved. Hidden items show up in Collections > Lists > Hidden so you can unhide them later.
 - Runs a Python scrape pipeline daily via GitHub Actions — no server to babysit.
@@ -50,7 +50,7 @@ Plus:
 - Implicit weekday-based date dividers (Today / Yesterday / weekday / Last week / Older) when sorted by date.
 - Dark/light mode following system preference, with manual override.
 - GBP→USD conversion for UK dealers, shown alongside the native price.
-- Mobile: configurable 1-3 col grid with a slide-up filter drawer, sticky search/sort row, and a 2-tab bottom-nav (Listings / Watchlist).
+- Mobile: configurable 1-3 col grid with a slide-up filter drawer, sticky search/sort row, and a 3-tab bottom-nav (Listings / Saved / Learn).
 - Desktop: full-width top bar with three main tab pills, an inline pill-style filter row, and configurable 3-7 col grid (or auto fluid).
 
 ---
@@ -88,11 +88,15 @@ Plus:
      Browser fetches JSON                 Supabase (Postgres + Auth)
        — filter/sort/state                  — watchlist_items
        lives in React                       — hidden_listings
-                                            — saved_searches
+                                            — saved_searches (with $ band)
+                                            — collections + collection_items
+                                            — collection_collaborators
+                                            — listing_events / _daily
+                                            — admin_emails / user_limits
                                             — Google OAuth, RLS per-user
 ```
 
-Listings/auctions are static JSON committed to the repo. The only thing behind a server is per-user data (watchlist, hidden listings, saved searches), which lives in Supabase with row-level security so each user can only read/write their own rows. Anonymous visitors can browse and search; signing in unlocks saving.
+Listings/auctions are static JSON committed to the repo. The only thing behind a server is per-user data (watchlist, hidden listings, saved searches, collections + items, collaborator invites, listing events for admin analytics), which lives in Supabase with row-level security so each user can only read/write their own rows. Anonymous visitors can browse and search; signing in unlocks saving.
 
 ---
 
