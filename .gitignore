@@ -213,3 +213,11 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# macOS Finder duplicates — files that pick up a " 2.ext" suffix when
+# Finder copies into a folder that already has a same-named file. They
+# accumulate during multi-tool drag-drop / sync sessions. Keeping them
+# out of `git status` so an accidental `git add -A` can't ship them.
+* 2.*
+* 2/
+.DS_Store

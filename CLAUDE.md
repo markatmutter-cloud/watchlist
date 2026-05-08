@@ -9,7 +9,7 @@ how to behave for the rest of it.
 - [README.md](README.md) — what the project is + architecture. Public-facing.
 - [ROADMAP.md](ROADMAP.md) — priorities, epics, what's explicitly out of scope.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
-  The current one is [SESSION_HANDOFF_2026-05-07.md](SESSION_HANDOFF_2026-05-07.md);
+  The current one is [SESSION_HANDOFF_2026-05-08.md](SESSION_HANDOFF_2026-05-08.md);
   older ones live in `archive/`.
 
 If a gotcha or convention is durable (still true next session), graduate
@@ -550,6 +550,24 @@ RPC (admin-only on the SQL side). Schema:
 `supabase/schema/2026-05-06_user_limits.sql`. Hook:
 `src/hooks/useUserLimit.js`. Banner:
 `src/components/UserLimitBanner.js`.
+
+**Challenge create via SECURITY DEFINER RPC (2026-05-08).** Direct
+INSERT into `collections` for a new challenge hit a state on Mark's
+project where RLS rejected even with `with check (true)` under role
+`authenticated`. We never fully diagnosed root cause (likely a
+relcache / policy-evaluation quirk specific to that project).
+Pragmatic fix: route the insert through `public.create_challenge_v2`
+— a `security definer` plpgsql function that resolves `auth.uid()`
+internally + sets `user_id` to that uid (so a malicious caller
+can't spoof). Schema lives in
+`supabase/schema/2026-05-08_challenge_rpc.sql`. JS calls
+`supabase.rpc('create_challenge_v2', { p_name, p_target_count, ... })`
+in `src/supabase.js` `createChallenge`. **If a future direct INSERT
+into `collections` hits the same RLS rejection,** copy the same
+pattern: write a `security definer` RPC, set `user_id := auth.uid()`
+inside, return the new id, grant execute to `authenticated`. Don't
+spend hours re-running the policy diagnostic — the SQL editor
+investigation in the 2026-05-08 chat covered it exhaustively.
 
 ## Scraper conventions
 
