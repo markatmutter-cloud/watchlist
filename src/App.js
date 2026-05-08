@@ -2207,19 +2207,28 @@ export default function Watchlist() {
   const watchSubTabsJSX = tab !== "watchlist" ? null : (
     // Sub-tab strip uses underline-style buttons (see tabPill in
     // styles.js). Pre-2026-05-04 the strip also carried a trailing
-    // contextual action button (+Track / +Add search / +New list),
-    // which fit on desktop but pushed the strip into a horizontal
-    // scroller on mobile (375px viewports couldn't accommodate five
-    // sub-tabs plus a button without overflow). Action buttons moved
-    // into the body of each sub-tab as part of an intro banner so the
-    // strip stays narrow enough to render without scroll on every
-    // viewport.
+    // contextual action button; that's gone now.
+    //
+    // Bundle 2A.2 (2026-05-07) folded the four Collections sub-tabs
+    // into this strip — eight sub-tabs total. On 375px viewports
+    // that's wider than the screen, so the wrapper needs horizontal
+    // overflow scrolling. Mirror the listingsSubTabsJSX shape: same
+    // overflowX:auto + scrollbar-hiding CSS so the strip scrolls
+    // touch-style with no visible scrollbar. Mark feedback
+    // 2026-05-08: "the sub tabs don't slide horizontally" — pre-fix
+    // the wrapper was display:flex without overflow, so the buttons
+    // got clipped.
     <div style={{
       display: "flex", gap: 20, alignItems: "center",
       padding: "0 16px",
       background: "var(--bg)",
       borderBottom: "0.5px solid var(--border)",
       flexShrink: 0,
+      overflowX: "auto",
+      overflowY: "hidden",
+      WebkitOverflowScrolling: "touch",
+      scrollbarWidth: "none",
+      msOverflowStyle: "none",
     }}>
       {[
         // Sub-tab key "listings" preserved for localStorage compat
