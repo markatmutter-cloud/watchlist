@@ -316,11 +316,11 @@ begin
            cc.invited_email,
            cc.role,
            cc.status,
-           u.email,
+           u.email::text,
            coalesce(
              u.raw_user_meta_data->>'full_name',
              u.raw_user_meta_data->>'name',
-             u.email
+             u.email::text
            ),
            cc.created_at,
            cc.responded_at
@@ -331,6 +331,11 @@ begin
      order by cc.created_at asc;
 end;
 $$;
+-- 2026-05-08 follow-up: u.email is varchar in auth.users; cast to text
+-- inside the SELECT to match the RETURNS TABLE user_email text column,
+-- otherwise Postgres raises "structure of query does not match function
+-- result type" once a real auth.users row joins the result. Same fix
+-- pattern in any future RPC that reads auth.users.email.
 
 -- Grant execute to authenticated only (anon never invites or accepts).
 grant execute on function public.invite_collaborator(uuid, text, text) to authenticated;
