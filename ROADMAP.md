@@ -210,35 +210,51 @@ this lands, those epics can't ship cleanly.
   a `useDerivedTaxonomies` hook for the brand / source / refs
   facets (~100 lines), display-style derivation. Could land
   App.js around 1,300–1,400. Not urgent; cleanup-rhythm work.
-- **Internal-naming cleanup pass.** Two UI renames left their
+- **Internal-naming cleanup pass.** Three UI renames left their
   internals on the old name. Carrying the divergence indefinitely
   is a real cost — every new piece of list-related code has to
   remember "UI says lists, DB says collections."
   - **Collections → Lists** (PR #24, 2026-05-04). DB tables
     (`collections`, `collection_items`), hook (`useCollections`),
-    URL params (`?sub=collections`, `?col=<uuid>`), localStorage
-    (`dial_watch_top_tab=collections`), `SUB_VALUES` key, mutator
-    names (`addItemToCollection`, `removeItemFromCollection`,
-    etc.) all still say "collections."
-  - **References → Cool Stuff** (PR #39, 2026-05-04). URL
-    (`?tab=references`), component (`ReferencesTab.js`),
-    `TAB_VALUES` entry, icon kind, schema files all still say
-    "references." (Naming note: "Cool Stuff" is the user-facing
-    label; "references" is fine as an internal name even
-    post-cleanup, since we already need a separate term for "watch
-    reference numbers". Decide at refactor time whether to touch
-    this rename at all.)
-  - **Cleanup work**: Supabase SQL migration to rename tables,
-    update RLS policies + indexes that reference old names, JS
-    code rewrites (`from("collections")` → `from("lists")`,
-    `useCollections` → `useLists`, etc.), URL/localStorage
-    backward-compat (read either form, write the new one) so
-    inbound shared links + existing user prefs survive,
-    schema-file updates.
-  - **Risk**: any miss = a user's lists show empty because the
-    read query hits a non-existent table. Manual smoke-test
-    post-migration mandatory; no automated coverage at this
-    layer today.
+    URL params (`?col=<uuid>`), localStorage (post-Bundle-2A:
+    `dial_collections_sub_tab`), `SUB_VALUES` key, mutator names
+    (`addItemToCollection`, `removeItemFromCollection`, etc.) all
+    still say "collections." **Decision parked**: Mark's framing
+    for keeping the umbrella DB name (`collections` covers Lists,
+    Wishlist, Owned, Sold, Challenges, shared inbox) is in
+    CLAUDE.md and is sound — likely DON'T rename the DB layer.
+    The hook + sub-tab key are the candidates if anything.
+  - **Watchlist → Saved (URL renamed PR #130, internals pending).**
+    URL `?tab=watchlist` → `?tab=saved` shipped Bundle 2A. Internal
+    state still uses `tab="watchlist"`, hook is `useWatchlist`,
+    component is `WatchlistTab.js`, localStorage is
+    `dial_watch_top_tab`, plus `LEGACY_WATCHLIST_KEY` for the
+    pre-Supabase data import (see Things-to-never-do — that one
+    DOES NOT bump). Renaming the file + hook + state value is a
+    mechanical sweep: rename the file, update every import, find/
+    replace `tab === "watchlist"` to `tab === "saved"`, etc. The
+    DB table for hearts (`watchlist_items`) probably stays named
+    that since it's specifically the "items the user hearted"
+    table, not a tab — analogous to the `collections` umbrella.
+  - **References → Learn (URL renamed PR #130, internals pending).**
+    URL `?tab=references` → `?tab=learn` shipped Bundle 2A.
+    Internal state still uses `tab="references"`, component is
+    `ReferencesTab.js`, `TAB_VALUES` entry, icon kind, schema files
+    all still say "references." (Naming note: "Learn" is the
+    user-facing label; "references" is fine as an internal name
+    even post-cleanup since we already need a separate term for
+    "watch reference numbers" — Epic 0 references-as-entities work.
+    Decide at refactor time whether to touch this rename at all.)
+  - **Cleanup work**: rename component files + every import,
+    update internal state values (`tab="watchlist"` → `"saved"`,
+    `tab="references"` → `"learn"`), keep URL/localStorage
+    backward-compat (read either form, write the new one — the
+    URL boundary maps already exist from PR #130), find/replace
+    string literals in conditionals + tests + handoffs. Plus
+    decide the DB-side rename question (probably no).
+  - **Risk**: any miss = a tab silently doesn't render or a state
+    machine wedge. The render-without-crash tests catch some of
+    this. Manual smoke-test post-rename mandatory.
   - **Effort**: half-day to a day. Low urgency. Slot during a
     maintenance-rhythm session.
 - **Maintenance rhythm.** Every 4th–5th session is hygiene only:
