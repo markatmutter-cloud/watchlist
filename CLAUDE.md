@@ -769,12 +769,24 @@ Two suites, both run on every push to main and every PR via
 - **pytest** (`tests/test_merge_state.py`) — state-transition logic in
   `merge.update_state`. Cross-run memory layer where regressions would
   be costly and silent. Synthetic input dicts only.
-- **jest** (`src/components/*.test.jsx`) — render-without-crash + key
-  visibility assertions for `MobileShell` + `DesktopShell`. Catches
-  the TDZ class of bug that shipped a white screen on mobile in late
-  April 2026. Single mock fixture in
-  `src/components/__fixtures__/mockShellProps.js`; tests override
-  individual fields rather than rebuilding the ~60-prop bag.
+- **jest** (`src/**/*.test.jsx`) — render-without-crash + key
+  visibility assertions across three layers:
+  - **Shells** (`src/components/MobileShell.test.jsx`,
+    `DesktopShell.test.jsx`) — render with the
+    `mockShellProps.js` fixture; cover the TDZ class of bug that
+    shipped a white screen on mobile late April 2026.
+  - **Tab components** (`CollectionsTab.test.jsx`,
+    `WatchlistTab.test.jsx`) — added 2026-05-07 after FOUR
+    production white-screens in a single session slipped past the
+    shell smoke tests. The shell tests pass `watchlistTabJSX`
+    etc. as already-built mock JSX, so they never actually render
+    the tab component tree. The tab tests cover that gap. Each
+    sub-tab gets a render-without-crash assertion.
+  - **App** (`src/App.test.jsx`) — App-level render-without-crash
+    using mocked `./supabase` hooks and a stubbed `fetch`. Catches
+    App.js TDZ / hook-ordering regressions that don't manifest in
+    shell tests because shells receive App-built JSX consts as
+    props. Module-load test PLUS render test.
 
 Run locally:
 
@@ -790,7 +802,10 @@ npm run test:ci                         # jest single-run (CI mode)
 When adding new state-transition behavior to `merge.py`, add a
 corresponding test in `tests/test_merge_state.py`. When adding a new
 prop to either shell, mirror it in `mockShellProps.js` so the smoke
-tests keep covering missing-prop regressions.
+tests keep covering missing-prop regressions. When adding a new
+prop to `CollectionsTab` / `WatchlistTab` / `App`, update the
+`buildProps` / mock setup in the corresponding `.test.jsx` so the
+render-without-crash assertions stay accurate.
 
 Currently-documented bugs in pytest (e.g. silent currency switches)
 live as behavior-documenting tests rather than expected-failures —
@@ -993,6 +1008,40 @@ To add a new printable tool: render its sheet via `createPortal` to
   the JSX tree (`<div>{/* ... */}</div>`) or above the `return`. Same
   trap exists for any expression that isn't a single JSX element in
   that slot.
+- **Don't add a `useEffect` whose deps array references a state
+  variable declared LATER in the function.** TDZ ("temporal dead
+  zone") — const declarations in JS execute top-to-bottom, and
+  `useEffect`'s deps array is constructed synchronously when the
+  hook is called. So a `useEffect(() => {...}, [tab, watchTopTab])`
+  placed above the `const [tab, setTab] = useState(...)` line
+  crashes with `Cannot access 'tab' before initialization` on first
+  render — white screen everywhere, no UI. Cost two production
+  hotfixes during the 2026-05-07 build session (#120, this one).
+  When adding a useEffect that references existing state, place it
+  AFTER all the state declarations it touches. The
+  `App.test.jsx` render-without-crash test catches this for App.js
+  specifically; the same rule applies anywhere consts depend on
+  later-declared consts.
+- **Don't reference `props.X` in a function that destructured
+  props at the top.** Cost a production hotfix on 2026-05-07
+  (#124) when a `props.tabResetTick` reference appeared inside
+  `CollectionsTab` even though the function signature is
+  `function CollectionsTab({ ... })` — `props` is never bound as
+  a variable. ReferenceError on render → white screen on every
+  Saved sub-tab. If you need a new prop, add it to the destructure
+  list AND the call site.
+- **Don't add JS code that writes a column or calls an RPC before
+  confirming the SQL migration ran in production.** Mark applies
+  migrations manually via the Supabase SQL editor; PR-merge does
+  NOT auto-apply them. Shipping JS ahead of the migration breaks
+  every flow that touches that column / RPC with `Could not find
+  the 'X' column of 'Y' in the schema cache`. Cost a production
+  hotfix on 2026-05-07 (#127) when slice 2 added
+  `who_added: user.id` to inserts before slice 1's column had been
+  applied. Two safer patterns: (a) ship JS that's a strict superset
+  of the OLD schema (no new columns / RPCs referenced); or (b) ship
+  the migration in its own PR, get it applied + verified, then
+  ship the JS in a follow-up.
 - **Don't update brand aliases on only one side.** `merge.py`
   `BRAND_ALIASES` (Python) and `src/utils.js` `BRAND_ALIASES` (JS)
   must stay in lockstep. The frontend canonicalises saved snapshots
