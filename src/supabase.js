@@ -324,33 +324,59 @@ export function useSearches(user) {
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) { console.warn('searches load failed', error); return; }
-        setItems((data || []).map(r => ({ id: r.id, label: r.label, query: r.query })));
+        // min_price / max_price columns added 2026-05-08. Older rows
+        // have NULL on both — surface as undefined here so the UI can
+        // treat the guard as "unset" with a simple truthy check.
+        setItems((data || []).map(r => ({
+          id: r.id, label: r.label, query: r.query,
+          minPrice: r.min_price != null ? Number(r.min_price) : null,
+          maxPrice: r.max_price != null ? Number(r.max_price) : null,
+        })));
       });
     return () => { cancelled = true; };
   }, [user?.id]);
 
-  const startAdd  = useCallback(() => setEditor({ id: 'new', label: '', query: '' }), []);
+  const startAdd  = useCallback(() => setEditor({ id: 'new', label: '', query: '', minPrice: null, maxPrice: null }), []);
   const startEdit = useCallback((s)  => setEditor({ ...s }), []);
   const cancel    = useCallback(()   => setEditor(null), []);
+
+  // Coerce a UI value (string from a numeric input, or null/undefined)
+  // into either a non-negative number or null. Returns null for empty
+  // / "" / non-numeric / negative input — the DB constraint also
+  // enforces non-negativity, but failing fast here gives a cleaner
+  // error path than waiting for the round-trip.
+  const coercePrice = (v) => {
+    if (v == null || v === '') return null;
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 0) return null;
+    return n;
+  };
 
   const commit = useCallback(async () => {
     if (!user || !supabase || !editor) return;
     const label = (editor.label || '').trim();
     const query = (editor.query || '').trim();
     if (!label || !query) { setEditor(null); return; }
+    const minPrice = coercePrice(editor.minPrice);
+    const maxPrice = coercePrice(editor.maxPrice);
 
     if (editor.id === 'new') {
       const { data, error } = await supabase.from('saved_searches')
-        .insert({ user_id: user.id, label, query })
+        .insert({ user_id: user.id, label, query, min_price: minPrice, max_price: maxPrice })
         .select().single();
       if (!error && data) {
-        setItems(prev => [...prev, { id: data.id, label: data.label, query: data.query }]);
+        setItems(prev => [...prev, {
+          id: data.id, label: data.label, query: data.query,
+          minPrice: data.min_price != null ? Number(data.min_price) : null,
+          maxPrice: data.max_price != null ? Number(data.max_price) : null,
+        }]);
       } else if (error) console.warn('search add', error);
     } else {
       const { error } = await supabase.from('saved_searches')
-        .update({ label, query }).eq('id', editor.id);
+        .update({ label, query, min_price: minPrice, max_price: maxPrice })
+        .eq('id', editor.id);
       if (!error) {
-        setItems(prev => prev.map(s => s.id === editor.id ? { ...s, label, query } : s));
+        setItems(prev => prev.map(s => s.id === editor.id ? { ...s, label, query, minPrice, maxPrice } : s));
       } else console.warn('search update', error);
     }
     setEditor(null);
@@ -366,22 +392,36 @@ export function useSearches(user) {
 
   // Direct insert without going through the editor flow — useful for the
   // "save current search as a favorite" heart button in the search bar.
+  // Accepts optional minPrice/maxPrice so the heart can capture the
+  // current $ Min / $ Max filter values too (Mark feedback 2026-05-08).
   // Returns { error: null } on success, { error: string } otherwise.
-  const quickAdd = useCallback(async (label, query) => {
+  const quickAdd = useCallback(async (label, query, opts = {}) => {
     if (!user || !supabase) return { error: 'not signed in' };
     const cleanLabel = (label || '').trim();
     const cleanQuery = (query || '').trim();
     if (!cleanLabel || !cleanQuery) return { error: 'label and query required' };
+    const minPrice = coercePrice(opts.minPrice);
+    const maxPrice = coercePrice(opts.maxPrice);
     // Reject exact duplicates so the heart can't accidentally spawn dozens
-    // of identical entries on repeated taps.
-    if (items.some(s => s.query.toLowerCase() === cleanQuery.toLowerCase())) {
+    // of identical entries on repeated taps. Min/max are part of the
+    // dedup signature — same query with a tighter price band IS a
+    // distinct search worth saving.
+    if (items.some(s =>
+      s.query.toLowerCase() === cleanQuery.toLowerCase() &&
+      (s.minPrice ?? null) === minPrice &&
+      (s.maxPrice ?? null) === maxPrice
+    )) {
       return { error: 'already saved' };
     }
     const { data, error } = await supabase.from('saved_searches')
-      .insert({ user_id: user.id, label: cleanLabel, query: cleanQuery })
+      .insert({ user_id: user.id, label: cleanLabel, query: cleanQuery, min_price: minPrice, max_price: maxPrice })
       .select().single();
     if (error) return { error: error.message };
-    setItems(prev => [...prev, { id: data.id, label: data.label, query: data.query }]);
+    setItems(prev => [...prev, {
+      id: data.id, label: data.label, query: data.query,
+      minPrice: data.min_price != null ? Number(data.min_price) : null,
+      maxPrice: data.max_price != null ? Number(data.max_price) : null,
+    }]);
     return { error: null };
   }, [user, items]);
 

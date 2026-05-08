@@ -8,12 +8,21 @@ import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle 
 export function FavSearchModal({
   open, setOpen,
   search,
+  // 2026-05-08 — captured at openPrompt time by App.js, surfaced here
+  // so the user knows the heart persists the active price guard
+  // alongside the query. Either / both null = no $ filter saved.
+  minPriceText, maxPriceText,
   label, setLabel,
   error, setError,
   submit,
   inp,
 }) {
   if (!open) return null;
+  const hasMin = (minPriceText || "").trim() !== "";
+  const hasMax = (maxPriceText || "").trim() !== "";
+  const priceBand = (hasMin || hasMax)
+    ? ` · $${hasMin ? Number(minPriceText).toLocaleString() : ""}–${hasMax ? "$" + Number(maxPriceText).toLocaleString() : ""}`
+    : "";
   return (
     <div onClick={() => setOpen(false)} style={modalBackdrop}>
       <div onClick={e => e.stopPropagation()} style={{
@@ -24,7 +33,7 @@ export function FavSearchModal({
           <button onClick={() => setOpen(false)} aria-label="Close" style={modalCloseButton}>×</button>
         </div>
         <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 10 }}>
-          Saving "<b>{search}</b>" — find it again from Watchlist → Searches.
+          Saving "<b>{search}</b>"{priceBand} — find it again from Watchlist → Searches.
         </div>
         <input
           autoFocus
