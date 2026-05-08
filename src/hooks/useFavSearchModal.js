@@ -10,7 +10,11 @@ import { useState, useCallback } from "react";
 // value when opened, so the hook needs the current search at open time
 // (not at hook-call time). Pass it via the `search` parameter every
 // render — the useCallback dep keeps the closures fresh.
-export function useFavSearchModal({ search, quickAddSearch }) {
+//
+// 2026-05-08 — Mark feedback: also pass `minPriceText` / `maxPriceText`
+// so the search-bar heart captures the active price guard alongside
+// the query. Either / both empty = no price filter persisted.
+export function useFavSearchModal({ search, minPriceText, maxPriceText, quickAddSearch }) {
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState("");
   const [error, setError] = useState("");
@@ -22,14 +26,17 @@ export function useFavSearchModal({ search, quickAddSearch }) {
   }, [search]);
 
   const submit = useCallback(async () => {
-    const { error: err } = await quickAddSearch(label, search);
+    const { error: err } = await quickAddSearch(label, search, {
+      minPrice: minPriceText,
+      maxPrice: maxPriceText,
+    });
     if (err) {
       setError(err);
       return;
     }
     setOpen(false);
     setLabel("");
-  }, [label, search, quickAddSearch]);
+  }, [label, search, minPriceText, maxPriceText, quickAddSearch]);
 
   return { open, setOpen, label, setLabel, error, setError, openPrompt, submit };
 }

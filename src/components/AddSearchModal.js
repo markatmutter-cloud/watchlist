@@ -43,8 +43,29 @@ export function AddSearchModal({
           onKeyDown={e => { if (e.key === "Enter" && canSave) commitSearch(); }}
           placeholder="Search terms (e.g. 145.022)"
           autoCapitalize="off" autoCorrect="off" spellCheck={false}
-          style={{ ...inp, fontSize: 14, marginBottom: 14 }}
+          style={{ ...inp, fontSize: 14, marginBottom: 8 }}
         />
+        {/* Optional price guard. Both fields nullable; leaving them
+            empty saves a search with no \$ filter. Mark feedback
+            2026-05-08: was missing entirely from the modal so the
+            user couldn't persist a "Speedmaster pro under \$5k"
+            saved search. */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+          <input
+            type="number" min="0" inputMode="numeric"
+            value={searchEditor.minPrice ?? ""}
+            onChange={e => setSearchEditor(ed => ({ ...ed, minPrice: e.target.value }))}
+            placeholder="$ Min"
+            style={{ ...inp, fontSize: 14, flex: 1 }}
+          />
+          <input
+            type="number" min="0" inputMode="numeric"
+            value={searchEditor.maxPrice ?? ""}
+            onChange={e => setSearchEditor(ed => ({ ...ed, maxPrice: e.target.value }))}
+            placeholder="$ Max"
+            style={{ ...inp, fontSize: 14, flex: 1 }}
+          />
+        </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button onClick={onClose} style={{
             border: "0.5px solid var(--border)", background: "transparent",

@@ -219,6 +219,25 @@ export function WatchlistTab(props) {
         placeholder="Search terms (e.g. 145.022)"
         style={{ ...inp, fontSize: 14 }}
       />
+      {/* Optional price guard. Mirrors the AddSearchModal layout —
+          two side-by-side numeric inputs. Either / both empty =
+          no price filter (the saved search runs across all prices). */}
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          type="number" min="0" inputMode="numeric"
+          value={searchEditor.minPrice ?? ""}
+          onChange={e => setSearchEditor(ed => ({ ...ed, minPrice: e.target.value }))}
+          placeholder="$ Min"
+          style={{ ...inp, fontSize: 14, flex: 1 }}
+        />
+        <input
+          type="number" min="0" inputMode="numeric"
+          value={searchEditor.maxPrice ?? ""}
+          onChange={e => setSearchEditor(ed => ({ ...ed, maxPrice: e.target.value }))}
+          placeholder="$ Max"
+          style={{ ...inp, fontSize: 14, flex: 1 }}
+        />
+      </div>
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <button onClick={cancelSearchEdit} style={{
           border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)",
@@ -360,7 +379,18 @@ export function WatchlistTab(props) {
               }}>
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 2 }}>{s.label}</div>
-                  <div style={{ fontSize: 12, color: "var(--text2)" }}>{s.count} for sale{s.query && s.query !== s.label ? ` · "${s.query}"` : ""}</div>
+                  <div style={{ fontSize: 12, color: "var(--text2)" }}>
+                    {s.count} for sale
+                    {s.query && s.query !== s.label ? ` · "${s.query}"` : ""}
+                    {/* Saved $ band — shows when either guard is set
+                        so the user can see what's persisted on the
+                        row without opening the editor. (2026-05-08) */}
+                    {(s.minPrice != null || s.maxPrice != null) && (
+                      ` · ${s.minPrice != null ? "$" + Number(s.minPrice).toLocaleString() : ""}` +
+                      "–" +
+                      `${s.maxPrice != null ? "$" + Number(s.maxPrice).toLocaleString() : ""}`
+                    )}
+                  </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {s.newCount > 0 && (

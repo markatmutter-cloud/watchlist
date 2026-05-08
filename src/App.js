@@ -671,13 +671,24 @@ export default function Watchlist() {
     error: favPromptError,  setError:   setFavPromptError,
     openPrompt:             openFavPrompt,
     submit:                 submitFavSearch,
-  } = useFavSearchModal({ search, quickAddSearch });
+  } = useFavSearchModal({ search, minPriceText, maxPriceText, quickAddSearch });
   // Whether the current search is already a saved favourite.
+  // 2026-05-08 — same dedup signature as quickAdd: query + minPrice +
+  // maxPrice. So a saved "Speedmaster pro $0–$5k" doesn't make the
+  // heart show as already-saved when the user has a different price
+  // band entered.
   const currentIsSaved = useMemo(() => {
     const q = (search || "").trim().toLowerCase();
     if (!q) return false;
-    return userSearches.some(s => (s.query || "").toLowerCase() === q);
-  }, [search, userSearches]);
+    const cur = (s) => Number.isFinite(Number(s)) && s !== "" ? Number(s) : null;
+    const curMin = cur(minPriceText);
+    const curMax = cur(maxPriceText);
+    return userSearches.some(s =>
+      (s.query || "").toLowerCase() === q &&
+      (s.minPrice ?? null) === curMin &&
+      (s.maxPrice ?? null) === curMax
+    );
+  }, [search, minPriceText, maxPriceText, userSearches]);
   const { urls: trackedLotUrls, add: addTrackedLot, remove: removeTrackedLot, addedAt: trackedLotAddedAt } = useTrackedLots(user);
 
   // Collections — user-created beyond the default Watchlist (which is
@@ -1638,12 +1649,18 @@ export default function Watchlist() {
     // is dealer-only items minus the user's hidden set). Without
     // the hidden filter the count is rosier than the visible grid.
     // Mark's report 2026-05-06.
+    //
+    // 2026-05-08 — also apply the saved $ Min / $ Max guard if set,
+    // so the count + "X new this week" badge match what the user
+    // sees after the saved guard re-applies on tap.
     const forSale = items.filter(i => !i.sold && !hidden[i.id]);
-    return userSearches.map(({ id, label, query }) => {
+    return userSearches.map(({ id, label, query, minPrice, maxPrice }) => {
       const q = (query || "").trim();
-      const matches = q ? forSale.filter(i => matchesSearch(i, q)) : [];
+      let matches = q ? forSale.filter(i => matchesSearch(i, q)) : [];
+      if (minPrice != null) matches = matches.filter(i => Number(i.price) >= minPrice);
+      if (maxPrice != null) matches = matches.filter(i => Number(i.price) <= maxPrice);
       const newCount = matches.filter(i => daysAgo(freshDate(i)) <= 7 && !i.backfilled).length;
-      return { id, label, query, count: matches.length, newCount };
+      return { id, label, query, minPrice, maxPrice, count: matches.length, newCount };
     });
   }, [items, hidden, userSearches]);
 
@@ -1848,6 +1865,14 @@ export default function Watchlist() {
   // count shows dealer-only matches — Mark's report 2026-05-06.
   const runSearch = (s) => {
     setSearch(s.query);
+    // Re-apply the saved $ Min / $ Max guard if either is set; clear
+    // both otherwise. (Mark feedback 2026-05-08: a saved search with
+    // a price band wasn't restoring the band on tap.) Stored as
+    // numbers — toString for the text input that drives the filter.
+    const minStr = s.minPrice != null ? String(s.minPrice) : "";
+    const maxStr = s.maxPrice != null ? String(s.maxPrice) : "";
+    setMinPriceText(minStr);
+    setMaxPriceText(maxStr);
     setSort("date");
     setListingsSubTab("live");
     setTab("listings");
@@ -2023,6 +2048,8 @@ export default function Watchlist() {
       open={favPromptOpen}
       setOpen={setFavPromptOpen}
       search={search}
+      minPriceText={minPriceText}
+      maxPriceText={maxPriceText}
       label={favPromptLabel}
       setLabel={setFavPromptLabel}
       error={favPromptError}
@@ -2370,7 +2397,7 @@ export default function Watchlist() {
     <AddSearchModal
       open={addSearchModalOpen}
       onClose={cancelSearchEdit}
-      searchEditor={searchEditor || { id: "", label: "", query: "" }}
+      searchEditor={searchEditor || { id: "", label: "", query: "", minPrice: null, maxPrice: null }}
       setSearchEditor={setSearchEditor}
       commitSearch={commitSearch}
       inp={inp}
