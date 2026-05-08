@@ -148,6 +148,6 @@ describe("CollectionsTab render-without-crash", () => {
     expect(() => {
       render(<CollectionsTab {...buildProps({ user: null })} />);
     }).not.toThrow();
-    expect(screen.getByText(/Sign in to use Collections/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sign in to organize your watches/i)).toBeInTheDocument();
   });
 });
