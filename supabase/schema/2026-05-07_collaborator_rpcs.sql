@@ -303,7 +303,12 @@ declare
   owner_uid uuid;
 begin
   if uid is null then return; end if;
-  select user_id into owner_uid from public.collections where id = p_collection_id;
+  -- Alias the table so unqualified `user_id` resolves to the column
+  -- and not the RETURNS TABLE OUT parameter of the same name.
+  -- Without the alias, plpgsql raises "column reference 'user_id' is
+  -- ambiguous" because the function's OUT params shadow column names.
+  -- (Mark hit this trying to open the Manage list sheet, 2026-05-08.)
+  select c.user_id into owner_uid from public.collections c where c.id = p_collection_id;
   if owner_uid is null or owner_uid <> uid then return; end if;
   return query
     select cc.id,
