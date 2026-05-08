@@ -307,14 +307,23 @@ export default function Watchlist() {
   // sub-tab key (the sub-tab values were already preserved when
   // SUB_VALUES_COLLECTIONS was folded into watchTopTab above).
   const TAB_VALUES = ["listings", "watchlist", "references", "admin"];
+  // URL-key translation. Naming alignment 2026-05-08 (Mark feedback:
+  // "?sub=sold&tab=watchlist" reads as ugly internal state in the
+  // address bar). The URL now uses `saved` / `learn` as the
+  // canonical externally-visible keys; internals keep `watchlist` /
+  // `references` per the documented divergence (renaming the state
+  // var + 80+ call sites was the bigger refactor we explicitly chose
+  // not to take). URL parse accepts BOTH old + new; URL write below
+  // emits the new keys so address bars + share links read cleanly.
+  const URL_TAB_TO_INTERNAL = { saved: "watchlist", learn: "references", collections: "watchlist" };
+  const INTERNAL_TAB_TO_URL = { watchlist: "saved", references: "learn" };
   const [tab, setTab] = useState(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const t = params.get("tab");
-      // Bundle 2A.2 redirect: ?tab=collections lands on Saved (still
-      // `?tab=watchlist` internally). Sub-tab key carries through —
-      // watchTopTab init above already accepts collections-style subs.
-      if (t === "collections") return "watchlist";
+      // External → internal redirect: ?tab=saved / ?tab=learn /
+      // ?tab=collections (legacy) all map to internal values.
+      if (URL_TAB_TO_INTERNAL[t]) return URL_TAB_TO_INTERNAL[t];
       if (TAB_VALUES.includes(t)) return t;
     }
     return "listings";
@@ -369,7 +378,11 @@ export default function Watchlist() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("shared") === "1") return;
-    if (tab === "listings") params.delete("tab"); else params.set("tab", tab);
+    // Naming alignment 2026-05-08: emit external URL keys (saved /
+    // learn) for the watchlist / references internal values. Listings
+    // is the default and stays stripped from the URL.
+    if (tab === "listings") params.delete("tab");
+    else params.set("tab", INTERNAL_TAB_TO_URL[tab] || tab);
     if (tab === "listings" && listingsSubTab !== "live") {
       params.set("sub", listingsSubTab);
     } else if (tab === "watchlist" && watchTopTab !== "listings") {
@@ -427,8 +440,9 @@ export default function Watchlist() {
       // `?tab=collections` URLs collapse onto `?tab=watchlist` with
       // the sub-tab key preserved.
       let nextTab = "listings";
-      if (tParam === "collections") {
-        nextTab = "watchlist";
+      // Same external→internal translation as the init useState.
+      if (URL_TAB_TO_INTERNAL[tParam]) {
+        nextTab = URL_TAB_TO_INTERNAL[tParam];
       } else if (TAB_VALUES.includes(tParam)) {
         nextTab = tParam;
       }
