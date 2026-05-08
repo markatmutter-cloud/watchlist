@@ -119,6 +119,12 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
             borderBottom: "0.5px solid var(--border)",
             position: "relative",
           }}>
+            {/* Close button is absolute-positioned here, not flex-laid-out
+                via modalTitleRow like every other modal. The hero band
+                has a 2-line title + tagline + favicon icon, so the standard
+                title-row layout would crush the title against the ×. The
+                absolute override is a one-off legitimate exception — don't
+                replicate it without the same hero-band justification. */}
             <button onClick={onClose} aria-label="Close" style={{
               ...modalCloseButton, position: "absolute", top: 12, right: 12,
             }}>×</button>
@@ -147,10 +153,14 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
               </div>
             </div>
             <div style={bodyText}>
-              The dealers worth following all run their own sites, in their
-              own currencies, in no consistent order. Watchlist is one place
-              to scan everything new — from independent dealers and the major
-              auction houses — without bouncing between tabs.
+              Watchlist aggregates new listings from across independent
+              dealers and auction houses to make your watch passion (problem)
+              more manageable.
+            </div>
+            <div style={{ ...bodyText, marginTop: 10 }}>
+              Built by a watch enthusiast as a passion project. Every listing
+              links back to the original dealer; this is a directory layer,
+              not a marketplace. No ads, no tracking, no fees, no data selling.
             </div>
           </div>
 
@@ -172,7 +182,7 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
                     <div style={featureVerb}>
                       <span style={{
                         width: 18, height: 18, borderRadius: 4,
-                        background: "#185FA5", color: "#fff",
+                        background: "var(--brand)", color: "#fff",
                         fontSize: 11, fontWeight: 700,
                         display: "inline-flex", alignItems: "center", justifyContent: "center",
                       }}>{verb[0]}</span>
@@ -183,16 +193,28 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
                 ))}
               </div>
 
-              <div style={sectionLabel}>A passion project, open to anyone</div>
+              <div style={sectionLabel}>Why I built this</div>
               <div style={bodyText}>
-                Built by a collector — a non-technical PM seeing how far you can
-                get vibe-coding with AI as a co-author. Every listing links back
-                to the original dealer; this is a directory layer, not a marketplace.
+                I used to spend more time in the day than I could afford
+                going between different websites trying to keep track of
+                new listings and researching new references. I wanted a tool
+                that could help me do this with less effort.
               </div>
               <div style={{ ...bodyText, marginTop: 8 }}>
-                No ads, no tracking, no fees. Saves and likes help build a
-                recommender that learns your taste — they stay yours. I don't
-                sell data and I don't run ads.
+                I'm a non-technical product manager in my day job, seeing
+                how far I can get with AI as a co-author. My aim is to create
+                things that delight watch people, like making "3 watches for
+                $50,000" challenges fun, or helping manage your obsession
+                (/financial situation).
+              </div>
+              <div style={{ ...bodyText, marginTop: 8 }}>
+                Built on the amazing work others have already put into the
+                watch space. If I'm not calling out credit appropriately,
+                please get in touch and I'll sort that out.
+              </div>
+              <div style={{ ...bodyText, marginTop: 8 }}>
+                A public roadmap is coming. Let me know if there's something
+                you'd like to see and I'll give it a go.
               </div>
 
               <div style={sectionLabel}>Get in touch</div>
@@ -223,7 +245,7 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
             borderTop: "0.5px solid var(--border)",
           }}>
             <button onClick={onClose} style={{
-              border: "none", background: "#185FA5", color: "#fff",
+              border: "none", background: "var(--brand)", color: "#fff",
               padding: "10px 20px", borderRadius: 10,
               fontFamily: "inherit", fontSize: 14, fontWeight: 500,
               cursor: "pointer",

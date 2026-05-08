@@ -8,6 +8,9 @@ import { ListingPickerModal } from "./ListingPickerModal";
 import { MarkAsSoldModal } from "./MarkAsSoldModal";
 import { ManageListSheet } from "./ManageListSheet";
 import { fmtUSD } from "../utils";
+import { innerToggleButton, actionButton, signInButton } from "../styles";
+import { EmptyState } from "./EmptyState";
+import { Section } from "./Section";
 
 // Top-level Collections tab — restructured 2026-05-06 (PR #99) into
 // four sub-tabs per Mark's plan:
@@ -44,7 +47,6 @@ export function CollectionsTab({
   handleWish,
   compact,
   gridStyle,
-  inp,
   setEditingCollection,
   openCollectionPicker,
   startCreateCollection,
@@ -151,19 +153,14 @@ export function CollectionsTab({
 
   if (!user) {
     return (
-      <div style={{ padding: "60px 20px", textAlign: "center" }}>
-        <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>Sign in to use Collections</div>
-        <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto 18px" }}>
-          Owned watches, watches you've sold, your wishlist, custom lists, challenges — all in one place. Sync across every device.
-        </div>
-        {isAuthConfigured && (
-          <button onClick={signInWithGoogle} style={{
-            padding: "10px 18px", borderRadius: 10, border: "none",
-            background: "#185FA5", color: "#fff", cursor: "pointer",
-            fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-          }}>Sign in</button>
+      <EmptyState
+        size="tall"
+        heading="Sign in to organize your watches"
+        blurb="Owned watches, watches you've sold, your wishlist, custom lists, challenges — all in one place. Sync across every device."
+        action={isAuthConfigured && (
+          <button onClick={signInWithGoogle} style={signInButton}>Sign in</button>
         )}
-      </div>
+      />
     );
   }
 
@@ -273,7 +270,6 @@ export function CollectionsTab({
         open={manualEntryOpen}
         onClose={() => setManualEntryOpen(false)}
         kind={manualEntryKind}
-        inp={inp}
         uploadWatchPhoto={collectionsApi?.uploadWatchPhoto}
         addManualItem={collectionsApi?.addManualItem}
         collectionId={
@@ -295,7 +291,6 @@ export function CollectionsTab({
         open={!!soldTarget}
         onClose={() => setSoldTarget(null)}
         item={soldTarget?.item}
-        inp={inp}
         onConfirm={(opts) => collectionsApi?.markItemAsSold(soldTarget.rowId, opts)}
       />
       {/* List Sharing v2 / slice 2 — Manage list sheet. Renders only
@@ -309,7 +304,6 @@ export function CollectionsTab({
         collection={selectedListId
           ? cols.find(c => c.id === selectedListId) || null
           : null}
-        inp={inp}
         inviteCollaborator={collectionsApi?.inviteCollaborator}
         revokeCollaborator={collectionsApi?.revokeCollaborator}
         listCollaborators={collectionsApi?.listCollaborators}
@@ -388,14 +382,7 @@ function MyCollectionView({
             ["shortlist", `Shortlist (${(wishlistItems || []).length})`],
           ].map(([key, label]) => (
             <button key={key} onClick={() => setToggle(key)}
-              style={{
-                padding: "5px 12px", borderRadius: 999,
-                border: "0.5px solid var(--border)",
-                background: toggle === key ? "var(--text1)" : "transparent",
-                color: toggle === key ? "var(--bg)" : "var(--text2)",
-                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                fontWeight: toggle === key ? 600 : 500,
-              }}>{label}</button>
+              style={innerToggleButton(toggle === key)}>{label}</button>
           ))}
         </div>
         <div style={{ flex: 1 }} />
@@ -404,12 +391,7 @@ function MyCollectionView({
             shortlist add-from-feed handler. "All" shows no +Add (the
             user picks Owned or Sold first). */}
         {toggle === "shortlist" && wishlist && (
-          <button onClick={onShortlistAddFromFeed}
-            style={{
-              border: "none", background: "#185FA5", color: "#fff",
-              padding: "4px 10px", borderRadius: 6,
-              cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-            }}>+ From feed</button>
+          <button onClick={onShortlistAddFromFeed} style={actionButton({ variant: "primary" })}>+ From feed</button>
         )}
         {toggle !== "shortlist" && targetCollectionId && (
           <>
@@ -417,18 +399,9 @@ function MyCollectionView({
                 common path and should be the highlighted primary
                 button; Add a watch is the secondary fallback for
                 manual entry of pieces not in the feed. */}
-            <button onClick={() => onAddManual(targetKind)}
-              style={{
-                border: "0.5px solid var(--border)", background: "transparent",
-                color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
-                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-              }}>+ Add a watch</button>
+            <button onClick={() => onAddManual(targetKind)} style={actionButton()}>+ Add a watch</button>
             <button onClick={() => onAddFromFeed(targetCollectionId, `Add to ${targetName}`)}
-              style={{
-                border: "none", background: "#185FA5", color: "#fff",
-                padding: "4px 10px", borderRadius: 6,
-                cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-              }}>+ From feed</button>
+              style={actionButton({ variant: "primary" })}>+ From feed</button>
           </>
         )}
       </div>
@@ -443,21 +416,14 @@ function MyCollectionView({
             Shortlist not yet ready — refresh to retry the auto-create.
           </div>
         ) : (wishlistItems || []).length === 0 ? (
-          <div style={{ padding: "48px 20px", textAlign: "center" }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>★</div>
-            <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-              Shortlist is empty
-            </div>
-            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto 16px" }}>
-              Pin a representative example — live or recently-sold from the feed — for each reference you'd like to add to your collection. Force-rank with the up/down buttons. The Shortlist is the deck you scenario-plan against your owned set.
-            </div>
-            <button onClick={onShortlistAddFromFeed}
-              style={{
-                border: "none", background: "#185FA5", color: "#fff",
-                padding: "8px 16px", borderRadius: 8,
-                cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-              }}>+ From feed</button>
-          </div>
+          <EmptyState
+            icon="★"
+            heading="Shortlist is empty"
+            blurb="Pin a representative example — live or recently-sold from the feed — for each reference you'd like to add to your collection. Force-rank with the up/down buttons. The Shortlist is the deck you scenario-plan against your owned set."
+            action={
+              <button onClick={onShortlistAddFromFeed} style={actionButton({ variant: "primary" })}>+ From feed</button>
+            }
+          />
         ) : (
           <WishlistRankedList
             items={wishlistItems}
@@ -466,29 +432,17 @@ function MyCollectionView({
           />
         )
       ) : ownedItems.length === 0 && soldItems.length === 0 ? (
-        <div style={{ padding: "48px 20px", textAlign: "center" }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>🕰</div>
-          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-            Build your collection
-          </div>
-          <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 380, margin: "0 auto 16px" }}>
-            Add watches you currently own and watches you've sold. Pick from the feed for anything bought via a tracked dealer, or enter manually with a photo for off-platform watches.
-          </div>
-          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-            <button onClick={() => onAddFromFeed(owned?.id, "Add to Owned")}
-              style={{
-                border: "0.5px solid var(--border)", background: "transparent",
-                color: "var(--text2)", padding: "8px 16px", borderRadius: 8,
-                cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              }}>+ From feed</button>
-            <button onClick={() => onAddManual("owned")}
-              style={{
-                border: "none", background: "#185FA5", color: "#fff",
-                padding: "8px 16px", borderRadius: 8,
-                cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-              }}>+ Add a watch</button>
-          </div>
-        </div>
+        <EmptyState
+          icon="🕰"
+          heading="Build your collection"
+          blurb="Add watches you currently own and watches you've sold. Pick from the feed for anything bought via a tracked dealer, or enter manually with a photo for off-platform watches."
+          action={
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+              <button onClick={() => onAddFromFeed(owned?.id, "Add to Owned")} style={actionButton()}>+ From feed</button>
+              <button onClick={() => onAddManual("owned")} style={actionButton({ variant: "primary" })}>+ Add a watch</button>
+            </div>
+          }
+        />
       ) : (
         <>
           {(toggle === "owned" || toggle === "all") && (
@@ -704,7 +658,7 @@ function ListsView({
         }}>
           <button onClick={() => setSelectedListId(null)} style={{
             border: "none", background: "transparent", cursor: "pointer",
-            color: "#185FA5", fontFamily: "inherit", fontSize: 13, padding: 0,
+            color: "var(--brand)", fontFamily: "inherit", fontSize: 13, padding: 0,
           }}>← All lists</button>
           <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
             {selected.name}
@@ -753,39 +707,23 @@ function ListsView({
                   }
                 }}
                 title="Share this list"
-                style={{
-                  border: "none", background: "#185FA5",
-                  color: "#fff", padding: "4px 10px", borderRadius: 6,
-                  cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-                }}>Share</button>
+                style={actionButton({ variant: "primary" })}>Share</button>
               {/* Manage / Rename / Delete are owner-only. Collaborators
                   see the list + Share button only. */}
               {isOwner && (
                 <>
                   <button onClick={() => setManageListOpen(true)}
                     title="Manage collaborators"
-                    style={{
-                      border: "0.5px solid var(--border)", background: "transparent",
-                      color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
-                      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                    }}>Manage</button>
+                    style={actionButton()}>Manage</button>
                   <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
                     title="Rename list"
-                    style={{
-                      border: "0.5px solid var(--border)", background: "transparent",
-                      color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
-                      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                    }}>Rename</button>
+                    style={actionButton()}>Rename</button>
                   <button onClick={async () => {
                       if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
                       await deleteCollection(selected.id);
                       setSelectedListId(null);
                     }}
-                    style={{
-                      border: "0.5px solid var(--border)", background: "transparent",
-                      color: "#c0392b", padding: "4px 10px", borderRadius: 6,
-                      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                    }}>Delete</button>
+                    style={actionButton({ variant: "danger" })}>Delete</button>
                 </>
               )}
             </>
@@ -793,17 +731,13 @@ function ListsView({
           })()}
         </div>
         {items.length === 0 ? (
-          <div style={{ padding: "48px 20px", textAlign: "center" }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>{isHiddenColl ? "👁" : "📂"}</div>
-            <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-              {isHiddenColl ? "Nothing hidden" : "Empty list"}
-            </div>
-            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto" }}>
-              {isHiddenColl
-                ? "Listings you hide from the Available feed land here. Use the \"…\" menu on any card to unhide it."
-                : "Add watches via the \"…\" menu on any listing card → \"Add to list…\"."}
-            </div>
-          </div>
+          <EmptyState
+            icon={isHiddenColl ? "👁" : "📂"}
+            heading={isHiddenColl ? "Nothing hidden" : "Empty list"}
+            blurb={isHiddenColl
+              ? "Listings you hide from the Available feed land here. Use the \"…\" menu on any card to unhide it."
+              : "Add watches via the \"…\" menu on any listing card → \"Add to list…\"."}
+          />
         ) : (
           <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
             {items.map(item => (
@@ -846,15 +780,11 @@ function ListsView({
         onAction={startCreateCollection}
       />
       {visibleCols.length === 0 ? (
-        <div style={{ padding: "32px 20px 48px", textAlign: "center" }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>📂</div>
-          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-            No lists yet
-          </div>
-          <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto" }}>
-            You haven't created any lists. Tap <strong style={{ color: "var(--text1)" }}>+ New list</strong> above to start one.
-          </div>
-        </div>
+        <EmptyState
+          icon="📂"
+          heading="No lists yet"
+          blurb={<>You haven't created any lists. Tap <strong style={{ color: "var(--text1)" }}>+ New list</strong> above to start one.</>}
+        />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {visibleCols.map(c => {
@@ -886,24 +816,8 @@ function ListsView({
 }
 
 // ── Helpers ──────────────────────────────────────────────────────
-
-function Section({ label, show, children }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      {show && (
-        <div style={{
-          display: "flex", alignItems: "baseline", gap: 12,
-          padding: "10px 14px",
-          borderBottom: "0.5px solid var(--border)",
-          marginBottom: 8,
-        }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text1)" }}>{label}</span>
-        </div>
-      )}
-      {children}
-    </div>
-  );
-}
+// Section was extracted to ./Section.js on 2026-05-08 so other tabs
+// can reuse the sub-section grouping. Imported at the top.
 
 function EmptyHardListSection({ text }) {
   return (
@@ -1032,7 +946,7 @@ function ManualItemCard({ item, onRemove, onMarkSold }) {
             <button onClick={async () => {
               setMenuOpen(false);
               if (window.confirm("Remove this watch from the list?")) await onRemove();
-            }} style={menuItemStyle("#c0392b")}>Remove</button>
+            }} style={menuItemStyle("var(--danger)")}>Remove</button>
           </div>
         )}
       </div>
@@ -1049,20 +963,20 @@ const menuItemStyle = (color) => ({
 
 // ── Inline icons (SVG) ──────────────────────────────────────────
 const inboxIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
     <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
   </svg>
 );
 
 const folderIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
   </svg>
 );
 
 const eyeOffIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M17.94 17.94A10.06 10.06 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
     <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
     <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/>

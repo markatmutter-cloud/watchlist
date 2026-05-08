@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { fmtUSD, imgSrc } from "../utils";
 import { supabase } from "../supabase";
+import { signInButton } from "../styles";
 
 // Watch Challenges v1.5 — receive flow. Mirrors ShareReceiver
 // (single-listing receive) for two challenge-share modes:
@@ -490,7 +491,7 @@ function OrientationAnchors({ signedIn, onClickAnchor, onSignIn, signInCopy }) {
             </button>
           )}
           <button onClick={() => onClickAnchor("references")} style={anchorBtnStyle}>
-            Cool stuff (tools + links) →
+            Learn (tools + links) →
           </button>
         </div>
       </div>
@@ -513,14 +514,7 @@ const focusedCardStyle = () => ({
 });
 
 const primaryBtnStyle = (busy) => ({
-  border: "none",
-  background: "#185FA5",
-  color: "#fff",
-  padding: "10px 18px",
-  borderRadius: 8,
-  fontFamily: "inherit",
-  fontSize: 14,
-  fontWeight: 500,
+  ...signInButton,
   cursor: busy ? "wait" : "pointer",
   opacity: busy ? 0.6 : 1,
 });

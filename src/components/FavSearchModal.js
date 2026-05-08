@@ -1,5 +1,5 @@
 import React from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle } from "../styles";
+import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase } from "../styles";
 
 // Save-search prompt — appears when the user taps the heart in the
 // search bar. Asks for an optional friendly label before persisting
@@ -15,7 +15,6 @@ export function FavSearchModal({
   label, setLabel,
   error, setError,
   submit,
-  inp,
 }) {
   if (!open) return null;
   const hasMin = (minPriceText || "").trim() !== "";
@@ -33,7 +32,7 @@ export function FavSearchModal({
           <button onClick={() => setOpen(false)} aria-label="Close" style={modalCloseButton}>×</button>
         </div>
         <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 10 }}>
-          Saving "<b>{search}</b>"{priceBand} — find it again from Watchlist → Searches.
+          Saving "<b>{search}</b>"{priceBand} — find it again from Saved → Searches.
         </div>
         <input
           autoFocus
@@ -41,10 +40,10 @@ export function FavSearchModal({
           onChange={e => { setLabel(e.target.value); setError(""); }}
           onKeyDown={e => { if (e.key === "Enter") submit(); }}
           placeholder="Name (e.g. Speedmaster pro)"
-          style={{ ...inp, fontSize: 14, marginBottom: 8 }}
+          style={{ ...inputBase, fontSize: 14, marginBottom: 8 }}
         />
         {error && (
-          <div style={{ fontSize: 12, color: "#c0392b", marginBottom: 8 }}>{error}</div>
+          <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 8 }}>{error}</div>
         )}
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button onClick={() => setOpen(false)} style={{
@@ -53,7 +52,7 @@ export function FavSearchModal({
             fontFamily: "inherit", fontSize: 13,
           }}>Cancel</button>
           <button onClick={submit} disabled={!label.trim()} style={{
-            border: "none", background: "#185FA5", color: "#fff",
+            border: "none", background: "var(--brand)", color: "#fff",
             padding: "8px 14px", borderRadius: 8, cursor: "pointer",
             fontFamily: "inherit", fontSize: 13, fontWeight: 500,
             opacity: label.trim() ? 1 : 0.5,

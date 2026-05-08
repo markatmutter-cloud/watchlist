@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle } from "../styles";
+import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase } from "../styles";
 
 // List Sharing v2 / slice 2 — Manage list sheet.
 //
@@ -20,7 +20,6 @@ export function ManageListSheet({
   open, onClose,
   user,
   collection,                 // the list being managed (id, name)
-  inp,
   // Mutators threaded from collectionsApi.
   inviteCollaborator,         // (collectionId, email, role) => { error, id }
   revokeCollaborator,         // (collectionId, opts) => { error }
@@ -154,7 +153,7 @@ export function ManageListSheet({
               onKeyDown={e => { if (e.key === "Enter") submitInvite(); }}
               placeholder="name@example.com"
               autoCapitalize="none" autoCorrect="off" spellCheck={false}
-              style={{ ...inp, fontSize: 14, flex: 1 }} />
+              style={{ ...inputBase, fontSize: 14, flex: 1 }} />
             <select value={role} onChange={e => setRole(e.target.value)}
               style={{
                 fontSize: 13, fontFamily: "inherit",
@@ -180,7 +179,7 @@ export function ManageListSheet({
             </button>
             <button onClick={submitInvite} disabled={busy || !email.trim()}
               style={{
-                border: "none", background: "#185FA5", color: "#fff",
+                border: "none", background: "var(--brand)", color: "#fff",
                 padding: "6px 14px", borderRadius: 6,
                 cursor: busy ? "wait" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
                 opacity: (!email.trim() || busy) ? 0.5 : 1,
@@ -195,12 +194,12 @@ export function ManageListSheet({
           </div>
         </div>
 
-        {error && <div style={{ fontSize: 12, color: "#c0392b", marginBottom: 10 }}>{error}</div>}
+        {error && <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 10 }}>{error}</div>}
 
         {/* Roster */}
         <Label>Collaborators ({rows.length})</Label>
         {loading && <div style={{ fontSize: 12, color: "var(--text3)" }}>Loading…</div>}
-        {loadError && <div style={{ fontSize: 12, color: "#c0392b" }}>{loadError}</div>}
+        {loadError && <div style={{ fontSize: 12, color: "var(--danger)" }}>{loadError}</div>}
         {!loading && rows.length === 0 && (
           <div style={{ fontSize: 12, color: "var(--text3)", padding: "10px 0" }}>
             No collaborators yet. Invite someone above.
@@ -231,7 +230,7 @@ export function ManageListSheet({
                     title="Remove access"
                     style={{
                       border: "none", background: "transparent",
-                      color: "#c0392b", cursor: busy ? "wait" : "pointer",
+                      color: "var(--danger)", cursor: busy ? "wait" : "pointer",
                       padding: "4px 10px", borderRadius: 6,
                       fontFamily: "inherit", fontSize: 12,
                     }}>Remove</button>

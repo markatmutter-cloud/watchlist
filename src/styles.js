@@ -15,17 +15,35 @@
 // ── PILLS ─────────────────────────────────────────────────────────────
 
 // Sort/filter pills in the sticky/filter rows. Inactive = transparent
-// with inset border, active = inverted dark. Used by both mobile sort
-// row (default size — bigger for touch) and desktop filter row
-// (`compact: true` — denser horizontal layout).
-export const pillBase = (active, { compact = false } = {}) => ({
+// (or surface-tinted) with inset border, active = inverted dark. Used by
+// both mobile sort row (default size — bigger for touch) and desktop
+// filter row (`compact: true` — denser horizontal layout). Pass
+// `surface: true` for the desktop variant where inactive pills sit on a
+// `--surface` background instead of transparent.
+export const pillBase = (active, { compact = false, surface = false } = {}) => ({
   fontSize: 13,
   padding: compact ? "6px 12px" : "9px 14px",
   borderRadius: 20, cursor: "pointer",
   fontFamily: "inherit", whiteSpace: "nowrap", border: "none", outline: "none",
-  background: active ? "var(--text1)" : "transparent",
+  background: active ? "var(--text1)" : (surface ? "var(--surface)" : "transparent"),
   color:      active ? "var(--bg)"    : "var(--text2)",
   boxShadow:  active ? "none" : "inset 0 0 0 0.5px var(--border)",
+});
+
+// Inner-toggle pill. Smaller, denser variant used for nested sub-toggles
+// inside a tab (Listings/Auctions/Sold inside Saved; Owned/Sold/All/
+// Shortlist inside My watches). Visually distinct from `pillBase` — uses
+// a real border (not boxShadow) and adds bold-on-active to signal the
+// secondary hierarchy. Promoted 2026-05-08 from inline duplicates in
+// App.js + CollectionsTab.js.
+export const innerToggleButton = (active) => ({
+  padding: "5px 12px", borderRadius: 999,
+  border: "0.5px solid var(--border)",
+  background: active ? "var(--text1)" : "transparent",
+  color:      active ? "var(--bg)"    : "var(--text2)",
+  cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+  fontWeight: active ? 600 : 500,
+  flexShrink: 0,
 });
 
 // Sub-tab strip (Listings / Searches / Calendar). Underline pattern,
@@ -48,6 +66,68 @@ export const tabPill = (active) => ({
   borderRadius: 0,
   marginBottom: -1,
 });
+
+// Compact action buttons used in tab headers, list-drill-in toolbars,
+// and inline editors (Share / Manage / Rename / Delete / + From feed /
+// + Add a watch / inline-editor Cancel-Save). Three variants:
+//   - primary: brand-fill, white text, semi-bold (the dominant CTA)
+//   - subtle:  bordered-transparent with text2 (default)
+//   - danger:  bordered-transparent with --danger color
+// Geometry sized so the button lands at ~32px tall — close to the iOS
+// PWA tap-target bar without disrupting visual rhythm in dense headers.
+// Promoted 2026-05-08 from inline duplicates spread across CollectionsTab
+// + WatchlistTab.
+export const actionButton = ({ variant = "subtle" } = {}) => {
+  const base = {
+    padding: "8px 12px", borderRadius: 6,
+    fontFamily: "inherit", fontSize: 12,
+    cursor: "pointer", whiteSpace: "nowrap",
+  };
+  if (variant === "primary") return {
+    ...base,
+    border: "none",
+    background: "var(--brand)", color: "#fff",
+    fontWeight: 500,
+  };
+  if (variant === "danger") return {
+    ...base,
+    border: "0.5px solid var(--border)",
+    background: "transparent", color: "var(--danger)",
+  };
+  return {
+    ...base,
+    border: "0.5px solid var(--border)",
+    background: "transparent", color: "var(--text2)",
+  };
+};
+
+// Sign-in / large primary CTA. One size class above actionButton —
+// padding and radius scale up because these are typically the dominant
+// CTA on a focused signed-out surface (CollectionsTab gate, WatchlistTab
+// gate, ListReceiver / ChallengeReceiver landings). Brand-fill + white
+// text. Promoted 2026-05-08 from inline copies (10px 18px / radius 10
+// pattern repeated across ~5 files).
+export const signInButton = {
+  padding: "10px 18px", borderRadius: 10,
+  border: "none", background: "var(--brand)", color: "#fff",
+  cursor: "pointer", fontFamily: "inherit",
+  fontSize: 14, fontWeight: 500,
+};
+
+// ── FORM INPUTS ───────────────────────────────────────────────────────
+
+// Standard text/number/select input style. Lifted-surface bg, no border,
+// soft rounding. Override fontSize / marginBottom / flex per call site.
+// Used across modal forms (search editor, manual entry, mark-as-sold,
+// track-new-item) and inline price filters. Promoted 2026-05-08 from
+// the App.js `inp` const that was prop-drilled through every tab + modal.
+export const inputBase = {
+  border: "none", borderRadius: 8,
+  padding: "8px 10px", fontSize: 14,
+  background: "var(--surface)", color: "var(--text1)",
+  fontFamily: "inherit", outline: "none",
+  width: "100%", boxSizing: "border-box",
+};
 
 // ── ICON BUTTONS ──────────────────────────────────────────────────────
 

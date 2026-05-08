@@ -1,5 +1,5 @@
 import React from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow } from "../styles";
+import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, signInButton } from "../styles";
 
 // Sign-in 2-step explainer. Replaces the cold-OAuth flow on the top-bar
 // Sign in button with a brief "what sign-in unlocks + privacy reassurance"
@@ -21,12 +21,13 @@ import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow } from "../s
 const INSTAGRAM_HANDLE = "the_watch_list.app";
 const INSTAGRAM_URL = "https://instagram.com/the_watch_list.app";
 
+// Full-width modal CTA — same brand-fill / radius / weight as the
+// shared signInButton token, with layout overrides for icon + label
+// alignment and full-width fill.
 const primaryBtn = {
+  ...signInButton,
   display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-  width: "100%", padding: "12px 16px", borderRadius: 10,
-  border: "none", background: "#185FA5", color: "#fff",
-  fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-  cursor: "pointer",
+  width: "100%", padding: "12px 16px",
 };
 
 const secondaryBtn = {

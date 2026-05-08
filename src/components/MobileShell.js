@@ -3,7 +3,7 @@ import { SearchIcon, FilterIcon, TabIcon } from "./icons";
 import { Chip } from "./Chip";
 import { AboutModal } from "./AboutModal";
 import { SignInPromptModal } from "./SignInPromptModal";
-import { iconButton, pillBase } from "../styles";
+import { iconButton, pillBase, inputBase } from "../styles";
 
 // Mobile shell — receives everything the mobile branch needs from
 // App.js as a single props bag. Extracted 2026-04-30 (Stage 2 of
@@ -44,7 +44,7 @@ export function MobileShell(props) {
     addSearchModalJSX,
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
-    favSearchModalJSX, inp,
+    favSearchModalJSX,
     adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX,
     challengeReceiverJSX,
@@ -111,7 +111,7 @@ export function MobileShell(props) {
                 disabled={currentIsSaved}
                 style={{ flexShrink: 0, background: "none", border: "none",
                         cursor: currentIsSaved ? "default" : "pointer",
-                        color: currentIsSaved ? "#185FA5" : "var(--text3)",
+                        color: currentIsSaved ? "var(--brand)" : "var(--text3)",
                         padding: 2, fontFamily: "inherit",
                         display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill={currentIsSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -200,7 +200,7 @@ export function MobileShell(props) {
               title={filterHearted ? "Show all" : "Show only saved"}
               style={{
                 ...pillBase(!!filterHearted),
-                background: filterHearted ? "#185FA5" : "transparent",
+                background: filterHearted ? "var(--brand)" : "transparent",
                 color:      filterHearted ? "#fff" : "var(--text2)",
                 boxShadow:  filterHearted ? "none" : "inset 0 0 0 0.5px var(--border)",
                 display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
@@ -224,8 +224,8 @@ export function MobileShell(props) {
                 width: 40, height: 40, borderRadius: "50%",
                 border: "none", outline: "none", cursor: "pointer",
                 fontFamily: "inherit", fontSize: 18, lineHeight: 1, padding: 0,
-                background: "transparent", color: "#185FA5",
-                boxShadow: "inset 0 0 0 0.5px #185FA5",
+                background: "transparent", color: "var(--brand)",
+                boxShadow: "inset 0 0 0 0.5px var(--brand)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>×</button>
           )}
@@ -310,7 +310,7 @@ export function MobileShell(props) {
           {[["listings", "Listings"], ["watchlist", "Saved"], ["references", "Learn"]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "8px 0 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               {tab === key
-                ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#185FA5" }} />
+                ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--brand)" }} />
                 : <TabIcon kind={key} />}
               <span>{label}</span>
             </button>
@@ -399,9 +399,9 @@ export function MobileShell(props) {
                 <div style={{ padding: "10px 16px 10px" }}>
                   <div style={sectionHeadingStyle}>Price range</div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <input value={minPriceText} onChange={e => setMinPriceText(e.target.value)} placeholder="Min $" style={{ ...inp, flex: 1 }} />
+                    <input value={minPriceText} onChange={e => setMinPriceText(e.target.value)} placeholder="Min $" style={{ ...inputBase, flex: 1 }} />
                     <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>to</span>
-                    <input value={maxPriceText} onChange={e => setMaxPriceText(e.target.value)} placeholder="Max $" style={{ ...inp, flex: 1 }} />
+                    <input value={maxPriceText} onChange={e => setMaxPriceText(e.target.value)} placeholder="Max $" style={{ ...inputBase, flex: 1 }} />
                   </div>
                 </div>
               </div>

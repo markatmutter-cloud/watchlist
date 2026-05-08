@@ -157,7 +157,7 @@ export function ListingPickerModal({
                 }} />
               <button onClick={handlePaste} disabled={busy || !pasteUrl.trim()}
                 style={{
-                  border: "none", background: "#185FA5", color: "#fff",
+                  border: "none", background: "var(--brand)", color: "#fff",
                   padding: "8px 14px", borderRadius: 8,
                   cursor: pasteUrl.trim() ? "pointer" : "not-allowed",
                   fontFamily: "inherit", fontSize: 13, fontWeight: 500,
@@ -165,7 +165,7 @@ export function ListingPickerModal({
                 }}>Add</button>
             </div>
             {pasteError && (
-              <div style={{ fontSize: 12, color: "#c0392b", marginTop: 6 }}>{pasteError}</div>
+              <div style={{ fontSize: 12, color: "var(--danger)", marginTop: 6 }}>{pasteError}</div>
             )}
           </div>
         ) : (
@@ -180,7 +180,7 @@ export function ListingPickerModal({
                 marginBottom: 8, outline: "none",
               }} />
             {pasteError && (
-              <div style={{ fontSize: 12, color: "#c0392b", marginBottom: 6 }}>{pasteError}</div>
+              <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 6 }}>{pasteError}</div>
             )}
             <div style={{ flex: 1, overflowY: "auto", margin: "0 -4px" }}>
               {candidates.length === 0 ? (

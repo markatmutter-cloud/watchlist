@@ -87,7 +87,6 @@ export function buildMockShellProps(overrides = {}) {
     collectionEditModalJSX: null,
     collectionPickerModalJSX: null,
     favSearchModalJSX: null,
-    inp: { border: "none", padding: "8px 10px" },
     listingsGridJSX: <div data-testid="listings-grid" />,
     listingsTabContentJSX: <div data-testid="listings-tab-content" />,
     listingsSubTabsJSX: <div data-testid="listings-sub-tabs" />,

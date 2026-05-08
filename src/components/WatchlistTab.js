@@ -3,6 +3,8 @@ import { Card } from "./Card";
 import { ageBucketFromDate, fmtUSD } from "../utils";
 import { importLocalData } from "../supabase";
 import { SubTabIntro } from "./SubTabIntro";
+import { actionButton, signInButton, inputBase } from "../styles";
+import { EmptyState } from "./EmptyState";
 
 
 
@@ -21,7 +23,7 @@ export function WatchlistTab(props) {
     // Card
     handleWish,
     // UI shared
-    compact, gridStyle, inp, isMobile,
+    compact, gridStyle, isMobile,
     // Sort state from the global filter bar
     sort,
     // Sub-tab routing — controlled by parent because the surrounding
@@ -150,24 +152,15 @@ export function WatchlistTab(props) {
   // ── HELPERS (return JSX; safe to define inline since they're not
   // component types) ────────────────────────────────────────────────────
   const signInPromptJSX = (heading, blurb) => (
-    <div style={{ padding: "60px 20px", textAlign: "center" }}>
-      <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>
-      <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>{heading}</div>
-      <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto 18px" }}>
-        {blurb}
-      </div>
-      {isAuthConfigured && (
-        // Brand-blue primary style — consistent across every signed-
-        // out sign-in CTA in the app (top bar, ShareReceiver,
-        // ChallengeReceiver, per-feature prompts). The actual OAuth
-        // fires from inside SignInPromptModal which this opens.
-        <button onClick={signInWithGoogle} style={{
-          padding: "10px 18px", borderRadius: 10, border: "none",
-          background: "#185FA5", color: "#fff", cursor: "pointer",
-          fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-        }}>Sign in</button>
+    <EmptyState
+      size="tall"
+      icon="♡"
+      heading={heading}
+      blurb={blurb}
+      action={isAuthConfigured && (
+        <button onClick={signInWithGoogle} style={signInButton}>Sign in</button>
       )}
-    </div>
+    />
   );
 
   // Per-sub-tab signed-out copy. Until 2026-05-04 every sub-tab fell
@@ -193,10 +186,6 @@ export function WatchlistTab(props) {
       heading: "Sign in to use saved searches",
       blurb: "Save the queries you keep coming back to — a reference, a brand cut, a phrase you scan for. Each one runs across every dealer in the feed and tells you when something new matches.",
     },
-    collections: {
-      heading: "Sign in to use lists",
-      blurb: "Group watches by reference, theme, or research thread — \"Rolex 5513s\", \"Vintage divers\", \"Reference comps\". Lists sync across every device you use, and you can share any list with one tap.",
-    },
   };
   const signedOutCopy = SIGNED_OUT_BY_SUBTAB[watchTopTab] || SIGNED_OUT_BY_SUBTAB.listings;
 
@@ -211,13 +200,13 @@ export function WatchlistTab(props) {
         value={searchEditor.label}
         onChange={e => setSearchEditor(ed => ({ ...ed, label: e.target.value }))}
         placeholder="Name (e.g. Speedmaster)"
-        style={{ ...inp, fontSize: 14 }}
+        style={{ ...inputBase, fontSize: 14 }}
       />
       <input
         value={searchEditor.query}
         onChange={e => setSearchEditor(ed => ({ ...ed, query: e.target.value }))}
         placeholder="Search terms (e.g. 145.022)"
-        style={{ ...inp, fontSize: 14 }}
+        style={{ ...inputBase, fontSize: 14 }}
       />
       {/* Optional price guard. Mirrors the AddSearchModal layout —
           two side-by-side numeric inputs. Either / both empty =
@@ -228,27 +217,19 @@ export function WatchlistTab(props) {
           value={searchEditor.minPrice ?? ""}
           onChange={e => setSearchEditor(ed => ({ ...ed, minPrice: e.target.value }))}
           placeholder="$ Min"
-          style={{ ...inp, fontSize: 14, flex: 1 }}
+          style={{ ...inputBase, fontSize: 14, flex: 1 }}
         />
         <input
           type="number" min="0" inputMode="numeric"
           value={searchEditor.maxPrice ?? ""}
           onChange={e => setSearchEditor(ed => ({ ...ed, maxPrice: e.target.value }))}
           placeholder="$ Max"
-          style={{ ...inp, fontSize: 14, flex: 1 }}
+          style={{ ...inputBase, fontSize: 14, flex: 1 }}
         />
       </div>
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button onClick={cancelSearchEdit} style={{
-          border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)",
-          padding: "6px 12px", borderRadius: 6, cursor: "pointer",
-          fontFamily: "inherit", fontSize: 13,
-        }}>Cancel</button>
-        <button onClick={commitSearch} style={{
-          border: "none", background: "#185FA5", color: "#fff",
-          padding: "6px 12px", borderRadius: 6, cursor: "pointer",
-          fontFamily: "inherit", fontSize: 13,
-        }}>Save</button>
+        <button onClick={cancelSearchEdit} style={actionButton()}>Cancel</button>
+        <button onClick={commitSearch} style={actionButton({ variant: "primary" })}>Save</button>
       </div>
     </div>
   );
@@ -291,7 +272,7 @@ export function WatchlistTab(props) {
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={runImport} style={{
           padding: "7px 14px", borderRadius: 8, border: "none",
-          background: "#185FA5", color: "#fff", cursor: "pointer",
+          background: "var(--brand)", color: "#fff", cursor: "pointer",
           fontFamily: "inherit", fontSize: 13, fontWeight: 500,
         }}>Import now</button>
         <button onClick={() => {
@@ -401,7 +382,7 @@ export function WatchlistTab(props) {
                     // App.js), so the answer is "new this week".
                     // Label updated for clarity; tooltip echoes it.
                     <div title="New this week (last 7 days, excluding backfilled archive)"
-                      style={{ fontSize: 11, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 8px" }}>
+                      style={{ fontSize: 11, fontWeight: 500, color: "#fff", background: "var(--brand)", borderRadius: 10, padding: "2px 8px" }}>
                       {s.newCount} new this week
                     </div>
                   )}
@@ -427,15 +408,11 @@ export function WatchlistTab(props) {
           // Same shell as the Watchlist + Calendar empty states —
           // icon + heading + blurb. Was a single line of muted text;
           // now matches the rest so empty surfaces feel native.
-          <div style={{ padding: "48px 20px", textAlign: "center" }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
-            <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-              No saved searches yet
-            </div>
-            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 320, margin: "0 auto" }}>
-              Save a search and run it with one tap. Useful for tracking specific references across every dealer in the feed.
-            </div>
-          </div>
+          <EmptyState
+            icon="🔍"
+            heading="No saved searches yet"
+            blurb="Save a search and run it with one tap. Useful for tracking specific references across every dealer in the feed."
+          />
         )}
       </div>
     </div>
@@ -467,18 +444,14 @@ export function WatchlistTab(props) {
               cluttered the sub-tab when 95% of saved auction items
               now flow through hearts on the unified feed.) */}
           {watchCount === 0 ? (
-            <div style={{ padding: "48px 20px", textAlign: "center" }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>♡</div>
-              <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>No watches saved yet</div>
-              <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 320, margin: "0 auto 16px" }}>
-                Browse the Listings tab and tap the heart on any item — it'll appear here with the price you saved at, even after the dealer takes the URL down.
-              </div>
-              <button onClick={() => { setTab("listings"); setPage(1); }} style={{
-                padding: "8px 16px", borderRadius: 8, border: "0.5px solid var(--border)",
-                background: "var(--card-bg)", color: "var(--text1)", cursor: "pointer",
-                fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-              }}>Browse Listings</button>
-            </div>
+            <EmptyState
+              icon="♡"
+              heading="No watches saved yet"
+              blurb="Browse the Listings tab and tap the heart on any item — it'll appear here with the price you saved at, even after the dealer takes the URL down."
+              action={
+                <button onClick={() => { setTab("listings"); setPage(1); }} style={actionButton()}>Browse Listings</button>
+              }
+            />
           ) : (
             <>
               {(() => {

@@ -23,8 +23,8 @@ export function UserLimitBanner({ count, cap, isAtSoftWarn, isAtHardCap }) {
 
   const tone = isAtHardCap ? "hard" : "soft";
   const palette = tone === "hard"
-    ? { bg: "rgba(192, 57, 43, 0.10)", border: "#c0392b", text: "#7d1f17" }
-    : { bg: "rgba(31, 90, 159, 0.08)", border: "#1f5a9f", text: "#1f5a9f" };
+    ? { bg: "rgba(192, 57, 43, 0.10)", border: "var(--danger)", text: "#7d1f17" }
+    : { bg: "rgba(31, 90, 159, 0.08)", border: "var(--brand)", text: "var(--brand)" };
 
   const adminEmail = (typeof window !== "undefined" && window.__WATCHLIST_ADMIN_EMAIL__)
     || ADMIN_EMAIL_DEFAULT;

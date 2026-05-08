@@ -70,7 +70,6 @@ function buildProps(overrides = {}) {
     handleWish: noop,
     compact: false,
     gridStyle: { display: "grid" },
-    inp: { padding: "8px" },
     setEditingCollection: noop,
     openCollectionPicker: noop,
     startCreateCollection: noop,
@@ -149,6 +148,6 @@ describe("CollectionsTab render-without-crash", () => {
     expect(() => {
       render(<CollectionsTab {...buildProps({ user: null })} />);
     }).not.toThrow();
-    expect(screen.getByText(/Sign in to use Collections/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sign in to organize your watches/i)).toBeInTheDocument();
   });
 });

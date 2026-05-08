@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle } from "../styles";
+import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase } from "../styles";
 
 // Create-or-rename modal for collections. Single name field; reuses
 // the same component for both flows because they share UI exactly.
@@ -10,7 +10,7 @@ import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle 
 //   - { id: '<uuid>', name: 'Foo' } → rename flow (Save dispatches renameCollection)
 //
 // Both dispatchers come from useCollections via props.
-export function CollectionEditModal({ editing, setEditing, createCollection, renameCollection, inp }) {
+export function CollectionEditModal({ editing, setEditing, createCollection, renameCollection }) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -66,9 +66,9 @@ export function CollectionEditModal({ editing, setEditing, createCollection, ren
           onKeyDown={e => { if (e.key === "Enter" && canSave) submit(); }}
           placeholder="List name"
           autoCapitalize="words" autoCorrect="off" spellCheck={false}
-          style={{ ...inp, fontSize: 14, marginBottom: 8 }}
+          style={{ ...inputBase, fontSize: 14, marginBottom: 8 }}
         />
-        {error && <div style={{ fontSize: 12, color: "#c0392b", marginBottom: 8 }}>{error}</div>}
+        {error && <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 8 }}>{error}</div>}
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button onClick={close} style={{
             border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)",
@@ -76,7 +76,7 @@ export function CollectionEditModal({ editing, setEditing, createCollection, ren
             fontFamily: "inherit", fontSize: 13,
           }}>Cancel</button>
           <button onClick={submit} disabled={!canSave} style={{
-            border: "none", background: "#185FA5", color: "#fff",
+            border: "none", background: "var(--brand)", color: "#fff",
             padding: "8px 14px", borderRadius: 8, cursor: "pointer",
             fontFamily: "inherit", fontSize: 13, fontWeight: 500,
             opacity: canSave ? 1 : 0.5,

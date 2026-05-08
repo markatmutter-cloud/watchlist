@@ -38,7 +38,7 @@ import { WatchlistTab } from "./components/WatchlistTab";
 import { AdminTab } from "./components/AdminTab";
 import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
-import { tabPill } from "./styles";
+import { tabPill, innerToggleButton } from "./styles";
 
 const LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/listings.json";
 const AUCTIONS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/auctions.json";
@@ -893,10 +893,12 @@ export default function Watchlist() {
     "--bg": "#000", "--surface": "#1c1c1e", "--card-bg": "#2c2c2e",
     "--border": "rgba(255,255,255,0.1)", "--text1": "#f5f5f7",
     "--text2": "#98989d", "--text3": "#48484a",
+    "--brand": "#185FA5", "--danger": "#c0392b", "--accent-positive": "#1b8f3a",
   } : {
     "--bg": "#fff", "--surface": "#f5f5f7", "--card-bg": "#fff",
     "--border": "rgba(0,0,0,0.09)", "--text1": "#1d1d1f",
     "--text2": "#6e6e73", "--text3": "#aeaeb2",
+    "--brand": "#185FA5", "--danger": "#c0392b", "--accent-positive": "#1b8f3a",
   };
 
   // Auction lots projected into the main listings feed. Two sources
@@ -1838,8 +1840,6 @@ export default function Watchlist() {
       )}
     </div>
   );
-  const inp = { border: "none", borderRadius: 8, padding: "8px 10px", fontSize: 14, background: "var(--surface)", color: "var(--text1)", fontFamily: "inherit", outline: "none", width: "100%", boxSizing: "border-box" };
-
   if (loading) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Loading listings...</div>;
   if (loadError) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Could not load listings. Try refreshing.</div>;
 
@@ -2055,7 +2055,6 @@ export default function Watchlist() {
       error={favPromptError}
       setError={setFavPromptError}
       submit={submitFavSearch}
-      inp={inp}
     />
   );
 
@@ -2144,7 +2143,6 @@ export default function Watchlist() {
       handleWish={handleWish}
       compact={compact}
       gridStyle={gridStyle}
-      inp={inp}
       isMobile={isMobile}
       sort={sort}
       watchTopTab={watchTopTab}
@@ -2216,7 +2214,6 @@ export default function Watchlist() {
       handleWish={handleWish}
       compact={compact}
       gridStyle={gridStyle}
-      inp={inp}
       setEditingCollection={setEditingCollection}
       openCollectionPicker={openCollectionPicker}
       startCreateCollection={startCreateCollection}
@@ -2348,15 +2345,7 @@ export default function Watchlist() {
         const active = watchTopTab === key;
         return (
           <button key={key} onClick={() => setWatchTopTab(key)}
-            style={{
-              padding: "5px 12px", borderRadius: 999,
-              border: "0.5px solid var(--border)",
-              background: active ? "var(--text1)" : "transparent",
-              color: active ? "var(--bg)" : "var(--text2)",
-              cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-              fontWeight: active ? 600 : 500,
-              flexShrink: 0,
-            }}>{label}</button>
+            style={innerToggleButton(active)}>{label}</button>
         );
       })}
     </>
@@ -2383,7 +2372,6 @@ export default function Watchlist() {
       setTrackError={setTrackError}
       submitTrack={submitTrack}
       trackBusy={trackBusy}
-      inp={inp}
     />
   );
 
@@ -2400,7 +2388,6 @@ export default function Watchlist() {
       searchEditor={searchEditor || { id: "", label: "", query: "", minPrice: null, maxPrice: null }}
       setSearchEditor={setSearchEditor}
       commitSearch={commitSearch}
-      inp={inp}
     />
   );
 
@@ -2413,7 +2400,6 @@ export default function Watchlist() {
       setEditing={setEditingCollection}
       createCollection={collectionsApi.createCollection}
       renameCollection={collectionsApi.renameCollection}
-      inp={inp}
     />
   );
   // Wrap addItemToCollection so the picker fires a list_add telemetry
@@ -2441,7 +2427,6 @@ export default function Watchlist() {
       addItemToCollection={addItemToCollectionWithTelemetry}
       removeItemFromCollection={collectionsApi.removeItemFromCollection}
       createCollection={collectionsApi.createCollection}
-      inp={inp}
     />
   );
 
@@ -2626,7 +2611,7 @@ export default function Watchlist() {
     addSearchModalJSX,
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
-    favSearchModalJSX, inp,
+    favSearchModalJSX,
     listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX,
     challengeReceiverJSX,

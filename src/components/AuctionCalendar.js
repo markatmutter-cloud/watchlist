@@ -166,7 +166,7 @@ export function AuctionCalendar({ auctions = [] }) {
                         <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#666", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>CLOSED</span>
                       )}
                       {catalogJustOpened && (
-                        <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#185FA5", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>NEW CATALOG</span>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "var(--brand)", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>NEW CATALOG</span>
                       )}
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)",
