@@ -911,10 +911,14 @@ revoke execute on function public.foo(...) from anon;
 (The grant line is sometimes redundant given the default ACL, but
 explicit-grants keep intent legible for future readers.)
 
-A schema-wide fix would be `alter default privileges in schema public
-revoke execute on functions from anon` so future functions stop
-auto-granting to anon. Not applied yet — would need an audit of every
-existing migration's expectations first.
+A schema-wide `alter default privileges in schema public revoke
+execute on functions from anon` would be the cleaner fix BUT Supabase's
+hosted Postgres blocks that operation even for the dashboard SQL
+editor — it returns "permission denied to change default privileges"
+because it requires real superuser, which Supabase reserves. So the
+per-function revoke is the only path on this platform. Don't waste
+cycles trying the ALTER DEFAULT PRIVILEGES path again; it's
+permanently blocked at the platform layer.
 
 ## Things to never do
 
