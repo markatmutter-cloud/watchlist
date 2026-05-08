@@ -3,7 +3,7 @@ import { SearchIcon, FilterIcon, TabIcon } from "./icons";
 import { Chip } from "./Chip";
 import { AboutModal } from "./AboutModal";
 import { SignInPromptModal } from "./SignInPromptModal";
-import { iconButton, pillBase } from "../styles";
+import { iconButton, pillBase, inputBase } from "../styles";
 
 // Mobile shell — receives everything the mobile branch needs from
 // App.js as a single props bag. Extracted 2026-04-30 (Stage 2 of
@@ -44,7 +44,7 @@ export function MobileShell(props) {
     addSearchModalJSX,
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
-    favSearchModalJSX, inp,
+    favSearchModalJSX,
     adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX,
     challengeReceiverJSX,
@@ -399,9 +399,9 @@ export function MobileShell(props) {
                 <div style={{ padding: "10px 16px 10px" }}>
                   <div style={sectionHeadingStyle}>Price range</div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <input value={minPriceText} onChange={e => setMinPriceText(e.target.value)} placeholder="Min $" style={{ ...inp, flex: 1 }} />
+                    <input value={minPriceText} onChange={e => setMinPriceText(e.target.value)} placeholder="Min $" style={{ ...inputBase, flex: 1 }} />
                     <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>to</span>
-                    <input value={maxPriceText} onChange={e => setMaxPriceText(e.target.value)} placeholder="Max $" style={{ ...inp, flex: 1 }} />
+                    <input value={maxPriceText} onChange={e => setMaxPriceText(e.target.value)} placeholder="Max $" style={{ ...inputBase, flex: 1 }} />
                   </div>
                 </div>
               </div>

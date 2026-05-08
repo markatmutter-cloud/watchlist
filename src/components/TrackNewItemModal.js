@@ -1,20 +1,15 @@
 import React from "react";
-import { modalBackdrop, modalCloseButton } from "../styles";
+import { modalBackdrop, modalCloseButton, inputBase } from "../styles";
 
 // Track new item modal — single-URL paste flow with source-list
 // instructions. Lifted out of App.js on 2026-04-30 (was an inline JSX
 // const next to favSearchModalJSX). Takes its trigger state and submit
 // handler as props so the parent owns the URL state machine.
-//
-// `inp` is passed through rather than imported from styles.js because
-// it's a parent-owned input style that's used in multiple inputs across
-// the app. Once styles.js absorbs `inp`, this prop can drop.
 export function TrackNewItemModal({
   open, setOpen,
   trackUrl, setTrackUrl,
   trackError, setTrackError,
   submitTrack, trackBusy,
-  inp,
 }) {
   if (!open) return null;
   return (
@@ -52,7 +47,7 @@ export function TrackNewItemModal({
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
-          style={{ ...inp, width: "100%", fontSize: 13, marginBottom: 8 }}
+          style={{ ...inputBase, width: "100%", fontSize: 13, marginBottom: 8 }}
         />
         {trackError && (
           <div style={{ fontSize: 11, color: "var(--danger)", marginBottom: 8 }}>{trackError}</div>

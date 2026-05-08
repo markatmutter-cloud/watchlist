@@ -8,6 +8,9 @@ how to behave for the rest of it.
 - This file (CLAUDE.md) — durable working conventions. Read every session.
 - [README.md](README.md) — what the project is + architecture. Public-facing.
 - [ROADMAP.md](ROADMAP.md) — priorities, epics, what's explicitly out of scope.
+- [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) — color tokens, style tokens
+  (`src/styles.js`), reusable components (`src/components/`), and
+  reach-for-this-first rules. Read this when doing UI work.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
   The current one is [SESSION_HANDOFF_2026-05-08.md](SESSION_HANDOFF_2026-05-08.md);
   older ones live in `archive/`.

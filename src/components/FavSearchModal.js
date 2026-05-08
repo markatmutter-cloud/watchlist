@@ -1,5 +1,5 @@
 import React from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle } from "../styles";
+import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase } from "../styles";
 
 // Save-search prompt — appears when the user taps the heart in the
 // search bar. Asks for an optional friendly label before persisting
@@ -15,7 +15,6 @@ export function FavSearchModal({
   label, setLabel,
   error, setError,
   submit,
-  inp,
 }) {
   if (!open) return null;
   const hasMin = (minPriceText || "").trim() !== "";
@@ -41,7 +40,7 @@ export function FavSearchModal({
           onChange={e => { setLabel(e.target.value); setError(""); }}
           onKeyDown={e => { if (e.key === "Enter") submit(); }}
           placeholder="Name (e.g. Speedmaster pro)"
-          style={{ ...inp, fontSize: 14, marginBottom: 8 }}
+          style={{ ...inputBase, fontSize: 14, marginBottom: 8 }}
         />
         {error && (
           <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 8 }}>{error}</div>

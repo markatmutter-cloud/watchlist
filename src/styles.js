@@ -101,6 +101,34 @@ export const actionButton = ({ variant = "subtle" } = {}) => {
   };
 };
 
+// Sign-in / large primary CTA. One size class above actionButton —
+// padding and radius scale up because these are typically the dominant
+// CTA on a focused signed-out surface (CollectionsTab gate, WatchlistTab
+// gate, ListReceiver / ChallengeReceiver landings). Brand-fill + white
+// text. Promoted 2026-05-08 from inline copies (10px 18px / radius 10
+// pattern repeated across ~5 files).
+export const signInButton = {
+  padding: "10px 18px", borderRadius: 10,
+  border: "none", background: "var(--brand)", color: "#fff",
+  cursor: "pointer", fontFamily: "inherit",
+  fontSize: 14, fontWeight: 500,
+};
+
+// ── FORM INPUTS ───────────────────────────────────────────────────────
+
+// Standard text/number/select input style. Lifted-surface bg, no border,
+// soft rounding. Override fontSize / marginBottom / flex per call site.
+// Used across modal forms (search editor, manual entry, mark-as-sold,
+// track-new-item) and inline price filters. Promoted 2026-05-08 from
+// the App.js `inp` const that was prop-drilled through every tab + modal.
+export const inputBase = {
+  border: "none", borderRadius: 8,
+  padding: "8px 10px", fontSize: 14,
+  background: "var(--surface)", color: "var(--text1)",
+  fontFamily: "inherit", outline: "none",
+  width: "100%", boxSizing: "border-box",
+};
+
 // ── ICON BUTTONS ──────────────────────────────────────────────────────
 
 // Round 40×40 icon buttons in the mobile top bar (Filter, View, Clear).

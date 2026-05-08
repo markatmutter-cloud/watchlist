@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle } from "../styles";
+import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase } from "../styles";
 
 // List Sharing v2 / slice 2 — Manage list sheet.
 //
@@ -20,7 +20,6 @@ export function ManageListSheet({
   open, onClose,
   user,
   collection,                 // the list being managed (id, name)
-  inp,
   // Mutators threaded from collectionsApi.
   inviteCollaborator,         // (collectionId, email, role) => { error, id }
   revokeCollaborator,         // (collectionId, opts) => { error }
@@ -154,7 +153,7 @@ export function ManageListSheet({
               onKeyDown={e => { if (e.key === "Enter") submitInvite(); }}
               placeholder="name@example.com"
               autoCapitalize="none" autoCorrect="off" spellCheck={false}
-              style={{ ...inp, fontSize: 14, flex: 1 }} />
+              style={{ ...inputBase, fontSize: 14, flex: 1 }} />
             <select value={role} onChange={e => setRole(e.target.value)}
               style={{
                 fontSize: 13, fontFamily: "inherit",

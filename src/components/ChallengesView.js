@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { ChallengeFlow, CreateStage } from "./ChallengeFlow";
 import { ListRow } from "./ListRow";
 import { fmtUSD } from "../utils";
+import { signInButton } from "../styles";
+import { EmptyState } from "./EmptyState";
 
 // Challenges view — extracted from WatchlistTab.js on 2026-05-04
 // when Challenges moved from a Watchlist sub-tab to a resource under
@@ -57,19 +59,14 @@ export function ChallengesView({
 
   if (!user) {
     return (
-      <div style={{ padding: "60px 20px", textAlign: "center" }}>
-        <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>Sign in to build a challenge</div>
-        <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 340, margin: "0 auto 18px" }}>
-          Build a constrained list: pick N watches under a budget. Save it, share it, ask a friend to fill in their own answer. Your challenges sync across every device you use.
-        </div>
-        {isAuthConfigured && (
-          <button onClick={signInWithGoogle} style={{
-            padding: "10px 18px", borderRadius: 10, border: "none",
-            background: "var(--brand)", color: "#fff", cursor: "pointer",
-            fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-          }}>Sign in</button>
+      <EmptyState
+        size="tall"
+        heading="Sign in to build a challenge"
+        blurb="Build a constrained list: pick N watches under a budget. Save it, share it, ask a friend to fill in their own answer. Your challenges sync across every device you use."
+        action={isAuthConfigured && (
+          <button onClick={signInWithGoogle} style={signInButton}>Sign in</button>
         )}
-      </div>
+      />
     );
   }
 
@@ -163,15 +160,10 @@ export function ChallengesView({
       </div>
 
       {allChallenges.length === 0 ? (
-        <div style={{ padding: "48px 20px", textAlign: "center" }}>
-          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-            No challenges yet
-          </div>
-          <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto" }}>
-            Create a virtual collection. Share your picks. Challenge someone else to do the
-            same under your constraints.
-          </div>
-        </div>
+        <EmptyState
+          heading="No challenges yet"
+          blurb="Create a virtual collection. Share your picks. Challenge someone else to do the same under your constraints."
+        />
       ) : (() => {
         // PR #90 grouping: split sender-attributed (Sent to you) from
         // self-created (Yours). Within each group, ordering matches

@@ -1840,8 +1840,6 @@ export default function Watchlist() {
       )}
     </div>
   );
-  const inp = { border: "none", borderRadius: 8, padding: "8px 10px", fontSize: 14, background: "var(--surface)", color: "var(--text1)", fontFamily: "inherit", outline: "none", width: "100%", boxSizing: "border-box" };
-
   if (loading) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Loading listings...</div>;
   if (loadError) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Could not load listings. Try refreshing.</div>;
 
@@ -2057,7 +2055,6 @@ export default function Watchlist() {
       error={favPromptError}
       setError={setFavPromptError}
       submit={submitFavSearch}
-      inp={inp}
     />
   );
 
@@ -2146,7 +2143,6 @@ export default function Watchlist() {
       handleWish={handleWish}
       compact={compact}
       gridStyle={gridStyle}
-      inp={inp}
       isMobile={isMobile}
       sort={sort}
       watchTopTab={watchTopTab}
@@ -2218,7 +2214,6 @@ export default function Watchlist() {
       handleWish={handleWish}
       compact={compact}
       gridStyle={gridStyle}
-      inp={inp}
       setEditingCollection={setEditingCollection}
       openCollectionPicker={openCollectionPicker}
       startCreateCollection={startCreateCollection}
@@ -2377,7 +2372,6 @@ export default function Watchlist() {
       setTrackError={setTrackError}
       submitTrack={submitTrack}
       trackBusy={trackBusy}
-      inp={inp}
     />
   );
 
@@ -2394,7 +2388,6 @@ export default function Watchlist() {
       searchEditor={searchEditor || { id: "", label: "", query: "", minPrice: null, maxPrice: null }}
       setSearchEditor={setSearchEditor}
       commitSearch={commitSearch}
-      inp={inp}
     />
   );
 
@@ -2407,7 +2400,6 @@ export default function Watchlist() {
       setEditing={setEditingCollection}
       createCollection={collectionsApi.createCollection}
       renameCollection={collectionsApi.renameCollection}
-      inp={inp}
     />
   );
   // Wrap addItemToCollection so the picker fires a list_add telemetry
@@ -2435,7 +2427,6 @@ export default function Watchlist() {
       addItemToCollection={addItemToCollectionWithTelemetry}
       removeItemFromCollection={collectionsApi.removeItemFromCollection}
       createCollection={collectionsApi.createCollection}
-      inp={inp}
     />
   );
 
@@ -2620,7 +2611,7 @@ export default function Watchlist() {
     addSearchModalJSX,
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
-    favSearchModalJSX, inp,
+    favSearchModalJSX,
     listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     settingsModalJSX, shareReceiverJSX,
     challengeReceiverJSX,

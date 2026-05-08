@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle } from "../styles";
+import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase } from "../styles";
 
 // MarkAsSoldModal — captures sold price + sold date when the user
 // moves a watch from Owned to Sold. PR #88, 2026-05-06.
@@ -14,7 +14,6 @@ import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle 
 export function MarkAsSoldModal({
   open, onClose,
   item,                 // the item being sold (for display only)
-  inp,
   onConfirm,            // ({ soldPrice, soldDate, currency }) => Promise<{ error?: string }>
 }) {
   const [soldPrice, setSoldPrice] = useState("");
@@ -76,12 +75,12 @@ export function MarkAsSoldModal({
             <input type="number" inputMode="decimal" autoFocus
               value={soldPrice}
               onChange={e => { setSoldPrice(e.target.value); setError(""); }}
-              placeholder="0" style={{ ...inp, fontSize: 14 }} />
+              placeholder="0" style={{ ...inputBase, fontSize: 14 }} />
           </div>
           <div style={{ flex: 1 }}>
             <Label>Currency</Label>
             <select value={currency} onChange={e => setCurrency(e.target.value)}
-              style={{ ...inp, fontSize: 14 }}>
+              style={{ ...inputBase, fontSize: 14 }}>
               <option>USD</option>
               <option>GBP</option>
               <option>EUR</option>
@@ -96,7 +95,7 @@ export function MarkAsSoldModal({
           <Label>Sold on</Label>
           <input type="date" value={soldDate}
             onChange={e => setSoldDate(e.target.value)}
-            style={{ ...inp, fontSize: 14 }} />
+            style={{ ...inputBase, fontSize: 14 }} />
         </div>
         {error && (
           <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 10 }}>{error}</div>

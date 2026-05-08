@@ -36,7 +36,6 @@ function buildProps(overrides = {}) {
     handleWish: noop,
     compact: false,
     gridStyle: { display: "grid" },
-    inp: { padding: "8px" },
     isMobile: false,
     sort: "date",
     watchTopTab: "listings",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle } from "../styles";
+import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase } from "../styles";
 import { resizeImage } from "../resizeImage";
 
 // Manual-entry form for Owned + Sold lists. PR #87 (2026-05-06).
@@ -27,7 +27,6 @@ import { resizeImage } from "../resizeImage";
 export function ManualEntryForm({
   open, onClose,
   kind,                 // "owned" | "sold"
-  inp,
   uploadWatchPhoto,     // (file) => { error, url }
   addManualItem,        // (collectionId, data) => { error, id }
   collectionId,
@@ -187,24 +186,24 @@ export function ManualEntryForm({
           <input autoFocus value={brand}
             onChange={e => { setBrand(e.target.value); setError(""); }}
             placeholder="e.g. Rolex"
-            style={{ ...inp, fontSize: 14 }} />
+            style={{ ...inputBase, fontSize: 14 }} />
         </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
           <div style={{ flex: 1 }}>
             <Label>Model</Label>
             <input value={model} onChange={e => setModel(e.target.value)}
-              placeholder="Submariner" style={{ ...inp, fontSize: 14 }} />
+              placeholder="Submariner" style={{ ...inputBase, fontSize: 14 }} />
           </div>
           <div style={{ flex: 1 }}>
             <Label>Reference</Label>
             <input value={reference} onChange={e => setReference(e.target.value)}
-              placeholder="5513" style={{ ...inp, fontSize: 14 }} />
+              placeholder="5513" style={{ ...inputBase, fontSize: 14 }} />
           </div>
         </div>
         <div style={{ marginBottom: 10 }}>
           <Label>Material</Label>
           <input value={material} onChange={e => setMaterial(e.target.value)}
-            placeholder="Steel · 18k yellow gold · etc." style={{ ...inp, fontSize: 14 }} />
+            placeholder="Steel · 18k yellow gold · etc." style={{ ...inputBase, fontSize: 14 }} />
         </div>
         <div style={{ marginBottom: 14 }}>
           <Label>Link (optional)</Label>
@@ -213,7 +212,7 @@ export function ManualEntryForm({
             value={sourceUrl}
             onChange={e => setSourceUrl(e.target.value)}
             placeholder="https://example.com/listing — dealer / eBay / auction lot"
-            style={{ ...inp, fontSize: 14 }} />
+            style={{ ...inputBase, fontSize: 14 }} />
         </div>
 
         {/* Price paid */}
@@ -222,13 +221,13 @@ export function ManualEntryForm({
             <Label>Price paid</Label>
             <input type="number" inputMode="decimal" value={pricePaid}
               onChange={e => setPricePaid(e.target.value)}
-              placeholder="0" style={{ ...inp, fontSize: 14 }} />
+              placeholder="0" style={{ ...inputBase, fontSize: 14 }} />
           </div>
           <div style={{ flex: 1 }}>
             <Label>Currency</Label>
             <select value={priceCurrency}
               onChange={e => setPriceCurrency(e.target.value)}
-              style={{ ...inp, fontSize: 14 }}>
+              style={{ ...inputBase, fontSize: 14 }}>
               <option>USD</option>
               <option>GBP</option>
               <option>EUR</option>
@@ -246,13 +245,13 @@ export function ManualEntryForm({
               <Label>Sold price (optional)</Label>
               <input type="number" inputMode="decimal" value={soldPrice}
                 onChange={e => setSoldPrice(e.target.value)}
-                placeholder="0" style={{ ...inp, fontSize: 14 }} />
+                placeholder="0" style={{ ...inputBase, fontSize: 14 }} />
             </div>
             <div style={{ flex: 1 }}>
               <Label>Sold on</Label>
               <input type="date" value={soldDate}
                 onChange={e => setSoldDate(e.target.value)}
-                style={{ ...inp, fontSize: 14 }} />
+                style={{ ...inputBase, fontSize: 14 }} />
             </div>
           </div>
         )}
@@ -262,7 +261,7 @@ export function ManualEntryForm({
           <textarea value={comments} onChange={e => setComments(e.target.value)}
             placeholder="Provenance, condition, story, anything you want to remember…"
             rows={3}
-            style={{ ...inp, fontSize: 14, fontFamily: "inherit", resize: "vertical" }} />
+            style={{ ...inputBase, fontSize: 14, fontFamily: "inherit", resize: "vertical" }} />
         </div>
 
         {error && (

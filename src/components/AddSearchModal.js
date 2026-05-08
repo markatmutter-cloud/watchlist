@@ -1,5 +1,5 @@
 import React from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle } from "../styles";
+import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase } from "../styles";
 
 // Add-search modal — paste flow for a saved search. Mirrors
 // TrackNewItemModal's UX so both "+ Track new item" and "+ Add search"
@@ -11,7 +11,6 @@ export function AddSearchModal({
   open, onClose,
   searchEditor, setSearchEditor,
   commitSearch,
-  inp,
 }) {
   if (!open) return null;
   const labelOk = (searchEditor.label || "").trim().length > 0;
@@ -35,7 +34,7 @@ export function AddSearchModal({
           value={searchEditor.label}
           onChange={e => setSearchEditor(ed => ({ ...ed, label: e.target.value }))}
           placeholder="Name (e.g. Speedmaster Pro)"
-          style={{ ...inp, fontSize: 14, marginBottom: 8 }}
+          style={{ ...inputBase, fontSize: 14, marginBottom: 8 }}
         />
         <input
           value={searchEditor.query}
@@ -43,7 +42,7 @@ export function AddSearchModal({
           onKeyDown={e => { if (e.key === "Enter" && canSave) commitSearch(); }}
           placeholder="Search terms (e.g. 145.022)"
           autoCapitalize="off" autoCorrect="off" spellCheck={false}
-          style={{ ...inp, fontSize: 14, marginBottom: 8 }}
+          style={{ ...inputBase, fontSize: 14, marginBottom: 8 }}
         />
         {/* Optional price guard. Both fields nullable; leaving them
             empty saves a search with no \$ filter. Mark feedback
@@ -56,14 +55,14 @@ export function AddSearchModal({
             value={searchEditor.minPrice ?? ""}
             onChange={e => setSearchEditor(ed => ({ ...ed, minPrice: e.target.value }))}
             placeholder="$ Min"
-            style={{ ...inp, fontSize: 14, flex: 1 }}
+            style={{ ...inputBase, fontSize: 14, flex: 1 }}
           />
           <input
             type="number" min="0" inputMode="numeric"
             value={searchEditor.maxPrice ?? ""}
             onChange={e => setSearchEditor(ed => ({ ...ed, maxPrice: e.target.value }))}
             placeholder="$ Max"
-            style={{ ...inp, fontSize: 14, flex: 1 }}
+            style={{ ...inputBase, fontSize: 14, flex: 1 }}
           />
         </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>

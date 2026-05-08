@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle } from "../styles";
+import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase } from "../styles";
 
 // Picker that opens when a user taps "Add to list..." in any Card's
 // "..." menu. Shows existing user-created lists (the shared-inbox is
@@ -16,7 +16,6 @@ export function CollectionPickerModal({
   target, setTarget,
   collections, itemsByCollection,
   addItemToCollection, removeItemFromCollection, createCollection,
-  inp,
 }) {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName]   = useState("");
@@ -160,7 +159,7 @@ export function CollectionPickerModal({
               onKeyDown={e => { if (e.key === "Enter") submitNew(); }}
               placeholder="New list name"
               autoCapitalize="words" autoCorrect="off" spellCheck={false}
-              style={{ ...inp, fontSize: 14 }}
+              style={{ ...inputBase, fontSize: 14 }}
             />
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button onClick={() => { setCreating(false); setNewName(""); setError(""); }} style={{

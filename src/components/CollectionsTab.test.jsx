@@ -70,7 +70,6 @@ function buildProps(overrides = {}) {
     handleWish: noop,
     compact: false,
     gridStyle: { display: "grid" },
-    inp: { padding: "8px" },
     setEditingCollection: noop,
     openCollectionPicker: noop,
     startCreateCollection: noop,
