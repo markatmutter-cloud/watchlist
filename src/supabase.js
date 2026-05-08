@@ -641,10 +641,14 @@ export function useCollections(user) {
       listing_snapshot: listing,
       source_of_entry:  opts.sourceOfEntry || 'manual',
       shared_by_handle: opts.sharedByHandle || null,
-      // Collaborator slice 1: who_added drives the attribution chip
-      // (slice 4) and the per-row delete gate. Always set explicitly
-      // even though the column has a default — explicit is clearer.
-      who_added:        user.id,
+      // who_added column was added in slice-1 SQL (and the trigger
+      // backfills it server-side). Removed from the JS payload
+      // 2026-05-07 because shipping the JS write before the migration
+      // ran broke every "Add to list" / "Add to Shortlist" /
+      // "Add to Owned" flow with `Could not find the 'who_added'
+      // column of 'collection_items' in the schema cache`. The
+      // collaborator slice-4 attribution work re-adds the JS write
+      // once the migration is confirmed applied in production.
     };
     const { data, error } = await supabase.from('collection_items')
       .insert(payload)
@@ -747,8 +751,8 @@ export function useCollections(user) {
       manual_comments:         manual.comments  || null,
       manual_source_url:       manual.sourceUrl || null,
       source_of_entry:         'manual',
-      // Collaborator slice 1: see addItemToCollection for rationale.
-      who_added:               user.id,
+      // who_added removed from JS payload 2026-05-07 — see
+      // addItemToCollection for the schema-cache failure rationale.
     };
     const { data, error } = await supabase.from('collection_items')
       .insert(payload).select().single();
