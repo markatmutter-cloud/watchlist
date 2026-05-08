@@ -855,6 +855,18 @@ To add a new printable tool: render its sheet via `createPortal` to
 
 ## Things to never do
 
+- **Don't add `to authenticated` (or any role scope) to a new RLS
+  policy unless every other policy on the same table already uses the
+  same role scope.** Postgres applies a policy only when the connection's
+  role matches; if four sibling policies are `roles={public}` and one
+  new one is `roles={authenticated}`, any session where the API role
+  isn't `authenticated` (stale JWT, anon, etc.) silently has no
+  applicable policy on that command and Postgres rejects with the
+  RLS-violation error — even though the policy "looks correct" to
+  whoever wrote it. Cost a debugging session on 2026-05-08 (#138).
+  Default to no role clause (`for insert with check (...)` →
+  `roles={public}`) and let `auth.uid() IS NULL` handle the
+  unauthenticated case naturally.
 - **Don't bump `LEGACY_WATCHLIST_KEY` / `LEGACY_HIDDEN_KEY`** in App.js —
   they're stable storage keys for users' pre-Supabase localStorage data
   that the import banner reads on first sign-in.
