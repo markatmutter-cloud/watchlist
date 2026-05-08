@@ -55,8 +55,9 @@ export function SignInPromptModal({ open, onClose, onSignIn }) {
         </div>
 
         <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6, marginBottom: 6 }}>
-          Sign in with Google to unlock the saving features. Watchlist is
-          free, and you can keep browsing without an account.
+          Sign in with Google to unlock features — saving listings and searches
+          across devices. Watchlist is free, and you can keep browsing without
+          an account.
         </div>
 
         <div style={sectionLabel}>Why sign in</div>
@@ -72,9 +73,8 @@ export function SignInPromptModal({ open, onClose, onSignIn }) {
 
         <div style={sectionLabel}>What it doesn't do</div>
         <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6 }}>
-          No ads, no tracking, no fees. Saves and likes help build a
-          recommender that learns your taste — they stay yours. I don't
-          sell data and I don't run ads. Questions:{" "}
+          No ads, no tracking, no fees. I don't sell data and I don't run
+          ads. Questions:{" "}
           <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" style={{ color: "var(--text1)" }}>
             @{INSTAGRAM_HANDLE}
           </a>.
