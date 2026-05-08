@@ -221,6 +221,7 @@ export function CollectionsTab({
   } else if (subTab === "lists") {
     body = (
       <ListsView
+        user={user}
         cols={cols}
         itemsByColl={itemsByColl}
         hiddenItems={hiddenItems}
@@ -240,6 +241,7 @@ export function CollectionsTab({
         removeItemFromCollection={collectionsApi?.removeItemFromCollection}
         selectedListId={selectedListId}
         setSelectedListId={setSelectedListId}
+        setManageListOpen={setManageListOpen}
       />
     );
   } else if (subTab === "challenges") {
@@ -621,6 +623,7 @@ const rankBtnStyle = (disabled) => ({
 // sub-tabs now. Shared inbox + user-created lists + Hidden synthetic
 // row are surfaced.
 function ListsView({
+  user,
   cols, itemsByColl, hiddenItems,
   watchlist, toggleHide,
   compact, gridStyle, primaryCurrency,
@@ -629,6 +632,7 @@ function ListsView({
   startCreateCollection, setEditingCollection,
   deleteCollection, removeItemFromCollection,
   selectedListId, setSelectedListId,
+  setManageListOpen,
 }) {
   const sharedInbox = cols.find(c => c.isSharedInbox) || null;
   const userCols = cols.filter(c =>
@@ -676,7 +680,13 @@ function ListsView({
             // accepted collaborators, so a "selected" list might not
             // be owned by the current user. Gate Manage / Rename /
             // Delete to the owner; collaborators only see Share.
-            const isOwner = !!(user?.id && selected?.user_id && user.id === selected.user_id);
+            // Hotfix 2026-05-07: previously compared against
+            // `selected.user_id` but the JS-side mapper exposes the
+            // owner's id as `userId` (camelCase). Without `user`
+            // also threaded into ListsView's destructure, this
+            // referenced an undefined `user` and white-screened
+            // every list view. Both fixed in the same hotfix.
+            const isOwner = !!(user?.id && selected?.userId && user.id === selected.userId);
             return (
             <>
               {/* Share — copies a `?list=<id>&shared=1` link via the

@@ -444,6 +444,12 @@ export function useCollections(user) {
         name:                r.name,
         description:         r.description,
         type:                r.type,
+        // user_id of the collection owner. Drives the isOwner gate
+        // for the Manage / Rename / Delete buttons in the list
+        // drill-in (List Sharing v2 / slice 2). Without this, the
+        // gate compares against `undefined` and silently hides
+        // owner actions even on the user's own lists.
+        userId:              r.user_id,
         isSharedInbox:       r.is_shared_inbox,
         // Hard system lists (Owned / Sold / Wishlist) — auto-created
         // per user, can't be deleted. is_system added in
@@ -560,7 +566,7 @@ export function useCollections(user) {
         }
         const hardCols = (hardRows || []).map(r => ({
           id: r.id, name: r.name, description: r.description,
-          type: r.type, isSharedInbox: r.is_shared_inbox,
+          type: r.type, userId: r.user_id, isSharedInbox: r.is_shared_inbox,
           isSystem: !!r.is_system,
           createdAt: r.created_at, updatedAt: r.updated_at,
         }));
@@ -589,7 +595,7 @@ export function useCollections(user) {
     if (error) return { error: error.message };
     setCollections(prev => [...prev, {
       id: data.id, name: data.name, description: data.description,
-      type: data.type, isSharedInbox: data.is_shared_inbox,
+      type: data.type, userId: data.user_id, isSharedInbox: data.is_shared_inbox,
       isSystem: !!data.is_system,
       createdAt: data.created_at, updatedAt: data.updated_at,
     }]);
@@ -907,7 +913,7 @@ export function useCollections(user) {
       if (row) {
         setCollections(prev => prev.find(c => c.id === row.id) ? prev : [...prev, {
           id: row.id, name: row.name, description: row.description,
-          type: row.type, isSharedInbox: row.is_shared_inbox,
+          type: row.type, userId: row.user_id, isSharedInbox: row.is_shared_inbox,
           isSystem: !!row.is_system,
           createdAt: row.created_at, updatedAt: row.updated_at,
         }]);
@@ -917,7 +923,7 @@ export function useCollections(user) {
     if (error) return { error: error.message };
     setCollections(prev => [...prev, {
       id: data.id, name: data.name, description: data.description,
-      type: data.type, isSharedInbox: data.is_shared_inbox,
+      type: data.type, userId: data.user_id, isSharedInbox: data.is_shared_inbox,
       isSystem: !!data.is_system,
       createdAt: data.created_at, updatedAt: data.updated_at,
     }]);
@@ -953,7 +959,7 @@ export function useCollections(user) {
         .filter(r => !existing.has(r.id))
         .map(r => ({
           id: r.id, name: r.name, description: r.description,
-          type: r.type, isSharedInbox: r.is_shared_inbox,
+          type: r.type, userId: r.user_id, isSharedInbox: r.is_shared_inbox,
           isSystem: !!r.is_system,
           createdAt: r.created_at, updatedAt: r.updated_at,
         }));
@@ -1003,7 +1009,7 @@ export function useCollections(user) {
     if (error) return { error: error.message };
     setCollections(prev => [...prev, {
       id: data.id, name: data.name, description: data.description,
-      type: data.type, isSharedInbox: false,
+      type: data.type, userId: data.user_id, isSharedInbox: false,
       isSystem: !!data.is_system,
       targetCount: data.target_count, budget: data.budget,
       descriptionLong: data.description_long, state: data.state,
