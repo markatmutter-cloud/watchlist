@@ -15,17 +15,35 @@
 // ── PILLS ─────────────────────────────────────────────────────────────
 
 // Sort/filter pills in the sticky/filter rows. Inactive = transparent
-// with inset border, active = inverted dark. Used by both mobile sort
-// row (default size — bigger for touch) and desktop filter row
-// (`compact: true` — denser horizontal layout).
-export const pillBase = (active, { compact = false } = {}) => ({
+// (or surface-tinted) with inset border, active = inverted dark. Used by
+// both mobile sort row (default size — bigger for touch) and desktop
+// filter row (`compact: true` — denser horizontal layout). Pass
+// `surface: true` for the desktop variant where inactive pills sit on a
+// `--surface` background instead of transparent.
+export const pillBase = (active, { compact = false, surface = false } = {}) => ({
   fontSize: 13,
   padding: compact ? "6px 12px" : "9px 14px",
   borderRadius: 20, cursor: "pointer",
   fontFamily: "inherit", whiteSpace: "nowrap", border: "none", outline: "none",
-  background: active ? "var(--text1)" : "transparent",
+  background: active ? "var(--text1)" : (surface ? "var(--surface)" : "transparent"),
   color:      active ? "var(--bg)"    : "var(--text2)",
   boxShadow:  active ? "none" : "inset 0 0 0 0.5px var(--border)",
+});
+
+// Inner-toggle pill. Smaller, denser variant used for nested sub-toggles
+// inside a tab (Listings/Auctions/Sold inside Saved; Owned/Sold/All/
+// Shortlist inside My watches). Visually distinct from `pillBase` — uses
+// a real border (not boxShadow) and adds bold-on-active to signal the
+// secondary hierarchy. Promoted 2026-05-08 from inline duplicates in
+// App.js + CollectionsTab.js.
+export const innerToggleButton = (active) => ({
+  padding: "5px 12px", borderRadius: 999,
+  border: "0.5px solid var(--border)",
+  background: active ? "var(--text1)" : "transparent",
+  color:      active ? "var(--bg)"    : "var(--text2)",
+  cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+  fontWeight: active ? 600 : 500,
+  flexShrink: 0,
 });
 
 // Sub-tab strip (Listings / Searches / Calendar). Underline pattern,

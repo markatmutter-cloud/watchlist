@@ -68,7 +68,7 @@ export function CollectionEditModal({ editing, setEditing, createCollection, ren
           autoCapitalize="words" autoCorrect="off" spellCheck={false}
           style={{ ...inp, fontSize: 14, marginBottom: 8 }}
         />
-        {error && <div style={{ fontSize: 12, color: "#c0392b", marginBottom: 8 }}>{error}</div>}
+        {error && <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 8 }}>{error}</div>}
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button onClick={close} style={{
             border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)",
@@ -76,7 +76,7 @@ export function CollectionEditModal({ editing, setEditing, createCollection, ren
             fontFamily: "inherit", fontSize: 13,
           }}>Cancel</button>
           <button onClick={submit} disabled={!canSave} style={{
-            border: "none", background: "#185FA5", color: "#fff",
+            border: "none", background: "var(--brand)", color: "#fff",
             padding: "8px 14px", borderRadius: 8, cursor: "pointer",
             fontFamily: "inherit", fontSize: 13, fontWeight: 500,
             opacity: canSave ? 1 : 0.5,

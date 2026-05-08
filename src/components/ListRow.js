@@ -35,8 +35,8 @@ import React from "react";
 //                are valid HTML (a <button> can't contain other
 //                buttons). Click handlers stop propagation so they
 //                don't drill in.
-export function ListRow({ icon, accent = "#185FA5", title, subtitle, onClick, ariaLabel, actions }) {
-  const tint = ACCENT_TINTS[accent] || ACCENT_TINTS["#185FA5"];
+export function ListRow({ icon, accent = "var(--brand)", title, subtitle, onClick, ariaLabel, actions }) {
+  const tint = ACCENT_TINTS[accent] || ACCENT_TINTS["var(--brand)"];
   const rowStyle = {
     display: "flex", alignItems: "center", justifyContent: "space-between",
     padding: "14px 16px", borderRadius: 12,
@@ -126,6 +126,6 @@ const iconActionBtnStyle = {
 // Disc-tint lookup keyed by stroke accent. Two tones for now (brand
 // blue + draft gold); add new entries as new surfaces adopt the row.
 const ACCENT_TINTS = {
-  "#185FA5": "rgba(24,95,165,0.08)",
+  "var(--brand)": "rgba(24,95,165,0.08)",
   "#c9a227": "rgba(201,162,39,0.10)",
 };

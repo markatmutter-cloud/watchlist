@@ -8,6 +8,7 @@ import { ListingPickerModal } from "./ListingPickerModal";
 import { MarkAsSoldModal } from "./MarkAsSoldModal";
 import { ManageListSheet } from "./ManageListSheet";
 import { fmtUSD } from "../utils";
+import { innerToggleButton } from "../styles";
 
 // Top-level Collections tab — restructured 2026-05-06 (PR #99) into
 // four sub-tabs per Mark's plan:
@@ -159,7 +160,7 @@ export function CollectionsTab({
         {isAuthConfigured && (
           <button onClick={signInWithGoogle} style={{
             padding: "10px 18px", borderRadius: 10, border: "none",
-            background: "#185FA5", color: "#fff", cursor: "pointer",
+            background: "var(--brand)", color: "#fff", cursor: "pointer",
             fontFamily: "inherit", fontSize: 14, fontWeight: 500,
           }}>Sign in</button>
         )}
@@ -388,14 +389,7 @@ function MyCollectionView({
             ["shortlist", `Shortlist (${(wishlistItems || []).length})`],
           ].map(([key, label]) => (
             <button key={key} onClick={() => setToggle(key)}
-              style={{
-                padding: "5px 12px", borderRadius: 999,
-                border: "0.5px solid var(--border)",
-                background: toggle === key ? "var(--text1)" : "transparent",
-                color: toggle === key ? "var(--bg)" : "var(--text2)",
-                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                fontWeight: toggle === key ? 600 : 500,
-              }}>{label}</button>
+              style={innerToggleButton(toggle === key)}>{label}</button>
           ))}
         </div>
         <div style={{ flex: 1 }} />
@@ -406,7 +400,7 @@ function MyCollectionView({
         {toggle === "shortlist" && wishlist && (
           <button onClick={onShortlistAddFromFeed}
             style={{
-              border: "none", background: "#185FA5", color: "#fff",
+              border: "none", background: "var(--brand)", color: "#fff",
               padding: "4px 10px", borderRadius: 6,
               cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
             }}>+ From feed</button>
@@ -425,7 +419,7 @@ function MyCollectionView({
               }}>+ Add a watch</button>
             <button onClick={() => onAddFromFeed(targetCollectionId, `Add to ${targetName}`)}
               style={{
-                border: "none", background: "#185FA5", color: "#fff",
+                border: "none", background: "var(--brand)", color: "#fff",
                 padding: "4px 10px", borderRadius: 6,
                 cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
               }}>+ From feed</button>
@@ -453,7 +447,7 @@ function MyCollectionView({
             </div>
             <button onClick={onShortlistAddFromFeed}
               style={{
-                border: "none", background: "#185FA5", color: "#fff",
+                border: "none", background: "var(--brand)", color: "#fff",
                 padding: "8px 16px", borderRadius: 8,
                 cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
               }}>+ From feed</button>
@@ -483,7 +477,7 @@ function MyCollectionView({
               }}>+ From feed</button>
             <button onClick={() => onAddManual("owned")}
               style={{
-                border: "none", background: "#185FA5", color: "#fff",
+                border: "none", background: "var(--brand)", color: "#fff",
                 padding: "8px 16px", borderRadius: 8,
                 cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
               }}>+ Add a watch</button>
@@ -704,7 +698,7 @@ function ListsView({
         }}>
           <button onClick={() => setSelectedListId(null)} style={{
             border: "none", background: "transparent", cursor: "pointer",
-            color: "#185FA5", fontFamily: "inherit", fontSize: 13, padding: 0,
+            color: "var(--brand)", fontFamily: "inherit", fontSize: 13, padding: 0,
           }}>← All lists</button>
           <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
             {selected.name}
@@ -754,7 +748,7 @@ function ListsView({
                 }}
                 title="Share this list"
                 style={{
-                  border: "none", background: "#185FA5",
+                  border: "none", background: "var(--brand)",
                   color: "#fff", padding: "4px 10px", borderRadius: 6,
                   cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
                 }}>Share</button>
@@ -783,7 +777,7 @@ function ListsView({
                     }}
                     style={{
                       border: "0.5px solid var(--border)", background: "transparent",
-                      color: "#c0392b", padding: "4px 10px", borderRadius: 6,
+                      color: "var(--danger)", padding: "4px 10px", borderRadius: 6,
                       cursor: "pointer", fontFamily: "inherit", fontSize: 12,
                     }}>Delete</button>
                 </>
@@ -1032,7 +1026,7 @@ function ManualItemCard({ item, onRemove, onMarkSold }) {
             <button onClick={async () => {
               setMenuOpen(false);
               if (window.confirm("Remove this watch from the list?")) await onRemove();
-            }} style={menuItemStyle("#c0392b")}>Remove</button>
+            }} style={menuItemStyle("var(--danger)")}>Remove</button>
           </div>
         )}
       </div>
@@ -1049,20 +1043,20 @@ const menuItemStyle = (color) => ({
 
 // ── Inline icons (SVG) ──────────────────────────────────────────
 const inboxIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
     <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
   </svg>
 );
 
 const folderIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
   </svg>
 );
 
 const eyeOffIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M17.94 17.94A10.06 10.06 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
     <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
     <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/>

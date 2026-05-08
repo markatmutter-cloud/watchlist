@@ -131,15 +131,7 @@ export function DesktopShell(props) {
               if (sort === "date") setSort("date-asc");
               else if (sort === "date-asc") setSort("date");
               else setSort("date");
-            }} style={{
-              padding: "6px 12px", borderRadius: 20,
-              border: "0.5px solid var(--border)",
-              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              background: isDate ? "var(--text1)" : "var(--surface)",
-              color:      isDate ? "var(--bg)"    : "var(--text2)",
-              fontWeight: isDate ? 600 : 500,
-              whiteSpace: "nowrap",
-            }}>{label}</button>
+            }} style={{ ...pillBase(isDate, { compact: true, surface: true }), fontWeight: isDate ? 600 : 500 }}>{label}</button>
           );
         })()}
         {(() => {
@@ -152,15 +144,7 @@ export function DesktopShell(props) {
               if (sort === "price-desc") setSort("price-asc");
               else if (sort === "price-asc") setSort("price-desc");
               else setSort("price-desc");
-            }} style={{
-              padding: "6px 12px", borderRadius: 20,
-              border: "0.5px solid var(--border)",
-              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              background: isPrice ? "var(--text1)" : "var(--surface)",
-              color:      isPrice ? "var(--bg)"    : "var(--text2)",
-              fontWeight: isPrice ? 600 : 500,
-              whiteSpace: "nowrap",
-            }}>{label}</button>
+            }} style={{ ...pillBase(isPrice, { compact: true, surface: true }), fontWeight: isPrice ? 600 : 500 }}>{label}</button>
           );
         })()}
         {/* Lot # pill retired 2026-05-07 (Mark feedback): the
@@ -179,13 +163,10 @@ export function DesktopShell(props) {
             aria-pressed={!!filterHearted}
             title={filterHearted ? "Show all" : "Show only saved"}
             style={{
-              padding: "6px 12px", borderRadius: 20,
-              border: "0.5px solid var(--border)",
-              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              background: filterHearted ? "#185FA5" : "var(--surface)",
-              color:      filterHearted ? "#fff"    : "var(--text2)",
+              ...pillBase(!!filterHearted, { compact: true, surface: true }),
+              background: filterHearted ? "var(--brand)" : "var(--surface)",
+              color:      filterHearted ? "#fff"         : "var(--text2)",
               fontWeight: filterHearted ? 600 : 500,
-              whiteSpace: "nowrap",
               display: "flex", alignItems: "center", gap: 5,
             }}>
             <svg width="11" height="11" viewBox="0 0 24 24"
@@ -274,8 +255,8 @@ export function DesktopShell(props) {
           fontSize: 13, padding: "6px 12px", borderRadius: 20, cursor: "pointer",
           fontFamily: "inherit", whiteSpace: "nowrap",
           border: "none", outline: "none",
-          background: "transparent", color: "#185FA5",
-          boxShadow: "inset 0 0 0 0.5px #185FA5",
+          background: "transparent", color: "var(--brand)",
+          boxShadow: "inset 0 0 0 0.5px var(--brand)",
         }}>× Clear all</button>
       )}
     </div>
@@ -391,7 +372,7 @@ export function DesktopShell(props) {
                 disabled={currentIsSaved}
                 style={{ flexShrink: 0, background: "none", border: "none",
                         cursor: currentIsSaved ? "default" : "pointer",
-                        color: currentIsSaved ? "#185FA5" : "var(--text3)",
+                        color: currentIsSaved ? "var(--brand)" : "var(--text3)",
                         padding: 2, fontFamily: "inherit",
                         display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill={currentIsSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

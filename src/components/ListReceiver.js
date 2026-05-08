@@ -305,7 +305,7 @@ export function ListReceiver({
       {matchedInvite && !acceptedInviteId && (
         <div style={{
           padding: "12px 14px", borderRadius: 10,
-          border: "1px solid #185FA5",
+          border: "1px solid var(--brand)",
           background: "rgba(24,95,165,0.08)",
           marginBottom: 16,
         }}>
@@ -329,7 +329,7 @@ export function ListReceiver({
       {acceptedInviteId && (
         <div style={{
           padding: "12px 14px", borderRadius: 10,
-          border: "1px solid #185FA5",
+          border: "1px solid var(--brand)",
           background: "rgba(24,95,165,0.08)",
           marginBottom: 16,
         }}>
@@ -454,7 +454,7 @@ function headerStyle() {
 }
 
 const primaryBtnStyle = {
-  border: "none", background: "#185FA5", color: "#fff",
+  border: "none", background: "var(--brand)", color: "#fff",
   padding: "10px 18px", borderRadius: 10,
   cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 500,
 };

@@ -18,7 +18,7 @@ const mmToPx = mm => (mm / MM_PER_IN) * DPI;
 
 // Project blue used as the "owned watch" highlight; matches the
 // existing primary-CTA color used elsewhere (Track button etc.).
-const REF_COLOR = "#185FA5";
+const REF_COLOR = "var(--brand)";
 const REF_FILL  = "rgba(24,95,165,0.10)";
 const REF_FILL_PRINT = "rgba(24,95,165,0.06)";
 

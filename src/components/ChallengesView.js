@@ -65,7 +65,7 @@ export function ChallengesView({
         {isAuthConfigured && (
           <button onClick={signInWithGoogle} style={{
             padding: "10px 18px", borderRadius: 10, border: "none",
-            background: "#185FA5", color: "#fff", cursor: "pointer",
+            background: "var(--brand)", color: "#fff", cursor: "pointer",
             fontFamily: "inherit", fontSize: 14, fontWeight: 500,
           }}>Sign in</button>
         )}
@@ -216,7 +216,7 @@ export function ChallengesView({
             const isDraft = c.state === "draft";
             // Disc tint carries the draft-vs-complete signal —
             // gold for draft, blue for complete.
-            const accent = isDraft ? "#c9a227" : "#185FA5";
+            const accent = isDraft ? "#c9a227" : "var(--brand)";
             const subtitle = c.targetCount && c.budget ? (
               <>
                 {picks.length} of {c.targetCount} picks
@@ -246,7 +246,7 @@ export function ChallengesView({
                   <span style={{
                     marginLeft: 8, fontSize: 10, fontWeight: 500,
                     padding: "1px 6px", borderRadius: 3,
-                    background: "rgba(24,95,165,0.10)", color: "#185FA5",
+                    background: "rgba(24,95,165,0.10)", color: "var(--brand)",
                   }}>from {c.senderName}</span>
                 )}
               </>

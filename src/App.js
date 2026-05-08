@@ -38,7 +38,7 @@ import { WatchlistTab } from "./components/WatchlistTab";
 import { AdminTab } from "./components/AdminTab";
 import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
-import { tabPill } from "./styles";
+import { tabPill, innerToggleButton } from "./styles";
 
 const LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/listings.json";
 const AUCTIONS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/auctions.json";
@@ -893,10 +893,12 @@ export default function Watchlist() {
     "--bg": "#000", "--surface": "#1c1c1e", "--card-bg": "#2c2c2e",
     "--border": "rgba(255,255,255,0.1)", "--text1": "#f5f5f7",
     "--text2": "#98989d", "--text3": "#48484a",
+    "--brand": "var(--brand)", "--danger": "var(--danger)",
   } : {
     "--bg": "#fff", "--surface": "#f5f5f7", "--card-bg": "#fff",
     "--border": "rgba(0,0,0,0.09)", "--text1": "#1d1d1f",
     "--text2": "#6e6e73", "--text3": "#aeaeb2",
+    "--brand": "var(--brand)", "--danger": "var(--danger)",
   };
 
   // Auction lots projected into the main listings feed. Two sources
@@ -2348,15 +2350,7 @@ export default function Watchlist() {
         const active = watchTopTab === key;
         return (
           <button key={key} onClick={() => setWatchTopTab(key)}
-            style={{
-              padding: "5px 12px", borderRadius: 999,
-              border: "0.5px solid var(--border)",
-              background: active ? "var(--text1)" : "transparent",
-              color: active ? "var(--bg)" : "var(--text2)",
-              cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-              fontWeight: active ? 600 : 500,
-              flexShrink: 0,
-            }}>{label}</button>
+            style={innerToggleButton(active)}>{label}</button>
         );
       })}
     </>

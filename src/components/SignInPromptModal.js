@@ -24,7 +24,7 @@ const INSTAGRAM_URL = "https://instagram.com/the_watch_list.app";
 const primaryBtn = {
   display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
   width: "100%", padding: "12px 16px", borderRadius: 10,
-  border: "none", background: "#185FA5", color: "#fff",
+  border: "none", background: "var(--brand)", color: "#fff",
   fontFamily: "inherit", fontSize: 14, fontWeight: 500,
   cursor: "pointer",
 };

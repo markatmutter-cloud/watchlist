@@ -163,7 +163,7 @@ export function WatchlistTab(props) {
         // fires from inside SignInPromptModal which this opens.
         <button onClick={signInWithGoogle} style={{
           padding: "10px 18px", borderRadius: 10, border: "none",
-          background: "#185FA5", color: "#fff", cursor: "pointer",
+          background: "var(--brand)", color: "#fff", cursor: "pointer",
           fontFamily: "inherit", fontSize: 14, fontWeight: 500,
         }}>Sign in</button>
       )}
@@ -192,10 +192,6 @@ export function WatchlistTab(props) {
     searches: {
       heading: "Sign in to use saved searches",
       blurb: "Save the queries you keep coming back to — a reference, a brand cut, a phrase you scan for. Each one runs across every dealer in the feed and tells you when something new matches.",
-    },
-    collections: {
-      heading: "Sign in to use lists",
-      blurb: "Group watches by reference, theme, or research thread — \"Rolex 5513s\", \"Vintage divers\", \"Reference comps\". Lists sync across every device you use, and you can share any list with one tap.",
     },
   };
   const signedOutCopy = SIGNED_OUT_BY_SUBTAB[watchTopTab] || SIGNED_OUT_BY_SUBTAB.listings;
@@ -245,7 +241,7 @@ export function WatchlistTab(props) {
           fontFamily: "inherit", fontSize: 13,
         }}>Cancel</button>
         <button onClick={commitSearch} style={{
-          border: "none", background: "#185FA5", color: "#fff",
+          border: "none", background: "var(--brand)", color: "#fff",
           padding: "6px 12px", borderRadius: 6, cursor: "pointer",
           fontFamily: "inherit", fontSize: 13,
         }}>Save</button>
@@ -291,7 +287,7 @@ export function WatchlistTab(props) {
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={runImport} style={{
           padding: "7px 14px", borderRadius: 8, border: "none",
-          background: "#185FA5", color: "#fff", cursor: "pointer",
+          background: "var(--brand)", color: "#fff", cursor: "pointer",
           fontFamily: "inherit", fontSize: 13, fontWeight: 500,
         }}>Import now</button>
         <button onClick={() => {
@@ -401,7 +397,7 @@ export function WatchlistTab(props) {
                     // App.js), so the answer is "new this week".
                     // Label updated for clarity; tooltip echoes it.
                     <div title="New this week (last 7 days, excluding backfilled archive)"
-                      style={{ fontSize: 11, fontWeight: 500, color: "#fff", background: "#185FA5", borderRadius: 10, padding: "2px 8px" }}>
+                      style={{ fontSize: 11, fontWeight: 500, color: "#fff", background: "var(--brand)", borderRadius: 10, padding: "2px 8px" }}>
                       {s.newCount} new this week
                     </div>
                   )}

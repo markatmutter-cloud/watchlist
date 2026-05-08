@@ -60,10 +60,10 @@ function ChipDot({ kind }) {
   const map = {
     good: { color: "#1f9d4f", glyph: "●", label: "Earning" },
     meh:  { color: "#c9a227", glyph: "●", label: "Marginal" },
-    bad:  { color: "#c0392b", glyph: "●", label: "Prune candidate" },
+    bad:  { color: "var(--danger)", glyph: "●", label: "Prune candidate" },
     ok:   { color: "#1f9d4f", glyph: "✓", label: "Healthy" },
     warn: { color: "#c9a227", glyph: "⚠", label: "Warning" },
-    error:{ color: "#c0392b", glyph: "✗", label: "Error" },
+    error:{ color: "var(--danger)", glyph: "✗", label: "Error" },
   };
   const c = map[kind] || map.meh;
   return (
@@ -579,7 +579,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
           marginBottom: 16,
           padding: "10px 14px",
           borderRadius: 8,
-          border: "0.5px solid #c0392b",
+          border: "0.5px solid var(--danger)",
           background: "rgba(192, 57, 43, 0.08)",
           fontSize: 13,
           color: "var(--text1)",
@@ -596,7 +596,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
       )}
 
       {loadError && (
-        <div style={{ color: "#c0392b", fontSize: 13, marginBottom: 12 }}>
+        <div style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>
           Failed to load report data: {loadError}
         </div>
       )}
@@ -842,7 +842,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
           {capBusy ? "Saving…" : "Set cap"}
         </button>
         {capError && (
-          <div style={{ flex: "1 1 100%", color: "#c0392b", fontSize: 12, marginTop: 4 }}>
+          <div style={{ flex: "1 1 100%", color: "var(--danger)", fontSize: 12, marginTop: 4 }}>
             {capError}
           </div>
         )}

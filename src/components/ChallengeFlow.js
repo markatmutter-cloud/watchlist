@@ -72,7 +72,7 @@ function Stepper({ activeStage }) {
             }}>
               <span style={{
                 display: "inline-block", width: 8, height: 8, borderRadius: "50%",
-                background: isActive ? "#185FA5" : (isPast ? "var(--text2)" : "var(--border)"),
+                background: isActive ? "var(--brand)" : (isPast ? "var(--text2)" : "var(--border)"),
               }} />
               {s.label}
             </span>
@@ -241,7 +241,7 @@ export function CreateStage({ challenge, onSubmit, onCancel, onDelete }) {
         <button onClick={handleSubmit} disabled={count < 1 || budget <= 0}
           style={{
             padding: "8px 16px", borderRadius: 8, border: "none",
-            background: "#185FA5", color: "#fff", cursor: "pointer",
+            background: "var(--brand)", color: "#fff", cursor: "pointer",
             fontFamily: "inherit", fontSize: 13, fontWeight: 500,
             opacity: (count < 1 || budget <= 0) ? 0.5 : 1,
           }}>Start picking →</button>
@@ -464,7 +464,7 @@ function PickingStage({
             style={{
               width: "100%",
               padding: "10px 18px", borderRadius: 8, border: "none",
-              background: "#185FA5", color: "#fff",
+              background: "var(--brand)", color: "#fff",
               cursor: canComplete ? "pointer" : "not-allowed",
               fontFamily: "inherit", fontSize: 14, fontWeight: 500,
               opacity: canComplete ? 1 : 0.4,
@@ -501,7 +501,7 @@ function PickingStage({
           </p>
         )}
         {allFilled && hardBlocked && (
-          <p style={{ fontSize: 12, color: "#c0392b", marginTop: 10 }}>
+          <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 10 }}>
             Too far over budget — remove a pick to continue.
           </p>
         )}
@@ -587,12 +587,12 @@ function PickingStage({
               />
               <button onClick={handlePaste} style={{
                 padding: "8px 14px", borderRadius: 6, border: "none",
-                background: "#185FA5", color: "#fff", cursor: "pointer",
+                background: "var(--brand)", color: "#fff", cursor: "pointer",
                 fontFamily: "inherit", fontSize: 13, fontWeight: 500,
               }}>Add</button>
             </div>
             {pasteError && (
-              <p style={{ fontSize: 12, color: "#c0392b", margin: "6px 0 0", lineHeight: 1.4 }}>
+              <p style={{ fontSize: 12, color: "var(--danger)", margin: "6px 0 0", lineHeight: 1.4 }}>
                 {pasteError}
               </p>
             )}
@@ -773,7 +773,7 @@ function StatCard({ label, value, sub, progress, warn, hardWarn, warnLabel }) {
   return (
     <div style={{
       background: "var(--card-bg)", borderRadius: 8,
-      border: hardWarn ? "0.5px solid #c0392b" : "0.5px solid var(--border)",
+      border: hardWarn ? "0.5px solid var(--danger)" : "0.5px solid var(--border)",
       padding: "12px 14px",
     }}>
       <p style={{ fontSize: 11, fontWeight: 600, color: "var(--text2)", textTransform: "uppercase",
@@ -785,12 +785,12 @@ function StatCard({ label, value, sub, progress, warn, hardWarn, warnLabel }) {
       <div style={{ height: 2, background: "var(--surface)", borderRadius: 1, overflow: "hidden" }}>
         <div style={{
           height: "100%", width: `${progress}%`,
-          background: hardWarn ? "#c0392b" : warn ? "#c9a227" : "var(--text1)",
+          background: hardWarn ? "var(--danger)" : warn ? "#c9a227" : "var(--text1)",
           transition: "width 0.2s ease",
         }} />
       </div>
       {warnLabel && (
-        <p style={{ fontSize: 11, color: hardWarn ? "#c0392b" : "#c9a227", margin: "6px 0 0", fontStyle: "italic" }}>
+        <p style={{ fontSize: 11, color: hardWarn ? "var(--danger)" : "#c9a227", margin: "6px 0 0", fontStyle: "italic" }}>
           {warnLabel}
         </p>
       )}
@@ -866,7 +866,7 @@ function CompleteStage({ challenge, items, onShareSpec, onShareComplete, onBack,
             title="Send with your picks visible — recipient sees what you chose"
             style={{
               padding: "9px 16px", borderRadius: 8, border: "none",
-              background: "#185FA5", color: "#fff", cursor: "pointer",
+              background: "var(--brand)", color: "#fff", cursor: "pointer",
               fontFamily: "inherit", fontSize: 14, fontWeight: 500,
             }}>Share my collection →</button>
         )}

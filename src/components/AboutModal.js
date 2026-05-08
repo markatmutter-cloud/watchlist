@@ -172,7 +172,7 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
                     <div style={featureVerb}>
                       <span style={{
                         width: 18, height: 18, borderRadius: 4,
-                        background: "#185FA5", color: "#fff",
+                        background: "var(--brand)", color: "#fff",
                         fontSize: 11, fontWeight: 700,
                         display: "inline-flex", alignItems: "center", justifyContent: "center",
                       }}>{verb[0]}</span>
@@ -223,7 +223,7 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
             borderTop: "0.5px solid var(--border)",
           }}>
             <button onClick={onClose} style={{
-              border: "none", background: "#185FA5", color: "#fff",
+              border: "none", background: "var(--brand)", color: "#fff",
               padding: "10px 20px", borderRadius: 10,
               fontFamily: "inherit", fontSize: 14, fontWeight: 500,
               cursor: "pointer",

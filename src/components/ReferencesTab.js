@@ -21,7 +21,7 @@ import { SubTabIntro } from "./SubTabIntro";
 // Resource row glyphs.
 function RulerIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5"
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)"
          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M21.3 8.7L15.3 2.7a1 1 0 0 0-1.4 0L2.7 13.9a1 1 0 0 0 0 1.4l6 6a1 1 0 0 0 1.4 0L21.3 10.1a1 1 0 0 0 0-1.4z"/>
       <path d="M7.5 12.5l1.5 1.5"/>
@@ -32,7 +32,7 @@ function RulerIcon() {
 }
 function LinkIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5"
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)"
          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
       <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>

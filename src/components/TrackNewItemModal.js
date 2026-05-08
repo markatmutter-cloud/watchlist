@@ -55,7 +55,7 @@ export function TrackNewItemModal({
           style={{ ...inp, width: "100%", fontSize: 13, marginBottom: 8 }}
         />
         {trackError && (
-          <div style={{ fontSize: 11, color: "#c0392b", marginBottom: 8 }}>{trackError}</div>
+          <div style={{ fontSize: 11, color: "var(--danger)", marginBottom: 8 }}>{trackError}</div>
         )}
         <div style={{ fontSize: 10, color: "var(--text3)", lineHeight: 1.55, marginBottom: 14 }}>
           Supported: eBay item URLs — auction or Buy-It-Now, any region
@@ -70,7 +70,7 @@ export function TrackNewItemModal({
             cursor: "pointer", fontFamily: "inherit", fontSize: 13,
           }}>Cancel</button>
           <button onClick={submitTrack} disabled={trackBusy || !trackUrl.trim()} style={{
-            border: "none", background: "#185FA5", color: "#fff",
+            border: "none", background: "var(--brand)", color: "#fff",
             padding: "8px 16px", borderRadius: 8, cursor: "pointer",
             fontFamily: "inherit", fontSize: 13, fontWeight: 500,
             opacity: (trackBusy || !trackUrl.trim()) ? 0.5 : 1,

@@ -113,7 +113,7 @@ export function CollectionPickerModal({
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "12px 14px", borderRadius: 10,
-                  border: alreadyHere ? "1px solid #185FA5" : "0.5px solid var(--border)",
+                  border: alreadyHere ? "1px solid var(--brand)" : "0.5px solid var(--border)",
                   background: alreadyHere ? "rgba(24,95,165,0.08)" : "var(--card-bg)",
                   color: "var(--text1)",
                   cursor: busy ? "wait" : "pointer",
@@ -126,7 +126,7 @@ export function CollectionPickerModal({
                   <span style={{
                     width: 18, height: 18, borderRadius: 4,
                     border: alreadyHere ? "none" : "1.5px solid var(--text3)",
-                    background: alreadyHere ? "#185FA5" : "transparent",
+                    background: alreadyHere ? "var(--brand)" : "transparent",
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
                     flexShrink: 0,
                   }}>
@@ -147,7 +147,7 @@ export function CollectionPickerModal({
           })}
         </div>
 
-        {error && <div style={{ fontSize: 12, color: "#c0392b", marginBottom: 8 }}>{error}</div>}
+        {error && <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 8 }}>{error}</div>}
 
         {creating ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 8,
@@ -169,7 +169,7 @@ export function CollectionPickerModal({
                 fontFamily: "inherit", fontSize: 13,
               }}>Cancel</button>
               <button onClick={submitNew} disabled={busy || !newName.trim()} style={{
-                border: "none", background: "#185FA5", color: "#fff",
+                border: "none", background: "var(--brand)", color: "#fff",
                 padding: "6px 12px", borderRadius: 6, cursor: "pointer",
                 fontFamily: "inherit", fontSize: 13, fontWeight: 500,
                 opacity: (!newName.trim() || busy) ? 0.5 : 1,
@@ -181,7 +181,7 @@ export function CollectionPickerModal({
             width: "100%", textAlign: "left",
             padding: "12px 14px", borderRadius: 10,
             border: "0.5px dashed var(--border)", background: "transparent",
-            color: "#185FA5", cursor: "pointer",
+            color: "var(--brand)", cursor: "pointer",
             fontFamily: "inherit", fontSize: 14, fontWeight: 500,
           }}>+ Create new list</button>
         )}
@@ -196,7 +196,7 @@ export function CollectionPickerModal({
           borderTop: "0.5px solid var(--border)",
         }}>
           <button onClick={close} disabled={busy} style={{
-            border: "none", background: "#185FA5", color: "#fff",
+            border: "none", background: "var(--brand)", color: "#fff",
             padding: "10px 22px", borderRadius: 10, cursor: "pointer",
             fontFamily: "inherit", fontSize: 14, fontWeight: 500,
           }}>Done</button>

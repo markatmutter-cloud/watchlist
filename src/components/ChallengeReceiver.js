@@ -490,7 +490,7 @@ function OrientationAnchors({ signedIn, onClickAnchor, onSignIn, signInCopy }) {
             </button>
           )}
           <button onClick={() => onClickAnchor("references")} style={anchorBtnStyle}>
-            Cool stuff (tools + links) →
+            Learn (tools + links) →
           </button>
         </div>
       </div>
@@ -514,7 +514,7 @@ const focusedCardStyle = () => ({
 
 const primaryBtnStyle = (busy) => ({
   border: "none",
-  background: "#185FA5",
+  background: "var(--brand)",
   color: "#fff",
   padding: "10px 18px",
   borderRadius: 8,

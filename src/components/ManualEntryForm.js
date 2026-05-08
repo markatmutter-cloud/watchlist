@@ -183,7 +183,7 @@ export function ManualEntryForm({
 
         {/* Required: brand. Optional: model / reference / material. */}
         <div style={{ marginBottom: 10 }}>
-          <Label>Brand <span style={{ color: "#c0392b" }}>*</span></Label>
+          <Label>Brand <span style={{ color: "var(--danger)" }}>*</span></Label>
           <input autoFocus value={brand}
             onChange={e => { setBrand(e.target.value); setError(""); }}
             placeholder="e.g. Rolex"
@@ -266,7 +266,7 @@ export function ManualEntryForm({
         </div>
 
         {error && (
-          <div style={{ fontSize: 12, color: "#c0392b", marginBottom: 10 }}>{error}</div>
+          <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 10 }}>{error}</div>
         )}
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -276,7 +276,7 @@ export function ManualEntryForm({
             cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit", fontSize: 13,
           }}>Cancel</button>
           <button onClick={submit} disabled={!canSave} style={{
-            border: "none", background: "#185FA5", color: "#fff",
+            border: "none", background: "var(--brand)", color: "#fff",
             padding: "8px 14px", borderRadius: 8,
             cursor: canSave ? "pointer" : "not-allowed",
             fontFamily: "inherit", fontSize: 13, fontWeight: 500,

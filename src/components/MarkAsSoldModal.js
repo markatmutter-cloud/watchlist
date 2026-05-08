@@ -99,7 +99,7 @@ export function MarkAsSoldModal({
             style={{ ...inp, fontSize: 14 }} />
         </div>
         {error && (
-          <div style={{ fontSize: 12, color: "#c0392b", marginBottom: 10 }}>{error}</div>
+          <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 10 }}>{error}</div>
         )}
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button onClick={onClose} disabled={busy} style={{
@@ -108,7 +108,7 @@ export function MarkAsSoldModal({
             cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit", fontSize: 13,
           }}>Cancel</button>
           <button onClick={submit} disabled={busy} style={{
-            border: "none", background: "#185FA5", color: "#fff",
+            border: "none", background: "var(--brand)", color: "#fff",
             padding: "8px 14px", borderRadius: 8,
             cursor: busy ? "not-allowed" : "pointer",
             fontFamily: "inherit", fontSize: 13, fontWeight: 500,
