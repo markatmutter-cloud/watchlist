@@ -148,6 +148,17 @@ export function MobileShell(props) {
         {!anyShareActive && !noFilterableList && (
         <div style={{ display: "flex", gap: 6, padding: "4px 14px 6px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
           <span style={{ fontSize: 12, color: "var(--text3)", marginRight: 2, flexShrink: 0 }}>{displayedCount}</span>
+          {/* Saved hearted-sub-tab toggle (Listings/Auctions/Sold)
+              prepended into the filter row on Saved + a hearted
+              sub-tab. Thin divider after the cluster so it visually
+              separates from the Date / Price / Hearted controls.
+              (2026-05-08 — Mark feedback: was a separate row.) */}
+          {watchHeartedToggleJSX && (
+            <>
+              {watchHeartedToggleJSX}
+              <div aria-hidden style={{ width: 1, height: 18, background: "var(--border)", margin: "0 4px", flexShrink: 0 }} />
+            </>
+          )}
           {/* Date sort pill — semantics depend on the active Listings
               sub-tab (newest firstSeen on Live; ending order on Live
               auctions; sold-date on All sold). Dispatch lives in
@@ -228,7 +239,10 @@ export function MobileShell(props) {
             landing for the same reason as the sort row above. */}
         {!anyShareActive && listingsSubTabsJSX}
         {!anyShareActive && watchSubTabsJSX}
-        {!anyShareActive && watchHeartedToggleJSX}
+        {/* watchHeartedToggleJSX is embedded inside the sort/filter
+            row above (2026-05-08 — Mark feedback) so the
+            Listings/Auctions/Sold pills sit on the same line as
+            Date/Price/Hearted rather than a separate row. */}
         {/* collectionsSubTabsJSX retired in Bundle 2A.2 (renders null);
             the prop is kept on the destructure for backward compat
             with the mock fixture. */}
