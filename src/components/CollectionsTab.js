@@ -6,6 +6,7 @@ import { ChallengesView } from "./ChallengesView";
 import { ManualEntryForm } from "./ManualEntryForm";
 import { ListingPickerModal } from "./ListingPickerModal";
 import { MarkAsSoldModal } from "./MarkAsSoldModal";
+import { ManageListSheet } from "./ManageListSheet";
 import { fmtUSD } from "../utils";
 
 // Top-level Collections tab — restructured 2026-05-06 (PR #99) into
@@ -67,6 +68,8 @@ export function CollectionsTab({
   const [pickerCollectionId, setPickerCollectionId] = useState(null);
   const [pickerTitle, setPickerTitle] = useState("Add to collection");
   const [soldTarget, setSoldTarget] = useState(null);
+  // List Sharing v2 / slice 2 — Manage list sheet state.
+  const [manageListOpen, setManageListOpen] = useState(false);
 
   // Lists sub-tab drill-in selection — moved here from the top-level
   // CollectionsTab pre-restructure. URL-synced via `?col=`. Only
@@ -283,6 +286,22 @@ export function CollectionsTab({
         item={soldTarget?.item}
         inp={inp}
         onConfirm={(opts) => collectionsApi?.markItemAsSold(soldTarget.rowId, opts)}
+      />
+      {/* List Sharing v2 / slice 2 — Manage list sheet. Renders only
+          when manageListOpen is true; opened from the list drill-in
+          "Manage" button. The sheet itself fetches the collaborator
+          roster on open via collectionsApi.listCollaborators. */}
+      <ManageListSheet
+        open={manageListOpen}
+        onClose={() => setManageListOpen(false)}
+        user={user}
+        collection={selectedListId
+          ? cols.find(c => c.id === selectedListId) || null
+          : null}
+        inp={inp}
+        inviteCollaborator={collectionsApi?.inviteCollaborator}
+        revokeCollaborator={collectionsApi?.revokeCollaborator}
+        listCollaborators={collectionsApi?.listCollaborators}
       />
     </div>
   );
@@ -646,7 +665,14 @@ function ListsView({
           <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
             {items.length}
           </span>
-          {!selected.isSharedInbox && !isHiddenColl && (
+          {!selected.isSharedInbox && !isHiddenColl && (() => {
+            // Owner-only actions vs collaborator-visible actions.
+            // List Sharing v2 / slice 1: SELECT RLS now includes
+            // accepted collaborators, so a "selected" list might not
+            // be owned by the current user. Gate Manage / Rename /
+            // Delete to the owner; collaborators only see Share.
+            const isOwner = !!(user?.id && selected?.user_id && user.id === selected.user_id);
+            return (
             <>
               {/* Share — copies a `?list=<id>&shared=1` link via the
                   Web Share API (or clipboard fallback). Recipients
@@ -679,25 +705,39 @@ function ListsView({
                   color: "#fff", padding: "4px 10px", borderRadius: 6,
                   cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
                 }}>Share</button>
-              <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
-                title="Rename list"
-                style={{
-                  border: "0.5px solid var(--border)", background: "transparent",
-                  color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
-                  cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                }}>Rename</button>
-              <button onClick={async () => {
-                  if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
-                  await deleteCollection(selected.id);
-                  setSelectedListId(null);
-                }}
-                style={{
-                  border: "0.5px solid var(--border)", background: "transparent",
-                  color: "#c0392b", padding: "4px 10px", borderRadius: 6,
-                  cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                }}>Delete</button>
+              {/* Manage / Rename / Delete are owner-only. Collaborators
+                  see the list + Share button only. */}
+              {isOwner && (
+                <>
+                  <button onClick={() => setManageListOpen(true)}
+                    title="Manage collaborators"
+                    style={{
+                      border: "0.5px solid var(--border)", background: "transparent",
+                      color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
+                      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                    }}>Manage</button>
+                  <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
+                    title="Rename list"
+                    style={{
+                      border: "0.5px solid var(--border)", background: "transparent",
+                      color: "var(--text2)", padding: "4px 10px", borderRadius: 6,
+                      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                    }}>Rename</button>
+                  <button onClick={async () => {
+                      if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
+                      await deleteCollection(selected.id);
+                      setSelectedListId(null);
+                    }}
+                    style={{
+                      border: "0.5px solid var(--border)", background: "transparent",
+                      color: "#c0392b", padding: "4px 10px", borderRadius: 6,
+                      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                    }}>Delete</button>
+                </>
+              )}
             </>
-          )}
+            );
+          })()}
         </div>
         {items.length === 0 ? (
           <div style={{ padding: "48px 20px", textAlign: "center" }}>
