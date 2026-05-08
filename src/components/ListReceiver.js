@@ -47,6 +47,12 @@ export function ListReceiver({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [savedCopyId, setSavedCopyId] = useState(null);
+  // List Sharing v2 / slice 3: when the invitee opens the share link
+  // and is signed in with the email the owner used to invite them,
+  // we surface an inline "Accept invite" CTA. matchedInvite holds
+  // the pending invite row when it matches the URL list_id.
+  const [matchedInvite, setMatchedInvite] = useState(null);
+  const [acceptedInviteId, setAcceptedInviteId] = useState(null);
 
   // Parse URL on mount.
   useEffect(() => {
@@ -75,6 +81,8 @@ export function ListReceiver({
       setData(null);
       setError("");
       setSavedCopyId(null);
+      setMatchedInvite(null);
+      setAcceptedInviteId(null);
     }
   }, [resetTick]);
 
@@ -96,6 +104,24 @@ export function ListReceiver({
     return () => { cancelled = true; };
   }, [listId]);
 
+  // List Sharing v2 / slice 3: when the invitee is signed in, check
+  // their pending invites against the URL list_id. If a match exists,
+  // surface an "Accept invite" CTA inline. Re-runs when listId or
+  // user changes (e.g. invitee signs in mid-session).
+  useEffect(() => {
+    if (!listId || !user || !collectionsApi?.fetchPendingInvitesForMe) {
+      setMatchedInvite(null);
+      return undefined;
+    }
+    let cancelled = false;
+    collectionsApi.fetchPendingInvitesForMe().then(({ rows }) => {
+      if (cancelled) return;
+      const match = (rows || []).find(r => r.collection_id === listId) || null;
+      setMatchedInvite(match);
+    });
+    return () => { cancelled = true; };
+  }, [listId, user, collectionsApi]);
+
   const clearIntent = useCallback(() => {
     setListId(null);
     setData(null);
@@ -113,6 +139,53 @@ export function ListReceiver({
     clearIntent();
     if (typeof setTab === "function") setTab("listings");
   }, [clearIntent, setTab]);
+
+  // Slice 3 — accept the matched invite, then drop the user into
+  // Saved > Lists drilled into the (now-shared) list. RLS expansion
+  // from slice 1 means the list shows up in their normal Lists
+  // surface immediately after accept.
+  const onAcceptInvite = useCallback(async () => {
+    if (!matchedInvite || !collectionsApi?.acceptInvite) return;
+    setBusy(true);
+    setError("");
+    const res = await collectionsApi.acceptInvite(matchedInvite.invite_id);
+    setBusy(false);
+    if (res?.error) {
+      setError(res.error);
+      return;
+    }
+    setAcceptedInviteId(matchedInvite.invite_id);
+    setMatchedInvite(null);
+  }, [matchedInvite, collectionsApi]);
+
+  const onOpenSharedList = useCallback(() => {
+    if (!listId) return;
+    clearIntent();
+    // Navigate to Saved > Lists with the col drill-in. App.js +
+    // CollectionsTab handle the URL → state derivation.
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", "watchlist");
+      url.searchParams.set("sub", "lists");
+      url.searchParams.set("col", listId);
+      window.history.pushState({}, "", url.toString());
+      // Force the receivers to clear + the shells to re-derive.
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    } catch {}
+  }, [listId, clearIntent]);
+
+  const onDeclineInvite = useCallback(async () => {
+    if (!matchedInvite || !collectionsApi?.declineInvite) return;
+    setBusy(true);
+    setError("");
+    const res = await collectionsApi.declineInvite(matchedInvite.invite_id);
+    setBusy(false);
+    if (res?.error) {
+      setError(res.error);
+      return;
+    }
+    setMatchedInvite(null);
+  }, [matchedInvite, collectionsApi]);
 
   // Save a copy — creates a new list owned by the recipient with the
   // same items. Listing-backed rows are looked up against the public
@@ -215,7 +288,7 @@ export function ListReceiver({
   return (
     <div style={landingPaneStyle()}>
       <div style={{ marginBottom: 6, fontSize: 12, color: "var(--text3)", letterSpacing: "0.04em", textTransform: "uppercase", fontWeight: 600 }}>
-        Shared list
+        {acceptedInviteId ? "Joined list" : matchedInvite ? "Invite to join" : "Shared list"}
       </div>
       <h2 style={headerStyle()}>{data.name}</h2>
       <p style={{ fontSize: 13, color: "var(--text2)", marginBottom: 16 }}>
@@ -224,18 +297,67 @@ export function ListReceiver({
           : `${itemCount} watch${itemCount === 1 ? "" : "es"}`}
       </p>
 
+      {/* List Sharing v2 / slice 3 — accept-invite banner. Surfaces
+          when the signed-in user has a pending invite for THIS list.
+          Replaces the "Save a copy" CTA: accept gives them the
+          owner's actual list (not a snapshot), with the role the
+          owner picked. */}
+      {matchedInvite && !acceptedInviteId && (
+        <div style={{
+          padding: "12px 14px", borderRadius: 10,
+          border: "1px solid #185FA5",
+          background: "rgba(24,95,165,0.08)",
+          marginBottom: 16,
+        }}>
+          <div style={{ fontSize: 13, color: "var(--text1)", marginBottom: 8, lineHeight: 1.5 }}>
+            <strong>{matchedInvite.inviter_name || matchedInvite.inviter_email}</strong> invited
+            you to collaborate on this list as a <strong>{matchedInvite.role}</strong>.
+            Accept to add it to your Saved &gt; Lists, where you can see new additions live.
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button onClick={onAcceptInvite} disabled={busy} style={primaryBtnStyle}>
+              {busy ? "Joining…" : "Accept invite"}
+            </button>
+            <button onClick={onDeclineInvite} disabled={busy} style={secondaryBtnStyle}>
+              Decline
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Post-accept success — drop them straight into the shared list. */}
+      {acceptedInviteId && (
+        <div style={{
+          padding: "12px 14px", borderRadius: 10,
+          border: "1px solid #185FA5",
+          background: "rgba(24,95,165,0.08)",
+          marginBottom: 16,
+        }}>
+          <div style={{ fontSize: 13, color: "var(--text1)", marginBottom: 8 }}>
+            You're in. The list now shows up under your Saved &gt; Lists.
+          </div>
+          <button onClick={onOpenSharedList} style={primaryBtnStyle}>
+            Open the shared list →
+          </button>
+        </div>
+      )}
+
       {/* CTAs above the items so the user doesn't have to scroll past
           a long list to find them. Mirrors the sticky-Finish pattern
-          on ChallengeFlow's picking stage. */}
+          on ChallengeFlow's picking stage. The "Save a copy" path
+          stays available even with a matched invite — some recipients
+          will prefer their own copy (e.g., wanting to make solo edits
+          without affecting the shared set). */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
-        {user && (
-          <button onClick={onSaveCopy} disabled={busy} style={primaryBtnStyle}>
+        {user && !acceptedInviteId && (
+          <button onClick={onSaveCopy} disabled={busy}
+            style={matchedInvite ? secondaryBtnStyle : primaryBtnStyle}>
             {busy ? "Saving…" : "Save a copy to my lists"}
           </button>
         )}
         {!user && isAuthConfigured && (
           <button onClick={signInWithGoogle} style={primaryBtnStyle}>
-            Sign in to save a copy
+            Sign in to save or accept an invite
           </button>
         )}
         <button onClick={onJustBrowse} style={secondaryBtnStyle}>
