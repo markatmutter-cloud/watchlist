@@ -1543,6 +1543,40 @@ becomes confusion.
 > Epic 0/1/2/5 numbering unchanged. Entries below dated before
 > 2026-05-05 evening reference the pre-restructure scheme.
 
+- 2026-05-08 (afternoon/evening continuation): **UI consistency +
+  design system + create-list bug fix + Supabase cleanup.** 9 commits
+  on `eod-cleanup-2026-05-08` (now pushed). Three arcs:
+  - **Design system layer.** New file [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)
+    + CLAUDE.md pointer. Tokens added: `--brand`, `--danger`,
+    `--accent-positive` CSS vars; `actionButton`, `signInButton`,
+    `inputBase`, `innerToggleButton` style tokens. Components added:
+    `EmptyState` (3 sizes), `Section` (lifted from CollectionsTab).
+    88+ inline hex literals consolidated to vars; ~30 inline
+    button/empty-state copies migrated to tokens. Net negative LOC.
+    `inp` prop-drilling removed across 9 files + test fixtures.
+  - **Create-list RLS fix.** `create_collection_v2` SECURITY DEFINER
+    RPC (same pattern as `create_challenge_v2` from earlier in the
+    day). `createCollection` JS now routes through the RPC. Migration
+    applied to production via Supabase MCP. Same-pattern follow-ups
+    for `ensureSharedInbox` and the hard-list auto-create stay
+    deferred (rows already exist for Mark; only fire for new users).
+  - **Supabase security hardening.** Enabled RLS on
+    `listing_events_daily` (was advisor-flagged ERROR — policies
+    inert). Revoked anon EXECUTE on 15 SECURITY DEFINER functions;
+    revoked authenticated EXECUTE on `rollup_and_prune_listing_events`
+    + `rls_auto_enable`. Pinned `search_path` on
+    `default_watchlist_cap` + `prevent_system_collection_delete`.
+    Added intent-documenting `comment` on `admin_emails` table +
+    `listing_events.Anyone insert` policy so future audits don't
+    re-flag. Deleted three stale local SQL files
+    (failed-RLS-attempt migrations + COMBINED catch-up bundle).
+  - **Watch-photos bucket SELECT-policy drop** + schema-wide
+    `alter default privileges` for anon execute revocation
+    held for explicit OK (deferred).
+  - **Critical regression caught + fixed in same PR sequence:** the
+    initial `--brand`/`--danger` migration's batch perl pass
+    rewrote the var DEFINITIONS too, producing self-referencing
+    `var(--brand)` for the var values. Caught + fixed before push.
 - 2026-05-08: **Bundle 2A IA shipped end-to-end + List Sharing v2
   collaborator slices 1–3 + saved-search \$ filters + RLS investigation
   + a flotilla of hotfixes.** ~20 PRs (#121 → #140), 9 SQL migrations

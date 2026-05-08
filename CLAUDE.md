@@ -874,6 +874,48 @@ To add a new printable tool: render its sheet via `createPortal` to
 `document.body` with a class that matches a selector in the
 `index.html` print rules (or extend the rule's selector list).
 
+## Supabase access
+
+**Claude has direct Supabase MCP access** on this project (project_id
+`abrqfxqmhzycphhbzklm`). Apply migrations via `apply_migration`, run
+queries via `execute_sql`, check security via `get_advisors`, etc. —
+don't ask Mark to copy-paste from the SQL editor. He applies via the
+dashboard manually only when explicitly preferred. Default to MCP for
+DDL + DML; verify with a follow-up `execute_sql` query when results
+matter.
+
+For destructive changes (DROP, schema migrations that touch existing
+data, ALTER DEFAULT PRIVILEGES schema-wide, anything irreversible):
+show the SQL first and ask before running. The MCP permission layer
+will deny over-broad bundles — that's a feature, not a bug.
+
+For dev/branch testing: `create_branch` / `merge_branch` is available
+when production-safety matters more than speed.
+
+**Supabase `public` schema default ACL gotcha.** Supabase pre-configures
+the `public` schema to auto-grant EXECUTE on every newly-created
+function directly to `anon`, `authenticated`, and `service_role` —
+NOT via the PUBLIC pseudo-role. So `revoke execute on function … from
+public` is a **no-op** for functions in `public`. To actually drop
+anon access, `revoke … from anon` explicitly (and `from authenticated`
+for internal-only functions like cron RPCs).
+
+This applies to every new SECURITY DEFINER RPC. The pattern at the
+end of a function-creating migration should be:
+
+```sql
+grant execute on function public.foo(...) to authenticated;
+revoke execute on function public.foo(...) from anon;
+```
+
+(The grant line is sometimes redundant given the default ACL, but
+explicit-grants keep intent legible for future readers.)
+
+A schema-wide fix would be `alter default privileges in schema public
+revoke execute on functions from anon` so future functions stop
+auto-granting to anon. Not applied yet — would need an audit of every
+existing migration's expectations first.
+
 ## Things to never do
 
 - **Don't add `to authenticated` (or any role scope) to a new RLS
