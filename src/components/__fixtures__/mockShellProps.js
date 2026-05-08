@@ -105,6 +105,7 @@ export function buildMockShellProps(overrides = {}) {
     statusSegmentJSX: null,
     trackNewItemModalJSX: null,
     watchSubTabsJSX: <div data-testid="watch-sub-tabs" />,
+    watchHeartedToggleJSX: null,
     collectionsSubTabsJSX: <div data-testid="collections-sub-tabs" />,
     endingSoonJSX: null,
     watchlistTabJSX: <div data-testid="watchlist-tab" />,

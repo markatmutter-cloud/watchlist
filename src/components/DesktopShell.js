@@ -47,7 +47,7 @@ export function DesktopShell(props) {
     challengeReceiverJSX,
     listReceiverJSX,
     listingsSubTabsJSX,
-    trackNewItemModalJSX, watchSubTabsJSX, collectionsSubTabsJSX, watchlistTabJSX,
+    trackNewItemModalJSX, watchSubTabsJSX, watchHeartedToggleJSX, collectionsSubTabsJSX, watchlistTabJSX,
     referencesTabJSX, collectionsTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
@@ -403,6 +403,7 @@ export function DesktopShell(props) {
           sub-tab + filter row chrome until they dismiss / save. */}
       {!anyShareActive && listingsSubTabsJSX}
       {!anyShareActive && watchSubTabsJSX}
+      {!anyShareActive && watchHeartedToggleJSX}
       {/* collectionsSubTabsJSX retired in Bundle 2A.2 (renders null) —
           the four collections-style sub-tabs are now part of
           watchSubTabsJSX. Prop kept on destructure for backward
