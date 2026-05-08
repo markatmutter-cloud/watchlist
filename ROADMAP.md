@@ -1544,7 +1544,7 @@ becomes confusion.
 > 2026-05-05 evening reference the pre-restructure scheme.
 
 - 2026-05-08 (afternoon/evening continuation): **UI consistency +
-  design system + create-list bug fix + Supabase cleanup.** 9 commits
+  design system + create-list bug fix + Supabase cleanup.** 12 commits
   on `eod-cleanup-2026-05-08` (now pushed). Three arcs:
   - **Design system layer.** New file [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)
     + CLAUDE.md pointer. Tokens added: `--brand`, `--danger`,
@@ -1570,9 +1570,15 @@ becomes confusion.
     `listing_events.Anyone insert` policy so future audits don't
     re-flag. Deleted three stale local SQL files
     (failed-RLS-attempt migrations + COMBINED catch-up bundle).
-  - **Watch-photos bucket SELECT-policy drop** + schema-wide
-    `alter default privileges` for anon execute revocation
-    held for explicit OK (deferred).
+    Dropped the broad `watch-photos` bucket SELECT policy (public
+    URL fetches via getPublicUrl bypass storage RLS, so no
+    rendering impact). Schema-wide `alter default privileges`
+    revoke from anon held for the user to apply via SQL editor
+    (needs superuser).
+  - **list_collaborators type-cast fix.** `auth.users.email` is
+    varchar but the function declared `user_email text` — Postgres
+    raised "structure of query does not match function result type"
+    once any auth.users row joined. Added `::text` casts.
   - **Critical regression caught + fixed in same PR sequence:** the
     initial `--brand`/`--danger` migration's batch perl pass
     rewrote the var DEFINITIONS too, producing self-referencing
