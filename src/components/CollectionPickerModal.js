@@ -33,11 +33,19 @@ export function CollectionPickerModal({
   };
 
   // Hide the shared-inbox from the picker — manual adds shouldn't
-  // touch it. Sort by recency (newest first) so freshly-created
-  // collections sit at the top, matching what the user just made.
+  // touch it. Sort by item count (most watches first), then by
+  // recency for tiebreaker (Mark feedback 2026-05-08: "change the
+  // order of the lists to most watches first" — most-used lists
+  // should be at the top so frequent destinations are reached
+  // without scrolling).
+  const countFor = (c) => (itemsByCollection?.[c.id] || []).length;
   const visible = (collections || [])
     .filter(c => !c.isSharedInbox)
-    .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+    .sort((a, b) => {
+      const cb = countFor(b), ca = countFor(a);
+      if (cb !== ca) return cb - ca;
+      return (b.createdAt || "").localeCompare(a.createdAt || "");
+    });
 
   // Toggle membership: add if not in the list, remove if already in.
   // Modal stays open after each toggle so the user can adjust
