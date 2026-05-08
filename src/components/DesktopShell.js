@@ -101,6 +101,21 @@ export function DesktopShell(props) {
       {/* Status segment retired 2026-05-04 — both Listings AND
           Watchlist now have sub-tabs that cover Live / Sold. */}
 
+      {/* Saved hearted-sub-tab toggle (Listings/Auctions/Sold) —
+          rendered as a leading cluster on the filter row when on
+          Saved + a hearted sub-tab. App.js builds the pill fragment
+          (or null when off-tab); a thin divider after the cluster
+          visually separates it from the sort/filter controls.
+          (2026-05-08 — Mark feedback: was a separate row above. */}
+      {watchHeartedToggleJSX && (
+        <>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            {watchHeartedToggleJSX}
+          </div>
+          <div aria-hidden style={{ width: 1, height: 18, background: "var(--border)", margin: "0 2px" }} />
+        </>
+      )}
+
       {/* Sort — Date + Price toggle pills. Date pill semantics depend
           on the active Listings sub-tab (newest firstSeen on Live;
           ending order on Live auctions; sold-date on All sold) — the
@@ -403,7 +418,10 @@ export function DesktopShell(props) {
           sub-tab + filter row chrome until they dismiss / save. */}
       {!anyShareActive && listingsSubTabsJSX}
       {!anyShareActive && watchSubTabsJSX}
-      {!anyShareActive && watchHeartedToggleJSX}
+      {/* watchHeartedToggleJSX is embedded inside filterRowJSX below
+          (2026-05-08 — Mark feedback) so the Listings/Auctions/Sold
+          pills sit on the same line as Date/Price/$Min/Source/Brand
+          rather than a separate row above. */}
       {/* collectionsSubTabsJSX retired in Bundle 2A.2 (renders null) —
           the four collections-style sub-tabs are now part of
           watchSubTabsJSX. Prop kept on destructure for backward

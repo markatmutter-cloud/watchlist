@@ -2301,18 +2301,18 @@ export default function Watchlist() {
     </div>
   );
 
-  // Internal Listings/Auctions/Sold toggle, rendered below the
-  // main sub-tab strip when Saved is active. Bundle 2A.2b — the
-  // three hearted views still exist as separate underlying
-  // sub-tabs, they just share a top-level pill now.
+  // Internal Listings/Auctions/Sold toggle for the Saved tab.
+  // Bundle 2A.2b — the three hearted views still exist as separate
+  // underlying sub-tabs, they just share a top-level pill now.
+  //
+  // 2026-05-08 (Mark feedback) — was a separate row above the filter
+  // row; merged into the filter row to save vertical space. Now
+  // returns a JSX fragment of three pills (no wrapper) so each shell
+  // can prepend it to its filter row inline. The cluster is rendered
+  // exactly when the Saved tab is on a hearted sub-tab; outside that
+  // it's null and shells render the filter row unchanged.
   const watchHeartedToggleJSX = (tab !== "watchlist" || !SAVED_HEARTED_SUBS.includes(watchTopTab)) ? null : (
-    <div style={{
-      display: "flex", gap: 6, alignItems: "center",
-      padding: "8px 16px",
-      background: "var(--bg)",
-      borderBottom: "0.5px solid var(--border)",
-      flexShrink: 0,
-    }}>
+    <>
       {[
         ["listings", "Listings"],
         ["auctions", "Auctions"],
@@ -2332,7 +2332,7 @@ export default function Watchlist() {
             }}>{label}</button>
         );
       })}
-    </div>
+    </>
   );
 
   // collectionsSubTabsJSX retired in Bundle 2A.2 (2026-05-07) —
