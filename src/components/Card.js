@@ -300,7 +300,7 @@ export const Card = memo(function Card({
               <span style={{ fontSize: 10, color: "var(--text3)", letterSpacing: "0.05em", fontWeight: 600 }}>
                 {lotLabel}
               </span>
-              <span style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: item.sold ? "#1b8f3a" : "var(--text1)" }}>
+              <span style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: item.sold ? "var(--accent-positive)" : "var(--text1)" }}>
                 {lotPrimaryDisplay}
               </span>
             </div>
@@ -309,7 +309,7 @@ export const Card = memo(function Card({
               <div style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: item.sold ? "var(--text2)" : "var(--text1)" }}>{displayPrice}</div>
               {priceDropped && (
                 <span title={`Peak ${fmt(peakPrice, item.currency || "USD")} → ${fmt(item.price, item.currency || "USD")}`}
-                  style={{ fontSize: 9, color: "#1b8f3a", fontWeight: 600 }}>
+                  style={{ fontSize: 9, color: "var(--accent-positive)", fontWeight: 600 }}>
                   ↓ {fmt(cumulativeDrop, item.currency || "USD")}
                 </span>
               )}

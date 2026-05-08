@@ -8,7 +8,7 @@ import { ListingPickerModal } from "./ListingPickerModal";
 import { MarkAsSoldModal } from "./MarkAsSoldModal";
 import { ManageListSheet } from "./ManageListSheet";
 import { fmtUSD } from "../utils";
-import { innerToggleButton } from "../styles";
+import { innerToggleButton, actionButton } from "../styles";
 
 // Top-level Collections tab — restructured 2026-05-06 (PR #99) into
 // four sub-tabs per Mark's plan:
@@ -398,12 +398,7 @@ function MyCollectionView({
             shortlist add-from-feed handler. "All" shows no +Add (the
             user picks Owned or Sold first). */}
         {toggle === "shortlist" && wishlist && (
-          <button onClick={onShortlistAddFromFeed}
-            style={{
-              border: "none", background: "var(--brand)", color: "#fff",
-              padding: "8px 12px", borderRadius: 6,
-              cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-            }}>+ From feed</button>
+          <button onClick={onShortlistAddFromFeed} style={actionButton({ variant: "primary" })}>+ From feed</button>
         )}
         {toggle !== "shortlist" && targetCollectionId && (
           <>
@@ -411,18 +406,9 @@ function MyCollectionView({
                 common path and should be the highlighted primary
                 button; Add a watch is the secondary fallback for
                 manual entry of pieces not in the feed. */}
-            <button onClick={() => onAddManual(targetKind)}
-              style={{
-                border: "0.5px solid var(--border)", background: "transparent",
-                color: "var(--text2)", padding: "8px 12px", borderRadius: 6,
-                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-              }}>+ Add a watch</button>
+            <button onClick={() => onAddManual(targetKind)} style={actionButton()}>+ Add a watch</button>
             <button onClick={() => onAddFromFeed(targetCollectionId, `Add to ${targetName}`)}
-              style={{
-                border: "none", background: "var(--brand)", color: "#fff",
-                padding: "8px 12px", borderRadius: 6,
-                cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-              }}>+ From feed</button>
+              style={actionButton({ variant: "primary" })}>+ From feed</button>
           </>
         )}
       </div>
@@ -747,39 +733,23 @@ function ListsView({
                   }
                 }}
                 title="Share this list"
-                style={{
-                  border: "none", background: "var(--brand)",
-                  color: "#fff", padding: "8px 12px", borderRadius: 6,
-                  cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-                }}>Share</button>
+                style={actionButton({ variant: "primary" })}>Share</button>
               {/* Manage / Rename / Delete are owner-only. Collaborators
                   see the list + Share button only. */}
               {isOwner && (
                 <>
                   <button onClick={() => setManageListOpen(true)}
                     title="Manage collaborators"
-                    style={{
-                      border: "0.5px solid var(--border)", background: "transparent",
-                      color: "var(--text2)", padding: "8px 12px", borderRadius: 6,
-                      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                    }}>Manage</button>
+                    style={actionButton()}>Manage</button>
                   <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
                     title="Rename list"
-                    style={{
-                      border: "0.5px solid var(--border)", background: "transparent",
-                      color: "var(--text2)", padding: "8px 12px", borderRadius: 6,
-                      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                    }}>Rename</button>
+                    style={actionButton()}>Rename</button>
                   <button onClick={async () => {
                       if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
                       await deleteCollection(selected.id);
                       setSelectedListId(null);
                     }}
-                    style={{
-                      border: "0.5px solid var(--border)", background: "transparent",
-                      color: "var(--danger)", padding: "8px 12px", borderRadius: 6,
-                      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                    }}>Delete</button>
+                    style={actionButton({ variant: "danger" })}>Delete</button>
                 </>
               )}
             </>

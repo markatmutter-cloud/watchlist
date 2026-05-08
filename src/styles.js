@@ -67,6 +67,40 @@ export const tabPill = (active) => ({
   marginBottom: -1,
 });
 
+// Compact action buttons used in tab headers, list-drill-in toolbars,
+// and inline editors (Share / Manage / Rename / Delete / + From feed /
+// + Add a watch / inline-editor Cancel-Save). Three variants:
+//   - primary: brand-fill, white text, semi-bold (the dominant CTA)
+//   - subtle:  bordered-transparent with text2 (default)
+//   - danger:  bordered-transparent with --danger color
+// Geometry sized so the button lands at ~32px tall — close to the iOS
+// PWA tap-target bar without disrupting visual rhythm in dense headers.
+// Promoted 2026-05-08 from inline duplicates spread across CollectionsTab
+// + WatchlistTab.
+export const actionButton = ({ variant = "subtle" } = {}) => {
+  const base = {
+    padding: "8px 12px", borderRadius: 6,
+    fontFamily: "inherit", fontSize: 12,
+    cursor: "pointer", whiteSpace: "nowrap",
+  };
+  if (variant === "primary") return {
+    ...base,
+    border: "none",
+    background: "var(--brand)", color: "#fff",
+    fontWeight: 500,
+  };
+  if (variant === "danger") return {
+    ...base,
+    border: "0.5px solid var(--border)",
+    background: "transparent", color: "var(--danger)",
+  };
+  return {
+    ...base,
+    border: "0.5px solid var(--border)",
+    background: "transparent", color: "var(--text2)",
+  };
+};
+
 // ── ICON BUTTONS ──────────────────────────────────────────────────────
 
 // Round 40×40 icon buttons in the mobile top bar (Filter, View, Clear).

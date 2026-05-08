@@ -893,12 +893,12 @@ export default function Watchlist() {
     "--bg": "#000", "--surface": "#1c1c1e", "--card-bg": "#2c2c2e",
     "--border": "rgba(255,255,255,0.1)", "--text1": "#f5f5f7",
     "--text2": "#98989d", "--text3": "#48484a",
-    "--brand": "var(--brand)", "--danger": "var(--danger)",
+    "--brand": "#185FA5", "--danger": "#c0392b", "--accent-positive": "#1b8f3a",
   } : {
     "--bg": "#fff", "--surface": "#f5f5f7", "--card-bg": "#fff",
     "--border": "rgba(0,0,0,0.09)", "--text1": "#1d1d1f",
     "--text2": "#6e6e73", "--text3": "#aeaeb2",
-    "--brand": "var(--brand)", "--danger": "var(--danger)",
+    "--brand": "#185FA5", "--danger": "#c0392b", "--accent-positive": "#1b8f3a",
   };
 
   // Auction lots projected into the main listings feed. Two sources

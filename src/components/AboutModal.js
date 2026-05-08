@@ -119,6 +119,12 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
             borderBottom: "0.5px solid var(--border)",
             position: "relative",
           }}>
+            {/* Close button is absolute-positioned here, not flex-laid-out
+                via modalTitleRow like every other modal. The hero band
+                has a 2-line title + tagline + favicon icon, so the standard
+                title-row layout would crush the title against the ×. The
+                absolute override is a one-off legitimate exception — don't
+                replicate it without the same hero-band justification. */}
             <button onClick={onClose} aria-label="Close" style={{
               ...modalCloseButton, position: "absolute", top: 12, right: 12,
             }}>×</button>

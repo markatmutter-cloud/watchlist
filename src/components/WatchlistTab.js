@@ -3,6 +3,7 @@ import { Card } from "./Card";
 import { ageBucketFromDate, fmtUSD } from "../utils";
 import { importLocalData } from "../supabase";
 import { SubTabIntro } from "./SubTabIntro";
+import { actionButton } from "../styles";
 
 
 
@@ -235,16 +236,8 @@ export function WatchlistTab(props) {
         />
       </div>
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button onClick={cancelSearchEdit} style={{
-          border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)",
-          padding: "6px 12px", borderRadius: 6, cursor: "pointer",
-          fontFamily: "inherit", fontSize: 13,
-        }}>Cancel</button>
-        <button onClick={commitSearch} style={{
-          border: "none", background: "var(--brand)", color: "#fff",
-          padding: "6px 12px", borderRadius: 6, cursor: "pointer",
-          fontFamily: "inherit", fontSize: 13,
-        }}>Save</button>
+        <button onClick={cancelSearchEdit} style={actionButton()}>Cancel</button>
+        <button onClick={commitSearch} style={actionButton({ variant: "primary" })}>Save</button>
       </div>
     </div>
   );
