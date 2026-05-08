@@ -182,13 +182,6 @@ this lands, those epics can't ship cleanly.
 
 ### Verification + scrape health
 
-- **`verify_sources.py` ✓ shipped 2026-05-02.** Counts live listings
-  per source, compares each to its rolling 7-day median, flags
-  drops to zero or <30% of median. Outputs `public/verification.json`
-  (today's report) + `public/verification_history.json` (rolling
-  14-day baseline). Non-blocking step in scrape-listings.yml.
-- **`verify_auction_lots.py` ✓ shipped (PR #35).** Same shape, but
-  for `auction_lots.json` per house.
 - **Pending — auction verification expansions.** Two checks that
   don't exist yet: (a) sales whose `date_end` has passed should
   flip to status=ended within N days; flag stuck-active sales;
@@ -260,17 +253,8 @@ this lands, those epics can't ship cleanly.
 - **Maintenance rhythm.** Every 4th–5th session is hygiene only:
   bug fixes, dependency updates, source pruning, doc cleanup.
   No new features in maintenance sessions.
-- **User settings / currency preference ✓ shipped 2026-05-01.**
-  `user_settings` Supabase table + USD/GBP/EUR picker in
-  Settings. Designed as a kitchen-sink user-prefs surface so
-  future settings co-locate.
 
 ### Site discoverability + welcome page
-
-SEO basics shipped (PR #39): descriptive `<title>` upgraded from
-bare "Watchlist", `<meta name="description">` added, OG / Twitter
-card meta, canonical link, Schema.org JSON-LD with SearchAction,
-`public/robots.txt`, `public/sitemap.xml`.
 
 **Pending:** og:image refresh (currently the 1024×1024
 apple-touch-icon as placeholder; want a proper 1200×630), and the
@@ -365,10 +349,8 @@ remains the active mode.
 
 | Candidate | Status |
 |---|---|
-| Vintage Watch Collective | **shipped 2026-05-02** — Wix, productsWithMetaData pattern (Chronoholic clone), EUR, ~40 active listings |
 | Wrist Icons | WordPress; `/wp-json/wc/store/v1/products` returned 301 — follow redirect to confirm WooCommerce |
 | Vision Vintage Watches | Wix (not Squarespace despite the URL trick); needs custom HTML parsing |
-| Vintage Heuer | **shipped 2026-05-03 as "Vintage Watch Shop"** — WordPress custom-post + detail-page walker for the "Our price: £NNNN" pattern; ~20 active items |
 | Specific pushers.io dealers | reuse the Moonphase pattern (~30 lines per dealer) |
 
 ### Scraper refactor — shared helper library
@@ -392,18 +374,9 @@ low risk if scoped tight.
 
 Mark-as-curator. Watchlist surfaces what Mark wants visible; the
 exclusion + canonicalization rules accumulate in `merge.py` and
-`src/utils.js`. Already shipped (PR #50, partial PR #52):
-
-- Hard exclusions: Franck Muller, Hublot, Gucci, Harry Winston,
-  Corum, Scatola Del Tempo (watch boxes).
-- Brand consolidations: Vacheron + Vacheron & Constantin →
-  Vacheron Constantin; Nivada / Croton → Nivada Grenchen; etc.
-- Force-Other pooling (UI only): Wittnauer, Mulco, Berd Vay'e,
-  Hanhart, Illinois, Elgin, Marvin, Wakmann, Caravelle, Pro Hunter.
-- Suppress-at-sold (UI only, hearted overrides): Gerald Genta,
-  Panerai, Tissot, Bell & Ross, TAG Heuer (NOT bare Heuer),
-  Girard-Perregaux, Jaquet Droz, Enigma, Ebel.
-- Title-pattern exclusions: standalone bracelets, Royal Oak Offshore.
+`src/utils.js`. Initial set of hard exclusions, brand consolidations,
+Force-Other pooling, suppress-at-sold rules, and title-pattern
+exclusions shipped (PR #50, partial PR #52).
 
 **Pending:** more curation as Mark spots low-tier inventory.
 Long-term: brand × price-floor rules ("drop Tissot under $500"),
@@ -432,7 +405,7 @@ subscription. Move to Mac-mini-hosted Playwright when Phase A of
 the Mac mini infrastructure (Epic 0) lands — removes the only
 paid-credit dependency in the scrape pipeline.
 
-### eBay integration ✓ shipped 2026-04-30 (one of the source kinds)
+### eBay integration (one of the source kinds)
 
 eBay is a source like the dealers, just with a different shape. It
 has a free Browse API (5k calls/day, OAuth); admin configures search
@@ -523,10 +496,7 @@ once enough lots accumulate. Three layers, increasingly ambitious:
   Legend (SPA with no server-rendered lot links), Heritage
   (DataDome). Same three escape hatches.
 
-### Calendar (✓ shipped, with pending UX)
-
-Six house calendars scraped daily into `public/auctions.json`.
-Calendar UI lives at Cool Stuff > Auction Calendar, month-banded.
+### Calendar — pending UX
 
 **Pending — auction date display.** Today the calendar chip shows
 the start date only. Auctions vary in shape: in-room sales run a
@@ -535,58 +505,17 @@ RANGE (start + end) when they differ, and a "live now" indicator
 when today is inside the window. Data is already in the CSVs +
 JSON; just a render change. Half-session.
 
-### Live lots (✓ shipped, with pending coverage gaps)
-
-`auction_lots_scraper.py` walks every active sale in
-`auctions.json` and pulls per-lot detail:
-
-- **Antiquorum** — `live.antiquorum.swiss/...?limit=1000` single
-  fetch per sale, parses `viewVars.lots.result_page` (PR #48,
-  was previously broken `catalog.antiquorum.swiss` pagination
-  surfacing only first 20 of ~600 lots).
-- **Christie's** — `chrComponents.lots.data.lots` blob inline on
-  the auction page; one fetch per sale.
-- **Sotheby's** — `__NEXT_DATA__.props.pageProps.algoliaJson.hits`,
-  paginated; per-lot `og:image` fetch for canonical brightspot URL
-  (PR #46).
-- **Phillips** — auction-page tile enumeration → per-lot fetch.
-  Cap raised 60 → 1000 (PR #48); CH080226 (227 lots) and
-  HK080226 (308 lots) now scrape in full.
-
-Outputs `public/auction_lots.json` (URL-keyed). Wired to the
-main Listings feed via `auctionLotItems` in App.js. Hearts on
-auction-lot cards write to `watchlist_items` via `shortHash(url)`.
+### Live lots — pending coverage gaps
 
 **Pending coverage:** Bonhams + Monaco Legend lot scraping (parked
 per Epic 1). Heritage entirely (DataDome).
 
 ### Archive (manual historical entry)
 
-Pipeline shipped via PR #42:
-- `data/manual_archive_sales.json` — registry, one entry per
-  archive sale.
-- `manual_archive_scraper.py` — reads the registry, walks each
-  sale via the existing per-house enumerators, writes
-  `public/manual_archive_lots.json`.
-- App.js loads + merges into `auctionLotItems` alongside the
-  comprehensive sweep.
-
-First sale in: Phillips CH080317, 42 Heuer lots from
-"Crosthwaite & Gavin Collection" Geneva 2017. Hammer range CHF
-7,500–137,500.
-
 **Adding more archive sales is in-session work**, not a roadmap
 item — Mark's call (the JSON-edit-and-rerun workflow is fine at
 the rare cadence). The two parked target URLs (Phillips CH080218,
 Antiquorum Geneva 2007-04-15) get picked up when there's reason.
-
-### Auction urgency surfacing ✓ shipped 2026-05-03 → retired 2026-05-04
-
-"Ending soon" pinned strip lived on Watchlist briefly, then was
-retired when the Watchlist sub-tab restructure introduced a
-dedicated Saved Auctions sub-tab with its own ending-soonest
-default sort. Same comparator (live → upcoming asc → ended desc →
-non-auction last) survives in App.js's `endingSoonComparator`.
 
 ### Reference-led realized-prices
 
@@ -644,101 +573,6 @@ users monitor inventory, filter and sort, save things they care about,
 file them into lists, and keep permanency across the live → sold
 transition.
 
-### Sub-tab structure ✓ shipped
-
-Five Watchlist sub-tabs, mirroring Listings: **Saved listings**
-(savedAt desc, saved-date dividers), **Saved auctions**
-(ending-soonest, +Track eBay button), **Saved sold** (sold-date desc,
-sold-date dividers), **Favorite searches**, **Lists**. Status segment
-retired (sub-tabs cover that role); Auctions-only toggle retired;
-EndingSoon pinned strip retired (Saved auctions sub-tab IS the
-ending-soon view).
-
-### Lists ✓ shipped (Collections renamed in UI 2026-05-04)
-
-User-created lists by reference, theme, or research thread ("Rolex
-5513s", "Vintage divers", "Reference comps"). Approach A in the data
-layer: default Favorites stays backed by `watchlist_items`; new
-`collections` + `collection_items` tables hold user-created lists +
-an auto "Shared with me" inbox.
-
-Hidden listings render as a synthetic "Hidden" row inside the
-Collections tab — data stays in `hidden_listings` table; UI presents
-it as a virtual list with the Card's "..." menu Hide entry flipping
-to "Unhide" on drill-in.
-
-### Collections refactor ✓ shipped 2026-05-06 (PRs #85–#90)
-
-End-of-day pivot: "everything is a list." Mark's locked plan put
-**Owned, Sold, and Wishlist** alongside Lists and Challenges as
-sibling kinds, all surfaced under a new top-level **Collections**
-tab. Watchlist tab now holds only the heart-on-feed surfaces;
-Cool Stuff is back to tools + curated links.
-
-Six PRs landed in sequence:
-
-- **#85 Schema + hook** — `is_system` flag on `collections`
-  (defense-in-depth: `prevent_system_collection_delete` BEFORE
-  DELETE trigger). Three hard system lists (Owned/Sold/Wishlist)
-  auto-create per user via `useCollections` first-load.
-- **#86 Top-level Collections tab** — TAB_VALUES gains
-  `"collections"`. URL migration: old `?tab=watchlist&sub=collections`
-  redirects to `?tab=collections`. WatchlistTab drops the Lists
-  sub-tab; ReferencesTab drops the Watch Challenges resource
-  (challenges live under Collections now). New `HardListRow`
-  prominent card with a 64×64 thumbnail strip. Mobile bottom-bar
-  grows from 2 → 3 pills.
-- **#87 Manual entry + photo upload** — `is_manual` boolean +
-  `manual_*` columns on `collection_items` (nullable on every
-  row). New `watch-photos` Supabase Storage bucket with RLS
-  per-user folders. Client-side canvas resize to 1600px JPEG q0.85
-  before upload — typical 5-10× cut on phone photos. Slim
-  `ManualItemCard` for items without a dealer URL.
-- **#88 Archive picker + Owned→Sold transition** — new
-  `ListingPickerModal` (Favorites / All listings / each user
-  list / Paste link). New `MarkAsSoldModal` captures sold price
-  + sold date. `markItemAsSold` mutator UPDATE's collection_id
-  + the manual_sold_* columns in one shot. Card extended with
-  optional `extraMenuItems` so the "..." menu can carry "Mark
-  sold" without Card knowing about collection semantics.
-- **#89 Wishlist force-rank** — `position` column on
-  `collection_items` + composite index. `WishlistRankedList`
-  renders as a vertical list with rank number + ↑/↓ controls
-  per row + remove ×. Optimistic local update on swap; parallel
-  UPDATEs persist. Tap-based controls (no drag-drop) for
-  cross-device parity.
-- **#90 Saved challenges with sender's name** — `sender_name`
-  column on `collections`. Spec link appends `&from=<senderName>`;
-  `createChallenge` accepts `senderName` and labels the saved
-  draft "James's 3 watches for $50k". ChallengesView splits
-  into "Sent to you" + "Yours" sections with attribution chip.
-
-(*Sharing of lists is in Epic 4. Watch Challenges as a list-shaped
-feature is in Epic 6 — Collection mentality.*)
-
-### Permanency across the live → sold transition ✓ shipped
-
-When a dealer takes a listing down or marks it sold, the saved entry
-keeps the price-at-save (`savedPrice`, `savedCurrency`,
-`savedPriceUSD`) plus the cached image, title, brand, source, URL.
-Cards still render in the Saved sold sub-tab even when the source no
-longer hosts the original page.
-
-`lastMeaningfulPrice` field on every enriched record (PR #47) carries
-the last non-zero entry from priceHistory — so items that went POR
-before disappearing still show a usable display value.
-
-### Saved searches — \$ Min / \$ Max persistence ✓ shipped 2026-05-08 (PRs #136 + #137)
-
-`saved_searches` table gained `min_price` / `max_price` numeric
-nullable columns + non-negative check constraints. Add-search
-modal + inline editor have explicit numeric inputs; the search-bar
-heart captures the active band alongside the query. `runSearch`
-re-applies the saved guard on tap; `savedSearchStats` filters by
-the band so the row count + "X new this week" badge agree with the
-visible grid. Fixes Mark's long-flagged "I still can't save \$
-filters to the searches" report.
-
 ### Pending — Alerts on saved-search matches
 
 Turn Watchlist from a browse tool into a daily-open tool. Built after
@@ -759,31 +593,6 @@ Implementation: extend the cache cron to query
 `collection_items.listing_id` alongside `watchlist_items.listing_id`
 and cache for both sets. Same blob path, same dedup-by-listing-id —
 a single cached image can satisfy a heart AND multiple list memberships.
-
-### User limits ✓ shipped 2026-05-06
-
-Defensive engineering for an open public site:
-- **Default cap: 2,500** hearts per user, configurable per-user via
-  the `user_limits` table.
-- **Soft warn at 80% of cap** (= 2,000 by default). Persistent
-  banner appears via `<UserLimitBanner/>` mounted in both shells.
-- **Hard cap blocks heart adds** in the UI; the BEFORE INSERT
-  trigger `enforce_watchlist_cap` on `watchlist_items` is the line
-  of defense if the frontend check is bypassed.
-- **Lists implicitly bounded** by the item cap (collection_items
-  references the same listings; a user at cap can't add new ones
-  through any path).
-- **Admin grants expansion** via the AdminTab "User limits" section
-  (per-user table with email, hearts/hides/lists/searches counts,
-  30-day views/clicks/shares, top saved brand, current cap, notes)
-  + an inline form. The form calls the
-  `set_watchlist_cap_by_email(email, cap, note)` admin-only RPC so
-  Mark doesn't have to look up auth user_ids by hand.
-
-Schema lives in
-[supabase/schema/2026-05-06_user_limits.sql](supabase/schema/2026-05-06_user_limits.sql).
-Mark's wife is the seed case — Mark expands her cap from the admin
-form once she signs up.
 
 ### Pending — Strength-of-save (reinstated 2026-05-03)
 
@@ -810,93 +619,24 @@ Everything social *between* users (replies, reactions, sender
 identity reveal) lives in the user's own messenger of choice
 (iMessage / WhatsApp / email / Slack / AirDrop), not in this app.
 
-### Single-listing share ✓ shipped 2026-05-01
-
-Web Share API → clipboard fallback. Deep link
-`?listing=<id>&shared=1` on root (no `react-router`). Recipient sees
-a non-modal banner above the listing's Card with Save / Dismiss;
-anonymous user gets a passive Sign-in CTA, no nag. "Shared with me"
-auto-collection lazy-created on first received share; items tagged
-`source_of_entry='shared_with_me'`.
-
-### Shared-link landing surface ✓ shipped 2026-05-06
-
-Focused full-width landing card replaces the cramped thumbnail-
-above-feed pattern from v1. Two-column on desktop (image left,
-details + Save / Dismiss + onboarding right), stacked on mobile
-with action buttons above the fold. Browse chrome (filter pills,
-sub-tabs, watch count, sort row) hides while a share-receive is
-active. Light-mode card lift via box-shadow. Maxwidth bumped to
-1600 so the surface fills wide screens. Multiple iterations
-(#63 → #65 → #66 → #67 → #69 → #72).
-
-### Dynamic OG preview ✓ shipped 2026-05-06
-
-`api/share.js` Vercel function emits per-listing og:image / og:title
-for share links so iMessage / Slack rich-link cards show the actual
-watch + a "Watchlist — Vintage watches in one feed" caption instead
-of the site logo. Vercel rewrites `/share/:id` → the function;
-real browsers redirect to the SPA's existing share-receive surface
-unchanged; preview-bots stop after the head-scrape and never see
-the redirect. Watchfid + other PROXIED_IMG_HOSTS get routed through
-`/api/img` for the OG image too. (#70.)
-
-### Sharing collections ✓ shipped 2026-05-07 (List Share v1, PR #119)
-
-Share an entire list by link, not just a single listing. URL shape
-`?list=<id>&shared=1`. Read-only landing surface with "Save a copy"
-flow. `is_public` column on collections + RLS expansion to permit
-anon SELECT for `is_public=true` rows. ListReceiver component
-mirrors ShareReceiver / ChallengeReceiver isolation pattern (own
-hooks, single mirror prop to App.js).
-
-### Collaborator lists ✓ slices 1–3 shipped 2026-05-07/08 (Plan B)
+### Collaborator lists — slice 4 deferred (Plan B)
 
 Mark + wife flow: "Watches for our wedding" / "Family wishlist"
 where two named users can both view AND add items to one list.
-Distinct from the read-only share primitive above — collaborators
+Distinct from the read-only list-share primitive — collaborators
 keep their identity, and item attribution surfaces "M added" /
 "J added" chips so contributions are legible.
 
-**Schema:** new `collection_collaborators(collection_id, user_id,
-role[viewer|editor], invited_by, invited_email, status[pending|
-accepted|declined], created_at, responded_at)` plus a `who_added
-uuid` column on `collection_items`. Email-by-invite resolves at
-accept-time via Google sign-in's email so invitee doesn't need to
-exist yet when invited.
+Slices 1–3 (schema + RLS + RPCs + `useCollaborators` hook +
+Manage-list sheet + accept-invite on share link) are in.
 
-**RLS:** two helper SQL functions (`can_view_collection`,
-`can_edit_collection`) so the collections + collection_items
-policies expand from `owner_id = auth.uid()` to "owner OR accepted
-collaborator." Editor role inserts items; viewer is read-only;
-delete gated to `who_added = auth.uid()` OR owner.
-
-**UI:** Manage-list sheet on collection drill-in with
-collaborator list + email invite + role picker; pending-invite
-badge in user dropdown leading to an Accept/Decline modal;
-initial-chip ("M" / "J") on each item card showing who added it.
-
-**Notifications:** none push or email — only the in-app
-pending-invite badge. Keeps consistent with the "share = artifact,
-not real-time" rule and the Epic 4 explicit-NOT list. The invite
-itself is the artifact.
-
-**Slicing — current status:**
-- ✓ Slice 1 (PR #121): schema + RLS + smoke-test SQL.
-- ✓ Slice 2 (PR #122): RPCs (`invite_collaborator`, `accept_invite`,
-  `decline_invite`, `revoke_collaborator`, `pending_invites_for_me`,
-  `list_collaborators`) + `useCollaborators` hook surface +
-  Manage-list sheet.
-- ✓ Slice 3 (PR #123): accept-invite **on the share link**
-  (`?list=<id>&shared=1`) with a focused share-receive surface.
-  Pending-invite badge in the user dropdown also lives here.
-- ⏳ Slice 4 (deferred): `who_added` attribution chip on item cards.
-  The column landed in slice 1, but slice-2 mid-build accidentally
-  shipped `who_added: user.id` on inserts before Mark's DB had the
-  column applied (caused widespread "could not find column" errors
-  → hotfix #127 removed the column write). Slice 4 needs to re-add
-  the column write after confirming slice-1 SQL is live in the
-  target DB, then add the chip rendering.
+**Pending — Slice 4:** `who_added` attribution chip on item cards.
+The column landed in slice 1, but slice-2 mid-build accidentally
+shipped `who_added: user.id` on inserts before Mark's DB had the
+column applied (caused widespread "could not find column" errors
+→ hotfix #127 removed the column write). Slice 4 needs to re-add
+the column write after confirming slice-1 SQL is live in the
+target DB, then add the chip rendering.
 
 **Known follow-up:** other inserts into `public.collections` (system
 list auto-create, manual user-list create) currently use direct
@@ -1010,11 +750,6 @@ exist first, with enough entries to make contributions useful.
 Tactile tools that solve specific calculation or visualization
 problems collectors actually have — narrow scope by design.
 
-- **Watch size comparison ✓ shipped 2026-04-29.** Two case
-  dimensions (width × length in mm) → side-by-side preview, stat
-  boxes, print-to-scale on US Letter. Print scoping uses a React
-  Portal pattern (CLAUDE.md "Print scoping for in-app tools" —
-  reusable for future printable tools).
 - **Auction total-cost calculator (pending).** Hammer × buyer's
   premium + shipping + duty/VAT → all-in cost in user's primary
   currency. BP schedules from the four scraped houses (vary by
@@ -1027,22 +762,6 @@ etc. as separate tools. Most of that calculation is better surfaced
 **within reference guides themselves** — the 1675's reference guide
 can include lug-to-lug context for that specific reference, where
 the data is actually meaningful.
-
-### Sub-area: Curated link aggregator ✓ shipped (Cool Stuff > Links)
-
-Hand-picked outbound resources that don't fit the encyclopedia
-structure. Lives at Cool Stuff > Links. Three section types:
-
-- **Dealers** — auto-derived from `allListings` (every dealer in
-  the feed gets a row pointing at their homepage). Auto-current.
-- **References** — per-watch-reference research clusters (Rolex
-  GMT 1675, Tudor Sub 7021, Omega Seamaster 300, AP 5548 BA,
-  Heuer, etc.).
-- **Topics** — Art, Straps, Editorial, Major Auctions.
-
-All sections collapsible (accordion); all collapsed by default.
-Add a section by appending to `REFERENCE_SECTIONS` /
-`TOPIC_SECTIONS` in `src/components/Links.js`.
 
 ### Naming note
 
@@ -1066,67 +785,14 @@ real teeth — it's the home for everything that would feel
 inappropriate in Chrono24 or eBay because those tools optimize for
 transactions, not reflection.
 
-### Watch Challenges (v1 ✓ shipped 2026-05-03; rebuilt 2026-05-06; v1.5 next)
+### Watch Challenges
 
 Constrained hypothetical collections — "3 watches for $50k", "5-watch
 starter", etc. ONE collection per challenge with `type='challenge'`;
 picks live in `collection_items` with `is_pick=true`; price
 snapshotted into `saved_price/_currency/_price_usd` so totals are
-immutable post-share.
-
-**2026-05-06 rebuild (PRs #71, #73, #74, #75, #76):**
-- **CreateStage simplified** — title + count + budget. Description
-  field dropped. Budget input formats with commas as you type.
-  Soft-cap copy ("Soft cap of 20% over budget").
-- **Stepper drops 4→3.** Set / Pick / Share. Reasoning stage
-  retired — per-pick textareas folded into PickingStage.
-- **Per-pick reasoning replaced with single challenge-wide note**
-  in `challenges.descriptionLong` (the column repurposed from the
-  dropped create-form description). Debounced write-through.
-- **Source picker over Lists / Favorites + URL paste.** Replaces
-  the search-allListings drawer Mark flagged as bad UX. Tap a
-  source chip (♥ Favorites / each List / + Paste link) → tile
-  grid below. Tap a tile → adds straight as a pick at the next
-  empty slot.
-- **Click-pick everywhere; drag-drop gone.** SlotPickerModal +
-  ShortlistTile + hasFinePointer all retired. Tap × on a slot to
-  remove a pick.
-- **Shortlist concept dropped.** Lists/Favorites ARE the
-  shortlist. Older challenges with `is_pick=false` rows in the DB
-  still exist but the new UI doesn't surface them.
-- **Sticky stat row** + single page-scroll (source picker no
-  longer has its own overflow).
-- **CompleteStage redesign** — Reopen + Share lifted to top of
-  card, polished card-theme with shadow, compact pick rows.
-  Share-feedback toast ("Link copied!" / "Shared.").
-- **Challenges list rows** — labeled Delete + Share buttons, no
-  more dart 🎯 emoji, budget remaining display ("$X spent · $Y
-  left" / "$Z over").
-- **Share-bug fix.** App.js `handleShare` accepts both the
-  listing-shape AND a pre-built `{ url, title? }` shape so
-  challenge shares no longer no-op.
-
-**v1.5 ✓ shipped 2026-05-06 (PRs #78, #80, #90):**
-- **`?newchallenge=1` receive flow** + **`?challenge=<id>&shared=1`
-  complete-link receive** (PR #78). ChallengeReceiver parses both
-  shapes, public read of `state='complete'` challenges via
-  `get_public_challenge` RPC (RLS-safe — state gate is inside
-  the security-definer function).
-- **D5 polish** (PR #80): copy ("Share my collection" / "Share
-  the challenge"), `setTabWithReceiveEscape` so the Watchlist
-  logo + main tabs let you out of the receive surface,
-  pendingChallengeDrillId so "Take this challenge" lands you
-  inside the new draft, sign-in CTA on receivers via
-  `OrientationAnchors`.
-- **Saved-challenges with sender's name** (PR #90). Spec link
-  appends `&from=<senderName>` (derived from auth metadata);
-  `createChallenge` accepts `senderName` and labels the saved
-  draft "James's 3 watches for $50k". ChallengesView splits the
-  list into "Sent to you" + "Yours" sections + adds a small
-  "from <name>" attribution chip per row.
-- **Receive surface polish** (PR #80 + PR #92): no more "Shared
-  with you" chip on mobile, three-action bar on the receive
-  card (Take / Just browse / Sign in to save).
+immutable post-share. v1 + 2026-05-06 rebuild + v1.5 (receive flows
++ sender attribution) all in.
 
 **Future — open question, not in priority order:**
 - Should completed challenges be editable? v1 says no (immutable
@@ -1302,23 +968,6 @@ About *supply* — the inventory side of the marketplace. Powers
 inventory decisions: which dealers to keep, which to prune, which
 brand/model verticals are well-served, where the gaps are.
 
-- **Source quality dashboard** ✓ shipped 2026-05-02. Per-source
-  table at `?tab=admin`: live count, new-per-week, sparkline,
-  days stale, hearts/heart-rate, hides/hide-rate, avg price, top
-  brand %, scrape health, "earning its keep" chip.
-- **Total throughput in value** ✓ shipped 2026-05-05. Per-source
-  rolling 30-day `$ added` and `$ sold` columns on the Source
-  quality table. `$ added` is sum of priceUSD across listings
-  whose firstSeen falls in the window; `$ sold` uses
-  `lastMeaningfulPrice` to handle the "Price on request" /
-  "$0 on disappearance" cases the merge.py field already
-  captures.
-- **Auction-house quality dashboard** ✓ shipped 2026-05-05. New
-  table below Source quality covering the 6 houses (4 lot-level
-  scrape, 2 calendar-only): live + upcoming sales counts, total
-  + sold lot counts, sold rate, $ sold (90d), median Hammer/Low
-  ratio. Anchors the Epic 2 "auction-house quality" cross-ref
-  that's been pending since the calendar shipped.
 - **Pending — sales by watch type per dealer.** For each dealer,
   break sold inventory down by brand × decade × type (chronograph
   / dive / dress / etc.). Two uses: (a) tells me which dealers
@@ -1347,19 +996,6 @@ About *demand* — what users actually engage with. Pre-2026-05-05
 only **saves** (`watchlist_items`) and **hides** (`hidden_listings`)
 were captured, and only for signed-in users.
 
-- **v1 shipped 2026-05-05.** `listing_events` raw table + RLS
-  (anyone INSERT, admin-only SELECT via `is_admin()` against an
-  `admin_emails` table) + `listing_events_daily` rollup +
-  `rollup_and_prune_listing_events` Postgres fn + GitHub Actions
-  daily cron at 09:15 UTC + `useEventTelemetry` hook + Card
-  view/click capture via IntersectionObserver + save/hide/list_add/
-  share capture at the toggle/handler call sites + `Views (30d)`
-  / CTR / ♥/100v / +List/100v / Sh/100v columns on the AdminTab
-  Source quality dashboard via the `source_engagement_summary`
-  RPC. See [supabase/schema/2026-05-05_listing_events.sql](supabase/schema/2026-05-05_listing_events.sql)
-  + CLAUDE.md "Listing events telemetry" + Things-to-never-do
-  block. Anon session id is a `localStorage` UUID at key
-  `dial_watch_anon_id` (don't bump it).
 - **Pending — public surface.** A "what's hot this week" strip on
   the Listings tab, derived from anonymised engagement rollups.
   Gated behind enough volume to anonymise meaningfully — defer
@@ -1485,7 +1121,6 @@ Saying no is part of the roadmap. These have been considered and rejected
 - **Public market analytics like Watchcharts.** They do it better.
 - **Original editorial content.** Curating and synthesizing others' work
   is enough.
-- **Birthday/anniversary mode.** Not interesting to me.
 - **Taste arcs as a near-term feature.** Embeddings cover most of this;
   revisit only if embeddings disappoint.
 - **In-app messaging / reactions / replies / sender-identity exposure
@@ -1497,15 +1132,6 @@ Saying no is part of the roadmap. These have been considered and rejected
 - **Generic public social features** (comments, ratings, profiles).
   Listing-share + future collection-share are the only social
   primitives on the roadmap. Keep it small.
-
-(Note: an earlier "three-tier save" rejection was reinstated
-2026-05-03 as **Strength-of-save** under Epic 3. The earlier
-rejection was framed around UI clutter, which is still the binding
-constraint — but a single-gesture cycle through three states
-addresses that constraint while preserving the calibrated-signal
-value. The reinstated version explicitly supersedes the earlier
-"Collections covers it" framing: Collections answers *organisation*,
-strength-of-save answers *signal*, and they're complementary.)
 
 ## Parked, strategy needed
 
@@ -1527,7 +1153,6 @@ questions are foundational rather than tactical.
 
 Not active. Worth keeping a list because some might graduate.
 
-- **Watch arrival animation.** Subtle entrance for firstSeen-today listings.
 - **Watchlist export.** PDF or CSV download of saved listings.
 - **Random watch button.** Pure serendipity, zero algorithm.
 - **Reference browser.** Encyclopedia view as standalone navigation, not
@@ -2312,67 +1937,8 @@ becomes confusion.
   table (Vintage Watch Collective, Wrist Icons, Vision Vintage,
   Vintage Heuer) still open; Stop rule says audit + prune to 25
   once the active count hits ~30.
-- 2026-04-30: **Structural cleanup pass.** App.js dropped from 2,130 →
-  ~1,250 lines (-41%). Mobile + Desktop render branches extracted
-  into `src/components/MobileShell.js` + `DesktopShell.js`. Domain
-  state moved into hooks (`useTrackModal`, `useFavSearchModal`,
-  `useViewSettings`, `useFilters`). Modals broken out into their own
-  files (`TrackNewItemModal`, `FavSearchModal`, `AddSearchModal`).
-  Shared style tokens consolidated in `src/styles.js` (4 copies of
-  the modal × button → 1; 3 copies of pill style → 1). Dead
-  `AuctionsTab.js` (504 lines) deleted. **Tests:** new jest job
-  runs RTL smoke tests for both shells on every push — would have
-  caught the TDZ class of bug that shipped a white screen on mobile
-  in late April. **Search tokenization:** word order no longer
-  matters ("rolex gold" = "gold rolex"). **Watchlist bucket order:**
-  Date↓ now puts Today first (was always-Today-last regardless of
-  direction). **eBay searches:** surfaced read-only in Watchlist >
-  Searches sub-tab with an Edit-on-GitHub link; collapsed 6 region-
-  split entries to 2 global queries.
-- 2026-04-29 (AM): **Shipped:** new top-level **References** section
-  with the Watch size comparison tool as its first feature. Two case
-  dimensions in → preview + stat boxes + print-to-scale sheet for US
-  Letter. Print scoping uses a React Portal pattern (only the print
-  sheet survives `@media print`; the rest of the app, including
-  `#root`, is hidden); pattern is reusable for future printable tools.
-  Epic 5 restructured under "References (collector resources surface)"
-  with the existing reference-number encyclopedia content moved into a
-  sub-area; the section/reference-number naming overlap is documented
-  inline so we can disambiguate as needed when more sub-areas land.
-- 2026-04-28 (PM): **Shipped:** Card-tile flash fix on heart click /
-  scroll. `ListingsGrid` was a function-component nested inside `App`,
-  giving it new identity each render → React unmounted+remounted the
-  whole grid → every `<img>` re-fetched. Converted to a JSX expression;
-  wrapped `Card` in `React.memo`. Live on `the-watch-list.app` at bundle
-  `main.bd1be653.js`. Same commit also renamed the "None" group option
-  to "Date" on Available (the implicit Today / Last 3 days / This week
-  / Older dividers were misleadingly labeled).
-- 2026-04-28 (PM): **Shipped:** Auctions tab gets two sub-tabs —
-  Tracked lots (default) + Calendar. Mirrors Watchlist's
-  Listings/Searches sub-tab pattern. Choice persists in localStorage.
-  Sets up the eBay sub-tab landing as a third entry once that
-  integration ships.
-- 2026-04-28 (PM): **Designed:** eBay integration scope finalized.
-  Sub-tab inside Auctions for timed lots; mixed into Available feed
-  for Buy-It-Now (with `source = "eBay"`). Targeted reference searches
-  + manual URL tracking. No re-listing detection. Setup blocker:
-  Mark needs to create developer.ebay.com keyset and add
-  `EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET` to GitHub Actions secrets
-  before code can begin. Full plan under Epic 3.
-- 2026-04-28 (PM): **Shipped:** pytest suite for `merge.update_state`
-  state transitions (`tests/test_merge_state.py`, 10 tests covering
-  new/persist/drop/increase/disappear/reappear/currency-edge/multi-cycle).
-  CI runs on every push to main and every PR. The "tests for merge.py
-  state transitions" item that was on Epic 0 / Code quality is now
-  done.
-- 2026-04-28 (PM): Doc-hygiene pass. Absorbed in-flight roadmap items
-  from SESSION_HANDOFF_2026-04-27 — eBay integration and Alerts named
-  under Epic 3; Heritage's DataDome blocking + the three escape hatches
-  documented under Epic 1; the dealer-evaluation table consolidated under
-  Epic 1 "Active candidates" with platform notes per source. Removed
-  "Custom domain" from "Explicitly NOT" (it's shipped, not declined).
-  Cross-reference header added.
-- 2026-04-28: Roadmap created. Build-a-collection promoted. Reference
-  encyclopedia reframed as headline feature using LLM synthesis of dealer
-  descriptions. Birthday mode dropped. Taste arcs deferred. Three-tier save
-  added. References established as cross-cutting foundation.
+- 2026-04-30: **Structural cleanup pass.** App.js extraction (~2,130 → ~1,853 lines), shared `styles.js` tokens introduced, modal unification.
+- 2026-04-29 (AM): **Shipped References tab + Watch size comparison tool.** Print-to-scale sheet via React Portal pattern. Epic 5 restructured under "References (collector resources)".
+- 2026-04-28 (PM): Card-tile flash fix on heart click; Auctions tab sub-tabs (Tracked lots / Calendar); eBay integration scope finalized; pytest suite for `merge.update_state` shipped (10 tests, CI on every push).
+- 2026-04-28: **Roadmap created.** Initial structure + epics. Build-a-collection promoted; reference encyclopedia reframed as headline feature.
+
