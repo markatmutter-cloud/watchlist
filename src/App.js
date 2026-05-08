@@ -204,6 +204,12 @@ export default function Watchlist() {
   const SUB_VALUES_WATCHLIST = ["listings", "auctions", "sold", "searches"];
   const SUB_VALUES_COLLECTIONS = ["my-collection", "wishlist", "lists", "challenges"];
   const SUB_VALUES = [...SUB_VALUES_WATCHLIST, ...SUB_VALUES_COLLECTIONS];
+  // Bundle 2A.2b (2026-05-08) — the three hearted sub-tabs
+  // (listings/auctions/sold) collapse under a single "Saved" pill in
+  // the strip, with an internal Listings/Auctions/Sold toggle below.
+  // Sub-tab values themselves stay unchanged — backward compat for
+  // existing share URLs + localStorage prefs.
+  const SAVED_HEARTED_SUBS = ["listings", "auctions", "sold"];
   const [watchTopTab, setWatchTopTab] = useState(() => {
     const normalize = (v) => (v === "calendar") ? "listings" : v;
     if (typeof window !== "undefined") {
@@ -237,6 +243,21 @@ export default function Watchlist() {
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" });
     const desktopMain = document.querySelector("[data-desktop-main]");
     if (desktopMain) desktopMain.scrollTop = 0;
+  }, [watchTopTab]);
+
+  // Track which hearted sub the user was last on (Bundle 2A.2b). When
+  // they tap the unified "Saved" pill from another sub-tab, restore
+  // the last hearted view rather than always defaulting to
+  // Listings. Stored as a ref since we don't need re-renders on
+  // change.
+  const lastHeartedSubRef = useRef(
+    SAVED_HEARTED_SUBS.includes(watchTopTab) ? watchTopTab : "listings"
+  );
+  useEffect(() => {
+    if (SAVED_HEARTED_SUBS.includes(watchTopTab)) {
+      lastHeartedSubRef.current = watchTopTab;
+    }
+    // eslint-disable-next-line
   }, [watchTopTab]);
 
   // (Saved-view staleness snapshot moved to AFTER `tab` is declared
@@ -2230,25 +2251,31 @@ export default function Watchlist() {
       scrollbarWidth: "none",
       msOverflowStyle: "none",
     }}>
+      {(() => {
+        // Bundle 2A.2b (2026-05-08) — collapse the three hearted
+        // sub-tabs (listings/auctions/sold) into a single "Saved"
+        // pill. Internal Listings/Auctions/Sold toggle below
+        // (watchHeartedToggleJSX) handles the further split. The
+        // sub-tab values themselves (listings/auctions/sold) are
+        // unchanged for localStorage + share-URL compat.
+        const isSavedActive = SAVED_HEARTED_SUBS.includes(watchTopTab);
+        const onClickSaved = () => {
+          setDrawerOpen(false);
+          if (!isSavedActive) {
+            setWatchTopTab(lastHeartedSubRef.current);
+          }
+        };
+        return (
+          <button onClick={onClickSaved} style={{ ...tabPill(isSavedActive), flexShrink: 0 }}>
+            Saved
+          </button>
+        );
+      })()}
       {[
-        // Sub-tab key "listings" preserved for localStorage compat
-        // (dial_watch_top_tab); display label "Saved listings" makes
-        // the saved-set scope explicit alongside Saved auctions /
-        // Saved sold. Restructured 2026-05-04 to mirror Listings tab.
-        // Mobile labels drop the "Saved" prefix to fit a multi-pill
-        // strip on 375px viewports — Bundle 2A.2 (2026-05-07) added
-        // the four collections-style sub-tabs after Searches so the
-        // strip overflow-scrolls horizontally on narrow viewports
-        // (the wrapper has scrollbar-hiding CSS already).
-        ["listings",      isMobile ? "Listings" : "Saved listings"],
-        ["auctions",      isMobile ? "Auctions" : "Saved auctions"],
-        ["sold",          isMobile ? "Sold"     : "Saved sold"],
+        // Remaining sub-tabs after the hearted-collapse. Six total
+        // (Saved above + these five) — fits on desktop without
+        // scroll, scrolls on mobile.
         ["searches",      isMobile ? "Searches" : "Favorite searches"],
-        // Bundle 2A.2 (2026-05-07): Collections top-level tab folded
-        // into Saved. The four sub-tab keys below kept their original
-        // values (my-collection / wishlist / lists / challenges) for
-        // localStorage compat with users who had a Collections sub-tab
-        // preference saved before the collapse.
         ["my-collection", "My watches"],
         ["wishlist",      "Shortlist"],
         ["lists",         "Lists"],
@@ -2257,6 +2284,40 @@ export default function Watchlist() {
         const active = watchTopTab === key;
         return (
           <button key={key} onClick={() => { setWatchTopTab(key); setDrawerOpen(false); }} style={{ ...tabPill(active), flexShrink: 0 }}>{label}</button>
+        );
+      })}
+    </div>
+  );
+
+  // Internal Listings/Auctions/Sold toggle, rendered below the
+  // main sub-tab strip when Saved is active. Bundle 2A.2b — the
+  // three hearted views still exist as separate underlying
+  // sub-tabs, they just share a top-level pill now.
+  const watchHeartedToggleJSX = (tab !== "watchlist" || !SAVED_HEARTED_SUBS.includes(watchTopTab)) ? null : (
+    <div style={{
+      display: "flex", gap: 6, alignItems: "center",
+      padding: "8px 16px",
+      background: "var(--bg)",
+      borderBottom: "0.5px solid var(--border)",
+      flexShrink: 0,
+    }}>
+      {[
+        ["listings", "Listings"],
+        ["auctions", "Auctions"],
+        ["sold",     "Sold"],
+      ].map(([key, label]) => {
+        const active = watchTopTab === key;
+        return (
+          <button key={key} onClick={() => setWatchTopTab(key)}
+            style={{
+              padding: "5px 12px", borderRadius: 999,
+              border: "0.5px solid var(--border)",
+              background: active ? "var(--text1)" : "transparent",
+              color: active ? "var(--bg)" : "var(--text2)",
+              cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+              fontWeight: active ? 600 : 500,
+              flexShrink: 0,
+            }}>{label}</button>
         );
       })}
     </div>
@@ -2532,7 +2593,7 @@ export default function Watchlist() {
     challengeReceiverJSX,
     listReceiverJSX,
     listingsSubTabsJSX,
-    trackNewItemModalJSX, watchSubTabsJSX, collectionsSubTabsJSX,
+    trackNewItemModalJSX, watchSubTabsJSX, watchHeartedToggleJSX, collectionsSubTabsJSX,
     // Bundle 2A.2: shells render `watchlistTabJSX` for the Saved
     // tab — the value is now the dispatched content (Watchlist or
     // Collections style) computed by `savedContentJSX`.

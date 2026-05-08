@@ -50,7 +50,7 @@ export function MobileShell(props) {
     challengeReceiverJSX,
     listReceiverJSX,
     listingsSubTabsJSX,
-    trackNewItemModalJSX, watchSubTabsJSX, collectionsSubTabsJSX, watchlistTabJSX,
+    trackNewItemModalJSX, watchSubTabsJSX, watchHeartedToggleJSX, collectionsSubTabsJSX, watchlistTabJSX,
     referencesTabJSX, collectionsTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
@@ -228,6 +228,7 @@ export function MobileShell(props) {
             landing for the same reason as the sort row above. */}
         {!anyShareActive && listingsSubTabsJSX}
         {!anyShareActive && watchSubTabsJSX}
+        {!anyShareActive && watchHeartedToggleJSX}
         {/* collectionsSubTabsJSX retired in Bundle 2A.2 (renders null);
             the prop is kept on the destructure for backward compat
             with the mock fixture. */}
