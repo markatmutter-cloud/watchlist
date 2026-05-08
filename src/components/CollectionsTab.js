@@ -185,14 +185,28 @@ export function CollectionsTab({
   };
 
   // ── Sub-tab dispatch ──────────────────────────────────────────
+  // Bundle 2A.2b 5→4 (2026-05-08): Shortlist consolidated into My
+  // watches. Both "my-collection" and "wishlist" subTabs route to
+  // MyCollectionView; the Owned/Sold/All/Shortlist toggle inside
+  // determines which body renders. Routing "wishlist" here keeps
+  // backward-compat URLs (?sub=wishlist) and stale localStorage
+  // values working — the toggle initialises in shortlist mode
+  // automatically via currentWatchTopTab.
   let body;
-  if (subTab === "my-collection") {
+  if (subTab === "my-collection" || subTab === "wishlist") {
     body = (
       <MyCollectionView
         owned={hardOwned}
         sold={hardSold}
         ownedItems={hardOwned ? (itemsByColl[hardOwned.id] || []) : []}
         soldItems={hardSold   ? (itemsByColl[hardSold.id]   || []) : []}
+        wishlist={hardWishlist}
+        wishlistItems={hardWishlist ? (itemsByColl[hardWishlist.id] || []) : []}
+        onShortlistAddFromFeed={() => hardWishlist && openPicker(hardWishlist.id, "Add to Shortlist")}
+        onShortlistReorder={(orderedIds) => hardWishlist && collectionsApi.reorderItems(hardWishlist.id, orderedIds)}
+        onShortlistRemove={(item) => hardWishlist && collectionsApi.removeItemFromCollection(hardWishlist.id, item.id)}
+        currentWatchTopTab={subTab}
+        setWatchTopTab={setCollectionsSubTab}
         watchlist={watchlist}
         compact={compact}
         gridStyle={gridStyle}
@@ -206,16 +220,6 @@ export function CollectionsTab({
         onAddFromFeed={(cid, title) => openPicker(cid, title)}
         onMarkSold={(rowId, item) => setSoldTarget({ rowId, item })}
         onRemoveItem={(cid, item) => collectionsApi.removeItemFromCollection(cid, item.id)}
-      />
-    );
-  } else if (subTab === "wishlist") {
-    body = (
-      <WishlistView
-        wishlist={hardWishlist}
-        wishlistItems={hardWishlist ? (itemsByColl[hardWishlist.id] || []) : []}
-        onAddFromFeed={() => hardWishlist && openPicker(hardWishlist.id, "Add to Shortlist")}
-        onReorder={(orderedIds) => hardWishlist && collectionsApi.reorderItems(hardWishlist.id, orderedIds)}
-        onRemove={(item) => hardWishlist && collectionsApi.removeItemFromCollection(hardWishlist.id, item.id)}
       />
     );
   } else if (subTab === "lists") {
@@ -324,12 +328,38 @@ export function CollectionsTab({
 function MyCollectionView({
   owned, sold,
   ownedItems, soldItems,
+  // Bundle 2A.2b 5→4 (2026-05-08) — Shortlist consolidated into
+  // My watches as a fourth toggle option. The wishlist collection
+  // + items + reorder/remove handlers thread through here so the
+  // Shortlist view renders inside this component.
+  wishlist, wishlistItems, onShortlistAddFromFeed, onShortlistReorder, onShortlistRemove,
+  // Active sub-tab (watchTopTab) — used to derive the toggle's
+  // initial active state. When watchTopTab="wishlist" we show the
+  // Shortlist view; otherwise the Owned/Sold/All cluster.
+  currentWatchTopTab, setWatchTopTab,
   watchlist, compact, gridStyle, primaryCurrency,
   handleShare, handleWish, observeCard, onClickListing,
   openCollectionPicker,
   onAddManual, onAddFromFeed, onMarkSold, onRemoveItem,
 }) {
-  const [toggle, setToggle] = useState("owned"); // "owned" | "sold" | "all"
+  // Toggle state. "shortlist" is driven by watchTopTab="wishlist"
+  // (so URL syncs); "owned" / "sold" / "all" are local state.
+  const [localToggle, setLocalToggle] = useState("owned");
+  const isShortlist = currentWatchTopTab === "wishlist";
+  const toggle = isShortlist ? "shortlist" : localToggle;
+  const setToggle = (next) => {
+    if (next === "shortlist") {
+      if (typeof setWatchTopTab === "function") setWatchTopTab("wishlist");
+    } else {
+      // Coming back from shortlist into owned/sold/all — bounce
+      // watchTopTab to my-collection so the URL syncs to the
+      // owned/sold view.
+      if (isShortlist && typeof setWatchTopTab === "function") {
+        setWatchTopTab("my-collection");
+      }
+      setLocalToggle(next);
+    }
+  };
   const targetCollectionId = toggle === "sold" ? sold?.id : owned?.id;
   const targetKind = toggle === "sold" ? "sold" : "owned";
   const targetName = toggle === "sold" ? "Sold" : "Owned";
@@ -347,12 +377,15 @@ function MyCollectionView({
         borderBottom: "0.5px solid var(--border)",
         marginBottom: 12, flexWrap: "wrap",
       }}>
-        {/* Toggle pills — Owned / Sold / All */}
-        <div style={{ display: "flex", gap: 4 }}>
+        {/* Toggle pills — Owned / Sold / All / Shortlist
+            (Bundle 2A.2b 5→4: Shortlist folded into this toggle so
+            the strip drops the standalone Shortlist sub-tab.) */}
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
           {[
-            ["owned", `Owned (${ownedItems.length})`],
-            ["sold",  `Sold (${soldItems.length})`],
-            ["all",   `All (${ownedItems.length + soldItems.length})`],
+            ["owned",     `Owned (${ownedItems.length})`],
+            ["sold",      `Sold (${soldItems.length})`],
+            ["all",       `All (${ownedItems.length + soldItems.length})`],
+            ["shortlist", `Shortlist (${(wishlistItems || []).length})`],
           ].map(([key, label]) => (
             <button key={key} onClick={() => setToggle(key)}
               style={{
@@ -366,7 +399,19 @@ function MyCollectionView({
           ))}
         </div>
         <div style={{ flex: 1 }} />
-        {targetCollectionId && (
+        {/* +Add CTAs: Owned/Sold target the corresponding hard list;
+            Shortlist targets the wishlist collection via the
+            shortlist add-from-feed handler. "All" shows no +Add (the
+            user picks Owned or Sold first). */}
+        {toggle === "shortlist" && wishlist && (
+          <button onClick={onShortlistAddFromFeed}
+            style={{
+              border: "none", background: "#185FA5", color: "#fff",
+              padding: "4px 10px", borderRadius: 6,
+              cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
+            }}>+ From feed</button>
+        )}
+        {toggle !== "shortlist" && targetCollectionId && (
           <>
             {/* Mark feedback 2026-05-07: From feed is the more
                 common path and should be the highlighted primary
@@ -388,8 +433,39 @@ function MyCollectionView({
         )}
       </div>
 
-      {/* Empty state */}
-      {ownedItems.length === 0 && soldItems.length === 0 ? (
+      {/* Body — Shortlist mode renders the ranked list; Owned/Sold/All
+          modes render the Section-grouped grids. Empty-states are
+          per-mode so an empty Sold list doesn't hide a non-empty
+          Shortlist (and vice versa). */}
+      {toggle === "shortlist" ? (
+        !wishlist ? (
+          <div style={{ padding: "48px 20px", textAlign: "center", color: "var(--text2)", fontSize: 13 }}>
+            Shortlist not yet ready — refresh to retry the auto-create.
+          </div>
+        ) : (wishlistItems || []).length === 0 ? (
+          <div style={{ padding: "48px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>★</div>
+            <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
+              Shortlist is empty
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto 16px" }}>
+              Pin a representative example — live or recently-sold from the feed — for each reference you'd like to add to your collection. Force-rank with the up/down buttons. The Shortlist is the deck you scenario-plan against your owned set.
+            </div>
+            <button onClick={onShortlistAddFromFeed}
+              style={{
+                border: "none", background: "#185FA5", color: "#fff",
+                padding: "8px 16px", borderRadius: 8,
+                cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
+              }}>+ From feed</button>
+          </div>
+        ) : (
+          <WishlistRankedList
+            items={wishlistItems}
+            onReorder={onShortlistReorder}
+            onRemove={onShortlistRemove}
+          />
+        )
+      ) : ownedItems.length === 0 && soldItems.length === 0 ? (
         <div style={{ padding: "48px 20px", textAlign: "center" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🕰</div>
           <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
@@ -474,58 +550,12 @@ function MyCollectionView({
   );
 }
 
-// ── Wishlist sub-tab ─────────────────────────────────────────────
-function WishlistView({ wishlist, wishlistItems, onAddFromFeed, onReorder, onRemove }) {
-  if (!wishlist) {
-    return (
-      <div style={{ padding: "48px 20px", textAlign: "center", color: "var(--text2)", fontSize: 13 }}>
-        Shortlist not yet ready — refresh to retry the auto-create.
-      </div>
-    );
-  }
-  return (
-    <div>
-      <div style={{
-        display: "flex", alignItems: "center", gap: 12,
-        padding: "14px 14px 12px",
-        borderBottom: "0.5px solid var(--border)",
-        marginBottom: 12,
-      }}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
-          Shortlist
-        </span>
-        <span style={{ fontSize: 12, color: "var(--text3)" }}>
-          {wishlistItems.length} watch{wishlistItems.length === 1 ? "" : "es"}
-        </span>
-        <div style={{ flex: 1 }} />
-        <button onClick={onAddFromFeed}
-          style={{
-            border: "none", background: "#185FA5", color: "#fff",
-            padding: "4px 10px", borderRadius: 6,
-            cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-          }}>+ From feed</button>
-      </div>
-      {wishlistItems.length === 0 ? (
-        <div style={{ padding: "48px 20px", textAlign: "center" }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>★</div>
-          <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
-            Shortlist is empty
-          </div>
-          <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, maxWidth: 360, margin: "0 auto 16px" }}>
-            Pin a representative example — live or recently-sold from the feed — for each reference you'd like to add to your collection. Force-rank with the up/down buttons. The Shortlist is the deck you scenario-plan against your owned set.
-          </div>
-        </div>
-      ) : (
-        <WishlistRankedList
-          items={wishlistItems}
-          onReorder={onReorder}
-          onRemove={onRemove}
-        />
-      )}
-    </div>
-  );
-}
-
+// ── Shortlist ranked-list view ───────────────────────────────────
+// Standalone WishlistView wrapper retired in Bundle 2A.2b 5→4
+// (2026-05-08) — Shortlist now renders inside MyCollectionView's
+// toggle. The WishlistRankedList primitive below is reused there
+// directly. The empty-state + "Shortlist not ready" branch logic
+// moved up into MyCollectionView.
 function WishlistRankedList({ items, onReorder, onRemove }) {
   if (items.length === 0) return null;
   const move = (idx, direction) => {
@@ -535,29 +565,32 @@ function WishlistRankedList({ items, onReorder, onRemove }) {
     [next[idx], next[target]] = [next[target], next[idx]];
     onReorder(next.map(it => it.rowId));
   };
+  // Mark feedback 2026-05-08: "Increase the card size on the
+  // shortlist feature." Bumped image 56→128, padding 10/12 → 14/14,
+  // title 14→15, meta 12→13, rank# 28w/16 → 36w/22 so the rows feel
+  // like cards rather than dense list rows.
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {items.map((item, idx) => {
         const title = item.title
           || [item.brand, item.model].filter(Boolean).join(" ").trim()
           || "Untitled";
-        const meta = [
-          item.ref && `Ref ${item.ref}`,
-          item.material,
-          item.price != null && `${item.currency || ""} ${Number(item.price).toLocaleString()}`.trim(),
-        ].filter(Boolean).join(" · ");
+        const ref = item.ref ? `Ref ${item.ref}` : null;
+        const priceText = item.price != null
+          ? `${item.currency || ""} ${Number(item.price).toLocaleString()}`.trim()
+          : null;
         return (
           <div key={item.id} style={{
-            display: "flex", alignItems: "center", gap: 12,
-            padding: "10px 12px", borderRadius: 10,
+            display: "flex", alignItems: "center", gap: 14,
+            padding: "14px 14px", borderRadius: 12,
             border: "0.5px solid var(--border)", background: "var(--card-bg)",
           }}>
             <div style={{
-              flexShrink: 0, width: 28, fontSize: 16, fontWeight: 600,
+              flexShrink: 0, width: 36, fontSize: 22, fontWeight: 700,
               color: "var(--text2)", textAlign: "center",
             }}>{idx + 1}</div>
             <div style={{
-              flexShrink: 0, width: 56, height: 56, borderRadius: 6,
+              flexShrink: 0, width: 128, height: 128, borderRadius: 10,
               background: "var(--surface)", overflow: "hidden",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
@@ -565,22 +598,27 @@ function WishlistRankedList({ items, onReorder, onRemove }) {
                 <img src={item.img} alt="" loading="lazy"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
-                <span style={{ fontSize: 18, color: "var(--text3)" }}>⌚</span>
+                <span style={{ fontSize: 36, color: "var(--text3)" }}>⌚</span>
               )}
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{
-                fontSize: 14, fontWeight: 500, color: "var(--text1)",
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                fontSize: 15, fontWeight: 600, color: "var(--text1)",
+                overflow: "hidden", textOverflow: "ellipsis",
+                display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                marginBottom: 4,
               }}>{title}</div>
-              {meta && (
-                <div style={{
-                  fontSize: 12, color: "var(--text2)",
-                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                }}>{meta}</div>
+              {ref && (
+                <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 2 }}>{ref}</div>
+              )}
+              {item.material && (
+                <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 2 }}>{item.material}</div>
+              )}
+              {priceText && (
+                <div style={{ fontSize: 14, color: "var(--text1)", fontWeight: 500, marginTop: 4 }}>{priceText}</div>
               )}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
               <button onClick={() => move(idx, -1)} disabled={idx === 0}
                 aria-label="Move up" title="Move up"
                 style={rankBtnStyle(idx === 0)}>↑</button>
@@ -594,8 +632,8 @@ function WishlistRankedList({ items, onReorder, onRemove }) {
               style={{
                 flexShrink: 0,
                 border: "none", background: "transparent",
-                color: "var(--text3)", padding: 4,
-                cursor: "pointer", fontFamily: "inherit", fontSize: 16,
+                color: "var(--text3)", padding: 8,
+                cursor: "pointer", fontFamily: "inherit", fontSize: 20,
                 display: "flex", alignItems: "center",
               }}>×</button>
           </div>
@@ -606,13 +644,13 @@ function WishlistRankedList({ items, onReorder, onRemove }) {
 }
 
 const rankBtnStyle = (disabled) => ({
-  width: 24, height: 22,
+  width: 32, height: 28,
   border: "0.5px solid var(--border)",
   background: "var(--surface)",
   color: disabled ? "var(--text3)" : "var(--text1)",
   cursor: disabled ? "default" : "pointer",
-  fontFamily: "inherit", fontSize: 12,
-  borderRadius: 4,
+  fontFamily: "inherit", fontSize: 14,
+  borderRadius: 6,
   display: "flex", alignItems: "center", justifyContent: "center",
   opacity: disabled ? 0.5 : 1,
 });
