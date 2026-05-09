@@ -99,12 +99,17 @@ export function MobileShell(props) {
             flow + sticky positioning. Padding tightened 2026-05-07
             (Mark feedback: top of mobile browser had too much padding
             around the title block). */}
-        <div style={{ padding: "4px 14px 2px" }}>
+        {/* Title block tightened again 2026-05-09 — Mark report:
+            in iOS Safari the URL bar + our chrome ate ~200px before
+            content, leaving only one row of cards visible above the
+            fold. Reduced font + padding here saves ~14px without
+            losing the home-tap affordance. */}
+        <div style={{ padding: "2px 14px 0" }}>
           {/* Tap the title to jump back to Available (home). */}
           <button onClick={() => { setTab("listings"); setPage(1); }}
             style={{ background: "none", border: "none", cursor: "pointer",
                     padding: 0, fontFamily: "inherit",
-                    fontSize: 18, fontWeight: 600, letterSpacing: "-0.5px",
+                    fontSize: 15, fontWeight: 600, letterSpacing: "-0.3px",
                     color: "var(--text1)" }}>
             Watchlist
           </button>
@@ -326,7 +331,15 @@ export function MobileShell(props) {
             bar disappear into the page in light mode (Mark feedback).
             Border on top is doubled (1px) for the same reason. Dark
             mode is unchanged in feel since --surface is dark there. */}
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--surface)", borderTop: "1px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}>
+        {/* Bottom nav: paddingBottom uses env(safe-area-inset-bottom)
+            for the iPhone home indicator. Bumped to +12 (was +4) on
+            2026-05-09 — in iOS PWA standalone mode the previous 4px
+            was tight enough that taps on the active tab pill caught
+            the system swipe-up gesture, sometimes invoking Siri
+            instead of the pill. +12 keeps the nav clear of the
+            indicator without burning real estate in Safari (where
+            env() resolves to 0). */}
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--surface)", borderTop: "1px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}>
           {/* Admin is desktop-only — mobile bottom bar shows
               Listings / Saved / Learn (3 pills, fits cleanly on
               375px viewports). Bundle 2A.2 (2026-05-07) collapsed
