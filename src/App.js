@@ -157,7 +157,11 @@ export default function Watchlist() {
   const cols = isMobile
     ? mobileCols
     : (desktopCols === "auto" ? desktopAutoCols : desktopCols);
-  const compact = cols >= 4;
+  // Compact = denser typography + smaller overlay buttons. Triggers
+  // on tight grids: any desktop ≥4-col, AND mobile 3-col (Mark
+  // 2026-05-09 — at 393px / 3-col the heart + ⋯ buttons crowded the
+  // brand chip; compact shrinks them so they stay clear).
+  const compact = cols >= 4 || (isMobile && cols >= 3);
 
   const [items, setItems] = useState([]);
   const [auctions, setAuctions] = useState([]);

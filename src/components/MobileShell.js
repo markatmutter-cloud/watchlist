@@ -161,7 +161,14 @@ export function MobileShell(props) {
         )}
         {!anyShareActive && !noFilterableList && (
         <div style={{ display: "flex", gap: 6, padding: "4px 14px 6px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          <span style={{ fontSize: 12, color: "var(--text3)", marginRight: 2, flexShrink: 0 }}>{displayedCount}</span>
+          {/* Fixed-width count slot (2026-05-09) so the pills don't
+              jitter horizontally when the count drops from 4-digit
+              (3309) to 3-digit (136) on filter toggles. Right-align
+              within the slot so the digit comma stays consistent. */}
+          <span style={{
+            fontSize: 12, color: "var(--text3)", marginRight: 2, flexShrink: 0,
+            minWidth: 38, textAlign: "right",
+          }}>{displayedCount}</span>
           {/* Saved hearted-sub-tab toggle (Listings/Auctions/Sold)
               prepended into the filter row on Saved + a hearted
               sub-tab. Thin divider after the cluster so it visually
@@ -234,14 +241,16 @@ export function MobileShell(props) {
           )}
           {/* Compact "clear filters" — just a small × icon to keep the
               row from wrapping when filters are set. The text version
-              ("× Clear") got cropped at narrow widths. */}
+              ("× Clear") got cropped at narrow widths. Sized to match
+              pill height (2026-05-09) so the row doesn't grow taller
+              when filters become active. */}
           {hasFilters && (
             <button onClick={resetFilters} aria-label="Clear all filters" title="Clear all filters"
               style={{
                 marginLeft: "auto", flexShrink: 0,
-                width: 40, height: 40, borderRadius: "50%",
+                width: 30, height: 30, borderRadius: "50%",
                 border: "none", outline: "none", cursor: "pointer",
-                fontFamily: "inherit", fontSize: 18, lineHeight: 1, padding: 0,
+                fontFamily: "inherit", fontSize: 16, lineHeight: 1, padding: 0,
                 background: "transparent", color: "var(--brand)",
                 boxShadow: "inset 0 0 0 0.5px var(--brand)",
                 display: "flex", alignItems: "center", justifyContent: "center",

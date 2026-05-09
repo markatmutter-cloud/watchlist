@@ -739,22 +739,49 @@ function ListsView({
     const items = applyDrillInFilters(rawItems, filterValues);
     return (
       <div style={{ paddingTop: 4 }}>
+        {/* Drill-in header — restructured 2026-05-09 (Mark report:
+            mobile clipped Share/Manage/Rename/Delete off the right
+            edge). Title row stays single-line; action row wraps so
+            buttons stack rather than clip on narrow viewports. */}
         <div style={{
           display: "flex", alignItems: "baseline", gap: 12,
-          padding: "14px 14px 12px",
-          borderBottom: "0.5px solid var(--border)",
-          marginBottom: 12,
+          padding: "14px 14px 8px",
         }}>
           <button onClick={() => setSelectedListId(null)} style={{
             border: "none", background: "transparent", cursor: "pointer",
             color: "var(--brand)", fontFamily: "inherit", fontSize: 13, padding: 0,
+            flexShrink: 0,
           }}>← All lists</button>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
+          <span style={{
+            fontSize: 14, fontWeight: 600, color: "var(--text1)",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
             {selected.name}
           </span>
-          <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
+          <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto", flexShrink: 0 }}>
             {items.length}
           </span>
+        </div>
+        {/* Inline clarifier on what "Date" means inside a list
+            drill-in (Mark feedback 2026-05-09): the date axis here
+            is when items were added to THIS list, not when they
+            first appeared on the dealer site. Small + secondary so
+            it sits as a quiet caption rather than competing with
+            the title. */}
+        {!isSavedColl && !isHiddenColl && (
+          <div style={{
+            padding: "0 14px 6px",
+            fontSize: 11, color: "var(--text3)", lineHeight: 1.4,
+          }}>
+            Date sort uses when items were added to this list.
+          </div>
+        )}
+        <div style={{
+          display: "flex", flexWrap: "wrap", gap: 6,
+          padding: "0 14px 12px",
+          borderBottom: "0.5px solid var(--border)",
+          marginBottom: 12,
+        }}>
           {!selected.isSharedInbox && !isHiddenColl && !isSavedColl && (() => {
             // Owner-only actions vs collaborator-visible actions.
             // List Sharing v2 / slice 1: SELECT RLS now includes
