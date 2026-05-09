@@ -59,6 +59,15 @@ export function ManageListSheet({
     }
   }, [open]);
 
+  // Single-step "invite and share". Creates the pending invite row
+  // (idempotent — re-uses an existing pending invite for the same
+  // email), then opens the OS share sheet (or clipboard fallback)
+  // with a personalised share URL that carries `?invite=<id>` so the
+  // receiver page can accept on click without needing the invitee's
+  // sign-in email to match what the owner typed. Was previously two
+  // separate buttons (Invite, then Copy invite link); the split
+  // confused users and several invites went out without the link
+  // being sent.
   const submitInvite = useCallback(async () => {
     if (!collection?.id) return;
     const trimmed = (email || "").trim();
@@ -66,14 +75,43 @@ export function ManageListSheet({
     setBusy(true);
     setError("");
     const res = await inviteCollaborator(collection.id, trimmed, role);
-    setBusy(false);
     if (res?.error) {
+      setBusy(false);
       setError(res.error);
       return;
     }
+    const inviteId = res?.id;
+    const url = `${window.location.origin}/?list=${encodeURIComponent(collection.id)}&shared=1${
+      inviteId ? `&invite=${encodeURIComponent(inviteId)}` : ""
+    }`;
+    let outcome = "";
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${collection.name} — Watchlist`,
+          text: `I'd like to share "${collection.name}" with you on Watchlist. Tap the link to join:`,
+          url,
+        });
+        outcome = "shared";
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        outcome = "copied";
+      } else {
+        window.prompt("Copy this link and send it to them:", url);
+        outcome = "copied";
+      }
+    } catch (e) {
+      if (e?.name !== "AbortError") {
+        try { await navigator.clipboard?.writeText(url); outcome = "copied"; }
+        catch { window.prompt("Copy this link and send it to them:", url); outcome = "copied"; }
+      } // AbortError = user dismissed share sheet; treat as no-op, invite still created.
+    }
+    setBusy(false);
+    setShareCopyState(outcome);
     setEmail("");
     refresh();
-  }, [collection?.id, email, role, inviteCollaborator, refresh]);
+    setTimeout(() => setShareCopyState(""), 2400);
+  }, [collection?.id, collection?.name, email, role, inviteCollaborator, refresh]);
 
   const onRevoke = useCallback(async (row) => {
     if (!collection?.id) return;
@@ -91,10 +129,11 @@ export function ManageListSheet({
     refresh();
   }, [collection?.id, revokeCollaborator, refresh]);
 
-  // Copy the list-share URL so the owner can paste it into the
-  // invitee's preferred messaging tool. Mark's no-in-app-notifications
-  // rule (CLAUDE.md) means we don't send the invite email ourselves
-  // — the owner shares the link via iMessage / WhatsApp / wherever.
+  // Generic list-share link (no invite token) for sharing a list
+  // read-only. Used when no email is in the invite field — the
+  // recipient gets a "Save a copy" experience rather than collaborator
+  // access. With an email + invite token (submitInvite), the receiver
+  // page can accept directly.
   const copyShareUrl = useCallback(async () => {
     if (!collection?.id) return;
     const url = `${window.location.origin}/?list=${encodeURIComponent(collection.id)}&shared=1`;
@@ -175,7 +214,7 @@ export function ManageListSheet({
               }}>
               {shareCopyState === "copied" ? "Link copied ✓"
                : shareCopyState === "shared" ? "Shared ✓"
-               : "Copy invite link"}
+               : "Read-only link"}
             </button>
             <button onClick={submitInvite} disabled={busy || !email.trim()}
               style={{
@@ -184,13 +223,13 @@ export function ManageListSheet({
                 cursor: busy ? "wait" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
                 opacity: (!email.trim() || busy) ? 0.5 : 1,
               }}>
-              {busy ? "Sending…" : "Invite"}
+              {busy ? "Sharing…" : "Invite & share link"}
             </button>
           </div>
           <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 8, lineHeight: 1.4 }}>
-            We don't send the invite email — copy the link with the button above and paste it
-            into iMessage / WhatsApp / wherever they'll see it. Once they sign in with the
-            invited email, the invite shows up in their account.
+            "Invite & share link" creates the invite and opens your share sheet so you can
+            send the link via iMessage / WhatsApp / email. They tap the link, sign in, and
+            join — even if their sign-in email is slightly different from what you typed.
           </div>
         </div>
 

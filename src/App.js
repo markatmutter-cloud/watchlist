@@ -230,11 +230,20 @@ export default function Watchlist() {
       // Saved listings within a session and refreshes would get
       // bounced back to Lists by the legacy read.
       const v = normalize(localStorage.getItem("dial_watch_top_tab"));
-      if (SUB_VALUES.includes(v)) return v;
+      // 2026-05-08 IA pass: hearted sub-tabs (listings/auctions/sold)
+      // are no longer pills in the strip. A user whose localStorage
+      // still holds one would land on a hidden surface with no
+      // navigation back. Coerce stale localStorage of those values
+      // to the new default "lists". URL params still win — old
+      // shared `?sub=listings` links still render the hearted grid
+      // for back-compat.
+      if (SUB_VALUES.includes(v) && !["listings", "auctions", "sold"].includes(v)) return v;
       const collectionsLegacy = normalize(localStorage.getItem("dial_collections_sub_tab"));
       if (SUB_VALUES_COLLECTIONS.includes(collectionsLegacy)) return collectionsLegacy;
-      return "listings";
-    } catch { return "listings"; }
+      // Default landing changed 2026-05-08: "lists" is the first
+      // pill in the new Watchlists strip.
+      return "lists";
+    } catch { return "lists"; }
   });
   useEffect(() => {
     try { localStorage.setItem("dial_watch_top_tab", watchTopTab); } catch {}
@@ -406,7 +415,7 @@ export default function Watchlist() {
     else params.set("tab", INTERNAL_TAB_TO_URL[tab] || tab);
     if (tab === "listings" && listingsSubTab !== "live") {
       params.set("sub", listingsSubTab);
-    } else if (tab === "watchlist" && watchTopTab !== "listings") {
+    } else if (tab === "watchlist" && watchTopTab !== "lists") {
       params.set("sub", watchTopTab);
     } else {
       params.delete("sub");
@@ -474,7 +483,7 @@ export default function Watchlist() {
       } else if (nextTab === "watchlist") {
         const norm = (v) => (v === "calendar") ? "listings" : v;
         const w = norm(sub);
-        setWatchTopTab(SUB_VALUES.includes(w) ? w : "listings");
+        setWatchTopTab(SUB_VALUES.includes(w) ? w : "lists");
       }
       // Lists drill-in (`?col=…`) is owned by CollectionsTab —
       // it has its own popstate handler / URL-derived effect.
@@ -2275,46 +2284,21 @@ export default function Watchlist() {
       scrollbarWidth: "none",
       msOverflowStyle: "none",
     }}>
-      {(() => {
-        // Bundle 2A.2b (2026-05-08) — collapse the three hearted
-        // sub-tabs (listings/auctions/sold) into a single "Saved"
-        // pill. Internal Listings/Auctions/Sold toggle below
-        // (watchHeartedToggleJSX) handles the further split. The
-        // sub-tab values themselves (listings/auctions/sold) are
-        // unchanged for localStorage + share-URL compat.
-        const isSavedActive = SAVED_HEARTED_SUBS.includes(watchTopTab);
-        const onClickSaved = () => {
-          setDrawerOpen(false);
-          if (!isSavedActive) {
-            setWatchTopTab(lastHeartedSubRef.current);
-          }
-        };
-        return (
-          <button onClick={onClickSaved} style={{ ...tabPill(isSavedActive), flexShrink: 0 }}>
-            Saved
-          </button>
-        );
-      })()}
+      {/* 2026-05-08 IA pass — Mark feedback: the previous "Saved"
+          sub-tab duplicated the Listings tab + the heart filter
+          (Listings → Saved chip) gave users the same browse-hearts
+          flow inline with Listings, making the Saved pill feel
+          redundant. Removed. The hearted-views (?sub=listings/
+          auctions/sold) still work via direct URL for back-compat
+          but have no pill in the strip. New strip pill order:
+          Lists / Favorite searches / Owned Watches / Challenges
+          (4 pills, lists is the new default landing). The "wishlist"
+          sub-tab also lost its pill; the value still routes to
+          MyCollectionView in shortlist-toggle mode for old URLs. */}
       {[
-        // Remaining sub-tabs after the hearted-collapse. Five total
-        // (Saved above + these four) — fits on desktop without
-        // scroll, scrolls on mobile.
-        //
-        // Bundle 2A.2 (2026-05-07): Collections top-level tab folded
-        // into Saved. The four sub-tab keys below kept their original
-        // values (my-collection / wishlist / lists / challenges) for
-        // localStorage compat with users who had a Collections sub-tab
-        // preference saved before the collapse.
-        //
-        // Bundle 2A.2b 5→4 (2026-05-08): Shortlist consolidated into
-        // My watches as a fourth Owned/Sold/All/Shortlist toggle.
-        // Standalone "Shortlist" pill removed from the strip; the
-        // "wishlist" sub-tab key still routes to MyCollectionView (in
-        // shortlist-toggle mode) for backward-compat URLs and stale
-        // localStorage values.
-        ["searches",      isMobile ? "Searches" : "Favorite searches"],
-        ["my-collection", "My watches"],
         ["lists",         "Lists"],
+        ["searches",      isMobile ? "Searches" : "Favorite searches"],
+        ["my-collection", "Owned Watches"],
         ["challenges",    "Challenges"],
       ].map(([key, label]) => {
         const active = watchTopTab === key;

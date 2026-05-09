@@ -15,15 +15,13 @@ describe("DesktopShell", () => {
     expect(watchlistButtons.length).toBeGreaterThanOrEqual(1);
   });
 
-  test("renders the three main tabs (Listings / Saved / Learn)", () => {
+  test("renders the three main tabs (Listings / Watchlists / Learn)", () => {
     render(<DesktopShell {...buildMockShellProps()} />);
     expect(screen.getByText("Listings")).toBeInTheDocument();
     // Bundle 2A.2 (2026-05-07) collapsed the standalone Collections
-    // tab into Saved; nav pill is now Listings / Saved / Learn.
-    // The "Saved" UI label clashes with the "Saved" filter pill on
-    // Listings sub-tabs, so use getAllByText and assert >= 1 — the
-    // top-bar tab pill is always present.
-    expect(screen.getAllByText("Saved").length).toBeGreaterThanOrEqual(1);
+    // tab into Saved; 2026-05-09 IA pass renamed "Saved" → "Watchlists".
+    // Nav pill is now Listings / Watchlists / Learn.
+    expect(screen.getByText("Watchlists")).toBeInTheDocument();
     expect(screen.getByText("Learn")).toBeInTheDocument();
     // Collections is no longer a top-level tab pill.
     expect(screen.queryByText("Collections")).not.toBeInTheDocument();

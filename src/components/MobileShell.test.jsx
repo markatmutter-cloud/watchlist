@@ -14,12 +14,12 @@ describe("MobileShell", () => {
   test("renders without crashing on a default empty session", () => {
     render(<MobileShell {...buildMockShellProps()} />);
     // Bundle 2A.1 (2026-05-07) renamed the bottom-nav tab
-    // "Watchlist" → "Saved" while the brand title at the top stays
-    // "Watchlist". So "Watchlist" appears once (brand title button)
-    // and "Saved" once (bottom-nav active tab on the default
-    // tab=watchlist mock state).
+    // "Watchlist" → "Saved", then 2026-05-09 IA pass renamed
+    // "Saved" → "Watchlists". The brand title at the top still
+    // says "Watchlist" (singular). So "Watchlist" appears at least
+    // twice on the default mock (brand button + bottom-nav matches
+    // /watchlist/i).
     expect(screen.getAllByRole("button", { name: /watchlist/i }).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByRole("button", { name: /saved/i }).length).toBeGreaterThanOrEqual(1);
   });
 
   test("renders the Filters icon button when not on Searches/Calendar sub-tabs", () => {
@@ -35,14 +35,15 @@ describe("MobileShell", () => {
     expect(screen.queryByLabelText("Filters")).not.toBeInTheDocument();
   });
 
-  test("renders the bottom tab bar with Listings + Saved + Learn", () => {
+  test("renders the bottom tab bar with Listings + Watchlists + Learn", () => {
     render(<MobileShell {...buildMockShellProps()} />);
     // Bundle 2A.2 — Collections nav pill removed from bottom bar
     // (collapsed into Saved); Learn (URL key `references`) replaces
-    // the Collections slot. Three pills: Listings / Saved / Learn.
-    // Brand title at the top stays "Watchlist".
+    // the Collections slot. 2026-05-09 IA pass renamed "Saved" →
+    // "Watchlists". Three pills: Listings / Watchlists / Learn.
+    // Brand title at the top still says "Watchlist" (singular).
     expect(screen.getAllByText("Watchlist").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Saved").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Watchlists")).toBeInTheDocument();
     expect(screen.getByText("Listings")).toBeInTheDocument();
     expect(screen.getByText("Learn")).toBeInTheDocument();
     expect(screen.queryByText("Collections")).not.toBeInTheDocument();

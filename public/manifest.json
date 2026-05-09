@@ -1,0 +1,16 @@
+{
+  "name": "Watchlist",
+  "short_name": "Watchlist",
+  "description": "Vintage watches from independent dealers and auction houses, in one feed.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#3b4a36",
+  "theme_color": "#3b4a36",
+  "icons": [
+    { "src": "/apple-touch-icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

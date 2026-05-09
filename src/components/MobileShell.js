@@ -307,7 +307,7 @@ export function MobileShell(props) {
               replaces what used to be the Collections pill on
               mobile (Mark's call: Learn deserves bottom-nav
               prominence over the now-folded Collections). */}
-          {[["listings", "Listings"], ["watchlist", "Saved"], ["references", "Learn"]].map(([key, label]) => (
+          {[["listings", "Listings"], ["watchlist", "Watchlists"], ["references", "Learn"]].map(([key, label]) => (
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "8px 0 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               {tab === key
                 ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--brand)" }} />

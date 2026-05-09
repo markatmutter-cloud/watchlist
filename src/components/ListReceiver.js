@@ -44,14 +44,21 @@ export function ListReceiver({
   resetTick,
 }) {
   const [listId, setListId] = useState(null);
+  // Token-based invite acceptance (List Sharing v2.1). When the
+  // owner uses "Invite & share link", the URL carries `?invite=<id>`
+  // alongside `?list=<id>&shared=1`. The invite token is the secret
+  // that unlocks accept regardless of email match — solves the case
+  // where the invitee's Google account differs from what the owner
+  // typed.
+  const [inviteToken, setInviteToken] = useState(null);
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [savedCopyId, setSavedCopyId] = useState(null);
-  // List Sharing v2 / slice 3: when the invitee opens the share link
-  // and is signed in with the email the owner used to invite them,
-  // we surface an inline "Accept invite" CTA. matchedInvite holds
-  // the pending invite row when it matches the URL list_id.
+  // List Sharing v2 / slice 3 + 2.1: when the invitee opens the share
+  // link, we surface an inline "Accept invite" CTA. matchedInvite is
+  // populated either by token lookup (URL invite=) OR by email-matched
+  // pending-invites lookup (legacy path for links without token).
   const [matchedInvite, setMatchedInvite] = useState(null);
   const [acceptedInviteId, setAcceptedInviteId] = useState(null);
 
@@ -62,6 +69,8 @@ export function ListReceiver({
       const params = new URLSearchParams(window.location.search);
       if (params.get("list") && params.get("shared") === "1") {
         setListId(params.get("list"));
+        const tok = params.get("invite");
+        if (tok) setInviteToken(tok);
       }
     } catch (e) {
       console.warn("list URL parse failed", e);
@@ -79,6 +88,7 @@ export function ListReceiver({
   useEffect(() => {
     if (resetTick && resetTick > 0) {
       setListId(null);
+      setInviteToken(null);
       setData(null);
       setError("");
       setSavedCopyId(null);
@@ -105,26 +115,58 @@ export function ListReceiver({
     return () => { cancelled = true; };
   }, [listId]);
 
-  // List Sharing v2 / slice 3: when the invitee is signed in, check
-  // their pending invites against the URL list_id. If a match exists,
-  // surface an "Accept invite" CTA inline. Re-runs when listId or
-  // user changes (e.g. invitee signs in mid-session).
+  // Receiver-side invite resolution. Two paths:
+  //
+  //   1. Token path (preferred, post-2026-05-08 share links):
+  //      `?invite=<id>` is in the URL. Look up the invite directly
+  //      and surface the accept CTA without requiring email match.
+  //
+  //   2. Email-match path (legacy links + a fallback): no token in
+  //      URL; check the signed-in user's pending invites and look
+  //      for one matching the URL list_id.
+  //
+  // Both paths populate matchedInvite with a normalised row shape:
+  //   { invite_id, collection_id, role, inviter_email, inviter_name }
   useEffect(() => {
-    if (!listId || !user || !collectionsApi?.fetchPendingInvitesForMe) {
+    if (!listId) { setMatchedInvite(null); return undefined; }
+    let cancelled = false;
+    if (inviteToken && collectionsApi?.fetchInviteByToken) {
+      collectionsApi.fetchInviteByToken(inviteToken).then(({ invite, error: invErr }) => {
+        if (cancelled) return;
+        if (invErr || !invite) { setMatchedInvite(null); return; }
+        // Token resolved but invite is for a different list — ignore
+        // (stale URL) so we don't surface a misleading CTA.
+        if (invite.collection_id !== listId) { setMatchedInvite(null); return; }
+        if (invite.status !== 'pending') { setMatchedInvite(null); return; }
+        setMatchedInvite({
+          invite_id: invite.invite_id,
+          collection_id: invite.collection_id,
+          role: invite.role,
+          inviter_email: invite.inviter_email,
+          inviter_name: invite.inviter_name,
+          // flag so onAcceptInvite knows to call accept_invite_by_token
+          // instead of the email-gated accept_invite.
+          via_token: true,
+        });
+      });
+      return () => { cancelled = true; };
+    }
+    // Legacy email-match path: requires sign-in to find pending invites.
+    if (!user || !collectionsApi?.fetchPendingInvitesForMe) {
       setMatchedInvite(null);
       return undefined;
     }
-    let cancelled = false;
     collectionsApi.fetchPendingInvitesForMe().then(({ rows }) => {
       if (cancelled) return;
       const match = (rows || []).find(r => r.collection_id === listId) || null;
       setMatchedInvite(match);
     });
     return () => { cancelled = true; };
-  }, [listId, user, collectionsApi]);
+  }, [listId, inviteToken, user, collectionsApi]);
 
   const clearIntent = useCallback(() => {
     setListId(null);
+    setInviteToken(null);
     setData(null);
     setError("");
     setSavedCopyId(null);
@@ -132,6 +174,7 @@ export function ListReceiver({
       const url = new URL(window.location.href);
       url.searchParams.delete("list");
       url.searchParams.delete("shared");
+      url.searchParams.delete("invite");
       window.history.replaceState({}, "", url.toString());
     } catch {}
   }, []);
@@ -141,15 +184,21 @@ export function ListReceiver({
     if (typeof setTab === "function") setTab("listings");
   }, [clearIntent, setTab]);
 
-  // Slice 3 — accept the matched invite, then drop the user into
-  // Saved > Lists drilled into the (now-shared) list. RLS expansion
-  // from slice 1 means the list shows up in their normal Lists
-  // surface immediately after accept.
+  // Accept the matched invite, then drop the user into Saved > Lists
+  // drilled into the (now-shared) list. RLS expansion from slice 1
+  // means the list shows up in their normal Lists surface immediately
+  // after accept. Token-path invites use accept_invite_by_token (no
+  // email-match gate); legacy email-path invites use accept_invite.
   const onAcceptInvite = useCallback(async () => {
-    if (!matchedInvite || !collectionsApi?.acceptInvite) return;
+    if (!matchedInvite || !collectionsApi) return;
+    if (!user) return; // shouldn't be possible — CTA gated on user
+    const fn = matchedInvite.via_token
+      ? collectionsApi.acceptInviteByToken
+      : collectionsApi.acceptInvite;
+    if (!fn) return;
     setBusy(true);
     setError("");
-    const res = await collectionsApi.acceptInvite(matchedInvite.invite_id);
+    const res = await fn(matchedInvite.invite_id);
     setBusy(false);
     if (res?.error) {
       setError(res.error);
@@ -157,7 +206,7 @@ export function ListReceiver({
     }
     setAcceptedInviteId(matchedInvite.invite_id);
     setMatchedInvite(null);
-  }, [matchedInvite, collectionsApi]);
+  }, [matchedInvite, collectionsApi, user]);
 
   const onOpenSharedList = useCallback(() => {
     if (!listId) return;
@@ -316,12 +365,20 @@ export function ListReceiver({
             Accept to add it to your Saved &gt; Lists, where you can see new additions live.
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button onClick={onAcceptInvite} disabled={busy} style={primaryBtnStyle}>
-              {busy ? "Joining…" : "Accept invite"}
-            </button>
-            <button onClick={onDeclineInvite} disabled={busy} style={secondaryBtnStyle}>
-              Decline
-            </button>
+            {user ? (
+              <>
+                <button onClick={onAcceptInvite} disabled={busy} style={primaryBtnStyle}>
+                  {busy ? "Joining…" : "Accept invite"}
+                </button>
+                <button onClick={onDeclineInvite} disabled={busy} style={secondaryBtnStyle}>
+                  Decline
+                </button>
+              </>
+            ) : isAuthConfigured ? (
+              <button onClick={signInWithGoogle} style={primaryBtnStyle}>
+                Sign in to join
+              </button>
+            ) : null}
           </div>
         </div>
       )}

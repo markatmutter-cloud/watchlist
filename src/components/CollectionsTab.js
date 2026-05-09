@@ -30,6 +30,14 @@ import { Section } from "./Section";
 // other sub-tabs don't have a drill-in concept.
 
 const HIDDEN_COLLECTION_ID = "__hidden__";
+// Saved virtual list (2026-05-08 IA pass). Shows the user's
+// hearted watchlist_items as a permanent, non-deletable list at
+// the top of Watchlists > Lists. Same synthetic-row pattern as
+// the (now-retired) Hidden virtual list — data stays in
+// watchlist_items, the surface is just a synthetic collection
+// row. Don't add `__saved__` to any collection_items writes;
+// it's UI-only.
+const SAVED_COLLECTION_ID = "__saved__";
 
 export function CollectionsTab({
   user,
@@ -226,6 +234,7 @@ export function CollectionsTab({
         cols={cols}
         itemsByColl={itemsByColl}
         hiddenItems={hiddenItems}
+        watchItems={watchItems}
         watchlist={watchlist}
         toggleHide={toggleHide}
         compact={compact}
@@ -617,6 +626,7 @@ const rankBtnStyle = (disabled) => ({
 function ListsView({
   user,
   cols, itemsByColl, hiddenItems,
+  watchItems,
   watchlist, toggleHide,
   compact, gridStyle, primaryCurrency,
   handleShare, handleWish,
@@ -639,15 +649,32 @@ function ListsView({
   // can drop them via the SQL editor when ready.
   const hiddenRow = null;
 
+  // Saved virtual row (2026-05-08 IA pass). Permanent, non-
+  // deletable, sits at the top of the lists ahead of Shared with
+  // me + user lists. Backed by watchlist_items (via watchItems
+  // prop) — same Approach A pattern as the old Hidden virtual
+  // row. Drilling in renders the user's hearted listings as a
+  // Card grid.
+  const savedRow = user ? {
+    id: SAVED_COLLECTION_ID,
+    name: "Saved",
+    isSystem: true,
+    isSaved: true,
+  } : null;
+
   const selected = (() => {
     if (!selectedListId) return null;
     if (selectedListId === HIDDEN_COLLECTION_ID) return hiddenRow;
+    if (selectedListId === SAVED_COLLECTION_ID) return savedRow;
     return cols.find(c => c.id === selectedListId) || null;
   })();
 
   if (selected) {
     const isHiddenColl = selected.id === HIDDEN_COLLECTION_ID;
-    const items = isHiddenColl ? hiddenItems : (itemsByColl[selected.id] || []);
+    const isSavedColl  = selected.id === SAVED_COLLECTION_ID;
+    const items = isHiddenColl ? hiddenItems
+                : isSavedColl  ? (watchItems || [])
+                : (itemsByColl[selected.id] || []);
     return (
       <div style={{ paddingTop: 4 }}>
         <div style={{
@@ -666,7 +693,7 @@ function ListsView({
           <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
             {items.length}
           </span>
-          {!selected.isSharedInbox && !isHiddenColl && (() => {
+          {!selected.isSharedInbox && !isHiddenColl && !isSavedColl && (() => {
             // Owner-only actions vs collaborator-visible actions.
             // List Sharing v2 / slice 1: SELECT RLS now includes
             // accepted collaborators, so a "selected" list might not
@@ -732,24 +759,36 @@ function ListsView({
         </div>
         {items.length === 0 ? (
           <EmptyState
-            icon={isHiddenColl ? "👁" : "📂"}
-            heading={isHiddenColl ? "Nothing hidden" : "Empty list"}
+            icon={isHiddenColl ? "👁" : isSavedColl ? "♡" : "📂"}
+            heading={isHiddenColl ? "Nothing hidden"
+                    : isSavedColl ? "No saved watches yet"
+                    : "Empty list"}
             blurb={isHiddenColl
               ? "Listings you hide from the Available feed land here. Use the \"…\" menu on any card to unhide it."
-              : "Add watches via the \"…\" menu on any listing card → \"Add to list…\"."}
+              : isSavedColl
+                ? "Browse the Listings tab and tap the heart on any item — it'll appear here with the price you saved at, even after the dealer takes the URL down."
+                : "Add watches via the \"…\" menu on any listing card → \"Add to list…\"."}
           />
         ) : (
           <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
             {items.map(item => (
               <Card
                 key={item.id}
-                item={item}
-                wished={!!watchlist[item.id]}
+                item={isSavedColl ? {
+                  ...item,
+                  price: item.savedPrice,
+                  currency: item.savedCurrency || "USD",
+                  priceUSD: item.savedPriceUSD || item.savedPrice,
+                  sold: item._isSold,
+                } : item}
+                wished={isSavedColl ? true : !!watchlist[item.id]}
                 onWish={handleWish}
                 compact={compact}
                 onHide={isHiddenColl
                   ? toggleHide
-                  : () => removeItemFromCollection(selected.id, item.id)}
+                  : isSavedColl
+                    ? undefined
+                    : () => removeItemFromCollection(selected.id, item.id)}
                 hideLabel={isHiddenColl ? undefined : "Remove from list"}
                 isHidden={isHiddenColl}
                 onAddToCollection={openCollectionPicker}
@@ -765,7 +804,11 @@ function ListsView({
     );
   }
 
+  // Permanent system rows render at the top — Saved (hearts) +
+  // Shared with me (sharedInbox). Both can't be deleted; both
+  // surface ahead of user-created lists.
   const visibleCols = [
+    ...(savedRow ? [savedRow] : []),
     ...(sharedInbox ? [sharedInbox] : []),
     ...userCols,
     ...(hiddenRow ? [hiddenRow] : []),
@@ -790,15 +833,23 @@ function ListsView({
           {visibleCols.map(c => {
             const isInbox = c.isSharedInbox;
             const isHiddenRowItem = c.id === HIDDEN_COLLECTION_ID;
-            const count = isHiddenRowItem
-              ? hiddenItems.length
-              : (itemsByColl[c.id] || []).length;
-            const icon = isInbox ? inboxIcon : isHiddenRowItem ? eyeOffIcon : folderIcon;
-            const subtitle = isInbox
-              ? `${count} listing${count === 1 ? "" : "s"} shared with you`
+            const isSavedRowItem  = c.id === SAVED_COLLECTION_ID;
+            const count = isSavedRowItem
+              ? (watchItems || []).length
               : isHiddenRowItem
-                ? `${count} listing${count === 1 ? "" : "s"} hidden from feed`
-                : `${count} watch${count === 1 ? "" : "es"}`;
+                ? hiddenItems.length
+                : (itemsByColl[c.id] || []).length;
+            const icon = isSavedRowItem ? heartIcon
+                       : isInbox        ? inboxIcon
+                       : isHiddenRowItem ? eyeOffIcon
+                       : folderIcon;
+            const subtitle = isSavedRowItem
+              ? `${count} hearted watch${count === 1 ? "" : "es"}`
+              : isInbox
+                ? `${count} listing${count === 1 ? "" : "s"} shared with you`
+                : isHiddenRowItem
+                  ? `${count} listing${count === 1 ? "" : "s"} hidden from feed`
+                  : `${count} watch${count === 1 ? "" : "es"}`;
             return (
               <ListRow
                 key={c.id}
@@ -981,5 +1032,11 @@ const eyeOffIcon = (
     <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
     <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/>
     <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+);
+
+const heartIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--brand)" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
   </svg>
 );
