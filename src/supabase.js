@@ -163,12 +163,18 @@ export function useWatchlist(user) {
   const toggle = useCallback(async (item) => {
     if (!user || !supabase) return;
     if (items[item.id]) {
-      // Optimistic remove → then reconcile with DB. If the DB call fails we
-      // currently just log; the local state is still correct for the user.
+      // Optimistic remove → reconcile with DB. On error, roll back the
+      // optimistic local state so the heart accurately reflects what's
+      // persisted (silent UI/DB divergence is what made bug-4 hard to
+      // diagnose: the heart looked saved but vanished on refresh).
+      const removed = items[item.id];
       setItems(prev => { const n = { ...prev }; delete n[item.id]; return n; });
       const { error } = await supabase.from('watchlist_items').delete()
         .match({ user_id: user.id, listing_id: item.id });
-      if (error) console.warn('watchlist remove', error);
+      if (error) {
+        console.warn('watchlist remove failed; rolling back', error);
+        setItems(prev => ({ ...prev, [item.id]: removed }));
+      }
     } else {
       const savedAt = new Date().toISOString();
       const saved = {
@@ -188,7 +194,20 @@ export function useWatchlist(user) {
         saved_price_usd:  item.priceUSD,
         listing_snapshot: item,
       });
-      if (error) console.warn('watchlist add', error);
+      if (error) {
+        // Roll back the optimistic add so the heart matches DB state.
+        // Without this, the user sees the heart "stick" in-session and
+        // then disappear on refresh — exactly the symptom Mark's wife
+        // reported on 2026-05-08. Surface a transient error too so the
+        // failure isn't completely silent.
+        console.warn('watchlist add failed; rolling back', error);
+        setItems(prev => { const n = { ...prev }; delete n[item.id]; return n; });
+        try {
+          window.dispatchEvent(new CustomEvent('watchlist-write-error', {
+            detail: { op: 'add', code: error.code, message: error.message },
+          }));
+        } catch {}
+      }
     }
   }, [user, items]);
 
@@ -1233,6 +1252,33 @@ export function useCollections(user) {
     return { error: null };
   }, [user]);
 
+  // List Sharing v2.1 — token-based accept.
+  //
+  // The invite-link share path embeds `?invite=<id>` in the URL the
+  // owner sends out. The receiver page passes that token here, and
+  // `accept_invite_by_token` accepts the invite as the signed-in
+  // caller WITHOUT the email-match gate that `accept_invite`
+  // requires. The URL itself is the secret — anyone with it can
+  // join, which is fine for family/friends sharing (the same URL
+  // already grants anonymous read of the list via get_public_list).
+  const acceptInviteByToken = useCallback(async (inviteId) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const { error } = await supabase.rpc('accept_invite_by_token', { p_invite_id: inviteId });
+    if (error) return { error: error.message };
+    return { error: null };
+  }, [user]);
+
+  // Receiver-side fetch: given an invite token from the URL, return
+  // the invite metadata so the receiver can render "X invited you to
+  // {list} as {role}" without needing the invitee's email to match.
+  const fetchInviteByToken = useCallback(async (inviteId) => {
+    if (!supabase) return { error: 'not configured', invite: null };
+    const { data, error } = await supabase.rpc('pending_invite_by_token', { p_invite_id: inviteId });
+    if (error) return { error: error.message, invite: null };
+    const row = (data && data[0]) || null;
+    return { error: null, invite: row };
+  }, []);
+
   const declineInvite = useCallback(async (inviteId) => {
     if (!user || !supabase) return { error: 'not signed in' };
     const { error } = await supabase.rpc('decline_invite', { p_invite_id: inviteId });
@@ -1283,6 +1329,8 @@ export function useCollections(user) {
     inviteCollaborator,
     revokeCollaborator,
     acceptInvite,
+    acceptInviteByToken,
+    fetchInviteByToken,
     declineInvite,
     listCollaborators,
     fetchPendingInvitesForMe,

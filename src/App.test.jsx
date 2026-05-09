@@ -66,6 +66,8 @@ jest.mock("./supabase", () => {
       inviteCollaborator: noopAsync,
       revokeCollaborator: noopAsync,
       acceptInvite: noopAsync,
+      acceptInviteByToken: noopAsync,
+      fetchInviteByToken: async () => ({ invite: null }),
       declineInvite: noopAsync,
       listCollaborators: async () => ({ error: null, rows: [] }),
       fetchPendingInvitesForMe: async () => ({ error: null, rows: [] }),

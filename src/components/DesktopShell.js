@@ -346,7 +346,7 @@ export function DesktopShell(props) {
                 Its sub-tabs (my-collection / wishlist / lists /
                 challenges) are now part of the Saved sub-tab strip.
                 `?tab=collections` redirects to `?tab=watchlist`. */}
-          {[["listings", "Listings"], ["watchlist", "Saved"], ["references", "Learn"]].map(([key, label]) => (
+          {[["listings", "Listings"], ["watchlist", "Watchlists"], ["references", "Learn"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               padding: "6px 14px", borderRadius: 20, border: "0.5px solid var(--border)", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,

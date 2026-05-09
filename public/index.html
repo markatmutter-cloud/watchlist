@@ -29,9 +29,21 @@
     <meta name="twitter:description" content="Active inventory from 36 independent vintage-watch dealers plus upcoming auctions from 6 houses, in one chronological feed." />
     <meta name="twitter:image" content="https://the-watch-list.app/apple-touch-icon.png" />
 
-    <link rel="apple-touch-icon" sizes="1024x1024" href="/apple-touch-icon.png" />
+    <!-- iOS home-screen icon. The 180×180 size is what iOS actually
+         reads on "Add to Home Screen" — when only an oversized
+         (1024×1024) icon is offered, iOS may silently fall back to a
+         screenshot of the page rather than render the oversized PNG.
+         Keep the 1024 around for og:image / twitter:image (above) but
+         point apple-touch-icon at the proper-sized variant. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon-180.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+    <!-- Web manifest for Android Chrome / desktop PWA install. iOS
+         doesn't read this for icons (apple-touch-icon links above are
+         the load-bearing part on iOS), but it provides theme + name
+         for the browser-level install prompt on other platforms. -->
+    <link rel="manifest" href="/manifest.json" />
     <meta name="apple-mobile-web-app-title" content="Watchlist" />
     <!-- PWA install capability. The standardised `mobile-web-app-capable`
          is what modern Chrome (Android + desktop) reads; iOS Safari
