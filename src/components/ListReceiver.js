@@ -224,18 +224,11 @@ export function ListReceiver({
     } catch {}
   }, [listId, clearIntent]);
 
-  const onDeclineInvite = useCallback(async () => {
-    if (!matchedInvite || !collectionsApi?.declineInvite) return;
-    setBusy(true);
-    setError("");
-    const res = await collectionsApi.declineInvite(matchedInvite.invite_id);
-    setBusy(false);
-    if (res?.error) {
-      setError(res.error);
-      return;
-    }
-    setMatchedInvite(null);
-  }, [matchedInvite, collectionsApi]);
+  // (Decline-invite handler retired 2026-05-09 with the Collaborate /
+  // View only redesign. The legacy `decline_invite` RPC stays in
+  // place for any existing pending rows; the new flow doesn't
+  // surface a Decline action — recipients who don't want to join
+  // simply tap "View only" or close the page.)
 
   // Save a copy — creates a new list owned by the recipient with the
   // same items. Listing-backed rows are looked up against the public
@@ -347,11 +340,14 @@ export function ListReceiver({
           : `${itemCount} watch${itemCount === 1 ? "" : "es"}`}
       </p>
 
-      {/* List Sharing v2 / slice 3 — accept-invite banner. Surfaces
-          when the signed-in user has a pending invite for THIS list.
-          Replaces the "Save a copy" CTA: accept gives them the
-          owner's actual list (not a snapshot), with the role the
-          owner picked. */}
+      {/* Collaboration-link receiver banner (post-2026-05-09). When
+          the URL carries an `?invite=<id>` token (Mark sent a
+          "Collaboration Link"), the recipient gets a clear two-CTA
+          choice: Collaborate (sign in + accept the invite) or View
+          only (read the list as-is, no commitment). The legacy
+          email-match path also lands here when `matchedInvite` is
+          populated by the email-side fetch. Save a copy stays
+          available below as a tertiary option. */}
       {matchedInvite && !acceptedInviteId && (
         <div style={{
           padding: "12px 14px", borderRadius: 10,
@@ -359,26 +355,29 @@ export function ListReceiver({
           background: "rgba(24,95,165,0.08)",
           marginBottom: 16,
         }}>
-          <div style={{ fontSize: 13, color: "var(--text1)", marginBottom: 8, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 13, color: "var(--text1)", marginBottom: 10, lineHeight: 1.5 }}>
             <strong>{matchedInvite.inviter_name || matchedInvite.inviter_email}</strong> invited
             you to collaborate on this list as a <strong>{matchedInvite.role}</strong>.
-            Accept to add it to your Saved &gt; Lists, where you can see new additions live.
+            Collaborate so you can both add and remove watches in one shared list, or
+            view only to look without signing in.
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {user ? (
-              <>
-                <button onClick={onAcceptInvite} disabled={busy} style={primaryBtnStyle}>
-                  {busy ? "Joining…" : "Accept invite"}
-                </button>
-                <button onClick={onDeclineInvite} disabled={busy} style={secondaryBtnStyle}>
-                  Decline
-                </button>
-              </>
+              <button onClick={onAcceptInvite} disabled={busy} style={primaryBtnStyle}>
+                {busy ? "Joining…" : "Collaborate"}
+              </button>
             ) : isAuthConfigured ? (
               <button onClick={signInWithGoogle} style={primaryBtnStyle}>
-                Sign in to join
+                Collaborate (sign in)
               </button>
             ) : null}
+            {/* "View only" dismisses the CTA panel and leaves the
+                read-only items grid visible. Recipient can keep
+                browsing the shared list without any sign-in
+                commitment. */}
+            <button onClick={() => setMatchedInvite(null)} disabled={busy} style={secondaryBtnStyle}>
+              View only
+            </button>
           </div>
         </div>
       )}
@@ -392,7 +391,7 @@ export function ListReceiver({
           marginBottom: 16,
         }}>
           <div style={{ fontSize: 13, color: "var(--text1)", marginBottom: 8 }}>
-            You're in. The list now shows up under your Saved &gt; Lists.
+            You're in. The list now shows up under your Watchlists &gt; Lists.
           </div>
           <button onClick={onOpenSharedList} style={primaryBtnStyle}>
             Open the shared list →
@@ -400,26 +399,23 @@ export function ListReceiver({
         </div>
       )}
 
-      {/* CTAs above the items so the user doesn't have to scroll past
-          a long list to find them. Mirrors the sticky-Finish pattern
-          on ChallengeFlow's picking stage. The "Save a copy" path
-          stays available even with a matched invite — some recipients
-          will prefer their own copy (e.g., wanting to make solo edits
-          without affecting the shared set). */}
+      {/* Tertiary CTAs — Save a copy + Just browse. Stay below the
+          collaborate panel so the primary collab/view-only choice is
+          the visual focus. Save a copy is for recipients who want a
+          private snapshot to edit on their own. */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
         {user && !acceptedInviteId && (
-          <button onClick={onSaveCopy} disabled={busy}
-            style={matchedInvite ? secondaryBtnStyle : primaryBtnStyle}>
+          <button onClick={onSaveCopy} disabled={busy} style={secondaryBtnStyle}>
             {busy ? "Saving…" : "Save a copy to my lists"}
           </button>
         )}
-        {!user && isAuthConfigured && (
+        {!user && isAuthConfigured && !matchedInvite && (
           <button onClick={signInWithGoogle} style={primaryBtnStyle}>
-            Sign in to save or accept an invite
+            Sign in to save a copy
           </button>
         )}
         <button onClick={onJustBrowse} style={secondaryBtnStyle}>
-          Just browse
+          Done
         </button>
       </div>
 
