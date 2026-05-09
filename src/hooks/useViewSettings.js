@@ -14,10 +14,16 @@ const MOBILE_OPTS  = [1, 2, 3];
 const DESKTOP_OPTS = [3, 4, 5, 6, 7];
 
 function readMobileCols() {
+  // Default 2 on mobile (2026-05-09 — Mark feedback: 3-col was too
+  // tight on a 393px iPhone, image overlay buttons collided with
+  // each other and the brand chip). Existing users with explicit
+  // localStorage preference keep their choice; new users land on 2.
   try {
-    const v = parseInt(localStorage.getItem(MOBILE_COLS_KEY) || "3", 10);
-    return MOBILE_OPTS.includes(v) ? v : 3;
-  } catch { return 3; }
+    const stored = localStorage.getItem(MOBILE_COLS_KEY);
+    if (stored == null) return 2;
+    const v = parseInt(stored, 10);
+    return MOBILE_OPTS.includes(v) ? v : 2;
+  } catch { return 2; }
 }
 
 function readDesktopCols() {

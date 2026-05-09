@@ -374,18 +374,11 @@ export function WatchlistTab(props) {
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {s.newCount > 0 && (
-                    // Mark feedback 2026-05-08: "what does the blue
-                    // X new represent? new since when (24hrs?)" —
-                    // the predicate is `daysAgo(freshDate(i)) <= 7
-                    // && !i.backfilled` (savedSearchStats memo in
-                    // App.js), so the answer is "new this week".
-                    // Label updated for clarity; tooltip echoes it.
-                    <div title="New this week (last 7 days, excluding backfilled archive)"
-                      style={{ fontSize: 11, fontWeight: 500, color: "#fff", background: "var(--brand)", borderRadius: 10, padding: "2px 8px" }}>
-                      {s.newCount} new this week
-                    </div>
-                  )}
+                  {/* "X new this week" chip retired 2026-05-09 (Mark
+                      feedback). The information is still available via
+                      the search itself (run the search → date sort
+                      shows recency); the chip added visual noise to a
+                      dense saved-search row. */}
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
                 </div>
               </button>
