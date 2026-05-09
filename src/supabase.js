@@ -591,6 +591,23 @@ export function useCollections(user) {
           // Null on private (single-owner) lists where it would be
           // visual noise.
           whoAdded:        row.who_added || null,
+          // Watch management v1 (2026-05-09).
+          flaggedForSale:    !!row.flagged_for_sale,
+          assumedSellValue:  row.assumed_sell_value || null,
+          manualDescription: row.manual_description || null,
+          manualThoughts:    row.manual_thoughts || null,
+          manualBuyHammer:   row.manual_buy_hammer || null,
+          manualBuyPremium:  row.manual_buy_premium || null,
+          manualBuyShipping: row.manual_buy_shipping || null,
+          manualBuyTax:      row.manual_buy_tax || null,
+          manualBuyOther:    row.manual_buy_other || null,
+          manualBuyFxToUsd:  row.manual_buy_fx_to_usd || null,
+          manualBuyAllInUsd: row.manual_buy_all_in_usd || null,
+          manualSellPlatformFee: row.manual_sell_platform_fee || null,
+          manualSellShippingOut: row.manual_sell_shipping_out || null,
+          manualSellOther:   row.manual_sell_other || null,
+          manualSellFxToUsd: row.manual_sell_fx_to_usd || null,
+          manualSellNetUsd:  row.manual_sell_net_usd || null,
           ...snap,
           ...manualShape,
         };
@@ -1268,6 +1285,93 @@ export function useCollections(user) {
     return { error: null };
   }, [user]);
 
+  // ── Watch management v1 (2026-05-09) ─────────────────────────
+  // Generic detail-sheet patcher. Maps app-facing camelCase keys
+  // (assumedSellValue, manualDescription, etc.) to the snake_case
+  // DB columns. Used by the My Watches > [watch] detail sheet.
+  const updateWatchDetails = useCallback(async (rowId, patch) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const map = {
+      flaggedForSale:        'flagged_for_sale',
+      assumedSellValue:      'assumed_sell_value',
+      manualDescription:     'manual_description',
+      manualThoughts:        'manual_thoughts',
+      manualBuyHammer:       'manual_buy_hammer',
+      manualBuyPremium:      'manual_buy_premium',
+      manualBuyShipping:     'manual_buy_shipping',
+      manualBuyTax:          'manual_buy_tax',
+      manualBuyOther:        'manual_buy_other',
+      manualBuyFxToUsd:      'manual_buy_fx_to_usd',
+      manualBuyAllInUsd:     'manual_buy_all_in_usd',
+      manualSellPlatformFee: 'manual_sell_platform_fee',
+      manualSellShippingOut: 'manual_sell_shipping_out',
+      manualSellOther:       'manual_sell_other',
+      manualSellFxToUsd:     'manual_sell_fx_to_usd',
+      manualSellNetUsd:      'manual_sell_net_usd',
+    };
+    const dbPatch = {};
+    for (const [k, v] of Object.entries(patch)) {
+      if (map[k]) dbPatch[map[k]] = v;
+    }
+    if (Object.keys(dbPatch).length === 0) return { error: null };
+    const { error } = await supabase.from('collection_items')
+      .update(dbPatch).eq('id', rowId);
+    if (error) return { error: error.message };
+    setItemsByCollection(prev => {
+      const next = { ...prev };
+      for (const [colId, items] of Object.entries(prev)) {
+        if (items.some(it => it.rowId === rowId)) {
+          next[colId] = items.map(it => it.rowId === rowId ? { ...it, ...patch } : it);
+        }
+      }
+      return next;
+    });
+    return { error: null };
+  }, [user]);
+
+  // Convenience flip — toggle the for-sale flag without touching the
+  // rest of the row.
+  const toggleFlagForSale = useCallback(async (rowId, next) => {
+    return updateWatchDetails(rowId, { flaggedForSale: !!next });
+  }, [updateWatchDetails]);
+
+  // ── Comments (the journal) ────────────────────────────────────
+  // Reads + appends collection_item_comments. RLS gates membership.
+  // Realtime broadcasts via supabase_realtime publication so a
+  // co-collaborator's comment appears live for both members.
+  const fetchComments = useCallback(async (rowId) => {
+    if (!user || !supabase) return { error: 'not signed in', rows: [] };
+    const { data, error } = await supabase.from('collection_item_comments')
+      .select('id, user_id, body, created_at')
+      .eq('collection_item_id', rowId)
+      .order('created_at', { ascending: false });
+    if (error) return { error: error.message, rows: [] };
+    return { error: null, rows: data || [] };
+  }, [user]);
+
+  const postComment = useCallback(async (rowId, body) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const trimmed = (body || '').trim();
+    if (!trimmed) return { error: 'comment empty' };
+    const { data, error } = await supabase.from('collection_item_comments')
+      .insert({
+        collection_item_id: rowId,
+        user_id: user.id,
+        body: trimmed,
+      })
+      .select().single();
+    if (error) return { error: error.message };
+    return { error: null, row: data };
+  }, [user]);
+
+  const deleteComment = useCallback(async (commentId) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    const { error } = await supabase.from('collection_item_comments')
+      .delete().eq('id', commentId);
+    if (error) return { error: error.message };
+    return { error: null };
+  }, [user]);
+
   // ── Collaborators (List Sharing v2 / slice 2, 2026-05-07) ────
   // All gated through SECURITY DEFINER RPCs in 2026-05-07_collaborator_rpcs.sql.
   // No state cached locally — each call re-fetches; the Manage-list
@@ -1398,6 +1502,12 @@ export function useCollections(user) {
     listCollaborators,
     fetchPendingInvitesForMe,
     fetchListMembers,
+    // Watch management v1 (2026-05-09)
+    updateWatchDetails,
+    toggleFlagForSale,
+    fetchComments,
+    postComment,
+    deleteComment,
   };
 }
 

@@ -54,6 +54,11 @@ const baseCollectionsApi = {
   listCollaborators: async () => ({ error: null, rows: [] }),
   fetchPendingInvitesForMe: async () => ({ error: null, rows: [] }),
   fetchListMembers: async () => ({ error: null, members: [] }),
+  updateWatchDetails: noopAsync,
+  toggleFlagForSale: noopAsync,
+  fetchComments: async () => ({ error: null, rows: [] }),
+  postComment: async () => ({ error: null, row: null }),
+  deleteComment: noopAsync,
 };
 
 function buildProps(overrides = {}) {
