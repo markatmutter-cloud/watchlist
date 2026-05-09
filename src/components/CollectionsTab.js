@@ -246,6 +246,9 @@ export function CollectionsTab({
         onMarkSold={(rowId, item) => setSoldTarget({ rowId, item })}
         onRemoveItem={(cid, item) => collectionsApi.removeItemFromCollection(cid, item.id)}
         onClickDetail={(item) => setDetailItem(item)}
+        addItemToWants={(item) => hardWishlist
+          ? collectionsApi.addItemToCollection(hardWishlist.id, item)
+          : Promise.resolve({ error: 'no wishlist' })}
       />
     );
   } else if (subTab === "lists") {
@@ -393,6 +396,7 @@ function MyCollectionView({
   openCollectionPicker,
   onAddManual, onAddFromFeed, onMarkSold, onRemoveItem,
   onClickDetail,
+  addItemToWants,
 }) {
   // Watch-management v1 (2026-05-09 — Mark spec). Toggle restructured
   // from `Owned / Sold / All / Shortlist` (which conflated three
@@ -491,6 +495,7 @@ function MyCollectionView({
           onMarkSold={onMarkSold}
           onRemoveItem={onRemoveItem}
           onClickDetail={onClickDetail}
+          addItemToWants={addItemToWants}
         />
       ) : toggle === "collection" ? (
         ownedItems.length === 0 ? (
@@ -604,6 +609,7 @@ function PlanView({
   onMarkSold,
   onRemoveItem,
   onClickDetail,
+  addItemToWants,
 }) {
   // Split owned by flag.
   const keeping = ownedItems.filter(it => !it.flaggedForSale);
@@ -740,7 +746,7 @@ function PlanView({
           <EmptyState
             icon="★"
             heading="No wants yet"
-            blurb="Add the watches you'd like to acquire next. Pick from the feed (most common) or paste a URL."
+            blurb="Add the watches you'd like to acquire next. Tap any saved watch in the Pool below, or pick from the feed."
             action={
               <button onClick={onShortlistAddFromFeed} style={actionButton({ variant: "primary" })}>+ From feed</button>
             }
@@ -753,7 +759,140 @@ function PlanView({
           />
         )}
       </Section>
+
+      {/* Pool — your saved watches, ready to promote into Wants
+          (Phase 5, 2026-05-09 — Mark spec "drink from list below").
+          Sourced from watchlist_items (hearts) MINUS anything
+          already in Wants. Tap a card to move it into Wants.
+          Hidden when the user has no hearts at all. */}
+      <PoolSection
+        wishlist={wishlist}
+        wishlistItems={wishlistItems}
+        watchlist={watchlist}
+        compact={compact}
+        primaryCurrency={primaryCurrency}
+        addItemToWants={addItemToWants}
+        handleShare={handleShare}
+        observeCard={observeCard}
+        onClickListing={onClickListing}
+      />
     </div>
+  );
+}
+
+// Phase 5 pool — surfaces hearted items not yet in Wants. Tap-to-add
+// (mobile-friendly; drag-and-drop deferred). Capped at 24 visible
+// candidates with an "Show all" toggle so the page doesn't grow
+// unbounded for users with many hearts.
+function PoolSection({
+  wishlist, wishlistItems, watchlist, compact, primaryCurrency,
+  addItemToWants, handleShare, observeCard, onClickListing,
+}) {
+  const [expanded, setExpanded] = React.useState(false);
+  const [busyIds, setBusyIds] = React.useState(() => new Set());
+  if (!wishlist) return null;
+  const watchlistObj = watchlist || {};
+  const inWants = new Set((wishlistItems || []).map(it => it.id));
+  const candidates = Object.values(watchlistObj)
+    .filter(it => !inWants.has(it.id))
+    .sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
+  if (candidates.length === 0) return null;
+  const SHOW = expanded ? candidates.length : Math.min(24, candidates.length);
+  const visible = candidates.slice(0, SHOW);
+  const onAdd = async (item) => {
+    if (!addItemToWants || busyIds.has(item.id)) return;
+    setBusyIds(prev => { const n = new Set(prev); n.add(item.id); return n; });
+    await addItemToWants(item);
+    // Don't clear busy — the optimistic local update will move the
+    // item out of `candidates` (now in inWants) so it disappears
+    // from the pool grid; no need to re-enable.
+  };
+  return (
+    <Section
+      label={`Pool · ${candidates.length} hearted watch${candidates.length === 1 ? "" : "es"} ready to promote`}
+      show={true}
+    >
+      <div style={{
+        fontSize: 11, color: "var(--text3)", marginBottom: 8, padding: "0 4px",
+      }}>
+        Tap any card to move it up into Wants.
+      </div>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+        gap: 8,
+      }}>
+        {visible.map(item => (
+          <PoolCard
+            key={item.id}
+            item={item}
+            busy={busyIds.has(item.id)}
+            onAdd={() => onAdd(item)}
+            primaryCurrency={primaryCurrency}
+          />
+        ))}
+      </div>
+      {candidates.length > SHOW && !expanded && (
+        <div style={{ textAlign: "center", marginTop: 10 }}>
+          <button onClick={() => setExpanded(true)} style={actionButton()}>
+            Show all {candidates.length}
+          </button>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function PoolCard({ item, busy, onAdd, primaryCurrency }) {
+  const title = item.title
+    || [item.brand, item.model].filter(Boolean).join(" ").trim()
+    || (item.ref || "Untitled");
+  const priceLine = item.savedPriceUSD || item.priceUSD
+    ? fmtUSD(item.savedPriceUSD || item.priceUSD) : null;
+  return (
+    <button onClick={onAdd} disabled={busy}
+      style={{
+        all: "unset", display: "flex", flexDirection: "column",
+        cursor: busy ? "wait" : "pointer",
+        border: "0.5px solid var(--border)", borderRadius: 10,
+        background: "var(--card-bg)", overflow: "hidden",
+        opacity: busy ? 0.5 : 1,
+        position: "relative",
+      }}>
+      <div style={{
+        aspectRatio: "1 / 1", background: "var(--surface)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        {item.img ? (
+          <img src={item.img} alt={title} loading="lazy"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <span style={{ fontSize: 28, color: "var(--text3)" }}>⌚</span>
+        )}
+      </div>
+      <div style={{ padding: "8px 10px 10px", flex: 1, width: "100%", textAlign: "left" }}>
+        {item.source && (
+          <div style={{ fontSize: 9, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
+            {item.source}
+          </div>
+        )}
+        <div style={{
+          fontSize: 12, fontWeight: 500, color: "var(--text1)",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          marginBottom: 2,
+        }}>{title}</div>
+        {priceLine && (
+          <div style={{ fontSize: 11, color: "var(--text2)" }}>{priceLine}</div>
+        )}
+      </div>
+      <div style={{
+        position: "absolute", top: 6, right: 6,
+        background: "rgba(0,0,0,0.55)", color: "#fff",
+        width: 22, height: 22, borderRadius: "50%",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 14, fontWeight: 600,
+      }}>↑</div>
+    </button>
   );
 }
 
