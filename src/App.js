@@ -955,7 +955,30 @@ export default function Watchlist() {
     for (const url of Object.keys(merged)) {
       const data = merged[url];
       if (!data) continue;
-      const isEnded = data.status === "ended";
+      // Trust the scraper's `status:"ended"` flag UNLESS the timing
+      // says the auction can't possibly have ended. Two checks: if
+      // auction_start is in the future, the sale hasn't begun; if
+      // auction_end is in the future, it's still in progress. Either
+      // override the flag back to active. Mark report 2026-05-09:
+      // EU auctions whose date was today but start time hadn't been
+      // reached got pinned to Archive Sold (Sotheby's auctionState
+      // returns "closed" on some multi-stage sales before the live
+      // session). Both checks needed because date-only auction_end
+      // strings ('2026-05-09') resolve to 00:00 UTC and would falsely
+      // pass the "end is in the past" gate later in the same day.
+      let isEnded = data.status === "ended";
+      if (isEnded && data.auction_start) {
+        const startMs = new Date(data.auction_start).getTime();
+        if (Number.isFinite(startMs) && startMs > Date.now()) {
+          isEnded = false;
+        }
+      }
+      if (isEnded && data.auction_end) {
+        const endMs = new Date(data.auction_end).getTime();
+        if (Number.isFinite(endMs) && endMs > Date.now()) {
+          isEnded = false;
+        }
+      }
       const price = (isEnded ? data.sold_price : data.current_bid)
         || data.starting_price || data.estimate_low || 0;
       const priceUsd = (isEnded ? data.sold_price_usd : data.current_bid_usd)
@@ -1399,7 +1422,34 @@ export default function Watchlist() {
     // still the durable record either way.
     its = its.map(it => {
       const live = liveStateById.get(it.id);
-      const isSold = !live || !!live.sold;
+      // "Missing from current scrape" is a strong signal for dealer
+      // items (the dealer removed the URL → almost always sold). For
+      // AUCTION items it's a false positive: a sale that hasn't
+      // started yet may not be in the active scrape window, or a
+      // transient scrape error may have dropped a single lot. If the
+      // saved snapshot carries an auction_start that hasn't passed,
+      // OR an auction_end that hasn't passed, the auction can't
+      // possibly have ended — keep the hearted lot out of the
+      // Archive Sold sub-tab. (Mark report 2026-05-09.)
+      let isSold;
+      if (live) {
+        isSold = !!live.sold;
+      } else if (it.auction_start) {
+        const startMs = new Date(it.auction_start).getTime();
+        if (Number.isFinite(startMs) && startMs > Date.now()) {
+          isSold = false;
+        } else if (it.auction_end) {
+          const endMs = new Date(it.auction_end).getTime();
+          isSold = Number.isFinite(endMs) && endMs <= Date.now();
+        } else {
+          isSold = true;
+        }
+      } else if (it.auction_end) {
+        const endMs = new Date(it.auction_end).getTime();
+        isSold = Number.isFinite(endMs) && endMs <= Date.now();
+      } else {
+        isSold = true;
+      }
       return { ...it, _isSold: isSold };
     });
     // Project tracked lots (auction-house lots, eBay items, future
@@ -1442,7 +1492,23 @@ export default function Watchlist() {
         });
         continue;
       }
-      const isEnded = data.status === "ended";
+      // Same time-aware override as the auction-lots projection above
+      // (see that comment for the bug detail). Both auction_start
+      // and auction_end checks because date-only end strings give a
+      // false positive on the same calendar day.
+      let isEnded = data.status === "ended";
+      if (isEnded && data.auction_start) {
+        const startMs = new Date(data.auction_start).getTime();
+        if (Number.isFinite(startMs) && startMs > Date.now()) {
+          isEnded = false;
+        }
+      }
+      if (isEnded && data.auction_end) {
+        const endMs = new Date(data.auction_end).getTime();
+        if (Number.isFinite(endMs) && endMs > Date.now()) {
+          isEnded = false;
+        }
+      }
       const price = (isEnded ? data.sold_price : data.current_bid)
         || data.starting_price || data.estimate_low || 0;
       const priceUsd = (isEnded ? data.sold_price_usd : data.current_bid_usd)
