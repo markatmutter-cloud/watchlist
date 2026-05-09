@@ -1019,31 +1019,48 @@ price-per-reference. Use it; build what it doesn't.
 ## Priority order
 
 Current best-guess sequence. Will shift; update this doc when it does.
-Epic numbers reflect the 2026-05-05 restructure. Last refreshed
-end of 2026-05-06 — Collections build + four-sub-tab restructure +
-auction-scrape coverage rebuild + lot-number sort all shipped after
-the morning roadmap pass; closed out several previously-#1 items.
+Last refreshed end of 2026-05-09 — Watchlists IA + Realtime + auction
+time-of-day fix + listing velocity all shipped today; reactions and
+usernames now plausible follow-ons because Realtime is in place.
 
-1. **Welcome page + og:image (Epic 0).** First-impression page for
+1. **Watchbox v2 — reflection + watch management on My Watches
+   (Epic 6).** Promoted from #10 today — Mark's stated "after the
+   bugs" goal. Owned + Sold + Wishlist are already real (the
+   Collections build moved the data model here); what remains is
+   the reflective UX layer. Reasonable scope choices to pick from:
+   per-watch reflection journal (why bought / how reality compared /
+   would-buy-again), deeper purchase-and-value tracking (purchase
+   date + condition + service history + value-over-time), watchbox
+   journey narrative (single editable per-user collecting story),
+   detail-page-per-watch as the shell that holds everything.
+2. **Usernames / display_name on user_profiles.** Load-bearing for
+   reactions + the `who_added` chip readability. Default derives
+   from `auth.users.raw_user_meta_data.full_name` (Google fills
+   this) → email-local-part fallback. Editable in Settings.
+3. **Reactions on shared-list items.** Schema +
+   `collection_item_reactions` table. Realtime pipe is in place
+   (#150) so updates push immediately. Depends on usernames so
+   chips read clean. Mark's "watch group voting" use case.
+4. **Welcome page + og:image (Epic 0).** First-impression page for
    non-share visitors. og:image still the 1024×1024 apple-touch-icon
    placeholder. Half-session.
-2. **Privacy notice + minimal terms (Epic 0).** Becomes load-bearing
+5. **Privacy notice + minimal terms (Epic 0).** Becomes load-bearing
    before Watchlist gets shared with users outside Mark's circle.
    One-pager `/privacy` covering Supabase + Vercel Blob storage,
    retention, deletion; companion `/terms` ("use at your own risk,
    listings come from third parties"). Linked from the user dropdown
    footer.
-3. **References as first-class entities (Epic 0).** The remaining
+6. **References as first-class entities (Epic 0).** The remaining
    foundation. Several downstream features (Epic 5 encyclopedia,
    per-reference comparison views, auction lot grouping, Discover
-   mode quality) gate on this.
-4. **Image cache for List items (Epic 3).** Extend
+   mode quality, per-reference velocity rollup) gate on this.
+7. **Image cache for List items (Epic 3).** Extend
    `cache_watchlist_images.mjs` to cover `collection_items`, not
    just `watchlist_items`. Promoted by Mark 2026-05-05; deferred
    through the Collections build. Newly-relevant after the
    Collections build because Owned/Sold/Wishlist all live in
    `collection_items` and benefit from the cache.
-5. **"Save someone's complete-share back" — child-challenge linkage
+8. **"Save someone's complete-share back" — child-challenge linkage
    (Epic 6).** When a friend shares THEIR completion of MY
    challenge back to me, I should be able to save it as a child
    challenge with `parent_challenge_id` linkage. Schema column
@@ -1051,48 +1068,43 @@ the morning roadmap pass; closed out several previously-#1 items.
    "save this collection" on the complete-receive page hasn't been
    built. Closes the social loop fully — Mark's "three other
    friends' solutions sent back to you" framing.
-6. **Site analytics — remaining Source-stats extensions (Epic 8).**
-   User stats + throughput-in-value + auction-house quality all
-   shipped 2026-05-05/06. Remaining: sales by watch type per dealer
-   (gated on Epic 0 references for "type" classification),
-   cross-source live inventory (also Epic-0-gated), listing-quality
-   signals, taste-relative pricing.
-7. **Strength-of-save model (Epic 3 + Epic 7 entry point).**
-   Two-tier (Love / Watch) is the gesture entry point to the broader
-   Multi-signal taste capture. Small UI lift; the feature is *the
-   gesture*, not the underlying data.
-8. **Source pruning (Epic 1 Stop rule).** At ~50 dealers, audit
-   with the click + save data and prune. Currently at 38.
-9. **Mac mini Phase A (Epic 0).** When Tropical Watch hits a Browse
-   AI snag OR when Heritage / Bonhams / Monaco Legend need a
-   Playwright runner OR when ready to start Epic 5 encyclopedia
-   generation. Also potentially relevant if Phillips' WAF tightens
-   to block single-URL fetches too — the auction-page Turbo-Stream
-   pattern from PR #100 buys time, but tracked-lot detail-fetches
-   are still single-URL today.
-10. **Watchbox v2 — reflection layer (Epic 6).** Highest personal
-    value of any roadmap item. The collection-mentality flagship.
-    Reflection notes + per-watch journey + the AI reflection bot
-    delighter. Note: the Collections build already moved the data
-    model significantly in this direction (Owned + Sold are real
-    now); what remains is the reflective UX layer.
-11. **Epic 5 encyclopedia.** Built incrementally as dealer
+9. **Site analytics — remaining Source-stats extensions (Epic 8).**
+   User stats + throughput-in-value + auction-house quality + per-
+   source / per-brand cycle-speed all shipped through 2026-05-09.
+   Remaining: sales by watch type per dealer (gated on Epic 0
+   references for "type" classification), cross-source live
+   inventory (also Epic-0-gated), per-reference velocity (Epic-0-
+   gated), listing-quality signals, taste-relative pricing.
+10. **Strength-of-save model (Epic 3 + Epic 7 entry point).**
+    Two-tier (Love / Watch) is the gesture entry point to the broader
+    Multi-signal taste capture. Small UI lift; the feature is *the
+    gesture*, not the underlying data.
+11. **Source pruning (Epic 1 Stop rule).** At ~50 dealers, audit
+    with the click + save data and prune. Currently at 38.
+12. **Mac mini Phase A (Epic 0).** When Tropical Watch hits a Browse
+    AI snag OR when Heritage / Bonhams / Monaco Legend need a
+    Playwright runner OR when ready to start Epic 5 encyclopedia
+    generation. Also potentially relevant if Phillips' WAF tightens
+    to block single-URL fetches too — the auction-page Turbo-Stream
+    pattern from PR #100 buys time, but tracked-lot detail-fetches
+    are still single-URL today.
+13. **Epic 5 encyclopedia.** Built incrementally as dealer
     descriptions accumulate. Depends on Epic 0 references + Mac
     mini A.5 for local LLM generation (or cloud LLM access).
-12. **Multi-signal taste capture + Discover mode + AI recommendations
+14. **Multi-signal taste capture + Discover mode + AI recommendations
     (Epic 7).** Stack progressively. Multi-signal first; Discover
     and recommendations layer on top once signals are rich.
-13. **Watch Challenges further polish (Epic 6).** Audit-deferred
+15. **Watch Challenges further polish (Epic 6).** Audit-deferred
     items from 2026-05-06: autosave indicator, hoist hardcoded
     colors to tokens, mobile tap-confirm on slot remove, target=7-
     style orphan-row layout, share-success state, sticky-pick-
     shrink-on-scroll. (Cool Stuff resource cards card-unification
     is the only remaining cosmetic carry-over; "save complete-share
-    back" graduated to its own #5 priority above.)
-14. **Watch Challenges v2 (Epic 6).** Past-listings as a source,
+    back" graduated to its own #8 priority above.)
+16. **Watch Challenges v2 (Epic 6).** Past-listings as a source,
     value-over-time tracking, challenge response threads — once
     Epic 0 references land.
-15. **Comprehensive auction inventory capture beyond active sales
+17. **Comprehensive auction inventory capture beyond active sales
     (Epic 2).** Substrate for serendipitous discovery + reference
     research at scale.
 
@@ -1183,6 +1195,57 @@ becomes confusion.
 > analytics) became Epic 8; old Epic 6 (Mac mini) folded into Epic 0.
 > Epic 0/1/2/5 numbering unchanged. Entries below dated before
 > 2026-05-05 evening reference the pre-restructure scheme.
+
+- 2026-05-09: **Watchlists IA + Realtime + auction time-fix +
+  velocity.** 8 PRs merged (#144–#151), 4 SQL migrations applied
+  via MCP. Six arcs:
+  - **Watchlists IA pass (PRs #144–#148).** Tab rename Saved →
+    Watchlists. Strip 5 → 4 pills (Lists / Favorite searches /
+    Owned Watches / Challenges; "My Watches" relabel mid-day).
+    Saved virtual list at top of Lists view (synthetic
+    `__saved__`, backed by `watchlist_items`, non-deletable);
+    Shared-with-me as second permanent. Drill-in filter row
+    (#145) — Date / Price / $ / Source / Brand inside a list.
+    View-settings inline (#147) — Currency / Theme / Columns
+    move out of SettingsModal into mobile filter drawer +
+    desktop account menu. Heart icon clarifications (#148):
+    Listings Saved chip heart goes red; Watchlists tab pill
+    heart → bookmark glyph.
+  - **Share flow rewrite (#146).** "Collaboration Link" /
+    "View Only Link" buttons. Token-based accept (`?invite=<id>`
+    in URL) bypasses email-match gate via two new RPCs:
+    `accept_invite_by_token`, `pending_invite_by_token`.
+    Receiver page surfaces Collaborate / View only as explicit
+    choices instead of an implicit Save-a-copy fallback ladder.
+    `who_added` attribution chip (slice 4) re-added to JS write
+    path + new `list_members_for_collection` RPC for any-member
+    roster reads. Chip renders only on lists with 2+ members.
+  - **iOS PWA favicon (#144).** Added 180×180
+    `apple-touch-icon-180.png` (the size iOS reads on Add-to-
+    Home-Screen) + `manifest.json`. The 1024×1024 icon was being
+    rejected by iOS so it fell back to a screenshot.
+  - **Auction time-of-day awareness (#149).** EU-timezone auctions
+    whose date was today but start time hadn't passed got pinned
+    to Archive Sold. Three call sites now check
+    `auction_start > now` AND `auction_end > now` before trusting
+    `status:"ended"`. Plus second cron at 12/16/20 UTC for the
+    auction-lot scraper — daily 06:00 calendar walk unchanged.
+  - **Realtime on shared lists (#150).** `useCollections`
+    subscribes to postgres_changes events on `collections` +
+    `collection_items`; debounce-bumped refetch tick converges
+    local state to canonical DB after wife's writes propagate.
+    RLS enforced server-side on broadcast. Migration adds the
+    two tables to `supabase_realtime`. Free tier handles family
+    use comfortably; Pro tier ($25/mo) is the next cliff at
+    ~5–10k actively-grouped users.
+  - **Listing velocity (#151 + #152 stacked).** Per-card SOLD
+    chip now reads "SOLD · 4d" (auction-shaped rows skip the
+    suffix). New `daysOnSale` / `daysOnSaleLabel` helpers in
+    utils.js. Admin Source-quality table gets "Cycle (30d)"
+    column. Per-brand velocity rollup table (#152, stacked)
+    between Source quality and Auction-house quality, default
+    sort = ascending Cycle so fastest-flippers float to the
+    top. Per-reference rollup deferred — depends on Epic 0.
 
 - 2026-05-08 (afternoon/evening continuation): **UI consistency +
   design system + create-list bug fix + Supabase cleanup.** 12 commits
