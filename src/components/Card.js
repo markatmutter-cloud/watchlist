@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, memo } from "react";
-import { fmt, imgSrc, fmtCountdown, fmtLotPrice, fmtSoldDate, priceIn, CURRENCY_SYM, FX_RATES_USD_PER } from "../utils";
+import { fmt, imgSrc, fmtCountdown, fmtLotPrice, fmtSoldDate, priceIn, daysOnSale, daysOnSaleLabel, CURRENCY_SYM, FX_RATES_USD_PER } from "../utils";
 import { HeartIcon } from "./icons";
 
 // Shared style for action-menu rows. Module-scope so it's not
@@ -264,9 +264,24 @@ export const Card = memo(function Card({
               2026-04-30 so it doesn't eat ~40% of card width at narrow
               mobile widths (2-col view = ~165px cards). Stays legible
               and gives chip more breathing room on every density. */}
-          {item.sold ? (
-            <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 9, padding: "2px 7px", borderRadius: 8, letterSpacing: "0.06em" }}>SOLD</div>
-          ) : isHidden ? (
+          {item.sold ? (() => {
+            // Velocity chip: "SOLD · 4d" when we know firstSeen +
+            // soldAt. Auctions don't have a firstSeen-from-listing
+            // history (lots appear on the catalog ~weeks before the
+            // sale and "sold" is the auction end), so the chip
+            // would mislead — skip on auction-shaped items. Mark
+            // wants this for dealer cycle-speed visibility (Mark
+            // request 2026-05-09).
+            const dur = (!item._isAuctionFormat && !item._isTrackedLot)
+              ? daysOnSale(item) : null;
+            const durLabel = dur != null ? daysOnSaleLabel(dur) : null;
+            return (
+              <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 9, padding: "2px 7px", borderRadius: 8, letterSpacing: "0.06em" }}
+                title={durLabel ? `On sale for ${durLabel} before going sold` : undefined}>
+                SOLD{durLabel ? ` · ${durLabel}` : ""}
+              </div>
+            );
+          })() : isHidden ? (
             <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 9, padding: "2px 7px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>
           ) : countdownLabel ? (
             <div style={{

@@ -1,6 +1,39 @@
 // Pure utility functions and constants. No React, no DOM access — safe
 // to import from anywhere including non-component code.
 
+// Days an item was on sale before going sold. Reads firstSeen and
+// soldAt (both YYYY-MM-DD strings emitted by merge.py's update_state).
+// Returns null when either is missing or unparseable. Inclusive count:
+// firstSeen=2026-05-01 + soldAt=2026-05-05 → 4 days. Same-day returns 0.
+//
+// Used for the "Sold in 4d" chip on archived listings (Mark report
+// 2026-05-09 — wants to see which dealers cycle inventory fastest).
+export function daysOnSale(item) {
+  if (!item || !item.firstSeen || !item.soldAt) return null;
+  try {
+    const a = new Date(item.firstSeen).getTime();
+    const b = new Date(item.soldAt).getTime();
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+    if (b < a) return null;
+    return Math.round((b - a) / 86400000);
+  } catch { return null; }
+}
+
+// Compact label for a days-on-sale duration: "1d", "12d", "6w", "4mo".
+// Buckets so very-fresh sales read distinct from slow burns:
+//   0-1   day → "<1d"
+//   2-13  days → "Nd"
+//   14-89 days → "Nw" (week-rounded)
+//   90+   days → "Nmo" (month-rounded, n=days/30)
+export function daysOnSaleLabel(days) {
+  if (days == null || days < 0) return null;
+  if (days === 0) return "same day";
+  if (days < 2) return "1d";
+  if (days < 14) return `${days}d`;
+  if (days < 90) return `${Math.round(days / 7)}w`;
+  return `${Math.round(days / 30)}mo`;
+}
+
 export const GLOBAL_MAX = 600000;
 export const CURRENCY_SYM = { USD: "$", GBP: "£", EUR: "€", CHF: "CHF ", HKD: "HK$", JPY: "¥" };
 

@@ -102,6 +102,19 @@ const COLUMNS = [
   // for high-value-low-volume dealers.
   { key: "addedUsd30d", label: "$ added (30d)", align: "right", fmt: (r) => fmtMoney(r.addedUsd30d) },
   { key: "soldUsd30d",  label: "$ sold (30d)",  align: "right", fmt: (r) => fmtMoney(r.soldUsd30d) },
+  // Cycle speed (median days-on-sale) over the rolling 30d sold
+  // sample. Lower = faster turn. Surface only when there were any
+  // sales in the window; otherwise "—" so we don't mislead with a
+  // zero. Subscript count gives reader a sense of sample size.
+  { key: "medianDaysOnSale", label: "Cycle (30d)", align: "right",
+    fmt: (r) => r.medianDaysOnSale == null
+      ? "—"
+      : (
+        <span title={`Median across ${r.soldCount30d} sale${r.soldCount30d === 1 ? "" : "s"} in the last 30 days`}>
+          {r.medianDaysOnSale}d <span style={{ color: "var(--text3)", fontSize: 10 }}>×{r.soldCount30d}</span>
+        </span>
+      )
+  },
   { key: "topBrand",    label: "Top brand",   align: "left",  fmt: (r) => r.topBrand ? `${r.topBrand} ${(r.topBrandPct*100).toFixed(0)}%` : "—" },
   // Demand-side columns from listing_events (Epic 8). 30-day rolling
   // window, sourced from listing_events_daily via the
@@ -289,6 +302,12 @@ export function AdminTab({ watchItems, hiddenItems }) {
           live: 0, prices: [], brands: new Map(),
           newRecent: 0, latestFirstSeen: "",
           addedUsd30d: 0, soldUsd30d: 0,
+          // Velocity samples: days-on-sale for items that sold in
+          // the rolling 30d window. Median is what reads as "typical
+          // dealer cycle time" (mean is dragged by long-tail aged
+          // listings). 2026-05-09 — Mark wants to see who flips
+          // inventory fastest.
+          daysOnSaleSamples: [],
         });
       }
       const agg = bySource.get(s);
@@ -321,6 +340,16 @@ export function AdminTab({ watchItems, hiddenItems }) {
           if (today - sd <= THIRTY_DAYS_MS) {
             const v = it.priceUSD || it.lastMeaningfulPrice || 0;
             if (v) agg.soldUsd30d += v;
+            // Velocity sample for the rolling-30d cycle-time read:
+            // (soldAt - firstSeen) in whole days. Skip if either
+            // end is missing or unparseable. Mark request 2026-05-09.
+            if (fs) {
+              const fsDate = new Date(fs);
+              const days = Math.round((sd - fsDate) / DAY_MS);
+              if (Number.isFinite(days) && days >= 0) {
+                agg.daysOnSaleSamples.push(days);
+              }
+            }
           }
         }
       }
@@ -349,6 +378,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
         live: 0, prices: [], brands: new Map(),
         newRecent: 0, latestFirstSeen: "",
         addedUsd30d: 0, soldUsd30d: 0,
+        daysOnSaleSamples: [],
       };
       const hearts = heartsBy.get(src) || 0;
       const hides = hidesBy.get(src) || 0;
@@ -384,10 +414,19 @@ export function AdminTab({ watchItems, hiddenItems }) {
       const listAddPer100v = views30d ? (listAdds30d / views30d) * 100 : 0;
       const sharePer100v = views30d ? (shares30d / views30d) * 100 : 0;
 
+      // Median days-on-sale across the rolling-30d sold sample.
+      // Cycle-speed signal — lower = faster turn. Empty sample
+      // returns null so the column reads "—" rather than "0d".
+      const dosSorted = agg.daysOnSaleSamples.slice().sort((a, b) => a - b);
+      const medianDaysOnSale = dosSorted.length
+        ? dosSorted[Math.floor(dosSorted.length / 2)]
+        : null;
       out.push({
         source: src, live: agg.live, newPerWeek, daysStale, hearts, heartRate, hides, hideRate,
         avgPrice: median, topBrand, topBrandPct, trend, health, earning, alert,
         addedUsd30d: agg.addedUsd30d, soldUsd30d: agg.soldUsd30d,
+        medianDaysOnSale,
+        soldCount30d: dosSorted.length,
         views30d, clicks30d, saves30d, listAdds30d, shares30d,
         ctr, savePer100v, listAddPer100v, sharePer100v,
       });
