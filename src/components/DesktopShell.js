@@ -174,9 +174,15 @@ export function DesktopShell(props) {
               fontWeight: filterHearted ? 600 : 500,
               display: "flex", alignItems: "center", gap: 5,
             }}>
+            {/* Heart always renders red (--danger) so the chip reads
+                as "the heart filter" at a glance — same color as the
+                hearted-card overlay. Filled when active; outlined
+                when off. (2026-05-09 Mark feedback: the heart was
+                color-following the pill state and got lost on the
+                white-on-brand active state.) */}
             <svg width="11" height="11" viewBox="0 0 24 24"
-              fill={filterHearted ? "#fff" : "none"}
-              stroke={filterHearted ? "#fff" : "currentColor"}
+              fill={filterHearted ? "var(--danger)" : "none"}
+              stroke="var(--danger)"
               strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>

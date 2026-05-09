@@ -46,7 +46,15 @@ export function TabIcon({ kind }) {
     <svg {...props}><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
   );
   if (kind === "watchlist") return (
-    <svg {...props}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    // Bookmark glyph (2026-05-09). Pre-Bundle-2A this tab was a heart
+    // — fitting when the tab WAS hearts. Now Watchlists holds Lists,
+    // Searches, Owned, Challenges; the heart misread as "this is the
+    // heart filter" when paired with the standalone Saved chip on
+    // Listings (which also uses a heart). Bookmark reads cleanly as
+    // "saved/curated stuff lives here" without the heart conflict.
+    <svg {...props}>
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+    </svg>
   );
   if (kind === "references") return (
     // Open-book glyph — reads as "reference resources" (encyclopedia
