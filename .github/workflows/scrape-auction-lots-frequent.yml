@@ -1,0 +1,103 @@
+name: Scrape auction lots (frequent)
+
+# Higher-frequency refresh of auction-lot data — current bids,
+# starting-bid live status, sold/passed transitions. Reuses the
+# comprehensive auction-lot scraper but skips the calendar walk
+# and tracked-lots passes (those don't change as fast).
+#
+# Why a separate workflow: Mark report 2026-05-09 — auctions ending
+# in EU timezone in the early-evening window were already showing
+# stale state by mid-afternoon US time because the daily 06:00 UTC
+# pass was the only refresh. Four runs per day (06:00 already
+# covered by the main workflow, plus 12:00 / 16:00 / 20:00 here)
+# means at most ~4-5 hours between refreshes during European /
+# US-business-hours auction days.
+#
+# This workflow does NOT re-walk auction calendars (auctions.json)
+# or eBay tracked lots — both of those are owned by the daily main
+# workflow. It DOES re-run public/auction_lots.json so the per-lot
+# bid + status fields stay fresh for the active sale window.
+
+on:
+  schedule:
+    # Three additional refreshes spaced through the day. The main
+    # daily workflow at 06:00 UTC handles the morning pass; these
+    # cover EU evening (~20:00 UTC) and US business hours.
+    - cron: '0 12 * * *'
+    - cron: '0 16 * * *'
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+# Concurrency: don't double-run if a previous run hasn't finished.
+# `cancel-in-progress: false` so we wait rather than abort an
+# in-flight scrape.
+concurrency:
+  group: auction-lots-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run comprehensive auction-lot scraper
+        # Reads the existing public/auctions.json (last refreshed by
+        # the daily workflow) and re-scrapes per-lot data for active
+        # sales. Output overwrites public/auction_lots.json. Soft-fail
+        # so a single house going down doesn't kill the run.
+        continue-on-error: true
+        run: python auction_lots_scraper.py
+
+      - name: Set up Node (for image caching)
+        # Same Node 22 pin as the main workflow — supabase-js boots
+        # RealtimeClient unconditionally and Node 20 lacks native
+        # WebSocket.
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Node deps
+        run: npm install --omit=dev --no-audit --no-fund --prefer-offline
+
+      - name: Cache watchlist images to Vercel Blob
+        # Hearted auction-lot images can disappear once the lot ends —
+        # this re-cache pass keeps Blob copies fresh for currently-
+        # hearted lots. Same script as the daily run.
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: node cache_watchlist_images.mjs
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/auction_lots.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Auction lots refresh $(date -u '+%Y-%m-%d %H:%M UTC')"
+          for i in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected, rebasing and retrying ($i/3)..."
+            if ! git pull --rebase --strategy-option=theirs; then
+              echo "Rebase failed, aborting and retrying push"
+              git rebase --abort 2>/dev/null || true
+            fi
+          done
+          echo "Push still failing after 3 retries"
+          exit 1
