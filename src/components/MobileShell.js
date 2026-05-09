@@ -219,9 +219,13 @@ export function MobileShell(props) {
                 boxShadow:  filterHearted ? "none" : "inset 0 0 0 0.5px var(--border)",
                 display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
               }}>
+              {/* Heart always renders red (--danger) to match the
+                  hearted-card overlay so this chip reads as "the
+                  heart filter" at a glance. (2026-05-09 — Mark
+                  feedback parity with the desktop chip.) */}
               <svg width="11" height="11" viewBox="0 0 24 24"
-                fill={filterHearted ? "#fff" : "none"}
-                stroke={filterHearted ? "#fff" : "currentColor"}
+                fill={filterHearted ? "var(--danger)" : "none"}
+                stroke="var(--danger)"
                 strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
