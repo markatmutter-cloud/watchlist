@@ -29,6 +29,7 @@ import { AddSearchModal } from "./components/AddSearchModal";
 import { CollectionEditModal } from "./components/CollectionEditModal";
 import { CollectionPickerModal } from "./components/CollectionPickerModal";
 import { SettingsModal } from "./components/SettingsModal";
+import { ViewSettingsControls } from "./components/ViewSettingsControls";
 import { ShareReceiver } from "./components/ShareReceiver";
 import { ChallengeReceiver } from "./components/ChallengeReceiver";
 import { ListReceiver } from "./components/ListReceiver";
@@ -1809,13 +1810,39 @@ export default function Watchlist() {
                     fontSize: 13, borderRadius: 6 }}>
             About Watchlist
           </button>
-          <button onClick={() => { setShowUserMenu(false); setSettingsModalOpen(true); }}
-            style={{ display: "block", width: "100%", textAlign: "left",
-                    padding: "6px 8px", border: "none", background: "transparent",
-                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 13, borderRadius: 6 }}>
-            Settings
-          </button>
+          {/* View-settings inline (2026-05-09 Mark feedback) — currency,
+              theme, columns surface directly in the desktop dropdown
+              rather than behind a Settings modal hop. On mobile the
+              same controls live in the filter drawer (per Mark's
+              "filter tray" preference); a fallback Settings entry
+              stays in the mobile dropdown for surfaces where the
+              filter button isn't shown. */}
+          {!isMobile ? (
+            <div style={{ padding: "8px 8px 4px" }}>
+              <ViewSettingsControls
+                primaryCurrency={primaryCurrency}
+                setPrimaryCurrency={setPrimaryCurrency}
+                isMobile={false}
+                dark={dark}
+                setDarkOverride={setDarkOverride}
+                mobileCols={mobileCols}
+                setMobileCols={setMobileCols}
+                desktopCols={desktopCols}
+                setDesktopCols={setDesktopCols}
+                desktopAutoCols={desktopAutoCols}
+                compact={true}
+              />
+            </div>
+          ) : (
+            <button onClick={() => { setShowUserMenu(false); setSettingsModalOpen(true); }}
+              style={{ display: "block", width: "100%", textAlign: "left",
+                      padding: "6px 8px", border: "none", background: "transparent",
+                      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                      fontSize: 13, borderRadius: 6 }}>
+              Display settings
+            </button>
+          )}
+          <div style={{ height: "0.5px", background: "var(--border)", margin: "8px -8px 4px" }} />
           {isAdmin && (
             // Site Stats is admin-only — shown only to Mark. Mark
             // feedback 2026-05-07: shade it and drop the trailing
@@ -2619,6 +2646,15 @@ export default function Watchlist() {
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
     listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
+    // View-settings (currency / theme / columns) threaded into shells so
+    // the same controls can render inline in the mobile filter drawer
+    // and the desktop user menu (2026-05-09 — Mark feedback that
+    // burying these in a Settings modal cost a tap users didn't have
+    // patience for, especially currency while comparing prices).
+    setPrimaryCurrency,
+    dark, setDarkOverride,
+    mobileCols, setMobileCols,
+    desktopCols, setDesktopCols, desktopAutoCols,
     settingsModalJSX, shareReceiverJSX,
     challengeReceiverJSX,
     listReceiverJSX,
