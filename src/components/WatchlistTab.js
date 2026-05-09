@@ -307,6 +307,8 @@ export function WatchlistTab(props) {
         blurb={<>Save the queries you keep coming back to — a reference, a brand cut, a phrase you scan for. Each one runs across every dealer in the feed and tells you when something new matches.</>}
         actionLabel="+ Add search"
         onAction={startAddSearch}
+        expandable
+        defaultExpanded={savedSearchStats.length === 0}
       />
 
       {/* eBay source-searches block (data/ebay_searches.json + GitHub

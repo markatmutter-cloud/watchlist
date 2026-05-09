@@ -433,8 +433,18 @@ function MyCollectionView({
   const wantsTotal = (wishlistItems || []).reduce(
     (s, it) => s + (Number(it.savedPriceUSD) || Number(it.price) || 0), 0);
 
+  // Total count drives the SubTabIntro's expand state — empty
+  // user gets the explainer; non-empty user gets a compact
+  // collapsed title row.
+  const myWatchesTotal = ownedItems.length + soldItems.length + (wishlistItems || []).length;
   return (
     <div>
+      <SubTabIntro
+        title="My watches — Collection · Archive · Plan"
+        blurb={<>Track what you own (Collection), what you've sold (Archive) and what's next (Plan). Tap any watch for the detail sheet — buy / sell breakdown, P&amp;L, your thoughts, and a dated journal.</>}
+        expandable
+        defaultExpanded={myWatchesTotal === 0}
+      />
       <div style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "14px 14px 12px",
@@ -1293,6 +1303,8 @@ function ListsView({
         blurb={<>Reference threads, dealer comps, "Rolex 5513s", "Vintage divers" — whatever cut helps you think. Add via the <strong style={{ color: "var(--text1)" }}>…</strong> menu on any card → <em>Add to list…</em>.</>}
         actionLabel="+ New list"
         onAction={startCreateCollection}
+        expandable
+        defaultExpanded={visibleCols.length === 0}
       />
       {visibleCols.length === 0 ? (
         <EmptyState
