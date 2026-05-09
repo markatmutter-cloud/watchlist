@@ -339,7 +339,20 @@ export function MobileShell(props) {
             instead of the pill. +12 keeps the nav clear of the
             indicator without burning real estate in Safari (where
             env() resolves to 0). */}
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", background: "var(--surface)", borderTop: "1px solid var(--border)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}>
+        {/* Bottom nav lifted off the page via a shadow in the
+            favicon's olive-green tone (#3b4a36 — the same theme-color
+            used on iOS PWA status bar). Mark feedback 2026-05-09:
+            tabs blended into the page; want them more visible. Test
+            shade — easy to swap to a darker grey if the green reads
+            too tinted at certain page colors. */}
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0,
+          display: "flex",
+          background: "var(--surface)",
+          borderTop: "1px solid var(--border)",
+          boxShadow: "0 -4px 12px rgba(59, 74, 54, 0.18)",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+        }}>
           {/* Admin is desktop-only — mobile bottom bar shows
               Listings / Saved / Learn (3 pills, fits cleanly on
               375px viewports). Bundle 2A.2 (2026-05-07) collapsed
