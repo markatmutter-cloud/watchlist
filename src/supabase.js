@@ -575,6 +575,12 @@ export function useCollections(user) {
           // Challenge-specific item fields
           isPick:          !!row.is_pick,
           reasoning:       row.reasoning || '',
+          // Slice 4 attribution (2026-05-09): who added this item
+          // on a shared list. Useful when more than one person can
+          // edit the same list — chip on the card reads "Added by X".
+          // Null on private (single-owner) lists where it would be
+          // visual noise.
+          whoAdded:        row.who_added || null,
           ...snap,
           ...manualShape,
         };
@@ -712,14 +718,13 @@ export function useCollections(user) {
       listing_snapshot: listing,
       source_of_entry:  opts.sourceOfEntry || 'manual',
       shared_by_handle: opts.sharedByHandle || null,
-      // who_added column was added in slice-1 SQL (and the trigger
-      // backfills it server-side). Removed from the JS payload
-      // 2026-05-07 because shipping the JS write before the migration
-      // ran broke every "Add to list" / "Add to Shortlist" /
-      // "Add to Owned" flow with `Could not find the 'who_added'
-      // column of 'collection_items' in the schema cache`. The
-      // collaborator slice-4 attribution work re-adds the JS write
-      // once the migration is confirmed applied in production.
+      // Slice 4 (re-added 2026-05-09): who_added attribution chip
+      // on shared lists. Stamps the inserter so the recipient can
+      // see who added each item ("Mark added" vs "Jacquelin
+      // added"). Schema column was added in slice-1 SQL and is
+      // confirmed live in production. The earlier removal in #127
+      // was a hotfix while the migration hadn't applied yet.
+      who_added:        user.id,
     };
     const { data, error } = await supabase.from('collection_items')
       .insert(payload)
@@ -1302,6 +1307,19 @@ export function useCollections(user) {
     return { error: null, rows: data || [] };
   }, [user]);
 
+  // Slice 4 (2026-05-09) — fetch every member (owner + accepted
+  // collaborators) of a list. Used by the drill-in to render
+  // who_added attribution chips. Caller must be a member; non-
+  // members get an empty result (no name leak from random list URLs).
+  const fetchListMembers = useCallback(async (collectionId) => {
+    if (!user || !supabase) return { error: 'not signed in', members: [] };
+    const { data, error } = await supabase.rpc('list_members_for_collection', {
+      p_collection_id: collectionId,
+    });
+    if (error) return { error: error.message, members: [] };
+    return { error: null, members: data || [] };
+  }, [user]);
+
   return {
     collections,
     itemsByCollection,
@@ -1334,6 +1352,7 @@ export function useCollections(user) {
     declineInvite,
     listCollaborators,
     fetchPendingInvitesForMe,
+    fetchListMembers,
   };
 }
 

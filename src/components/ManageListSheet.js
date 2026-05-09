@@ -92,25 +92,28 @@ export function ManageListSheet({
           text: `I'd like to share "${collection.name}" with you on Watchlist. Tap the link to join:`,
           url,
         });
-        outcome = "shared";
+        outcome = "shared-collab";
       } else if (navigator.clipboard) {
         await navigator.clipboard.writeText(url);
-        outcome = "copied";
+        outcome = "copied-collab";
       } else {
         window.prompt("Copy this link and send it to them:", url);
-        outcome = "copied";
+        outcome = "copied-collab";
       }
     } catch (e) {
       if (e?.name !== "AbortError") {
-        try { await navigator.clipboard?.writeText(url); outcome = "copied"; }
-        catch { window.prompt("Copy this link and send it to them:", url); outcome = "copied"; }
+        try { await navigator.clipboard?.writeText(url); outcome = "copied-collab"; }
+        catch { window.prompt("Copy this link and send it to them:", url); outcome = "copied-collab"; }
       } // AbortError = user dismissed share sheet; treat as no-op, invite still created.
     }
     setBusy(false);
     setShareCopyState(outcome);
     setEmail("");
     refresh();
-    setTimeout(() => setShareCopyState(""), 2400);
+    // Keep the confirmation visible long enough to actually be read —
+    // 2.4s was the prior default but Mark feedback (2026-05-09):
+    // desktop-clipboard "copied" felt too brief. 4s gives a calm read.
+    setTimeout(() => setShareCopyState(""), 4000);
   }, [collection?.id, collection?.name, email, role, inviteCollaborator, refresh]);
 
   const onRevoke = useCallback(async (row) => {
@@ -144,20 +147,20 @@ export function ManageListSheet({
           text: `${collection.name} — a list on Watchlist`,
           url,
         });
-        setShareCopyState("shared");
+        setShareCopyState("shared-readonly");
       } else if (navigator.clipboard) {
         await navigator.clipboard.writeText(url);
-        setShareCopyState("copied");
+        setShareCopyState("copied-readonly");
       } else {
         window.prompt("Copy this link:", url);
       }
     } catch (e) {
       if (e?.name !== "AbortError") {
-        try { await navigator.clipboard?.writeText(url); setShareCopyState("copied"); }
+        try { await navigator.clipboard?.writeText(url); setShareCopyState("copied-readonly"); }
         catch { window.prompt("Copy this link:", url); }
       }
     }
-    setTimeout(() => setShareCopyState(""), 2400);
+    setTimeout(() => setShareCopyState(""), 4000);
   }, [collection?.id, collection?.name]);
 
   if (!open || !collection) return null;
@@ -204,7 +207,7 @@ export function ManageListSheet({
               <option value="viewer">Viewer</option>
             </select>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <button onClick={copyShareUrl}
               disabled={busy}
               style={{
@@ -212,9 +215,9 @@ export function ManageListSheet({
                 color: "var(--text2)", padding: "6px 12px", borderRadius: 6,
                 cursor: busy ? "wait" : "pointer", fontFamily: "inherit", fontSize: 12,
               }}>
-              {shareCopyState === "copied" ? "Link copied ✓"
-               : shareCopyState === "shared" ? "Shared ✓"
-               : "Read-only link"}
+              {shareCopyState === "copied-readonly" ? "Link copied to clipboard ✓"
+               : shareCopyState === "shared-readonly" ? "Shared ✓"
+               : "View Only Link"}
             </button>
             <button onClick={submitInvite} disabled={busy || !email.trim()}
               style={{
@@ -223,13 +226,17 @@ export function ManageListSheet({
                 cursor: busy ? "wait" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
                 opacity: (!email.trim() || busy) ? 0.5 : 1,
               }}>
-              {busy ? "Sharing…" : "Invite & share link"}
+              {busy ? "Sharing…"
+               : shareCopyState === "copied-collab" ? "Link copied to clipboard ✓"
+               : shareCopyState === "shared-collab" ? "Shared ✓"
+               : "Collaboration Link"}
             </button>
           </div>
           <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 8, lineHeight: 1.4 }}>
-            "Invite & share link" creates the invite and opens your share sheet so you can
-            send the link via iMessage / WhatsApp / email. They tap the link, sign in, and
-            join — even if their sign-in email is slightly different from what you typed.
+            <strong>View Only Link</strong> shares the list as read-only — no email needed.
+            <br/>
+            <strong>Collaboration Link</strong> needs an email; the recipient signs in and
+            can add or remove watches alongside you.
           </div>
         </div>
 

@@ -268,6 +268,7 @@ export function CollectionsTab({
         setSelectedListId={setSelectedListId}
         setManageListOpen={setManageListOpen}
         filterValues={filterValues}
+        fetchListMembers={collectionsApi?.fetchListMembers}
       />
     );
   } else if (subTab === "challenges") {
@@ -654,7 +655,36 @@ function ListsView({
   // Filter row values from App.js. Same shape useFilters exposes.
   // Applied to drilled-in items via applyDrillInFilters below.
   filterValues,
+  // (Slice 4) — fetch members for the active drill-in so the
+  // who_added chip can resolve user_id → display_name.
+  fetchListMembers,
 }) {
+  // Membership map for the active drill-in. Populated on drill-in
+  // (best-effort — non-members get an empty array, which means no
+  // chips). Used to resolve `whoAdded` user_id → display name.
+  const [memberMap, setMemberMap] = useState(() => new Map());
+  const [memberCount, setMemberCount] = useState(0);
+  useEffect(() => {
+    if (!selectedListId
+        || selectedListId === HIDDEN_COLLECTION_ID
+        || selectedListId === SAVED_COLLECTION_ID
+        || !fetchListMembers) {
+      setMemberMap(new Map());
+      setMemberCount(0);
+      return undefined;
+    }
+    let cancelled = false;
+    fetchListMembers(selectedListId).then(({ members }) => {
+      if (cancelled) return;
+      const m = new Map();
+      for (const row of (members || [])) {
+        m.set(row.user_id, row.user_name || row.user_email || "Member");
+      }
+      setMemberMap(m);
+      setMemberCount(m.size);
+    });
+    return () => { cancelled = true; };
+  }, [selectedListId, fetchListMembers]);
   const sharedInbox = cols.find(c => c.isSharedInbox) || null;
   const userCols = cols.filter(c =>
     !c.isSharedInbox && !c.isSystem && c.type !== "challenge"
@@ -795,33 +825,51 @@ function ListsView({
           />
         ) : (
           <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-            {items.map(item => (
-              <Card
-                key={item.id}
-                item={isSavedColl ? {
-                  ...item,
-                  price: item.savedPrice,
-                  currency: item.savedCurrency || "USD",
-                  priceUSD: item.savedPriceUSD || item.savedPrice,
-                  sold: item._isSold,
-                } : item}
-                wished={isSavedColl ? true : !!watchlist[item.id]}
-                onWish={handleWish}
-                compact={compact}
-                onHide={isHiddenColl
-                  ? toggleHide
-                  : isSavedColl
-                    ? undefined
-                    : () => removeItemFromCollection(selected.id, item.id)}
-                hideLabel={isHiddenColl ? undefined : "Remove from list"}
-                isHidden={isHiddenColl}
-                onAddToCollection={openCollectionPicker}
-                primaryCurrency={primaryCurrency}
-                onShare={handleShare}
-                onView={observeCard}
-                onClickListing={onClickListing}
-              />
-            ))}
+            {items.map(item => {
+              // Slice 4: only show the attribution chip on shared
+              // (multi-member) lists. On single-owner lists every
+              // item was added by the owner and the chip is just
+              // visual noise.
+              const showChip = memberCount >= 2 && !!item.whoAdded;
+              const addedByName = showChip ? memberMap.get(item.whoAdded) : null;
+              return (
+                <div key={item.id} style={{ display: "flex", flexDirection: "column" }}>
+                  <Card
+                    item={isSavedColl ? {
+                      ...item,
+                      price: item.savedPrice,
+                      currency: item.savedCurrency || "USD",
+                      priceUSD: item.savedPriceUSD || item.savedPrice,
+                      sold: item._isSold,
+                    } : item}
+                    wished={isSavedColl ? true : !!watchlist[item.id]}
+                    onWish={handleWish}
+                    compact={compact}
+                    onHide={isHiddenColl
+                      ? toggleHide
+                      : isSavedColl
+                        ? undefined
+                        : () => removeItemFromCollection(selected.id, item.id)}
+                    hideLabel={isHiddenColl ? undefined : "Remove from list"}
+                    isHidden={isHiddenColl}
+                    onAddToCollection={openCollectionPicker}
+                    primaryCurrency={primaryCurrency}
+                    onShare={handleShare}
+                    onView={observeCard}
+                    onClickListing={onClickListing}
+                  />
+                  {addedByName && (
+                    <div style={{
+                      padding: "4px 10px 8px",
+                      fontSize: 11, color: "var(--text3)",
+                      letterSpacing: "0.02em",
+                    }}>
+                      Added by <strong style={{ color: "var(--text2)" }}>{addedByName}</strong>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

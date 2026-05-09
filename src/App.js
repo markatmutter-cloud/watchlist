@@ -2119,7 +2119,7 @@ export default function Watchlist() {
       {[
         ["live", isMobile ? "Live" : "Live listings"],
         ["auctions", isMobile ? "Auctions" : "Live auctions"],
-        ["sold", isMobile ? "Sold" : "All sold"],
+        ["sold", isMobile ? "Archive" : "Archive Sold"],
         ["calendar", isMobile ? "Calendar" : "Auction calendar"],
       ].map(([key, label]) => {
         const active = listingsSubTab === key;
@@ -2320,7 +2320,7 @@ export default function Watchlist() {
       {[
         ["lists",         "Lists"],
         ["searches",      isMobile ? "Searches" : "Favorite searches"],
-        ["my-collection", "Owned Watches"],
+        ["my-collection", "My Watches"],
         ["challenges",    "Challenges"],
       ].map(([key, label]) => {
         const active = watchTopTab === key;

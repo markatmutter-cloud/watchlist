@@ -53,6 +53,7 @@ const baseCollectionsApi = {
   declineInvite: noopAsync,
   listCollaborators: async () => ({ error: null, rows: [] }),
   fetchPendingInvitesForMe: async () => ({ error: null, rows: [] }),
+  fetchListMembers: async () => ({ error: null, members: [] }),
 };
 
 function buildProps(overrides = {}) {
