@@ -589,6 +589,16 @@ export default function Watchlist() {
   // pattern — one-bit mirror; the ListReceiver component owns its
   // own intent state.
   const [listShareActive, setListShareActive] = useState(false);
+  // One-bit mirror of CollectionsTab's drill-in state. CollectionsTab
+  // still owns selectedListId / URL push; this just exposes "are we
+  // drilled into a list?" up to App.js so the shell can render the
+  // filter row when drilled in (mirroring the Listings tab). The
+  // setter is threaded down to CollectionsTab via shellProps below.
+  // (2026-05-09 IA pass.)
+  const [colDrillInId, setColDrillInId] = useState(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("col") || null;
+  });
   // Bumps each time the user explicitly navigates away from a
   // share-receive surface via main-nav (Watchlist logo, top tabs).
   // Receivers watch this and clear their internal intent state,
@@ -2233,6 +2243,18 @@ export default function Watchlist() {
       collectionsSubTab={collectionsSubTab}
       setCollectionsSubTab={setCollectionsSubTab}
       tabResetTick={tab === "watchlist" && SUB_VALUES_COLLECTIONS.includes(watchTopTab) ? tabResetTick : 0}
+      // Filter row values for drill-in filtering (2026-05-09).
+      // Same shape useFilters exposes; ListsView applies these to
+      // the drilled-in items so the shell's filter row drives the
+      // visible set inside a list, mirroring Listings tab behavior.
+      filterValues={{
+        filterSources, filterBrands, search, sort,
+        minPrice, maxPrice,
+      }}
+      // CollectionsTab notifies App.js of its drill-in id so the
+      // shell can render the filter row when drilled in. App.js
+      // doesn't manage the col state — this is a one-way mirror.
+      onDrillInChange={setColDrillInId}
     />
   );
 
@@ -2616,6 +2638,9 @@ export default function Watchlist() {
     shareActive,
     challengeShareActive,
     listShareActive,
+    // Drill-in mirror so the shell can show the filter row when
+    // we're inside a list (Watchlists > Lists > [list]).
+    colDrillInId,
   };
 
   return isMobile

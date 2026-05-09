@@ -97,6 +97,7 @@ export function buildMockShellProps(overrides = {}) {
     shareActive: false,
     challengeShareActive: false,
     listShareActive: false,
+    colDrillInId: null,
     primaryCurrency: "USD",
     sectionHeadingStyle: { fontSize: 11, fontWeight: 600 },
     settingsModalJSX: null,

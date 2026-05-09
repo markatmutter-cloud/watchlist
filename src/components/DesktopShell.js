@@ -54,8 +54,13 @@ export function DesktopShell(props) {
     shareActive,
     challengeShareActive,
     listShareActive,
+    colDrillInId,
   } = props;
   const anyShareActive = shareActive || challengeShareActive || listShareActive;
+  // True when we're drilled into a list (Watchlists > Lists > [list]).
+  // Filter row is shown here so users can date-sort, narrow by source/
+  // brand, etc. inside a long list — same UX as the Listings tab.
+  const inListsDrillIn = tab === "watchlist" && watchTopTab === "lists" && !!colDrillInId;
 
   // Listings sub-tab gates filter exposure: Live listings hides
   // auction-house chips (no live dealer items in those sources);
@@ -409,6 +414,7 @@ export function DesktopShell(props) {
           compat with the mock fixture. */}
       {anyShareActive ? null : (
         (tab === "listings" && showListingsFilterRow) ||
+        inListsDrillIn ||
         (tab === "watchlist" && watchTopTab !== "searches" &&
           watchTopTab !== "my-collection" && watchTopTab !== "wishlist" &&
           watchTopTab !== "lists" && watchTopTab !== "challenges")

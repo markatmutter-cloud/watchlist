@@ -57,9 +57,14 @@ export function MobileShell(props) {
     shareActive,
     challengeShareActive,
     listShareActive,
+    colDrillInId,
   } = props;
   // Any of the three receive-flows swallows the regular browse chrome.
   const anyShareActive = shareActive || challengeShareActive || listShareActive;
+  // True when drilled into a list (Watchlists > Lists > [list]).
+  // Filter row shows here so users can date-sort, narrow by source/
+  // brand etc. inside a long list — same UX as the Listings tab.
+  const inListsDrillIn = tab === "watchlist" && watchTopTab === "lists" && !!colDrillInId;
 
   // Listings sub-tab gates filter exposure (mirror of DesktopShell).
   const showDealerSources  = !(tab === "listings" && listingsSubTab === "auctions");
@@ -67,13 +72,14 @@ export function MobileShell(props) {
   // Filter button + sort row hidden on Calendar sub-tab, on
   // Watchlist sub-tabs that don't show a filterable list, and
   // anywhere in the Collections / References / Admin tabs.
+  // Lists drill-in is the exception: when colDrillInId is set we
+  // re-enable the filter chrome so the user can narrow inside the
+  // list (mirrors Listings tab behavior).
   const noFilterableList =
     (tab === "listings" && listingsSubTab === "calendar") ||
     (tab === "watchlist" && watchTopTab === "searches") ||
-    // Bundle 2A.2: Collections folded into Saved (tab=watchlist).
-    // Sub-tabs my-collection / wishlist / lists / challenges all
-    // render their own non-filterable content surfaces.
-    (tab === "watchlist" && (watchTopTab === "my-collection" || watchTopTab === "wishlist" || watchTopTab === "lists" || watchTopTab === "challenges")) ||
+    (tab === "watchlist" && (watchTopTab === "my-collection" || watchTopTab === "wishlist" || watchTopTab === "challenges")) ||
+    (tab === "watchlist" && watchTopTab === "lists" && !inListsDrillIn) ||
     tab === "references" ||
     tab === "admin";
 
