@@ -1213,8 +1213,14 @@ export default function Watchlist() {
     if (intent) {
       try { sessionStorage.setItem("pending_intent", JSON.stringify(intent)); } catch {}
     }
-    signInWithGoogle();
-  }, [signInWithGoogle]);
+    // Route through the SignInPromptModal so users see the
+    // 2-step explainer before OAuth fires (Mark report 2026-05-09:
+    // mobile heart-tap fired Google OAuth instantly with no
+    // explanation; desktop top-bar Sign-in already used the modal,
+    // so behaviour was inconsistent). The modal's onSignIn is wired
+    // to signInWithGoogle, which picks up pending_intent on return.
+    setSignInPromptOpen(true);
+  }, []);
 
   const toggleHide = useCallback((item) => {
     if (!user) { requireSignIn({ kind: "hide", id: item.id }); return; }
