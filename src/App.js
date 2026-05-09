@@ -255,20 +255,10 @@ export default function Watchlist() {
     if (desktopMain) desktopMain.scrollTop = 0;
   }, [watchTopTab]);
 
-  // Track which hearted sub the user was last on (Bundle 2A.2b). When
-  // they tap the unified "Saved" pill from another sub-tab, restore
-  // the last hearted view rather than always defaulting to
-  // Listings. Stored as a ref since we don't need re-renders on
-  // change.
-  const lastHeartedSubRef = useRef(
-    SAVED_HEARTED_SUBS.includes(watchTopTab) ? watchTopTab : "listings"
-  );
-  useEffect(() => {
-    if (SAVED_HEARTED_SUBS.includes(watchTopTab)) {
-      lastHeartedSubRef.current = watchTopTab;
-    }
-    // eslint-disable-next-line
-  }, [watchTopTab]);
+  // (lastHeartedSubRef retired 2026-05-09 — was the "remember which
+  // hearted sub-tab the user came from when re-tapping the Saved
+  // pill" memory. The Saved pill itself was removed in the
+  // Watchlists IA pass so the ref had no readers.)
 
   // (Saved-view staleness snapshot moved to AFTER `tab` is declared
   // — referencing `tab` from a useEffect deps array up here triggered
