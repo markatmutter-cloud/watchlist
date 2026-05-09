@@ -3,6 +3,7 @@ import { SearchIcon, FilterIcon, TabIcon } from "./icons";
 import { Chip } from "./Chip";
 import { AboutModal } from "./AboutModal";
 import { SignInPromptModal } from "./SignInPromptModal";
+import { ViewSettingsControls } from "./ViewSettingsControls";
 import { iconButton, pillBase, inputBase } from "../styles";
 
 // Mobile shell — receives everything the mobile branch needs from
@@ -46,6 +47,13 @@ export function MobileShell(props) {
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
     adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
+    // View-settings (2026-05-09): rendered inline in the filter
+    // drawer so currency / theme / columns are one tap from the
+    // current view rather than buried behind Settings.
+    setPrimaryCurrency,
+    dark, setDarkOverride,
+    mobileCols, setMobileCols,
+    desktopCols, setDesktopCols, desktopAutoCols,
     settingsModalJSX, shareReceiverJSX,
     challengeReceiverJSX,
     listReceiverJSX,
@@ -409,6 +417,28 @@ export function MobileShell(props) {
                     <span style={{ fontSize: 12, color: "var(--text3)", flexShrink: 0 }}>to</span>
                     <input value={maxPriceText} onChange={e => setMaxPriceText(e.target.value)} placeholder="Max $" style={{ ...inputBase, flex: 1 }} />
                   </div>
+                </div>
+
+                {/* View settings inline in the filter drawer (2026-05-09).
+                    User feedback: currency / theme / columns were too
+                    buried behind the Settings modal. They live here so a
+                    quick comparison-shop currency swap is one tap from
+                    the current filter state. */}
+                <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
+                <div style={{ padding: "10px 16px 12px" }}>
+                  <div style={sectionHeadingStyle}>View settings</div>
+                  <ViewSettingsControls
+                    primaryCurrency={primaryCurrency}
+                    setPrimaryCurrency={setPrimaryCurrency}
+                    isMobile={true}
+                    dark={dark}
+                    setDarkOverride={setDarkOverride}
+                    mobileCols={mobileCols}
+                    setMobileCols={setMobileCols}
+                    desktopCols={desktopCols}
+                    setDesktopCols={setDesktopCols}
+                    desktopAutoCols={desktopAutoCols}
+                  />
                 </div>
               </div>
 
