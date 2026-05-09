@@ -7,6 +7,7 @@ import { ManualEntryForm } from "./ManualEntryForm";
 import { ListingPickerModal } from "./ListingPickerModal";
 import { MarkAsSoldModal } from "./MarkAsSoldModal";
 import { ManageListSheet } from "./ManageListSheet";
+import { WatchDetailSheet } from "./WatchDetailSheet";
 import { fmtUSD, matchesSearch } from "../utils";
 import { innerToggleButton, actionButton, signInButton } from "../styles";
 import { EmptyState } from "./EmptyState";
@@ -88,6 +89,10 @@ export function CollectionsTab({
   const [soldTarget, setSoldTarget] = useState(null);
   // List Sharing v2 / slice 2 — Manage list sheet state.
   const [manageListOpen, setManageListOpen] = useState(false);
+  // Watch management v1 (2026-05-09) — WatchDetailSheet state.
+  // Holds the item being viewed in the detail sheet; null when
+  // closed. Set from card click; cleared by the sheet's onClose.
+  const [detailItem, setDetailItem] = useState(null);
 
   // Lists sub-tab drill-in selection — moved here from the top-level
   // CollectionsTab pre-restructure. URL-synced via `?col=`. Only
@@ -240,6 +245,7 @@ export function CollectionsTab({
         onAddFromFeed={(cid, title) => openPicker(cid, title)}
         onMarkSold={(rowId, item) => setSoldTarget({ rowId, item })}
         onRemoveItem={(cid, item) => collectionsApi.removeItemFromCollection(cid, item.id)}
+        onClickDetail={(item) => setDetailItem(item)}
       />
     );
   } else if (subTab === "lists") {
@@ -334,6 +340,31 @@ export function CollectionsTab({
         revokeCollaborator={collectionsApi?.revokeCollaborator}
         listCollaborators={collectionsApi?.listCollaborators}
       />
+      {/* Watch management v1 (2026-05-09) — per-watch detail sheet.
+          Opens when a card is clicked in My Watches. Carries the
+          full collection_items shape; the sheet itself reads the
+          read-only fields + offers Edit Description / Edit Thoughts /
+          Flag for sale / Mark sold / Remove + Journal. */}
+      <WatchDetailSheet
+        open={!!detailItem}
+        item={detailItem}
+        onClose={() => setDetailItem(null)}
+        isMobile={typeof window !== "undefined" && window.innerWidth < 768}
+        updateWatchDetails={collectionsApi?.updateWatchDetails}
+        toggleFlagForSale={collectionsApi?.toggleFlagForSale}
+        removeItemFromCollection={collectionsApi?.removeItemFromCollection}
+        markItemAsSold={detailItem ? (rowId, item) => {
+          setSoldTarget({ rowId, item });
+          setDetailItem(null);
+        } : undefined}
+        collectionId={detailItem?.isManual
+          ? (detailItem?.soldDate ? hardSold?.id : hardOwned?.id)
+          : null}
+        fetchComments={collectionsApi?.fetchComments}
+        postComment={collectionsApi?.postComment}
+        deleteComment={collectionsApi?.deleteComment}
+        user={user}
+      />
     </div>
   );
 }
@@ -354,40 +385,49 @@ function MyCollectionView({
   // Shortlist view renders inside this component.
   wishlist, wishlistItems, onShortlistAddFromFeed, onShortlistReorder, onShortlistRemove,
   // Active sub-tab (watchTopTab) — used to derive the toggle's
-  // initial active state. When watchTopTab="wishlist" we show the
-  // Shortlist view; otherwise the Owned/Sold/All cluster.
+  // initial active state. The "wishlist" URL value maps to the new
+  // "plan" toggle (Plan view contains Wants which is wishlistItems).
   currentWatchTopTab, setWatchTopTab,
   watchlist, compact, gridStyle, primaryCurrency,
   handleShare, handleWish, observeCard, onClickListing,
   openCollectionPicker,
   onAddManual, onAddFromFeed, onMarkSold, onRemoveItem,
+  onClickDetail,
 }) {
-  // Toggle state. "shortlist" is driven by watchTopTab="wishlist"
-  // (so URL syncs); "owned" / "sold" / "all" are local state.
-  const [localToggle, setLocalToggle] = useState("owned");
-  const isShortlist = currentWatchTopTab === "wishlist";
-  const toggle = isShortlist ? "shortlist" : localToggle;
+  // Watch-management v1 (2026-05-09 — Mark spec). Toggle restructured
+  // from `Owned / Sold / All / Shortlist` (which conflated three
+  // distinct user jobs) into `Collection / Archive / Plan`:
+  //   - Collection: what I have now (was Owned)
+  //   - Archive:    what I've owned in the past (was Sold)
+  //   - Plan:       what's next — Keeping vs Selling vs Wants
+  // The legacy "All" combined view is gone; the legacy "Shortlist"
+  // surface folds into Plan > Wants.
+  //
+  // URL backward-compat: `?sub=wishlist` still routes to Plan (the
+  // old shortlist URL keeps working). New users land on Collection.
+  const [localToggle, setLocalToggle] = useState("collection");
+  const isPlanRouting = currentWatchTopTab === "wishlist";
+  const toggle = isPlanRouting ? "plan" : localToggle;
   const setToggle = (next) => {
-    if (next === "shortlist") {
+    if (next === "plan") {
       if (typeof setWatchTopTab === "function") setWatchTopTab("wishlist");
     } else {
-      // Coming back from shortlist into owned/sold/all — bounce
-      // watchTopTab to my-collection so the URL syncs to the
-      // owned/sold view.
-      if (isShortlist && typeof setWatchTopTab === "function") {
+      if (isPlanRouting && typeof setWatchTopTab === "function") {
         setWatchTopTab("my-collection");
       }
       setLocalToggle(next);
     }
   };
-  const targetCollectionId = toggle === "sold" ? sold?.id : owned?.id;
-  const targetKind = toggle === "sold" ? "sold" : "owned";
-  const targetName = toggle === "sold" ? "Sold" : "Owned";
+  const targetCollectionId = toggle === "archive" ? sold?.id : owned?.id;
+  const targetKind = toggle === "archive" ? "sold" : "owned";
+  const targetName = toggle === "archive" ? "Archive" : "Collection";
 
   const ownedTotal = ownedItems.reduce(
     (s, it) => s + (Number(it.savedPriceUSD) || Number(it.price) || 0), 0);
   const soldTotal = soldItems.reduce(
     (s, it) => s + (Number(it.soldPrice) || Number(it.savedPriceUSD) || Number(it.price) || 0), 0);
+  const wantsTotal = (wishlistItems || []).reduce(
+    (s, it) => s + (Number(it.savedPriceUSD) || Number(it.price) || 0), 0);
 
   return (
     <div>
@@ -397,34 +437,31 @@ function MyCollectionView({
         borderBottom: "0.5px solid var(--border)",
         marginBottom: 12, flexWrap: "wrap",
       }}>
-        {/* Toggle pills — Owned / Sold / All / Shortlist
-            (Bundle 2A.2b 5→4: Shortlist folded into this toggle so
-            the strip drops the standalone Shortlist sub-tab.) */}
+        {/* Toggle pills — Collection / Archive / Plan
+            (2026-05-09 watch-management restructure). */}
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
           {[
-            ["owned",     `Owned (${ownedItems.length})`],
-            ["sold",      `Sold (${soldItems.length})`],
-            ["all",       `All (${ownedItems.length + soldItems.length})`],
-            ["shortlist", `Shortlist (${(wishlistItems || []).length})`],
+            ["collection", `Collection (${ownedItems.length})`],
+            ["archive",    `Archive (${soldItems.length})`],
+            ["plan",       `Plan`],
           ].map(([key, label]) => (
             <button key={key} onClick={() => setToggle(key)}
               style={innerToggleButton(toggle === key)}>{label}</button>
           ))}
         </div>
         <div style={{ flex: 1 }} />
-        {/* +Add CTAs: Owned/Sold target the corresponding hard list;
-            Shortlist targets the wishlist collection via the
-            shortlist add-from-feed handler. "All" shows no +Add (the
-            user picks Owned or Sold first). */}
-        {toggle === "shortlist" && wishlist && (
-          <button onClick={onShortlistAddFromFeed} style={actionButton({ variant: "primary" })}>+ From feed</button>
-        )}
-        {toggle !== "shortlist" && targetCollectionId && (
+        {/* +Add CTAs scope to the active toggle. Plan view shows
+            "+ From feed" pulling into Wants (shortlist), with a
+            secondary "+ Add a watch" for manual entries. Collection
+            and Archive show their existing add-flows. */}
+        {toggle === "plan" && wishlist && (
           <>
-            {/* Mark feedback 2026-05-07: From feed is the more
-                common path and should be the highlighted primary
-                button; Add a watch is the secondary fallback for
-                manual entry of pieces not in the feed. */}
+            <button onClick={() => onAddManual("owned")} style={actionButton()}>+ Add a watch</button>
+            <button onClick={onShortlistAddFromFeed} style={actionButton({ variant: "primary" })}>+ From feed</button>
+          </>
+        )}
+        {toggle !== "plan" && targetCollectionId && (
+          <>
             <button onClick={() => onAddManual(targetKind)} style={actionButton()}>+ Add a watch</button>
             <button onClick={() => onAddFromFeed(targetCollectionId, `Add to ${targetName}`)}
               style={actionButton({ variant: "primary" })}>+ From feed</button>
@@ -432,20 +469,278 @@ function MyCollectionView({
         )}
       </div>
 
-      {/* Body — Shortlist mode renders the ranked list; Owned/Sold/All
-          modes render the Section-grouped grids. Empty-states are
-          per-mode so an empty Sold list doesn't hide a non-empty
-          Shortlist (and vice versa). */}
-      {toggle === "shortlist" ? (
-        !wishlist ? (
-          <div style={{ padding: "48px 20px", textAlign: "center", color: "var(--text2)", fontSize: 13 }}>
-            Shortlist not yet ready — refresh to retry the auto-create.
-          </div>
-        ) : (wishlistItems || []).length === 0 ? (
+      {/* Body — three branches matching the toggle. */}
+      {toggle === "plan" ? (
+        <PlanView
+          ownedItems={ownedItems}
+          ownedTotal={ownedTotal}
+          wishlist={wishlist}
+          wishlistItems={wishlistItems || []}
+          wantsTotal={wantsTotal}
+          compact={compact}
+          gridStyle={gridStyle}
+          primaryCurrency={primaryCurrency}
+          watchlist={watchlist}
+          handleShare={handleShare}
+          handleWish={handleWish}
+          observeCard={observeCard}
+          onClickListing={onClickListing}
+          openCollectionPicker={openCollectionPicker}
+          onShortlistAddFromFeed={onShortlistAddFromFeed}
+          onShortlistRemove={onShortlistRemove}
+          onMarkSold={onMarkSold}
+          onRemoveItem={onRemoveItem}
+          onClickDetail={onClickDetail}
+        />
+      ) : toggle === "collection" ? (
+        ownedItems.length === 0 ? (
+          <EmptyState
+            icon="🕰"
+            heading="Your collection"
+            blurb="Add watches you currently own. Pick from the feed for anything bought via a tracked dealer, or enter manually with a photo for off-platform watches."
+            action={
+              <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                <button onClick={() => onAddFromFeed(owned?.id, "Add to Collection")} style={actionButton()}>+ From feed</button>
+                <button onClick={() => onAddManual("owned")} style={actionButton({ variant: "primary" })}>+ Add a watch</button>
+              </div>
+            }
+          />
+        ) : (
+          <Section
+            label={`Collection · ${ownedItems.length}${ownedTotal > 0 ? ` · ${fmtUSD(ownedTotal)} total` : ""}`}
+            show={false}
+          >
+            <CollectionGrid
+              items={ownedItems}
+              collectionId={owned?.id}
+              watchlist={watchlist}
+              compact={compact}
+              gridStyle={gridStyle}
+              primaryCurrency={primaryCurrency}
+              handleShare={handleShare}
+              handleWish={handleWish}
+              observeCard={observeCard}
+              onClickListing={onClickListing}
+              openCollectionPicker={openCollectionPicker}
+              hideLabel="Remove from collection"
+              onMarkSold={onMarkSold}
+              onRemoveItem={onRemoveItem}
+              onClickDetail={onClickDetail}
+            />
+          </Section>
+        )
+      ) : (
+        // Archive
+        soldItems.length === 0 ? (
+          <EmptyState
+            icon="📁"
+            heading="No archive yet"
+            blurb="Watches you've owned and sold land here. Mark a watch in your Collection as sold to start your archive."
+          />
+        ) : (
+          <Section
+            label={`Archive · ${soldItems.length}${soldTotal > 0 ? ` · ${fmtUSD(soldTotal)} total` : ""}`}
+            show={false}
+          >
+            <CollectionGrid
+              items={soldItems}
+              collectionId={sold?.id}
+              watchlist={watchlist}
+              compact={compact}
+              gridStyle={gridStyle}
+              primaryCurrency={primaryCurrency}
+              handleShare={handleShare}
+              handleWish={handleWish}
+              observeCard={observeCard}
+              onClickListing={onClickListing}
+              openCollectionPicker={openCollectionPicker}
+              hideLabel="Remove from archive"
+              onRemoveItem={onRemoveItem}
+              onClickDetail={onClickDetail}
+            />
+          </Section>
+        )
+      )}
+    </div>
+  );
+}
+
+// ── Shortlist ranked-list view ───────────────────────────────────
+// Plan view (2026-05-09 — watch-management v1).
+//
+// Three vertically-stacked sections (mobile) / three columns (desktop)
+// with running totals at the top:
+//   - Keeping: owned items NOT flagged for sale
+//   - Selling: owned items WITH flagged_for_sale=true
+//   - Wants:   wishlist items (the planned-purchase pool)
+//
+// Plus running totals at the top:
+//   Owned    = sum of assumed_sell_value (or savedPrice fallback) for
+//              keeping items
+//   Selling  = sum of assumed_sell_value (or savedPrice fallback) for
+//              flagged items
+//   Wants    = sum of savedPrice across wishlist items
+//   Net cash = Selling − Wants  (cash impact if all moves happen)
+//   Future   = Owned + Wants    (collection value after moves)
+//
+// Movement (tap-actions, not drag-and-drop — drag is fragile on
+// mobile and the action set is small enough to afford menu items):
+//   Keeping → Selling: card "..." menu has "Flag for sale"
+//   Selling → Keeping: card "..." menu has "Keep instead"
+//   Wants   → Removed:  card "..." menu has "Remove"
+//   Wants   → Owned:    "Mark as bought" (TODO — phase 5 with picker)
+//
+// The pool below the columns (Phase 5) will surface candidates from
+// Saved + Lists for adding into Wants. Stub for now.
+
+function PlanView({
+  ownedItems, ownedTotal,
+  wishlist, wishlistItems, wantsTotal,
+  compact, gridStyle, primaryCurrency,
+  watchlist, handleShare, handleWish, observeCard, onClickListing,
+  openCollectionPicker,
+  onShortlistAddFromFeed,
+  onShortlistRemove,
+  onMarkSold,
+  onRemoveItem,
+  onClickDetail,
+}) {
+  // Split owned by flag.
+  const keeping = ownedItems.filter(it => !it.flaggedForSale);
+  const selling = ownedItems.filter(it => !!it.flaggedForSale);
+
+  const valueOf = (it) => Number(it.assumedSellValue)
+    || Number(it.savedPriceUSD) || Number(it.priceUSD)
+    || Number(it.savedPrice) || Number(it.price) || 0;
+  const keepingValue = keeping.reduce((s, it) => s + valueOf(it), 0);
+  const sellingValue = selling.reduce((s, it) => s + valueOf(it), 0);
+  // wantsTotal already computed upstream from wishlistItems' savedPrice.
+  const netCash = sellingValue - wantsTotal;
+  const futureValue = keepingValue + wantsTotal;
+
+  const colHeader = (label, value, hint, color) => (
+    <div style={{
+      padding: "10px 12px",
+      borderRadius: 10,
+      background: "var(--surface)",
+      border: "0.5px solid var(--border)",
+      marginBottom: 10,
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 18, fontWeight: 600, color: color || "var(--text1)", marginTop: 2 }}>
+        {fmtUSD(value || 0)}
+      </div>
+      {hint && <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{hint}</div>}
+    </div>
+  );
+
+  const sectionGridStyle = {
+    ...gridStyle,
+    // Plan columns are narrower than the regular grid; force a tighter
+    // min-width so the cards don't blow out the column.
+    gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+    borderRadius: 10, overflow: "hidden",
+  };
+
+  return (
+    <div style={{ paddingTop: 4 }}>
+      {/* Summary row: 3 totals + net cash + future value */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+        gap: 8,
+        padding: "0 12px 16px",
+      }}>
+        {colHeader("Keeping", keepingValue, `${keeping.length} watch${keeping.length === 1 ? "" : "es"}`)}
+        {colHeader("Selling", sellingValue,
+          `${selling.length} flagged · proceeds`,
+          selling.length > 0 ? "var(--accent-positive)" : undefined)}
+        {colHeader("Wants", wantsTotal,
+          `${wishlistItems.length} candidate${wishlistItems.length === 1 ? "" : "s"} · cost`,
+          wishlistItems.length > 0 ? "var(--danger)" : undefined)}
+        {colHeader(
+          "Net cash impact",
+          netCash,
+          netCash >= 0 ? "if you do the moves, you'd gain cash" : "if you do the moves, you'd spend cash",
+          netCash >= 0 ? "var(--accent-positive)" : "var(--danger)"
+        )}
+        {colHeader("Future collection value", futureValue,
+          "what your collection would be worth after the moves")}
+      </div>
+
+      {/* Three vertical sections (or three columns on a wide viewport
+          via the grid below). Mobile stacks naturally because each
+          section is a block element. */}
+      {/* Keeping */}
+      <Section
+        label={`Keeping · ${keeping.length}${keepingValue > 0 ? ` · ${fmtUSD(keepingValue)} total` : ""}`}
+        show={true}
+      >
+        {keeping.length === 0 ? (
+          <EmptyHardListSection text="No watches in Keeping. Anything you flag for sale moves to the Selling section." />
+        ) : (
+          <CollectionGrid
+            items={keeping}
+            collectionId={null /* mixed */ }
+            watchlist={watchlist}
+            compact={compact}
+            gridStyle={sectionGridStyle}
+            primaryCurrency={primaryCurrency}
+            handleShare={handleShare}
+            handleWish={handleWish}
+            observeCard={observeCard}
+            onClickListing={onClickListing}
+            openCollectionPicker={openCollectionPicker}
+            hideLabel="Remove from collection"
+            onMarkSold={onMarkSold}
+            onRemoveItem={onRemoveItem}
+            onClickDetail={onClickDetail}
+          />
+        )}
+      </Section>
+
+      {/* Selling */}
+      <Section
+        label={`Selling · ${selling.length}${sellingValue > 0 ? ` · ${fmtUSD(sellingValue)} expected` : ""}`}
+        show={true}
+      >
+        {selling.length === 0 ? (
+          <EmptyHardListSection text="Nothing flagged for sale yet. On any owned watch, open the detail sheet → Flag for sale." />
+        ) : (
+          <CollectionGrid
+            items={selling}
+            collectionId={null}
+            watchlist={watchlist}
+            compact={compact}
+            gridStyle={sectionGridStyle}
+            primaryCurrency={primaryCurrency}
+            handleShare={handleShare}
+            handleWish={handleWish}
+            observeCard={observeCard}
+            onClickListing={onClickListing}
+            openCollectionPicker={openCollectionPicker}
+            hideLabel="Remove from collection"
+            onMarkSold={onMarkSold}
+            onRemoveItem={onRemoveItem}
+            onClickDetail={onClickDetail}
+          />
+        )}
+      </Section>
+
+      {/* Wants */}
+      <Section
+        label={`Wants · ${wishlistItems.length}${wantsTotal > 0 ? ` · ${fmtUSD(wantsTotal)} total` : ""}`}
+        show={true}
+      >
+        {!wishlist ? (
+          <EmptyHardListSection text="Plan not ready — refresh to retry the auto-create." />
+        ) : wishlistItems.length === 0 ? (
           <EmptyState
             icon="★"
-            heading="Shortlist is empty"
-            blurb="Pin a representative example — live or recently-sold from the feed — for each reference you'd like to add to your collection. Force-rank with the up/down buttons. The Shortlist is the deck you scenario-plan against your owned set."
+            heading="No wants yet"
+            blurb="Add the watches you'd like to acquire next. Pick from the feed (most common) or paste a URL."
             action={
               <button onClick={onShortlistAddFromFeed} style={actionButton({ variant: "primary" })}>+ From feed</button>
             }
@@ -453,84 +748,15 @@ function MyCollectionView({
         ) : (
           <WishlistRankedList
             items={wishlistItems}
-            onReorder={onShortlistReorder}
+            onReorder={() => {}}
             onRemove={onShortlistRemove}
           />
-        )
-      ) : ownedItems.length === 0 && soldItems.length === 0 ? (
-        <EmptyState
-          icon="🕰"
-          heading="Build your collection"
-          blurb="Add watches you currently own and watches you've sold. Pick from the feed for anything bought via a tracked dealer, or enter manually with a photo for off-platform watches."
-          action={
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-              <button onClick={() => onAddFromFeed(owned?.id, "Add to Owned")} style={actionButton()}>+ From feed</button>
-              <button onClick={() => onAddManual("owned")} style={actionButton({ variant: "primary" })}>+ Add a watch</button>
-            </div>
-          }
-        />
-      ) : (
-        <>
-          {(toggle === "owned" || toggle === "all") && (
-            <Section
-              label={`Owned · ${ownedItems.length}${ownedTotal > 0 ? ` · ${fmtUSD(ownedTotal)} total` : ""}`}
-              show={toggle === "all"}
-            >
-              {ownedItems.length === 0 ? (
-                <EmptyHardListSection text="No watches in Owned yet." />
-              ) : (
-                <CollectionGrid
-                  items={ownedItems}
-                  collectionId={owned?.id}
-                  watchlist={watchlist}
-                  compact={compact}
-                  gridStyle={gridStyle}
-                  primaryCurrency={primaryCurrency}
-                  handleShare={handleShare}
-                  handleWish={handleWish}
-                  observeCard={observeCard}
-                  onClickListing={onClickListing}
-                  openCollectionPicker={openCollectionPicker}
-                  hideLabel="Remove from list"
-                  onMarkSold={onMarkSold}
-                  onRemoveItem={onRemoveItem}
-                />
-              )}
-            </Section>
-          )}
-          {(toggle === "sold" || toggle === "all") && (
-            <Section
-              label={`Sold · ${soldItems.length}${soldTotal > 0 ? ` · ${fmtUSD(soldTotal)} total` : ""}`}
-              show={toggle === "all"}
-            >
-              {soldItems.length === 0 ? (
-                <EmptyHardListSection text="No watches in Sold yet." />
-              ) : (
-                <CollectionGrid
-                  items={soldItems}
-                  collectionId={sold?.id}
-                  watchlist={watchlist}
-                  compact={compact}
-                  gridStyle={gridStyle}
-                  primaryCurrency={primaryCurrency}
-                  handleShare={handleShare}
-                  handleWish={handleWish}
-                  observeCard={observeCard}
-                  onClickListing={onClickListing}
-                  openCollectionPicker={openCollectionPicker}
-                  hideLabel="Remove from list"
-                  onRemoveItem={onRemoveItem}
-                />
-              )}
-            </Section>
-          )}
-        </>
-      )}
+        )}
+      </Section>
     </div>
   );
 }
 
-// ── Shortlist ranked-list view ───────────────────────────────────
 // Standalone WishlistView wrapper retired in Bundle 2A.2b 5→4
 // (2026-05-08) — Shortlist now renders inside MyCollectionView's
 // toggle. The WishlistRankedList primitive below is reused there
@@ -1027,6 +1253,11 @@ function CollectionGrid({
   hideLabel,
   onMarkSold,
   onRemoveItem,
+  // Watch management v1 (2026-05-09): when set, cards expose a
+  // "Watch details" menu entry that opens the WatchDetailSheet
+  // for that item. Manual entries surface a tap-to-open on the
+  // card itself in addition to the menu entry.
+  onClickDetail,
 }) {
   return (
     <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
@@ -1034,12 +1265,17 @@ function CollectionGrid({
         const markSoldHandler = onMarkSold
           ? () => onMarkSold(item.rowId, item)
           : null;
+        const detailHandler = onClickDetail ? () => onClickDetail(item) : null;
+        const cardExtraMenuItems = [];
+        if (detailHandler) cardExtraMenuItems.push({ label: "Watch details", onClick: detailHandler });
+        if (markSoldHandler) cardExtraMenuItems.push({ label: "Mark sold", onClick: () => markSoldHandler() });
         return item.isManual ? (
           <ManualItemCard
             key={item.id}
             item={item}
             onRemove={() => onRemoveItem(collectionId, item)}
             onMarkSold={markSoldHandler}
+            onClickDetail={detailHandler}
           />
         ) : (
           <Card
@@ -1055,7 +1291,7 @@ function CollectionGrid({
             onShare={handleShare}
             onView={observeCard}
             onClickListing={onClickListing}
-            extraMenuItems={markSoldHandler ? [{ label: "Mark sold", onClick: () => markSoldHandler() }] : undefined}
+            extraMenuItems={cardExtraMenuItems.length > 0 ? cardExtraMenuItems : undefined}
           />
         );
       })}
@@ -1063,7 +1299,7 @@ function CollectionGrid({
   );
 }
 
-function ManualItemCard({ item, onRemove, onMarkSold }) {
+function ManualItemCard({ item, onRemove, onMarkSold, onClickDetail }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   // Click-outside + Escape dismiss for the ⋯ menu (2026-05-09 — was
   // missing; menu stayed open until tapped again, with no obvious
@@ -1103,34 +1339,46 @@ function ManualItemCard({ item, onRemove, onMarkSold }) {
       background: "var(--card-bg)", overflow: "hidden",
       display: "flex", flexDirection: "column",
     }}>
-      <div style={{
-        aspectRatio: "1 / 1", background: "var(--surface)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        {item.img ? (
-          <img src={item.img} alt={title} loading="lazy"
-            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <span style={{ fontSize: 36, color: "var(--text3)" }}>⌚</span>
-        )}
-      </div>
-      <div style={{ padding: "10px 12px 12px", flex: 1 }}>
+      {/* Image + body wrapped in a click target when onClickDetail is
+          provided (My Watches surface). The ⋯ menu uses
+          stopPropagation to keep its own click contained. */}
+      <button
+        type="button"
+        onClick={onClickDetail || undefined}
+        disabled={!onClickDetail}
+        style={{
+          all: "unset", display: "flex", flexDirection: "column",
+          cursor: onClickDetail ? "pointer" : "default",
+        }}>
         <div style={{
-          fontSize: 13, fontWeight: 500, color: "var(--text1)",
-          marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>{title}</div>
-        {meta && <div style={{ fontSize: 11, color: "var(--text2)", marginBottom: 2 }}>{meta}</div>}
-        {priceLine && <div style={{ fontSize: 11, color: "var(--text2)" }}>Paid {priceLine}</div>}
-        {soldLine && <div style={{ fontSize: 11, color: "var(--text2)" }}>{soldLine}</div>}
-        {item.comments && (
+          aspectRatio: "1 / 1", background: "var(--surface)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          {item.img ? (
+            <img src={item.img} alt={title} loading="lazy"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <span style={{ fontSize: 36, color: "var(--text3)" }}>⌚</span>
+          )}
+        </div>
+        <div style={{ padding: "10px 12px 12px", flex: 1, width: "100%", textAlign: "left" }}>
           <div style={{
-            fontSize: 11, color: "var(--text3)", marginTop: 6,
-            lineHeight: 1.4, fontStyle: "italic",
-            overflow: "hidden", display: "-webkit-box",
-            WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-          }}>{item.comments}</div>
-        )}
-      </div>
+            fontSize: 13, fontWeight: 500, color: "var(--text1)",
+            marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>{title}</div>
+          {meta && <div style={{ fontSize: 11, color: "var(--text2)", marginBottom: 2 }}>{meta}</div>}
+          {priceLine && <div style={{ fontSize: 11, color: "var(--text2)" }}>Paid {priceLine}</div>}
+          {soldLine && <div style={{ fontSize: 11, color: "var(--text2)" }}>{soldLine}</div>}
+          {item.comments && (
+            <div style={{
+              fontSize: 11, color: "var(--text3)", marginTop: 6,
+              lineHeight: 1.4, fontStyle: "italic",
+              overflow: "hidden", display: "-webkit-box",
+              WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+            }}>{item.comments}</div>
+          )}
+        </div>
+      </button>
       <div ref={menuRef} style={{ position: "absolute", top: 6, right: 6 }}>
         <button onClick={() => setMenuOpen(o => !o)}
           aria-label="More" style={{
