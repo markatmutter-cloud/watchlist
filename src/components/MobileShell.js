@@ -339,18 +339,19 @@ export function MobileShell(props) {
             instead of the pill. +12 keeps the nav clear of the
             indicator without burning real estate in Safari (where
             env() resolves to 0). */}
-        {/* Bottom nav lifted off the page via a shadow in the
-            favicon's olive-green tone (#3b4a36 — the same theme-color
-            used on iOS PWA status bar). Mark feedback 2026-05-09:
-            tabs blended into the page; want them more visible. Test
-            shade — easy to swap to a darker grey if the green reads
-            too tinted at certain page colors. */}
+        {/* Bottom nav lifted off the page (Mark feedback iter 2:
+            18% alpha shadow was invisible on Safari mobile against
+            white page bg). Strengthened: a visible olive-green
+            top BORDER (#3b4a36 at 0.55 alpha) gives a clear edge,
+            plus a wider/darker drop shadow underneath that for
+            depth. Borders render reliably across browsers in a way
+            box-shadow alone doesn't on translucent fixed elements. */}
         <div style={{
           position: "fixed", bottom: 0, left: 0, right: 0,
           display: "flex",
           background: "var(--surface)",
-          borderTop: "1px solid var(--border)",
-          boxShadow: "0 -4px 12px rgba(59, 74, 54, 0.18)",
+          borderTop: "1.5px solid rgba(59, 74, 54, 0.55)",
+          boxShadow: "0 -8px 18px rgba(59, 74, 54, 0.22)",
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
         }}>
           {/* Admin is desktop-only — mobile bottom bar shows
