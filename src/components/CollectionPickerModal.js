@@ -38,8 +38,14 @@ export function CollectionPickerModal({
   // should be at the top so frequent destinations are reached
   // without scrolling).
   const countFor = (c) => (itemsByCollection?.[c.id] || []).length;
+  // Hide shared inbox + hard system lists (Owned / Sold / Wishlist)
+  // from the picker (2026-05-09 — Mark feedback). Those collections
+  // are managed via the My Watches surface (picker / URL import /
+  // mark-as-sold), not through the generic Add-to-list flow which
+  // is for free-form user lists. Challenge collections also hidden
+  // — they have their own purpose-built picker.
   const visible = (collections || [])
-    .filter(c => !c.isSharedInbox)
+    .filter(c => !c.isSharedInbox && !c.isSystem && c.type !== "challenge")
     .sort((a, b) => {
       const cb = countFor(b), ca = countFor(a);
       if (cb !== ca) return cb - ca;
