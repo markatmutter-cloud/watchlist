@@ -4,6 +4,7 @@ import { ListRow } from "./ListRow";
 import { fmtUSD } from "../utils";
 import { signInButton } from "../styles";
 import { EmptyState } from "./EmptyState";
+import { SubTabIntro } from "./SubTabIntro";
 
 // Challenges view — extracted from WatchlistTab.js on 2026-05-04
 // when Challenges moved from a Watchlist sub-tab to a resource under
@@ -129,35 +130,32 @@ export function ChallengesView({
 
   return (
     <div style={{ paddingTop: 4 }}>
-      <div style={{
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        marginBottom: 14, gap: 8, flexWrap: "wrap",
-      }}>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          {onBack && (
-            <button onClick={onBack} aria-label="Back" style={{
-              border: "none", background: "transparent", color: "var(--text2)",
-              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              padding: 0, display: "flex", alignItems: "center", gap: 4,
-            }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-              Back
-            </button>
-          )}
-          <p style={{
-            fontSize: 12, fontWeight: 600, color: "var(--text2)",
-            textTransform: "uppercase", letterSpacing: "0.04em", margin: 0,
+      {/* Back button (drill-in only) sits above the SubTabIntro so
+          navigation remains the first thing the user sees. */}
+      {onBack && (
+        <div style={{ marginBottom: 8 }}>
+          <button onClick={onBack} aria-label="Back" style={{
+            border: "none", background: "transparent", color: "var(--text2)",
+            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+            padding: 0, display: "flex", alignItems: "center", gap: 4,
           }}>
-            Challenges · {allChallenges.length}
-          </p>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+            Back
+          </button>
         </div>
-        <button onClick={handleNewChallenge} style={{
-          padding: "7px 14px", borderRadius: 8,
-          border: "0.5px solid var(--border)",
-          background: "var(--surface)", color: "var(--text1)",
-          cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-        }}>+ New challenge</button>
-      </div>
+      )}
+      {/* Intro banner consistent with Lists / Searches / My Watches
+          (2026-05-09 — Mark feedback: sub-tabs jumped vertically as
+          you switched). Collapsed when you have content; expanded
+          when empty so first-timers see the explainer. */}
+      <SubTabIntro
+        title={`Challenges · ${allChallenges.length}`}
+        blurb={<>Create a virtual collection within constraints — top 5 watches, max $50k, three Speedmasters in a row. Share the spec; receive friends' picks back. The collector's thought experiment.</>}
+        actionLabel="+ New challenge"
+        onAction={handleNewChallenge}
+        expandable
+        defaultExpanded={allChallenges.length === 0}
+      />
 
       {allChallenges.length === 0 ? (
         <EmptyState

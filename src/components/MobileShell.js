@@ -393,7 +393,7 @@ export function MobileShell(props) {
                     above (next to Date / Price) on 2026-05-07 — Mark
                     feedback parity with desktop placement. */}
 
-                <div style={{ padding: "10px 16px 10px" }}>
+                <div style={{ padding: "8px 16px 6px" }}>
                   <div style={sectionHeadingStyle}>Source</div>
                   {/* Sources grouped by Dealers / Auction houses with
                       sub-headers (2026-05-04). When expanded, every
@@ -440,7 +440,7 @@ export function MobileShell(props) {
                 </div>
                 <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
 
-                <div style={{ padding: "10px 16px 10px" }}>
+                <div style={{ padding: "8px 16px 6px" }}>
                   <div style={sectionHeadingStyle}>Brand</div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {visibleBrands.map(b => <Chip key={b} label={b} active={filterBrands.includes(b)} onClick={() => toggleBrand(b)} />)}
@@ -449,7 +449,7 @@ export function MobileShell(props) {
                 </div>
                 <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
 
-                <div style={{ padding: "10px 16px 10px" }}>
+                <div style={{ padding: "8px 16px 6px" }}>
                   <div style={sectionHeadingStyle}>Price range</div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <input value={minPriceText} onChange={e => setMinPriceText(e.target.value)} placeholder="Min $" style={{ ...inputBase, flex: 1 }} />
@@ -464,7 +464,7 @@ export function MobileShell(props) {
                     quick comparison-shop currency swap is one tap from
                     the current filter state. */}
                 <div style={{ height: "0.5px", background: "var(--border)", margin: "0 16px 0" }} />
-                <div style={{ padding: "10px 16px 12px" }}>
+                <div style={{ padding: "8px 16px 8px" }}>
                   <div style={sectionHeadingStyle}>View settings</div>
                   <ViewSettingsControls
                     primaryCurrency={primaryCurrency}
@@ -477,19 +477,24 @@ export function MobileShell(props) {
                     desktopCols={desktopCols}
                     setDesktopCols={setDesktopCols}
                     desktopAutoCols={desktopAutoCols}
+                    compact={true}
                   />
                 </div>
               </div>
 
-              {/* Fixed bottom actions. */}
-              <div style={{ borderTop: "0.5px solid var(--border)", padding: "12px 16px", background: "var(--bg)" }}>
+              {/* Fixed bottom actions. Show-CTA bumped slightly
+                  (14px padding, fontSize 15) so the primary button
+                  reads as the headline action below the now-shorter
+                  filter sections. (2026-05-09 Mark feedback: "a
+                  little bit more space for the show watches button".) */}
+              <div style={{ borderTop: "0.5px solid var(--border)", padding: "14px 16px 16px", background: "var(--bg)" }}>
                 <div style={{ display: "flex", gap: 8 }}>
                   {hasFilters && (
-                    <button onClick={resetFilters} style={{ padding: "12px 16px", borderRadius: 12, border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)", fontSize: 14, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                    <button onClick={resetFilters} style={{ padding: "14px 16px", borderRadius: 12, border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)", fontSize: 14, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
                       Reset
                     </button>
                   )}
-                  <button onClick={() => setDrawerOpen(false)} style={{ flex: 1, padding: 12, borderRadius: 12, border: "none", background: "var(--text1)", color: "var(--bg)", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>
+                  <button onClick={() => setDrawerOpen(false)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: "var(--text1)", color: "var(--bg)", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                     Show {displayedCount} watches
                   </button>
                 </div>
