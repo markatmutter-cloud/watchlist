@@ -479,8 +479,18 @@ export function useSearches(user) {
 export function useCollections(user) {
   const [collections, setCollections]           = useState([]);
   const [itemsByCollection, setItemsByCollection] = useState({});
+  // Bumped by the Realtime subscription below on collection /
+  // collection_items changes; triggers the fetch effect to re-run.
+  // Lighter than a per-event surgical patch and avoids duplicating
+  // the row → item shape mapping. Debounced inside the channel
+  // handler so a burst (e.g. bulk add) collapses into one refetch.
+  // 2026-05-09 — first Realtime wiring.
+  const [refetchTick, setRefetchTick] = useState(0);
 
   // Initial fetch — collections + their items in two queries.
+  // Re-runs whenever refetchTick is bumped by the Realtime listener
+  // (acts as the "stale" signal — DB push tells us our local state
+  // may not match the canonical row set anymore).
   useEffect(() => {
     if (!user || !supabase) {
       setCollections([]);
@@ -642,6 +652,41 @@ export function useCollections(user) {
       }
     })();
     return () => { cancelled = true; };
+  }, [user?.id, refetchTick]);
+
+  // Realtime subscription (2026-05-09). Postgres-changes events on
+  // collections + collection_items push a refetch tick — debounced
+  // 250ms so a burst (e.g. multi-item add) collapses into one
+  // refetch. Supabase Realtime applies RLS at the row level, so
+  // the user only receives events for collections they own or are
+  // an accepted collaborator on; events for other users' lists
+  // are filtered server-side.
+  //
+  // Replication for these tables is enabled by
+  // 2026-05-09_realtime_publication.sql (already applied to prod).
+  //
+  // Cost note: at ~3 collaborators per shared list and edits a few
+  // times per day, message volume per user is well under 100/day —
+  // free tier (2M msg/mo) is comfortable. See ROADMAP cost notes.
+  useEffect(() => {
+    if (!user || !supabase) return undefined;
+    let timer;
+    const bumpDebounced = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => setRefetchTick(t => t + 1), 250);
+    };
+    const channel = supabase.channel(`collections-rt-${user.id}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'collection_items' },
+        bumpDebounced)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'collections' },
+        bumpDebounced)
+      .subscribe();
+    return () => {
+      clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   // ── Collection CRUD ──────────────────────────────────────────
