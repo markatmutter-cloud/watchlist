@@ -54,6 +54,13 @@ const AUCTION_LOTS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/w
 // added sale and the result never changes (archive sales don't update
 // post-hoc). Loaded alongside auction_lots.json and merged by URL key.
 const MANUAL_ARCHIVE_LOTS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/manual_archive_lots.json";
+// Manually-curated historical sold listings (2026-05-09). Sits next
+// to manual_archive_lots.json conceptually but is shaped like a flat
+// listings.json entry rather than auction-lot data. Each item is a
+// hand-added "watch sold by a dealer / house before our scraper
+// window" record — surfaces in Listings > Archive (Sold) for
+// everyone. merge.py is unaware of this file; App.js loads + merges.
+const MANUAL_HISTORICAL_LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/manual_historical_listings.json";
 const PAGE_SIZE = 48;
 // Legacy localStorage keys — kept only for the one-shot import on first
 // sign-in (see importLocalData + the banner in the Watchlist tab). Active
@@ -879,9 +886,22 @@ export default function Watchlist() {
     // — fast). Without it, iOS PWA + GitHub raw's 5-minute Cache-Control
     // could serve stale data for hours after a fresh scrape commit.
     const fetchOpts = { cache: "no-cache" };
-    fetch(LISTINGS_URL, fetchOpts)
-      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(d => { setItems(d); setLoading(false); })
+    // Load listings.json + manual_historical_listings.json in parallel
+    // and merge before populating items. Manual historical entries
+    // append to the live listings feed (deduped by id) so curated
+    // historical sold listings appear in Listings > Archive (Sold)
+    // for everyone. (2026-05-09 — Mark request to surface his
+    // spreadsheet's URLs in the public sold archive.)
+    Promise.all([
+      fetch(LISTINGS_URL, fetchOpts).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+      fetch(MANUAL_HISTORICAL_LISTINGS_URL, fetchOpts).then(r => r.ok ? r.json() : { items: [] }).catch(() => ({ items: [] })),
+    ])
+      .then(([live, manual]) => {
+        const seen = new Set((live || []).map(i => i.id));
+        const extras = ((manual && manual.items) || []).filter(i => i && i.id && !seen.has(i.id));
+        setItems([...(live || []), ...extras]);
+        setLoading(false);
+      })
       .catch(() => { setLoadError(true); setLoading(false); });
     // Auctions load in parallel. Failing silently is fine — the Auctions tab
     // just won't have data, which we handle with an empty-state message.
