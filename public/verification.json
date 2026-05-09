@@ -5,8 +5,8 @@
     "Wind Vintage": 102,
     "Tropical Watch": 107,
     "Menta Watches": 36,
-    "Collectors Corner NY": 62,
-    "Falco Watches": 105,
+    "Collectors Corner NY": 61,
+    "Falco Watches": 109,
     "Grey & Patina": 50,
     "Oliver & Clarke": 95,
     "Craft & Tailored": 79,
@@ -14,7 +14,7 @@
     "MVV Watches": 46,
     "DB1983": 25,
     "Hairspring": 30,
-    "Somlo": 208,
+    "Somlo": 206,
     "Analog Shift": 641,
     "Watches of Knightsbridge": 79,
     "Belmont Watches": 39,
@@ -32,7 +32,7 @@
     "Vintage Watch Collective": 38,
     "Watchurbia": 8,
     "Maunder Watches": 94,
-    "Watch Club": 50,
+    "Watch Club": 19,
     "Vintage Watch Shop": 19,
     "Watches of Lancashire": 63,
     "Heuertime": 23,
@@ -42,6 +42,6 @@
     "Swiss Hours": 80,
     "eBay": 20
   },
-  "total_listings": 3390,
+  "total_listings": 3360,
   "sources_tracked": 39
 }
