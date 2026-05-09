@@ -721,8 +721,16 @@ function ListsView({
   if (selected) {
     const isHiddenColl = selected.id === HIDDEN_COLLECTION_ID;
     const isSavedColl  = selected.id === SAVED_COLLECTION_ID;
+    // Saved virtual list (2026-05-09 — Mark report): exclude tracked-
+    // lot projection placeholders. watchItems pushes a "Fetching…"
+    // placeholder for every URL in trackedLotUrls that the scraper
+    // hasn't populated yet — it shows up in the Saved view as a
+    // ghost card the user can't identify or un-heart. Real hearts
+    // on auction lots / tracked URLs flow through watchlist_items
+    // (Phase B2) and don't have `_isTrackedLot` set, so this filter
+    // only strips projection-only placeholders.
     const rawItems = isHiddenColl ? hiddenItems
-                : isSavedColl  ? (watchItems || [])
+                : isSavedColl  ? (watchItems || []).filter(i => !i._isTrackedLot)
                 : (itemsByColl[selected.id] || []);
     // Apply the shell filter row (date/price sort, $ min-max,
     // source, brand, search) to the drilled-in items so the filter
@@ -922,6 +930,35 @@ function ListsView({
                 : isHiddenRowItem
                   ? `${count} listing${count === 1 ? "" : "s"} hidden from feed`
                   : `${count} watch${count === 1 ? "" : "es"}`;
+            // Inline edit / delete actions on user-list rows (Mark
+            // request 2026-05-09 — match the Challenges card pattern
+            // so Rename + Delete don't require drilling in first).
+            // Hidden on virtual rows (Saved / Hidden), shared inbox,
+            // and shared-with-me collaborator lists (non-owners can't
+            // mutate). System lists (Owned/Sold/Wishlist) are
+            // excluded from userCols already.
+            const isOwner = !!(user?.id && c?.userId && user.id === c.userId);
+            const isSyntheticOrInbox = isInbox || isHiddenRowItem || isSavedRowItem;
+            const actions = [];
+            if (!isSyntheticOrInbox && isOwner && setEditingCollection) {
+              actions.push({
+                ariaLabel: `Rename ${c.name}`,
+                title: "Rename list",
+                icon: pencilIcon,
+                onClick: () => setEditingCollection({ id: c.id, name: c.name }),
+              });
+            }
+            if (!isSyntheticOrInbox && isOwner && deleteCollection) {
+              actions.push({
+                ariaLabel: `Delete ${c.name}`,
+                title: "Delete list",
+                icon: trashIcon,
+                onClick: async () => {
+                  if (!window.confirm(`Delete "${c.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
+                  await deleteCollection(c.id);
+                },
+              });
+            }
             return (
               <ListRow
                 key={c.id}
@@ -929,6 +966,7 @@ function ListsView({
                 title={c.name}
                 subtitle={subtitle}
                 onClick={() => setSelectedListId(c.id)}
+                actions={actions.length > 0 ? actions : undefined}
               />
             );
           })}
@@ -1000,6 +1038,26 @@ function CollectionGrid({
 
 function ManualItemCard({ item, onRemove, onMarkSold }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  // Click-outside + Escape dismiss for the ⋯ menu (2026-05-09 — was
+  // missing; menu stayed open until tapped again, with no obvious
+  // affordance to close. Mark report: couldn't easily reach Remove.)
+  const menuRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onDown = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
+    const t = setTimeout(() => {
+      document.addEventListener("mousedown", onDown);
+      document.addEventListener("keydown", onKey);
+    }, 0);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
   const title = item.title || [item.brand, item.model].filter(Boolean).join(" ").trim() || "Untitled";
   const metaParts = [];
   if (item.ref) metaParts.push(`Ref ${item.ref}`);
@@ -1046,7 +1104,7 @@ function ManualItemCard({ item, onRemove, onMarkSold }) {
           }}>{item.comments}</div>
         )}
       </div>
-      <div style={{ position: "absolute", top: 6, right: 6 }}>
+      <div ref={menuRef} style={{ position: "absolute", top: 6, right: 6 }}>
         <button onClick={() => setMenuOpen(o => !o)}
           aria-label="More" style={{
             border: "none", background: "rgba(0,0,0,0.5)",
@@ -1110,6 +1168,24 @@ const eyeOffIcon = (
 const heartIcon = (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--brand)" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+  </svg>
+);
+
+// Inline-action icons for ListRow row-level edit/delete (2026-05-09).
+// Sized 14×14 to match ChallengesView's pattern.
+const pencilIcon = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20h9"/>
+    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+  </svg>
+);
+const trashIcon = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+    <path d="M10 11v6"/>
+    <path d="M14 11v6"/>
+    <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
   </svg>
 );
 

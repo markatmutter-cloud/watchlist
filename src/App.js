@@ -365,20 +365,40 @@ export default function Watchlist() {
   // with a TDZ "Cannot access before initialization" — const
   // bindings execute top-to-bottom and the deps array is constructed
   // synchronously when useEffect is called.
+  // One-bit mirror of CollectionsTab's drill-in state. CollectionsTab
+  // still owns selectedListId / URL push; this just exposes "are we
+  // drilled into a list?" up to App.js so the shell can render the
+  // filter row when drilled in (mirroring the Listings tab). The
+  // setter is threaded down to CollectionsTab via shellProps below.
+  // (Hoisted above savedItemsSnapshot 2026-05-09 — that effect's deps
+  // reference colDrillInId; const declarations execute top-to-bottom
+  // so referencing a later const in a useEffect deps array TDZs.)
+  const [colDrillInId, setColDrillInId] = useState(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("col") || null;
+  });
+
   const [savedItemsSnapshot, setSavedItemsSnapshot] = useState({});
   useEffect(() => {
-    const onSavedView = tab === "watchlist" &&
+    // Snapshot capture fires on ANY view that displays hearted items
+    // as the primary content: legacy hearted sub-tabs (listings/
+    // auctions/sold) AND the Saved virtual list inside Watchlists >
+    // Lists drilled into `__saved__`. Both surfaces want the same
+    // "un-heart leaves the card visible until refresh" UX so a
+    // misclick is reversible. (Mark report 2026-05-09 — un-hearting
+    // on the Saved virtual list immediately removed the card.)
+    const onLegacyHeartedSubs = tab === "watchlist" &&
       (watchTopTab === "listings" || watchTopTab === "auctions" || watchTopTab === "sold");
+    const onSavedVirtual = tab === "watchlist" &&
+      watchTopTab === "lists" && colDrillInId === "__saved__";
+    const onSavedView = onLegacyHeartedSubs || onSavedVirtual;
     if (onSavedView) {
-      // Intentionally NOT depending on watchlist — the whole point is
-      // for the snapshot to lag updates so un-hearts stay visible.
       setSavedItemsSnapshot({ ...watchlist });
     } else if (Object.keys(savedItemsSnapshot).length > 0) {
-      // Clear when leaving so re-entry rebuilds fresh.
       setSavedItemsSnapshot({});
     }
     // eslint-disable-next-line
-  }, [tab, watchTopTab]);
+  }, [tab, watchTopTab, colDrillInId]);
 
   // URL sync — reflect tab + sub-tab in the query string so refresh
   // preserves location and direct links work. Skipped when share-
@@ -580,16 +600,8 @@ export default function Watchlist() {
   // pattern — one-bit mirror; the ListReceiver component owns its
   // own intent state.
   const [listShareActive, setListShareActive] = useState(false);
-  // One-bit mirror of CollectionsTab's drill-in state. CollectionsTab
-  // still owns selectedListId / URL push; this just exposes "are we
-  // drilled into a list?" up to App.js so the shell can render the
-  // filter row when drilled in (mirroring the Listings tab). The
-  // setter is threaded down to CollectionsTab via shellProps below.
-  // (2026-05-09 IA pass.)
-  const [colDrillInId, setColDrillInId] = useState(() => {
-    if (typeof window === "undefined") return null;
-    return new URLSearchParams(window.location.search).get("col") || null;
-  });
+  // (colDrillInId state moved up earlier in the file — needed by the
+  // savedItemsSnapshot effect which depends on it.)
   // Bumps each time the user explicitly navigates away from a
   // share-receive surface via main-nav (Watchlist logo, top tabs).
   // Receivers watch this and clear their internal intent state,
@@ -967,6 +979,23 @@ export default function Watchlist() {
         const endMs = new Date(data.auction_end).getTime();
         if (Number.isFinite(endMs) && endMs > Date.now()) {
           isEnded = false;
+        }
+      }
+      // 2026-05-09 — reverse-direction override. If the scraper
+      // hasn't re-run since the auction ended (daily 06:00 cron
+      // misses an EU-evening auction), mark the lot as sold so it
+      // moves to Archive Sold when the user expects. Only flip
+      // active→ended when auction_end has explicit time-of-day
+      // (HH:MM > 0); date-only strings resolve to 00:00 UTC and
+      // would false-positive the entire calendar day.
+      if (!isEnded && data.auction_end) {
+        const endMs = new Date(data.auction_end).getTime();
+        if (Number.isFinite(endMs) && endMs < Date.now()) {
+          const d = new Date(endMs);
+          const hasTimeOfDay = d.getUTCHours() !== 0
+                            || d.getUTCMinutes() !== 0
+                            || d.getUTCSeconds() !== 0;
+          if (hasTimeOfDay) isEnded = true;
         }
       }
       const price = (isEnded ? data.sold_price : data.current_bid)
@@ -1497,6 +1526,20 @@ export default function Watchlist() {
         const endMs = new Date(data.auction_end).getTime();
         if (Number.isFinite(endMs) && endMs > Date.now()) {
           isEnded = false;
+        }
+      }
+      // Reverse-direction override (mirrors site above): flip
+      // active→ended when auction_end has explicit time-of-day AND
+      // is in the past. Catches auctions that ended between scraper
+      // runs.
+      if (!isEnded && data.auction_end) {
+        const endMs = new Date(data.auction_end).getTime();
+        if (Number.isFinite(endMs) && endMs < Date.now()) {
+          const d = new Date(endMs);
+          const hasTimeOfDay = d.getUTCHours() !== 0
+                            || d.getUTCMinutes() !== 0
+                            || d.getUTCSeconds() !== 0;
+          if (hasTimeOfDay) isEnded = true;
         }
       }
       const price = (isEnded ? data.sold_price : data.current_bid)
@@ -2062,7 +2105,16 @@ export default function Watchlist() {
     // same date labels. Collapse all backfilled items under a single
     // "Earlier additions" divider so they can't collide with the
     // non-backfilled date dividers above.
-    const labelFn = (i) => i.backfilled ? "Earlier additions" : baseLabelFn(i);
+    //
+    // 2026-05-09: the "Earlier additions" override applies ONLY to
+    // the live freshness buckets — for sold-date buckets it produced
+    // a confusing "Today sold / Earlier additions / Yesterday sold /
+    // Earlier additions" alternation because some recently-sold
+    // items happen to be backfilled. Sold dividers should be
+    // uniform: the sold-date is the right axis regardless of how
+    // the listing was first captured.
+    const labelFn = (i) =>
+      (useSoldBuckets ? false : !!i.backfilled) ? "Earlier additions" : baseLabelFn(i);
     const out = [];
     let last = null;
     // Count the contiguous run in `allFiltered`, not the bucket total:
@@ -2202,7 +2254,7 @@ export default function Watchlist() {
       {[
         ["live", isMobile ? "Live" : "Live listings"],
         ["auctions", isMobile ? "Auctions" : "Live auctions"],
-        ["sold", isMobile ? "Archive" : "Archive Sold"],
+        ["sold", isMobile ? "Archive" : "Archive (Sold)"],
         ["calendar", isMobile ? "Calendar" : "Auction calendar"],
       ].map(([key, label]) => {
         const active = listingsSubTab === key;
