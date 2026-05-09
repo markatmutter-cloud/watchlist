@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
+import { Card } from "./Card";
+import { daysOnSale } from "../utils";
 
 // Admin-only source-quality dashboard. Surfaces the data the Epic 0
 // verification script + per-source aggregates produce, in a dense
@@ -71,6 +73,23 @@ function ChipDot({ kind }) {
   );
 }
 
+// Time constants (module-scope so multiple memos can read them
+// without redeclaration). Prefer DAY_MS over manually re-deriving
+// 86400000 — common typo source.
+const DAY_MS = 86400000;
+const THIRTY_DAYS_MS = 30 * DAY_MS;
+
+// Color-code a days-on-sale value: <7d reads green (hot inventory,
+// flips fast), >30d reads in --danger (slow burn, marginal turn),
+// in-between is neutral text1. Used in both per-source and per-
+// brand cycle columns + anywhere else cycle-time renders inline.
+function cycleColor(days) {
+  if (days == null) return "var(--text3)";
+  if (days < 7)     return "var(--accent-positive)";
+  if (days > 30)    return "var(--danger)";
+  return "var(--text1)";
+}
+
 const fmtPct = (n) => (n ? `${(n * 100).toFixed(1)}%` : "—");
 const fmtPer100 = (n) => (n ? n.toFixed(1) : "—");
 // Compact $ — switches between $X.XK / $X.XM so a wide range of
@@ -103,15 +122,17 @@ const COLUMNS = [
   { key: "addedUsd30d", label: "$ added (30d)", align: "right", fmt: (r) => fmtMoney(r.addedUsd30d) },
   { key: "soldUsd30d",  label: "$ sold (30d)",  align: "right", fmt: (r) => fmtMoney(r.soldUsd30d) },
   // Cycle speed (median days-on-sale) over the rolling 30d sold
-  // sample. Lower = faster turn. Surface only when there were any
-  // sales in the window; otherwise "—" so we don't mislead with a
-  // zero. Subscript count gives reader a sense of sample size.
+  // sample. Lower = faster turn. Color-coded: <7d green (fast),
+  // >30d red (slow), in-between neutral. Surface only when there
+  // were any sales in the window; otherwise "—". Subscript count
+  // gives reader a sense of sample size.
   { key: "medianDaysOnSale", label: "Cycle (30d)", align: "right",
     fmt: (r) => r.medianDaysOnSale == null
       ? "—"
       : (
-        <span title={`Median across ${r.soldCount30d} sale${r.soldCount30d === 1 ? "" : "s"} in the last 30 days`}>
-          {r.medianDaysOnSale}d <span style={{ color: "var(--text3)", fontSize: 10 }}>×{r.soldCount30d}</span>
+        <span title={`Median across ${r.soldCount30d} sale${r.soldCount30d === 1 ? "" : "s"} in the last 30 days`}
+          style={{ color: cycleColor(r.medianDaysOnSale), fontWeight: 600 }}>
+          {r.medianDaysOnSale}d <span style={{ color: "var(--text3)", fontWeight: 400, fontSize: 10 }}>×{r.soldCount30d}</span>
         </span>
       )
   },
@@ -140,7 +161,13 @@ const BRAND_COLUMNS = [
   { key: "live",             label: "Live",             align: "right", fmt: (r) => r.live.toLocaleString() },
   { key: "soldCount30d",     label: "Sold (30d)",       align: "right", fmt: (r) => r.soldCount30d.toLocaleString() },
   { key: "medianDaysOnSale", label: "Cycle (30d)",      align: "right",
-    fmt: (r) => r.medianDaysOnSale == null ? "—" : `${r.medianDaysOnSale}d` },
+    fmt: (r) => r.medianDaysOnSale == null
+      ? "—"
+      : (
+        <span style={{ color: cycleColor(r.medianDaysOnSale), fontWeight: 600 }}>
+          {r.medianDaysOnSale}d
+        </span>
+      ) },
   { key: "soldUsd30d",       label: "$ sold (30d)",     align: "right", fmt: (r) => fmtMoney(r.soldUsd30d) },
   { key: "topSource",        label: "Top dealer",       align: "left",
     fmt: (r) => r.topSource ? `${r.topSource} ${(r.topSourcePct*100).toFixed(0)}%` : "—" },
@@ -207,6 +234,12 @@ export function AdminTab({ watchItems, hiddenItems }) {
   // sorts fastest-cycle first so the most-actively-flipped brands
   // float to the top).
   const [brandSort, setBrandSort] = useState({ key: "medianDaysOnSale", dir: "asc" });
+  // Fastest-sales section (2026-05-09 — Mark request). Window
+  // toggle 30d / 90d / all-this-year + brand filter chip set.
+  // Default: top 50 in 30 days. Brand filter null = all brands.
+  const [fastestWindow, setFastestWindow] = useState("30d");
+  const [fastestBrand, setFastestBrand] = useState(null);
+  const [fastestLimit, setFastestLimit] = useState(50);
   // Per-source engagement aggregates from listing_events_daily.
   // Empty Map until the RPC resolves; engagement columns render "—"
   // for sources without rolled-up events yet.
@@ -311,9 +344,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
     if (!listings.length) return [];
 
     const today = new Date();
-    const FOUR_WEEKS_MS = 28 * 24 * 60 * 60 * 1000;
-    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-    const DAY_MS = 86400000;
+    const FOUR_WEEKS_MS = 28 * DAY_MS;
 
     const bySource = new Map();
     for (const it of listings) {
@@ -553,6 +584,67 @@ export function AdminTab({ watchItems, hiddenItems }) {
     return out;
   }, [listings]);
 
+  // Fastest-sales sample (2026-05-09). Walks listings, filters to
+  // sold dealer items (auction lots excluded — different lifecycle),
+  // computes daysOnSale, applies window + brand filter, sorts asc.
+  // Returns an array of full listings ready to render via Card.
+  const fastestSales = useMemo(() => {
+    const now = Date.now();
+    const cutoff = fastestWindow === "30d" ? now - THIRTY_DAYS_MS
+                : fastestWindow === "90d" ? now - 90 * DAY_MS
+                : null; // "all" = no cutoff
+    const out = [];
+    for (const it of listings) {
+      if (!it.sold) continue;
+      if (it._isAuctionFormat || it._isTrackedLot) continue;
+      if (fastestBrand && (it.brand || "Other") !== fastestBrand) continue;
+      const days = daysOnSale(it);
+      if (days == null) continue;
+      if (cutoff != null) {
+        const sd = new Date(it.soldAt).getTime();
+        if (!Number.isFinite(sd) || sd < cutoff) continue;
+      }
+      out.push({ ...it, _daysOnSale: days });
+    }
+    out.sort((a, b) => a._daysOnSale - b._daysOnSale);
+    return out;
+  }, [listings, fastestWindow, fastestBrand]);
+
+  // Brand chips for the fastest-sales filter — limited to brands
+  // that have at least one sale in the active window so the chip
+  // row doesn't surface dead options. Sorted by sale count desc.
+  const fastestBrands = useMemo(() => {
+    const counts = new Map();
+    for (const it of fastestSales) {
+      const b = it.brand || "Other";
+      counts.set(b, (counts.get(b) || 0) + 1);
+    }
+    // Recompute over the unfiltered set when a brand IS selected,
+    // so the user can switch brands without first clearing.
+    if (fastestBrand) {
+      counts.clear();
+      const now = Date.now();
+      const cutoff = fastestWindow === "30d" ? now - THIRTY_DAYS_MS
+                  : fastestWindow === "90d" ? now - 90 * DAY_MS
+                  : null;
+      for (const it of listings) {
+        if (!it.sold) continue;
+        if (it._isAuctionFormat || it._isTrackedLot) continue;
+        const days = daysOnSale(it);
+        if (days == null) continue;
+        if (cutoff != null) {
+          const sd = new Date(it.soldAt).getTime();
+          if (!Number.isFinite(sd) || sd < cutoff) continue;
+        }
+        const b = it.brand || "Other";
+        counts.set(b, (counts.get(b) || 0) + 1);
+      }
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([brand, n]) => ({ brand, count: n }));
+  }, [fastestSales, fastestBrand, fastestWindow, listings]);
+
   const sortedBrandRows = useMemo(() => {
     const r = brandRows.slice();
     const k = brandSort.key;
@@ -725,7 +817,39 @@ export function AdminTab({ watchItems, hiddenItems }) {
 
   return (
     <div style={{ padding: "16px 18px 60px" }}>
+      {/* Section nav (2026-05-09). Sticky-at-top anchor links so the
+          dense admin page is navigable without scrolling. Anchor
+          targets are the section ids on each h1 below. Click goes
+          via plain href so the browser handles the smooth scroll +
+          URL hash for free. */}
       <div style={{
+        position: "sticky", top: 0, zIndex: 5,
+        marginLeft: -18, marginRight: -18, marginTop: -16, marginBottom: 14,
+        padding: "10px 18px",
+        background: "var(--bg)",
+        borderBottom: "0.5px solid var(--border)",
+        display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center",
+      }}>
+        <span style={{ fontSize: 11, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginRight: 4 }}>
+          Jump to
+        </span>
+        {[
+          ["sec-source",   "Sources"],
+          ["sec-brand",    "Brands"],
+          ["sec-fastest",  "Fastest sales"],
+          ["sec-house",    "Auction houses"],
+          ["sec-limits",   "User limits"],
+        ].map(([id, label]) => (
+          <a key={id} href={`#${id}`} style={{
+            fontSize: 12, padding: "5px 10px", borderRadius: 16,
+            border: "0.5px solid var(--border)",
+            color: "var(--text2)", textDecoration: "none",
+            background: "var(--surface)",
+          }}>{label}</a>
+        ))}
+      </div>
+
+      <div id="sec-source" style={{
         display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
         marginBottom: 14,
       }}>
@@ -841,7 +965,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
           ascending by median-cycle so fastest-flipping brands top
           the list. Auction lots intentionally excluded — different
           lifecycle would dilute the dealer-cycle read. */}
-      <div style={{
+      <div id="sec-brand" style={{
         display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
         marginTop: 32, marginBottom: 14,
       }}>
@@ -903,8 +1027,127 @@ export function AdminTab({ watchItems, hiddenItems }) {
         most listings (live + cycled) for that brand.
       </div>
 
+      {/* ── Fastest sales ──────────────────────────────────────────── */}
+      {/* Per-listing rank (2026-05-09 — Mark request "show me the
+          fastest selling watches"). Card-grid render so images carry
+          the actual signal — the SOLD chip already shows "SOLD · 4d"
+          from PR #151. Window toggle lets the user widen / narrow
+          the time slice; brand chips filter to a single make. */}
+      <div id="sec-fastest" style={{
+        display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
+        marginTop: 32, marginBottom: 14,
+      }}>
+        <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
+          Fastest sales
+        </h1>
+        <span style={{ fontSize: 12, color: "var(--text2)" }}>
+          {fastestSales.length.toLocaleString()} cycle{fastestSales.length === 1 ? "" : "s"}
+          {fastestBrand ? ` · ${fastestBrand}` : ""}
+        </span>
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 12 }}>
+        {/* Window toggle */}
+        <div style={{ display: "flex", gap: 4 }}>
+          {[["30d", "30 days"], ["90d", "90 days"], ["all", "All"]].map(([key, label]) => {
+            const active = fastestWindow === key;
+            return (
+              <button key={key} onClick={() => setFastestWindow(key)} style={{
+                padding: "6px 12px", borderRadius: 16,
+                border: "0.5px solid var(--border)",
+                background: active ? "var(--text1)" : "var(--surface)",
+                color: active ? "var(--bg)" : "var(--text2)",
+                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                fontWeight: active ? 600 : 500,
+              }}>{label}</button>
+            );
+          })}
+        </div>
+        <div aria-hidden style={{ width: 1, height: 18, background: "var(--border)", margin: "0 4px" }} />
+        {/* Top N */}
+        <div style={{ display: "flex", gap: 4 }}>
+          {[25, 50, 100].map((n) => {
+            const active = fastestLimit === n;
+            return (
+              <button key={n} onClick={() => setFastestLimit(n)} style={{
+                padding: "6px 12px", borderRadius: 16,
+                border: "0.5px solid var(--border)",
+                background: active ? "var(--text1)" : "var(--surface)",
+                color: active ? "var(--bg)" : "var(--text2)",
+                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+                fontWeight: active ? 600 : 500,
+              }}>Top {n}</button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Brand chip filter — sourced from fastestBrands so dead
+          options don't surface (a brand with zero sales in the
+          window doesn't appear). Wraps; max-height so very long
+          chip rows don't push the grid off-screen. */}
+      {fastestBrands.length > 0 && (
+        <div style={{
+          display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14,
+          maxHeight: 80, overflowY: "auto",
+        }}>
+          <button onClick={() => setFastestBrand(null)} style={{
+            padding: "5px 10px", borderRadius: 14,
+            border: "0.5px solid var(--border)",
+            background: fastestBrand == null ? "var(--text1)" : "transparent",
+            color: fastestBrand == null ? "var(--bg)" : "var(--text2)",
+            cursor: "pointer", fontFamily: "inherit", fontSize: 11,
+            fontWeight: fastestBrand == null ? 600 : 500,
+          }}>All brands</button>
+          {fastestBrands.slice(0, 20).map(({ brand, count }) => {
+            const active = fastestBrand === brand;
+            return (
+              <button key={brand} onClick={() => setFastestBrand(brand)} style={{
+                padding: "5px 10px", borderRadius: 14,
+                border: "0.5px solid var(--border)",
+                background: active ? "var(--text1)" : "transparent",
+                color: active ? "var(--bg)" : "var(--text2)",
+                cursor: "pointer", fontFamily: "inherit", fontSize: 11,
+                fontWeight: active ? 600 : 500,
+              }}>
+                {brand} <span style={{ color: active ? "var(--bg)" : "var(--text3)", fontWeight: 400 }}>·{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {fastestSales.length === 0 ? (
+        <div style={{ color: "var(--text2)", fontSize: 13, padding: 20 }}>
+          No sold listings in this window {fastestBrand ? `for ${fastestBrand}` : ""}.
+        </div>
+      ) : (
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+          gap: 8,
+          marginBottom: 8,
+        }}>
+          {fastestSales.slice(0, fastestLimit).map((it) => (
+            <Card
+              key={it.id}
+              item={it}
+              wished={false}
+              compact={true}
+              primaryCurrency="USD"
+            />
+          ))}
+        </div>
+      )}
+
+      <div style={{ marginTop: 4, fontSize: 11, color: "var(--text3)", lineHeight: 1.6 }}>
+        Sorted ascending by days-on-sale (firstSeen → soldAt). The "SOLD · Nd"
+        chip on each card is the headline. Auction lots excluded (different
+        lifecycle). Click a card to open the dealer URL.
+      </div>
+
       {/* ── Auction-house quality ──────────────────────────────────── */}
-      <div style={{
+      <div id="sec-house" style={{
         display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
         marginTop: 32, marginBottom: 14,
       }}>
@@ -974,7 +1217,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
       </div>
 
       {/* ── User limits ───────────────────────────────────────────── */}
-      <div style={{
+      <div id="sec-limits" style={{
         display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
         marginTop: 32, marginBottom: 14,
       }}>
