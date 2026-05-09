@@ -7,7 +7,7 @@ import { ManualEntryForm } from "./ManualEntryForm";
 import { ListingPickerModal } from "./ListingPickerModal";
 import { MarkAsSoldModal } from "./MarkAsSoldModal";
 import { ManageListSheet } from "./ManageListSheet";
-import { fmtUSD } from "../utils";
+import { fmtUSD, matchesSearch } from "../utils";
 import { innerToggleButton, actionButton, signInButton } from "../styles";
 import { EmptyState } from "./EmptyState";
 import { Section } from "./Section";
@@ -65,6 +65,13 @@ export function CollectionsTab({
   collectionsSubTab,
   setCollectionsSubTab,
   tabResetTick,
+  // Filter row values (2026-05-09) for drill-in filtering. Passed
+  // wholesale to ListsView so the same source/brand/price/sort
+  // controls in the shell drive the visible items inside a list.
+  filterValues,
+  // App.js mirror — call with the current drill-in id (or null) so
+  // the shell can render the filter row when we're drilled in.
+  onDrillInChange,
 }) {
   // Sub-tab routing: the parent owns the state but if for some reason
   // it isn't passed (smoke tests, signed-out flows), fall back to a
@@ -93,6 +100,14 @@ export function CollectionsTab({
   useEffect(() => {
     if (subTab !== "lists") setSelectedListId(null);
   }, [subTab]);
+
+  // Mirror drill-in id up to App.js so the shell can show the filter
+  // row when we're inside a list. Reports the active drill-in only
+  // when on the Lists sub-tab; null otherwise.
+  useEffect(() => {
+    if (typeof onDrillInChange !== "function") return;
+    onDrillInChange(subTab === "lists" ? selectedListId : null);
+  }, [subTab, selectedListId, onDrillInChange]);
 
   // Tab re-tap → return to the Lists landing. App.js bumps
   // `tabResetTick` whenever the user clicks the active main tab pill;
@@ -252,6 +267,7 @@ export function CollectionsTab({
         selectedListId={selectedListId}
         setSelectedListId={setSelectedListId}
         setManageListOpen={setManageListOpen}
+        filterValues={filterValues}
       />
     );
   } else if (subTab === "challenges") {
@@ -635,6 +651,9 @@ function ListsView({
   deleteCollection, removeItemFromCollection,
   selectedListId, setSelectedListId,
   setManageListOpen,
+  // Filter row values from App.js. Same shape useFilters exposes.
+  // Applied to drilled-in items via applyDrillInFilters below.
+  filterValues,
 }) {
   const sharedInbox = cols.find(c => c.isSharedInbox) || null;
   const userCols = cols.filter(c =>
@@ -672,9 +691,14 @@ function ListsView({
   if (selected) {
     const isHiddenColl = selected.id === HIDDEN_COLLECTION_ID;
     const isSavedColl  = selected.id === SAVED_COLLECTION_ID;
-    const items = isHiddenColl ? hiddenItems
+    const rawItems = isHiddenColl ? hiddenItems
                 : isSavedColl  ? (watchItems || [])
                 : (itemsByColl[selected.id] || []);
+    // Apply the shell filter row (date/price sort, $ min-max,
+    // source, brand, search) to the drilled-in items so the filter
+    // pills above the grid actually narrow the visible set.
+    // 2026-05-09 IA pass.
+    const items = applyDrillInFilters(rawItems, filterValues);
     return (
       <div style={{ paddingTop: 4 }}>
         <div style={{
@@ -1040,3 +1064,64 @@ const heartIcon = (
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
   </svg>
 );
+
+// ── Drill-in filter helper (2026-05-09) ─────────────────────────
+//
+// Applies the shell filter-row values (filterSources, filterBrands,
+// minPrice, maxPrice, search, sort) to a drilled-in list's items
+// so the filter pills above the grid actually narrow the visible
+// set. Mirrors App.js's allFiltered / watchView predicates but
+// scoped to whatever the user's currently looking at inside a
+// list — Saved virtual list, a user list, or a shared list.
+//
+// Source/brand: simple equality on the snapshot fields. Brand uses
+// `(item.brand || "Other")` rather than App.js's count-aware
+// displayBrand because we don't have brandCounts here; close
+// enough for in-list narrowing.
+//
+// Price: prefers savedPriceUSD/savedPrice (watchlist_items shape)
+// and falls back to priceUSD/price (collection_items / live
+// snapshots). manualPricePaid is also checked so manual entries
+// participate in the band when relevant.
+//
+// Sort: Date↓ default = savedAt desc; Date↑ flips. Price asc/desc
+// works on the same numeric field as the band check.
+
+function applyDrillInFilters(items, fv) {
+  if (!fv) return items;
+  let out = items.slice();
+  const { filterSources, filterBrands, minPrice, maxPrice, search, sort } = fv;
+  if (filterSources && filterSources.length > 0) {
+    out = out.filter(i => filterSources.includes(i.source));
+  }
+  if (filterBrands && filterBrands.length > 0) {
+    out = out.filter(i => filterBrands.includes(i.brand || "Other"));
+  }
+  const priceOf = (i) => i.savedPriceUSD || i.savedPrice
+                       || i.priceUSD || i.price
+                       || i.manualPricePaid || 0;
+  if (minPrice && minPrice > 0) {
+    out = out.filter(i => priceOf(i) >= minPrice);
+  }
+  // GLOBAL_MAX in App.js is Infinity; here a missing maxPrice means
+  // "no upper bound", so only filter when it's a real finite cap.
+  if (maxPrice && Number.isFinite(maxPrice) && maxPrice < 1e12) {
+    out = out.filter(i => priceOf(i) <= maxPrice);
+  }
+  const q = (search || "").trim();
+  if (q) out = out.filter(i => matchesSearch(i, q));
+
+  if (sort === "price-asc") {
+    out.sort((a, b) => priceOf(a) - priceOf(b));
+  } else if (sort === "price-desc") {
+    out.sort((a, b) => priceOf(b) - priceOf(a));
+  } else if (sort === "date-asc") {
+    const date = (i) => i.savedAt || i.firstSeen || "";
+    out.sort((a, b) => (date(a) > date(b) ? 1 : date(a) < date(b) ? -1 : 0));
+  } else {
+    // default: date desc (newest savedAt first)
+    const date = (i) => i.savedAt || i.firstSeen || "";
+    out.sort((a, b) => (date(a) < date(b) ? 1 : date(a) > date(b) ? -1 : 0));
+  }
+  return out;
+}
