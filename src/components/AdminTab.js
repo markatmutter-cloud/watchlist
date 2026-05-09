@@ -129,6 +129,23 @@ const COLUMNS = [
   { key: "earning",     label: "Earning?",    align: "center",fmt: (r) => <ChipDot kind={r.earning} /> },
 ];
 
+// Per-brand velocity columns (2026-05-09). Surfaces "which brands
+// flip fastest" alongside live/cycled counts and the top-selling
+// dealer for each brand. Intentionally narrower than the source
+// table — the brand axis is interesting for cycle-speed signal,
+// not for the heart-rate / engagement / earning chip layer (those
+// belong on dealers).
+const BRAND_COLUMNS = [
+  { key: "brand",            label: "Brand",            align: "left",  fmt: (r) => r.brand },
+  { key: "live",             label: "Live",             align: "right", fmt: (r) => r.live.toLocaleString() },
+  { key: "soldCount30d",     label: "Sold (30d)",       align: "right", fmt: (r) => r.soldCount30d.toLocaleString() },
+  { key: "medianDaysOnSale", label: "Cycle (30d)",      align: "right",
+    fmt: (r) => r.medianDaysOnSale == null ? "—" : `${r.medianDaysOnSale}d` },
+  { key: "soldUsd30d",       label: "$ sold (30d)",     align: "right", fmt: (r) => fmtMoney(r.soldUsd30d) },
+  { key: "topSource",        label: "Top dealer",       align: "left",
+    fmt: (r) => r.topSource ? `${r.topSource} ${(r.topSourcePct*100).toFixed(0)}%` : "—" },
+];
+
 // Auction-house quality table. Different signal set than dealer
 // sources: houses publish in batches around scheduled sales rather
 // than rolling inventory, so unit-count / new-per-week / heart-rate
@@ -186,6 +203,10 @@ export function AdminTab({ watchItems, hiddenItems }) {
   const [listings, setListings] = useState([]);
   const [loadError, setLoadError] = useState(null);
   const [sort, setSort] = useState({ key: "earning", dir: "desc" });
+  // Independent sort state for the brand-velocity table (default
+  // sorts fastest-cycle first so the most-actively-flipped brands
+  // float to the top).
+  const [brandSort, setBrandSort] = useState({ key: "medianDaysOnSale", dir: "asc" });
   // Per-source engagement aggregates from listing_events_daily.
   // Empty Map until the RPC resolves; engagement columns render "—"
   // for sources without rolled-up events yet.
@@ -457,6 +478,103 @@ export function AdminTab({ watchItems, hiddenItems }) {
     return r;
   }, [rows, sort]);
 
+  // Per-brand velocity aggregates (2026-05-09). Same data as the
+  // source-quality memo above, grouped by brand instead of dealer.
+  // Surfaces "which brands flip fastest" — Mark wants this for taste
+  // pattern visibility (a brand that turns over in days has hotter
+  // demand than one that sits for months at the same dealer).
+  //
+  // Sample: items that went sold in the rolling 30-day window. For
+  // each brand we compute:
+  //   - soldCount30d  — sample size
+  //   - medianDaysOnSale — the velocity signal
+  //   - soldUsd30d    — total $ value sold
+  //   - liveCount     — how many currently active across all dealers
+  //   - topSource     — which dealer sells the most of this brand
+  //
+  // Auction lots intentionally excluded: their lifecycle isn't a
+  // first-listed → sold-flip cycle (catalog → sale → ended). Mixing
+  // them would dilute the dealer-cycle read.
+  const brandRows = useMemo(() => {
+    const today = new Date();
+    const byBrand = new Map();
+    const ensure = (b) => {
+      if (!byBrand.has(b)) {
+        byBrand.set(b, {
+          live: 0, sold30d: 0, soldUsd30d: 0,
+          daysOnSaleSamples: [],
+          sources: new Map(),
+        });
+      }
+      return byBrand.get(b);
+    };
+
+    for (const it of listings) {
+      // Skip auction lots — different lifecycle (see header comment).
+      if (it._isAuctionFormat || it._isTrackedLot) continue;
+      const brand = it.brand || "Other";
+      const agg = ensure(brand);
+      if (!it.sold) agg.live += 1;
+      const src = it.source || "?";
+      agg.sources.set(src, (agg.sources.get(src) || 0) + 1);
+      if (it.sold && it.soldAt && it.firstSeen) {
+        const sd = new Date(it.soldAt);
+        if (today - sd <= THIRTY_DAYS_MS) {
+          const days = Math.round((sd - new Date(it.firstSeen)) / DAY_MS);
+          if (Number.isFinite(days) && days >= 0) {
+            agg.daysOnSaleSamples.push(days);
+            agg.sold30d += 1;
+            const v = it.priceUSD || it.lastMeaningfulPrice || 0;
+            if (v) agg.soldUsd30d += v;
+          }
+        }
+      }
+    }
+
+    const out = [];
+    for (const [brand, agg] of byBrand.entries()) {
+      const dosSorted = agg.daysOnSaleSamples.slice().sort((a, b) => a - b);
+      const medianDaysOnSale = dosSorted.length
+        ? dosSorted[Math.floor(dosSorted.length / 2)]
+        : null;
+      const topSourceEntry = [...agg.sources.entries()].sort((a, b) => b[1] - a[1])[0];
+      const topSource = topSourceEntry ? topSourceEntry[0] : "";
+      const topSourcePct = topSourceEntry && (agg.live + agg.sold30d)
+        ? topSourceEntry[1] / (agg.live + agg.sold30d) : 0;
+      out.push({
+        brand,
+        live: agg.live,
+        soldCount30d: agg.sold30d,
+        soldUsd30d: agg.soldUsd30d,
+        medianDaysOnSale,
+        topSource, topSourcePct,
+      });
+    }
+    return out;
+  }, [listings]);
+
+  const sortedBrandRows = useMemo(() => {
+    const r = brandRows.slice();
+    const k = brandSort.key;
+    const sign = brandSort.dir === "asc" ? 1 : -1;
+    r.sort((a, b) => {
+      if (k === "brand" || k === "topSource") {
+        return sign * String(a[k] || "").localeCompare(String(b[k] || ""));
+      }
+      // Null medianDaysOnSale (no sales sample) sinks to the bottom
+      // regardless of sort dir — saves the user from scrolling past
+      // 50 brands with "—" to find the ones with actual signal.
+      if (k === "medianDaysOnSale") {
+        if (a.medianDaysOnSale == null && b.medianDaysOnSale == null) return 0;
+        if (a.medianDaysOnSale == null) return 1;
+        if (b.medianDaysOnSale == null) return -1;
+        return sign * (a.medianDaysOnSale - b.medianDaysOnSale);
+      }
+      return sign * ((a[k] || 0) - (b[k] || 0));
+    });
+    return r;
+  }, [brandRows, brandSort]);
+
   // Per-house aggregates for the auction-house quality table.
   // Drawn from auctions.json (calendar status) + auction_lots.json
   // ∪ manual_archive_lots.json (lot detail). tracked_lots.json is
@@ -562,6 +680,17 @@ export function AdminTab({ watchItems, hiddenItems }) {
       // Default direction for numeric is desc (highest first); for text is asc.
       const isText = key === "source" || key === "topBrand";
       return { key, dir: isText ? "asc" : "desc" };
+    });
+  };
+
+  const onBrandSortClick = (key) => {
+    setBrandSort((prev) => {
+      if (prev.key === key) return { key, dir: prev.dir === "asc" ? "desc" : "asc" };
+      // Cycle defaults to ascending (fastest first); other numerics
+      // default desc; text asc.
+      const isText = key === "brand" || key === "topSource";
+      const isCycle = key === "medianDaysOnSale";
+      return { key, dir: isText || isCycle ? "asc" : "desc" };
     });
   };
 
@@ -704,6 +833,74 @@ export function AdminTab({ watchItems, hiddenItems }) {
         appear after the next nightly rollup; trigger one early via
         <code style={{ marginLeft: 4, marginRight: 4, padding: "0 4px", background: "var(--surface)", borderRadius: 3 }}>select public.rollup_and_prune_listing_events();</code>
         in the SQL editor.
+      </div>
+
+      {/* ── Brand velocity ────────────────────────────────────────── */}
+      {/* Per-brand cycle-speed rollup (2026-05-09). Sample = listings
+          that went sold in the rolling 30-day window. Default sort
+          ascending by median-cycle so fastest-flipping brands top
+          the list. Auction lots intentionally excluded — different
+          lifecycle would dilute the dealer-cycle read. */}
+      <div style={{
+        display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
+        marginTop: 32, marginBottom: 14,
+      }}>
+        <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
+          Brand velocity
+        </h1>
+        <span style={{ fontSize: 12, color: "var(--text2)" }}>
+          {sortedBrandRows.filter(r => r.medianDaysOnSale != null).length} brands with 30d sales
+          · {sortedBrandRows.reduce((a, r) => a + r.soldCount30d, 0).toLocaleString()} listings cycled
+        </span>
+      </div>
+
+      {sortedBrandRows.length === 0 ? (
+        <div style={{ color: "var(--text2)", fontSize: 13, padding: 20 }}>
+          Loading…
+        </div>
+      ) : (
+        <div style={{ overflowX: "auto", border: "0.5px solid var(--border)", borderRadius: 8 }}>
+          <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 720 }}>
+            <thead>
+              <tr>
+                {BRAND_COLUMNS.map((c) => (
+                  <th
+                    key={c.key}
+                    onClick={() => onBrandSortClick(c.key)}
+                    style={{ ...headerBase, textAlign: c.align }}
+                    title="Click to sort"
+                  >
+                    {c.label}
+                    {brandSort.key === c.key && (
+                      <span style={{ marginLeft: 4, color: "var(--text1)" }}>
+                        {brandSort.dir === "asc" ? "▲" : "▼"}
+                      </span>
+                    )}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sortedBrandRows.map((r) => (
+                <tr key={r.brand}>
+                  {BRAND_COLUMNS.map((c) => (
+                    <td key={c.key} style={{ ...cellBase, textAlign: c.align, color: "var(--text1)" }}>
+                      {c.fmt(r)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div style={{ marginTop: 12, fontSize: 11, color: "var(--text3)", lineHeight: 1.6 }}>
+        <strong style={{ color: "var(--text2)" }}>Cycle (30d)</strong> = median days from
+        firstSeen to soldAt across listings that sold in the last 30 days. Lower = faster
+        turn. Brands with no 30-day sales sample sink to the bottom of the table.
+        <strong style={{ color: "var(--text2)" }}> Top dealer</strong> = the source with the
+        most listings (live + cycled) for that brand.
       </div>
 
       {/* ── Auction-house quality ──────────────────────────────────── */}
