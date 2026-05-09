@@ -1120,6 +1120,20 @@ usernames now plausible follow-ons because Realtime is in place.
 - **Personal-learning agent side track.** Brand-watcher agent and
   maintenance-assistant agent both accepted in concept (2026-05-05);
   defer the build to its own session whenever Mark wants to start.
+- **Conversational ask-Claude over the listings + state data
+  (2026-05-09).** "What are the fastest-selling Cartier Tanks
+  this month?" / "Which dealer flips the cheapest Rolex
+  Submariners?" → natural-language → query layer → tabular or
+  card answer. Foundation is already there: listings.json +
+  state.json carry firstSeen / soldAt / brand / source /
+  priceUSD; the velocity rollups (PRs #151 + #152) prove the
+  aggregations work. Implementation: small Anthropic SDK
+  integration with prompt caching on the data dump, output
+  rendered through the existing Card grid and admin tables.
+  Admin-only first; promote to user-facing once the surfaces
+  it could query are richer (post-Epic-0 references-as-entities
+  most usefully). Defer the build until a clear shape emerges
+  from Mark's day-to-day admin use.
 
 ## Explicitly NOT on the roadmap
 
