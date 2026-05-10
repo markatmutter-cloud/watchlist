@@ -1060,33 +1060,49 @@ will deny over-broad bundles — that's a feature, not a bug.
 For dev/branch testing: `create_branch` / `merge_branch` is available
 when production-safety matters more than speed.
 
-**Supabase `public` schema default ACL gotcha.** Supabase pre-configures
-the `public` schema to auto-grant EXECUTE on every newly-created
-function directly to `anon`, `authenticated`, and `service_role` —
-NOT via the PUBLIC pseudo-role. So `revoke execute on function … from
-public` is a **no-op** for functions in `public`. To actually drop
-anon access, `revoke … from anon` explicitly (and `from authenticated`
-for internal-only functions like cron RPCs).
+**Supabase `public` schema default ACL gotcha (revised 2026-05-10).**
+On the current Supabase platform, every newly-created function in the
+`public` schema has `EXECUTE` granted to **PUBLIC** (everyone — and
+`anon` inherits via PUBLIC). It is NOT a direct grant to anon, despite
+what an older version of this note claimed. So
+`revoke execute on function … from anon` is a **no-op** — anon never
+had its own direct grant — and the function stays anon-callable through
+the PUBLIC inheritance.
 
-This applies to every new SECURITY DEFINER RPC. The pattern at the
-end of a function-creating migration should be:
+The actually-effective pattern at the end of a function-creating
+migration is:
 
 ```sql
 grant execute on function public.foo(...) to authenticated;
-revoke execute on function public.foo(...) from anon;
+revoke execute on function public.foo(...) from public;
 ```
 
-(The grant line is sometimes redundant given the default ACL, but
-explicit-grants keep intent legible for future readers.)
+`revoke … from public` strips the PUBLIC blanket grant; the explicit
+`grant to authenticated` keeps signed-in users callable; `service_role`
+keeps its own direct grant (preserved by the platform) so the cron
+path / service backends still work.
+
+Verify after applying:
+
+```sql
+select has_function_privilege('anon', 'public.foo(...)', 'EXECUTE')
+  -- expect: false
+```
+
+Three RPCs shipped with the original (wrong) pattern in May 10 and
+were re-revoked in `2026-05-10_revoke_anon_signed_in_rpcs.sql`:
+`list_item_reactions`, `list_members_for_collection`,
+`list_reaction_counts_for_user`. If you find others, copy that
+migration's shape.
 
 A schema-wide `alter default privileges in schema public revoke
-execute on functions from anon` would be the cleaner fix BUT Supabase's
-hosted Postgres blocks that operation even for the dashboard SQL
-editor — it returns "permission denied to change default privileges"
-because it requires real superuser, which Supabase reserves. So the
-per-function revoke is the only path on this platform. Don't waste
-cycles trying the ALTER DEFAULT PRIVILEGES path again; it's
-permanently blocked at the platform layer.
+execute on functions from public` would be the cleaner fix BUT
+Supabase's hosted Postgres blocks that operation even for the
+dashboard SQL editor — it returns "permission denied to change default
+privileges" because it requires real superuser, which Supabase
+reserves. So the per-function revoke is the only path on this
+platform. Don't waste cycles trying the ALTER DEFAULT PRIVILEGES path
+again; it's permanently blocked at the platform layer.
 
 ## Things to never do
 
