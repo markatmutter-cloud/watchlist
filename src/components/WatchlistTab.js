@@ -320,15 +320,13 @@ export function WatchlistTab(props) {
         defaultExpanded={savedSearchStats.length === 0}
       />
 
-      {/* eBay source-searches block (data/ebay_searches.json + GitHub
-          edit link) was removed from this view 2026-05-06 per Mark
-          ("remove the source ebay section from this page. I want to
-          manage these searches directly in the code"). The data
-          still feeds the scraper from data/ebay_searches.json — only
-          the UI surface is gone. The hook is left out for now; if
-          the surface is restored, re-add useEBaySearches +
-          EBAY_SEARCHES_EDIT_URL imports and the JSX block from git
-          history. */}
+      {/* eBay source-searches block was removed 2026-05-06 — only
+          surface was an admin "Edit on GitHub" link Mark didn't
+          want public. The hook (useEBaySearches) was deleted on
+          2026-05-10 alongside the GitHub-repo URL cleanup. The
+          scraper still reads data/ebay_searches.json server-side;
+          if a future in-app editor is wanted, route it through a
+          Supabase table rather than re-exposing the GitHub URL. */}
 
       {/* Saved searches — user-defined filters over the existing feed. */}
       {savedSearchStats.length > 0 && (

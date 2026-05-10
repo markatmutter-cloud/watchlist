@@ -41,26 +41,31 @@ import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
 import { tabPill, innerToggleButton } from "./styles";
 
-const LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/listings.json";
-const AUCTIONS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/auctions.json";
-const TRACKED_LOTS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/tracked_lots.json";
+// Same-origin paths — Vercel serves everything in /public at the
+// site root, so these resolve against the user's current host
+// (the-watch-list.app or a preview-deploy domain). 2026-05-10:
+// switched away from `raw.githubusercontent.com/<user>/<repo>/...`
+// to keep the GitHub repo identity off the production network tab.
+const LISTINGS_URL = "/listings.json";
+const AUCTIONS_URL = "/auctions.json";
+const TRACKED_LOTS_URL = "/tracked_lots.json";
 // Comprehensive auction-lot scrape — populated by auction_lots_scraper.py
 // (Antiquorum + Christie's + Sotheby's + Phillips). Same shape as
 // tracked_lots.json (URL-keyed lot detail dicts) so the App.js
 // projection treats them identically.
-const AUCTION_LOTS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/auction_lots.json";
+const AUCTION_LOTS_URL = "/auction_lots.json";
 // Manually-captured historical-auction lots (Phase D, 2026-05-05).
 // Static, immutable: the manual_archive_scraper writes this once per
 // added sale and the result never changes (archive sales don't update
 // post-hoc). Loaded alongside auction_lots.json and merged by URL key.
-const MANUAL_ARCHIVE_LOTS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/manual_archive_lots.json";
+const MANUAL_ARCHIVE_LOTS_URL = "/manual_archive_lots.json";
 // Manually-curated historical sold listings (2026-05-09). Sits next
 // to manual_archive_lots.json conceptually but is shaped like a flat
 // listings.json entry rather than auction-lot data. Each item is a
 // hand-added "watch sold by a dealer / house before our scraper
 // window" record — surfaces in Listings > Archive (Sold) for
 // everyone. merge.py is unaware of this file; App.js loads + merges.
-const MANUAL_HISTORICAL_LISTINGS_URL = "https://raw.githubusercontent.com/markatmutter-cloud/watchlist/main/public/manual_historical_listings.json";
+const MANUAL_HISTORICAL_LISTINGS_URL = "/manual_historical_listings.json";
 const PAGE_SIZE = 48;
 // Legacy localStorage keys — kept only for the one-shot import on first
 // sign-in (see importLocalData + the banner in the Watchlist tab). Active
