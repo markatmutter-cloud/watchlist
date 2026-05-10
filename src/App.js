@@ -2293,33 +2293,51 @@ export default function Watchlist() {
   // pattern (tabPill underline buttons, horizontally scrollable).
   // Live listings | Live auctions | All sold | Auction calendar.
   const listingsSubTabsJSX = tab !== "listings" ? null : (
-    <div style={{
-      display: "flex", gap: 20, alignItems: "center",
-      padding: "0 16px",
-      background: "var(--bg)",
-      borderBottom: "0.5px solid var(--border)",
-      flexShrink: 0,
-      overflowX: "auto",
-      overflowY: "hidden",
-      WebkitOverflowScrolling: "touch",
-      scrollbarWidth: "none",
-      msOverflowStyle: "none",
-    }}>
-      {[
-        ["live", isMobile ? "Live" : "Live listings"],
-        ["auctions", isMobile ? "Auctions" : "Live auctions"],
-        ["sold", isMobile ? "Archive" : "Archive (Sold)"],
-        ["calendar", isMobile ? "Calendar" : "Auction calendar"],
-      ].map(([key, label]) => {
-        const active = listingsSubTab === key;
-        return (
-          <button key={key} onClick={() => { setListingsSubTab(key); setDrawerOpen(false); setPage(1); }}
-            style={{ ...tabPill(active), flexShrink: 0 }}>
-            {label}
-          </button>
-        );
-      })}
-    </div>
+    <>
+      <div style={{
+        display: "flex", gap: 20, alignItems: "center",
+        padding: "0 16px",
+        background: "var(--bg)",
+        borderBottom: "0.5px solid var(--border)",
+        flexShrink: 0,
+        overflowX: "auto",
+        overflowY: "hidden",
+        WebkitOverflowScrolling: "touch",
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+      }}>
+        {[
+          ["live", isMobile ? "Live" : "Live listings"],
+          ["auctions", isMobile ? "Auctions" : "Live auctions"],
+          ["sold", isMobile ? "Archive" : "Archive (Sold)"],
+          ["calendar", isMobile ? "Calendar" : "Auction calendar"],
+        ].map(([key, label]) => {
+          const active = listingsSubTab === key;
+          return (
+            <button key={key} onClick={() => { setListingsSubTab(key); setDrawerOpen(false); setPage(1); }}
+              style={{ ...tabPill(active), flexShrink: 0 }}>
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      {/* One-line description for the active sub-tab — Mark
+          feedback 2026-05-10: with four sub-tabs the labels alone
+          aren't always self-evident on first encounter. Lives just
+          below the strip; same grey muted color as SubTabIntro. */}
+      <div style={{
+        fontSize: 11, color: "var(--text3)",
+        padding: "8px 16px 6px",
+        background: "var(--bg)",
+        borderBottom: "0.5px solid var(--border)",
+        flexShrink: 0,
+      }}>
+        {listingsSubTab === "live"     && "Live dealer listings — currently for sale across every tracked dealer."}
+        {listingsSubTab === "auctions" && "Live auction lots — currently up for bid at the major houses."}
+        {listingsSubTab === "sold"     && "Archive — sold dealer listings + ended auction lots, most recently sold first."}
+        {listingsSubTab === "calendar" && "Upcoming auction calendar across the major houses, plus an archive of past sales."}
+      </div>
+    </>
   );
 
   // (Retired 2026-04-30) AuctionsTab JSX was built here. Tracked lots

@@ -192,12 +192,17 @@ export function WatchDetailSheet({
   // Sheet sizing — mobile = full screen (no rounded corners on
   // bottom), desktop = right-side panel. modalBackdrop handles
   // overlay; modalShell is overridden inline.
+  // Mobile paddingTop carries the safe-area inset so the title
+  // doesn't sit under the status-bar / iOS notch — Mark report
+  // 2026-05-10: title was right at the top edge with no breathing
+  // room. The standard modalShell padding (22) gives the rest.
   const sheetStyle = isMobile ? {
     ...modalShell,
     maxWidth: "100%", width: "100%",
     maxHeight: "100vh", height: "100vh",
     margin: 0, borderRadius: 0,
     overflowY: "auto",
+    paddingTop: "max(28px, env(safe-area-inset-top, 28px))",
   } : {
     ...modalShell,
     maxWidth: 540, width: "92vw",
