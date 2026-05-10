@@ -49,7 +49,7 @@ export function SettingsModal({
     }
     setNameStatus("Saving…");
     const res = await setDisplayName(trimmed);
-    setNameStatus(res?.error ? `Error: ${res.error}` : "Saved");
+    setNameStatus(res?.error ? `Didn't save — ${res.error}` : "Saved");
     setTimeout(() => setNameStatus(""), 1800);
   };
 

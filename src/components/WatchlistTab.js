@@ -242,13 +242,15 @@ export function WatchlistTab(props) {
   // Import flow — runs once when the user opts in. Reloads the page on
   // success so all the data hooks re-fetch from Supabase with the fresh
   // rows in place.
+  const [importError, setImportError] = useState("");
   const runImport = async () => {
     if (!user) return;
+    setImportError("");
     setImportState("working");
     const res = await importLocalData(user, legacyLocal);
     if (res.error) {
       setImportState("available");
-      alert("Import failed: " + res.error);
+      setImportError(res.error);
       return;
     }
     try {
@@ -293,6 +295,11 @@ export function WatchlistTab(props) {
           fontFamily: "inherit", fontSize: 13,
         }}>No thanks</button>
       </div>
+      {importError && (
+        <div style={{ fontSize: 12, color: "var(--danger)", marginTop: 4 }}>
+          Import didn't go through — {importError}
+        </div>
+      )}
     </div>
   ) : null;
 

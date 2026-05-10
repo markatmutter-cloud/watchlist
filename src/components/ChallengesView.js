@@ -106,10 +106,12 @@ export function ChallengesView({
     setCreatingNew(true);
   };
 
+  const [createError, setCreateError] = useState("");
   const submitNewChallenge = async (config) => {
+    setCreateError("");
     const res = await collectionsApi.createChallenge(config);
     if (res.error) {
-      window.alert("Couldn't create challenge: " + res.error);
+      setCreateError(res.error);
       return;
     }
     setCreatingNew(false);
@@ -119,10 +121,20 @@ export function ChallengesView({
   if (creatingNew) {
     return (
       <div style={{ paddingTop: 4 }}>
+        {createError && (
+          <div style={{
+            fontSize: 12, color: "var(--danger)",
+            padding: "8px 12px", marginBottom: 10,
+            border: "0.5px solid var(--danger)", borderRadius: 8,
+            background: "var(--card-bg)",
+          }}>
+            Challenge didn't save — {createError}
+          </div>
+        )}
         <CreateStage
           challenge={null}
           onSubmit={submitNewChallenge}
-          onCancel={() => setCreatingNew(false)}
+          onCancel={() => { setCreateError(""); setCreatingNew(false); }}
         />
       </div>
     );

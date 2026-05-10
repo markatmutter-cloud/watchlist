@@ -1272,6 +1272,14 @@ function ListsView({
   // cases — sharedListIds contains the collection ids that should
   // render the people icon.
   const [sharedListIds, setSharedListIds] = useState(() => new Set());
+  // Ephemeral share-link copied toast — replaces the old window.alert
+  // on share button presses. Auto-clears after 2s.
+  const [shareCopied, setShareCopied] = useState(false);
+  useEffect(() => {
+    if (!shareCopied) return undefined;
+    const t = setTimeout(() => setShareCopied(false), 2000);
+    return () => clearTimeout(t);
+  }, [shareCopied]);
   useEffect(() => {
     if (!user || !supabase || userCols.length === 0) {
       setSharedListIds(new Set());
@@ -1418,17 +1426,25 @@ function ListsView({
                       await navigator.share(shareData);
                     } else if (navigator.clipboard) {
                       await navigator.clipboard.writeText(url);
-                      window.alert("Link copied. Paste it anywhere to share this list.");
+                      setShareCopied(true);
                     }
                   } catch (e) {
                     if (e?.name !== "AbortError") {
-                      try { await navigator.clipboard?.writeText(url); window.alert("Link copied."); }
+                      try { await navigator.clipboard?.writeText(url); setShareCopied(true); }
                       catch { window.prompt("Copy this link to share:", url); }
                     }
                   }
                 }}
                 title="Share this list"
                 style={actionButton({ variant: "primary" })}>Share</button>
+              {shareCopied && (
+                <span style={{
+                  fontSize: 12, color: "var(--brand)", fontWeight: 500,
+                  alignSelf: "center", paddingLeft: 2,
+                }}>
+                  Link copied — paste anywhere
+                </span>
+              )}
               {/* Manage / Rename / Delete are owner-only. Collaborators
                   see the list + Share button only. */}
               {isOwner && (
