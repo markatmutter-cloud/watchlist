@@ -119,7 +119,7 @@ export function CollectionPickerModal({
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "12px 14px", borderRadius: 10,
                   border: alreadyHere ? "1px solid var(--brand)" : "0.5px solid var(--border)",
-                  background: alreadyHere ? "rgba(24,95,165,0.08)" : "var(--card-bg)",
+                  background: alreadyHere ? "var(--brand-tint-08)" : "var(--card-bg)",
                   color: "var(--text1)",
                   cursor: busy ? "wait" : "pointer",
                   fontFamily: "inherit", fontSize: 14, textAlign: "left",

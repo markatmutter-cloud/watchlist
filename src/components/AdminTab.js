@@ -61,10 +61,10 @@ function ChipDot({ kind }) {
   // kind: "good" | "meh" | "bad" | "ok" | "warn" | "error"
   const map = {
     good: { color: "#1f9d4f", glyph: "●", label: "Earning" },
-    meh:  { color: "#c9a227", glyph: "●", label: "Marginal" },
+    meh:  { color: "var(--accent-warn)", glyph: "●", label: "Marginal" },
     bad:  { color: "var(--danger)", glyph: "●", label: "Prune candidate" },
     ok:   { color: "#1f9d4f", glyph: "✓", label: "Healthy" },
-    warn: { color: "#c9a227", glyph: "⚠", label: "Warning" },
+    warn: { color: "var(--accent-warn)", glyph: "⚠", label: "Warning" },
     error:{ color: "var(--danger)", glyph: "✗", label: "Error" },
   };
   const c = map[kind] || map.meh;
@@ -855,7 +855,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
           ["sec-limits",   "User limits"],
         ].map(([id, label]) => (
           <a key={id} href={`#${id}`} style={{
-            fontSize: 12, padding: "5px 10px", borderRadius: 16,
+            fontSize: 12, padding: "5px 10px", borderRadius: 14,
             border: "0.5px solid var(--border)",
             color: "var(--text2)", textDecoration: "none",
             background: "var(--surface)",
@@ -1067,7 +1067,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
             const active = fastestWindow === key;
             return (
               <button key={key} onClick={() => setFastestWindow(key)} style={{
-                padding: "6px 12px", borderRadius: 16,
+                padding: "6px 12px", borderRadius: 14,
                 border: "0.5px solid var(--border)",
                 background: active ? "var(--text1)" : "var(--surface)",
                 color: active ? "var(--bg)" : "var(--text2)",
@@ -1084,7 +1084,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
             const active = fastestLimit === n;
             return (
               <button key={n} onClick={() => setFastestLimit(n)} style={{
-                padding: "6px 12px", borderRadius: 16,
+                padding: "6px 12px", borderRadius: 14,
                 border: "0.5px solid var(--border)",
                 background: active ? "var(--text1)" : "var(--surface)",
                 color: active ? "var(--bg)" : "var(--text2)",

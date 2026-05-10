@@ -352,7 +352,7 @@ export function ListReceiver({
         <div style={{
           padding: "12px 14px", borderRadius: 10,
           border: "1px solid var(--brand)",
-          background: "rgba(24,95,165,0.08)",
+          background: "var(--brand-tint-08)",
           marginBottom: 16,
         }}>
           <div style={{ fontSize: 13, color: "var(--text1)", marginBottom: 10, lineHeight: 1.5 }}>
@@ -387,7 +387,7 @@ export function ListReceiver({
         <div style={{
           padding: "12px 14px", borderRadius: 10,
           border: "1px solid var(--brand)",
-          background: "rgba(24,95,165,0.08)",
+          background: "var(--brand-tint-08)",
           marginBottom: 16,
         }}>
           <div style={{ fontSize: 13, color: "var(--text1)", marginBottom: 8 }}>
