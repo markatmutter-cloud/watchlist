@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { supabase } from "../supabase";
 import { Card } from "./Card";
 import { ListRow } from "./ListRow";
 import { SubTabIntro } from "./SubTabIntro";
@@ -479,7 +480,7 @@ function MyCollectionView({
       />
       <div style={{
         display: "flex", alignItems: "center", gap: 12,
-        padding: "8px 14px 14px",
+        padding: "8px 0 14px",
         marginBottom: 8, flexWrap: "wrap",
       }}>
         {/* Segmented control — Collection / Archive / Plan.
@@ -669,7 +670,7 @@ function CollectionSummary({ label, count, totalUSD, avgUSD }) {
       display: "grid",
       gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
       gap: 8,
-      padding: "0 12px 16px",
+      padding: "0 0 16px",
     }}>
       {cards.map(([title, value, hint]) => (
         <div key={title} style={{
@@ -782,7 +783,7 @@ function PlanView({
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
         gap: 8,
-        padding: "0 12px 16px",
+        padding: "0 0 16px",
       }}>
         {colHeader("Keeping", keepingValue, `${keeping.length} watch${keeping.length === 1 ? "" : "es"}`)}
         {colHeader("Selling", sellingValue,
@@ -1237,6 +1238,37 @@ function ListsView({
   const userCols = cols.filter(c =>
     !c.isSharedInbox && !c.isSystem && c.type !== "challenge"
   );
+
+  // 2026-05-10 — Mark spec: list rows with at least one accepted
+  // collaborator render with a two-person icon (and a "· shared"
+  // suffix on the subtitle). Owner-side query returns rows where
+  // the user owns the list; collaborator-side returns the user's
+  // own accepted row. RLS on collection_collaborators handles both
+  // cases — sharedListIds contains the collection ids that should
+  // render the people icon.
+  const [sharedListIds, setSharedListIds] = useState(() => new Set());
+  useEffect(() => {
+    if (!user || !supabase || userCols.length === 0) {
+      setSharedListIds(new Set());
+      return undefined;
+    }
+    let cancelled = false;
+    supabase.from('collection_collaborators')
+      .select('collection_id')
+      .eq('status', 'accepted')
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.warn('shared-list ids load failed', error);
+          return;
+        }
+        setSharedListIds(new Set((data || []).map(r => r.collection_id)));
+      });
+    return () => { cancelled = true; };
+  // userCols.length is the cheap signal that a list was added/removed.
+  // eslint-disable-next-line
+  }, [user?.id, userCols.length]);
+
   // Hidden synthetic row retired 2026-05-07 (Mark feedback): user-
   // facing Hide affordance was already removed in Bundle 2A.1
   // (admin-only); admin hides drop globally for everyone via the
@@ -1417,8 +1449,17 @@ function ListsView({
               const addedByName = showChip ? memberMap.get(item.whoAdded) : null;
               const itemReactions = reactionsByItem.get(item.rowId) || [];
               const isSharedList = memberCount >= 2;
+              // 2026-05-10 — Mark feedback: the reaction strip + added-by
+              // chip used to float between cards with the grid's border
+              // bleed making it ambiguous which card they belonged to.
+              // Now wrapped with the card's own bg so the unit reads as
+              // one card: image on top, reactions + attribution as a
+              // tight footer below.
               return (
-                <div key={item.id} style={{ display: "flex", flexDirection: "column" }}>
+                <div key={item.id} style={{
+                  display: "flex", flexDirection: "column",
+                  background: "var(--card-bg)",
+                }}>
                   <Card
                     item={isSavedColl ? {
                       ...item,
@@ -1516,9 +1557,11 @@ function ListsView({
               : isHiddenRowItem
                 ? hiddenItems.length
                 : (itemsByColl[c.id] || []).length;
+            const isShared = sharedListIds.has(c.id);
             const icon = isSavedRowItem ? heartIcon
                        : isInbox        ? inboxIcon
                        : isHiddenRowItem ? eyeOffIcon
+                       : isShared      ? usersIcon
                        : folderIcon;
             const subtitle = isSavedRowItem
               ? `${count} hearted watch${count === 1 ? "" : "es"}`
@@ -1526,7 +1569,7 @@ function ListsView({
                 ? `${count} listing${count === 1 ? "" : "s"} shared with you`
                 : isHiddenRowItem
                   ? `${count} listing${count === 1 ? "" : "s"} hidden from feed`
-                  : `${count} watch${count === 1 ? "" : "es"}`;
+                  : `${count} watch${count === 1 ? "" : "es"}${isShared ? " · shared" : ""}`;
             // Inline edit / delete actions on user-list rows (Mark
             // request 2026-05-09 — match the Challenges card pattern
             // so Rename + Delete don't require drilling in first).
@@ -1812,6 +1855,17 @@ const folderIcon = (
   </svg>
 );
 
+// Two-people icon for lists shared with at least one accepted
+// collaborator. 2026-05-10 Mark spec.
+const usersIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
+
 const eyeOffIcon = (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M17.94 17.94A10.06 10.06 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
@@ -1863,6 +1917,16 @@ const trashIcon = (
 
 const REACTION_EMOJIS = ["👍", "❤️", "🔥", "🤔", "❌"];
 
+// Thumbs-up SVG used as the empty-state trigger for the reactions
+// picker (Mark feedback 2026-05-10: a "+ react" text button looked
+// like a generic CTA; an icon reads as a reaction affordance).
+const thumbsUpIcon = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+  </svg>
+);
+
 function ReactionStrip({ reactions, currentUserId, onToggle }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const grouped = React.useMemo(() => {
@@ -1874,23 +1938,31 @@ function ReactionStrip({ reactions, currentUserId, onToggle }) {
     return [...map.entries()].sort((a, b) => b[1].length - a[1].length);
   }, [reactions]);
 
+  // Tight padding so the strip butts against the card's bottom edge.
+  // The wrapper around (Card + this strip + addedBy) gives them all
+  // the card bg, so this strip reads as part of the card unit.
+  const stripStyle = {
+    display: "flex", flexWrap: "wrap", gap: 4,
+    padding: "6px 10px 6px",
+    alignItems: "center",
+    borderTop: "0.5px solid var(--border)",
+  };
+
   if (grouped.length === 0 && !pickerOpen) {
     return (
-      <div style={{ padding: "4px 10px 8px" }}>
+      <div style={stripStyle}>
         <button onClick={() => setPickerOpen(true)}
+          aria-label="Add reaction"
+          title="Add reaction"
           style={addReactionButtonStyle}>
-          + react
+          {thumbsUpIcon}
         </button>
       </div>
     );
   }
 
   return (
-    <div style={{
-      display: "flex", flexWrap: "wrap", gap: 4,
-      padding: "4px 10px 8px",
-      alignItems: "center",
-    }}>
+    <div style={stripStyle}>
       {grouped.map(([emoji, rs]) => {
         const meActive = currentUserId && rs.some(r => r.user_id === currentUserId);
         const names = rs.map(r => r.user_name).filter(Boolean).join(", ");
@@ -1914,9 +1986,9 @@ function ReactionStrip({ reactions, currentUserId, onToggle }) {
       })}
       <button onClick={() => setPickerOpen(p => !p)}
         style={addReactionButtonStyle}
-        aria-label="Add reaction"
-        title="Add reaction">
-        {pickerOpen ? "×" : "+"}
+        aria-label={pickerOpen ? "Close picker" : "Add reaction"}
+        title={pickerOpen ? "Close picker" : "Add reaction"}>
+        {pickerOpen ? <span style={{ fontSize: 14, lineHeight: 1 }}>×</span> : thumbsUpIcon}
       </button>
       {pickerOpen && (
         <div style={{
@@ -1942,8 +2014,8 @@ function ReactionStrip({ reactions, currentUserId, onToggle }) {
 const addReactionButtonStyle = {
   display: "inline-flex", alignItems: "center", justifyContent: "center",
   minWidth: 28, height: 24, padding: "0 8px",
-  borderRadius: 999, border: "0.5px dashed var(--border)",
-  background: "transparent", color: "var(--text3)",
+  borderRadius: 999, border: "0.5px solid var(--border)",
+  background: "var(--surface)", color: "var(--text2)",
   cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
 };
 
