@@ -36,11 +36,12 @@ import { ListReceiver } from "./components/ListReceiver";
 import { AuctionCalendar } from "./components/AuctionCalendar";
 import { LotMigrationBanner } from "./components/LotMigrationBanner";
 import { WatchlistTab } from "./components/WatchlistTab";
+import { EmptyState } from "./components/EmptyState";
 import { AdminTab } from "./components/AdminTab";
 import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { tabPill, innerToggleButton } from "./styles";
+import { tabPill, innerToggleButton, actionButton } from "./styles";
 
 // Same-origin paths — Vercel serves everything in /public at the
 // site root, so these resolve against the user's current host
@@ -2233,13 +2234,23 @@ export default function Watchlist() {
             <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={isAdmin ? toggleHide : undefined} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} primaryCurrency={primaryCurrency} onShare={handleShare} onView={observeCard} onClickListing={onClickListing} />
           )
         ))}
-        {allFiltered.length === 0 && <div style={{ gridColumn: "1/-1", padding: 48, textAlign: "center", color: "var(--text3)", fontSize: 14 }}>
-          {tab === "listings" && listingsSubTab === "sold"
-            ? "No sold items match your filters"
-            : tab === "listings" && listingsSubTab === "auctions"
-            ? "No live auction lots match your filters"
-            : "No watches match your filters"}
-        </div>}
+        {allFiltered.length === 0 && (
+          <div style={{ gridColumn: "1/-1" }}>
+            <EmptyState
+              heading={
+                tab === "listings" && listingsSubTab === "sold"
+                  ? "No sold items match your filters"
+                  : tab === "listings" && listingsSubTab === "auctions"
+                  ? "No live auction lots match your filters"
+                  : "Nothing matches"
+              }
+              blurb={hasFilters ? "Loosen the filters and the feed will fill back up." : undefined}
+              action={hasFilters ? (
+                <button onClick={resetFilters} style={actionButton()}>Clear filters</button>
+              ) : undefined}
+            />
+          </div>
+        )}
       </div>
       {hasMore && <div ref={loaderRef} style={{ padding: 24, textAlign: "center", color: "var(--text3)", fontSize: 12 }}>Loading more...</div>}
       {!hasMore && allFiltered.length > 0 && <div style={{ padding: 24, textAlign: "center", color: "var(--text3)", fontSize: 12 }}>All {allFiltered.length} shown</div>}
@@ -2403,6 +2414,8 @@ export default function Watchlist() {
       hidden={hidden}
       observeCard={observeCard}
       onClickListing={onClickListing}
+      hasFilters={hasFilters}
+      resetFilters={resetFilters}
     />
   );
 
