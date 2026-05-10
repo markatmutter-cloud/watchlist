@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Card } from "./Card";
 import { ListRow } from "./ListRow";
 import { SubTabIntro } from "./SubTabIntro";
@@ -501,6 +502,7 @@ function MyCollectionView({
           onClickListing={onClickListing}
           openCollectionPicker={openCollectionPicker}
           onShortlistAddFromFeed={onShortlistAddFromFeed}
+          onShortlistReorder={onShortlistReorder}
           onShortlistRemove={onShortlistRemove}
           onMarkSold={onMarkSold}
           onRemoveItem={onRemoveItem}
@@ -615,6 +617,7 @@ function PlanView({
   watchlist, handleShare, handleWish, observeCard, onClickListing,
   openCollectionPicker,
   onShortlistAddFromFeed,
+  onShortlistReorder,
   onShortlistRemove,
   onMarkSold,
   onRemoveItem,
@@ -764,7 +767,7 @@ function PlanView({
         ) : (
           <WishlistRankedList
             items={wishlistItems}
-            onReorder={() => {}}
+            onReorder={onShortlistReorder}
             onRemove={onShortlistRemove}
           />
         )}
@@ -1452,14 +1455,21 @@ function CollectionGrid({
 
 function ManualItemCard({ item, onRemove, onMarkSold, onClickDetail }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  // Portal-anchored coords. The menu used to be absolutely positioned
+  // inside the card, which clipped via overflow:hidden when the menu
+  // was wider than the card. Mark report 2026-05-10.
+  const [menuPos, setMenuPos] = React.useState(null);
   // Click-outside + Escape dismiss for the ⋯ menu (2026-05-09 — was
   // missing; menu stayed open until tapped again, with no obvious
   // affordance to close. Mark report: couldn't easily reach Remove.)
-  const menuRef = React.useRef(null);
+  const triggerRef = React.useRef(null);
+  const portalRef = React.useRef(null);
   React.useEffect(() => {
     if (!menuOpen) return undefined;
     const onDown = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+      const inTrigger = triggerRef.current && triggerRef.current.contains(e.target);
+      const inPortal  = portalRef.current && portalRef.current.contains(e.target);
+      if (!inTrigger && !inPortal) setMenuOpen(false);
     };
     const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
     const t = setTimeout(() => {
@@ -1530,22 +1540,36 @@ function ManualItemCard({ item, onRemove, onMarkSold, onClickDetail }) {
           )}
         </div>
       </button>
-      <div ref={menuRef} style={{ position: "absolute", top: 6, right: 6 }}>
-        <button onClick={() => setMenuOpen(o => !o)}
+      <div style={{ position: "absolute", top: 6, right: 6 }}>
+        <button ref={triggerRef}
+          onClick={() => {
+            if (!menuOpen && triggerRef.current) {
+              const r = triggerRef.current.getBoundingClientRect();
+              setMenuPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) });
+            }
+            setMenuOpen(o => !o);
+          }}
           aria-label="More" style={{
             border: "none", background: "rgba(0,0,0,0.5)",
             color: "#fff", width: 26, height: 26, borderRadius: "50%",
             cursor: "pointer", fontSize: 14, fontFamily: "inherit",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>⋯</button>
-        {menuOpen && (
-          <div style={{
-            position: "absolute", top: 30, right: 0,
+        {menuOpen && menuPos && createPortal(
+          <div ref={portalRef} style={{
+            position: "fixed",
+            top: menuPos.top, right: menuPos.right,
+            zIndex: 1000,
+            maxWidth: `calc(100vw - ${menuPos.right + 16}px)`,
             background: "var(--card-bg)",
             border: "0.5px solid var(--border)", borderRadius: 8,
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            minWidth: 140, zIndex: 10,
+            minWidth: 140,
           }}>
+            {onClickDetail && (
+              <button onClick={() => { setMenuOpen(false); onClickDetail(); }}
+                style={menuItemStyle("var(--text1)")}>Watch details</button>
+            )}
             {onMarkSold && (
               <button onClick={() => { setMenuOpen(false); onMarkSold(); }}
                 style={menuItemStyle("var(--text1)")}>Mark sold</button>
@@ -1554,7 +1578,8 @@ function ManualItemCard({ item, onRemove, onMarkSold, onClickDetail }) {
               setMenuOpen(false);
               if (window.confirm("Remove this watch from the list?")) await onRemove();
             }} style={menuItemStyle("var(--danger)")}>Remove</button>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>
