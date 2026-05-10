@@ -10,7 +10,7 @@ import { MarkAsSoldModal } from "./MarkAsSoldModal";
 import { ManageListSheet } from "./ManageListSheet";
 import { WatchDetailSheet } from "./WatchDetailSheet";
 import { fmtUSD, matchesSearch } from "../utils";
-import { innerToggleButton, actionButton, signInButton } from "../styles";
+import { actionButton, signInButton } from "../styles";
 import { EmptyState } from "./EmptyState";
 import { Section } from "./Section";
 
@@ -459,8 +459,19 @@ function MyCollectionView({
   return (
     <div>
       <SubTabIntro
-        title="My watches — Collection · Archive · Plan"
-        blurb={<>Track what you own (Collection), what you've sold (Archive) and what's next (Plan). Tap any watch for the detail sheet — buy / sell breakdown, P&amp;L, your thoughts, and a dated journal.</>}
+        title="My watches"
+        blurb={<>
+          Three views over your collection. <strong>Collection</strong> is what
+          you own today. <strong>Archive</strong> is what you've sold.
+          <strong> Plan</strong> is what you're thinking about next — the
+          watches you'd sell, the watches you'd buy, and the cash impact if
+          you make those moves.
+          <br/>
+          Add a watch with <strong>+ Add a watch</strong> (off-platform — upload
+          a photo) or <strong>+ From feed</strong> (pull in a tracked dealer
+          listing). Tap any tile for the detail sheet — your thoughts,
+          buy/sell numbers, P&amp;L, and a dated journal.
+        </>}
         expandable
         defaultExpanded={myWatchesTotal === 0}
       />
@@ -470,17 +481,52 @@ function MyCollectionView({
         borderBottom: "0.5px solid var(--border)",
         marginBottom: 12, flexWrap: "wrap",
       }}>
-        {/* Toggle pills — Collection / Archive / Plan
-            (2026-05-09 watch-management restructure). */}
-        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+        {/* Segmented control — Collection / Archive / Plan.
+            Restyled 2026-05-10 from inner-pill chips so the primary
+            nav inside My Watches reads as a distinct block. Mark
+            feedback: pills read as filter chips, not as the primary
+            axis people are picking between. */}
+        <div style={{
+          display: "inline-flex",
+          background: "var(--surface)",
+          border: "0.5px solid var(--border)",
+          borderRadius: 10,
+          padding: 3,
+          flexShrink: 0,
+        }}>
           {[
-            ["collection", `Collection (${ownedItems.length})`],
-            ["archive",    `Archive (${soldItems.length})`],
-            ["plan",       `Plan`],
-          ].map(([key, label]) => (
-            <button key={key} onClick={() => setToggle(key)}
-              style={innerToggleButton(toggle === key)}>{label}</button>
-          ))}
+            ["collection", "Collection", ownedItems.length],
+            ["archive",    "Archive",    soldItems.length],
+            ["plan",       "Plan",       null],
+          ].map(([key, label, count]) => {
+            const active = toggle === key;
+            return (
+              <button key={key} onClick={() => setToggle(key)}
+                style={{
+                  border: "none",
+                  background: active ? "var(--bg)" : "transparent",
+                  color: active ? "var(--text1)" : "var(--text2)",
+                  boxShadow: active ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                  borderRadius: 8,
+                  padding: "8px 16px",
+                  fontFamily: "inherit", fontSize: 13,
+                  fontWeight: active ? 600 : 500,
+                  cursor: "pointer",
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                }}>
+                <span>{label}</span>
+                {count != null && (
+                  <span style={{
+                    fontSize: 11, fontWeight: 500,
+                    color: "var(--text3)",
+                    background: active ? "var(--surface)" : "transparent",
+                    padding: "1px 6px", borderRadius: 999,
+                    minWidth: 18, textAlign: "center",
+                  }}>{count}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
         <div style={{ flex: 1 }} />
         {/* +Add CTAs scope to the active toggle. Plan view shows
@@ -1303,8 +1349,19 @@ function ListsView({
   return (
     <div style={{ paddingTop: 4 }}>
       <SubTabIntro
-        title="Lists group watches your way"
-        blurb={<>Reference threads, dealer comps, "Rolex 5513s", "Vintage divers" — whatever cut helps you think. Add via the <strong style={{ color: "var(--text1)" }}>…</strong> menu on any card → <em>Add to list…</em>.</>}
+        title="Lists"
+        blurb={<>
+          Group watches the way you think about them — "Rolex 5513s",
+          "Vintage divers", "Watches for our anniversary", whatever helps.
+          Add to a list from any card via <strong style={{ color: "var(--text1)" }}>⋯</strong> →
+          <em> Add to…</em>
+          <br/>
+          Lists are private by default. Open one and tap <em>Manage</em> to
+          share with someone — read-only, or as a collaborator who can add
+          watches alongside you. <strong>Saved</strong> at the top is every
+          watch you've hearted; the <strong>Shared</strong> inbox is every
+          list someone shared with you.
+        </>}
         actionLabel="+ New list"
         onAction={startCreateCollection}
         expandable

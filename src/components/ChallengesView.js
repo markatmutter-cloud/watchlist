@@ -150,7 +150,17 @@ export function ChallengesView({
           when empty so first-timers see the explainer. */}
       <SubTabIntro
         title={`Challenges · ${allChallenges.length}`}
-        blurb={<>Create a virtual collection within constraints — top 5 watches, max $50k, three Speedmasters in a row. Share the spec; receive friends' picks back. The collector's thought experiment.</>}
+        blurb={<>
+          Build a virtual collection within constraints — "5 watches, $50k
+          total" or "3 chronographs from before 1970". Pick from the feed,
+          share the spec with a friend, see what they'd pick under the same
+          rules. A pure thought experiment, no money moves.
+          <br/>
+          Tap <strong>+ New challenge</strong> to set the rules; pick from
+          your hearts or the live feed; share the result via the native
+          share sheet. Friends who open your link land on the same picker
+          and can save their own version back.
+        </>}
         actionLabel="+ New challenge"
         onAction={handleNewChallenge}
         expandable

@@ -69,11 +69,24 @@ const featureCopy = {
 };
 
 const FEATURES = [
-  ["Browse", "Active inventory from independent dealers and lots from the major auctions, in one feed updated multiple times a day."],
-  ["Save",   "Heart anything you want to come back to. Build lists for references you're hunting or for sharing."],
-  ["Plan",   "Track what you own, what you've sold, and what you'd add. Play with budgets and tradeoffs."],
-  ["Learn",  "Reference guides synthesized from the best writers and dealers in the watch world."],
-  ["Discover", "Watches you'd never have stumbled on yourself."],
+  ["Browse", "Live inventory from 38 independent dealers and lots from the six major auction houses, in one feed. Refreshed three times a day."],
+  ["Save",   "Heart anything you want to come back to. Build lists by theme or reference, share them with someone, or keep them private."],
+  ["Plan",   "Track what you own, what you've sold, and what you'd buy next. See the cash impact of your moves before you make them."],
+  ["Learn",  "Wrist-fit comparison printouts, dealer link directory, and reference research clusters. Encyclopedia coming."],
+  ["Discover", "Auction-house archive feeds + cross-source price velocity show you watches you'd never have stumbled on yourself."],
+];
+
+// "How to use" — a tighter walkthrough for newcomers who want to know
+// where each feature lives. Each row is a short verb + concrete steps.
+// Mark feedback 2026-05-10: descriptions on tabs aren't enough; an
+// always-on "how to" in About helps people get to the right surface.
+const HOW_TO_USE = [
+  ["Heart watches", "Tap the heart on any card. Hearted watches show up under Saved → Saved (the default sub-tab)."],
+  ["Save searches", "Type a query in the Listings tab, then tap the heart next to the search bar. Saved searches re-run across every dealer."],
+  ["Build a list",  "Saved → Lists → + New list. Or hit ⋯ on any card → Add to… to add to an existing list."],
+  ["Share a list",  "Open the list, tap Manage. Share a View Only Link, or invite by email for a Collaboration Link (they can add watches alongside you)."],
+  ["Track what you own", "Saved → My Watches → + Add a watch (off-platform, with photo) or + From feed (an existing dealer listing). Tap a watch for the detail sheet — your thoughts, buy/sell numbers, journal."],
+  ["Plan a move",   "My Watches → Plan. Tap ↑ on a Keeping watch to flag it for sale; pick from the picker below to add to your shortlist. Net cash impact updates live."],
 ];
 
 export function AboutModal({ open, onClose, primaryCurrency }) {
@@ -189,6 +202,24 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
                       {verb}
                     </div>
                     <div style={featureCopy}>{copy}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={sectionLabel}>How to use it</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {HOW_TO_USE.map(([verb, copy]) => (
+                  <div key={verb} style={{
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    border: "0.5px solid var(--border)",
+                    background: "var(--card-bg)",
+                  }}>
+                    <div style={{
+                      fontSize: 13, fontWeight: 600, color: "var(--text1)",
+                      marginBottom: 2,
+                    }}>{verb}</div>
+                    <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>{copy}</div>
                   </div>
                 ))}
               </div>
