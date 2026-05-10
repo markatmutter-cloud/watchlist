@@ -1,6 +1,6 @@
 # Watchlist Roadmap
 
-Last updated: 2026-05-06
+Last updated: 2026-05-10
 Living document. Updated as priorities shift.
 
 For project context and architecture, see [README.md](README.md). For
@@ -1019,48 +1019,31 @@ price-per-reference. Use it; build what it doesn't.
 ## Priority order
 
 Current best-guess sequence. Will shift; update this doc when it does.
-Last refreshed end of 2026-05-09 — Watchlists IA + Realtime + auction
-time-of-day fix + listing velocity all shipped today; reactions and
-usernames now plausible follow-ons because Realtime is in place.
+Last refreshed end of 2026-05-10 — usernames + reactions on shared
+lists both shipped; Watchbox v2 watch-management is end-to-end live
+after a heavy user-test feedback batch. Welcome page + privacy
+notice + Epic 0 references float to the top of the queue.
 
-1. **Watchbox v2 — reflection + watch management on My Watches
-   (Epic 6).** Promoted from #10 today — Mark's stated "after the
-   bugs" goal. Owned + Sold + Wishlist are already real (the
-   Collections build moved the data model here); what remains is
-   the reflective UX layer. Reasonable scope choices to pick from:
-   per-watch reflection journal (why bought / how reality compared /
-   would-buy-again), deeper purchase-and-value tracking (purchase
-   date + condition + service history + value-over-time), watchbox
-   journey narrative (single editable per-user collecting story),
-   detail-page-per-watch as the shell that holds everything.
-2. **Usernames / display_name on user_profiles.** Load-bearing for
-   reactions + the `who_added` chip readability. Default derives
-   from `auth.users.raw_user_meta_data.full_name` (Google fills
-   this) → email-local-part fallback. Editable in Settings.
-3. **Reactions on shared-list items.** Schema +
-   `collection_item_reactions` table. Realtime pipe is in place
-   (#150) so updates push immediately. Depends on usernames so
-   chips read clean. Mark's "watch group voting" use case.
-4. **Welcome page + og:image (Epic 0).** First-impression page for
+1. **Welcome page + og:image (Epic 0).** First-impression page for
    non-share visitors. og:image still the 1024×1024 apple-touch-icon
-   placeholder. Half-session.
-5. **Privacy notice + minimal terms (Epic 0).** Becomes load-bearing
+   placeholder; want a proper 1200×630. Half-session.
+2. **Privacy notice + minimal terms (Epic 0).** Becomes load-bearing
    before Watchlist gets shared with users outside Mark's circle.
    One-pager `/privacy` covering Supabase + Vercel Blob storage,
    retention, deletion; companion `/terms` ("use at your own risk,
    listings come from third parties"). Linked from the user dropdown
-   footer.
-6. **References as first-class entities (Epic 0).** The remaining
+   footer + the welcome page once it ships.
+3. **References as first-class entities (Epic 0).** The remaining
    foundation. Several downstream features (Epic 5 encyclopedia,
    per-reference comparison views, auction lot grouping, Discover
    mode quality, per-reference velocity rollup) gate on this.
-7. **Image cache for List items (Epic 3).** Extend
+4. **Image cache for List items (Epic 3).** Extend
    `cache_watchlist_images.mjs` to cover `collection_items`, not
    just `watchlist_items`. Promoted by Mark 2026-05-05; deferred
    through the Collections build. Newly-relevant after the
    Collections build because Owned/Sold/Wishlist all live in
    `collection_items` and benefit from the cache.
-8. **"Save someone's complete-share back" — child-challenge linkage
+5. **"Save someone's complete-share back" — child-challenge linkage
    (Epic 6).** When a friend shares THEIR completion of MY
    challenge back to me, I should be able to save it as a child
    challenge with `parent_challenge_id` linkage. Schema column
@@ -1068,43 +1051,48 @@ usernames now plausible follow-ons because Realtime is in place.
    "save this collection" on the complete-receive page hasn't been
    built. Closes the social loop fully — Mark's "three other
    friends' solutions sent back to you" framing.
-9. **Site analytics — remaining Source-stats extensions (Epic 8).**
+6. **Reactions follow-ons (Epic 4 / Epic 6).** v1 shipped 2026-05-10
+   on shared list items only. Follow-ups: reactions on **journal
+   entries** (collection_item_comments), summary stats per list
+   ("3 hearts on this list this week"), the "new reactions since
+   you last opened" badge. Realtime substrate already in place.
+7. **Site analytics — remaining Source-stats extensions (Epic 8).**
    User stats + throughput-in-value + auction-house quality + per-
    source / per-brand cycle-speed all shipped through 2026-05-09.
    Remaining: sales by watch type per dealer (gated on Epic 0
    references for "type" classification), cross-source live
    inventory (also Epic-0-gated), per-reference velocity (Epic-0-
    gated), listing-quality signals, taste-relative pricing.
-10. **Strength-of-save model (Epic 3 + Epic 7 entry point).**
+8. **Strength-of-save model (Epic 3 + Epic 7 entry point).**
     Two-tier (Love / Watch) is the gesture entry point to the broader
     Multi-signal taste capture. Small UI lift; the feature is *the
     gesture*, not the underlying data.
-11. **Source pruning (Epic 1 Stop rule).** At ~50 dealers, audit
+9. **Source pruning (Epic 1 Stop rule).** At ~50 dealers, audit
     with the click + save data and prune. Currently at 38.
-12. **Mac mini Phase A (Epic 0).** When Tropical Watch hits a Browse
+10. **Mac mini Phase A (Epic 0).** When Tropical Watch hits a Browse
     AI snag OR when Heritage / Bonhams / Monaco Legend need a
     Playwright runner OR when ready to start Epic 5 encyclopedia
     generation. Also potentially relevant if Phillips' WAF tightens
     to block single-URL fetches too — the auction-page Turbo-Stream
     pattern from PR #100 buys time, but tracked-lot detail-fetches
     are still single-URL today.
-13. **Epic 5 encyclopedia.** Built incrementally as dealer
+11. **Epic 5 encyclopedia.** Built incrementally as dealer
     descriptions accumulate. Depends on Epic 0 references + Mac
     mini A.5 for local LLM generation (or cloud LLM access).
-14. **Multi-signal taste capture + Discover mode + AI recommendations
+12. **Multi-signal taste capture + Discover mode + AI recommendations
     (Epic 7).** Stack progressively. Multi-signal first; Discover
     and recommendations layer on top once signals are rich.
-15. **Watch Challenges further polish (Epic 6).** Audit-deferred
+13. **Watch Challenges further polish (Epic 6).** Audit-deferred
     items from 2026-05-06: autosave indicator, hoist hardcoded
     colors to tokens, mobile tap-confirm on slot remove, target=7-
     style orphan-row layout, share-success state, sticky-pick-
     shrink-on-scroll. (Cool Stuff resource cards card-unification
     is the only remaining cosmetic carry-over; "save complete-share
-    back" graduated to its own #8 priority above.)
-16. **Watch Challenges v2 (Epic 6).** Past-listings as a source,
+    back" graduated to its own #5 priority above.)
+14. **Watch Challenges v2 (Epic 6).** Past-listings as a source,
     value-over-time tracking, challenge response threads — once
     Epic 0 references land.
-17. **Comprehensive auction inventory capture beyond active sales
+15. **Comprehensive auction inventory capture beyond active sales
     (Epic 2).** Substrate for serendipitous discovery + reference
     research at scale.
 
@@ -1209,6 +1197,72 @@ becomes confusion.
 > analytics) became Epic 8; old Epic 6 (Mac mini) folded into Epic 0.
 > Epic 0/1/2/5 numbering unchanged. Entries below dated before
 > 2026-05-05 evening reference the pre-restructure scheme.
+
+- 2026-05-10: **Watch-management user-test cycle + usernames +
+  reactions.** 10 PRs merged (#168–#177), 2 SQL migrations applied
+  via MCP. Eight arcs:
+  - **My Watches bug fixes (#168).** Wants ↑↓ arrows wired to the
+    real reorder mutator (was no-op). ⋯ menu portalled to
+    document.body with position:fixed coords from
+    getBoundingClientRect — escapes the card's overflow:hidden so
+    long labels (Remove from collection, Watch details) stay
+    reachable on small viewports.
+  - **Detail sheet polish (#169).** Photo upload from desktop on
+    manual entries. "View original listing ↗" link surfaces
+    item.url. Editable Listing-link field for manual rows. Hourglass
+    favicon replaces the ⌚ emoji as the missing-image placeholder
+    everywhere. detailItem now derived from itemsByCollection by
+    rowId so in-sheet edits re-render immediately.
+  - **Plan view rebuild (#170).** Wants → Shortlist rename + tile
+    grid (was list-rows). New `quickAction` prop on Card — ↑
+    overlay button on Keeping cards for one-tap flag-for-sale; red
+    ↓ on Selling for "keep instead". "Select from your lists"
+    picker replaces the hearts-only Pool with chip group across
+    Favorites + every user list. Section explanations under each
+    section title.
+  - **Toggle restyle + tab copy + How-to-use (#171).** Segmented
+    control replaces pill chips for Collection / Archive / Plan.
+    Six SubTabIntro rewrites. About modal "How to use it" cards.
+  - **Auction multi-session + velocity stats (#172).** Phillips
+    Geneva XXIII session-1 lots stuck Live; fix: trust
+    `sold_price` over the calendar-level `auction_end > now`
+    override. Same-day archive imports (Chronoholic, ClassicHeuer)
+    excluded from fastest-sales (`days >= 1`) at four AdminTab call
+    sites — auction lots already excluded.
+  - **Auction calendar archive (#173).** Removed "Show all" preview;
+    full list always. New collapsible Archive section for past
+    auctions. merge.py drops the 30-day prune so past auctions stay
+    in `auctions.json` indefinitely (state entries already did).
+  - **Usernames + CSS-var portal fix (#174).** New `user_profiles`
+    table (user_id PK, display_name, timestamps) with RLS — read-all
+    signed-in, write self only. Auto-create on first sign-in with a
+    derived default. Settings UI gains Display name field.
+    `list_collaborators` and `list_members_for_collection` updated
+    to prefer profile.display_name (coalesce: profile → full_name →
+    name → email). **CSS variables now live on
+    `document.documentElement.style` in addition to App-root inline
+    style** so portal-rendered nodes (the ⋯ menu) inherit theme
+    colours — fixes the menu-with-no-background bug that landed when
+    the portal moved out of the App subtree.
+  - **UI polish + alignment (#175 + #176).** Listings sub-tab
+    one-liner descriptions (bold, wraps cleanly, fits one line on
+    most viewports). Detail-sheet `paddingTop: env(safe-area-inset-top)`
+    on mobile. Collection / Archive 3-card summary row above the
+    grid (count / total / average). All My Watches header rows
+    stripped of inner horizontal padding to align with the watch
+    grid at MobileShell's 14px edge. Two-person icon on lists with
+    accepted collaborators + " · shared" subtitle suffix.
+  - **Reactions on shared list items (#177).** New
+    `collection_item_reactions` table + RLS gated on
+    `can_view_collection`. Realtime publication entry. New
+    `list_item_reactions` RPC joins display names through
+    user_profiles. `fetchReactions` + `toggleReaction` mutators.
+    `ReactionStrip` component below each shared-list card with
+    the 👍 ❤️ 🔥 🤔 ❌ picker. Solo lists (memberCount < 2) skip
+    the strip.
+  - **In-session SQL.** Mark's stuck "test" Blancpain 50 Fathoms
+    (Owned hard list, row id `ff1766d0-…`) hard-deleted via Supabase
+    MCP after the clipped ⋯ menu made the UI Remove unreachable.
 
 - 2026-05-09: **Watchlists IA + Realtime + auction time-fix +
   velocity.** 8 PRs merged (#144–#151), 4 SQL migrations applied

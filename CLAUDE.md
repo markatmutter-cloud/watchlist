@@ -12,7 +12,7 @@ how to behave for the rest of it.
   (`src/styles.js`), reusable components (`src/components/`), and
   reach-for-this-first rules. Read this when doing UI work.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
-  The current one is [SESSION_HANDOFF_2026-05-08.md](SESSION_HANDOFF_2026-05-08.md);
+  The current one is [SESSION_HANDOFF_2026-05-10.md](SESSION_HANDOFF_2026-05-10.md);
   older ones live in `archive/`.
 
 If a gotcha or convention is durable (still true next session), graduate
@@ -590,6 +590,85 @@ inside, return the new id, grant execute to `authenticated`. Don't
 spend hours re-running the policy diagnostic — the SQL editor
 investigation in the 2026-05-08 chat covered it exhaustively.
 
+**User profiles + display_name (2026-05-10).** A `user_profiles`
+table (user_id PK → auth.users, display_name not null) lets users
+override the auto-derived display name from
+`auth.users.raw_user_meta_data.full_name`. Schema:
+`supabase/schema/2026-05-10_user_profiles.sql`. Hook:
+`useUserProfile(user)` in `src/supabase.js`. Auto-creates the row
+on first sign-in with a default derived from full_name → name →
+preferred_username → email-local-part (capitalized); 23505 (PK
+conflict) treated as success — parallel sessions just won the
+race. **Every surface that renders a user's name** (the Manage list
+sheet roster, the `who_added` chip, reaction author tooltips,
+journal authors when that ships) should resolve through a server
+function that coalesces `user_profiles.display_name` first. The
+`list_collaborators` and `list_members_for_collection` RPCs already
+do this — copy the coalesce chain (`profile → full_name → name →
+email`) into any new RPC that surfaces a name.
+
+**Reactions on shared list items (2026-05-10, PR #177).** Emoji
+reactions at the (collection_item, user, emoji) tuple — toggle on
+re-tap. Schema:
+`supabase/schema/2026-05-10_reactions.sql`. Table
+`collection_item_reactions` with unique
+`(collection_item_id, user_id, emoji)` so the toggle is "delete if
+exists, else insert". RLS: SELECT + INSERT gate on
+`can_view_collection`; DELETE on `auth.uid() = user_id`. Editors
+AND viewers can both react. Realtime publication entry so reactions
+push live. RPC `list_item_reactions(p_collection_id)` joins
+display names through `user_profiles → auth.users` in one
+round-trip. Hook surface: `fetchReactions(collectionId)` +
+`toggleReaction(itemId, emoji)` on `useCollections`. UI:
+`ReactionStrip` below each card in shared-list drill-ins (rendered
+only when `memberCount >= 2`). The picker emoji set
+(`👍 ❤️ 🔥 🤔 ❌`) is a frontend constant — extending it doesn't
+need a migration since the column is `text` capped at 8 chars.
+**Don't render reactions on solo lists** — it's just visual
+clutter when no one else can see them.
+
+**Theme CSS variables live on `:root`, not just App root
+(2026-05-10).** `--bg`, `--surface`, `--border`, etc. are mirrored
+to `document.documentElement.style` via a useEffect on the theme
+object so portal-rendered nodes (the Card ⋯ menu, future toasts)
+inherit them. Pre-2026-05-10 the variables were inline-styled on
+the App root only; portal nodes sit under `<body>` outside that
+subtree, so `var(--bg)` resolved to nothing → transparent menu.
+The App root inline style stays for back-compat with any CSS that
+scoped off the App container, but the `:root` copy is what makes
+new portal surfaces "just work". If you ship a new portal-rendered
+component, you don't need to thread theme colours — they cascade
+through `:root`.
+
+**Card ⋯ menu portals to document.body (2026-05-10, PR #168).**
+The menu used to be `position: absolute` inside Card's
+`overflow: hidden` root, which clipped long labels (Remove from
+collection, Watch details) on small viewports. Now `Card.js` and
+`ManualItemCard` both render the menu via `createPortal` to
+`document.body` with `position: fixed` at coords computed from
+the trigger's `getBoundingClientRect()`. Click-outside detection
+checks BOTH the trigger ref and a portal ref. **If you build a
+new card variant with a ⋯ menu, copy the portal pattern** —
+overflow:hidden card roots clip absolute children regardless of
+z-index.
+
+**WatchDetailSheet derives item from itemsByCollection by rowId
+(2026-05-10, PR #169).** The sheet stores `detailRowId` in
+`CollectionsTab` state and looks up the live item on every render
+so in-sheet edits (image upload, listing-link, description, P&L,
+journal post) reflect immediately without a close-reopen. Storing
+the item snapshot directly would mean the sheet shows stale data
+until the user reopens.
+
+**Past auctions stay in `auctions.json` forever (2026-05-10, PR
+#173).** `merge.py`'s 30-day post-auction prune was removed so
+the AuctionCalendar Archive section can surface every past sale
+1:1 with the lots in the Listings Archive (Sold) view. State
+entries (`auctions_state.json`) were already persisted
+indefinitely, so no data was being lost — just hidden from the
+JSON output. File size grows ~50–100 entries/month across all six
+houses; not a bundle concern at present.
+
 ## Scraper conventions
 
 - Each dealer / auction house has its own `*_scraper.py` at repo root.
@@ -952,6 +1031,43 @@ permanently blocked at the platform layer.
   Default to no role clause (`for insert with check (...)` →
   `roles={public}`) and let `auth.uid() IS NULL` handle the
   unauthenticated case naturally.
+- **Don't override `status:"ended"` to active when `sold_price` is
+  set.** App.js's auction-time override flips an ended lot back to
+  active when `auction_end > now` so multi-stage Sotheby's "closed"
+  states don't false-positive Archive Sold. But Phillips multi-
+  session sales (e.g. CH080226 across two days) ship session-1 lots
+  with `status:"ended" + sold_price` while the auction-level
+  `auction_end` is still in the future. The override was force-
+  resetting those to active. Fix landed 2026-05-10 (PR #172): only
+  override when `sold_price` is null. A realised price beats the
+  calendar-level end date as a "this lot has truly closed" signal.
+- **Don't include 0-day flips in velocity stats.** Chronoholic +
+  ClassicHeuer ship archive imports with `firstSeen == soldAt` at
+  scrape time — 100+ same-day "sales" that crowd the fastest-sales
+  view and pull cycle medians to 0. Filter `days >= 1` at every
+  AdminTab call site that aggregates `daysOnSale` (per-source
+  cycle, per-brand cycle, fastestSales, fastestBrands chips). Real
+  same-day dealer flips are rare; the noise reduction is the right
+  tradeoff. Auction lots are also excluded via `_isAuctionFormat ||
+  _isTrackedLot` — different lifecycle (catalog → sale → ended).
+- **Don't inline-style theme CSS variables only on App's root div.**
+  `--bg`, `--surface`, `--border`, `--text1`, etc. live on
+  `document.documentElement.style` (mirrored via useEffect) so
+  portal-rendered nodes — the Card ⋯ menu, future toasts — inherit
+  them. The App-root inline style stays for back-compat, but any
+  surface that lives outside the App subtree (createPortal targets
+  `document.body`) needs the `:root` copy to pick up `var(--bg)`.
+  Pre-2026-05-10 this caused the ⋯ menu to render with no
+  background — text floated over the card image.
+- **Don't render absolute-positioned dropdowns inside a card root
+  with `overflow: hidden`.** The Card root clips long labels (Remove
+  from collection, Watch details) regardless of z-index. The fix
+  pattern is `createPortal(menu, document.body)` with
+  `position: fixed` at coords from
+  `triggerRef.current.getBoundingClientRect()`. Card.js + the
+  ManualItemCard menu in CollectionsTab.js are the reference. If
+  you build a new card variant with a menu, route it through the
+  same portal pattern, not back into the card subtree.
 - **Don't bump `LEGACY_WATCHLIST_KEY` / `LEGACY_HIDDEN_KEY`** in App.js —
   they're stable storage keys for users' pre-Supabase localStorage data
   that the import banner reads on first sign-in.
