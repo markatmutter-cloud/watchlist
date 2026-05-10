@@ -245,7 +245,8 @@ function Tile({ item, onTap }) {
           <img src={imgSrc(item.img)} alt="" loading="lazy"
             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         ) : (
-          <span style={{ fontSize: 18, color: "var(--text3)" }}>⌚</span>
+          <img src="/favicon-192.png" alt="" aria-hidden="true"
+            style={{ width: "50%", maxWidth: 36, opacity: 0.5 }} />
         )}
       </div>
       <div style={{ padding: "5px 6px" }}>

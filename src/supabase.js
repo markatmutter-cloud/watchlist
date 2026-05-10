@@ -1296,6 +1296,8 @@ export function useCollections(user) {
       assumedSellValue:      'assumed_sell_value',
       manualDescription:     'manual_description',
       manualThoughts:        'manual_thoughts',
+      manualImageUrl:        'manual_image_url',
+      manualSourceUrl:       'manual_source_url',
       manualBuyHammer:       'manual_buy_hammer',
       manualBuyPremium:      'manual_buy_premium',
       manualBuyShipping:     'manual_buy_shipping',
@@ -1317,11 +1319,25 @@ export function useCollections(user) {
     const { error } = await supabase.from('collection_items')
       .update(dbPatch).eq('id', rowId);
     if (error) return { error: error.message };
+    // Mirror the image / source URL onto the front-facing img/url
+    // fields the UI renders against. Manual rows surface
+    // manual_image_url as `img` and manual_source_url as `url`/`sourceUrl`
+    // in the load-mapper; without this mirror, an in-session edit
+    // would write to the manual_* fields but the UI would keep showing
+    // the old img/url until a page refetch.
+    const mirror = { ...patch };
+    if (Object.prototype.hasOwnProperty.call(patch, 'manualImageUrl')) {
+      mirror.img = patch.manualImageUrl || null;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'manualSourceUrl')) {
+      mirror.url = patch.manualSourceUrl || null;
+      mirror.sourceUrl = patch.manualSourceUrl || null;
+    }
     setItemsByCollection(prev => {
       const next = { ...prev };
       for (const [colId, items] of Object.entries(prev)) {
         if (items.some(it => it.rowId === rowId)) {
-          next[colId] = items.map(it => it.rowId === rowId ? { ...it, ...patch } : it);
+          next[colId] = items.map(it => it.rowId === rowId ? { ...it, ...mirror } : it);
         }
       }
       return next;

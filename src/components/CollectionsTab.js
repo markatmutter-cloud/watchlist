@@ -91,9 +91,10 @@ export function CollectionsTab({
   // List Sharing v2 / slice 2 — Manage list sheet state.
   const [manageListOpen, setManageListOpen] = useState(false);
   // Watch management v1 (2026-05-09) — WatchDetailSheet state.
-  // Holds the item being viewed in the detail sheet; null when
-  // closed. Set from card click; cleared by the sheet's onClose.
-  const [detailItem, setDetailItem] = useState(null);
+  // Stores rowId rather than the item snapshot so an in-sheet edit
+  // (image upload, listing-link, description, etc.) re-derives the
+  // item from itemsByCollection and re-renders without a close-reopen.
+  const [detailRowId, setDetailRowId] = useState(null);
 
   // Lists sub-tab drill-in selection — moved here from the top-level
   // CollectionsTab pre-restructure. URL-synced via `?col=`. Only
@@ -200,6 +201,14 @@ export function CollectionsTab({
   const hardSold     = cols.find(c => c.type === "sold"     && c.isSystem) || null;
   const hardWishlist = cols.find(c => c.type === "wishlist" && c.isSystem) || null;
 
+  // Re-derive the active detail-sheet item from live itemsByCollection
+  // so in-sheet edits (image upload, listing-link, description, etc.)
+  // refresh the sheet immediately. Lookup by rowId; fall back to null
+  // when the row has been removed (sheet's open flag goes false).
+  const detailItem = detailRowId
+    ? Object.values(itemsByColl).flat().find(it => it.rowId === detailRowId) || null
+    : null;
+
   const openManualEntry = (kind) => {
     setManualEntryKind(kind);
     setManualEntryOpen(true);
@@ -246,7 +255,7 @@ export function CollectionsTab({
         onAddFromFeed={(cid, title) => openPicker(cid, title)}
         onMarkSold={(rowId, item) => setSoldTarget({ rowId, item })}
         onRemoveItem={(cid, item) => collectionsApi.removeItemFromCollection(cid, item.id)}
-        onClickDetail={(item) => setDetailItem(item)}
+        onClickDetail={(item) => setDetailRowId(item.rowId)}
         addItemToWants={(item) => hardWishlist
           ? collectionsApi.addItemToCollection(hardWishlist.id, item)
           : Promise.resolve({ error: 'no wishlist' })}
@@ -352,14 +361,15 @@ export function CollectionsTab({
       <WatchDetailSheet
         open={!!detailItem}
         item={detailItem}
-        onClose={() => setDetailItem(null)}
+        onClose={() => setDetailRowId(null)}
         isMobile={typeof window !== "undefined" && window.innerWidth < 768}
         updateWatchDetails={collectionsApi?.updateWatchDetails}
+        uploadWatchPhoto={collectionsApi?.uploadWatchPhoto}
         toggleFlagForSale={collectionsApi?.toggleFlagForSale}
         removeItemFromCollection={collectionsApi?.removeItemFromCollection}
         markItemAsSold={detailItem ? (rowId, item) => {
           setSoldTarget({ rowId, item });
-          setDetailItem(null);
+          setDetailRowId(null);
         } : undefined}
         collectionId={detailItem?.isManual
           ? (detailItem?.soldDate ? hardSold?.id : hardOwned?.id)
@@ -880,7 +890,8 @@ function PoolCard({ item, busy, onAdd, primaryCurrency }) {
           <img src={item.img} alt={title} loading="lazy"
             style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          <span style={{ fontSize: 28, color: "var(--text3)" }}>⌚</span>
+          <img src="/favicon-192.png" alt="" aria-hidden="true"
+            style={{ width: "44%", maxWidth: 56, opacity: 0.5 }} />
         )}
       </div>
       <div style={{ padding: "8px 10px 10px", flex: 1, width: "100%", textAlign: "left" }}>
@@ -956,7 +967,8 @@ function WishlistRankedList({ items, onReorder, onRemove }) {
                 <img src={item.img} alt="" loading="lazy"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
-                <span style={{ fontSize: 36, color: "var(--text3)" }}>⌚</span>
+                <img src="/favicon-192.png" alt="" aria-hidden="true"
+                  style={{ width: "55%", maxWidth: 72, opacity: 0.5 }} />
               )}
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
@@ -1519,7 +1531,8 @@ function ManualItemCard({ item, onRemove, onMarkSold, onClickDetail }) {
             <img src={item.img} alt={title} loading="lazy"
               style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            <span style={{ fontSize: 36, color: "var(--text3)" }}>⌚</span>
+            <img src="/favicon-192.png" alt="" aria-hidden="true"
+              style={{ width: "44%", maxWidth: 72, opacity: 0.5 }} />
           )}
         </div>
         <div style={{ padding: "10px 12px 12px", flex: 1, width: "100%", textAlign: "left" }}>

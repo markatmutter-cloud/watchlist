@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { fmtUSD } from "../utils";
+import { resizeImage } from "../resizeImage";
 import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase, actionButton } from "../styles";
 
 // Per-watch detail sheet for the My Watches surface (2026-05-09 —
@@ -29,6 +30,11 @@ export function WatchDetailSheet({
   removeItemFromCollection, // (collectionId, rowId) — for the Remove action
   markItemAsSold,        // (rowId, opts) — opens MarkAsSoldModal upstream
   collectionId,          // owning collection id (passed through for remove)
+  // Photo upload (manual entries only — listing-backed rows have an
+  // image owned by the dealer's CDN). Resizes client-side then
+  // uploads to the watch-photos bucket; updateWatchDetails persists
+  // the resulting public URL on manual_image_url.
+  uploadWatchPhoto,      // (file) => { error, url }
   // Comment journal.
   fetchComments,         // (rowId) => { rows }
   postComment,           // (rowId, body) => { row, error }
@@ -48,6 +54,12 @@ export function WatchDetailSheet({
   const [comments, setComments] = useState([]);
   const [commentBody, setCommentBody] = useState("");
   const [commentBusy, setCommentBusy] = useState(false);
+
+  // Photo upload state. Only relevant for manual entries (img is
+  // ours to control); listing-backed rows skip the upload affordance.
+  const fileInputRef = useRef(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState("");
 
   useEffect(() => {
     if (!open || !rowId || !fetchComments) {
@@ -111,6 +123,28 @@ export function WatchDetailSheet({
       setComments(prev => prev.filter(c => c.id !== commentId));
     }
   }, [deleteComment]);
+
+  const onPhotoChosen = useCallback(async (e) => {
+    const file = e.target?.files?.[0];
+    if (!file || !rowId || !uploadWatchPhoto) return;
+    setPhotoBusy(true);
+    setPhotoError("");
+    try {
+      const resized = await resizeImage(file);
+      const up = await uploadWatchPhoto(resized);
+      if (up?.error) {
+        setPhotoError(up.error);
+        return;
+      }
+      const res = await updateWatchDetails(rowId, { manualImageUrl: up.url });
+      if (res?.error) setPhotoError(res.error);
+    } catch (err) {
+      setPhotoError(err?.message || String(err));
+    } finally {
+      setPhotoBusy(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, [rowId, uploadWatchPhoto, updateWatchDetails]);
 
   if (!open || !item) return null;
 
@@ -178,20 +212,44 @@ export function WatchDetailSheet({
           <button onClick={onClose} aria-label="Close" style={modalCloseButton}>×</button>
         </div>
 
-        {/* Photo + identifying info */}
+        {/* Photo + identifying info. Manual entries get an upload
+            affordance — tap the photo (or the empty placeholder) to
+            replace it. Listing-backed rows skip the affordance: the
+            image is owned by the dealer's CDN. */}
         <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 8 }}>
           <div style={{
             width: 120, height: 120, borderRadius: 10,
             background: "var(--surface)", overflow: "hidden", flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
+            position: "relative",
+            cursor: item.isManual && uploadWatchPhoto ? "pointer" : "default",
+          }}
+          onClick={() => {
+            if (!item.isManual || !uploadWatchPhoto || photoBusy) return;
+            fileInputRef.current?.click();
+          }}
+          title={item.isManual && uploadWatchPhoto ? "Tap to upload a photo" : undefined}>
             {item.img ? (
               <img src={item.img} alt={title}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
-              <span style={{ fontSize: 36, color: "var(--text3)" }}>⌚</span>
+              <img src="/favicon-192.png" alt="" aria-hidden="true"
+                style={{ width: "55%", maxWidth: 70, opacity: 0.55 }} />
+            )}
+            {item.isManual && uploadWatchPhoto && (
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0,
+                background: "rgba(0,0,0,0.55)", color: "#fff",
+                padding: "3px 6px", fontSize: 10, textAlign: "center",
+                fontWeight: 500, letterSpacing: "0.04em",
+              }}>{photoBusy ? "Uploading…" : (item.img ? "Tap to replace" : "Tap to upload")}</div>
             )}
           </div>
+          {item.isManual && uploadWatchPhoto && (
+            <input ref={fileInputRef} type="file" accept="image/*"
+              onChange={onPhotoChosen}
+              style={{ display: "none" }} />
+          )}
           <div style={{ minWidth: 0, flex: 1, fontSize: 13, color: "var(--text2)", lineHeight: 1.6 }}>
             {(item.ref || item.manualReference) && (
               <div>Ref <strong style={{ color: "var(--text1)" }}>{item.ref || item.manualReference}</strong></div>
@@ -205,8 +263,46 @@ export function WatchDetailSheet({
             {item.soldDate && (
               <div>Sold: {new Date(item.soldDate).toLocaleDateString()}</div>
             )}
+            {item.url && (
+              <div style={{ marginTop: 4 }}>
+                <a href={item.url} target="_blank" rel="noopener noreferrer"
+                  style={{ color: "var(--brand)", fontSize: 12, textDecoration: "underline" }}>
+                  View original listing ↗
+                </a>
+              </div>
+            )}
           </div>
         </div>
+        {photoError && (
+          <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 6 }}>{photoError}</div>
+        )}
+
+        {/* Listing URL (manual entries only — listing-backed rows
+            already carry item.url from the dealer/auction-house feed
+            and surface it as the "View original listing ↗" link
+            above). Lets users add a link to a watch they entered
+            manually but came from a real listing — Mark's 1675 from
+            Menta, etc. */}
+        {item.isManual && (
+          <>
+            <div style={sectionLabel}>Listing link</div>
+            {editingField === "manualSourceUrl" ? (
+              <EditField draft={draft} setDraft={setDraft}
+                placeholder="https://example.com/listing"
+                inputMode="url"
+                onSave={saveEdit} onCancel={cancelEdit} />
+            ) : (
+              fieldLine(
+                item.manualSourceUrl || item.sourceUrl || item.url || (
+                  <span style={{ color: "var(--text3)", fontStyle: "italic" }}>
+                    Tap to add the dealer / auction / eBay link…
+                  </span>
+                ),
+                () => beginEdit("manualSourceUrl", item.manualSourceUrl || item.sourceUrl || item.url || "")
+              )
+            )}
+          </>
+        )}
 
         {/* Description */}
         <div style={sectionLabel}>Description</div>
