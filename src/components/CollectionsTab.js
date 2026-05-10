@@ -1726,12 +1726,12 @@ function ListsView({
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 4,
                     padding: "2px 8px", borderRadius: 999,
-                    background: "rgba(24,95,165,0.12)",
+                    background: "var(--brand-tint-12)",
                     color: "var(--brand)",
                     fontSize: 11, fontWeight: 600, lineHeight: 1.3,
                   }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
                   </svg>
                   {otherCount}
@@ -2115,7 +2115,7 @@ function ReactionStrip({ reactions, currentUserId, onToggle }) {
               display: "inline-flex", alignItems: "center", gap: 4,
               padding: "3px 8px", borderRadius: 999,
               border: meActive ? "0.5px solid var(--brand)" : "0.5px solid var(--border)",
-              background: meActive ? "rgba(24,95,165,0.12)" : "var(--surface)",
+              background: meActive ? "var(--brand-tint-12)" : "var(--surface)",
               color: "var(--text1)",
               cursor: "pointer", fontFamily: "inherit",
               fontSize: 12, fontWeight: 500, lineHeight: 1.4,

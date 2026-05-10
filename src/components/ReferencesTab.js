@@ -113,7 +113,7 @@ export function ReferencesTab(props) {
               <div style={{
                 flexShrink: 0,
                 width: 36, height: 36, borderRadius: "50%",
-                background: "rgba(24,95,165,0.08)",
+                background: "var(--brand-tint-08)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 <r.Icon />

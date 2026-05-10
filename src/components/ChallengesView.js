@@ -228,12 +228,12 @@ export function ChallengesView({
             const isDraft = c.state === "draft";
             // Disc tint carries the draft-vs-complete signal —
             // gold for draft, blue for complete.
-            const accent = isDraft ? "#c9a227" : "var(--brand)";
+            const accent = isDraft ? "var(--accent-warn)" : "var(--brand)";
             const subtitle = c.targetCount && c.budget ? (
               <>
                 {picks.length} of {c.targetCount} picks
                 {" · "}{fmtUSD(totalSpend)} spent
-                {" · "}<strong style={{ color: remaining < 0 ? "#c9a227" : "var(--text2)", fontWeight: 500 }}>
+                {" · "}<strong style={{ color: remaining < 0 ? "var(--accent-warn)" : "var(--text2)", fontWeight: 500 }}>
                   {remaining < 0 ? `${fmtUSD(-remaining)} over` : `${fmtUSD(remaining)} left`}
                 </strong>
               </>
@@ -247,7 +247,7 @@ export function ChallengesView({
                   <span style={{
                     marginLeft: 8, fontSize: 10, fontWeight: 600,
                     padding: "1px 6px", borderRadius: 3,
-                    background: "rgba(201,162,39,0.15)", color: "#c9a227",
+                    background: "rgba(201,162,39,0.15)", color: "var(--accent-warn)",
                     textTransform: "uppercase", letterSpacing: "0.04em",
                   }}>Draft</span>
                 )}
@@ -258,7 +258,7 @@ export function ChallengesView({
                   <span style={{
                     marginLeft: 8, fontSize: 10, fontWeight: 500,
                     padding: "1px 6px", borderRadius: 3,
-                    background: "rgba(24,95,165,0.10)", color: "var(--brand)",
+                    background: "var(--brand-tint-10)", color: "var(--brand)",
                   }}>from {c.senderName}</span>
                 )}
               </>

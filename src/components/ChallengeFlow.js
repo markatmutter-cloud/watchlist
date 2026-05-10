@@ -506,7 +506,7 @@ function PickingStage({
           </p>
         )}
         {allFilled && overBudget && !hardBlocked && (
-          <p style={{ fontSize: 12, color: "#c9a227", marginTop: 10 }}>
+          <p style={{ fontSize: 12, color: "var(--accent-warn)", marginTop: 10 }}>
             Over budget — soft warn. You can complete with explicit confirmation.
           </p>
         )}
@@ -779,18 +779,18 @@ function StatCard({ label, value, sub, progress, warn, hardWarn, warnLabel }) {
       <p style={{ fontSize: 11, fontWeight: 600, color: "var(--text2)", textTransform: "uppercase",
                   letterSpacing: "0.04em", margin: "0 0 6px" }}>{label}</p>
       <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: 6 }}>
-        <span style={{ fontSize: 22, fontWeight: 600, color: warn ? "#c9a227" : "var(--text1)" }}>{value}</span>
+        <span style={{ fontSize: 22, fontWeight: 600, color: warn ? "var(--accent-warn)" : "var(--text1)" }}>{value}</span>
         <span style={{ fontSize: 12, color: "var(--text3)" }}>{sub}</span>
       </div>
       <div style={{ height: 2, background: "var(--surface)", borderRadius: 1, overflow: "hidden" }}>
         <div style={{
           height: "100%", width: `${progress}%`,
-          background: hardWarn ? "var(--danger)" : warn ? "#c9a227" : "var(--text1)",
+          background: hardWarn ? "var(--danger)" : warn ? "var(--accent-warn)" : "var(--text1)",
           transition: "width 0.2s ease",
         }} />
       </div>
       {warnLabel && (
-        <p style={{ fontSize: 11, color: hardWarn ? "var(--danger)" : "#c9a227", margin: "6px 0 0", fontStyle: "italic" }}>
+        <p style={{ fontSize: 11, color: hardWarn ? "var(--danger)" : "var(--accent-warn)", margin: "6px 0 0", fontStyle: "italic" }}>
           {warnLabel}
         </p>
       )}
@@ -895,7 +895,7 @@ function CompleteStage({ challenge, items, onShareSpec, onShareComplete, onBack,
           </p>
           <p style={{ fontSize: 13, color: "var(--text2)", margin: 0 }}>
             {fmtUSD(totalSpend)} of {fmtUSD(challenge.budget)}
-            {overBy > 0 && <span style={{ color: "#c9a227" }}> · over by {fmtUSD(overBy)}</span>}
+            {overBy > 0 && <span style={{ color: "var(--accent-warn)" }}> · over by {fmtUSD(overBy)}</span>}
           </p>
         </div>
         {picks.map((p, i) => (
