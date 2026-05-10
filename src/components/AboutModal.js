@@ -110,12 +110,17 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
             padding: 20px !important;
           }
         }
-        /* Mobile-only: hide the features grid + passion-project
-           section so the welcome card stays compact. The full
-           content is still reachable via the user dropdown's
-           About Watchlist entry on any device. */
+        /* 2026-05-10 — extended the full About content to mobile per
+           Mark spec. Was previously hidden under 560px. The features
+           grid switches from 2-col to 1-col at narrow widths so each
+           card stays readable. */
         @media (max-width: 559px) {
-          .welcome-extras { display: none !important; }
+          .watchlist-feature-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .welcome-extras-pad {
+            padding: 16px 20px 20px !important;
+          }
         }
       `}</style>
       <div onClick={e => e.stopPropagation()} style={{
@@ -177,13 +182,13 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
             </div>
           </div>
 
-          {/* "Extras" — features grid + passion-project section. Hidden
-              on mobile (<560px) so the welcome card stays compact at
-              the top of the viewport. The full content is reachable
-              post-dismiss via the user dropdown's About Watchlist
-              entry on any device. */}
+          {/* "Extras" — features grid + How-to-use + passion-project
+              section. Visible on every viewport now (2026-05-10);
+              previously mobile-hidden but Mark spec asks for full
+              content on phones too. The features grid drops from
+              2-col → 1-col at <560px via the @media rule above. */}
           <div className="welcome-extras">
-            <div style={{ padding: "16px 28px 22px" }}>
+            <div className="welcome-extras-pad" style={{ padding: "16px 28px 22px" }}>
               <div style={sectionLabel}>What you can do</div>
               <div className="watchlist-feature-grid" style={{
                 display: "grid",
@@ -269,12 +274,22 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
             </div>
           </div>
 
-          {/* Footer CTA — always shown. */}
+          {/* Footer CTA — always shown. Privacy + Terms link to the
+              static pages in /public so they load fast and read clean
+              outside the SPA. 2026-05-10. */}
           <div style={{
-            display: "flex", gap: 10, justifyContent: "flex-end",
+            display: "flex", gap: 10, justifyContent: "space-between",
+            alignItems: "center",
             padding: "12px 22px 16px",
             borderTop: "0.5px solid var(--border)",
+            flexWrap: "wrap",
           }}>
+            <div style={{ display: "flex", gap: 14, fontSize: 12 }}>
+              <a href="/privacy.html" target="_blank" rel="noopener noreferrer"
+                style={{ color: "var(--text2)", textDecoration: "none" }}>Privacy</a>
+              <a href="/terms.html" target="_blank" rel="noopener noreferrer"
+                style={{ color: "var(--text2)", textDecoration: "none" }}>Terms</a>
+            </div>
             <button onClick={onClose} style={{
               border: "none", background: "var(--brand)", color: "#fff",
               padding: "10px 20px", borderRadius: 10,
