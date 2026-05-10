@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { useAuth, useWatchlist, useHidden, useAdminHidden, useSearches, useTrackedLots, useCollections, useUserSettings, importLocalData, isAuthConfigured } from "./supabase";
+import { useAuth, useWatchlist, useHidden, useAdminHidden, useSearches, useTrackedLots, useCollections, useUserSettings, useUserProfile, importLocalData, isAuthConfigured } from "./supabase";
 import { useEventTelemetry } from "./hooks/useEventTelemetry";
 import { useUserLimit } from "./hooks/useUserLimit";
 import { UserLimitBanner } from "./components/UserLimitBanner";
@@ -738,6 +738,7 @@ export default function Watchlist() {
   // changes it. Plumbs through shellProps → Card so every card
   // surface honours the preference.
   const { primaryCurrency, setPrimaryCurrency } = useUserSettings(user);
+  const { displayName, setDisplayName } = useUserProfile(user);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   // Outbound share handler. Pure function (no useState/useMemo
@@ -2617,6 +2618,9 @@ export default function Watchlist() {
     <SettingsModal
       open={settingsModalOpen}
       onClose={() => setSettingsModalOpen(false)}
+      user={user}
+      displayName={displayName}
+      setDisplayName={setDisplayName}
       primaryCurrency={primaryCurrency}
       setPrimaryCurrency={setPrimaryCurrency}
       isMobile={isMobile}

@@ -1667,6 +1667,91 @@ export function useUserSettings(user) {
 }
 
 
+// ── USER PROFILES (display name) ──────────────────────────────────────
+// 2026-05-10. Lets users override the auto-derived display name from
+// auth.users.raw_user_meta_data.full_name with one of their choosing.
+// Schema: 2026-05-10_user_profiles.sql.
+//
+// Auto-create on first load: if no row exists, derive a default from
+// the user's auth metadata (full_name → name → email local-part) and
+// insert. Idempotent — primary key on user_id catches concurrent inserts.
+
+function deriveDefaultDisplayName(user) {
+  if (!user) return '';
+  const meta = user.user_metadata || {};
+  const candidate = meta.full_name || meta.name || meta.preferred_username || '';
+  if (candidate && candidate.trim()) return candidate.trim();
+  const email = user.email || '';
+  if (email.includes('@')) {
+    const local = email.split('@')[0];
+    // Capitalize first letter for nicer chips ("mark" → "Mark"), but
+    // leave the rest as-is so dotted/numbered locals still render.
+    if (local) return local.charAt(0).toUpperCase() + local.slice(1);
+  }
+  return 'Member';
+}
+
+export function useUserProfile(user) {
+  const [displayName, setDisplayNameLocal] = useState('');
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!user || !supabase) {
+      setDisplayNameLocal('');
+      setLoaded(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.from('user_profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error) {
+        console.warn('user_profiles load failed', error);
+        setLoaded(true);
+        return;
+      }
+      if (data?.display_name) {
+        setDisplayNameLocal(data.display_name);
+        setLoaded(true);
+        return;
+      }
+      // No row yet — auto-create with a default. 23505 (unique
+      // violation) is treated as success: a parallel session beat
+      // us to it, so re-fetch.
+      const fallback = deriveDefaultDisplayName(user);
+      const { error: insErr } = await supabase.from('user_profiles')
+        .insert({ user_id: user.id, display_name: fallback });
+      if (cancelled) return;
+      if (insErr && insErr.code !== '23505') {
+        console.warn('user_profiles insert failed', insErr);
+      }
+      setDisplayNameLocal(fallback);
+      setLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const setDisplayName = useCallback(async (next) => {
+    const trimmed = (next || '').trim();
+    if (!trimmed) return { error: 'display name required' };
+    if (trimmed.length > 60) return { error: 'display name too long (60 char max)' };
+    setDisplayNameLocal(trimmed);
+    if (!user || !supabase) return { error: null };
+    const { error } = await supabase.from('user_profiles').upsert({
+      user_id:      user.id,
+      display_name: trimmed,
+    }, { onConflict: 'user_id' });
+    if (error) console.warn('user_profiles save failed', error);
+    return { error: error?.message || null };
+  }, [user]);
+
+  return { displayName, setDisplayName, loaded };
+}
+
+
 // ── IMPORT FROM LOCALSTORAGE ────────────────────────────────────────────────
 // One-shot helper: bulk-upload whatever's in the user's browser localStorage
 // (watchlist + hidden) into their Supabase account. `ignoreDuplicates` means
