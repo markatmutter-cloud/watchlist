@@ -7,13 +7,15 @@ ROADMAP.md.
 
 ## TL;DR
 
-Heavy user-test cycle on the watch-management feature shipped
-yesterday. **Ten PRs merged today (#168 → #177)**, one new SQL table
-+ one new RPC + a public + private RPC update. Headline: usernames
-+ reactions on shared lists are both live, and the My Watches /
-Plan surface is materially better after a feedback batch.
+Marathon session. **Eighteen PRs merged today (#168 → #185)**, five
+SQL migrations + one in-session SQL fix, one new column on
+collection_items, three new RPCs, two existing RPCs rewritten.
+Headlines: usernames + reactions on shared lists both live with
+sentiment-bucket sorting, watch-management feature stress-tested
+end-to-end, privacy + terms shipped, list-image cache extended,
+GitHub repo URL no longer exposed.
 
-Eight arcs:
+Twelve arcs:
 
 1. **My Watches bug fixes (PR #168)** — Wants ↑↓ arrows wired to
    the real reorder mutator, ⋯ menu portalled with `position:fixed`
@@ -45,14 +47,42 @@ Eight arcs:
    list_members_for_collection prefer profile display_name. Also
    moves theme CSS variables to `:root` so portal nodes inherit.
 8. **UI tweaks + descriptions + alignment + shared-list icon
-   (#175 + #176)** — listings sub-tab one-liners, detail-sheet
-   safe-area inset, Collection/Archive summary stats above the
-   grid, alignment cleanup so headers + grid + summary cards all
-   sit at MobileShell's 14px edge, two-person icon on shared
-   lists.
+   (#175 + #176 + #183)** — listings sub-tab one-liners,
+   detail-sheet safe-area inset, Collection/Archive summary stats
+   above the grid, alignment cleanup so headers + grid + summary
+   cards all sit at MobileShell's 14px edge, two-person icon on
+   shared lists. (#176's second commit got orphaned and re-shipped
+   in #183 — see Process notes below.)
 9. **Reactions on shared list items (PR #177)** — emoji reactions
    table + RLS + realtime publication + RPC; ReactionStrip below
    each shared-list card with the 👍 ❤️ 🔥 🤔 ❌ picker.
+10. **Privacy + terms + extend About to mobile (#179).** Static
+    `public/privacy.html` + `public/terms.html` (one-pagers,
+    dark-mode aware via `prefers-color-scheme`); AboutModal extras
+    (features grid + How-to-use + Why I built this) now visible on
+    mobile too; Privacy · Terms links in the footer.
+11. **Image cache extension to collection_items (#180)** + **hide
+    GitHub repo URL (#181).** New `cached_img_url` column on
+    collection_items so list-only items survive dealer churn;
+    cache_watchlist_images.mjs gets a third pass that mirrors
+    watchlist blobs by listing_id. Same-origin data fetches replace
+    the six raw.githubusercontent URLs in App.js; unused
+    `useEBaySearches` hook deleted (it was the only surface still
+    fetching from GitHub).
+12. **Reactions polish: ErrorBoundary, sentiment buckets, count
+    chip, brand blue (#182, #183, #184, #185).** ErrorBoundary
+    around the App shell so render-time crashes show an inline
+    error card with stack instead of white-screen. Realtime
+    subscribe wrapped in try/catch. Self-attribution ("Added by
+    Mark" on Mark's own items) hidden. New `list_reaction_counts_for_user`
+    RPC drives a small blue 👍 N chip on list rows so a glance at
+    the Lists view tells you which lists have collaborator
+    activity. Sentiment-bucket grid splits shared lists into
+    👍 Liked / Open / ❌ Set aside sections with `gridColumn: 1/-1`
+    sub-headers. Reaction-strip border removed (was reading as a
+    card boundary inside the unit). Picker-trigger SVG and
+    list-row chip both switched from yellow emoji to brand-blue
+    SVG matching the interface.
 
 ## What shipped — by arc
 
@@ -209,21 +239,52 @@ All applied via Supabase MCP, committed under `supabase/schema/`:
    `user_profiles.display_name`.
 2. `2026-05-10_reactions.sql` — `collection_item_reactions` table,
    RLS, realtime publication entry, `list_item_reactions` RPC.
-3. **In-session SQL (no migration file):** `delete from
+3. `2026-05-10_collection_items_cached_img.sql` — adds
+   `cached_img_url text` column on `collection_items` so the
+   image cache cron can populate it for listing-backed rows.
+4. `2026-05-10_reaction_counts.sql` — `list_reaction_counts_for_user`
+   SECURITY DEFINER RPC; returns per-collection count of reactions
+   by people other than the caller. Drives the chip on list rows.
+5. **In-session SQL (no migration file):** `delete from
    collection_items where id = 'ff1766d0-...';` to clear Mark's
    stuck 50 Fathoms test row.
 
+## Process notes (worth pinning)
+
+- **Don't push followup commits to an already-open PR.** PR #176
+  was merged with only its first commit; the second commit
+  (alignment + shared-list icon) was orphaned because the merge
+  picked up the head ref before GitHub had registered the second
+  push. Re-shipped via #183 as a fresh branch + fresh PR. Going
+  forward: every new logical change → its own branch + its own
+  PR, no follow-on commits onto open PRs.
+
 ## Open / pending at handoff
 
-- Welcome page + og:image refresh (still parked from earlier
-  sessions — not raised this session)
-- Privacy notice + minimal terms (parked)
-- References as first-class entities (Epic 0)
-- Image cache extension to List items
-- "Save complete-share back" child-challenge linkage
+- **og:image refresh** — privacy + terms pages shipped with the
+  apple-touch-icon as the placeholder OG image. The 1200×630
+  proper hero needs designing (an asset task, not a code one).
+  Welcome page itself is effectively the AboutModal, which
+  auto-opens on first visit and now (post-#179) shows full
+  content on mobile too.
+- **Design pass.** Mark asked for an honest design rating and the
+  answer is: shipped chrome is functional, not designed. A design
+  brief has been drafted in conversation — paste into a fresh
+  claude.ai session with Artifacts, one surface at a time (Card,
+  Plan view, Detail sheet) for visual mockups. Implementation in
+  code waits until mockups land.
+- References as first-class entities (Epic 0).
+- "Save complete-share back" child-challenge linkage.
+- **Reactions follow-ons.** v1 covers shared-list items only.
+  Next: reactions on **journal entries**
+  (collection_item_comments), summary stats per list ("3 hearts
+  on this list this week"), "new reactions since you last
+  opened" badge (the count chip is a per-collection total — it
+  doesn't yet diff against last-visit). Realtime substrate
+  already in place.
 - Site-analytics extensions (sales-by-watch-type-per-dealer,
-  taste-relative pricing — Epic 0 references gated)
-- Strength-of-save (Love / Watch two-tier)
+  taste-relative pricing — Epic 0 references gated).
+- Strength-of-save (Love / Watch two-tier).
 
 ## Things to know for next session
 
@@ -252,6 +313,43 @@ All applied via Supabase MCP, committed under `supabase/schema/`:
 - **The Card ⋯ menu portals to document.body**; if you add a new
   Card variant, route the menu through the same portal pattern
   (triggerRef + portalRef + getBoundingClientRect coords).
+- **Privacy + terms are static HTML** at `public/privacy.html`
+  and `public/terms.html`, served outside the SPA. Both have
+  their own theme-token CSS with `prefers-color-scheme` dark
+  mode. Update the `Last updated` line whenever something
+  material changes (new table, new third party, new event type).
+- **Data fetches now use same-origin paths.** App.js no longer
+  reaches `raw.githubusercontent.com` — `/listings.json`,
+  `/auctions.json`, `/tracked_lots.json`, `/auction_lots.json`,
+  `/manual_archive_lots.json`, `/manual_historical_listings.json`
+  all live at the site root via Vercel. If you add a new public
+  data file, drop it under `public/` and reference it by its
+  same-origin path. Don't reintroduce the GitHub raw URL pattern.
+- **List images survive dealer churn now.** PR #180 extended the
+  Vercel Blob cache to listing-backed `collection_items` rows.
+  Every collection_items row gets a `cached_img_url` after the
+  next cron run; frontend prefers it over the dealer URL. Manual
+  entries unaffected (their photo is already in `watch-photos`).
+- **Sentiment-bucket grid for shared lists.** Items split into
+  👍 Liked / Open / ❌ Set aside via `gridColumn: 1/-1` sub-headers.
+  Classification: any 👍/❤️/🔥 → positive; ❌ (no positive) →
+  negative; everything else → neutral. Solo lists keep the plain
+  unsorted order. POSITIVE/NEGATIVE constants live next to the
+  bucketing IIFE in `CollectionsTab.js`.
+- **Reactions count chip on list rows** — small blue 👍 N pill on
+  any list row with reactions from people other than the viewer.
+  Refreshes when the user navigates back from a drill-in.
+  `list_reaction_counts_for_user` RPC excludes self-reactions
+  server-side.
+- **ErrorBoundary wraps the App shell.** A render-time crash
+  anywhere downstream now surfaces an inline error card with
+  message + stack instead of a white screen. Useful for debugging
+  user-environment-specific bugs (e.g. iOS Safari without USB
+  tethering).
+- **Don't push followup commits to an already-open PR.** PR #176
+  was merged with only its first commit; the second was orphaned
+  due to a race between push + merge. Rule of thumb: every new
+  logical change → its own branch + its own PR.
 
 ## Cleanup pass
 

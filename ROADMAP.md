@@ -1019,31 +1019,30 @@ price-per-reference. Use it; build what it doesn't.
 ## Priority order
 
 Current best-guess sequence. Will shift; update this doc when it does.
-Last refreshed end of 2026-05-10 — usernames + reactions on shared
-lists both shipped; Watchbox v2 watch-management is end-to-end live
-after a heavy user-test feedback batch. Welcome page + privacy
-notice + Epic 0 references float to the top of the queue.
+Last refreshed end of 2026-05-10 (very late) — privacy + terms +
+mobile About + list-image cache + GitHub-URL hide all shipped.
+og:image asset, design pass, and Epic 0 references float to the
+top.
 
-1. **Welcome page + og:image (Epic 0).** First-impression page for
-   non-share visitors. og:image still the 1024×1024 apple-touch-icon
-   placeholder; want a proper 1200×630. Half-session.
-2. **Privacy notice + minimal terms (Epic 0).** Becomes load-bearing
-   before Watchlist gets shared with users outside Mark's circle.
-   One-pager `/privacy` covering Supabase + Vercel Blob storage,
-   retention, deletion; companion `/terms` ("use at your own risk,
-   listings come from third parties"). Linked from the user dropdown
-   footer + the welcome page once it ships.
+1. **og:image asset (Epic 0).** Privacy / terms / index.html still
+   reference the 1024×1024 apple-touch-icon as the placeholder.
+   Drop a proper 1200×630 PNG at `public/og-image.png` + update
+   meta tags in three locations (mechanical). The "welcome page"
+   role is filled by the AboutModal which auto-opens on first
+   visit (now mobile-friendly post-#179) — no separate welcome
+   route needed.
+2. **Design pass (chrome quality).** Mark asked for an honest
+   design rating and the answer is: shipped chrome is functional,
+   not designed. Hand the drafted design brief to a fresh
+   claude.ai session with Artifacts, one surface at a time
+   (Card, Plan view, Detail sheet), get visual mockups, then
+   implement in code. Could materially improve perceived quality
+   without changing data model.
 3. **References as first-class entities (Epic 0).** The remaining
    foundation. Several downstream features (Epic 5 encyclopedia,
    per-reference comparison views, auction lot grouping, Discover
    mode quality, per-reference velocity rollup) gate on this.
-4. **Image cache for List items (Epic 3).** Extend
-   `cache_watchlist_images.mjs` to cover `collection_items`, not
-   just `watchlist_items`. Promoted by Mark 2026-05-05; deferred
-   through the Collections build. Newly-relevant after the
-   Collections build because Owned/Sold/Wishlist all live in
-   `collection_items` and benefit from the cache.
-5. **"Save someone's complete-share back" — child-challenge linkage
+4. **"Save someone's complete-share back" — child-challenge linkage
    (Epic 6).** When a friend shares THEIR completion of MY
    challenge back to me, I should be able to save it as a child
    challenge with `parent_challenge_id` linkage. Schema column
@@ -1051,48 +1050,51 @@ notice + Epic 0 references float to the top of the queue.
    "save this collection" on the complete-receive page hasn't been
    built. Closes the social loop fully — Mark's "three other
    friends' solutions sent back to you" framing.
-6. **Reactions follow-ons (Epic 4 / Epic 6).** v1 shipped 2026-05-10
-   on shared list items only. Follow-ups: reactions on **journal
-   entries** (collection_item_comments), summary stats per list
-   ("3 hearts on this list this week"), the "new reactions since
-   you last opened" badge. Realtime substrate already in place.
-7. **Site analytics — remaining Source-stats extensions (Epic 8).**
+5. **Reactions follow-ons (Epic 4 / Epic 6).** v1 shipped 2026-05-10
+   on shared list items only with sentiment-bucket grid + count
+   chip on list rows. Follow-ups: reactions on **journal entries**
+   (collection_item_comments), summary stats per list ("3 hearts
+   on this list this week"), the "new reactions since you last
+   opened" badge (the count chip is a per-collection total — it
+   doesn't yet diff against last-visit). Realtime substrate
+   already in place.
+6. **Site analytics — remaining Source-stats extensions (Epic 8).**
    User stats + throughput-in-value + auction-house quality + per-
    source / per-brand cycle-speed all shipped through 2026-05-09.
    Remaining: sales by watch type per dealer (gated on Epic 0
    references for "type" classification), cross-source live
    inventory (also Epic-0-gated), per-reference velocity (Epic-0-
    gated), listing-quality signals, taste-relative pricing.
-8. **Strength-of-save model (Epic 3 + Epic 7 entry point).**
+7. **Strength-of-save model (Epic 3 + Epic 7 entry point).**
     Two-tier (Love / Watch) is the gesture entry point to the broader
     Multi-signal taste capture. Small UI lift; the feature is *the
     gesture*, not the underlying data.
-9. **Source pruning (Epic 1 Stop rule).** At ~50 dealers, audit
+8. **Source pruning (Epic 1 Stop rule).** At ~50 dealers, audit
     with the click + save data and prune. Currently at 38.
-10. **Mac mini Phase A (Epic 0).** When Tropical Watch hits a Browse
+9. **Mac mini Phase A (Epic 0).** When Tropical Watch hits a Browse
     AI snag OR when Heritage / Bonhams / Monaco Legend need a
     Playwright runner OR when ready to start Epic 5 encyclopedia
     generation. Also potentially relevant if Phillips' WAF tightens
     to block single-URL fetches too — the auction-page Turbo-Stream
     pattern from PR #100 buys time, but tracked-lot detail-fetches
     are still single-URL today.
-11. **Epic 5 encyclopedia.** Built incrementally as dealer
+10. **Epic 5 encyclopedia.** Built incrementally as dealer
     descriptions accumulate. Depends on Epic 0 references + Mac
     mini A.5 for local LLM generation (or cloud LLM access).
-12. **Multi-signal taste capture + Discover mode + AI recommendations
+11. **Multi-signal taste capture + Discover mode + AI recommendations
     (Epic 7).** Stack progressively. Multi-signal first; Discover
     and recommendations layer on top once signals are rich.
-13. **Watch Challenges further polish (Epic 6).** Audit-deferred
+12. **Watch Challenges further polish (Epic 6).** Audit-deferred
     items from 2026-05-06: autosave indicator, hoist hardcoded
     colors to tokens, mobile tap-confirm on slot remove, target=7-
     style orphan-row layout, share-success state, sticky-pick-
     shrink-on-scroll. (Cool Stuff resource cards card-unification
     is the only remaining cosmetic carry-over; "save complete-share
-    back" graduated to its own #5 priority above.)
-14. **Watch Challenges v2 (Epic 6).** Past-listings as a source,
+    back" graduated to its own #4 priority above.)
+13. **Watch Challenges v2 (Epic 6).** Past-listings as a source,
     value-over-time tracking, challenge response threads — once
     Epic 0 references land.
-15. **Comprehensive auction inventory capture beyond active sales
+14. **Comprehensive auction inventory capture beyond active sales
     (Epic 2).** Substrate for serendipitous discovery + reference
     research at scale.
 
@@ -1199,8 +1201,9 @@ becomes confusion.
 > 2026-05-05 evening reference the pre-restructure scheme.
 
 - 2026-05-10: **Watch-management user-test cycle + usernames +
-  reactions.** 10 PRs merged (#168–#177), 2 SQL migrations applied
-  via MCP. Eight arcs:
+  reactions + privacy + image cache + GitHub-URL hide.** 18 PRs
+  merged (#168–#185), 4 SQL migrations applied via MCP plus an
+  in-session SQL fix. Twelve arcs:
   - **My Watches bug fixes (#168).** Wants ↑↓ arrows wired to the
     real reorder mutator (was no-op). ⋯ menu portalled to
     document.body with position:fixed coords from
@@ -1263,6 +1266,51 @@ becomes confusion.
   - **In-session SQL.** Mark's stuck "test" Blancpain 50 Fathoms
     (Owned hard list, row id `ff1766d0-…`) hard-deleted via Supabase
     MCP after the clipped ⋯ menu made the UI Remove unreachable.
+  - **Privacy + terms + extend About to mobile (#179).** Static
+    `public/privacy.html` + `public/terms.html` (one-pagers,
+    dark-mode aware via prefers-color-scheme). AboutModal extras
+    (features grid + How-to-use + Why I built this) now visible
+    on mobile too — features grid drops to 1-col at <560px.
+    Footer gains Privacy · Terms links.
+  - **Image cache extension to collection_items (#180).** New
+    `cached_img_url` column on collection_items. cache_watchlist_
+    images.mjs gets a third pass — listing-backed rows mirror an
+    existing watchlist blob if one exists, otherwise fetch +
+    upload to the same `watchlist/<listing_id>.<ext>` path.
+    Reap pass extended to consider both watchlist_items and
+    collection_items as live refs. Frontend prefers
+    `row.cached_img_url` over the snapshot's dealer URL.
+  - **Hide GitHub repo from production (#181).** Six App.js
+    fetch URLs switched from `raw.githubusercontent.com/<user>/
+    <repo>/main/public/...` to same-origin paths (`/listings.json`
+    etc.). Vercel already serves /public at the site root, so the
+    data is identical. Unused `useEBaySearches.js` hook deleted
+    (it was the only remaining surface that fetched from raw.
+    githubusercontent and exported an "Edit on GitHub" URL).
+    After this lands, no first-party part of the site exposes
+    the repo URL.
+  - **ErrorBoundary + reactions hardening (#182).** App-level
+    boundary surfaces an inline error card with stack instead of
+    white-screening when render throws. Realtime subscribe wrapped
+    in try/catch + method-existence checks so a websocket /
+    stale-token issue can't take down the drill-in. Shipped after
+    Jackie hit a non-reproducible white screen tapping into a
+    shared list — the boundary lets future bugs of that shape get
+    diagnosed via screenshot.
+  - **Reactions polish (#183, #184, #185).** Re-shipped the
+    alignment + shared-list icon work that orphaned on PR #176
+    (process note pinned). Card + reaction strip + addedBy now
+    wrapped in a `var(--card-bg)` container so the unit reads as
+    one card. Strip's internal borderTop dropped (was reading as a
+    card boundary inside the unit). Hide self-attribution
+    ("Added by Mark" on Mark's own items). New
+    `list_reaction_counts_for_user` RPC drives a small blue 👍 N
+    chip on list rows so a glance at the Lists view tells you
+    which lists have collaborator activity. Sentiment-bucket
+    grid splits shared lists into 👍 Liked / Open / ❌ Set aside
+    sections via `gridColumn: 1/-1` sub-headers. Picker-trigger
+    SVG and list-row chip both switched from yellow emoji to
+    brand-blue SVG.
 
 - 2026-05-09: **Watchlists IA + Realtime + auction time-fix +
   velocity.** 8 PRs merged (#144–#151), 4 SQL migrations applied
