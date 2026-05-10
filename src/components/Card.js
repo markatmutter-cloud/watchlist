@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, memo } from "react";
+import { createPortal } from "react-dom";
 import { fmt, imgSrc, fmtCountdown, fmtLotPrice, fmtSoldDate, priceIn, daysOnSale, daysOnSaleLabel, CURRENCY_SYM, FX_RATES_USD_PER } from "../utils";
 import { HeartIcon } from "./icons";
 
@@ -67,7 +68,14 @@ export const Card = memo(function Card({
   // Brief "Copied!" feedback when Web Share API isn't available and
   // we fall back to the clipboard. 1.2s timeout, no toast component.
   const [shareFeedback, setShareFeedback] = useState("");
-  const menuRef = useRef(null);
+  // Portal-anchored menu position. The menu used to live inside the
+  // card's overflow:hidden subtree, so longer labels (Remove from
+  // collection, Watch details) overflowed the card edge and got
+  // clipped — Mark report 2026-05-10. Now rendered via portal with
+  // position:fixed at coords computed from the trigger's rect.
+  const [menuPos, setMenuPos] = useState(null);
+  const triggerRef = useRef(null);
+  const portalRef = useRef(null);
   // View-event observer registration. When onView is supplied, hand
   // the card's outer node to the App-level IntersectionObserver so it
   // can fire a `view` once the card crosses 50% visibility. Returns a
@@ -80,7 +88,9 @@ export const Card = memo(function Card({
   useEffect(() => {
     if (!menuOpen) return;
     const onDown = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+      const inTrigger = triggerRef.current && triggerRef.current.contains(e.target);
+      const inPortal  = portalRef.current && portalRef.current.contains(e.target);
+      if (!inTrigger && !inPortal) setMenuOpen(false);
     };
     const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
     // Defer one tick so the click that opened the menu doesn't
@@ -378,8 +388,18 @@ export const Card = memo(function Card({
             Anchored top-right with the dropdown opening down-and-left
             so it doesn't fall off the screen on rightmost cards. */}
         {(onAddToCollection || onHide || onShare || (extraMenuItems && extraMenuItems.length > 0)) && (
-          <div ref={menuRef} style={{ position: "relative" }}>
-            <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(o => !o); }}
+          <div style={{ position: "relative" }}>
+            <button ref={triggerRef}
+              onClick={e => {
+                e.preventDefault(); e.stopPropagation();
+                if (!menuOpen && triggerRef.current) {
+                  const r = triggerRef.current.getBoundingClientRect();
+                  // Anchor the menu's right edge to the trigger's right
+                  // edge in viewport coords. Clamp left to ≥8 below.
+                  setMenuPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) });
+                }
+                setMenuOpen(o => !o);
+              }}
               aria-label="More actions"
               style={{ width: compact ? 26 : 36, height: compact ? 26 : 36, borderRadius: "50%", border: "none", cursor: "pointer",
                       background: menuOpen ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.28)",
@@ -387,16 +407,17 @@ export const Card = memo(function Card({
                       padding: 0, fontFamily: "inherit", fontSize: compact ? 16 : 20, lineHeight: 1 }}>
               ⋯
             </button>
-            {menuOpen && (
-              <div onClick={e => e.preventDefault()}
+            {menuOpen && menuPos && createPortal(
+              <div ref={portalRef} onClick={e => e.preventDefault()}
                 style={{
-                  position: "absolute", top: compact ? 30 : 40, right: 0, zIndex: 30,
+                  position: "fixed",
+                  top: menuPos.top, right: menuPos.right,
+                  zIndex: 1000,
+                  // Clamp width so on a small viewport the menu can't
+                  // extend past the left edge — labels wrap if forced.
+                  maxWidth: `calc(100vw - ${menuPos.right + 16}px)`,
                   background: "var(--bg)", border: "0.5px solid var(--border)",
                   borderRadius: 8, padding: 4,
-                  // No minWidth — menu sizes to its widest item.
-                  // Pre-2026-05-01 had minWidth: 168 which extended past
-                  // the right edge of cards on 2-col mobile (~165px wide)
-                  // and got clipped by the Card root's overflow: hidden.
                   whiteSpace: "nowrap",
                   boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
                 }}>
@@ -440,7 +461,8 @@ export const Card = memo(function Card({
                     entry.onClick(item);
                   }} style={menuItemStyle}>{entry.label}</button>
                 ))}
-              </div>
+              </div>,
+              document.body
             )}
           </div>
         )}
