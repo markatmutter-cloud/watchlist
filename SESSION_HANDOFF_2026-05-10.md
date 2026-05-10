@@ -7,13 +7,28 @@ ROADMAP.md.
 
 ## TL;DR
 
-Marathon session. **Eighteen PRs merged today (#168 → #185)**, five
+**Two sessions today.** Combined: **28 PRs merged (#168 → #196)**,
+seven SQL migrations applied, plus two production bug fixes triaged
+during the second session (saved-search schema drift, Vercel Blob
+private-store config) and one open issue (Blob token in GH Actions
+needs the new public store's token).
+
+**Part 1 — mid-day shipping (PRs #168 → #185).** Eighteen PRs, five
 SQL migrations + one in-session SQL fix, one new column on
 collection_items, three new RPCs, two existing RPCs rewritten.
 Headlines: usernames + reactions on shared lists both live with
 sentiment-bucket sorting, watch-management feature stress-tested
 end-to-end, privacy + terms shipped, list-image cache extended,
 GitHub repo URL no longer exposed.
+
+**Part 2 — late-evening maintenance pass (PRs #187 → #196).** Ten
+PRs, two SQL migrations applied, one prod bug fixed mid-pass
+(`saved_searches` was missing the May 8 `min_price`/`max_price`
+columns — JS had been writing them since May 8). Empty-state warming,
+copy de-genericising, design tokens, doc rot fixes, anon-access
+revoke that actually works this time (PUBLIC, not anon), RLS
+performance sweep, FK covering indexes. See "Part 2 — Maintenance
+pass" section below.
 
 Twelve arcs:
 
@@ -375,3 +390,180 @@ All applied via Supabase MCP, committed under `supabase/schema/`:
   ROADMAP priority order.
 - References as first-class entities (Epic 0) — gates several
   downstream features.
+
+---
+
+## Part 2 — Late-evening maintenance pass (PRs #187 → #196)
+
+Discovery-driven hygiene session. Mark kicked off a "no new features"
+maintenance pass per the CLAUDE.md maintenance-rhythm rule. Four
+parallel audit streams (empty states, copy voice, visual consistency,
+code hygiene) plus a doc audit and a Supabase audit produced a
+consolidated discovery report; Mark green-lit "all 6" and a few more
+on top.
+
+Two production bugs surfaced mid-pass and were triaged inline:
+1. **Saved-search create failed with `Could not find the 'max_price'
+   column of 'saved_searches' in the schema cache`.** The May 8
+   migration `2026-05-08_saved_searches_price_filters.sql` had never
+   been applied to prod even though the JS has been writing
+   `min_price` / `max_price` for two days. Classic "JS ahead of
+   migration" — the exact trap pinned in CLAUDE.md "Things to never
+   do." Applied via Supabase MCP + bumped PostgREST cache. Mark
+   confirmed save-without-price works.
+2. **All image loads slow.** Vercel Blob image cache had been
+   silently failing on every cron run: the cache script uploads
+   with `access: "public"` but the Blob store was configured for
+   **private** access — every upload rejected with "Cannot use
+   public access on a private store." DB confirmed: **0 of 274
+   hearts and 0 of 92 listing-backed `collection_items` had a
+   cached image URL.** Fix required Mark dashboard-side (store
+   access mode is immutable post-creation): delete + recreate as
+   public, rotate token in GH Actions. **At handoff: token rotation
+   in flight; new public store created, GH Actions secret updated,
+   workflow rerun.** Verify cache_watchlist_images.mjs no longer
+   errors on next run and `cached_img_url` columns start filling.
+
+### What shipped — Part 2 by PR
+
+- **#187 — Clear-filters CTA on no-match empty states.** The bare
+  "No watches match your filters" was the most-hit dead-end in the
+  app. Wrapped in `<EmptyState/>` with an inline "Clear filters"
+  button when `hasFilters` is true. Applied to the Listings card
+  grid (App.js) and the Saved sub-tab card grid (WatchlistTab). Also
+  threaded `hasFilters` + `resetFilters` props through to
+  WatchlistTab.
+- **#188 — Loading copy: enthusiast voice.** Generic "Loading
+  listings...", "Loading more...", "Loading list…", "Loading
+  challenge…" → "Pulling the latest listings…" / "More on the way…"
+  variants. Five surfaces: App.js cold-load + scroll-loader +
+  load-error, ListReceiver, ChallengeReceiver, ManageListSheet.
+  Admin-only "Loading…" strings left as-is (out of scope).
+- **#189 — window.alert + naked Error: strings → inline status.**
+  Four flows: share-a-list (ephemeral "Link copied — paste
+  anywhere" chip with 2s auto-clear), local-data import (inline
+  danger message under the import buttons), create-challenge
+  failure (red banner at top of CreateStage), SettingsModal
+  display-name save ("Error: <msg>" → "Didn't save — <msg>").
+  Sign-in alert (rare OAuth failure path) left for a follow-up.
+- **#190 — Design tokens + radii snap.** Added `--brand-tint-08 /
+  -10 / -12` and `--accent-warn` (#c9a227 gold) CSS variables to
+  both light + dark themes in App.js. Replaced 18 inline literals:
+  6× `rgba(24,95,165,…)` → `var(--brand-tint-*)` across
+  ListReceiver / ReferencesTab / CollectionPickerModal /
+  ChallengesView / CollectionsTab; 12× `#c9a227` →
+  `var(--accent-warn)` across AdminTab / ChallengesView /
+  ChallengeFlow. `borderRadius: 16 → 14` snap on AdminTab (×3) +
+  LotMigrationBanner. `strokeWidth="2.2" → "2"` on the
+  reactions-trigger icon.
+- **#191 — Doc rot.** README App.js line count `~1,470 → ~2,900`
+  (actual 2,908). Removed `useEBaySearches` from both README's
+  hooks list and folder-layout diagram (deleted PR #181). Removed
+  `EndingSoon.js` from README folder-layout diagram (deleted PR
+  #36). Updated CLAUDE.md architecture quick reference to drop
+  `useEBaySearches`. Replaced CLAUDE.md's stale `WishlistRankedList`
+  description with the post-#170 reality (renders via
+  `MyCollectionView` with the wishlist as the Shortlist source).
+- **#192 — Actually block anon from 3 signed-in-only SECURITY
+  DEFINER RPCs.** The May 10 reactions / member-roster / reaction-
+  counts migrations each tried `revoke execute from anon` but that
+  was a no-op on the current Supabase platform: the function ACL
+  grants EXECUTE to PUBLIC (everyone, including anon via
+  inheritance), not to anon directly. Discovered when
+  `has_function_privilege('anon', …)` kept returning true even
+  after re-running the original revoke. Fix: `revoke from public`
+  instead; authenticated keeps its direct grant. **CLAUDE.md
+  "Supabase public schema default ACL gotcha" section corrected**
+  to describe current behavior — old text described an earlier
+  platform version's per-role direct grants. Three RPCs revoked:
+  `list_item_reactions`, `list_members_for_collection`,
+  `list_reaction_counts_for_user`. Verified anon=false post-apply.
+- **#193 — Remove unused `importLocalData` import.** App.js:2
+  destructured it from `./supabase` but never called it
+  (WatchlistTab is the real consumer). One-line cleanup.
+- **#194 — Empty-state polish round 2.** Four more bare strings
+  warmed: ShortlistPickerSection (CollectionsTab) chosen-list
+  empty, ListReceiver shared-list-empty ("Nothing in this list
+  yet — the owner hasn't added any watches."), Links section
+  accordion ("Nothing curated here yet — check back as the section
+  grows."), ListingPickerModal Favorites/All/List no-match (now
+  uses `<EmptyState/>` with source-specific blurbs).
+- **#195 — RLS performance: `auth.uid()` → `(select auth.uid())`
+  sweep.** Supabase advisor flagged 26 policies with the
+  `auth_rls_initplan` warning — calls to `auth.uid()` /
+  `auth.email()` were being re-evaluated per row instead of once
+  per query. Wrapped each call in a SELECT subquery so Postgres
+  treats it as an InitPlan. **30 policies dropped + recreated
+  across 11 tables**: watchlist_items (4), hidden_listings (3),
+  saved_searches (4), tracked_lots (3), user_settings (3),
+  user_limits (1), collections (3), collection_items (2 —
+  multi-auth.uid quals), collection_collaborators (1 —
+  `auth.uid()` + `auth.email()`), collection_item_comments (3),
+  collection_item_reactions (2), user_profiles (2). Post-apply
+  advisor scan: the `auth_rls_initplan` category is fully clean
+  (was 26, now 0).
+- **#196 — Covering indexes on 7 unindexed FKs.** Supabase advisor
+  `unindexed_foreign_keys` flagged seven. Most immediately useful:
+  `collection_items.who_added` (drives the attribution chip on
+  every shared-list render). Plus admin_hidden_listings.hidden_by,
+  collection_collaborators.invited_by, collection_item_comments
+  .user_id, collection_item_reactions.user_id, listing_events
+  .user_id, user_limits.updated_by. All idempotent
+  `CREATE INDEX IF NOT EXISTS`.
+
+### SQL migrations applied this session (all via MCP)
+
+1. `2026-05-08_saved_searches_price_filters.sql` — backfill of the
+   already-committed May 8 migration that never reached prod.
+2. `2026-05-10_revoke_anon_signed_in_rpcs.sql` — the actually-effective
+   anon revoke (revoke from PUBLIC).
+3. `2026-05-10_rls_initplan_perf.sql` — 30 policy rewrites for the
+   auth.uid() InitPlan wrapping.
+4. `2026-05-10_fk_covering_indexes.sql` — 7 covering indexes.
+
+### Things to know for next session — Part 2 additions
+
+- **`(select auth.uid())` is now the only acceptable pattern in new
+  RLS policies.** Bare `auth.uid()` in `using` / `with check` gets
+  flagged by the advisor and re-evaluates per row. CLAUDE.md
+  "Things to never do" should probably get a pin for this if
+  another RLS policy lands.
+- **Supabase ACL gotcha is updated in CLAUDE.md.** The old advice
+  (`revoke execute from anon` to block anon access) is wrong on the
+  current platform. Use `revoke execute from public` instead.
+- **Blob store config caveat.** Vercel Blob's access mode (public
+  vs private) is **immutable post-creation**. If a store gets
+  recreated, the GH Actions `BLOB_READ_WRITE_TOKEN` secret has to
+  be rotated to match the new store's token — Vercel won't auto-
+  sync that one (only the project env var).
+- **Saved-search field is properly nullable end-to-end now.**
+  `min_price` / `max_price` are nullable in DB, JS already passes
+  `null` when blank. The "could not find max_price column" error
+  was the missing migration, not a JS bug.
+- **Discovery report**: `~30 advisor warnings cleared` across the
+  RLS perf sweep + FK indexes + anon revoke. Remaining advisor
+  warnings (intentionally not in scope): 5 unused indexes (low
+  signal — might light up later), 8 `multiple_permissive_policies`
+  on `admin_hidden_listings` + `user_limits` (admin-table cleanup
+  candidate), 1 `auth_leaked_password_protection` (one-click
+  Vercel dashboard setting).
+
+### Open carry-overs — Part 2
+
+- **Render-without-crash tests** for ReferencesTab, AdminTab,
+  AuctionCalendar, Card. Each is a top-level surface where a TDZ
+  regression would white-screen. Pattern is already established
+  by `App.test.jsx` / `CollectionsTab.test.jsx`.
+- **"Saving…" copy sweep** deferred from #188 (6+ surfaces). Same
+  pattern as the loading-copy work.
+- **`multiple_permissive_policies` consolidation** on
+  `admin_hidden_listings` + `user_limits` — slightly trickier
+  because it requires merging "Admins manage X" + "Anyone select
+  X" into one policy without losing either gate.
+- **Unused index drop** — wait another 30 days of observation;
+  some may light up after the next AdminTab usage spike.
+- **Vercel Auth leaked-password protection** — one click; not done
+  in this session because it's a dashboard setting not a code
+  change.
+- **Blob token rotation verification** — still in flight as of
+  handoff; new public store should now be receiving uploads.
