@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Privacy — Watchlist</title>
+  <meta name="description" content="What Watchlist stores about you, why, and who else sees it." />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180.png" />
+  <meta property="og:title" content="Privacy — Watchlist" />
+  <meta property="og:description" content="What Watchlist stores about you, why, and who else sees it." />
+  <meta property="og:image" content="https://the-watch-list.app/apple-touch-icon.png" />
+  <meta name="twitter:card" content="summary" />
+  <style>
+    :root {
+      --bg: #fff;
+      --surface: #f5f5f7;
+      --border: rgba(0,0,0,0.09);
+      --text1: #1d1d1f;
+      --text2: #6e6e73;
+      --text3: #aeaeb2;
+      --brand: #185FA5;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000;
+        --surface: #1c1c1e;
+        --border: rgba(255,255,255,0.1);
+        --text1: #f5f5f7;
+        --text2: #98989d;
+        --text3: #48484a;
+      }
+    }
+    html, body {
+      margin: 0; padding: 0;
+      background: var(--bg); color: var(--text1);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap {
+      max-width: 680px; margin: 0 auto;
+      padding: 32px 22px 64px;
+    }
+    header {
+      display: flex; align-items: center; gap: 12px;
+      padding-bottom: 18px; margin-bottom: 24px;
+      border-bottom: 0.5px solid var(--border);
+    }
+    header img { width: 36px; height: 36px; border-radius: 6px; }
+    header a { color: var(--text2); text-decoration: none; font-size: 13px; }
+    header a:hover { color: var(--text1); }
+    h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.4px; margin: 0 0 6px; }
+    .subtitle { font-size: 14px; color: var(--text2); margin: 0 0 28px; }
+    h2 { font-size: 16px; font-weight: 600; margin: 26px 0 8px; color: var(--text1); }
+    p { font-size: 14px; line-height: 1.6; color: var(--text2); margin: 0 0 12px; }
+    p strong { color: var(--text1); font-weight: 600; }
+    a.brand { color: var(--brand); text-decoration: underline; }
+    footer {
+      margin-top: 40px; padding-top: 18px;
+      border-top: 0.5px solid var(--border);
+      font-size: 12px; color: var(--text3); line-height: 1.6;
+    }
+    footer a { color: var(--text2); text-decoration: none; margin-right: 14px; }
+    footer a:hover { color: var(--text1); }
+    code { background: var(--surface); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img src="/favicon-192.png" alt="Watchlist" />
+      <a href="/">← Back to Watchlist</a>
+    </header>
+
+    <h1>Privacy</h1>
+    <p class="subtitle">
+      Watchlist is a personal vintage-watch tool built by one person as a passion project. Below is everything that gets stored when you use it.
+    </p>
+
+    <h2>What you give us when you sign in</h2>
+    <p>Google sign-in only. We receive your email and the name on your Google profile. No password, no phone number, no address.</p>
+
+    <h2>What you create while you use the site</h2>
+    <p>Hearts, hidden items, lists you build, watches you mark as owned or sold, your shortlist, journal notes you write on a watch, reactions on shared lists, saved searches, the display name you pick in Settings, your preferred currency. Each of these is stored against your account in Supabase with row-level security — only you (and people you've invited as collaborators on a shared list) can read your rows.</p>
+
+    <h2>Photos you upload</h2>
+    <p>Photos for a manually-entered watch live in a private Supabase Storage bucket scoped to your user. We resize them client-side before upload to keep the file small.</p>
+
+    <h2>Cached dealer images</h2>
+    <p>Dealer images for the watches you've hearted are cached in Vercel Blob so they keep working even after a dealer takes the listing down. We don't cache the whole feed — only items you save.</p>
+
+    <h2>Anonymous usage data</h2>
+    <p>Watchlist records six event types — view, click, save, hide, add-to-list, share — keyed to a random UUID stored in your browser's <code>localStorage</code>. There is no IP address, no device fingerprint, no third-party analytics product. Raw events are pruned after 90 days; aggregated rollups are kept to understand which dealers and brands people engage with. Sign-in status doesn't change what's recorded; the same UUID is used either way.</p>
+
+    <h2>What we never store</h2>
+    <p>Payment info, addresses, phone numbers, browsing on other sites, sale or transaction details. Watchlist is a directory layer that links to dealers — we don't broker sales and don't see them.</p>
+
+    <h2>Who else sees your data</h2>
+    <p><strong>Supabase</strong> hosts the database, auth, and your uploaded photos. <strong>Vercel</strong> hosts the site and the dealer-image cache. <strong>Google</strong> handles sign-in and sees the OAuth event. When you follow a link to a dealer's site, that dealer's server sees a referer header indicating you came from <code>the-watch-list.app</code>. No analytics products, no ad networks, no data sales.</p>
+
+    <h2>Cookies and local storage</h2>
+    <p>Watchlist uses your browser's <code>localStorage</code> for view preferences (theme, columns, last-active sub-tabs), the anonymous telemetry UUID, and a Supabase auth token while you're signed in. There are no third-party tracking cookies.</p>
+
+    <h2>Sharing lists with others</h2>
+    <p>A list you share via the Collaboration Link is visible to people you've invited by email and accepted the invite. The View Only Link creates a "save a copy" experience for the recipient — the copy lives in their account and is theirs from then on.</p>
+
+    <h2>Deleting your account</h2>
+    <p>Email <a class="brand" href="mailto:hello@the-watch-list.app?subject=Account%20deletion">hello@the-watch-list.app</a> and I'll delete every row and uploaded photo connected to your account. There isn't a self-serve delete button yet.</p>
+
+    <h2>Changes</h2>
+    <p>If this notice ever changes, the date below updates. No surprise emails, no push notifications.</p>
+
+    <footer>
+      Last updated 2026-05-10. Built and operated by Mark Mutter as a personal passion project.
+      <br/>
+      <a href="/">Watchlist</a>
+      <a href="/terms.html">Terms</a>
+    </footer>
+  </div>
+</body>
+</html>
