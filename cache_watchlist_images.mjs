@@ -131,11 +131,103 @@ async function cacheUncached() {
   }
 }
 
+// 2026-05-10 — Listing-backed collection_items reuse the same
+// `watchlist/<listing_id>.<ext>` blob path (same listing → same image)
+// so a watch hearted AND in a list shares a single cached blob. Skip
+// manual entries (they have their own photo in watch-photos already).
+async function cacheUncachedCollectionItems() {
+  const { data: rows, error } = await supabase
+    .from("collection_items")
+    .select("id, listing_id, listing_snapshot, cached_img_url, is_manual")
+    .is("cached_img_url", null)
+    .not("listing_id", "is", null);
+  if (error) { console.error("supabase collection_items select", error.message); return; }
+  if (!rows || rows.length === 0) {
+    console.log("collection_items pass: nothing new to cache");
+    return;
+  }
+  console.log(`${rows.length} collection_items row(s) without cached image`);
+
+  // Re-use existing watchlist blobs where possible — if a user has
+  // hearted the same listing, the blob is already in
+  // `watchlist/<listing_id>.<ext>`. One round-trip to fetch the
+  // existing URLs in bulk for the listing_ids we're about to process.
+  const listingIds = [...new Set(rows.map(r => r.listing_id).filter(Boolean))];
+  const existingByLid = new Map();
+  for (let i = 0; i < listingIds.length; i += 200) {
+    const slice = listingIds.slice(i, i + 200);
+    const { data: existing } = await supabase
+      .from("watchlist_items")
+      .select("listing_id, cached_img_url")
+      .in("listing_id", slice)
+      .not("cached_img_url", "is", null);
+    for (const r of (existing || [])) {
+      if (r.cached_img_url) existingByLid.set(r.listing_id, r.cached_img_url);
+    }
+  }
+
+  for (const row of rows) {
+    if (row.is_manual) continue;
+    const listingId = row.listing_id;
+    // Mirror an existing watchlist cache when present.
+    const reuse = existingByLid.get(listingId);
+    if (reuse) {
+      await supabase.from("collection_items")
+        .update({ cached_img_url: reuse }).eq("id", row.id);
+      console.log(`  ${listingId}: reused watchlist cache`);
+      continue;
+    }
+    const img = (row.listing_snapshot || {}).img;
+    if (!img) {
+      // Mark as processed-without-image so we don't re-check every run.
+      await supabase.from("collection_items")
+        .update({ cached_img_url: "" }).eq("id", row.id);
+      console.log(`  ${listingId}: no source image, marking processed`);
+      continue;
+    }
+    const fetched = await fetchImage(img);
+    if (!fetched || fetched.error) {
+      console.log(`  ${listingId}: fetch failed (${fetched?.error || "no body"})`);
+      continue;
+    }
+    const ext = EXT_BY_MIME[fetched.mime] || "bin";
+    const pathname = `watchlist/${listingId}.${ext}`;
+    try {
+      const blob = await put(pathname, fetched.buf, {
+        access: "public",
+        contentType: fetched.mime,
+        addRandomSuffix: false,
+        cacheControlMaxAge: 31536000,
+        token: BLOB_TOKEN,
+      });
+      // Write back to this collection_items row AND any watchlist_items
+      // rows that share the listing_id (so the next watchlist cache pass
+      // skips). Both updates are idempotent.
+      await supabase.from("collection_items")
+        .update({ cached_img_url: blob.url }).eq("id", row.id);
+      await supabase.from("watchlist_items")
+        .update({ cached_img_url: blob.url })
+        .eq("listing_id", listingId)
+        .is("cached_img_url", null);
+      // Bookkeeping for the rest of this batch — if multiple rows in
+      // this batch share the same listing_id, we should reuse the URL
+      // we just produced rather than re-fetching.
+      existingByLid.set(listingId, blob.url);
+      console.log(`  ${listingId} cached (collection_items origin): ${blob.url}`);
+    } catch (err) {
+      console.error(`  ${listingId}: upload failed`, err.message);
+    }
+  }
+}
+
 async function reapOrphans() {
   // List every blob under watchlist/, find the set of listing_ids
-  // currently in watchlist_items, delete blobs whose listing_id isn't
-  // in that set. Multiple users can watchlist the same listing — only
-  // delete when no row references it.
+  // referenced by watchlist_items OR listing-backed collection_items,
+  // delete blobs whose listing_id isn't in that set. Multiple users
+  // can heart / list the same listing — only delete when no row
+  // references it. Extended 2026-05-10 to include collection_items
+  // so an item only in a list (not hearted) doesn't get its blob
+  // reaped.
   let cursor = undefined;
   const allBlobs = [];
   do {
@@ -144,11 +236,19 @@ async function reapOrphans() {
     cursor = page.cursor;
   } while (cursor);
 
-  const { data: rows, error } = await supabase
+  const { data: wlRows, error: wlErr } = await supabase
     .from("watchlist_items")
     .select("listing_id");
-  if (error) { console.error("supabase select for cleanup", error.message); return; }
-  const liveIds = new Set((rows || []).map(r => r.listing_id));
+  if (wlErr) { console.error("supabase select for cleanup", wlErr.message); return; }
+  const { data: ciRows, error: ciErr } = await supabase
+    .from("collection_items")
+    .select("listing_id")
+    .not("listing_id", "is", null);
+  if (ciErr) { console.error("supabase collection_items select for cleanup", ciErr.message); return; }
+  const liveIds = new Set([
+    ...(wlRows || []).map(r => r.listing_id),
+    ...(ciRows || []).map(r => r.listing_id),
+  ]);
 
   let deleted = 0;
   for (const blob of allBlobs) {
@@ -280,6 +380,7 @@ async function reapTrackedOrphans() {
 
 async function main() {
   await cacheUncached();
+  await cacheUncachedCollectionItems();
   await reapOrphans();
   await cacheUncachedTrackedLots();
   await reapTrackedOrphans();
