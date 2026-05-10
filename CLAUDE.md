@@ -52,9 +52,9 @@ Frontend is React (CRA, inline styles). `App.js` is the orchestrator
 that owns state and JSX consts; render is delegated to
 `src/components/MobileShell.js` + `DesktopShell.js`, each receiving
 a single `shellProps` bag. Domain state hooks live under `src/hooks/`
-(useTrackModal, useFavSearchModal, useViewSettings, useFilters,
-useEBaySearches); shared style tokens in `src/styles.js`; pure
-helpers in `src/utils.js`. Per-user data (watchlist, hidden, saved
+(useTrackModal, useFavSearchModal, useViewSettings, useFilters);
+shared style tokens in `src/styles.js`; pure helpers in
+`src/utils.js`. Per-user data (watchlist, hidden, saved
 searches, tracked lots, **collections + collection_items**) is in
 Supabase with RLS. One serverless function: `api/img.js` (image
 proxy for hot-link-protected dealers). Vercel Blob caches dealer
@@ -189,8 +189,11 @@ path that already uses `useWatchlist().hidden`.
   Owned / Sold / All toggle. Single grid, no drill-in. +Add CTAs
   (+ From feed / + Add a watch) target whichever list the toggle
   is on.
-- **Wishlist** — standalone ranked list. WishlistRankedList renders
-  directly (no list-of-list wrapper). + From feed at top.
+- **Wishlist** — standalone ranked list. Routes through
+  `MyCollectionView` (same body as My collection) with the wishlist
+  hard list passed in as the shortlist source — the rebuild in
+  PR #170 retired the dedicated `WishlistRankedList` component in
+  favour of the shared Shortlist tile grid. + From feed at top.
 - **Lists** — user-created lists + shared-with-me inbox + Hidden
   synthetic row. Drill-in shows the list's items as a Card grid.
   `?col=<uuid>` URL persistence.
@@ -226,14 +229,17 @@ Client-side canvas resize to 1600px JPEG q0.85 before upload (5-10×
 cut on phone photos). Render via the slim `ManualItemCard` (no
 heart/share/dealer-link, since there's no source URL).
 
-**Wishlist force-rank (2026-05-06 PR #89).** `position` integer
-column on `collection_items`, nullable on every row (only used in
-wishlist context). Composite index on (collection_id, position).
-Lower position = higher rank (1 = most wanted). `WishlistRankedList`
-component renders the wishlist as a vertical list with rank +
-↑/↓ buttons + remove ×. Optimistic local update on swap; parallel
-UPDATE writes persist. Tap-based controls (no drag-drop) for
-cross-device parity.
+**Wishlist force-rank (2026-05-06 PR #89; renderer replaced 2026-05-10
+PR #170).** `position` integer column on `collection_items`,
+nullable on every row (only used in wishlist context). Composite
+index on (collection_id, position). Lower position = higher rank
+(1 = most wanted). The original `WishlistRankedList` vertical-list
+component was retired in PR #170 (Plan view rebuild) — wishlist
+items now render in the same tile grid as the Shortlist, with rank
+order preserved via the `position` column. Reorder UI lives in
+PlanView's ↑/↓ controls. Optimistic local update on swap; parallel
+UPDATE writes persist. Tap-based (no drag-drop) for cross-device
+parity.
 
 **Owned → Sold transition (2026-05-06 PR #88).** `markItemAsSold(rowId, opts)`
 mutator UPDATEs the row's `collection_id` to the user's Sold list
