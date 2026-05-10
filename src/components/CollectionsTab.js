@@ -477,9 +477,8 @@ function MyCollectionView({
       />
       <div style={{
         display: "flex", alignItems: "center", gap: 12,
-        padding: "14px 14px 12px",
-        borderBottom: "0.5px solid var(--border)",
-        marginBottom: 12, flexWrap: "wrap",
+        padding: "8px 14px 14px",
+        marginBottom: 8, flexWrap: "wrap",
       }}>
         {/* Segmented control — Collection / Archive / Plan.
             Restyled 2026-05-10 from inner-pill chips so the primary
@@ -589,10 +588,13 @@ function MyCollectionView({
             }
           />
         ) : (
-          <Section
-            label={`Collection · ${ownedItems.length}${ownedTotal > 0 ? ` · ${fmtUSD(ownedTotal)} total` : ""}`}
-            show={false}
-          >
+          <>
+            <CollectionSummary
+              label="Collection"
+              count={ownedItems.length}
+              totalUSD={ownedTotal}
+              avgUSD={ownedItems.length ? ownedTotal / ownedItems.length : 0}
+            />
             <CollectionGrid
               items={ownedItems}
               collectionId={owned?.id}
@@ -610,7 +612,7 @@ function MyCollectionView({
               onRemoveItem={onRemoveItem}
               onClickDetail={onClickDetail}
             />
-          </Section>
+          </>
         )
       ) : (
         // Archive
@@ -621,10 +623,13 @@ function MyCollectionView({
             blurb="Watches you've owned and sold land here. Mark a watch in your Collection as sold to start your archive."
           />
         ) : (
-          <Section
-            label={`Archive · ${soldItems.length}${soldTotal > 0 ? ` · ${fmtUSD(soldTotal)} total` : ""}`}
-            show={false}
-          >
+          <>
+            <CollectionSummary
+              label="Archive"
+              count={soldItems.length}
+              totalUSD={soldTotal}
+              avgUSD={soldItems.length ? soldTotal / soldItems.length : 0}
+            />
             <CollectionGrid
               items={soldItems}
               collectionId={sold?.id}
@@ -641,9 +646,45 @@ function MyCollectionView({
               onRemoveItem={onRemoveItem}
               onClickDetail={onClickDetail}
             />
-          </Section>
+          </>
         )
       )}
+    </div>
+  );
+}
+
+// Stat-card row above Collection / Archive grids. Mark spec
+// 2026-05-10: surface total value front-and-centre, not buried in
+// a Section label. Same shape as the PlanView running totals.
+function CollectionSummary({ label, count, totalUSD, avgUSD }) {
+  const cards = [
+    [`${label} count`, `${count}`, count === 1 ? "watch" : "watches"],
+    [`Total value`, fmtUSD(totalUSD || 0), label === "Archive" ? "lifetime sold value" : "estimated portfolio value"],
+    [`Average price`, fmtUSD(avgUSD || 0), `per watch`],
+  ];
+  return (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+      gap: 8,
+      padding: "0 12px 16px",
+    }}>
+      {cards.map(([title, value, hint]) => (
+        <div key={title} style={{
+          padding: "10px 12px",
+          borderRadius: 10,
+          background: "var(--surface)",
+          border: "0.5px solid var(--border)",
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            {title}
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", marginTop: 2 }}>
+            {value}
+          </div>
+          {hint && <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{hint}</div>}
+        </div>
+      ))}
     </div>
   );
 }
