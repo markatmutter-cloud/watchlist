@@ -1,12 +1,19 @@
 {
-  "date": "2026-05-09",
-  "alerts": [],
+  "date": "2026-05-10",
+  "alerts": [
+    {
+      "house": "Antiquorum",
+      "level": "ERROR",
+      "today": 0,
+      "previous": 293,
+      "note": "house absent from today's lot scrape (was present yesterday)"
+    }
+  ],
   "counts": {
-    "Antiquorum": 293,
     "Christie's": 499,
     "Phillips": 528,
     "Sotheby's": 322
   },
-  "total_live_lots": 1642,
-  "houses_tracked": 4
+  "total_live_lots": 1349,
+  "houses_tracked": 3
 }
