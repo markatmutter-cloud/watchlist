@@ -237,8 +237,10 @@ export function CollectionsTab({
         soldItems={hardSold   ? (itemsByColl[hardSold.id]   || []) : []}
         wishlist={hardWishlist}
         wishlistItems={hardWishlist ? (itemsByColl[hardWishlist.id] || []) : []}
+        collections={cols}
+        itemsByCollection={itemsByColl}
+        toggleFlagForSale={collectionsApi?.toggleFlagForSale}
         onShortlistAddFromFeed={() => hardWishlist && openPicker(hardWishlist.id, "Add to Shortlist")}
-        onShortlistReorder={(orderedIds) => hardWishlist && collectionsApi.reorderItems(hardWishlist.id, orderedIds)}
         onShortlistRemove={(item) => hardWishlist && collectionsApi.removeItemFromCollection(hardWishlist.id, item.id)}
         currentWatchTopTab={subTab}
         setWatchTopTab={setCollectionsSubTab}
@@ -397,7 +399,13 @@ function MyCollectionView({
   // My watches as a fourth toggle option. The wishlist collection
   // + items + reorder/remove handlers thread through here so the
   // Shortlist view renders inside this component.
-  wishlist, wishlistItems, onShortlistAddFromFeed, onShortlistReorder, onShortlistRemove,
+  wishlist, wishlistItems, onShortlistAddFromFeed, onShortlistRemove,
+  // 2026-05-10 plan rebuild: the Shortlist picker draws from
+  // Favorites + every user list, not just hearts. Need the live
+  // collections + per-collection items maps to populate the chips.
+  collections, itemsByCollection,
+  // 2026-05-10: ↑-flag-for-sale gesture on Keeping/Selling cards.
+  toggleFlagForSale,
   // Active sub-tab (watchTopTab) — used to derive the toggle's
   // initial active state. The "wishlist" URL value maps to the new
   // "plan" toggle (Plan view contains Wants which is wishlistItems).
@@ -506,13 +514,15 @@ function MyCollectionView({
           gridStyle={gridStyle}
           primaryCurrency={primaryCurrency}
           watchlist={watchlist}
+          collections={collections}
+          itemsByCollection={itemsByCollection}
+          toggleFlagForSale={toggleFlagForSale}
           handleShare={handleShare}
           handleWish={handleWish}
           observeCard={observeCard}
           onClickListing={onClickListing}
           openCollectionPicker={openCollectionPicker}
           onShortlistAddFromFeed={onShortlistAddFromFeed}
-          onShortlistReorder={onShortlistReorder}
           onShortlistRemove={onShortlistRemove}
           onMarkSold={onMarkSold}
           onRemoveItem={onRemoveItem}
@@ -592,33 +602,35 @@ function MyCollectionView({
   );
 }
 
-// ── Shortlist ranked-list view ───────────────────────────────────
-// Plan view (2026-05-09 — watch-management v1).
+// ── Plan view ────────────────────────────────────────────────────
+// Watch management v1 (2026-05-09); rebuilt 2026-05-10 from Mark's
+// user-test feedback. Three vertically-stacked sections + a
+// "Select from your lists" picker below:
 //
-// Three vertically-stacked sections (mobile) / three columns (desktop)
-// with running totals at the top:
-//   - Keeping: owned items NOT flagged for sale
-//   - Selling: owned items WITH flagged_for_sale=true
-//   - Wants:   wishlist items (the planned-purchase pool)
+//   - Keeping:   owned items NOT flagged for sale
+//   - Selling:   owned items WITH flagged_for_sale=true
+//   - Shortlist: wishlist items (was "Wants" — Mark renamed
+//                2026-05-10 because shortlist reads more naturally)
+//   - Picker:    chip group across Favorites + every user list,
+//                tap a tile to add it to the Shortlist
 //
-// Plus running totals at the top:
-//   Owned    = sum of assumed_sell_value (or savedPrice fallback) for
-//              keeping items
-//   Selling  = sum of assumed_sell_value (or savedPrice fallback) for
-//              flagged items
-//   Wants    = sum of savedPrice across wishlist items
-//   Net cash = Selling − Wants  (cash impact if all moves happen)
-//   Future   = Owned + Wants    (collection value after moves)
+// Running totals at the top:
+//   Keeping  = assumed_sell_value (or savedPrice fallback) for keeping
+//   Selling  = assumed_sell_value (or savedPrice fallback) for flagged
+//   Shortlist = savedPrice across wishlist items
+//   Net cash = Selling − Shortlist  (cash impact if all moves happen)
+//   Future   = Keeping + Shortlist  (collection value after moves)
 //
-// Movement (tap-actions, not drag-and-drop — drag is fragile on
-// mobile and the action set is small enough to afford menu items):
-//   Keeping → Selling: card "..." menu has "Flag for sale"
-//   Selling → Keeping: card "..." menu has "Keep instead"
-//   Wants   → Removed:  card "..." menu has "Remove"
-//   Wants   → Owned:    "Mark as bought" (TODO — phase 5 with picker)
+// Movement gestures:
+//   Keeping → Selling: ↑ overlay button on each card (one tap), or
+//                      detail-sheet → Flag for sale
+//   Selling → Keeping: ↑ overlay (active red) tap, or detail sheet
+//   Shortlist → Owned: planned future — needs a "Mark as bought"
+//                      flow that promotes the row to Keeping
+//   Shortlist → Removed: card ⋯ menu has "Remove from shortlist"
 //
-// The pool below the columns (Phase 5) will surface candidates from
-// Saved + Lists for adding into Wants. Stub for now.
+// The picker below the sections sources from Favorites + each
+// user list (not just hearts — Mark spec). Tap → addItemToWants.
 
 function PlanView({
   ownedItems, ownedTotal,
@@ -626,8 +638,9 @@ function PlanView({
   compact, gridStyle, primaryCurrency,
   watchlist, handleShare, handleWish, observeCard, onClickListing,
   openCollectionPicker,
+  collections, itemsByCollection,
+  toggleFlagForSale,
   onShortlistAddFromFeed,
-  onShortlistReorder,
   onShortlistRemove,
   onMarkSold,
   onRemoveItem,
@@ -686,8 +699,8 @@ function PlanView({
         {colHeader("Selling", sellingValue,
           `${selling.length} flagged · proceeds`,
           selling.length > 0 ? "var(--accent-positive)" : undefined)}
-        {colHeader("Wants", wantsTotal,
-          `${wishlistItems.length} candidate${wishlistItems.length === 1 ? "" : "s"} · cost`,
+        {colHeader("Shortlist", wantsTotal,
+          `${wishlistItems.length} watch${wishlistItems.length === 1 ? "" : "es"} · cost`,
           wishlistItems.length > 0 ? "var(--danger)" : undefined)}
         {colHeader(
           "Net cash impact",
@@ -699,14 +712,12 @@ function PlanView({
           "what your collection would be worth after the moves")}
       </div>
 
-      {/* Three vertical sections (or three columns on a wide viewport
-          via the grid below). Mobile stacks naturally because each
-          section is a block element. */}
       {/* Keeping */}
       <Section
         label={`Keeping · ${keeping.length}${keepingValue > 0 ? ` · ${fmtUSD(keepingValue)} total` : ""}`}
         show={true}
       >
+        <SectionExplain text="Watches currently in your collection. Tap ↑ on a card to flag it for sale; the card slides down into Selling and stops counting toward Keeping value." />
         {keeping.length === 0 ? (
           <EmptyHardListSection text="No watches in Keeping. Anything you flag for sale moves to the Selling section." />
         ) : (
@@ -726,6 +737,11 @@ function PlanView({
             onMarkSold={onMarkSold}
             onRemoveItem={onRemoveItem}
             onClickDetail={onClickDetail}
+            quickActionFor={toggleFlagForSale ? () => ({
+              icon: "↑", label: "Flag for sale",
+              active: false,
+              onClick: (it) => toggleFlagForSale(it.rowId, true),
+            }) : undefined}
           />
         )}
       </Section>
@@ -735,8 +751,9 @@ function PlanView({
         label={`Selling · ${selling.length}${sellingValue > 0 ? ` · ${fmtUSD(sellingValue)} expected` : ""}`}
         show={true}
       >
+        <SectionExplain text="Owned watches you've flagged for sale. Tap ↑ (red) to keep instead. The detail sheet has the assumed sell value field — set it so the proceeds total reads accurately." />
         {selling.length === 0 ? (
-          <EmptyHardListSection text="Nothing flagged for sale yet. On any owned watch, open the detail sheet → Flag for sale." />
+          <EmptyHardListSection text="Nothing flagged for sale yet. Tap ↑ on any Keeping card or open the detail sheet → Flag for sale." />
         ) : (
           <CollectionGrid
             items={selling}
@@ -754,115 +771,191 @@ function PlanView({
             onMarkSold={onMarkSold}
             onRemoveItem={onRemoveItem}
             onClickDetail={onClickDetail}
+            quickActionFor={toggleFlagForSale ? () => ({
+              icon: "↓", label: "Keep instead",
+              active: true,
+              onClick: (it) => toggleFlagForSale(it.rowId, false),
+            }) : undefined}
           />
         )}
       </Section>
 
-      {/* Wants */}
+      {/* Shortlist (was "Wants" pre-2026-05-10) */}
       <Section
-        label={`Wants · ${wishlistItems.length}${wantsTotal > 0 ? ` · ${fmtUSD(wantsTotal)} total` : ""}`}
+        label={`Shortlist · ${wishlistItems.length}${wantsTotal > 0 ? ` · ${fmtUSD(wantsTotal)} total` : ""}`}
         show={true}
       >
+        <SectionExplain text="Watches you're considering buying next. Pick from your lists below, or use + From feed for the global feed." />
         {!wishlist ? (
           <EmptyHardListSection text="Plan not ready — refresh to retry the auto-create." />
         ) : wishlistItems.length === 0 ? (
           <EmptyState
             icon="★"
-            heading="No wants yet"
-            blurb="Add the watches you'd like to acquire next. Tap any saved watch in the Pool below, or pick from the feed."
+            heading="Empty shortlist"
+            blurb="Pick a watch from one of your lists below, or tap + From feed to browse the global feed."
             action={
               <button onClick={onShortlistAddFromFeed} style={actionButton({ variant: "primary" })}>+ From feed</button>
             }
           />
         ) : (
-          <WishlistRankedList
+          <CollectionGrid
             items={wishlistItems}
-            onReorder={onShortlistReorder}
-            onRemove={onShortlistRemove}
+            collectionId={wishlist?.id}
+            watchlist={watchlist}
+            compact={compact}
+            gridStyle={sectionGridStyle}
+            primaryCurrency={primaryCurrency}
+            handleShare={handleShare}
+            handleWish={handleWish}
+            observeCard={observeCard}
+            onClickListing={onClickListing}
+            openCollectionPicker={openCollectionPicker}
+            hideLabel="Remove from shortlist"
+            onClickDetail={onClickDetail}
+            onRemoveOverride={(item) => onShortlistRemove(item)}
           />
         )}
       </Section>
 
-      {/* Pool — your saved watches, ready to promote into Wants
-          (Phase 5, 2026-05-09 — Mark spec "drink from list below").
-          Sourced from watchlist_items (hearts) MINUS anything
-          already in Wants. Tap a card to move it into Wants.
-          Hidden when the user has no hearts at all. */}
-      <PoolSection
+      {/* Picker — replaces the old "Pool" (2026-05-10 Mark spec).
+          Source chips for Favorites + every user list, not just
+          hearts. Tap a tile → adds to the Shortlist. */}
+      <ShortlistPickerSection
         wishlist={wishlist}
         wishlistItems={wishlistItems}
         watchlist={watchlist}
+        collections={collections}
+        itemsByCollection={itemsByCollection}
         compact={compact}
         primaryCurrency={primaryCurrency}
         addItemToWants={addItemToWants}
-        handleShare={handleShare}
-        observeCard={observeCard}
-        onClickListing={onClickListing}
       />
     </div>
   );
 }
 
-// Phase 5 pool — surfaces hearted items not yet in Wants. Tap-to-add
-// (mobile-friendly; drag-and-drop deferred). Capped at 24 visible
-// candidates with an "Show all" toggle so the page doesn't grow
-// unbounded for users with many hearts.
-function PoolSection({
-  wishlist, wishlistItems, watchlist, compact, primaryCurrency,
-  addItemToWants, handleShare, observeCard, onClickListing,
+function SectionExplain({ text }) {
+  return (
+    <div style={{
+      fontSize: 11, color: "var(--text3)",
+      padding: "0 4px 8px", lineHeight: 1.5,
+    }}>{text}</div>
+  );
+}
+
+// Shortlist picker — Mark spec 2026-05-10 (replaces the
+// hearts-only "Pool"). Surfaces chips for Favorites + each
+// user list; the active chip's items render as a tile grid
+// below. Tap any tile to promote it into the Shortlist.
+function ShortlistPickerSection({
+  wishlist, wishlistItems, watchlist,
+  collections, itemsByCollection,
+  compact, primaryCurrency,
+  addItemToWants,
 }) {
+  const [source, setSource] = React.useState("favorites");
   const [expanded, setExpanded] = React.useState(false);
   const [busyIds, setBusyIds] = React.useState(() => new Set());
   if (!wishlist) return null;
-  const watchlistObj = watchlist || {};
+
   const inWants = new Set((wishlistItems || []).map(it => it.id));
-  const candidates = Object.values(watchlistObj)
-    .filter(it => !inWants.has(it.id))
+
+  // User lists eligible to source from. Match ListingPickerModal's
+  // rule — exclude shared inbox, hard system lists, and challenges.
+  // The shortlist itself is a system list so it's filtered out.
+  const userLists = (collections || []).filter(c =>
+    !c.isSharedInbox && !c.isSystem && c.type !== "challenge"
+  );
+
+  // Resolve candidate items for the active source.
+  let candidates;
+  if (source === "favorites") {
+    candidates = Object.values(watchlist || {});
+  } else {
+    candidates = itemsByCollection?.[source] || [];
+  }
+  candidates = candidates
+    .filter(it => it && it.id && !inWants.has(it.id))
     .sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
-  if (candidates.length === 0) return null;
+
   const SHOW = expanded ? candidates.length : Math.min(24, candidates.length);
   const visible = candidates.slice(0, SHOW);
+
   const onAdd = async (item) => {
     if (!addItemToWants || busyIds.has(item.id)) return;
     setBusyIds(prev => { const n = new Set(prev); n.add(item.id); return n; });
     await addItemToWants(item);
-    // Don't clear busy — the optimistic local update will move the
-    // item out of `candidates` (now in inWants) so it disappears
-    // from the pool grid; no need to re-enable.
+    // Optimistic update upstream removes the item from the source
+    // (favorites case is special — adding to Shortlist doesn't
+    // un-heart, so the item stays visible until inWants picks it
+    // up on next render. That's fine, busy stays set and re-tap
+    // is a no-op.)
   };
+
   return (
     <Section
-      label={`Pool · ${candidates.length} hearted watch${candidates.length === 1 ? "" : "es"} ready to promote`}
+      label="Select from your lists"
       show={true}
     >
+      <SectionExplain text="Pick a watch from your hearted set or any of your lists. Tapping a tile copies it into your Shortlist (it stays where it was too)." />
       <div style={{
-        fontSize: 11, color: "var(--text3)", marginBottom: 8, padding: "0 4px",
+        display: "flex", flexWrap: "wrap", gap: 6,
+        marginBottom: 10, padding: "0 4px",
       }}>
-        Tap any card to move it up into Wants.
-      </div>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-        gap: 8,
-      }}>
-        {visible.map(item => (
-          <PoolCard
-            key={item.id}
-            item={item}
-            busy={busyIds.has(item.id)}
-            onAdd={() => onAdd(item)}
-            primaryCurrency={primaryCurrency}
-          />
+        <PickerChip active={source === "favorites"} label="♥ Favorites"
+          onClick={() => { setSource("favorites"); setExpanded(false); }} />
+        {userLists.map(c => (
+          <PickerChip key={c.id} active={source === c.id} label={c.name}
+            onClick={() => { setSource(c.id); setExpanded(false); }} />
         ))}
       </div>
-      {candidates.length > SHOW && !expanded && (
-        <div style={{ textAlign: "center", marginTop: 10 }}>
-          <button onClick={() => setExpanded(true)} style={actionButton()}>
-            Show all {candidates.length}
-          </button>
+      {candidates.length === 0 ? (
+        <div style={{ padding: "20px 12px", textAlign: "center", fontSize: 13, color: "var(--text3)" }}>
+          {source === "favorites"
+            ? "Heart a few watches in the Listings tab and they'll appear here."
+            : "This list is empty — nothing to add to your shortlist from here yet."}
         </div>
+      ) : (
+        <>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+            gap: 8,
+          }}>
+            {visible.map(item => (
+              <PoolCard
+                key={item.id}
+                item={item}
+                busy={busyIds.has(item.id)}
+                onAdd={() => onAdd(item)}
+                primaryCurrency={primaryCurrency}
+              />
+            ))}
+          </div>
+          {candidates.length > SHOW && !expanded && (
+            <div style={{ textAlign: "center", marginTop: 10 }}>
+              <button onClick={() => setExpanded(true)} style={actionButton()}>
+                Show all {candidates.length}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </Section>
+  );
+}
+
+function PickerChip({ active, label, onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      flexShrink: 0,
+      padding: "5px 11px", borderRadius: 999,
+      border: "0.5px solid var(--border)",
+      background: active ? "var(--text1)" : "transparent",
+      color: active ? "var(--bg)" : "var(--text1)",
+      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
+      whiteSpace: "nowrap",
+    }}>{label}</button>
   );
 }
 
@@ -920,110 +1013,6 @@ function PoolCard({ item, busy, onAdd, primaryCurrency }) {
   );
 }
 
-// Standalone WishlistView wrapper retired in Bundle 2A.2b 5→4
-// (2026-05-08) — Shortlist now renders inside MyCollectionView's
-// toggle. The WishlistRankedList primitive below is reused there
-// directly. The empty-state + "Shortlist not ready" branch logic
-// moved up into MyCollectionView.
-function WishlistRankedList({ items, onReorder, onRemove }) {
-  if (items.length === 0) return null;
-  const move = (idx, direction) => {
-    const target = idx + direction;
-    if (target < 0 || target >= items.length) return;
-    const next = [...items];
-    [next[idx], next[target]] = [next[target], next[idx]];
-    onReorder(next.map(it => it.rowId));
-  };
-  // Mark feedback 2026-05-08: "Increase the card size on the
-  // shortlist feature." Bumped image 56→128, padding 10/12 → 14/14,
-  // title 14→15, meta 12→13, rank# 28w/16 → 36w/22 so the rows feel
-  // like cards rather than dense list rows.
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {items.map((item, idx) => {
-        const title = item.title
-          || [item.brand, item.model].filter(Boolean).join(" ").trim()
-          || "Untitled";
-        const ref = item.ref ? `Ref ${item.ref}` : null;
-        const priceText = item.price != null
-          ? `${item.currency || ""} ${Number(item.price).toLocaleString()}`.trim()
-          : null;
-        return (
-          <div key={item.id} style={{
-            display: "flex", alignItems: "center", gap: 14,
-            padding: "14px 14px", borderRadius: 12,
-            border: "0.5px solid var(--border)", background: "var(--card-bg)",
-          }}>
-            <div style={{
-              flexShrink: 0, width: 36, fontSize: 22, fontWeight: 700,
-              color: "var(--text2)", textAlign: "center",
-            }}>{idx + 1}</div>
-            <div style={{
-              flexShrink: 0, width: 128, height: 128, borderRadius: 10,
-              background: "var(--surface)", overflow: "hidden",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              {item.img ? (
-                <img src={item.img} alt="" loading="lazy"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : (
-                <img src="/favicon-192.png" alt="" aria-hidden="true"
-                  style={{ width: "55%", maxWidth: 72, opacity: 0.5 }} />
-              )}
-            </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{
-                fontSize: 15, fontWeight: 600, color: "var(--text1)",
-                overflow: "hidden", textOverflow: "ellipsis",
-                display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-                marginBottom: 4,
-              }}>{title}</div>
-              {ref && (
-                <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 2 }}>{ref}</div>
-              )}
-              {item.material && (
-                <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 2 }}>{item.material}</div>
-              )}
-              {priceText && (
-                <div style={{ fontSize: 14, color: "var(--text1)", fontWeight: 500, marginTop: 4 }}>{priceText}</div>
-              )}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
-              <button onClick={() => move(idx, -1)} disabled={idx === 0}
-                aria-label="Move up" title="Move up"
-                style={rankBtnStyle(idx === 0)}>↑</button>
-              <button onClick={() => move(idx, +1)} disabled={idx === items.length - 1}
-                aria-label="Move down" title="Move down"
-                style={rankBtnStyle(idx === items.length - 1)}>↓</button>
-            </div>
-            <button onClick={async () => {
-              if (window.confirm(`Remove "${title}" from Shortlist?`)) await onRemove(item);
-            }} aria-label="Remove" title="Remove"
-              style={{
-                flexShrink: 0,
-                border: "none", background: "transparent",
-                color: "var(--text3)", padding: 8,
-                cursor: "pointer", fontFamily: "inherit", fontSize: 20,
-                display: "flex", alignItems: "center",
-              }}>×</button>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-const rankBtnStyle = (disabled) => ({
-  width: 32, height: 28,
-  border: "0.5px solid var(--border)",
-  background: "var(--surface)",
-  color: disabled ? "var(--text3)" : "var(--text1)",
-  cursor: disabled ? "default" : "pointer",
-  fontFamily: "inherit", fontSize: 14,
-  borderRadius: 6,
-  display: "flex", alignItems: "center", justifyContent: "center",
-  opacity: disabled ? 0.5 : 1,
-});
 
 // ── Lists sub-tab ─────────────────────────────────────────────────
 // Existing list-of-lists pattern. Hard system lists (Owned/Sold/
@@ -1424,6 +1413,15 @@ function CollectionGrid({
   // for that item. Manual entries surface a tap-to-open on the
   // card itself in addition to the menu entry.
   onClickDetail,
+  // Optional per-item quick-action factory (2026-05-10). Returns
+  // { icon, label, onClick, active } | null. Renders as a small
+  // top-left overlay button on each card. Used by Plan > Keeping
+  // for the ↑-flag-for-sale gesture.
+  quickActionFor,
+  // Override remove handler for shortlist-shaped surfaces where
+  // the row uses a wishlist-specific mutator instead of the
+  // generic removeItemFromCollection. Falls back to onRemoveItem.
+  onRemoveOverride,
 }) {
   return (
     <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
@@ -1432,14 +1430,18 @@ function CollectionGrid({
           ? () => onMarkSold(item.rowId, item)
           : null;
         const detailHandler = onClickDetail ? () => onClickDetail(item) : null;
+        const removeHandler = onRemoveOverride
+          ? () => onRemoveOverride(item)
+          : (onRemoveItem ? () => onRemoveItem(collectionId, item) : null);
         const cardExtraMenuItems = [];
         if (detailHandler) cardExtraMenuItems.push({ label: "Watch details", onClick: detailHandler });
         if (markSoldHandler) cardExtraMenuItems.push({ label: "Mark sold", onClick: () => markSoldHandler() });
+        const qa = quickActionFor ? quickActionFor(item) : null;
         return item.isManual ? (
           <ManualItemCard
             key={item.id}
             item={item}
-            onRemove={() => onRemoveItem(collectionId, item)}
+            onRemove={removeHandler || (() => {})}
             onMarkSold={markSoldHandler}
             onClickDetail={detailHandler}
           />
@@ -1450,7 +1452,7 @@ function CollectionGrid({
             wished={!!watchlist[item.id]}
             onWish={handleWish}
             compact={compact}
-            onHide={() => onRemoveItem(collectionId, item)}
+            onHide={removeHandler || undefined}
             hideLabel={hideLabel}
             onAddToCollection={openCollectionPicker}
             primaryCurrency={primaryCurrency}
@@ -1458,6 +1460,7 @@ function CollectionGrid({
             onView={observeCard}
             onClickListing={onClickListing}
             extraMenuItems={cardExtraMenuItems.length > 0 ? cardExtraMenuItems : undefined}
+            quickAction={qa || undefined}
           />
         );
       })}

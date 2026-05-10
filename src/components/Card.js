@@ -58,6 +58,12 @@ export const Card = memo(function Card({
   // (PR #88, 2026-05-06). Keeps Card unaware of collection
   // semantics — the surface owns the action wiring.
   extraMenuItems,
+  // Optional: small overlay button at top-left for a one-tap
+  // gesture (e.g. Plan > Keeping "↑ flag for sale"). Shape:
+  // { icon, label, onClick, active }. Active flips the bg to red.
+  // 2026-05-10 — Mark spec: replicate the pool's ↑ pattern on
+  // owned cards so flagging for sale doesn't require the menu.
+  quickAction,
 }) {
   // When the dealer's image URL goes 404 (e.g. they cleaned up their CDN
   // for a sold listing), the browser shows an ugly broken-image icon.
@@ -373,6 +379,21 @@ export const Card = memo(function Card({
           card spans the viewport. Bump to 36px (heart 16px, ⋯ 20px)
           for the non-compact case so the heart is comfortably tap-
           sized at all column counts. */}
+      {quickAction && (
+        <button onClick={e => { e.preventDefault(); e.stopPropagation(); quickAction.onClick(item); }}
+          aria-label={quickAction.label}
+          title={quickAction.label}
+          style={{
+            position: "absolute", top: 6, left: 6,
+            width: compact ? 22 : 28, height: compact ? 22 : 28,
+            borderRadius: "50%", border: "none", cursor: "pointer",
+            background: quickAction.active ? "rgba(220,38,38,0.88)" : "rgba(0,0,0,0.55)",
+            color: "#fff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: compact ? 12 : 14, fontWeight: 700,
+            fontFamily: "inherit", padding: 0, lineHeight: 1,
+          }}>{quickAction.icon || "↑"}</button>
+      )}
       <div style={{ position: "absolute", top: 6, right: 6, display: "flex", flexDirection: "column", gap: 6 }}>
         <button onClick={e => { e.preventDefault(); e.stopPropagation(); onWish(item); }}
           aria-label="Save"
