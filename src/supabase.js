@@ -610,6 +610,12 @@ export function useCollections(user) {
           manualSellNetUsd:  row.manual_sell_net_usd || null,
           ...snap,
           ...manualShape,
+          // 2026-05-10 — listing-backed rows prefer the cached blob
+          // URL (set by cache_watchlist_images.mjs) over the dealer's
+          // own URL in the snapshot, so images keep working after the
+          // dealer pulls the listing. Manual entries have their own
+          // photo (manualShape.img) and aren't affected.
+          ...(row.cached_img_url && !isManual ? { img: row.cached_img_url } : {}),
         };
         (grouped[row.collection_id] ||= []).push(item);
       }
