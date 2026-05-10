@@ -329,7 +329,7 @@ function LinkSection({ title, items, isOpen, onToggle }) {
         }}>
           {items.length === 0 ? (
             <div style={{ padding: "8px 4px 0", fontSize: 12, color: "var(--text3)" }}>
-              No entries yet.
+              Nothing curated here yet — check back as the section grows.
             </div>
           ) : (
             items.map(item => <LinkRow key={item.url} {...item} />)

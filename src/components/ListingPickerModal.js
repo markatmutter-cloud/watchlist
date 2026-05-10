@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle } from "../styles";
 import { fmtUSD, imgSrc, shortHash } from "../utils";
+import { EmptyState } from "./EmptyState";
 
 // ListingPickerModal — pick a listing from the user's hearted items,
 // any of their lists, or the global feed (search + paste-link). Used
@@ -184,13 +185,19 @@ export function ListingPickerModal({
             )}
             <div style={{ flex: 1, overflowY: "auto", margin: "0 -4px" }}>
               {candidates.length === 0 ? (
-                <div style={{ padding: "32px 16px", textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
-                  {source === "favorites"
-                    ? "Nothing in your Favorites matches."
+                <EmptyState
+                  size="compact"
+                  heading={source === "favorites"
+                    ? "Nothing saved matches"
                     : source === "all"
-                      ? "No listings match that search."
-                      : "Empty list."}
-                </div>
+                      ? "No listings match"
+                      : "This list is empty"}
+                  blurb={source === "favorites"
+                    ? "Try a different search, or heart more watches in the Listings tab."
+                    : source === "all"
+                      ? "Try a different search term, or paste a listing URL above."
+                      : "Add a watch to this list and you can pick it from here."}
+                />
               ) : (
                 <div style={{
                   display: "grid",
