@@ -293,6 +293,7 @@ export function CollectionsTab({
         fetchListMembers={collectionsApi?.fetchListMembers}
         fetchReactions={collectionsApi?.fetchReactions}
         toggleReaction={collectionsApi?.toggleReaction}
+        fetchReactionCounts={collectionsApi?.fetchReactionCounts}
       />
     );
   } else if (subTab === "challenges") {
@@ -1130,6 +1131,7 @@ function ListsView({
   // Reactions on shared list items (2026-05-10).
   fetchReactions,
   toggleReaction,
+  fetchReactionCounts,
 }) {
   // Membership map for the active drill-in. Populated on drill-in
   // (best-effort — non-members get an empty array, which means no
@@ -1238,6 +1240,29 @@ function ListsView({
   const userCols = cols.filter(c =>
     !c.isSharedInbox && !c.isSystem && c.type !== "challenge"
   );
+
+  // 2026-05-10 — per-list count of reactions by other people.
+  // Surfaces on the list row as a small chip so a glance at the
+  // Lists view tells you which lists have new collaborator activity
+  // ("how do I know Jackie reacted?"). Excludes the user's own
+  // reactions server-side; RLS gates membership.
+  const [otherReactionCounts, setOtherReactionCounts] = useState(() => new Map());
+  useEffect(() => {
+    if (!user || !fetchReactionCounts) {
+      setOtherReactionCounts(new Map());
+      return undefined;
+    }
+    let cancelled = false;
+    fetchReactionCounts().then(({ counts }) => {
+      if (cancelled) return;
+      setOtherReactionCounts(counts || new Map());
+    });
+    return () => { cancelled = true; };
+  }, [user?.id, fetchReactionCounts, selectedListId]);
+  // selectedListId in deps so closing a drill-in (which is when the
+  // viewer just saw the latest reactions) re-fetches counts. The
+  // count surfaces "since I last looked" implicitly because every
+  // list-view return refreshes the count.
 
   // 2026-05-10 — Mark spec: list rows with at least one accepted
   // collaborator render with a two-person icon (and a "· shared"
@@ -1445,7 +1470,12 @@ function ListsView({
               // (multi-member) lists. On single-owner lists every
               // item was added by the owner and the chip is just
               // visual noise.
-              const showChip = memberCount >= 2 && !!item.whoAdded;
+              // Hide self-attribution — Mark feedback 2026-05-10:
+              // "Added by Mark" on every one of his own items is
+              // noise. Only show when SOMEONE ELSE added it.
+              const showChip = memberCount >= 2
+                && !!item.whoAdded
+                && item.whoAdded !== user?.id;
               const addedByName = showChip ? memberMap.get(item.whoAdded) : null;
               const itemReactions = reactionsByItem.get(item.rowId) || [];
               const isSharedList = memberCount >= 2;
@@ -1599,11 +1629,33 @@ function ListsView({
                 },
               });
             }
+            // Reactions-by-other count chip (2026-05-10). Shows on
+            // any list with at least one collaborator-made reaction.
+            // Refreshes when the user navigates back from a drill-in
+            // (selectedListId changes) so "since I last looked" is
+            // implicit.
+            const otherCount = otherReactionCounts.get(c.id) || 0;
+            const titleNode = otherCount > 0 ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <span>{c.name}</span>
+                <span title={`${otherCount} reaction${otherCount === 1 ? "" : "s"} from collaborators`}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    padding: "2px 8px", borderRadius: 999,
+                    background: "rgba(220,38,38,0.12)",
+                    color: "var(--danger)",
+                    fontSize: 11, fontWeight: 600, lineHeight: 1.3,
+                  }}>
+                  <span style={{ fontSize: 11 }}>👍</span>
+                  {otherCount}
+                </span>
+              </span>
+            ) : c.name;
             return (
               <ListRow
                 key={c.id}
                 icon={icon}
-                title={c.name}
+                title={titleNode}
                 subtitle={subtitle}
                 onClick={() => setSelectedListId(c.id)}
                 actions={actions.length > 0 ? actions : undefined}
