@@ -395,10 +395,15 @@ export function AdminTab({ watchItems, hiddenItems }) {
             // Velocity sample for the rolling-30d cycle-time read:
             // (soldAt - firstSeen) in whole days. Skip if either
             // end is missing or unparseable. Mark request 2026-05-09.
+            // 2026-05-10 — exclude 0-day flips (firstSeen == soldAt
+            // same calendar day): these are dominated by
+            // already-sold imports (Chronoholic / ClassicHeuer
+            // archive backfills land with both timestamps at
+            // import time) and skew the cycle median.
             if (fs) {
               const fsDate = new Date(fs);
               const days = Math.round((sd - fsDate) / DAY_MS);
-              if (Number.isFinite(days) && days >= 0) {
+              if (Number.isFinite(days) && days >= 1) {
                 agg.daysOnSaleSamples.push(days);
               }
             }
@@ -552,7 +557,11 @@ export function AdminTab({ watchItems, hiddenItems }) {
         const sd = new Date(it.soldAt);
         if (today - sd <= THIRTY_DAYS_MS) {
           const days = Math.round((sd - new Date(it.firstSeen)) / DAY_MS);
-          if (Number.isFinite(days) && days >= 0) {
+          // Exclude 0-day flips: dominated by archive imports where
+          // firstSeen == soldAt at scrape time (Chronoholic /
+          // ClassicHeuer backfills). Real same-day dealer flips are
+          // rare; the noise reduction is the right tradeoff.
+          if (Number.isFinite(days) && days >= 1) {
             agg.daysOnSaleSamples.push(days);
             agg.sold30d += 1;
             const v = it.priceUSD || it.lastMeaningfulPrice || 0;
@@ -600,6 +609,10 @@ export function AdminTab({ watchItems, hiddenItems }) {
       if (fastestBrand && (it.brand || "Other") !== fastestBrand) continue;
       const days = daysOnSale(it);
       if (days == null) continue;
+      // Exclude 0-day flips — see source-quality comment above.
+      // Imports (Chronoholic / ClassicHeuer archive backfills) get
+      // firstSeen == soldAt and dominate this bucket.
+      if (days < 1) continue;
       if (cutoff != null) {
         const sd = new Date(it.soldAt).getTime();
         if (!Number.isFinite(sd) || sd < cutoff) continue;
@@ -632,6 +645,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
         if (it._isAuctionFormat || it._isTrackedLot) continue;
         const days = daysOnSale(it);
         if (days == null) continue;
+        if (days < 1) continue;
         if (cutoff != null) {
           const sd = new Date(it.soldAt).getTime();
           if (!Number.isFinite(sd) || sd < cutoff) continue;

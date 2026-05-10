@@ -982,24 +982,33 @@ export default function Watchlist() {
       const data = merged[url];
       if (!data) continue;
       // Trust the scraper's `status:"ended"` flag UNLESS the timing
-      // says the auction can't possibly have ended. Two checks: if
-      // auction_start is in the future, the sale hasn't begun; if
-      // auction_end is in the future, it's still in progress. Either
-      // override the flag back to active. Mark report 2026-05-09:
+      // says the auction can't possibly have ended AND the scraper
+      // hasn't observed a realised sold price. Mark report 2026-05-09:
       // EU auctions whose date was today but start time hadn't been
       // reached got pinned to Archive Sold (Sotheby's auctionState
       // returns "closed" on some multi-stage sales before the live
       // session). Both checks needed because date-only auction_end
       // strings ('2026-05-09') resolve to 00:00 UTC and would falsely
       // pass the "end is in the past" gate later in the same day.
+      //
+      // Mark report 2026-05-10: Phillips multi-session auctions split
+      // the catalog across two days. Lots that sold in session 1 had
+      // status:"ended" + sold_price set, but the auction-level
+      // auction_end is still in the future (session 2). The override
+      // was force-resetting the per-lot ended state. Fix: only treat
+      // a future auction_end as "still active" when sold_price is
+      // null (i.e. the scraper hasn't seen the actual sale yet). A
+      // realised sold_price is the strongest signal — trust it over
+      // the calendar-level end date.
+      const hasRealisedSale = data.sold_price != null && data.sold_price > 0;
       let isEnded = data.status === "ended";
-      if (isEnded && data.auction_start) {
+      if (isEnded && !hasRealisedSale && data.auction_start) {
         const startMs = new Date(data.auction_start).getTime();
         if (Number.isFinite(startMs) && startMs > Date.now()) {
           isEnded = false;
         }
       }
-      if (isEnded && data.auction_end) {
+      if (isEnded && !hasRealisedSale && data.auction_end) {
         const endMs = new Date(data.auction_end).getTime();
         if (Number.isFinite(endMs) && endMs > Date.now()) {
           isEnded = false;
