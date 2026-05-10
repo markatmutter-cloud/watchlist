@@ -336,7 +336,7 @@ export function ListReceiver({
       <h2 style={headerStyle()}>{data.name}</h2>
       <p style={{ fontSize: 13, color: "var(--text2)", marginBottom: 16 }}>
         {itemCount === 0
-          ? "This list is empty."
+          ? "Nothing in this list yet — the owner hasn't added any watches."
           : `${itemCount} watch${itemCount === 1 ? "" : "es"}`}
       </p>
 

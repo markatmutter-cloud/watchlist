@@ -1001,11 +1001,13 @@ function ShortlistPickerSection({
         ))}
       </div>
       {candidates.length === 0 ? (
-        <div style={{ padding: "20px 12px", textAlign: "center", fontSize: 13, color: "var(--text3)" }}>
-          {source === "favorites"
-            ? "Heart a few watches in the Listings tab and they'll appear here."
-            : "This list is empty — nothing to add to your shortlist from here yet."}
-        </div>
+        <EmptyState
+          size="compact"
+          heading={source === "favorites" ? "Nothing saved yet" : "This list is empty"}
+          blurb={source === "favorites"
+            ? "Heart a watch in the Listings tab and it'll show up here, ready to drop into the shortlist."
+            : "Add a watch to this list and you'll be able to pick it from here next time."}
+        />
       ) : (
         <>
           <div style={{
