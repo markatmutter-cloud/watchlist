@@ -88,7 +88,13 @@ export function ReferencesTab(props) {
     <div style={{ paddingTop: 4 }}>
       <SubTabIntro
         title="Learn"
-        blurb={<>Tools, calculators, and curated link sets for vintage-watch collectors. New tools land here as they come together — calculators for lug-to-lug fit and strap sizing, and a reference encyclopedia, are on the roadmap.</>}
+        blurb={<>
+          Tools and curated link sets for vintage-watch collectors. Today:
+          a wrist-fit size comparison printout (calibrated 1:1 ruler), and
+          a Links page that bundles every dealer in the feed plus
+          per-reference research clusters. More tools — auction-cost
+          calculator, reference encyclopedia — on the roadmap.
+        </>}
       />
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {RESOURCES.map(r => (

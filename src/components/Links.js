@@ -233,7 +233,13 @@ export function Links({ allListings = [], onBack }) {
 
       <SubTabIntro
         title="Links"
-        blurb={<>Outbound links — every dealer in the feed, plus per-reference research clusters and curated lists for art, straps, editorial. Tap a section to open it.</>}
+        blurb={<>
+          A link directory for getting deeper. Every dealer in the feed
+          (with a count of how many of their listings are live right now),
+          plus curated reference research clusters — places to read about
+          a 5513 or a Speedmaster pre-Moon — and topical lists for art,
+          straps, and editorial. Tap a section to expand.
+        </>}
       />
 
       {/* Sections render in order: Dealers (auto-derived), then the

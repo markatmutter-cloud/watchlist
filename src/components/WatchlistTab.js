@@ -303,8 +303,17 @@ export function WatchlistTab(props) {
           that pushed the strip into a horizontal scroller on mobile;
           now it sits inline with the section blurb. */}
       <SubTabIntro
-        title="Saved searches run on tap"
-        blurb={<>Save the queries you keep coming back to — a reference, a brand cut, a phrase you scan for. Each one runs across every dealer in the feed and tells you when something new matches.</>}
+        title="Saved searches"
+        blurb={<>
+          Searches you keep coming back to — a reference, a brand cut, a
+          phrase ("tropical dial"), or a price band. Save once, tap any time
+          to re-run across every dealer in the feed.
+          <br/>
+          Build a search from the Listings tab: type your query, optionally
+          add a price range, then tap the heart next to the search bar.
+          Saved searches land here and the count next to each one shows how
+          many live listings match right now.
+        </>}
         actionLabel="+ Add search"
         onAction={startAddSearch}
         expandable
