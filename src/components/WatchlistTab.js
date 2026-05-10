@@ -47,6 +47,10 @@ export function WatchlistTab(props) {
     // Telemetry hooks (Epic 8 — Site analytics). Both optional so
     // signed-out / non-Supabase environments degrade silently.
     observeCard, onClickListing,
+    // Filter helpers — forwarded so the saved sub-tab no-match
+    // empty state can offer a "Clear filters" CTA when filters
+    // are active.
+    hasFilters, resetFilters,
   } = props;
 
   // (eBay source-search read-only block removed 2026-05-06 — see
@@ -481,14 +485,20 @@ export function WatchlistTab(props) {
                 );
 
                 if (watchView.length === 0) {
-                  const emptyCopy =
-                    watchTopTab === "auctions" ? "No saved auction lots match your filters." :
-                    watchTopTab === "sold"     ? "Nothing in your saved set has sold yet that matches your filters." :
-                                                 "No saved listings match your filters.";
+                  const heading =
+                    watchTopTab === "auctions" ? "No saved auction lots match" :
+                    watchTopTab === "sold"     ? "Nothing here has sold yet" :
+                                                 "No saved listings match";
                   return (
                     <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-                      <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "var(--text3)", fontSize: 13 }}>
-                        {emptyCopy}
+                      <div style={{ gridColumn: "1/-1" }}>
+                        <EmptyState
+                          heading={heading}
+                          blurb={hasFilters ? "Loosen the filters to see the rest of your saved set." : undefined}
+                          action={hasFilters && resetFilters ? (
+                            <button onClick={resetFilters} style={actionButton()}>Clear filters</button>
+                          ) : undefined}
+                        />
                       </div>
                     </div>
                   );
