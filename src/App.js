@@ -39,6 +39,7 @@ import { WatchlistTab } from "./components/WatchlistTab";
 import { AdminTab } from "./components/AdminTab";
 import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { tabPill, innerToggleButton } from "./styles";
 
 // Same-origin paths — Vercel serves everything in /public at the
@@ -2872,7 +2873,11 @@ export default function Watchlist() {
     colDrillInId,
   };
 
-  return isMobile
-    ? <MobileShell {...shellProps} />
-    : <DesktopShell {...shellProps} />;
+  return (
+    <ErrorBoundary>
+      {isMobile
+        ? <MobileShell {...shellProps} />
+        : <DesktopShell {...shellProps} />}
+    </ErrorBoundary>
+  );
 }

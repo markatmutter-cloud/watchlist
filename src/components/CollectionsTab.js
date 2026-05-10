@@ -1161,6 +1161,14 @@ function ListsView({
   // shared lists (memberCount >= 2) since solo lists don't need
   // them. Realtime subscription pushes co-collaborator reactions
   // live so the wife/whoever sees Mark's tap immediately.
+  //
+  // 2026-05-10 hardening: subscription set up + teardown wrapped in
+  // try/catch so a transient supabase-realtime issue (stale token,
+  // websocket failure, etc.) doesn't crash the drill-in. Any error
+  // logs to console; the user gets a non-realtime view of reactions
+  // and can still toggle their own (toggleReaction does its own
+  // round-trip + setReactionsByItem updates locally on the next
+  // refetch).
   const [reactionsByItem, setReactionsByItem] = useState(() => new Map());
   useEffect(() => {
     if (!selectedListId
@@ -1173,30 +1181,49 @@ function ListsView({
     }
     let cancelled = false;
     const reload = async () => {
-      const { rows } = await fetchReactions(selectedListId);
-      if (cancelled) return;
-      const map = new Map();
-      for (const r of (rows || [])) {
-        if (!map.has(r.collection_item_id)) map.set(r.collection_item_id, []);
-        map.get(r.collection_item_id).push(r);
+      try {
+        const { rows } = await fetchReactions(selectedListId);
+        if (cancelled) return;
+        const map = new Map();
+        for (const r of (rows || [])) {
+          if (!r || !r.collection_item_id) continue;
+          if (!map.has(r.collection_item_id)) map.set(r.collection_item_id, []);
+          map.get(r.collection_item_id).push(r);
+        }
+        setReactionsByItem(map);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn("reactions reload failed", e);
       }
-      setReactionsByItem(map);
     };
     reload();
     // Realtime subscription on collection_item_reactions. We can't
     // filter server-side by collection_id (the table joins to
     // collection_items for that), so we listen to all changes and
     // refetch — the RPC's RLS gates membership so we only see our
-    // own collections' reactions anyway.
-    const channel = supabase
-      ?.channel(`reactions-${selectedListId}`)
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'collection_item_reactions' },
-        () => reload())
-      .subscribe();
+    // own collections' reactions anyway. Wrap the channel build in
+    // try/catch so a setup error never crashes the render.
+    let channel = null;
+    try {
+      if (supabase && typeof supabase.channel === "function") {
+        channel = supabase
+          .channel(`reactions-${selectedListId}`)
+          .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'collection_item_reactions' },
+            () => reload())
+          .subscribe();
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn("reactions realtime subscribe failed", e);
+      channel = null;
+    }
     return () => {
       cancelled = true;
-      if (channel) supabase.removeChannel(channel);
+      if (channel && supabase && typeof supabase.removeChannel === "function") {
+        try { supabase.removeChannel(channel); }
+        catch (e) { /* swallow — cleanup shouldn't crash */ }
+      }
     };
   }, [selectedListId, fetchReactions, memberCount]);
 
