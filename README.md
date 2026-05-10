@@ -189,7 +189,7 @@ This means the pipeline is **self-healing**: if a single run misses listings (sc
 
 - **Scrapers:** Python 3.11 with `requests`. No Playwright, no Selenium — Browse AI fills the gap for JS-rendered sources.
 - **Pipeline:** GitHub Actions (ubuntu-latest). Each scraper step uses `continue-on-error: true` so one failing source doesn't kill the batch.
-- **Frontend:** React (Create React App), inline styles only, no UI libraries. `App.js` is the orchestrator (~1,470 lines — owns state and JSX consts); render is delegated to `src/components/MobileShell.js` + `DesktopShell.js`, each receiving a single `shellProps` bag. Domain-state hooks live under `src/hooks/` (`useTrackModal`, `useFavSearchModal`, `useViewSettings`, `useFilters`, `useEBaySearches`); shared style tokens in `src/styles.js`. Pure helpers in `src/utils.js`.
+- **Frontend:** React (Create React App), inline styles only, no UI libraries. `App.js` is the orchestrator (~2,900 lines — owns state and JSX consts); render is delegated to `src/components/MobileShell.js` + `DesktopShell.js`, each receiving a single `shellProps` bag. Domain-state hooks live under `src/hooks/` (`useTrackModal`, `useFavSearchModal`, `useViewSettings`, `useFilters`); shared style tokens in `src/styles.js`. Pure helpers in `src/utils.js`.
 - **Per-user image persistence:** Hearted listings get their dealer image cached to **Vercel Blob** by `cache_watchlist_images.mjs` (runs once a day inside the auctions workflow). The frontend prefers the cached URL, so favorited cards survive a dealer deleting the original. Listings/auction images aren't cached — auction houses keep theirs up long-term, and caching the full feed isn't worth the storage cost.
 - **Auth + per-user data:** [Supabase](https://supabase.com) — Postgres with row-level security, Google OAuth provider. Free tier; no backend code of my own.
 - **Hosting:** Vercel free tier, auto-deploy from `main`.
@@ -244,8 +244,7 @@ watchlist/
 │   │   ├─ useTrackModal.js        #   Track new item modal state + submit
 │   │   ├─ useFavSearchModal.js    #   Save-search prompt state + submit
 │   │   ├─ useViewSettings.js      #   theme + column count (View popover folded into Settings)
-│   │   ├─ useFilters.js           #   the filter row's full input state
-│   │   └─ useEBaySearches.js      #   read-only fetch of data/ebay_searches.json + counts
+│   │   └─ useFilters.js           #   the filter row's full input state
 │   └─ components/
 │       ├─ MobileShell.js          # mobile render path (sticky stack, drawer, bottom nav)
 │       ├─ DesktopShell.js         # desktop render path (top bar, filter row, fluid grid)
@@ -269,7 +268,6 @@ watchlist/
 │       ├─ SettingsModal.js        # currency picker + theme + columns + about (View menu lives here)
 │       ├─ ShareBanner.js          # in-app banner for ?listing=<id>&shared=1 receive flow
 │       ├─ ShareReceiver.js        # hook-isolated mount for share-receive logic (avoids App.js hook bloat)
-│       ├─ EndingSoon.js           # auction-urgency pinned section + ending-soonest comparator
 │       ├─ AdminTab.js             # source-quality dashboard at ?tab=admin (gated by REACT_APP_ADMIN_EMAILS)
 │       └─ ChallengeFlow.js        # Watch Challenges multi-stage flow (Watchlist > Challenges)
 └─ package.json
