@@ -1485,6 +1485,48 @@ export function useCollections(user) {
     return { error: null, members: data || [] };
   }, [user]);
 
+  // ── Reactions (2026-05-10) ────────────────────────────────────
+  // Fetch every reaction for items in a collection. Returns rows
+  // with { id, collection_item_id, user_id, emoji, user_name }.
+  // Use the SECURITY DEFINER RPC which joins user_profiles +
+  // auth.users for the display name in one round-trip.
+  const fetchReactions = useCallback(async (collectionId) => {
+    if (!user || !supabase) return { error: 'not signed in', rows: [] };
+    if (!collectionId) return { error: 'collection required', rows: [] };
+    const { data, error } = await supabase.rpc('list_item_reactions', {
+      p_collection_id: collectionId,
+    });
+    if (error) return { error: error.message, rows: [] };
+    return { error: null, rows: data || [] };
+  }, [user]);
+
+  // Add or remove the current user's reaction with this emoji on a
+  // specific item. The unique index (collection_item_id, user_id,
+  // emoji) means the toggle is "delete the row if it exists, else
+  // insert". RLS gates membership so a non-member's call fails
+  // even if they crafted the IDs.
+  const toggleReaction = useCallback(async (collectionItemId, emoji) => {
+    if (!user || !supabase) return { error: 'not signed in' };
+    if (!collectionItemId || !emoji) return { error: 'item + emoji required' };
+    // First check if the row exists for this user.
+    const { data: existing } = await supabase.from('collection_item_reactions')
+      .select('id')
+      .eq('collection_item_id', collectionItemId)
+      .eq('user_id', user.id)
+      .eq('emoji', emoji)
+      .maybeSingle();
+    if (existing?.id) {
+      const { error } = await supabase.from('collection_item_reactions')
+        .delete().eq('id', existing.id);
+      if (error) return { error: error.message };
+      return { error: null, removed: true };
+    }
+    const { error } = await supabase.from('collection_item_reactions')
+      .insert({ collection_item_id: collectionItemId, user_id: user.id, emoji });
+    if (error) return { error: error.message };
+    return { error: null, added: true };
+  }, [user]);
+
   return {
     collections,
     itemsByCollection,
@@ -1524,6 +1566,9 @@ export function useCollections(user) {
     fetchComments,
     postComment,
     deleteComment,
+    // Reactions on shared list items (2026-05-10).
+    fetchReactions,
+    toggleReaction,
   };
 }
 

@@ -290,6 +290,8 @@ export function CollectionsTab({
         setManageListOpen={setManageListOpen}
         filterValues={filterValues}
         fetchListMembers={collectionsApi?.fetchListMembers}
+        fetchReactions={collectionsApi?.fetchReactions}
+        toggleReaction={collectionsApi?.toggleReaction}
       />
     );
   } else if (subTab === "challenges") {
@@ -1124,6 +1126,9 @@ function ListsView({
   // (Slice 4) — fetch members for the active drill-in so the
   // who_added chip can resolve user_id → display_name.
   fetchListMembers,
+  // Reactions on shared list items (2026-05-10).
+  fetchReactions,
+  toggleReaction,
 }) {
   // Membership map for the active drill-in. Populated on drill-in
   // (best-effort — non-members get an empty array, which means no
@@ -1151,6 +1156,56 @@ function ListsView({
     });
     return () => { cancelled = true; };
   }, [selectedListId, fetchListMembers]);
+
+  // Reactions for the active drill-in (2026-05-10). Loaded only on
+  // shared lists (memberCount >= 2) since solo lists don't need
+  // them. Realtime subscription pushes co-collaborator reactions
+  // live so the wife/whoever sees Mark's tap immediately.
+  const [reactionsByItem, setReactionsByItem] = useState(() => new Map());
+  useEffect(() => {
+    if (!selectedListId
+        || selectedListId === HIDDEN_COLLECTION_ID
+        || selectedListId === SAVED_COLLECTION_ID
+        || !fetchReactions
+        || memberCount < 2) {
+      setReactionsByItem(new Map());
+      return undefined;
+    }
+    let cancelled = false;
+    const reload = async () => {
+      const { rows } = await fetchReactions(selectedListId);
+      if (cancelled) return;
+      const map = new Map();
+      for (const r of (rows || [])) {
+        if (!map.has(r.collection_item_id)) map.set(r.collection_item_id, []);
+        map.get(r.collection_item_id).push(r);
+      }
+      setReactionsByItem(map);
+    };
+    reload();
+    // Realtime subscription on collection_item_reactions. We can't
+    // filter server-side by collection_id (the table joins to
+    // collection_items for that), so we listen to all changes and
+    // refetch — the RPC's RLS gates membership so we only see our
+    // own collections' reactions anyway.
+    const channel = supabase
+      ?.channel(`reactions-${selectedListId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'collection_item_reactions' },
+        () => reload())
+      .subscribe();
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [selectedListId, fetchReactions, memberCount]);
+
+  const onToggleReaction = React.useCallback(async (itemId, emoji) => {
+    if (!toggleReaction) return;
+    await toggleReaction(itemId, emoji);
+    // Realtime will refetch; no optimistic update needed.
+  }, [toggleReaction]);
+
   const sharedInbox = cols.find(c => c.isSharedInbox) || null;
   const userCols = cols.filter(c =>
     !c.isSharedInbox && !c.isSystem && c.type !== "challenge"
@@ -1333,6 +1388,8 @@ function ListsView({
               // visual noise.
               const showChip = memberCount >= 2 && !!item.whoAdded;
               const addedByName = showChip ? memberMap.get(item.whoAdded) : null;
+              const itemReactions = reactionsByItem.get(item.rowId) || [];
+              const isSharedList = memberCount >= 2;
               return (
                 <div key={item.id} style={{ display: "flex", flexDirection: "column" }}>
                   <Card
@@ -1359,6 +1416,13 @@ function ListsView({
                     onView={observeCard}
                     onClickListing={onClickListing}
                   />
+                  {isSharedList && item.rowId && (
+                    <ReactionStrip
+                      reactions={itemReactions}
+                      currentUserId={user?.id}
+                      onToggle={(emoji) => onToggleReaction(item.rowId, emoji)}
+                    />
+                  )}
                   {addedByName && (
                     <div style={{
                       padding: "4px 10px 8px",
@@ -1753,6 +1817,108 @@ const trashIcon = (
     <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
   </svg>
 );
+
+// ── Reactions strip (2026-05-10) ─────────────────────────────────
+//
+// Small row of emoji-reaction chips below shared-list cards.
+// Mark spec: he and his wife can "vote" on watches in their shared
+// lists with a small set of emojis. Renders only on lists with 2+
+// members (memberCount in ListsView gates this).
+//
+// Aggregates reactions by emoji → count + tooltip listing reactor
+// names. The current user's reaction shows with a filled / brand-
+// coloured chip; tap toggles it on/off. The "+" button reveals a
+// preset emoji picker.
+//
+// Realtime publication broadcasts inserts/deletes so the other
+// member sees the chip update without a refresh (ListsView's
+// effect refetches on every event).
+
+const REACTION_EMOJIS = ["👍", "❤️", "🔥", "🤔", "❌"];
+
+function ReactionStrip({ reactions, currentUserId, onToggle }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const grouped = React.useMemo(() => {
+    const map = new Map();
+    for (const r of (reactions || [])) {
+      if (!map.has(r.emoji)) map.set(r.emoji, []);
+      map.get(r.emoji).push(r);
+    }
+    return [...map.entries()].sort((a, b) => b[1].length - a[1].length);
+  }, [reactions]);
+
+  if (grouped.length === 0 && !pickerOpen) {
+    return (
+      <div style={{ padding: "4px 10px 8px" }}>
+        <button onClick={() => setPickerOpen(true)}
+          style={addReactionButtonStyle}>
+          + react
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      display: "flex", flexWrap: "wrap", gap: 4,
+      padding: "4px 10px 8px",
+      alignItems: "center",
+    }}>
+      {grouped.map(([emoji, rs]) => {
+        const meActive = currentUserId && rs.some(r => r.user_id === currentUserId);
+        const names = rs.map(r => r.user_name).filter(Boolean).join(", ");
+        return (
+          <button key={emoji}
+            onClick={() => onToggle(emoji)}
+            title={names || emoji}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              padding: "3px 8px", borderRadius: 999,
+              border: meActive ? "0.5px solid var(--brand)" : "0.5px solid var(--border)",
+              background: meActive ? "rgba(24,95,165,0.12)" : "var(--surface)",
+              color: "var(--text1)",
+              cursor: "pointer", fontFamily: "inherit",
+              fontSize: 12, fontWeight: 500, lineHeight: 1.4,
+            }}>
+            <span>{emoji}</span>
+            {rs.length > 1 && <span style={{ fontSize: 11, color: "var(--text2)" }}>{rs.length}</span>}
+          </button>
+        );
+      })}
+      <button onClick={() => setPickerOpen(p => !p)}
+        style={addReactionButtonStyle}
+        aria-label="Add reaction"
+        title="Add reaction">
+        {pickerOpen ? "×" : "+"}
+      </button>
+      {pickerOpen && (
+        <div style={{
+          display: "inline-flex", gap: 2,
+          padding: "2px 4px", borderRadius: 999,
+          border: "0.5px solid var(--border)", background: "var(--bg)",
+        }}>
+          {REACTION_EMOJIS.map(e => (
+            <button key={e}
+              onClick={() => { onToggle(e); setPickerOpen(false); }}
+              style={{
+                border: "none", background: "transparent",
+                padding: "3px 6px", borderRadius: 999,
+                cursor: "pointer", fontFamily: "inherit", fontSize: 14,
+              }}>{e}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const addReactionButtonStyle = {
+  display: "inline-flex", alignItems: "center", justifyContent: "center",
+  minWidth: 28, height: 24, padding: "0 8px",
+  borderRadius: 999, border: "0.5px dashed var(--border)",
+  background: "transparent", color: "var(--text3)",
+  cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
+};
 
 // ── Drill-in filter helper (2026-05-09) ─────────────────────────
 //
