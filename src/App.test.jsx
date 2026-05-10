@@ -82,6 +82,11 @@ jest.mock("./supabase", () => {
       primaryCurrency: "USD",
       setPrimaryCurrency: () => {},
     }),
+    useUserProfile: () => ({
+      displayName: "",
+      setDisplayName: noopAsync,
+      loaded: true,
+    }),
     importLocalData: noopAsync,
     emptyHook,
   };

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { useAuth, useWatchlist, useHidden, useAdminHidden, useSearches, useTrackedLots, useCollections, useUserSettings, importLocalData, isAuthConfigured } from "./supabase";
+import { useAuth, useWatchlist, useHidden, useAdminHidden, useSearches, useTrackedLots, useCollections, useUserSettings, useUserProfile, importLocalData, isAuthConfigured } from "./supabase";
 import { useEventTelemetry } from "./hooks/useEventTelemetry";
 import { useUserLimit } from "./hooks/useUserLimit";
 import { UserLimitBanner } from "./components/UserLimitBanner";
@@ -738,6 +738,7 @@ export default function Watchlist() {
   // changes it. Plumbs through shellProps → Card so every card
   // surface honours the preference.
   const { primaryCurrency, setPrimaryCurrency } = useUserSettings(user);
+  const { displayName, setDisplayName } = useUserProfile(user);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   // Outbound share handler. Pure function (no useState/useMemo
@@ -946,6 +947,20 @@ export default function Watchlist() {
     "--text2": "#6e6e73", "--text3": "#aeaeb2",
     "--brand": "#185FA5", "--danger": "#c0392b", "--accent-positive": "#1b8f3a",
   };
+
+  // Mirror the theme variables onto :root so portal-rendered nodes
+  // (the Card ⋯ menu, future toasts) inherit them too. `baseStyle`
+  // below also keeps them on the App root for back-compat with any
+  // CSS that scopes off the App container, but the :root copy is
+  // what makes `var(--bg)` resolve outside of App's subtree —
+  // critical for the menu portal (Mark report 2026-05-10: menu
+  // text rendered with no background because the portal sat under
+  // <body> and var(--bg) was undefined there).
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    for (const [k, v] of Object.entries(c)) root.style.setProperty(k, v);
+  }, [c]);
 
   // Auction lots projected into the main listings feed. Two sources
   // get merged by URL key:
@@ -2617,6 +2632,9 @@ export default function Watchlist() {
     <SettingsModal
       open={settingsModalOpen}
       onClose={() => setSettingsModalOpen(false)}
+      user={user}
+      displayName={displayName}
+      setDisplayName={setDisplayName}
       primaryCurrency={primaryCurrency}
       setPrimaryCurrency={setPrimaryCurrency}
       isMobile={isMobile}
