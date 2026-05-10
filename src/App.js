@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { useAuth, useWatchlist, useHidden, useAdminHidden, useSearches, useTrackedLots, useCollections, useUserSettings, useUserProfile, importLocalData, isAuthConfigured } from "./supabase";
+import { useAuth, useWatchlist, useHidden, useAdminHidden, useSearches, useTrackedLots, useCollections, useUserSettings, useUserProfile, isAuthConfigured } from "./supabase";
 import { useEventTelemetry } from "./hooks/useEventTelemetry";
 import { useUserLimit } from "./hooks/useUserLimit";
 import { UserLimitBanner } from "./components/UserLimitBanner";
