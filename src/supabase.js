@@ -1506,6 +1506,22 @@ export function useCollections(user) {
     return { error: null, rows: data || [] };
   }, [user]);
 
+  // Per-collection count of reactions by someone other than the
+  // current user. Drives the small chip on list rows in the Lists
+  // view (Mark spec 2026-05-10: "how do I know Jackie reacted other
+  // than looking at the list?"). Single round-trip; backend filters
+  // and aggregates via the SECURITY DEFINER RPC.
+  const fetchReactionCounts = useCallback(async () => {
+    if (!user || !supabase) return { error: 'not signed in', counts: new Map() };
+    const { data, error } = await supabase.rpc('list_reaction_counts_for_user');
+    if (error) return { error: error.message, counts: new Map() };
+    const counts = new Map();
+    for (const row of (data || [])) {
+      counts.set(row.collection_id, row.others_reaction_count);
+    }
+    return { error: null, counts };
+  }, [user]);
+
   // Add or remove the current user's reaction with this emoji on a
   // specific item. The unique index (collection_item_id, user_id,
   // emoji) means the toggle is "delete the row if it exists, else
@@ -1575,6 +1591,7 @@ export function useCollections(user) {
     // Reactions on shared list items (2026-05-10).
     fetchReactions,
     toggleReaction,
+    fetchReactionCounts,
   };
 }
 

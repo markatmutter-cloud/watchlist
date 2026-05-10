@@ -61,6 +61,7 @@ const baseCollectionsApi = {
   deleteComment: noopAsync,
   fetchReactions: async () => ({ error: null, rows: [] }),
   toggleReaction: async () => ({ error: null }),
+  fetchReactionCounts: async () => ({ error: null, counts: new Map() }),
 };
 
 function buildProps(overrides = {}) {

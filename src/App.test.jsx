@@ -79,6 +79,7 @@ jest.mock("./supabase", () => {
       deleteComment: noopAsync,
       fetchReactions: async () => ({ error: null, rows: [] }),
       toggleReaction: async () => ({ error: null }),
+      fetchReactionCounts: async () => ({ error: null, counts: new Map() }),
     }),
     useUserSettings: () => ({
       primaryCurrency: "USD",
