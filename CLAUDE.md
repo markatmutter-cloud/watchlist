@@ -669,6 +669,71 @@ indefinitely, so no data was being lost — just hidden from the
 JSON output. File size grows ~50–100 entries/month across all six
 houses; not a bundle concern at present.
 
+**Privacy + terms are static HTML (2026-05-10, PR #179).**
+`public/privacy.html` + `public/terms.html` are hand-written
+one-pagers, served outside the SPA. Both have their own
+theme-token CSS with `prefers-color-scheme` dark mode, and link
+back to `/`. Update the `Last updated` line whenever something
+material changes — a new table, a new third party, a new event
+type. Linked from the AboutModal footer.
+
+**Same-origin data fetches, not GitHub raw URLs (2026-05-10, PR
+#181).** App.js's six fetch URLs (`listings.json`, `auctions.json`,
+`tracked_lots.json`, `auction_lots.json`,
+`manual_archive_lots.json`, `manual_historical_listings.json`)
+all live at the site root via Vercel — `/listings.json` etc. Mark
+spec: don't reintroduce the `raw.githubusercontent.com/<user>/
+<repo>/...` pattern; the repo identity should stay off the
+production network tab. The unused `useEBaySearches` hook was
+deleted in the same PR (it was the last surface still fetching
+from raw.githubusercontent and exporting an "Edit on GitHub" URL).
+
+**ErrorBoundary wraps the App shell (2026-05-10, PR #182).**
+Render-time crashes anywhere downstream now surface an inline
+error card with message + stack instead of white-screening.
+Useful for diagnosing user-environment bugs (e.g. mobile Safari
+without USB tethering). Class component at
+`src/components/ErrorBoundary.js`; wraps the
+`<MobileShell/DesktopShell>` render at the bottom of App.js.
+
+**Image cache extended to listing-backed `collection_items`
+(2026-05-10, PR #180).** New `cached_img_url text` column on
+`collection_items`. `cache_watchlist_images.mjs` gets a third
+pass that reuses an existing watchlist blob when available
+(same `watchlist/<listing_id>.<ext>` path, deduped across both
+tables) and otherwise fetches + uploads. Reap considers BOTH
+`watchlist_items` and `collection_items` as live refs so a
+listing only in a list (not hearted) doesn't lose its cached
+image. Frontend prefers `row.cached_img_url` over the snapshot's
+dealer URL on listing-backed rows; manual entries are unaffected
+(their photo is in `watch-photos`).
+
+**Reactions sentiment-bucket grid (2026-05-10, PRs #183–#185).**
+Shared lists (`memberCount >= 2`) split items into three
+buckets via `gridColumn: 1/-1` sub-headers:
+👍 Liked → Open → ❌ Set aside. Classification:
+- any `👍`/`❤️`/`🔥` reaction → positive (top)
+- `❌` and no positive → negative (bottom)
+- everything else (no reactions OR `🤔`-only) → neutral (middle)
+
+POSITIVE / NEGATIVE constants live next to the bucketing IIFE
+in `CollectionsTab.js`. Solo lists keep the plain unsorted
+order. Per-list **count chip** ("👍 N") on Lists view rows is
+driven by `list_reaction_counts_for_user()` (excludes the
+caller's own reactions server-side); refreshes when the user
+returns from a drill-in. Both the picker-trigger SVG and the
+list-row count chip use brand blue, not yellow emoji — matches
+the rest of the interface.
+
+**Don't push followup commits to an already-open PR
+(2026-05-10).** PR #176 was merged with only its first commit;
+the second commit (alignment + shared-list icon) was orphaned
+because the merge picked up the head ref before GitHub had
+registered the second push. Re-shipped via #183 as a fresh
+branch. Rule of thumb going forward: every new logical change →
+its own branch + its own PR. Visible to the user before merge,
+and no race condition with squash-merges.
+
 ## Scraper conventions
 
 - Each dealer / auction house has its own `*_scraper.py` at repo root.
