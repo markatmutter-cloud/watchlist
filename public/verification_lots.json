@@ -2,10 +2,10 @@
   "date": "2026-05-10",
   "alerts": [],
   "counts": {
-    "Christie's": 499,
-    "Phillips": 528,
-    "Sotheby's": 321
+    "Christie's": 498,
+    "Phillips": 426,
+    "Sotheby's": 176
   },
-  "total_live_lots": 1348,
+  "total_live_lots": 1100,
   "houses_tracked": 3
 }
