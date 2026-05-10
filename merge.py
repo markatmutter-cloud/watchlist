@@ -718,11 +718,11 @@ def auction_status(date_start, date_end, today=TODAY):
     return 'upcoming'
 
 
-# Days after an auction's date_end that we keep showing it on the
-# calendar with a CLOSED chip. After this window the auction drops
-# off the rolling calendar but its state entry sticks around for any
-# future analytics surfaces.
-PAST_AUCTION_RETENTION_DAYS = 30
+# Past auctions are kept in the emitted feed indefinitely so the
+# Archive section in AuctionCalendar can surface them — these are
+# the same auctions whose lots end up in the sold-archive view.
+# 2026-05-10: the previous 30-day prune was dropped per Mark spec.
+# State entries already persisted indefinitely.
 
 
 def _days_since(date_str, today=TODAY):
@@ -814,15 +814,10 @@ def process_auctions():
                 if status == 'live':
                     status = 'past'
 
-            # 30-day post-auction window: keep recently-finished auctions
-            # on the calendar with a CLOSED chip so users can pull up
-            # results, but drop them after a month so the rolling
-            # calendar doesn't grow without bound. State entry is
-            # preserved either way.
-            if status == 'past':
-                age = _days_since(date_end or date_start)
-                if age is None or age > PAST_AUCTION_RETENTION_DAYS:
-                    continue
+            # Past auctions stay in the emitted feed forever — the
+            # AuctionCalendar Archive section surfaces them, and they
+            # match the sold lots in the listings archive 1:1. State
+            # entry is preserved either way.
 
             auctions.append({
                 'id':            aid,
