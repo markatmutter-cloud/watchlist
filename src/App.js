@@ -948,11 +948,23 @@ export default function Watchlist() {
     "--border": "rgba(255,255,255,0.1)", "--text1": "#f5f5f7",
     "--text2": "#98989d", "--text3": "#48484a",
     "--brand": "#185FA5", "--danger": "#c0392b", "--accent-positive": "#1b8f3a",
+    // Brand-tint surfaces (subtle fills behind icons, chips, hover
+    // states) and the gold accent used for status / warning hints
+    // (Plan view over-budget, admin "earning its keep" chip, etc.).
+    // Promoted from inline literals 2026-05-10 maintenance pass.
+    "--brand-tint-08": "rgba(24,95,165,0.08)",
+    "--brand-tint-10": "rgba(24,95,165,0.10)",
+    "--brand-tint-12": "rgba(24,95,165,0.12)",
+    "--accent-warn": "#c9a227",
   } : {
     "--bg": "#fff", "--surface": "#f5f5f7", "--card-bg": "#fff",
     "--border": "rgba(0,0,0,0.09)", "--text1": "#1d1d1f",
     "--text2": "#6e6e73", "--text3": "#aeaeb2",
     "--brand": "#185FA5", "--danger": "#c0392b", "--accent-positive": "#1b8f3a",
+    "--brand-tint-08": "rgba(24,95,165,0.08)",
+    "--brand-tint-10": "rgba(24,95,165,0.10)",
+    "--brand-tint-12": "rgba(24,95,165,0.12)",
+    "--accent-warn": "#c9a227",
   };
 
   // Mirror the theme variables onto :root so portal-rendered nodes
