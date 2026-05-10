@@ -1464,8 +1464,75 @@ function ListsView({
                 : "Add watches via the \"…\" menu on any listing card → \"Add to list…\"."}
           />
         ) : (
+          (() => {
+            // Sentiment-bucketed sorting on shared lists (Mark spec
+            // 2026-05-10): liked items float to the top, set-aside
+            // items sink to the bottom, undecided in the middle.
+            // Sub-headers (gridColumn: 1/-1) call out the boundaries
+            // so a glance at the list tells you "what we agreed on
+            // / what's open / what we've ruled out."
+            //
+            // Classification: any 👍/❤️/🔥 reaction → positive; ❌
+            // (and no positive) → negative; everything else → neutral
+            // (including no reactions and 🤔-only items).
+            const isSharedList = memberCount >= 2;
+            let renderEntries;
+            if (isSharedList) {
+              const POSITIVE = new Set(["👍", "❤️", "🔥"]);
+              const NEGATIVE = new Set(["❌"]);
+              const classify = (item) => {
+                const rs = reactionsByItem.get(item.rowId) || [];
+                let hasPositive = false, hasNegative = false;
+                for (const r of rs) {
+                  if (POSITIVE.has(r.emoji)) hasPositive = true;
+                  else if (NEGATIVE.has(r.emoji)) hasNegative = true;
+                }
+                if (hasPositive) return "positive";
+                if (hasNegative) return "negative";
+                return "neutral";
+              };
+              const buckets = { positive: [], neutral: [], negative: [] };
+              for (const it of items) buckets[classify(it)].push(it);
+              renderEntries = [];
+              const showHeaders = (buckets.positive.length > 0 ? 1 : 0)
+                                + (buckets.negative.length > 0 ? 1 : 0) > 0;
+              if (buckets.positive.length > 0) {
+                renderEntries.push({ kind: "header", key: "h-pos",
+                  label: `👍 Liked · ${buckets.positive.length}` });
+                for (const it of buckets.positive) renderEntries.push({ kind: "item", item: it });
+              }
+              if (buckets.neutral.length > 0) {
+                if (showHeaders) {
+                  renderEntries.push({ kind: "header", key: "h-neu",
+                    label: `Open · ${buckets.neutral.length}` });
+                }
+                for (const it of buckets.neutral) renderEntries.push({ kind: "item", item: it });
+              }
+              if (buckets.negative.length > 0) {
+                renderEntries.push({ kind: "header", key: "h-neg",
+                  label: `❌ Set aside · ${buckets.negative.length}` });
+                for (const it of buckets.negative) renderEntries.push({ kind: "item", item: it });
+              }
+            } else {
+              renderEntries = items.map(it => ({ kind: "item", item: it }));
+            }
+            return (
           <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-            {items.map(item => {
+            {renderEntries.map(entry => {
+              if (entry.kind === "header") {
+                return (
+                  <div key={entry.key} style={{
+                    gridColumn: "1/-1",
+                    background: "var(--bg)",
+                    padding: "12px 14px 8px",
+                    fontSize: 11, fontWeight: 600,
+                    color: "var(--text3)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                  }}>{entry.label}</div>
+                );
+              }
+              const item = entry.item;
               // Slice 4: only show the attribution chip on shared
               // (multi-member) lists. On single-owner lists every
               // item was added by the owner and the chip is just
@@ -1478,7 +1545,6 @@ function ListsView({
                 && item.whoAdded !== user?.id;
               const addedByName = showChip ? memberMap.get(item.whoAdded) : null;
               const itemReactions = reactionsByItem.get(item.rowId) || [];
-              const isSharedList = memberCount >= 2;
               // 2026-05-10 — Mark feedback: the reaction strip + added-by
               // chip used to float between cards with the grid's border
               // bleed making it ambiguous which card they belonged to.
@@ -1534,6 +1600,8 @@ function ListsView({
               );
             })}
           </div>
+            );
+          })()
         )}
       </div>
     );
@@ -1642,11 +1710,14 @@ function ListsView({
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 4,
                     padding: "2px 8px", borderRadius: 999,
-                    background: "rgba(220,38,38,0.12)",
-                    color: "var(--danger)",
+                    background: "rgba(24,95,165,0.12)",
+                    color: "var(--brand)",
                     fontSize: 11, fontWeight: 600, lineHeight: 1.3,
                   }}>
-                  <span style={{ fontSize: 11 }}>👍</span>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+                  </svg>
                   {otherCount}
                 </span>
               </span>
@@ -1991,13 +2062,15 @@ function ReactionStrip({ reactions, currentUserId, onToggle }) {
   }, [reactions]);
 
   // Tight padding so the strip butts against the card's bottom edge.
-  // The wrapper around (Card + this strip + addedBy) gives them all
-  // the card bg, so this strip reads as part of the card unit.
+  // No internal border — Mark feedback 2026-05-10: the borderTop
+  // looked like a card boundary INSIDE the unit, breaking the
+  // image-then-reactions visual flow. Card image already provides
+  // a clear bottom edge via its content; the strip is just the
+  // footer of the same card.
   const stripStyle = {
     display: "flex", flexWrap: "wrap", gap: 4,
     padding: "6px 10px 6px",
     alignItems: "center",
-    borderTop: "0.5px solid var(--border)",
   };
 
   if (grouped.length === 0 && !pickerOpen) {
@@ -2067,7 +2140,7 @@ const addReactionButtonStyle = {
   display: "inline-flex", alignItems: "center", justifyContent: "center",
   minWidth: 28, height: 24, padding: "0 8px",
   borderRadius: 999, border: "0.5px solid var(--border)",
-  background: "var(--surface)", color: "var(--text2)",
+  background: "var(--surface)", color: "var(--brand)",
   cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
 };
 
