@@ -2326,16 +2326,21 @@ export default function Watchlist() {
           aren't always self-evident on first encounter. Lives just
           below the strip; same grey muted color as SubTabIntro. */}
       <div style={{
-        fontSize: 11, color: "var(--text3)",
-        padding: "8px 16px 6px",
+        fontSize: 12, color: "var(--text2)",
+        fontWeight: 500,
+        padding: "8px 16px 10px",
         background: "var(--bg)",
         borderBottom: "0.5px solid var(--border)",
         flexShrink: 0,
+        lineHeight: 1.45,
+        whiteSpace: "normal",
+        wordBreak: "normal",
+        overflowWrap: "break-word",
       }}>
-        {listingsSubTab === "live"     && "Live dealer listings — currently for sale across every tracked dealer."}
-        {listingsSubTab === "auctions" && "Live auction lots — currently up for bid at the major houses."}
-        {listingsSubTab === "sold"     && "Archive — sold dealer listings + ended auction lots, most recently sold first."}
-        {listingsSubTab === "calendar" && "Upcoming auction calendar across the major houses, plus an archive of past sales."}
+        {listingsSubTab === "live"     && "Live dealer listings currently for sale across every tracked dealer."}
+        {listingsSubTab === "auctions" && "Live auction lots currently up for bid at the major houses."}
+        {listingsSubTab === "sold"     && "Sold dealer listings + ended auction lots, most recently sold first."}
+        {listingsSubTab === "calendar" && "Upcoming auction calendar plus an archive of past sales."}
       </div>
     </>
   );
