@@ -199,7 +199,7 @@ export function ChallengeReceiver({
   if (!isSpec && !completeData && !completeError) {
     return (
       <div style={landingPaneStyle()}>
-        <p style={{ color: "var(--text2)", fontSize: 14 }}>Loading challenge…</p>
+        <p style={{ color: "var(--text2)", fontSize: 14 }}>Pulling the challenge…</p>
       </div>
     );
   }

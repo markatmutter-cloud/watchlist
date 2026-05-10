@@ -244,7 +244,7 @@ export function ManageListSheet({
 
         {/* Roster */}
         <Label>Collaborators ({rows.length})</Label>
-        {loading && <div style={{ fontSize: 12, color: "var(--text3)" }}>Loading…</div>}
+        {loading && <div style={{ fontSize: 12, color: "var(--text3)" }}>Pulling collaborators…</div>}
         {loadError && <div style={{ fontSize: 12, color: "var(--danger)" }}>{loadError}</div>}
         {!loading && rows.length === 0 && (
           <div style={{ fontSize: 12, color: "var(--text3)", padding: "10px 0" }}>

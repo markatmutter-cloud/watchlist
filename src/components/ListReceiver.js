@@ -288,7 +288,7 @@ export function ListReceiver({
   if (!data && !error) {
     return (
       <div style={landingPaneStyle()}>
-        <p style={{ color: "var(--text2)", fontSize: 14 }}>Loading list…</p>
+        <p style={{ color: "var(--text2)", fontSize: 14 }}>Pulling the list…</p>
       </div>
     );
   }
