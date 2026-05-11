@@ -1117,6 +1117,82 @@ function PoolCard({ item, busy, onAdd, primaryCurrency }) {
 }
 
 
+// Compact ⋯ overflow menu for the list drill-in header. Replaces the
+// previous row of Manage / Rename / Delete buttons (Mark feedback
+// 2026-05-11: too many actions stacked next to Share — collapse the
+// owner-only ones into one menu). Click-outside + Escape close;
+// portals to document.body so it isn't clipped by any ancestor with
+// overflow:hidden (same pattern as Card.js).
+function ListActionsMenu({ items }) {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef(null);
+  const portalRef = useRef(null);
+  const [pos, setPos] = useState(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => {
+      const inTrigger = triggerRef.current && triggerRef.current.contains(e.target);
+      const inPortal  = portalRef.current && portalRef.current.contains(e.target);
+      if (!inTrigger && !inPortal) setOpen(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    const t = setTimeout(() => {
+      document.addEventListener("mousedown", onDown);
+      document.addEventListener("keydown", onKey);
+    }, 0);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  if (!items || items.length === 0) return null;
+  return (
+    <>
+      <button ref={triggerRef}
+        onClick={() => {
+          if (!open && triggerRef.current) {
+            const r = triggerRef.current.getBoundingClientRect();
+            setPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) });
+          }
+          setOpen(o => !o);
+        }}
+        aria-label="More actions"
+        title="More actions"
+        style={{
+          width: 32, height: 32, borderRadius: 8,
+          border: "0.5px solid var(--border)",
+          background: "var(--surface)", color: "var(--text1)",
+          cursor: "pointer", fontFamily: "inherit",
+          fontSize: 18, lineHeight: 1, padding: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0,
+        }}>⋯</button>
+      {open && pos && createPortal(
+        <div ref={portalRef}
+          style={{
+            position: "fixed",
+            top: pos.top, right: pos.right,
+            zIndex: 1000, minWidth: 160,
+            background: "var(--bg)", border: "0.5px solid var(--border)",
+            borderRadius: 8, padding: 4,
+            boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+          }}>
+          {items.map((it, i) => (
+            <button key={i}
+              onClick={() => { setOpen(false); it.onClick(); }}
+              style={menuItemStyle(it.danger ? "var(--danger)" : "var(--text1)")}>
+              {it.label}
+            </button>
+          ))}
+        </div>,
+        document.body,
+      )}
+    </>
+  );
+}
+
 // ── Lists sub-tab ─────────────────────────────────────────────────
 // Existing list-of-lists pattern. Hard system lists (Owned/Sold/
 // Wishlist) are excluded — they live in My Collection and Wishlist
@@ -1363,15 +1439,61 @@ function ListsView({
     // pills above the grid actually narrow the visible set.
     // 2026-05-09 IA pass.
     const items = applyDrillInFilters(rawItems, filterValues);
+    // Owner-only actions vs collaborator-visible actions. List Sharing
+    // v2 / slice 1: SELECT RLS now includes accepted collaborators, so
+    // a "selected" list might not be owned by the current user. Gate
+    // Manage / Rename / Delete to the owner; collaborators only see
+    // Share.
+    const isOwner = !!(user?.id && selected?.userId && user.id === selected.userId);
+    const showActions = !selected.isSharedInbox && !isHiddenColl && !isSavedColl;
+    // Share callback — copies a `?list=<id>&shared=1` link via the Web
+    // Share API (or clipboard fallback). Recipients land on
+    // ListReceiver which fetches via the public `get_public_list` RPC.
+    const triggerShare = async () => {
+      const url = `${window.location.origin}/?list=${encodeURIComponent(selected.id)}&shared=1`;
+      const shareData = {
+        title: `${selected.name} — Watchlist`,
+        text: `${selected.name} — a list on Watchlist`,
+        url,
+      };
+      try {
+        if (navigator.share) {
+          await navigator.share(shareData);
+        } else if (navigator.clipboard) {
+          await navigator.clipboard.writeText(url);
+          setShareCopied(true);
+        }
+      } catch (e) {
+        if (e?.name !== "AbortError") {
+          try { await navigator.clipboard?.writeText(url); setShareCopied(true); }
+          catch { window.prompt("Copy this link to share:", url); }
+        }
+      }
+    };
+    const overflowItems = (showActions && isOwner) ? [
+      { label: "Manage collaborators", onClick: () => setManageListOpen(true) },
+      { label: "Rename list", onClick: () => setEditingCollection({ id: selected.id, name: selected.name }) },
+      { label: "Delete list", danger: true, onClick: async () => {
+        if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
+        await deleteCollection(selected.id);
+        setSelectedListId(null);
+      } },
+    ] : [];
     return (
       <div style={{ paddingTop: 4 }}>
-        {/* Drill-in header — restructured 2026-05-09 (Mark report:
-            mobile clipped Share/Manage/Rename/Delete off the right
-            edge). Title row stays single-line; action row wraps so
-            buttons stack rather than clip on narrow viewports. */}
+        {/* Drill-in header — compact single-row layout (Mark feedback
+            2026-05-11: caption + 4-button action row took two rows of
+            vertical space; push the actions to the right edge instead
+            so they use horizontal space). Back + title on the left;
+            Share + ⋯ overflow menu on the right. Manage / Rename /
+            Delete moved into the overflow menu. Date-axis caption
+            dropped — the Date pill in the filter row already explains
+            its own scope, and the caption was a quiet duplicate. */}
         <div style={{
-          display: "flex", alignItems: "baseline", gap: 12,
-          padding: "14px 14px 8px",
+          display: "flex", alignItems: "center", gap: 12,
+          padding: "14px 14px 12px",
+          borderBottom: "0.5px solid var(--border)",
+          marginBottom: 12,
         }}>
           <button onClick={() => setSelectedListId(null)} style={{
             border: "none", background: "transparent", cursor: "pointer",
@@ -1381,104 +1503,24 @@ function ListsView({
           <span style={{
             fontSize: 14, fontWeight: 600, color: "var(--text1)",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            flex: 1, minWidth: 0,
           }}>
             {selected.name}
           </span>
-          <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto", flexShrink: 0 }}>
-            {items.length}
-          </span>
-        </div>
-        {/* Inline clarifier on what "Date" means inside a list
-            drill-in (Mark feedback 2026-05-09): the date axis here
-            is when items were added to THIS list, not when they
-            first appeared on the dealer site. Small + secondary so
-            it sits as a quiet caption rather than competing with
-            the title. */}
-        {!isSavedColl && !isHiddenColl && (
-          <div style={{
-            padding: "0 14px 6px",
-            fontSize: 11, color: "var(--text3)", lineHeight: 1.4,
-          }}>
-            Date sort uses when items were added to this list.
-          </div>
-        )}
-        <div style={{
-          display: "flex", flexWrap: "wrap", gap: 6,
-          padding: "0 14px 12px",
-          borderBottom: "0.5px solid var(--border)",
-          marginBottom: 12,
-        }}>
-          {!selected.isSharedInbox && !isHiddenColl && !isSavedColl && (() => {
-            // Owner-only actions vs collaborator-visible actions.
-            // List Sharing v2 / slice 1: SELECT RLS now includes
-            // accepted collaborators, so a "selected" list might not
-            // be owned by the current user. Gate Manage / Rename /
-            // Delete to the owner; collaborators only see Share.
-            // Hotfix 2026-05-07: previously compared against
-            // `selected.user_id` but the JS-side mapper exposes the
-            // owner's id as `userId` (camelCase). Without `user`
-            // also threaded into ListsView's destructure, this
-            // referenced an undefined `user` and white-screened
-            // every list view. Both fixed in the same hotfix.
-            const isOwner = !!(user?.id && selected?.userId && user.id === selected.userId);
-            return (
-            <>
-              {/* Share — copies a `?list=<id>&shared=1` link via the
-                  Web Share API (or clipboard fallback). Recipients
-                  land on ListReceiver which fetches via the public
-                  `get_public_list` RPC. List Sharing v1, 2026-05-07. */}
-              <button onClick={async () => {
-                  const url = `${window.location.origin}/?list=${encodeURIComponent(selected.id)}&shared=1`;
-                  const shareData = {
-                    title: `${selected.name} — Watchlist`,
-                    text: `${selected.name} — a list on Watchlist`,
-                    url,
-                  };
-                  try {
-                    if (navigator.share) {
-                      await navigator.share(shareData);
-                    } else if (navigator.clipboard) {
-                      await navigator.clipboard.writeText(url);
-                      setShareCopied(true);
-                    }
-                  } catch (e) {
-                    if (e?.name !== "AbortError") {
-                      try { await navigator.clipboard?.writeText(url); setShareCopied(true); }
-                      catch { window.prompt("Copy this link to share:", url); }
-                    }
-                  }
-                }}
-                title="Share this list"
-                style={actionButton({ variant: "primary" })}>Share</button>
-              {shareCopied && (
-                <span style={{
-                  fontSize: 12, color: "var(--brand)", fontWeight: 500,
-                  alignSelf: "center", paddingLeft: 2,
-                }}>
-                  Link copied — paste anywhere
-                </span>
-              )}
-              {/* Manage / Rename / Delete are owner-only. Collaborators
-                  see the list + Share button only. */}
-              {isOwner && (
-                <>
-                  <button onClick={() => setManageListOpen(true)}
-                    title="Manage collaborators"
-                    style={actionButton()}>Manage</button>
-                  <button onClick={() => setEditingCollection({ id: selected.id, name: selected.name })}
-                    title="Rename list"
-                    style={actionButton()}>Rename</button>
-                  <button onClick={async () => {
-                      if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
-                      await deleteCollection(selected.id);
-                      setSelectedListId(null);
-                    }}
-                    style={actionButton({ variant: "danger" })}>Delete</button>
-                </>
-              )}
-            </>
-            );
-          })()}
+          {shareCopied && (
+            <span style={{
+              fontSize: 12, color: "var(--brand)", fontWeight: 500,
+              flexShrink: 0,
+            }}>
+              Link copied
+            </span>
+          )}
+          {showActions && (
+            <button onClick={triggerShare}
+              title="Share this list"
+              style={{ ...actionButton({ variant: "primary" }), flexShrink: 0 }}>Share</button>
+          )}
+          {overflowItems.length > 0 && <ListActionsMenu items={overflowItems} />}
         </div>
         {items.length === 0 ? (
           <EmptyState
@@ -1542,7 +1584,11 @@ function ListsView({
               }
               if (buckets.negative.length > 0) {
                 renderEntries.push({ kind: "header", key: "h-neg",
-                  label: `❌ Set aside · ${buckets.negative.length}` });
+                  // "Disliked" reads as the direct counterpart to
+                  // "Liked" — Mark feedback 2026-05-11: "set aside"
+                  // sounded too soft and made the sentiment pair
+                  // (👍 vs 👎) less obvious.
+                  label: `❌ Disliked · ${buckets.negative.length}` });
                 for (const it of buckets.negative) renderEntries.push({ kind: "item", item: it });
               }
             } else {
