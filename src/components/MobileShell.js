@@ -105,14 +105,26 @@ export function MobileShell(props) {
             content, leaving only one row of cards visible above the
             fold. Reduced font + padding here saves ~14px without
             losing the home-tap affordance. */}
-        <div style={{ padding: "2px 16px 0" }}>
-          {/* Tap the title to jump back to Available (home). */}
+        <div style={{ padding: "6px 16px 4px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+          {/* Tap the title to jump back to Home. Bumped up in phase 3
+              (2026-05-11) so the wordmark reads as a brand mark, not
+              just a header label. */}
           <button onClick={() => { setTab("home"); setPage(1); }}
             style={{ background: "none", border: "none", cursor: "pointer",
                     padding: 0, fontFamily: "inherit",
-                    fontSize: 15, fontWeight: 600, letterSpacing: "-0.3px",
+                    fontSize: 22, fontWeight: 700, letterSpacing: "-0.6px",
                     color: "var(--text1)" }}>
             Watchlist
+          </button>
+          {/* About link surfaced top-level on mobile so first-time
+              visitors have an obvious "what is this?" affordance
+              without digging into a user dropdown. */}
+          <button onClick={() => setAboutModalOpen(true)}
+            style={{ background: "none", border: "none", cursor: "pointer",
+                    padding: 0, fontFamily: "inherit", fontSize: 12,
+                    fontWeight: 500, color: "var(--text2)",
+                    letterSpacing: "0.04em" }}>
+            About
           </button>
         </div>
         {/* Sticky stack: search row (with filter + dark-mode buttons) and
