@@ -852,6 +852,11 @@ def process_auctions():
                 status = 'past'
 
         auctions.append({
+            # Prefer the preserved catalogUrl over lastUrl — catalogUrl
+            # is the durable per-sale URL that survives the calendar
+            # scraper reverting lastUrl to a generic listings page
+            # after a sale ends. lastUrl remains the fallback for
+            # sales that never had a confirmed catalog.
             'id':            aid,
             'house':         house,
             'title':         title,
@@ -859,7 +864,7 @@ def process_auctions():
             'dateStart':     date_start,
             'dateEnd':       date_end,
             'dateLabel':     entry.get('dateLabel', ''),
-            'url':           entry.get('lastUrl', ''),
+            'url':           entry.get('catalogUrl') or entry.get('lastUrl', ''),
             'hasCatalog':    bool(entry.get('hasCatalog')),
             'catalogLiveAt': entry.get('catalogLiveAt'),
             'status':        status,
