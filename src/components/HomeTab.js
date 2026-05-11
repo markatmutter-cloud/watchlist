@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card } from "./Card";
+import { SearchIcon } from "./icons";
 
 // Home tab — step 1 (2026-05-11).
 //
@@ -84,10 +85,73 @@ function SectionStrip({ eyebrow, heading, items, onViewAll, isMobile, watchlist,
   );
 }
 
+// Search composite — step 2 (2026-05-11). Single text input plus a
+// three-chip target row: Listings / Auctions / Sold. Tapping any chip
+// commits the query to App.js's `search` state, navigates to Listings
+// with the matching sub-tab pre-selected, and resets pagination. The
+// existing filter pipeline (`allFiltered`) does the rest — no special
+// search logic needed here. Enter in the input defaults to Listings.
+//
+// State is local to this component (the input value). Lifted on
+// submit only — keeps the global `search` state from oscillating as
+// the user types on Home.
+function HomeSearchBar({ onSubmit, isMobile }) {
+  const [draft, setDraft] = useState("");
+  const fire = (target) => {
+    const q = draft.trim();
+    onSubmit(q, target);
+  };
+  const targets = [
+    ["live",     "Listings"],
+    ["auctions", "Auctions"],
+    ["sold",     "Sold"],
+  ];
+  return (
+    <section style={{ padding: isMobile ? "0 16px 24px" : "8px 16px 28px" }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text3)", marginBottom: 6 }}>
+        Search the market
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--surface)", borderRadius: 12, padding: "10px 14px", border: "0.5px solid var(--border)" }}>
+        <SearchIcon />
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); fire("live"); } }}
+          placeholder="Reference, brand, model…"
+          style={{ flex: 1, border: "none", background: "transparent", fontSize: 14, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }}
+        />
+        {draft && (
+          <button onClick={() => setDraft("")} aria-label="Clear" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text3)", padding: 2, fontFamily: "inherit", display: "flex" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 12, color: "var(--text3)", alignSelf: "center", marginRight: 4 }}>Go to →</span>
+        {targets.map(([key, label]) => (
+          <button key={key} onClick={() => fire(key)}
+            style={{
+              padding: "6px 12px", borderRadius: 999,
+              border: "0.5px solid var(--border)",
+              background: "var(--card-bg)", color: "var(--text1)",
+              fontFamily: "inherit", fontSize: 12, fontWeight: 500,
+              cursor: "pointer",
+            }}>
+            {label}{draft.trim() ? ` "${draft.trim().length > 18 ? draft.trim().slice(0, 18) + "…" : draft.trim()}"` : ""}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function HomeTab(props) {
   const {
     homeRecentAdded, homeRecentSold, homeEndingNext,
     goToRecentAdded, goToRecentSold, goToEndingNext,
+    homeSearchSubmit,
     isMobile,
     watchlist, hidden, handleWish, toggleHide, primaryCurrency,
     onShare, onView, onClickListing, openCollectionPicker, isAdmin,
@@ -96,6 +160,9 @@ export function HomeTab(props) {
 
   return (
     <div style={{ paddingTop: 8, paddingBottom: 40 }}>
+      {homeSearchSubmit && (
+        <HomeSearchBar onSubmit={homeSearchSubmit} isMobile={isMobile} />
+      )}
       <SectionStrip
         eyebrow="On the feed"
         heading="Recently added"

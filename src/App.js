@@ -2529,6 +2529,15 @@ export default function Watchlist() {
       goToRecentAdded={() => { setTab("listings"); setListingsSubTab("live"); setPage(1); }}
       goToRecentSold={() => { setTab("listings"); setListingsSubTab("sold"); setPage(1); }}
       goToEndingNext={() => { setTab("listings"); setListingsSubTab("auctions"); setPage(1); }}
+      homeSearchSubmit={(query, target) => {
+        // Commit the typed query to App.js's existing `search` state
+        // (which feeds `allFiltered`) and land on the chosen sub-tab.
+        // Target values match listingsSubTab: live / auctions / sold.
+        setSearch(query);
+        setTab("listings");
+        setListingsSubTab(target);
+        setPage(1);
+      }}
       isMobile={isMobile}
       watchlist={watchlist}
       hidden={hidden}
