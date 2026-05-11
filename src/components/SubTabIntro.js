@@ -35,6 +35,13 @@ export function SubTabIntro({
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         gap: 10,
+        // Pin the header row height so a SubTabIntro with no
+        // `actionLabel` (My watches) collapses to the same height as
+        // one with an action button (Lists / Saved searches /
+        // Challenges, each ~30px tall via the button's padding).
+        // Without this, the four Saved sub-tabs sat at different
+        // y-offsets when collapsed — Mark feedback 2026-05-11.
+        minHeight: 30,
       }}>
         <button
           onClick={expandable ? () => setExpanded(e => !e) : undefined}

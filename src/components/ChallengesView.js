@@ -161,7 +161,7 @@ export function ChallengesView({
           you switched). Collapsed when you have content; expanded
           when empty so first-timers see the explainer. */}
       <SubTabIntro
-        title={`Challenges · ${allChallenges.length}`}
+        title="Challenges"
         blurb={<>
           Build a virtual collection within constraints — "5 watches, $50k
           total" or "3 chronographs from before 1970". Pick from the feed,
