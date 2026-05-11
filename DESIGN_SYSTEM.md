@@ -34,37 +34,6 @@ App.js. Never inline a hex literal — even one-off shades drift over
 time (UserLimitBanner shipped with `#1f5a9f` instead of `#185FA5`
 because there was no token to anchor to).
 
-### Redesign tokens (additive, 2026-05-10)
-
-The watchlist-redesign handoff brought a second token family. It
-**coexists** with the legacy `--text/--border/--brand` names above —
-both are defined in `src/App.js` and the migration is per-consumer,
-not a flag-day. New surfaces (activity-grouped landing, reaction
-system, shared-list drill-in, calendar rows) reach for these names;
-existing surfaces keep working on legacy until a consumer is
-deliberately migrated.
-
-| New token | Light | Use | Closest legacy |
-|---|---|---|---|
-| `--ink-1` | `#0F0F0F` | Primary text, prices, ref names | `--text1` |
-| `--ink-2` | `#5C5C5C` | Secondary text, labels | `--text2` |
-| `--ink-3` | `#9A9A9A` | Tertiary, counts, captions | `--text3` |
-| `--ink-4` | `#C8C8C8` | Faintest — chevrons, placeholders | _new_ |
-| `--surface-1` | `#FAFAFA` | Subtle elevated cards, banners | `--surface` (close) |
-| `--surface-2` | `#F4F4F4` | Filter pills, search input bg | `--surface` |
-| `--photo-bg` | `#F2F0EC` | Photo placeholder before image loads | _new_ |
-| `--rule` | `#E8E8E8` | Primary divider | `--border` |
-| `--rule-soft` | `#F0F0F0` | Secondary divider, card borders | _new_ |
-| `--accent` | `#185FA5` | Heart-saved, primary CTAs, links | `--brand` (same hex) |
-| `--accent-soft` | `#EFF3FA` | Accent backgrounds, soft chips | `--brand-tint-08` (close) |
-| `--positive` | `#2D7A3D` | Price drops, "Live" status | `--accent-positive` (close) |
-| `--warning` | `#B43C28` | "Ending soon", auction urgency | _new_ |
-| `--danger` | `#C0392B` | Delete, destructive actions | `--danger` (same) |
-
-Dark mode values are a first pass — ink inverted, surfaces
-near-black, accent unchanged. A dark-mode audit is a separate later
-pass (the redesign brief defers it explicitly).
-
 ## 2. Style tokens — `src/styles.js`
 
 Each export is either a plain object (use directly:
@@ -88,19 +57,15 @@ state, no behavior. Compose with overrides via spread:
 
 | Component | Use |
 |---|---|
-| `Card.js` | Feed card. The dominant UI unit. New `reactionSlot` prop (2026-05-10) feeds a pre-rendered reaction pill below the card body on shared-list surfaces. |
+| `Card.js` | Feed card. The dominant UI unit |
 | `Chip.js` | Filter chips (brands / sources / refs row) |
 | `ListRow.js` | Collection list row (in Lists drill-in) |
-| `HomeTab.js` | Aggregator landing accessed via the Watchlist wordmark (2026-05-10). Renders three sections — "New listings" / "Auctions closing soon" / "Recently sold" — each with a `View all →` that routes to the Listings sub-tabs. Pure presentation; App.js owns the slicing. Gated by the `?new-ui=1` feature flag. |
-| `Popover.js` | Portaled popover primitive (2026-05-10). `usePopoverState()` + `<Popover state={pop}>`. Three callers: Card ⋯ menu, drill-in overflow menu, desktop reaction picker. Click-outside / Escape / position-anchored to trigger rect. |
-| `SectionHeader.js` | Section divider used across the redesign (2026-05-10): glyph + Newsreader serif title + sans count + optional `View all →` right link. `muted` variant for "No reaction yet". |
-| `Segmented.js` | Filled pill-track segmented control (2026-05-10). Distinct visual register from `tabPill` (underline) and `innerToggleButton` (single border). For Manage modal toggle + Listings sub-tabs. |
 | `SubTabIntro.js` | Intro callout banner with optional action button (different visual primitive from `actionButton`; intentional — callout-banner action vs header toolbar action) |
 | `EmptyState.js` | Standard empty-state surface (icon + heading + blurb + optional CTA). Three sizes: `compact` / `default` / `tall` |
-| `Section.js` | Sub-section grouping inside a tab content area. Pass `show={false}` for single-section views to drop the divider header. Distinct from the new `SectionHeader` primitive — Section wraps content and renders a header; SectionHeader is the header alone, for surfaces that grid their own content below it. |
+| `Section.js` | Sub-section grouping inside a tab content area. Pass `show={false}` for single-section views to drop the divider header |
 | `UserLimitBanner.js` | Top-of-app limit banner (global, mounted by both shells) |
 | `LotMigrationBanner.js` | One-shot tracked-lot migration prompt |
-| `Links.js` / `icons.js` | Internal/external link helpers, SVG icons (including the 2026-05-10 reaction glyphs: `LoveIcon`, `YesIcon`, `HmmIcon`, `NoIcon`, `ReactIcon`, and the `REACTION_GLYPH` map keyed by enum value) |
+| `Links.js` / `icons.js` | Internal/external link helpers, SVG icons |
 
 ## Reach-for-this rules
 
