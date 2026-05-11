@@ -307,12 +307,12 @@ export function WatchlistTab(props) {
   // into the Watchlist tab. Signed-out fallback handled by the outer
   // !user branch in render() via SIGNED_OUT_BY_SUBTAB.
   const searchesTabJSX = (
-    // No outer paddingTop — every other Saved sub-tab renders its
-    // SubTabIntro directly under the shell padding. The 4px here
-    // was making the Searches intro sit 4px lower than the others.
-    // (Mark feedback 2026-05-11: "SubTabIntro alignment is
-    // different across the subtabs".)
-    <div>
+    // paddingTop:4 restored 2026-05-11 — turns out most Saved
+    // sub-tabs (Lists, My Watches, Challenges via CollectionsTab)
+    // also use paddingTop:4. The previous fix that dropped it from
+    // Searches made the alignment WORSE, not better. Now all four
+    // SubTabIntros line up at the same y-offset.
+    <div style={{ paddingTop: 4 }}>
       {/* Intro banner — mirrors the Lists sub-tab pattern (2026-05-04)
           so the two "add a thing" sub-tabs read consistently. The
           + button used to live in the Watchlist sub-tab strip, but

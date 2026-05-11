@@ -120,7 +120,7 @@ export function MobileShell(props) {
             <button onClick={() => { setTab("home"); setPage(1); }}
               style={{ background: "none", border: "none", cursor: "pointer",
                       padding: 0, paddingLeft: "0.14em", fontFamily: "inherit",
-                      fontSize: 15, fontWeight: 400, letterSpacing: "0.14em",
+                      fontSize: 15, fontWeight: 300, letterSpacing: "0.14em",
                       textTransform: "uppercase",
                       color: "var(--text1)" }}>
               Watchlist
