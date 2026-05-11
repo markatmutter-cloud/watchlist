@@ -445,47 +445,58 @@ def enumerate_antiquorum_catalog(sale_url, sale=None):
     for years post-sale AND publishes the realized "Sold: CHF X" panel
     directly in static HTML on each lot's detail page.
 
-    KNOWN CONSTRAINT (verified 2026-05-11): Antiquorum's catalog server
-    301-redirects `?page=N` to `/lots` (page 1), even with browser
-    headers + Referer. Real users hitting page-2 also can't get past
-    page 1 — it's a vendor-side bug, not a bot guard. Net effect: this
-    enumerator can only see the first 20 of a sale's lots. The
-    remaining lots can be added via data/manual_lot_urls.json on a
-    per-lot basis until Antiquorum fixes pagination (or we add a
-    Playwright bridge via the Mac mini phase).
+    Pagination quirk (verified 2026-05-11): plain `?page=N` requests
+    301-redirect to page 1 — including with proper browser UA + Referer
+    headers. The frontend's lazy-load works because it sends
+    `X-Requested-With: XMLHttpRequest`, which the server treats as the
+    canonical Rails xhr signal and returns the actual page-N chunk.
+    Add that header and full pagination unlocks (page 34 → 672 lots
+    confirmed for Geneva May 9-10).
     """
-    try:
-        r = requests.get(sale_url, headers=HEADERS, timeout=30)
-        r.raise_for_status()
-    except Exception as e:
-        print(f"  [Antiquorum catalog] sale page fetch failed: {e}")
-        return []
+    xhr_headers = dict(HEADERS)
+    xhr_headers["Referer"] = sale_url
+    xhr_headers["X-Requested-With"] = "XMLHttpRequest"
 
-    # Extract lot anchor URLs. Pattern: /en/lots/<slug>-lot-<auction_id>-<N>.
-    # The auction_id is shared across all lots of one sale (e.g. 386 for
-    # Geneva May 9-10, 2026); the trailing number is the lot index.
-    lot_paths = re.findall(
-        r"/en/lots/[a-z0-9\-]+-lot-\d+-\d+",
-        r.text,
-    )
-    # Dedupe while preserving order (each lot anchor often appears
-    # multiple times — image + title + "view" button).
+    # Walk pages until one returns no NEW lot anchors. Antiquorum's
+    # server quietly returns page 1's content for out-of-range `?page=N`
+    # values, so a "no new lots" page is the stop signal — not status
+    # code, not empty body. The dedupe set across pages catches that.
     seen = set()
     unique_paths = []
-    for p in lot_paths:
-        if p in seen:
-            continue
-        seen.add(p)
-        unique_paths.append(p)
+    for page in range(1, 200):  # 200-page ceiling = ~4000 lots; well past real-world
+        page_url = sale_url if page == 1 else f"{sale_url}?page={page}"
+        try:
+            r = requests.get(page_url, headers=xhr_headers, timeout=30)
+            r.raise_for_status()
+        except Exception as e:
+            print(f"  [Antiquorum catalog] page {page} fetch failed: {e}")
+            break
+        # Each lot anchor appears ~4× on a page (image link, title
+        # link, "view details" button, etc.) — dedupe within the page
+        # via dict.fromkeys (preserves order) before merging with the
+        # cross-page seen set.
+        paths_on_page = list(dict.fromkeys(
+            re.findall(r"/en/lots/[a-z0-9\-]+-lot-\d+-\d+", r.text)
+        ))
+        new_paths = [p for p in paths_on_page if p not in seen]
+        if not new_paths:
+            # Either past the last page or hit the silent-redirect-to-1
+            # fallback. Either way: nothing new — stop walking.
+            break
+        for p in new_paths:
+            seen.add(p)
+            unique_paths.append(p)
+        # Gentle pause between page fetches; auction lots get a sleep
+        # in the per-lot loop below, so pages don't need much.
+        time.sleep(0.2)
 
     if not unique_paths:
         print("  [Antiquorum catalog] no lot anchors found on sale page")
         return []
 
     print(
-        f"  [Antiquorum catalog] found {len(unique_paths)} lot anchor(s) "
-        f"on page 1 (vendor pagination broken — remaining lots can be "
-        f"added via data/manual_lot_urls.json)"
+        f"  [Antiquorum catalog] walked {page} page(s); found "
+        f"{len(unique_paths)} unique lot anchor(s)"
     )
 
     sale_start = (sale or {}).get("dateStart")
