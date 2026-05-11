@@ -2389,19 +2389,35 @@ export default function Watchlist() {
       <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
         {visibleWithDividers.map((entry, idx) => (
           entry.kind === "divider" ? (
+            // Date-band section header (Mark spec 2026-05-11: "grey
+            // headers with rounded edges"). Each band header renders
+            // as a content-width pill, left-aligned in the divider
+            // row. Pill shape (borderRadius 999) means the rounded
+            // edges are visible on every header — not just the
+            // first one (which the grid's own borderRadius clips).
+            // Same divider component fires on listings date sort,
+            // sold date sort, and auctions closing-time sort.
             <div key={`div-${idx}-${entry.label}`} style={{
               gridColumn: "1/-1",
-              padding: idx === 0 ? "14px 14px 12px" : "28px 14px 12px",
-              display: "flex", alignItems: "baseline", gap: 12,
-              borderBottom: "0.5px solid var(--border)",
-              marginBottom: 4,
+              padding: idx === 0 ? "6px 0 8px" : "22px 0 8px",
+              display: "flex",
+              alignItems: "center",
             }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
-                {entry.label}
-              </span>
-              <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
-                {entry.total.toLocaleString()}
-              </span>
+              <div style={{
+                display: "inline-flex",
+                alignItems: "baseline",
+                gap: 10,
+                background: "var(--surface)",
+                borderRadius: 999,
+                padding: "8px 16px",
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text1)" }}>
+                  {entry.label}
+                </span>
+                <span style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500 }}>
+                  {entry.total.toLocaleString()}
+                </span>
+              </div>
             </div>
           ) : (
             <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={isAdmin ? toggleHide : undefined} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} primaryCurrency={primaryCurrency} onShare={handleShare} onView={observeCard} onClickListing={onClickListing} />

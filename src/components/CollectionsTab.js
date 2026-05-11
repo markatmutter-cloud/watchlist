@@ -1336,16 +1336,17 @@ function ListsView({
   if (selected) {
     const isHiddenColl = selected.id === HIDDEN_COLLECTION_ID;
     const isSavedColl  = selected.id === SAVED_COLLECTION_ID;
-    // Saved virtual list (2026-05-09 — Mark report): exclude tracked-
-    // lot projection placeholders. watchItems pushes a "Fetching…"
-    // placeholder for every URL in trackedLotUrls that the scraper
-    // hasn't populated yet — it shows up in the Saved view as a
-    // ghost card the user can't identify or un-heart. Real hearts
-    // on auction lots / tracked URLs flow through watchlist_items
-    // (Phase B2) and don't have `_isTrackedLot` set, so this filter
-    // only strips projection-only placeholders.
+    // Saved virtual list: show every hearted item (dealer + auction).
+    // Filter by membership in the user's watchlist map — that's the
+    // source of truth. Mark report 2026-05-11: previously used
+    // `!_isTrackedLot` which excluded hearted auction lots because
+    // the auctionLotItems projection sets that flag on every lot,
+    // and the flag survives into the listing_snapshot stored in
+    // watchlist_items. Using watchlist[id] avoids the conflation —
+    // tracked-but-not-hearted lots (placeholders, untracked-by-paste)
+    // aren't in watchlist, so they're correctly excluded.
     const rawItems = isHiddenColl ? hiddenItems
-                : isSavedColl  ? (watchItems || []).filter(i => !i._isTrackedLot)
+                : isSavedColl  ? (watchItems || []).filter(i => !!watchlist[i.id])
                 : (itemsByColl[selected.id] || []);
     // Apply the shell filter row (date/price sort, $ min-max,
     // source, brand, search) to the drilled-in items so the filter
