@@ -2372,10 +2372,18 @@ export default function Watchlist() {
         {visibleWithDividers.map((entry, idx) => (
           entry.kind === "divider" ? (
             <div key={`div-${idx}-${entry.label}`} style={{
+              // Date-divider contrast bumped 2026-05-11. The transparent
+              // divider was reading too close to the card grid below —
+              // Mark feedback: "would be nice to clearly see as you
+              // scroll past one of these." Add an explicit --surface
+              // bg (slightly elevated grey) so the band reads as a
+              // landmark when scanning at speed. Heading text + count
+              // unchanged.
               gridColumn: "1/-1",
               padding: idx === 0 ? "14px 14px 12px" : "28px 14px 12px",
               display: "flex", alignItems: "baseline", gap: 12,
               borderBottom: "0.5px solid var(--border)",
+              background: "var(--surface)",
               marginBottom: 4,
             }}>
               <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>

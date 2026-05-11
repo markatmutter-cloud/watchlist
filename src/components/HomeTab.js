@@ -354,6 +354,12 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
             <Card item={item} wished={!!watchlist[item.id]} onWish={handleWish}
               compact={compact}
               onHide={isAdmin ? toggleHide : undefined}
+              // On Home the × overlay handles Home-only hide.
+              // Rename the ⋯ menu Hide entry to "Hide everywhere"
+              // so the two actions are visually disambiguated
+              // (Mark feedback 2026-05-11). Card respects
+              // hideLabel via its existing prop.
+              hideLabel="Hide everywhere"
               isHidden={!!hidden[item.id]}
               onAddToCollection={user ? openCollectionPicker : undefined}
               primaryCurrency={primaryCurrency}
