@@ -43,7 +43,7 @@ export function DesktopShell(props) {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
-    adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX,
+    adminTabJSX, homeTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX,
     challengeReceiverJSX,
     listReceiverJSX,
     listingsSubTabsJSX,
@@ -346,7 +346,7 @@ export function DesktopShell(props) {
     <div style={{ ...baseStyle, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* Full-width top bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 20px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-        <button onClick={() => { setTab("listings"); setPage(1); }}
+        <button onClick={() => { setTab("home"); setPage(1); }}
           style={{ background: "none", border: "none", cursor: "pointer",
                   padding: 0, fontFamily: "inherit",
                   fontSize: 18, fontWeight: 500, letterSpacing: "-0.5px",
@@ -424,7 +424,7 @@ export function DesktopShell(props) {
           the four collections-style sub-tabs are now part of
           watchSubTabsJSX. Prop kept on destructure for backward
           compat with the mock fixture. */}
-      {anyShareActive ? null : (
+      {anyShareActive || tab === "home" ? null : (
         (tab === "listings" && showListingsFilterRow) ||
         inListsDrillIn ||
         (tab === "watchlist" && watchTopTab !== "searches" &&
@@ -436,6 +436,8 @@ export function DesktopShell(props) {
           // Spacer row that matches the real filter pill row's height,
           // so switching to a filter-less sub-tab (Calendar / Searches
           // / Collections / Challenges) doesn't pop content up.
+          // Home gets no spacer either — the editorial layout should
+          // breathe right up against the top nav.
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 20px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
             <span style={{ fontSize: 13, padding: "6px 12px", borderRadius: 20, visibility: "hidden" }}>placeholder</span>
           </div>
@@ -469,7 +471,8 @@ export function DesktopShell(props) {
                   `watchlistTabJSX` prop, which App.js dispatches
                   between Watchlist and Collections content based on
                   the active sub-tab. */}
-              {tab === "listings" ? listingsTabContentJSX
+              {tab === "home" ? homeTabJSX
+                : tab === "listings" ? listingsTabContentJSX
                 : tab === "references" ? referencesTabJSX
                 : tab === "admin" ? adminTabJSX
                 : watchlistTabJSX}
