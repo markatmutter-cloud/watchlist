@@ -112,41 +112,41 @@ export function MobileShell(props) {
             affordance stays where users expect it. */}
         <div style={{ padding: "6px 16px 4px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, minHeight: 28 }}>
           {tab !== "home" ? (
+            // Smaller-but-editorial wordmark on other tabs — matches
+            // the Home hero's weight + tracking + uppercase, just
+            // shrunk so it sits inside the top bar (Mark spec
+            // 2026-05-11). Padding-left preserves the trailing
+            // letter-spacing visually so the wordmark reads centered.
             <button onClick={() => { setTab("home"); setPage(1); }}
               style={{ background: "none", border: "none", cursor: "pointer",
-                      padding: 0, fontFamily: "inherit",
-                      fontSize: 22, fontWeight: 700, letterSpacing: "-0.6px",
+                      padding: 0, paddingLeft: "0.14em", fontFamily: "inherit",
+                      fontSize: 15, fontWeight: 400, letterSpacing: "0.14em",
+                      textTransform: "uppercase",
                       color: "var(--text1)" }}>
               Watchlist
             </button>
           ) : <span />}
-          {/* Top-right cluster. About always; on Home we ALSO render
-              authJSX here because the persistent auth chrome
-              normally lives inside the sticky search row (hidden on
-              Home). authJSX is the canonical sign-in surface — it
-              becomes a "Sign in with Google" button for signed-out
-              users and the user dropdown / avatar for signed-in.
-              Other tabs keep authJSX in the sticky search row only. */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <button onClick={() => setAboutModalOpen(true)}
-              style={{ background: "none", border: "none", cursor: "pointer",
-                      padding: 0, fontFamily: "inherit", fontSize: 12,
-                      fontWeight: 500, color: "var(--text2)",
-                      letterSpacing: "0.04em" }}>
-              About
-            </button>
-            {tab === "home" && authJSX}
-          </div>
+          {/* Top-right cluster — just About now. authJSX moved back
+              into the sticky search row below (which is itself now
+              visible on Home as of 2026-05-11 — Mark wants search +
+              auth pinned at top across all tabs, matching the
+              other-tab behaviour). */}
+          <button onClick={() => setAboutModalOpen(true)}
+            style={{ background: "none", border: "none", cursor: "pointer",
+                    padding: 0, fontFamily: "inherit", fontSize: 12,
+                    fontWeight: 500, color: "var(--text2)",
+                    letterSpacing: "0.04em" }}>
+            About
+          </button>
         </div>
         {/* Sticky stack: search row (with filter + dark-mode buttons) and
             sort/clear pills row. Stays pinned to the viewport top so
             filters are one tap away at any scroll depth.
-            Hidden entirely on Home — Mark spec 2026-05-11: the
-            HomeTab editorial hero + its own search composite are
-            the canonical surface there; the persistent sticky search
-            would be redundant and visually competes. Other tabs
-            unchanged. */}
-        {tab !== "home" && (
+            Restored on Home 2026-05-11 (Mark spec): the search bar
+            and sign-in circle should stay at the top of the page
+            like on the other tabs. Editorial hero in the HomeTab
+            body still scrolls away naturally — this sticky bar just
+            persists. */}
         <div style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--bg)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 16px 4px", borderBottom: "0.5px solid var(--border)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 0 }}>
@@ -313,7 +313,6 @@ export function MobileShell(props) {
             the prop is kept on the destructure for backward compat
             with the mock fixture. */}
         </div>
-        )}
         {/* Share-receive surface — self-contained component, hooks
             isolated. Renders null when no share intent in URL. */}
         {shareReceiverJSX}

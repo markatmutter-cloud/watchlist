@@ -1165,6 +1165,33 @@ questions are foundational rather than tactical.
   trust the curatorial signals. Capture so it doesn't get lost; do
   the strategy session before the build session.
 
+- **Creator / professional account tier (Mark spec 2026-05-11).**
+  An elevated account type for people who use Watchlist as a tool
+  rather than as a personal collector surface. Three personas in
+  mind:
+  - **Content creators** — podcasters, YouTubers, newsletter / show-
+    notes writers. Want shareable lists ("this week's picks", "every
+    Tank Louis I'd buy") tied to a recognisable byline. Possibly
+    embed-friendly list URLs for show-notes pages.
+  - **Sourcing consultants** — folks who hunt watches on behalf of
+    clients. Want curated lists they can share with one client at a
+    time (private), with attribution + lightweight commentary
+    against each pick. Builds on the existing list-share +
+    reactions surface but with a "for my client" framing.
+  - **Dealers** — eventually, dealers might want to surface their
+    own listings inside Watchlist, manage what shows up, respond to
+    interest. Bigger commercial / RLS / payments lift than the two
+    above. Probably the last of the three to ship.
+  Strategic questions before any build: what's the gating mechanism
+  (invite-only, application form, paid tier)? Where does the
+  curator-trust boundary sit (creators have public bylines but
+  shouldn't be able to globally hide listings the way Mark can)?
+  Does this introduce a payments path? How does this interact with
+  the Manage-your-collection / Lists surface that already exists?
+  Capture and revisit alongside the Featured-selling strategy
+  session — the two share some of the same conflict-of-interest
+  shape.
+
 ## Fun ideas, parked
 
 Not active. Worth keeping a list because some might graduate.

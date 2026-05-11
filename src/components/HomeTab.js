@@ -105,7 +105,7 @@ function LiveCounts({ counts }) {
 // the input with three target rows — Listings / Auctions / Sold —
 // so the user can pick which sub-tab they want before submitting.
 // Click outside or empty the input to dismiss.
-function HomeSearchBar({ onSubmit, isMobile }) {
+function HomeSearchBar({ onSubmit, isMobile, dealerSources, onJumpToDealer }) {
   const [draft, setDraft] = useState("");
   const [focused, setFocused] = useState(false);
   const wrapRef = useRef(null);
@@ -140,6 +140,23 @@ function HomeSearchBar({ onSubmit, isMobile }) {
     ["auctions", "Auctions", "Active auction lots"],
     ["sold",     "Sold",     "Archive of sold items"],
   ];
+
+  // Dealer name typeahead — case-insensitive substring match. Caps at
+  // 5 results so the popover doesn't dominate the page. Only shows
+  // for queries ≥ 2 chars (single-char matches are too noisy).
+  const dealerMatches = (() => {
+    if (!dealerSources || !onJumpToDealer) return [];
+    if (trimmed.length < 2) return [];
+    const q = trimmed.toLowerCase();
+    return dealerSources
+      .filter(n => n && n.toLowerCase().includes(q))
+      .slice(0, 5);
+  })();
+  const jumpToDealer = (name) => {
+    onJumpToDealer(name);
+    setDraft("");
+    setFocused(false);
+  };
 
   return (
     <section style={{
@@ -223,6 +240,29 @@ function HomeSearchBar({ onSubmit, isMobile }) {
                 </span>
               </button>
             ))}
+            {dealerMatches.length > 0 && (
+              <>
+                <div style={{ padding: "10px 14px 6px", borderTop: "0.5px solid var(--border)", fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text3)" }}>
+                  Dealers matching
+                </div>
+                {dealerMatches.map((name) => (
+                  <button key={name}
+                    onMouseDown={(e) => { e.preventDefault(); jumpToDealer(name); }}
+                    role="option"
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      width: "100%", gap: 12,
+                      padding: "10px 14px",
+                      background: "transparent", border: "none",
+                      borderTop: "0.5px solid var(--border)",
+                      cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                    }}>
+                    <span style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)" }}>{name}</span>
+                    <span style={{ fontSize: 11, color: "var(--text3)" }}>Browse listings →</span>
+                  </button>
+                ))}
+              </>
+            )}
           </div>
         )}
       </div>
@@ -238,7 +278,7 @@ function HomeSearchBar({ onSubmit, isMobile }) {
 // duplicated the heading text below ("ON THE FEED" + "Recently
 // added"). Heading + descriptor carry the editorial signal on
 // their own.
-function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchlist, hidden, handleWish, toggleHide, primaryCurrency, onShare, onView, onClickListing, openCollectionPicker, isAdmin, user, compact, inverted, shellPad }) {
+function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchlist, hidden, handleWish, toggleHide, toggleHomeHide, primaryCurrency, onShare, onView, onClickListing, openCollectionPicker, isAdmin, user, compact, inverted, shellPad }) {
   if (!items || items.length === 0) return null;
   const slice = items.slice(0, CARDS_PER_SECTION);
   // Inverted bleed (phase 4c, 2026-05-11): one section gets a dark
@@ -320,17 +360,19 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
               onShare={onShare} onView={onView} onClickListing={onClickListing} />
             {/* Admin one-tap quick-hide overlay — Home only (2026-05-11).
                 Mark report: "crappy watches showing up on the home
-                screen and I want to be able to hide". The ⋯ menu
-                Hide entry is two taps; this overlay is one. Fires
-                the same toggleHide handler, which (because Mark is
-                admin) writes to BOTH `hidden_listings` (his view)
-                AND `admin_hidden_listings` (global blocklist) — see
-                App.js toggleHide. Non-admin users never see the
-                overlay; the standard ⋯ menu Hide is unchanged. */}
-            {isAdmin && toggleHide && (
-              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleHide(item); }}
-                aria-label="Hide (admin)"
-                title="Hide for everyone"
+                screen and I want to hide on a daily basis." Fires
+                `toggleHomeHide(item.id)` which writes to a local
+                home-only set (localStorage `dial_home_hidden_v1`) —
+                hides the listing from THIS page only, doesn't touch
+                hidden_listings or admin_hidden_listings. Other tabs
+                and other users still see it. The ⋯ menu Hide is
+                unchanged and still does the full per-user + global
+                curation hide for cases where Mark wants the listing
+                gone from everywhere. */}
+            {isAdmin && toggleHomeHide && (
+              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleHomeHide(item.id); }}
+                aria-label="Hide from Home"
+                title="Hide from Home (this page only)"
                 style={{
                   position: "absolute", top: 6, left: 6, zIndex: 5,
                   width: 26, height: 26, borderRadius: "50%",
@@ -439,13 +481,15 @@ function FooterBand({ openAbout, signInWithGoogle, user }) {
 export function HomeTab(props) {
   const {
     homeRecentAdded, homeRecentSold, homeEndingNext,
+    homeRecentlyHearted, goToSavedHearts,
+    homeDealerSources, homeJumpToDealer,
     goToRecentAdded, goToRecentSold, goToEndingNext,
     homeSearchSubmit,
     homeCounts,
     goToSavedLists, goToMyWatches, goToChallenges,
     openAbout, signInWithGoogle,
     isMobile,
-    watchlist, hidden, handleWish, toggleHide, primaryCurrency,
+    watchlist, hidden, handleWish, toggleHide, toggleHomeHide, primaryCurrency,
     onShare, onView, onClickListing, openCollectionPicker, isAdmin,
     user, compact,
   } = props;
@@ -460,7 +504,12 @@ export function HomeTab(props) {
     <div style={{ paddingBottom: 0 }}>
       <EditorialHero isMobile={isMobile} />
       {homeSearchSubmit && (
-        <HomeSearchBar onSubmit={homeSearchSubmit} isMobile={isMobile} />
+        <HomeSearchBar
+          onSubmit={homeSearchSubmit}
+          isMobile={isMobile}
+          dealerSources={homeDealerSources}
+          onJumpToDealer={homeJumpToDealer}
+        />
       )}
       <SectionStrip
         heading="Recently added"
@@ -468,7 +517,23 @@ export function HomeTab(props) {
         onViewAll={goToRecentAdded}
         isMobile={isMobile} shellPad={shellPad}
         watchlist={watchlist} hidden={hidden} handleWish={handleWish}
-        toggleHide={toggleHide} primaryCurrency={primaryCurrency}
+        toggleHide={toggleHide} toggleHomeHide={toggleHomeHide} primaryCurrency={primaryCurrency}
+        onShare={onShare} onView={onView} onClickListing={onClickListing}
+        openCollectionPicker={openCollectionPicker} isAdmin={isAdmin}
+        user={user} compact={compact}
+      />
+      {/* Signed-in user's most-recently hearted strip — Mark spec
+          2026-05-11: "users most recent hearted items on the home
+          page as a strip... if they are logged in... second row".
+          SectionStrip already returns null on empty items so signed-
+          out users / users with no hearts get no row. */}
+      <SectionStrip
+        heading="Recently hearted"
+        items={homeRecentlyHearted}
+        onViewAll={goToSavedHearts}
+        isMobile={isMobile} shellPad={shellPad}
+        watchlist={watchlist} hidden={hidden} handleWish={handleWish}
+        toggleHide={toggleHide} toggleHomeHide={toggleHomeHide} primaryCurrency={primaryCurrency}
         onShare={onShare} onView={onView} onClickListing={onClickListing}
         openCollectionPicker={openCollectionPicker} isAdmin={isAdmin}
         user={user} compact={compact}
@@ -479,7 +544,7 @@ export function HomeTab(props) {
         onViewAll={goToRecentSold}
         isMobile={isMobile} shellPad={shellPad}
         watchlist={watchlist} hidden={hidden} handleWish={handleWish}
-        toggleHide={toggleHide} primaryCurrency={primaryCurrency}
+        toggleHide={toggleHide} toggleHomeHide={toggleHomeHide} primaryCurrency={primaryCurrency}
         onShare={onShare} onView={onView} onClickListing={onClickListing}
         openCollectionPicker={openCollectionPicker} isAdmin={isAdmin}
         user={user} compact={compact}
@@ -490,7 +555,7 @@ export function HomeTab(props) {
         onViewAll={goToEndingNext}
         isMobile={isMobile} shellPad={shellPad}
         watchlist={watchlist} hidden={hidden} handleWish={handleWish}
-        toggleHide={toggleHide} primaryCurrency={primaryCurrency}
+        toggleHide={toggleHide} toggleHomeHide={toggleHomeHide} primaryCurrency={primaryCurrency}
         onShare={onShare} onView={onView} onClickListing={onClickListing}
         openCollectionPicker={openCollectionPicker} isAdmin={isAdmin}
         user={user} compact={compact}

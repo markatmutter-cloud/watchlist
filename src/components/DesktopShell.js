@@ -347,14 +347,17 @@ export function DesktopShell(props) {
       {/* Full-width top bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 20px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
         {/* Top wordmark hidden on Home (editorial hero in body is the
-            brand mark there). Stays visible on every other tab as the
-            home-tap affordance. About link relocated to the right
-            side of the top bar — see the authJSX area below. */}
+            brand mark there). On every other tab: smaller-but-
+            editorial — matches the Home hero's weight + tracking +
+            uppercase, shrunk to fit inside the top bar (Mark spec
+            2026-05-11). Padding-left preserves visual centering
+            against the trailing letter-spacing. */}
         {tab !== "home" && (
           <button onClick={() => { setTab("home"); setPage(1); }}
             style={{ background: "none", border: "none", cursor: "pointer",
-                    padding: 0, fontFamily: "inherit",
-                    fontSize: 22, fontWeight: 700, letterSpacing: "-0.6px",
+                    padding: 0, paddingLeft: "0.16em", fontFamily: "inherit",
+                    fontSize: 17, fontWeight: 400, letterSpacing: "0.16em",
+                    textTransform: "uppercase",
                     color: "var(--text1)", flexShrink: 0 }}>
             Watchlist
           </button>
