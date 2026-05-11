@@ -177,21 +177,35 @@ export function useWatchlist(user) {
       }
     } else {
       const savedAt = new Date().toISOString();
+      // saved_price + saved_price_usd are integer columns in Postgres.
+      // Some auction scrapers (Sotheby's, in particular) emit prices
+      // as float-strings like "10000.0" inside the JSON. Sending that
+      // to an int column trips 22P02 and the heart silently rolls
+      // back. Coerce defensively here: parse → round → integer.
+      // (Mark report 2026-05-11: heart on Listings > Auctions sub-tab
+      // appeared dead because every add was rejected by Postgres.)
+      const toInt = (v) => {
+        if (v == null || v === "") return null;
+        const n = typeof v === "string" ? parseFloat(v) : v;
+        return Number.isFinite(n) ? Math.round(n) : null;
+      };
+      const safePrice    = toInt(item.price);
+      const safePriceUsd = toInt(item.priceUSD);
       const saved = {
         ...item,
         savedAt,
-        savedPrice:     item.price,
+        savedPrice:     safePrice,
         savedCurrency:  item.currency || 'USD',
-        savedPriceUSD:  item.priceUSD,
+        savedPriceUSD:  safePriceUsd,
       };
       setItems(prev => ({ ...prev, [item.id]: saved }));
       const { error } = await supabase.from('watchlist_items').insert({
         user_id:          user.id,
         listing_id:       item.id,
         saved_at:         savedAt,
-        saved_price:      item.price,
+        saved_price:      safePrice,
         saved_currency:   item.currency || 'USD',
-        saved_price_usd:  item.priceUSD,
+        saved_price_usd:  safePriceUsd,
         listing_snapshot: item,
       });
       if (error) {
