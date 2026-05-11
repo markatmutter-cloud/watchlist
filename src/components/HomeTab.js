@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card } from "./Card";
 import { SearchIcon } from "./icons";
 
@@ -47,10 +47,14 @@ function EditorialHero({ isMobile }) {
       // tab pills are about to be hidden on Home (moved inline below
       // the search bar), so the wordmark sits closer to the top edge
       // and the hero feels less wasteful.
-      padding: isMobile ? "12px 16px 14px" : "18px 16px 22px",
+      padding: isMobile ? "20px 16px 14px" : "32px 16px 22px",
       textAlign: "center",
     }}>
-      <div style={{ height: 0.5, background: "var(--border)", margin: isMobile ? "0 0 12px" : "0 0 22px" }} />
+      {/* The hairline-above the wordmark was removed 2026-05-11 —
+          the top bar already has a `border-bottom`, so the page
+          was reading as having two horizontal rules in close
+          succession. The hairline below the wordmark stays as the
+          divider into the search section. */}
       <h1 style={{
         margin: isMobile ? "0 0 12px" : "0 0 22px",
         fontFamily: "inherit",
@@ -88,16 +92,48 @@ function LiveCounts({ counts }) {
   );
 }
 
-// Search composite (2026-05-11). Light surface — the brief inverted
-// experiment (PR #232) read as too heavy at the top of the page;
-// reverted in the next round. Search input + primary CTA + secondary
-// chip cluster all on the page's normal background.
+// Search composite (2026-05-11). Empty state: just the input + a
+// primary "Search" button (Listings default on click / Enter).
+// When the user starts typing, a typeahead popover drops below
+// the input with three target rows — Listings / Auctions / Sold —
+// so the user can pick which sub-tab they want before submitting.
+// Click outside or empty the input to dismiss.
 function HomeSearchBar({ onSubmit, isMobile }) {
   const [draft, setDraft] = useState("");
+  const [focused, setFocused] = useState(false);
+  const wrapRef = useRef(null);
   const fire = (target) => {
     const q = draft.trim();
     onSubmit(q, target);
+    setDraft("");
+    setFocused(false);
   };
+
+  // Click-outside dismiss. mousedown not click so the popover row's
+  // own click still fires (mousedown-on-row → blur on input → click
+  // on row; without this guard the popover would unmount before the
+  // click lands).
+  useEffect(() => {
+    if (!focused) return undefined;
+    const onDown = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setFocused(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [focused]);
+
+  const trimmed = draft.trim();
+  const showPopover = focused && trimmed.length > 0;
+  const echo = trimmed.length > 24 ? trimmed.slice(0, 24) + "…" : trimmed;
+
+  const targets = [
+    ["live",     "Listings", "Live dealer items"],
+    ["auctions", "Auctions", "Active auction lots"],
+    ["sold",     "Sold",     "Archive of sold items"],
+  ];
+
   return (
     <section style={{
       padding: isMobile ? "0 16px 28px" : "0 16px 36px",
@@ -105,67 +141,83 @@ function HomeSearchBar({ onSubmit, isMobile }) {
       margin: "0 auto",
       width: "100%",
     }}>
-      <div style={{
-        display: "flex", alignItems: "stretch",
-        background: "var(--surface)", borderRadius: 12,
-        border: "0.5px solid var(--border)",
-        overflow: "hidden",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 10, padding: isMobile ? "0 12px" : "0 14px", flex: 1, minWidth: 0 }}>
-          <SearchIcon />
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); fire("live"); } }}
-            placeholder={isMobile ? "Reference or brand…" : "Reference, brand, model…"}
-            style={{ flex: 1, border: "none", background: "transparent", fontSize: isMobile ? 14 : 15, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0, padding: isMobile ? "11px 0" : "13px 0" }}
-          />
-          {draft && (
-            <button onClick={() => setDraft("")} aria-label="Clear" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text3)", padding: 2, fontFamily: "inherit", display: "flex", flexShrink: 0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          )}
+      <div ref={wrapRef} style={{ position: "relative" }}>
+        <div style={{
+          display: "flex", alignItems: "stretch",
+          background: "var(--surface)", borderRadius: 12,
+          border: "0.5px solid var(--border)",
+          overflow: "hidden",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 10, padding: isMobile ? "0 12px" : "0 14px", flex: 1, minWidth: 0 }}>
+            <SearchIcon />
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onFocus={() => setFocused(true)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); fire("live"); } }}
+              placeholder={isMobile ? "Reference or brand…" : "Reference, brand, model…"}
+              style={{ flex: 1, border: "none", background: "transparent", fontSize: isMobile ? 14 : 15, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0, padding: isMobile ? "11px 0" : "13px 0" }}
+            />
+            {draft && (
+              <button onMouseDown={(e) => e.preventDefault()} onClick={() => setDraft("")} aria-label="Clear" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text3)", padding: 2, fontFamily: "inherit", display: "flex", flexShrink: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <button onClick={() => fire("live")}
+            aria-label="Search"
+            style={{
+              flexShrink: 0,
+              border: "none", borderLeft: "0.5px solid var(--border)",
+              background: "var(--text1)", color: "var(--bg)",
+              fontFamily: "inherit", fontSize: isMobile ? 12 : 13, fontWeight: 600,
+              letterSpacing: "0.04em", cursor: "pointer",
+              padding: isMobile ? "0 14px" : "0 22px",
+              display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+            }}>
+            Search <span aria-hidden style={{ fontSize: 14 }}>→</span>
+          </button>
         </div>
-        <button onClick={() => fire("live")}
-          aria-label="Search Listings"
-          style={{
-            flexShrink: 0,
-            border: "none", borderLeft: "0.5px solid var(--border)",
-            background: "var(--text1)", color: "var(--bg)",
-            fontFamily: "inherit", fontSize: isMobile ? 12 : 13, fontWeight: 600,
-            letterSpacing: "0.04em", cursor: "pointer",
-            padding: isMobile ? "0 14px" : "0 22px",
-            display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
-          }}>
-          {isMobile ? "Search" : "Search Listings"} <span aria-hidden style={{ fontSize: 14 }}>→</span>
-        </button>
-      </div>
-      {/* Secondary search targets — sit directly under the Search
-          Listings button, right-aligned. Visual descendents of the
-          primary CTA; reads as an "or…" dropdown without needing a
-          toggle interaction. */}
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 10, paddingRight: 2 }}>
-        <span style={{ fontSize: 11, color: "var(--text3)", alignSelf: "center", marginRight: 2 }}>Search in</span>
-        <button onClick={() => fire("auctions")}
-          style={{
-            padding: "5px 12px", borderRadius: 999,
-            border: "0.5px solid var(--border)", background: "var(--card-bg)",
-            color: "var(--text1)", fontFamily: "inherit", fontSize: 12,
-            fontWeight: 500, cursor: "pointer",
-          }}>
-          Auctions
-        </button>
-        <button onClick={() => fire("sold")}
-          style={{
-            padding: "5px 12px", borderRadius: 999,
-            border: "0.5px solid var(--border)", background: "var(--card-bg)",
-            color: "var(--text1)", fontFamily: "inherit", fontSize: 12,
-            fontWeight: 500, cursor: "pointer",
-          }}>
-          Sold
-        </button>
+        {/* Typeahead popover — appears on the first keystroke. Three
+            rows pointing at Listings / Auctions / Sold sub-tabs. The
+            user's query echoes on the right of each row so the
+            destination is unambiguous before they click. */}
+        {showPopover && (
+          <div role="listbox"
+            style={{
+              position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
+              background: "var(--card-bg)", border: "0.5px solid var(--border)",
+              borderRadius: 10, overflow: "hidden", zIndex: 10,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+            }}>
+            <div style={{ padding: "8px 14px 6px", fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--text3)" }}>
+              Search in
+            </div>
+            {targets.map(([key, label, hint], idx) => (
+              <button key={key}
+                onMouseDown={(e) => { e.preventDefault(); fire(key); }}
+                role="option"
+                style={{
+                  display: "flex", alignItems: "baseline", justifyContent: "space-between",
+                  width: "100%", gap: 12,
+                  padding: "10px 14px",
+                  background: "transparent", border: "none",
+                  borderTop: idx === 0 ? "none" : "0.5px solid var(--border)",
+                  cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>{label}</span>
+                  <span style={{ fontSize: 11, color: "var(--text3)" }}>{hint}</span>
+                </div>
+                <span style={{ fontSize: 12, color: "var(--text2)", fontStyle: "italic", flexShrink: 0 }}>
+                  "{echo}"
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
