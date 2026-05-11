@@ -2341,10 +2341,6 @@ export default function Watchlist() {
               display: "flex", alignItems: "baseline", gap: 12,
               borderBottom: "0.5px solid var(--border)",
               marginBottom: 4,
-              // Cover the grid's --border background that bleeds
-              // through via gap:1 — without this, date-group dividers
-              // render with a grey strip behind them (Mark report).
-              background: "var(--bg)",
             }}>
               <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
                 {entry.label}
