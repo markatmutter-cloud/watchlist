@@ -18,6 +18,7 @@ import { useFavSearchModal } from "./hooks/useFavSearchModal";
 import { useViewSettings } from "./hooks/useViewSettings";
 import { useFilters } from "./hooks/useFilters";
 import { Card } from "./components/Card";
+import { HomeTab } from "./components/HomeTab";
 // AuctionsTab retired 2026-04-30 — Tracked lots merged into Watchlist
 // Listings; calendar moved to Watchlist > Auction Calendar sub-tab via
 // the new AuctionCalendar component (AuctionsTab.js deleted 2026-04-30).
@@ -50,6 +51,22 @@ import { tabPill, innerToggleButton, actionButton } from "./styles";
 // to keep the GitHub repo identity off the production network tab.
 const LISTINGS_URL = "/listings.json";
 const AUCTIONS_URL = "/auctions.json";
+
+// Redesign feature flag (2026-05-10). Read once at module load —
+// toggling requires a reload. `?new-ui=1` flips it on and persists
+// into localStorage so subsequent visits remember; `?new-ui=0`
+// clears it. When on: the Home tab is reachable, the Watchlist
+// wordmark routes there instead of Listings, and a bare URL
+// defaults to Home. When off: behaviour matches pre-redesign.
+const NEW_UI = (() => {
+  if (typeof window === "undefined") return false;
+  try {
+    const p = new URLSearchParams(window.location.search).get("new-ui");
+    if (p === "1") { localStorage.setItem("dial_new_ui", "1"); return true; }
+    if (p === "0") { localStorage.removeItem("dial_new_ui"); return false; }
+    return localStorage.getItem("dial_new_ui") === "1";
+  } catch { return false; }
+})();
 const TRACKED_LOTS_URL = "/tracked_lots.json";
 // Comprehensive auction-lot scrape — populated by auction_lots_scraper.py
 // (Antiquorum + Christie's + Sotheby's + Phillips). Same shape as
@@ -345,7 +362,10 @@ export default function Watchlist() {
   // `?tab=collections` redirect to `?tab=watchlist` with the same
   // sub-tab key (the sub-tab values were already preserved when
   // SUB_VALUES_COLLECTIONS was folded into watchTopTab above).
-  const TAB_VALUES = ["listings", "watchlist", "references", "admin"];
+  // "home" is the redesign aggregator landing (2026-05-10). Always
+  // in TAB_VALUES so `?tab=home` works even without the flag (lets
+  // anyone preview), but only set as default when NEW_UI is on.
+  const TAB_VALUES = ["home", "listings", "watchlist", "references", "admin"];
   // URL-key translation. Naming alignment 2026-05-08 (Mark feedback:
   // "?sub=sold&tab=watchlist" reads as ugly internal state in the
   // address bar). The URL now uses `saved` / `learn` as the
@@ -365,7 +385,7 @@ export default function Watchlist() {
       if (URL_TAB_TO_INTERNAL[t]) return URL_TAB_TO_INTERNAL[t];
       if (TAB_VALUES.includes(t)) return t;
     }
-    return "listings";
+    return NEW_UI ? "home" : "listings";
   });
 
   // Saved-view staleness snapshot. Mark feedback 2026-05-07: when a
@@ -956,6 +976,21 @@ export default function Watchlist() {
     "--brand-tint-10": "rgba(24,95,165,0.10)",
     "--brand-tint-12": "rgba(24,95,165,0.12)",
     "--accent-warn": "#c9a227",
+    // Watchlist redesign token set (2026-05-10, additive). Coexists
+    // with the legacy --text/--brand/--border names above during
+    // migration. New consumers reach for these names; existing
+    // consumers stay on legacy until a deliberate consumer-by-
+    // consumer migration. Dark values follow the spec note "invert
+    // ink, near-black surfaces, accent stays similar"; treat as
+    // first-pass — a dark-mode audit is a separate later pass.
+    "--ink-1": "#F2F2F2", "--ink-2": "#A0A0A0",
+    "--ink-3": "#6E6E6E", "--ink-4": "#3E3E3E",
+    "--surface-1": "#161616", "--surface-2": "#1F1F1F",
+    "--photo-bg": "#1A1A1A",
+    "--rule": "#2A2A2A", "--rule-soft": "#1F1F1F",
+    "--accent": "#185FA5", "--accent-soft": "#102A47",
+    "--positive": "#3E9952", "--warning": "#D85A45",
+    // --danger already declared above; same value in dark mode.
   } : {
     "--bg": "#fff", "--surface": "#f5f5f7", "--card-bg": "#fff",
     "--border": "rgba(0,0,0,0.09)", "--text1": "#1d1d1f",
@@ -965,6 +1000,15 @@ export default function Watchlist() {
     "--brand-tint-10": "rgba(24,95,165,0.10)",
     "--brand-tint-12": "rgba(24,95,165,0.12)",
     "--accent-warn": "#c9a227",
+    // Watchlist redesign token set (2026-05-10, additive). See dark
+    // block above for migration notes.
+    "--ink-1": "#0F0F0F", "--ink-2": "#5C5C5C",
+    "--ink-3": "#9A9A9A", "--ink-4": "#C8C8C8",
+    "--surface-1": "#FAFAFA", "--surface-2": "#F4F4F4",
+    "--photo-bg": "#F2F0EC",
+    "--rule": "#E8E8E8", "--rule-soft": "#F0F0F0",
+    "--accent": "#185FA5", "--accent-soft": "#EFF3FA",
+    "--positive": "#2D7A3D", "--warning": "#B43C28",
   };
 
   // Mirror the theme variables onto :root so portal-rendered nodes
@@ -2276,6 +2320,82 @@ export default function Watchlist() {
     ? auctionCalendarJSX
     : listingsGridJSX;
 
+  // Home tab data (2026-05-10 redesign). Three slices off the same
+  // `mainFeedItems` pool the Listings tab uses, so admin-hidden +
+  // merged-auction-lots semantics stay identical. Time windows:
+  // 24h for new listings, 48h for closing-soon + recently-sold.
+  const HOME_HOUR = 60 * 60 * 1000;
+  const homeNewListings = useMemo(() => {
+    const isLot = (i) => !!i._isAuctionFormat || !!i._isTrackedLot;
+    return mainFeedItems
+      .filter(i => !i.sold && !isLot(i) && !i.backfilled && !hidden[i.id])
+      .filter(i => daysAgo(freshDate(i)) <= 1)
+      .sort((a, b) => new Date(freshDate(b) || 0) - new Date(freshDate(a) || 0));
+  }, [mainFeedItems, hidden]);
+
+  const homeClosingSoon = useMemo(() => {
+    const now = Date.now();
+    const isLot = (i) => !!i._isAuctionFormat || !!i._isTrackedLot;
+    return mainFeedItems
+      .filter(i => isLot(i) && !i.sold && !hidden[i.id] && i.auction_end)
+      .filter(i => {
+        const end = new Date(i.auction_end).getTime();
+        return end > now && end - now <= 48 * HOME_HOUR;
+      })
+      .sort((a, b) => new Date(a.auction_end) - new Date(b.auction_end));
+  }, [mainFeedItems, hidden]);
+
+  const homeRecentlySold = useMemo(() => {
+    const now = Date.now();
+    return mainFeedItems
+      .filter(i => i.sold && !hidden[i.id])
+      .filter(i => {
+        const sold = i.soldAt || i.lastSeen || i.auction_end;
+        if (!sold) return false;
+        return now - new Date(sold).getTime() <= 48 * HOME_HOUR;
+      })
+      .sort((a, b) => {
+        const sa = a.soldAt || a.lastSeen || a.auction_end;
+        const sb = b.soldAt || b.lastSeen || b.auction_end;
+        return new Date(sb || 0) - new Date(sa || 0);
+      });
+  }, [mainFeedItems, hidden]);
+
+  // Routes a "View all →" click into the corresponding Listings
+  // sub-tab. Used by HomeTab's three sections.
+  const goToListingsSub = useCallback((subKey) => {
+    setTab("listings");
+    setListingsSubTab(subKey);
+    setPage(1);
+  }, [setTab, setListingsSubTab, setPage]);
+
+  // Card renderer for the home grid. Matches the prop bag used in
+  // listingsGridJSX line ~2270 so heart toggles, ⋯ menu, share,
+  // collection-add all behave the same on Home as on Listings.
+  const renderHomeCard = useCallback((item) => (
+    <Card key={item.id} item={item}
+      wished={!!watchlist[item.id]} onWish={handleWish}
+      compact={compact}
+      onHide={isAdmin ? toggleHide : undefined}
+      isHidden={!!hidden[item.id]}
+      onAddToCollection={user ? openCollectionPicker : undefined}
+      primaryCurrency={primaryCurrency}
+      onShare={handleShare}
+      onView={observeCard}
+      onClickListing={onClickListing} />
+  ), [watchlist, handleWish, compact, isAdmin, toggleHide, hidden, user, openCollectionPicker, primaryCurrency, handleShare, observeCard, onClickListing]);
+
+  const homeTabJSX = (
+    <HomeTab
+      newListings={homeNewListings}
+      closingSoon={homeClosingSoon}
+      recentlySold={homeRecentlySold}
+      onViewAll={goToListingsSub}
+      renderCard={renderHomeCard}
+      cols={isMobile ? 2 : (desktopCols || 5)}
+    />
+  );
+
 
   // Save-current-search modal. Opened by the heart in the search input.
   // Single-field form (label) — query comes from the live search field.
@@ -2884,6 +3004,11 @@ export default function Watchlist() {
     // Collections style) computed by `savedContentJSX`.
     watchlistTabJSX: savedContentJSX,
     adminTabJSX, referencesTabJSX, collectionsTabJSX,
+    homeTabJSX,
+    // Redesign feature flag — shells use this to gate the
+    // wordmark-routes-to-Home behaviour. Off ⇒ wordmark goes to
+    // Listings (today's behaviour). On ⇒ wordmark goes to Home.
+    newUi: NEW_UI,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     // Whether a share-receive landing surface is taking over the

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, memo } from "react";
-import { createPortal } from "react-dom";
 import { fmt, imgSrc, fmtCountdown, fmtLotPrice, fmtSoldDate, priceIn, daysOnSale, daysOnSaleLabel, CURRENCY_SYM, FX_RATES_USD_PER } from "../utils";
 import { HeartIcon } from "./icons";
+import { Popover, usePopoverState } from "./Popover";
 
 // Shared style for action-menu rows. Module-scope so it's not
 // re-created per Card render. Uses var(--text1) explicitly so the
@@ -64,24 +64,26 @@ export const Card = memo(function Card({
   // 2026-05-10 — Mark spec: replicate the pool's ↑ pattern on
   // owned cards so flagging for sale doesn't require the menu.
   quickAction,
+  // Optional: arbitrary node rendered below the card body, typically
+  // a <ReactionPill> / <ReactionSet> on shared-list surfaces. Slot
+  // pattern keeps Card unaware of reaction state, pickers, and
+  // realtime — the parent list view owns all of that and feeds a
+  // pre-rendered node in. Lives outside the <a> wrapper so its
+  // inner buttons don't nest inside the listing-link anchor.
+  reactionSlot,
 }) {
   // When the dealer's image URL goes 404 (e.g. they cleaned up their CDN
   // for a sold listing), the browser shows an ugly broken-image icon.
   // Track the failure and render a clean placeholder instead.
   const [imgFailed, setImgFailed] = useState(false);
-  // Action menu open/close. Click-outside + Escape closes.
-  const [menuOpen, setMenuOpen] = useState(false);
+  // Action menu open/close + portal mount. Promoted 2026-05-10 from
+  // Card-local plumbing into a shared <Popover> primitive so the
+  // drill-in overflow menu and the desktop reaction picker can reuse
+  // the same click-outside / Escape / position-anchor logic.
+  const menuPop = usePopoverState();
   // Brief "Copied!" feedback when Web Share API isn't available and
   // we fall back to the clipboard. 1.2s timeout, no toast component.
   const [shareFeedback, setShareFeedback] = useState("");
-  // Portal-anchored menu position. The menu used to live inside the
-  // card's overflow:hidden subtree, so longer labels (Remove from
-  // collection, Watch details) overflowed the card edge and got
-  // clipped — Mark report 2026-05-10. Now rendered via portal with
-  // position:fixed at coords computed from the trigger's rect.
-  const [menuPos, setMenuPos] = useState(null);
-  const triggerRef = useRef(null);
-  const portalRef = useRef(null);
   // View-event observer registration. When onView is supplied, hand
   // the card's outer node to the App-level IntersectionObserver so it
   // can fire a `view` once the card crosses 50% visibility. Returns a
@@ -91,26 +93,6 @@ export const Card = memo(function Card({
     if (!onView || !cardRef.current) return undefined;
     return onView(cardRef.current, item);
   }, [onView, item]);
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onDown = (e) => {
-      const inTrigger = triggerRef.current && triggerRef.current.contains(e.target);
-      const inPortal  = portalRef.current && portalRef.current.contains(e.target);
-      if (!inTrigger && !inPortal) setMenuOpen(false);
-    };
-    const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
-    // Defer one tick so the click that opened the menu doesn't
-    // immediately close it.
-    const t = setTimeout(() => {
-      document.addEventListener("mousedown", onDown);
-      document.addEventListener("keydown", onKey);
-    }, 0);
-    return () => {
-      clearTimeout(t);
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menuOpen]);
   // (Previously had a NEW chip on cards <= 1 day old. Removed
   // 2026-04-30 — was firing inconsistently due to the backfill rule
   // and the date-order sort already conveys recency. Less chrome on
@@ -371,6 +353,11 @@ export const Card = memo(function Card({
           </div>
         </div>
       </a>
+      {reactionSlot && (
+        <div style={{ padding: compact ? "0 7px 8px" : "0 9px 10px" }}>
+          {reactionSlot}
+        </div>
+      )}
       {/* Action-button sizing tracks card density. compact mode is
           activated at cols >= 4 (App.js: const compact = cols >= 4),
           where cards are narrow and a tight 26px button is fine. At
@@ -410,81 +397,60 @@ export const Card = memo(function Card({
             so it doesn't fall off the screen on rightmost cards. */}
         {(onAddToCollection || onHide || onShare || (extraMenuItems && extraMenuItems.length > 0)) && (
           <div style={{ position: "relative" }}>
-            <button ref={triggerRef}
+            <button ref={menuPop.triggerRef}
               onClick={e => {
                 e.preventDefault(); e.stopPropagation();
-                if (!menuOpen && triggerRef.current) {
-                  const r = triggerRef.current.getBoundingClientRect();
-                  // Anchor the menu's right edge to the trigger's right
-                  // edge in viewport coords. Clamp left to ≥8 below.
-                  setMenuPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) });
-                }
-                setMenuOpen(o => !o);
+                menuPop.toggle();
               }}
               aria-label="More actions"
               style={{ width: compact ? 26 : 36, height: compact ? 26 : 36, borderRadius: "50%", border: "none", cursor: "pointer",
-                      background: menuOpen ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.28)",
+                      background: menuPop.open ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.28)",
                       color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
                       padding: 0, fontFamily: "inherit", fontSize: compact ? 16 : 20, lineHeight: 1 }}>
               ⋯
             </button>
-            {menuOpen && menuPos && createPortal(
-              <div ref={portalRef} onClick={e => e.preventDefault()}
-                style={{
-                  position: "fixed",
-                  top: menuPos.top, right: menuPos.right,
-                  zIndex: 1000,
-                  // Clamp width so on a small viewport the menu can't
-                  // extend past the left edge — labels wrap if forced.
-                  maxWidth: `calc(100vw - ${menuPos.right + 16}px)`,
-                  background: "var(--bg)", border: "0.5px solid var(--border)",
-                  borderRadius: 8, padding: 4,
-                  whiteSpace: "nowrap",
-                  boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
-                }}>
-                {onShare && (
-                  <button onClick={async e => {
-                    e.preventDefault(); e.stopPropagation();
-                    let result;
-                    try { result = await onShare(item); }
-                    catch (err) { console.warn("share failed", err); result = null; }
-                    if (result?.copied) {
-                      setShareFeedback("Copied!");
-                      setTimeout(() => { setShareFeedback(""); setMenuOpen(false); }, 1200);
-                    } else {
-                      setMenuOpen(false);
-                    }
-                  }} style={menuItemStyle}>{shareFeedback || "Share"}</button>
-                )}
-                {/* Menu labels are intentionally short so the menu
-                    fits inside a 3-col-mobile card (~114px wide).
-                    Longer labels ("Add to collection…", "Hide from
-                    feed", "Remove from collection") would push the
-                    menu past the card's overflow:hidden edge and
-                    get clipped. The "…" on "Add to" hints at the
-                    second-step picker modal. */}
-                {onAddToCollection && (
-                  <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onAddToCollection(item); }}
-                    style={menuItemStyle}>Add to…</button>
-                )}
-                {onHide && (
-                  <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); onHide(item); }}
-                    style={menuItemStyle}>
-                    {hideLabel === "Remove from list"
-                      ? "Remove"
-                      : (hideLabel || (isHidden ? "Unhide" : "Hide"))}
-                  </button>
-                )}
-                {(extraMenuItems || []).map((entry, i) => (
-                  <button key={i} onClick={e => {
-                    e.preventDefault(); e.stopPropagation();
-                    setMenuOpen(false);
-                    entry.onClick(item);
-                  }} style={menuItemStyle}>{entry.label}</button>
-                ))}
-              </div>,
-              document.body
-            )}
+            <Popover state={menuPop}>
+              {onShare && (
+                <button onClick={async e => {
+                  e.preventDefault(); e.stopPropagation();
+                  let result;
+                  try { result = await onShare(item); }
+                  catch (err) { console.warn("share failed", err); result = null; }
+                  if (result?.copied) {
+                    setShareFeedback("Copied!");
+                    setTimeout(() => { setShareFeedback(""); menuPop.close(); }, 1200);
+                  } else {
+                    menuPop.close();
+                  }
+                }} style={menuItemStyle}>{shareFeedback || "Share"}</button>
+              )}
+              {/* Menu labels are intentionally short so the menu
+                  fits inside a 3-col-mobile card (~114px wide).
+                  Longer labels ("Add to collection…", "Hide from
+                  feed", "Remove from collection") would push the
+                  menu past the card's overflow:hidden edge and
+                  get clipped. The "…" on "Add to" hints at the
+                  second-step picker modal. */}
+              {onAddToCollection && (
+                <button onClick={e => { e.preventDefault(); e.stopPropagation(); menuPop.close(); onAddToCollection(item); }}
+                  style={menuItemStyle}>Add to…</button>
+              )}
+              {onHide && (
+                <button onClick={e => { e.preventDefault(); e.stopPropagation(); menuPop.close(); onHide(item); }}
+                  style={menuItemStyle}>
+                  {hideLabel === "Remove from list"
+                    ? "Remove"
+                    : (hideLabel || (isHidden ? "Unhide" : "Hide"))}
+                </button>
+              )}
+              {(extraMenuItems || []).map((entry, i) => (
+                <button key={i} onClick={e => {
+                  e.preventDefault(); e.stopPropagation();
+                  menuPop.close();
+                  entry.onClick(item);
+                }} style={menuItemStyle}>{entry.label}</button>
+              ))}
+            </Popover>
           </div>
         )}
       </div>
