@@ -76,3 +76,67 @@ export function TabIcon({ kind }) {
   );
   return null;
 }
+
+// Reaction glyphs for the shared-list reaction system. Extracted
+// verbatim from the watchlist-redesign mockup symbols (g-love /
+// g-yes / g-hmm / g-no / g-react). All four use `currentColor` so
+// the consumer controls color via the chip — black chip with white
+// glyph in the "reacted" state, --ink-2 in the "unreacted" React
+// pill. Default size 16 — picker uses ~14, inline chips use ~10.
+
+export function LoveIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24">
+      <path d="M12 21s-7-4.5-9.5-9.2C1 8.5 2.5 5 6 5c2 0 3.5 1 6 3.5C14.5 6 16 5 18 5c3.5 0 5 3.5 3.5 6.8C19 16.5 12 21 12 21z"
+        fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+export function YesIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="9.5" strokeWidth="1.6"/>
+      <path d="M7.5 12.5l3.2 3.2 6-7" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+export function HmmIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="9.5" strokeWidth="1.6"/>
+      <path d="M7 14 Q9 11, 11 13 T15 13 T17 14" strokeWidth="1.6" strokeLinecap="round"/>
+      <circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none"/>
+    </svg>
+  );
+}
+
+export function NoIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="9.5" strokeWidth="1.6"/>
+      <path d="M8 8l8 8M16 8l-8 8" strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// Plus-in-circle glyph for the unreacted state ("React" pill).
+export function ReactIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="9.5" strokeWidth="1.6"/>
+      <path d="M12 7v10M7 12h10" strokeWidth="1.6" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// Map from reaction enum value → glyph component. Lets call sites
+// render a reaction by name without a switch: `const G =
+// REACTION_GLYPH[reaction]; return <G size={12} />`.
+export const REACTION_GLYPH = {
+  love: LoveIcon,
+  yes:  YesIcon,
+  hmm:  HmmIcon,
+  no:   NoIcon,
+};

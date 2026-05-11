@@ -46,7 +46,7 @@ export function MobileShell(props) {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
-    adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
+    adminTabJSX, homeTabJSX, newUi, listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     // View-settings (2026-05-09): rendered inline in the filter
     // drawer so currency / theme / columns are one tap from the
     // current view rather than buried behind Settings.
@@ -105,8 +105,9 @@ export function MobileShell(props) {
             fold. Reduced font + padding here saves ~14px without
             losing the home-tap affordance. */}
         <div style={{ padding: "2px 14px 0" }}>
-          {/* Tap the title to jump back to Available (home). */}
-          <button onClick={() => { setTab("listings"); setPage(1); }}
+          {/* Tap the title to jump back to Home (or Available when
+              the redesign flag is off). */}
+          <button onClick={() => { setTab(newUi ? "home" : "listings"); setPage(1); }}
             style={{ background: "none", border: "none", cursor: "pointer",
                     padding: 0, fontFamily: "inherit",
                     fontSize: 15, fontWeight: 600, letterSpacing: "-0.3px",
@@ -310,7 +311,8 @@ export function MobileShell(props) {
                 tab (`tab === "watchlist"`) via the `watchlistTabJSX`
                 prop, which App.js dispatches between Watchlist and
                 Collections content based on the active sub-tab. */}
-            {tab === "listings" ? listingsTabContentJSX
+            {tab === "home" ? homeTabJSX
+              : tab === "listings" ? listingsTabContentJSX
               : tab === "references" ? referencesTabJSX
               : tab === "admin" ? adminTabJSX
               : watchlistTabJSX}
