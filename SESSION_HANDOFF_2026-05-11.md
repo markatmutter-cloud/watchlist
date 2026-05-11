@@ -78,6 +78,23 @@ Per Mark's direction "I don't want simple for you - I want good fix":
 - Don't push to `main` directly via Claude — the auto-mode classifier blocks it. Open a PR.
 - Don't run any scrape against a real auction house from this session (Cloudflare / DataDome blocks; user-side trigger only).
 
+## Critical finding (2026-05-11 ~08:00 UTC): workflow race condition
+
+The two scrape workflows (`scrape-auctions.yml` and `scrape-auction-lots-frequent.yml`) trigger simultaneously. They both checkout `main` and run independently. The auctions workflow runs `merge.py` to update `public/auctions.json`, then commits + pushes. The lots workflow reads `public/auctions.json` directly from the runner's working tree.
+
+If the lots workflow gets to its read step BEFORE the auctions workflow commits, it gets the stale file. That happened tonight: Antiquorum's May 9-10 catalog URL landed in `auctions.json` at 08:02:21 (merge.py emit), but the lots scraper had already logged "10 sale(s) in active window" at 08:00:23 — two minutes earlier. Antiquorum got skipped.
+
+**Mitigation tonight:** manually re-triggered `scrape-auction-lots-frequent.yml` at run `25658557634` after the auctions workflow had finished committing. That run should pick up Antiquorum's May 9-10 sale.
+
+**Permanent fix needed (tomorrow):** change `scrape-auction-lots-frequent.yml` to use a `workflow_run` trigger so it fires AFTER the auctions workflow finishes, instead of in parallel. Example:
+```yaml
+on:
+  workflow_run:
+    workflows: ["Scrape auctions"]
+    types: [completed]
+```
+The cron + manual-dispatch triggers can stay alongside, but the parallel parent-cron coupling should be replaced with the workflow_run dependency.
+
 ## Open questions for Mark (when convenient)
 
 - For Phillips past-sales discovery (PR #216): is there a known phillips.com/auctions/past URL or similar? I haven't verified empirically.
