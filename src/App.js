@@ -52,6 +52,11 @@ import { tabPill, innerToggleButton, actionButton } from "./styles";
 const LISTINGS_URL = "/listings.json";
 const AUCTIONS_URL = "/auctions.json";
 
+// Time-window constant for the Home tab's "closing soon" + "recently
+// sold" slices. Module-level so the useMemo deps stay tight (it's
+// a stable reference, not a render-bound value).
+const HOME_HOUR_MS = 60 * 60 * 1000;
+
 // Redesign feature flag (2026-05-10). Read once at module load —
 // toggling requires a reload. `?new-ui=1` flips it on and persists
 // into localStorage so subsequent visits remember; `?new-ui=0`
@@ -2324,7 +2329,6 @@ export default function Watchlist() {
   // `mainFeedItems` pool the Listings tab uses, so admin-hidden +
   // merged-auction-lots semantics stay identical. Time windows:
   // 24h for new listings, 48h for closing-soon + recently-sold.
-  const HOME_HOUR = 60 * 60 * 1000;
   const homeNewListings = useMemo(() => {
     const isLot = (i) => !!i._isAuctionFormat || !!i._isTrackedLot;
     return mainFeedItems
@@ -2340,7 +2344,7 @@ export default function Watchlist() {
       .filter(i => isLot(i) && !i.sold && !hidden[i.id] && i.auction_end)
       .filter(i => {
         const end = new Date(i.auction_end).getTime();
-        return end > now && end - now <= 48 * HOME_HOUR;
+        return end > now && end - now <= 48 * HOME_HOUR_MS;
       })
       .sort((a, b) => new Date(a.auction_end) - new Date(b.auction_end));
   }, [mainFeedItems, hidden]);
@@ -2352,7 +2356,7 @@ export default function Watchlist() {
       .filter(i => {
         const sold = i.soldAt || i.lastSeen || i.auction_end;
         if (!sold) return false;
-        return now - new Date(sold).getTime() <= 48 * HOME_HOUR;
+        return now - new Date(sold).getTime() <= 48 * HOME_HOUR_MS;
       })
       .sort((a, b) => {
         const sa = a.soldAt || a.lastSeen || a.auction_end;
