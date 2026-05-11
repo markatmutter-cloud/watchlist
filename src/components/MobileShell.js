@@ -296,6 +296,7 @@ export function MobileShell(props) {
               }}>×</button>
           )}
         </div>
+        )}
         {/* Sub-tab strips — Listings strip on tab=listings, the
             unified Saved strip on tab=watchlist (which now combines
             the Watchlist + old Collections sub-tabs after Bundle 2A.2
