@@ -120,13 +120,29 @@ export function MobileShell(props) {
               Watchlist
             </button>
           ) : <span />}
-          <button onClick={() => setAboutModalOpen(true)}
-            style={{ background: "none", border: "none", cursor: "pointer",
-                    padding: 0, fontFamily: "inherit", fontSize: 12,
-                    fontWeight: 500, color: "var(--text2)",
-                    letterSpacing: "0.04em" }}>
-            About
-          </button>
+          {/* Top-right link cluster — About always; Sign in surfaces
+              on Home when signed-out (the persistent authJSX lives
+              inside the sticky search bar which is hidden on Home).
+              Mark report 2026-05-11: no sign-in option visible on
+              mobile Home before this. */}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
+            {tab === "home" && !user && signInWithGoogle && (
+              <button onClick={() => signInWithGoogle()}
+                style={{ background: "none", border: "none", cursor: "pointer",
+                        padding: 0, fontFamily: "inherit", fontSize: 12,
+                        fontWeight: 600, color: "var(--text1)",
+                        letterSpacing: "0.04em" }}>
+                Sign in
+              </button>
+            )}
+            <button onClick={() => setAboutModalOpen(true)}
+              style={{ background: "none", border: "none", cursor: "pointer",
+                      padding: 0, fontFamily: "inherit", fontSize: 12,
+                      fontWeight: 500, color: "var(--text2)",
+                      letterSpacing: "0.04em" }}>
+              About
+            </button>
+          </div>
         </div>
         {/* Sticky stack: search row (with filter + dark-mode buttons) and
             sort/clear pills row. Stays pinned to the viewport top so

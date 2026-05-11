@@ -2560,10 +2560,10 @@ export default function Watchlist() {
         lots: auctionLotItems.filter(i => !adminHidden.has(i.id)).length,
         houses: 6,
       }}
-      // Manage-your-collection callout CTAs route into Saved.
-      goToSavedListings={() => { setTab("watchlist"); setWatchTopTab("listings"); setPage(1); }}
+      // Manage-your-collection callout CTAs — three sub-tabs of Saved.
+      goToSavedLists={() => { setTab("watchlist"); setWatchTopTab("lists"); setPage(1); }}
       goToMyWatches={() => { setTab("watchlist"); setWatchTopTab("my-collection"); setPage(1); }}
-      goToLists={() => { setTab("watchlist"); setWatchTopTab("lists"); setPage(1); }}
+      goToChallenges={() => { setTab("watchlist"); setWatchTopTab("challenges"); setPage(1); }}
       // Footer routes
       openAbout={() => setAboutModalOpen(true)}
       signInWithGoogle={triggerSignInPrompt}
