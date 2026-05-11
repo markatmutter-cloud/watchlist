@@ -97,6 +97,20 @@ PHILLIPS_LONG_COOLDOWN_SECONDS = 90
 RECENT_SOLD_WINDOW_DAYS = 30
 UPCOMING_WINDOW_DAYS = 90
 
+# Antiquorum results-refresh pass (2026-05-11). After a sale ends, the
+# bulk enumerator (live.antiquorum.swiss/auctions/<id>) can stop
+# carrying the lots blob — the page archives, viewVars.lots.result_page
+# returns empty, and the sale drops out of our scrape entirely. But
+# individual lot detail pages (live.antiquorum.swiss/lots/view/<id>)
+# stay up indefinitely and continue to report realized sold_price.
+# So for any Antiquorum lot we ALREADY have in prior auction_lots.json
+# that lacks sold_price and whose parent sale ended within the refresh
+# window, re-fetch the individual lot to pick up the realized price.
+# Settled lots (sold_price already set) are immutable and skipped.
+ANTIQUORUM_REFRESH_WINDOW_DAYS = 30
+ANTIQUORUM_REFRESH_SLEEP_SECONDS = 0.5
+ANTIQUORUM_LOT_URL_FRAGMENT = "live.antiquorum.swiss/lots/view/"
+
 # HTTP headers for the catalog/auction page fetches. Same UA the
 # per-house calendar scrapers use; no Accept-language pinning needed
 # since the URLs are locale-agnostic for these houses.
@@ -392,6 +406,104 @@ def enumerate_antiquorum(sale_url, sale=None):
             "scraped_at":    time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }))
     return out
+
+
+def refresh_antiquorum_unsold_lots(prior_lots, fresh_out, today=None):
+    """Lot-by-lot results refresh for Antiquorum (2026-05-11).
+
+    Walks every Antiquorum lot in `prior_lots` whose parent sale has
+    ended within ANTIQUORUM_REFRESH_WINDOW_DAYS and that lacks a
+    sold_price, re-fetching the individual lot detail page (which
+    survives the sale's archival on the live auction surface). Lots
+    that come back with a realized sold_price (or other terminal
+    status) are written into `fresh_out`, overriding the prior
+    no-price entry.
+
+    Does NOT touch lots that already have a sold_price — settled lots
+    are immutable. Does NOT re-fetch URLs already captured by the bulk
+    enumerator in the same run (`fresh_out` wins).
+
+    Returns the count of lots actually updated. Intended as a fallback
+    to the bulk auction-page enumerator, NOT a replacement: bulk gives
+    us all 600+ lots in one fetch while the sale is live; this pass
+    only handles the post-sale "viewVars went empty but individual lot
+    pages still serve sold_price" failure mode.
+    """
+    today = today or date.today()
+    refresh_cutoff = today - timedelta(days=ANTIQUORUM_REFRESH_WINDOW_DAYS)
+
+    candidates = []
+    for url, data in (prior_lots or {}).items():
+        if not isinstance(data, dict):
+            continue
+        if data.get("house") != "Antiquorum":
+            continue
+        if ANTIQUORUM_LOT_URL_FRAGMENT not in url:
+            continue
+        if data.get("sold_price"):
+            continue
+        if url in fresh_out:
+            continue
+        end_str = data.get("auction_end") or ""
+        d_end = None
+        # auction_end can be ISO datetime ("2026-05-10T18:00:00Z") or a
+        # bare date string. Try datetime first, fall back to date prefix.
+        for parser in (
+            lambda s: datetime.fromisoformat(s.replace("Z", "+00:00")).date(),
+            lambda s: datetime.fromisoformat(s[:10]).date(),
+        ):
+            try:
+                d_end = parser(end_str)
+                break
+            except (ValueError, TypeError):
+                continue
+        if d_end is None:
+            continue
+        if d_end >= today:
+            # Sale hasn't closed yet — bulk path is the right surface.
+            continue
+        if d_end < refresh_cutoff:
+            # Too old; if we never got a price by now, we never will.
+            continue
+        candidates.append(url)
+
+    if not candidates:
+        return 0
+
+    print(
+        f"\n[Antiquorum] Results refresh: walking {len(candidates)} unsold "
+        f"lot(s) from sales closed in the last "
+        f"{ANTIQUORUM_REFRESH_WINDOW_DAYS}d"
+    )
+    updated = 0
+    for url in candidates:
+        try:
+            time.sleep(ANTIQUORUM_REFRESH_SLEEP_SECONDS)
+            data = scrape_antiquorum_lot(url)
+        except Exception as e:
+            print(f"  [refresh] fetch failed {url}: {e}")
+            continue
+        if not isinstance(data, dict):
+            continue
+        sp = data.get("sold_price")
+        raw_status = (data.get("status") or "").lower()
+        terminal_status = raw_status in {
+            "sold", "passed", "unsold", "withdrawn", "ended"
+        }
+        if sp in (None, 0) and not terminal_status:
+            # Still no result published; try again next run.
+            continue
+        # Normalize status to our binary 'ended' bucket, matching
+        # enumerate_antiquorum's status mapping.
+        if terminal_status:
+            data["status"] = "ended"
+        fresh_out[url] = data
+        updated += 1
+    print(
+        f"  [refresh] {updated}/{len(candidates)} lot(s) updated with "
+        f"realised results"
+    )
+    return updated
 
 
 def enumerate_christies(sale_url, sale=None):
@@ -1313,6 +1425,28 @@ def main():
             n_kept += 1
         print(f"  → {n_kept} lots kept after filter\n")
 
+    # Load prior auction_lots.json once — used both for the Antiquorum
+    # results-refresh pass below AND the sold-lot persistence pass at
+    # the end of main().
+    prior = {}
+    if os.path.exists(OUTPUT_JSON):
+        try:
+            with open(OUTPUT_JSON) as f:
+                prior = json.load(f) or {}
+            if not isinstance(prior, dict):
+                prior = {}
+        except Exception as e:
+            print(f"  warn: couldn't read existing {OUTPUT_JSON}: {e}")
+            prior = {}
+
+    # Antiquorum results-refresh: walk per-lot detail pages for any
+    # Antiquorum lot we already have but never captured a sold_price for,
+    # IFF its parent sale ended within the refresh window. Fills the gap
+    # when the bulk live-auction page archives post-sale and stops
+    # serving the lots blob, but individual lot pages still publish
+    # the realized sold_price.
+    refresh_antiquorum_unsold_lots(prior, out, today)
+
     # Manually curated URLs (data/manual_lot_urls.json) — process AFTER
     # the comprehensive scrape so manual entries win on URL collision
     # (they're typically the more authoritative scrape for that lot,
@@ -1347,16 +1481,8 @@ def main():
     # realized sold_price (an unambiguous "this lot was sold" signal).
     # Passed / unsold / never-resolved lots are NOT preserved — they
     # have no realized result and become dead weight over time.
-    prior = {}
-    if os.path.exists(OUTPUT_JSON):
-        try:
-            with open(OUTPUT_JSON) as f:
-                prior = json.load(f) or {}
-            if not isinstance(prior, dict):
-                prior = {}
-        except Exception as e:
-            print(f"  warn: couldn't read existing {OUTPUT_JSON} for sold-lot persistence: {e}")
-            prior = {}
+    # `prior` was loaded once near the top of main() and is shared with
+    # the Antiquorum results-refresh pass above.
     persisted = 0
     for url, data in prior.items():
         if url in out:
