@@ -127,8 +127,13 @@ export function DesktopShell(props) {
           dispatch lives in App.js's allFiltered memo. */}
       <div style={{ display: "flex", gap: 6 }}>
         {(() => {
-          const isDate = sort === "date" || sort === "date-asc";
-          const label = sort === "date" ? "Date ↓"
+          // On Home, the activity grouping is the visible order — not
+          // a date sort. Suppress the active state on Home so the
+          // pill doesn't lie about state. Click still routes to
+          // Listings via the interact-routes effect.
+          const isDate = tab !== "home" && (sort === "date" || sort === "date-asc");
+          const label = tab === "home" ? "Date"
+                      : sort === "date" ? "Date ↓"
                       : sort === "date-asc" ? "Date ↑"
                       : "Date";
           return (
@@ -140,8 +145,9 @@ export function DesktopShell(props) {
           );
         })()}
         {(() => {
-          const isPrice = sort === "price-asc" || sort === "price-desc";
-          const label = sort === "price-desc" ? "Price ↓"
+          const isPrice = tab !== "home" && (sort === "price-asc" || sort === "price-desc");
+          const label = tab === "home" ? "Price"
+                      : sort === "price-desc" ? "Price ↓"
                       : sort === "price-asc" ? "Price ↑"
                       : "Price";
           return (
