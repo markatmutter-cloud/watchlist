@@ -315,7 +315,12 @@ export function CollectionsTab({
   }
 
   return (
-    <div style={{ paddingTop: 4 }}>
+    // No paddingTop here — each inner view (ListsView / MyWatchesView /
+    // ChallengesView) already adds `paddingTop: 4` so the SubTabIntro
+    // banner lines up with the Searches sub-tab in WatchlistTab. Adding
+    // 4px here too made these three sub-tabs sit 4px lower than Searches
+    // (Mark feedback 2026-05-11).
+    <div>
       {body}
       <ManualEntryForm
         open={manualEntryOpen}
@@ -1496,13 +1501,16 @@ function ListsView({
             // so a glance at the list tells you "what we agreed on
             // / what's open / what we've ruled out."
             //
-            // Classification: any 👍/❤️/🔥 reaction → positive; ❌
-            // (and no positive) → negative; everything else → neutral
-            // (including no reactions and 🤔-only items).
+            // Classification: any ❤️/👍 reaction → positive; ❌ (and
+            // no positive) → negative; everything else → neutral (no
+            // reactions). The legacy 🔥 and 🤔 emojis are kept in the
+            // classification sets so older reactions written before
+            // the 2026-05-11 simplification still bucket correctly —
+            // they just aren't offered as new picks in the strip.
             const isSharedList = memberCount >= 2;
             let renderEntries;
             if (isSharedList) {
-              const POSITIVE = new Set(["👍", "❤️", "🔥"]);
+              const POSITIVE = new Set(["❤️", "👍", "🔥"]);
               const NEGATIVE = new Set(["❌"]);
               const classify = (item) => {
                 const rs = reactionsByItem.get(item.rowId) || [];
@@ -1522,7 +1530,7 @@ function ListsView({
                                 + (buckets.negative.length > 0 ? 1 : 0) > 0;
               if (buckets.positive.length > 0) {
                 renderEntries.push({ kind: "header", key: "h-pos",
-                  label: `👍 Liked · ${buckets.positive.length}` });
+                  label: `❤️ Liked · ${buckets.positive.length}` });
                 for (const it of buckets.positive) renderEntries.push({ kind: "item", item: it });
               }
               if (buckets.neutral.length > 0) {
@@ -2062,7 +2070,13 @@ const trashIcon = (
 // member sees the chip update without a refresh (ListsView's
 // effect refetches on every event).
 
-const REACTION_EMOJIS = ["👍", "❤️", "🔥", "🤔", "❌"];
+// Simplified set (2026-05-11). Was ["👍", "❤️", "🔥", "🤔", "❌"];
+// Mark feedback: too many overlapping options. Dropped 🔥 (intensifier
+// on ❤️, no distinct meaning) and 🤔 (the "no reaction" state already
+// covers undecided). Three clean tiers: love / yes / no. Reactions
+// written under the old set still display and still bucket correctly
+// — see the POSITIVE/NEGATIVE sets above.
+const REACTION_EMOJIS = ["❤️", "👍", "❌"];
 
 // Thumbs-up SVG used as the empty-state trigger for the reactions
 // picker (Mark feedback 2026-05-10: a "+ react" text button looked
