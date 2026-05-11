@@ -47,7 +47,14 @@ function EditorialHero({ isMobile }) {
       // tab pills are about to be hidden on Home (moved inline below
       // the search bar), so the wordmark sits closer to the top edge
       // and the hero feels less wasteful.
-      padding: isMobile ? "20px 16px 14px" : "32px 16px 22px",
+      // Top + bottom equalized 2026-05-11 (Mark feedback): wordmark
+      // needs to sit visually centered between the top-bar's
+      // border-bottom and the hairline below it. Section's top
+      // padding == h1's bottom margin, so the gap above the wordmark
+      // matches the gap below it (to the hairline). Bottom padding
+      // adds breathing room INTO the next section but doesn't affect
+      // the perceived centering.
+      padding: isMobile ? "12px 16px 14px" : "22px 16px 22px",
       textAlign: "center",
     }}>
       {/* The hairline-above the wordmark was removed 2026-05-11 —
@@ -302,7 +309,8 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
             // screen. Tighter slots let row 1 + the top of the next
             // section show together so the page reads as scrollable.
             flex: "0 0 44%", maxWidth: 180, scrollSnapAlign: "start", background: "var(--card-bg)",
-          } : { minWidth: 0 }}>
+            position: "relative",
+          } : { minWidth: 0, position: "relative" }}>
             <Card item={item} wished={!!watchlist[item.id]} onWish={handleWish}
               compact={compact}
               onHide={isAdmin ? toggleHide : undefined}
@@ -310,6 +318,34 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
               onAddToCollection={user ? openCollectionPicker : undefined}
               primaryCurrency={primaryCurrency}
               onShare={onShare} onView={onView} onClickListing={onClickListing} />
+            {/* Admin one-tap quick-hide overlay — Home only (2026-05-11).
+                Mark report: "crappy watches showing up on the home
+                screen and I want to be able to hide". The ⋯ menu
+                Hide entry is two taps; this overlay is one. Fires
+                the same toggleHide handler, which (because Mark is
+                admin) writes to BOTH `hidden_listings` (his view)
+                AND `admin_hidden_listings` (global blocklist) — see
+                App.js toggleHide. Non-admin users never see the
+                overlay; the standard ⋯ menu Hide is unchanged. */}
+            {isAdmin && toggleHide && (
+              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleHide(item); }}
+                aria-label="Hide (admin)"
+                title="Hide for everyone"
+                style={{
+                  position: "absolute", top: 6, left: 6, zIndex: 5,
+                  width: 26, height: 26, borderRadius: "50%",
+                  border: "none",
+                  background: "rgba(0,0,0,0.55)", color: "#fff",
+                  cursor: "pointer", fontFamily: "inherit",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  padding: 0,
+                }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            )}
           </div>
         ))}
       </div>
