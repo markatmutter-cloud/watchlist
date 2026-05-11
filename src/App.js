@@ -2259,6 +2259,31 @@ export default function Watchlist() {
     if (label === "Older") return "Older sold";
     return `${label} sold`;
   };
+  // Auctions banding (2026-05-10). Buckets active auction lots by
+  // proximity to their auction_end. The underlying sort is already
+  // endingSoonComparator (soonest-first), so this just labels the
+  // natural breakpoints — "Closing today" vs "Closing tomorrow"
+  // vs weekday-name vs "Closing next week" / "Closing later".
+  const closingBucketLabel = (i) => {
+    const end = i.auction_end;
+    if (!end) return "No end date";
+    const endTime = new Date(end).getTime();
+    if (!Number.isFinite(endTime)) return "No end date";
+    const now = Date.now();
+    const diffMs = endTime - now;
+    if (diffMs < 0) return "Ending now";
+    const HOUR = 60 * 60 * 1000;
+    const DAY = 24 * HOUR;
+    if (diffMs < HOUR) return "Closing in the next hour";
+    if (diffMs < DAY) return "Closing today";
+    if (diffMs < 2 * DAY) return "Closing tomorrow";
+    if (diffMs < 7 * DAY) {
+      const weekdays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+      return `Closing ${weekdays[new Date(endTime).getDay()]}`;
+    }
+    if (diffMs < 14 * DAY) return "Closing next week";
+    return "Closing later";
+  };
   // (Group-by helpers removed with the feature. Date dividers under
   // a date-sort are produced inline in `visibleWithDividers` below.)
 
@@ -2285,15 +2310,19 @@ export default function Watchlist() {
     // only on sub-tabs where date dividers make sense:
     //   live  → freshness buckets (Today / Yesterday / weekday / ...)
     //   sold  → sold-date buckets (Today sold / Last week sold / ...)
-    //   auctions → no dividers (sort is by ending order, not date)
+    //   auctions → closing-time buckets (Closing today / Closing
+    //              tomorrow / weekday / Closing next week / ...)
     //   calendar → renders a calendar component, not this grid
     const isDateSort = sort === "date" || sort === "date-asc";
-    const useFreshBuckets = isDateSort && tab === "listings" && listingsSubTab === "live";
-    const useSoldBuckets  = isDateSort && tab === "listings" && listingsSubTab === "sold";
-    if (!useFreshBuckets && !useSoldBuckets) {
+    const useFreshBuckets   = isDateSort && tab === "listings" && listingsSubTab === "live";
+    const useSoldBuckets    = isDateSort && tab === "listings" && listingsSubTab === "sold";
+    const useClosingBuckets = isDateSort && tab === "listings" && listingsSubTab === "auctions";
+    if (!useFreshBuckets && !useSoldBuckets && !useClosingBuckets) {
       return visible.map(it => ({ kind: "card", item: it }));
     }
-    const baseLabelFn = useSoldBuckets ? soldBucketLabel : ageBucketLabel;
+    const baseLabelFn = useClosingBuckets ? closingBucketLabel
+                      : useSoldBuckets    ? soldBucketLabel
+                      : ageBucketLabel;
     // Mark's report 2026-05-06: backfilled items can produce a second
     // "Last week" (or any) divider because they sort in a separate
     // section below the non-backfilled run but get bucketed by the
@@ -2308,8 +2337,12 @@ export default function Watchlist() {
     // items happen to be backfilled. Sold dividers should be
     // uniform: the sold-date is the right axis regardless of how
     // the listing was first captured.
+    // "Earlier additions" override only applies to the live freshness
+    // buckets — for sold + closing buckets it'd alternate confusingly
+    // because some sold / closing items happen to be backfilled.
+    const useEarlierOverride = useFreshBuckets;
     const labelFn = (i) =>
-      (useSoldBuckets ? false : !!i.backfilled) ? "Earlier additions" : baseLabelFn(i);
+      (useEarlierOverride && !!i.backfilled) ? "Earlier additions" : baseLabelFn(i);
     const out = [];
     let last = null;
     // Count the contiguous run in `allFiltered`, not the bucket total:
