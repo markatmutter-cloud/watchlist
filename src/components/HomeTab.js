@@ -7,11 +7,9 @@ import React from "react";
 // Pure presentation. App.js owns the data slicing and feature-flag
 // routing; HomeTab just renders the arrays it's handed.
 //
-// Section headers use Georgia (a system serif that falls back from
-// Newsreader if it were loaded) — distinct from the sans body so the
-// activity grouping reads as a hierarchy, not just more chrome.
-
-const HEADER_FONT = "Georgia, 'Times New Roman', serif";
+// Section headers use the same system sans as the rest of the app
+// — sizing + weight set them apart from body text without changing
+// the font family.
 
 function SectionHead({ title, count, onViewAll }) {
   return (
@@ -23,10 +21,9 @@ function SectionHead({ title, count, onViewAll }) {
     }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
         <span style={{
-          fontFamily: HEADER_FONT,
-          fontSize: 20,
-          fontWeight: 500,
-          letterSpacing: "-0.015em",
+          fontSize: 18,
+          fontWeight: 600,
+          letterSpacing: "-0.01em",
           color: "var(--text1)",
         }}>{title}</span>
         {count != null && (
@@ -70,10 +67,10 @@ export function HomeTab({
     return (
       <div style={{ padding: "80px 20px", textAlign: "center" }}>
         <div style={{
-          fontFamily: HEADER_FONT,
-          fontSize: 19,
+          fontSize: 17,
+          fontWeight: 600,
           color: "var(--text1)",
-          letterSpacing: "-0.015em",
+          letterSpacing: "-0.01em",
           marginBottom: 6,
         }}>
           Nothing new in the last 48 hours.

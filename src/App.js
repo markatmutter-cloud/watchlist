@@ -2151,6 +2151,21 @@ export default function Watchlist() {
       onClickListing={onClickListing} />
   ), [watchlist, handleWish, compact, isAdmin, toggleHide, hidden, user, openCollectionPicker, primaryCurrency, handleShare, observeCard, onClickListing]);
 
+  // "Interact-on-Home routes to Listings" contract. Home renders the
+  // same sub-tab strip + filter row chrome as Listings, but Home has
+  // no flat feed to filter. So when the user touches any of those
+  // controls while on Home, route them to Listings and let the new
+  // state take effect there. The ref guards against firing on the
+  // initial mount tick (state-initialisation, not user interaction).
+  const homeInteractRouteRef = useRef(false);
+  useEffect(() => {
+    if (!homeInteractRouteRef.current) { homeInteractRouteRef.current = true; return; }
+    if (tab === "home") {
+      setTab("listings");
+      setPage(1);
+    }
+  }, [tab, setTab, setPage, listingsSubTab, sort, search, filterHearted, filterSources, filterBrands, filterRefs, minPriceText, maxPriceText]);
+
   if (loading) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Pulling the latest listings…</div>;
   if (loadError) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Couldn't pull the listings — refresh to try again.</div>;
 
@@ -2428,7 +2443,10 @@ export default function Watchlist() {
   // Listings tab sub-tab strip — mirrors the Watchlist sub-tab strip
   // pattern (tabPill underline buttons, horizontally scrollable).
   // Live listings | Live auctions | All sold | Auction calendar.
-  const listingsSubTabsJSX = tab !== "listings" ? null : (
+  // Sub-tab strip renders on Home too — Mark feedback 2026-05-10:
+  // chrome should be visible on Home with a "click routes to Listings"
+  // contract (see the navigateToListingsOnInteraction effect below).
+  const listingsSubTabsJSX = (tab !== "listings" && tab !== "home") ? null : (
     <>
       <div style={{
         display: "flex", gap: 20, alignItems: "center",
@@ -2448,9 +2466,23 @@ export default function Watchlist() {
           ["sold", isMobile ? "Archive" : "Archive (Sold)"],
           ["calendar", isMobile ? "Calendar" : "Auction calendar"],
         ].map(([key, label]) => {
-          const active = listingsSubTab === key;
+          // On Home, no sub-tab is "active" — Home is its own surface,
+          // and the strip is a quick-jump into Listings. Highlighting
+          // a pill would falsely imply Home is showing that sub-tab's
+          // content. The interact-routes-to-Listings effect handles
+          // the navigation; clicking re-selects the sub-tab there.
+          const active = tab === "listings" && listingsSubTab === key;
           return (
-            <button key={key} onClick={() => { setListingsSubTab(key); setDrawerOpen(false); setPage(1); }}
+            <button key={key} onClick={() => {
+              // On Home, force a tab change even if the user clicks
+              // the sub-tab that's already in listingsSubTab state.
+              // (Otherwise the state setter no-ops and the
+              // interact-routes effect doesn't fire.)
+              if (tab === "home") { setTab("listings"); setPage(1); }
+              setListingsSubTab(key);
+              setDrawerOpen(false);
+              setPage(1);
+            }}
               style={{ ...tabPill(active), flexShrink: 0 }}>
               {label}
             </button>

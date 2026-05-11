@@ -215,12 +215,13 @@ export function MobileShell(props) {
           {/* Lot # pill retired 2026-05-07 (Mark feedback) — catalog
               ordering is now baked into the default Date sort via
               endingSoonComparator's lot_number tiebreaker. */}
-          {/* ♥ Saved-only filter pill — Listings tab, signed-in only.
-              Moved out of the filter drawer 2026-05-07 (Mark
+          {/* ♥ Saved-only filter pill — Listings + Home, signed-in
+              only. Moved out of the filter drawer 2026-05-07 (Mark
               feedback: should sit next to Date and Price for
-              parity with desktop). Hidden on Calendar (no items)
-              and on non-Listings tabs. */}
-          {tab === "listings" && user && listingsSubTab !== "calendar" && (
+              parity with desktop). Hidden on Calendar (no items).
+              On Home the click routes to Listings via the
+              interact-routes effect in App.js. */}
+          {(tab === "listings" || tab === "home") && user && listingsSubTab !== "calendar" && (
             <button onClick={() => setFilterHearted && setFilterHearted(!filterHearted)}
               aria-pressed={!!filterHearted}
               title={filterHearted ? "Show all" : "Show only saved"}
