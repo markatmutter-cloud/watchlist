@@ -1,0 +1,6 @@
+{
+  "_comment": "Manual list of Phillips auction codes the calendar scraper missed. phillips.com/watches only shows upcoming sales, so past sales drop off the moment they end. Add codes here to make merge.py treat them as known sales (lot enumeration kicks in via auction_lots_scraper). Mark report 2026-05-11: CH080226 (Geneva Watch Auction XXIII, May 9-10) had results posted but never landed in our data.",
+  "codes": [
+    "CH080226"
+  ]
+}
