@@ -105,20 +105,21 @@ export function MobileShell(props) {
             content, leaving only one row of cards visible above the
             fold. Reduced font + padding here saves ~14px without
             losing the home-tap affordance. */}
-        <div style={{ padding: "6px 16px 4px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-          {/* Tap the title to jump back to Home. Bumped up in phase 3
-              (2026-05-11) so the wordmark reads as a brand mark, not
-              just a header label. */}
-          <button onClick={() => { setTab("home"); setPage(1); }}
-            style={{ background: "none", border: "none", cursor: "pointer",
-                    padding: 0, fontFamily: "inherit",
-                    fontSize: 22, fontWeight: 700, letterSpacing: "-0.6px",
-                    color: "var(--text1)" }}>
-            Watchlist
-          </button>
-          {/* About link surfaced top-level on mobile so first-time
-              visitors have an obvious "what is this?" affordance
-              without digging into a user dropdown. */}
+        {/* Top wordmark row. On Home, the editorial hero in the body
+            is the canonical brand mark — render only the About link
+            (right-aligned) and skip the redundant top wordmark. On
+            every other tab, render wordmark + About so the home-tap
+            affordance stays where users expect it. */}
+        <div style={{ padding: "6px 16px 4px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, minHeight: 28 }}>
+          {tab !== "home" ? (
+            <button onClick={() => { setTab("home"); setPage(1); }}
+              style={{ background: "none", border: "none", cursor: "pointer",
+                      padding: 0, fontFamily: "inherit",
+                      fontSize: 22, fontWeight: 700, letterSpacing: "-0.6px",
+                      color: "var(--text1)" }}>
+              Watchlist
+            </button>
+          ) : <span />}
           <button onClick={() => setAboutModalOpen(true)}
             style={{ background: "none", border: "none", cursor: "pointer",
                     padding: 0, fontFamily: "inherit", fontSize: 12,

@@ -2103,10 +2103,19 @@ export default function Watchlist() {
     return [...live].sort((a, b) => (sortKey(b) || "").localeCompare(sortKey(a) || "")).slice(0, 12);
   }, [items, hidden, adminHidden]);
   const homeEndingNext = useMemo(() => {
+    // auctionLotItems is the PROJECTED shape — `sold` is the
+    // derived isEnded flag (data.status === "ended" || sold_price set),
+    // there is no `status` field on the projected item. The earlier
+    // `i.status === "ended"` check never fired, which let multi-
+    // session sold session-1 lots through (Phillips Geneva XXIII,
+    // Christie's online sales) because they carry a future
+    // `auction_end` (session 2) AND a realised sold_price. Filter
+    // on `!i.sold` to exclude them. (Bug surfaced 2026-05-11 — same
+    // SOLD cards appearing in both Recently sold and Ending next.)
     const now = Date.now();
     const active = auctionLotItems.filter(i => {
       if (hidden[i.id] || adminHidden.has(i.id)) return false;
-      if (i.status === "ended") return false;
+      if (i.sold) return false;
       const end = i.auction_end ? Date.parse(i.auction_end) : NaN;
       return !Number.isNaN(end) && end > now;
     });

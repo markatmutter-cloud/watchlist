@@ -65,22 +65,20 @@ function EditorialHero({ isMobile }) {
   );
 }
 
-// Search composite — phase 4 redesign. Listings is the primary
-// submit (sits inside the input on the right; Enter key also fires
-// it). Auctions and Sold are surfaced underneath as smaller secondary
-// links — clearly available but not competing with the primary action.
+// Search composite — phase 4b (2026-05-11). Listings is the primary
+// submit (dark pill inside the input on the right; Enter also fires
+// it). Auctions and Sold sit RIGHT UNDER that button as a small
+// secondary chip cluster — popover-style, right-aligned to the
+// primary action. Reads as "the same dropdown, but flattened" — no
+// open/close toggle state, no JS, just visual hierarchy.
 function HomeSearchBar({ onSubmit, isMobile }) {
   const [draft, setDraft] = useState("");
   const fire = (target) => {
     const q = draft.trim();
     onSubmit(q, target);
   };
-  const trimmed = draft.trim();
-  const queryEcho = trimmed
-    ? ` "${trimmed.length > 22 ? trimmed.slice(0, 22) + "…" : trimmed}"`
-    : "";
   return (
-    <section style={{ padding: isMobile ? "0 16px 24px" : "0 16px 32px", maxWidth: 720, margin: "0 auto", width: "100%" }}>
+    <section style={{ padding: isMobile ? "0 16px 28px" : "0 16px 36px", maxWidth: 720, margin: "0 auto", width: "100%" }}>
       <div style={{
         display: "flex", alignItems: "stretch",
         background: "var(--surface)", borderRadius: 12,
@@ -117,16 +115,29 @@ function HomeSearchBar({ onSubmit, isMobile }) {
           Search Listings <span aria-hidden style={{ fontSize: 14 }}>→</span>
         </button>
       </div>
-      <div style={{ marginTop: 10, fontSize: 12, color: "var(--text3)", textAlign: "center" }}>
-        Or search instead in{" "}
+      {/* Secondary search targets — sit directly under the Search
+          Listings button, right-aligned. Visual descendents of the
+          primary CTA; reads as an "or…" dropdown without needing a
+          toggle interaction. */}
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 8, paddingRight: 2 }}>
+        <span style={{ fontSize: 11, color: "var(--text3)", alignSelf: "center", marginRight: 2 }}>or in</span>
         <button onClick={() => fire("auctions")}
-          style={{ background: "none", border: "none", padding: 0, fontFamily: "inherit", fontSize: 12, fontWeight: 600, color: "var(--text2)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
-          Auctions{queryEcho}
+          style={{
+            padding: "5px 12px", borderRadius: 999,
+            border: "0.5px solid var(--border)", background: "var(--card-bg)",
+            color: "var(--text1)", fontFamily: "inherit", fontSize: 12,
+            fontWeight: 500, cursor: "pointer",
+          }}>
+          Auctions
         </button>
-        {" · "}
         <button onClick={() => fire("sold")}
-          style={{ background: "none", border: "none", padding: 0, fontFamily: "inherit", fontSize: 12, fontWeight: 600, color: "var(--text2)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
-          Sold{queryEcho}
+          style={{
+            padding: "5px 12px", borderRadius: 999,
+            border: "0.5px solid var(--border)", background: "var(--card-bg)",
+            color: "var(--text1)", fontFamily: "inherit", fontSize: 12,
+            fontWeight: 500, cursor: "pointer",
+          }}>
+          Sold
         </button>
       </div>
     </section>
@@ -137,18 +148,17 @@ function HomeSearchBar({ onSubmit, isMobile }) {
 // mobile flips to a horizontal scroll with snap so cards 4-7 slide in
 // from the right. The strip surfaces 7 — App.js still caps the slice
 // at 12 so future grid changes don't require a data plumbing change.
-function SectionStrip({ eyebrow, heading, descriptor, items, onViewAll, isMobile, watchlist, hidden, handleWish, toggleHide, primaryCurrency, onShare, onView, onClickListing, openCollectionPicker, isAdmin, user, compact }) {
+// Eyebrow labels removed 2026-05-11 — Mark feedback: they
+// duplicated the heading text below ("ON THE FEED" + "Recently
+// added"). Heading + descriptor carry the editorial signal on
+// their own.
+function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchlist, hidden, handleWish, toggleHide, primaryCurrency, onShare, onView, onClickListing, openCollectionPicker, isAdmin, user, compact }) {
   if (!items || items.length === 0) return null;
   const slice = items.slice(0, CARDS_PER_SECTION);
   return (
     <section style={{ marginBottom: 28 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "0 16px", marginBottom: 12, gap: 12 }}>
         <div style={{ minWidth: 0 }}>
-          {eyebrow && (
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--text3)", marginBottom: 6 }}>
-              {eyebrow}
-            </div>
-          )}
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: "var(--text1)", letterSpacing: "-0.3px" }}>
             {heading}
           </h2>
@@ -210,7 +220,6 @@ export function HomeTab(props) {
         <HomeSearchBar onSubmit={homeSearchSubmit} isMobile={isMobile} />
       )}
       <SectionStrip
-        eyebrow="On the feed"
         heading="Recently added"
         descriptor="The newest pieces from the dealers I follow — straight off the wire."
         items={homeRecentAdded}
@@ -223,7 +232,6 @@ export function HomeTab(props) {
         user={user} compact={compact}
       />
       <SectionStrip
-        eyebrow="Just settled"
         heading="Recently sold"
         descriptor="What just changed hands — dealers and auction houses, the most recent results first."
         items={homeRecentSold}
@@ -236,7 +244,6 @@ export function HomeTab(props) {
         user={user} compact={compact}
       />
       <SectionStrip
-        eyebrow="Closing soon"
         heading="Ending next at auction"
         descriptor="Bids about to close across Antiquorum, Christie's, Sotheby's, and Phillips."
         items={homeEndingNext}
