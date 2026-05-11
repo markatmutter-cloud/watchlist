@@ -741,21 +741,35 @@ def _days_since(date_str, today=TODAY):
 
 
 def process_auctions():
-    """Read every data/*_auctions.csv, enrich with firstSeen + catalogLiveAt
-    from auctions_state.json, emit public/auctions.json. Past auctions are
-    dropped from the emitted feed (we don't keep a sold-auction archive yet)
-    but their state entries are preserved for future use.
+    """Build public/auctions.json from public/auctions_state.json (the
+    registry of every auction we've ever seen) — NOT just from the
+    current scrape. Mark spec 2026-05-11: "I want auction sales to be
+    kept with price permanently". Without registry-driven emission, a
+    sale falling out of any per-house calendar scrape (Phillips drops
+    past sales from /watches; Antiquorum reverts to a generic URL once
+    a sale ends; etc.) would disappear from auctions.json on the next
+    run, taking its lot enumeration trigger with it.
+
+    Flow:
+      1. Read every data/*_auctions.csv. For each row, upsert a full
+         entry into the registry — house, title, location, dates, URL,
+         hasCatalog, statusHint, firstSeen, lastSeen, catalogLiveAt.
+         Old fields preserved unless the new scrape supersedes them.
+      2. Walk the WHOLE registry (not just rows present in this run's
+         CSVs) to build the auctions array. Recompute status fresh
+         off dates + statusHint so a sale that was 'live' yesterday
+         is now 'past' today even if no scrape re-touched its row.
+      3. Drop registry entries lacking the bare minimum (house + title)
+         — happens when the schema was extended after the row landed.
     """
     import glob
     auction_csvs = sorted(glob.glob('data/*_auctions.csv'))
-    if not auction_csvs:
-        print("\nNo auction CSVs found, skipping auctions.json.")
-        return
 
     state = load_json(AUCTIONS_STATE_PATH, {})
     state_before = len(state)
-    auctions = []
+    seen_in_run = 0
 
+    # --- Pass 1: upsert current CSV rows into the registry ----------------
     for path in auction_csvs:
         with open(path, encoding='utf-8') as f:
             rows = list(csv.DictReader(f))
@@ -764,8 +778,8 @@ def process_auctions():
             house      = clean(r.get('house', ''))
             title      = clean(r.get('title', ''))
             location   = clean(r.get('location', ''))
-            date_start = r.get('date_start', '')
-            date_end   = r.get('date_end', '')
+            date_start = r.get('date_start', '') or ''
+            date_end   = r.get('date_end', '') or ''
             date_label = r.get('date_label', '')
             url        = r.get('url', '')
 
@@ -774,15 +788,10 @@ def process_auctions():
 
             aid = auction_id(house, date_start or title, title)
             entry = state.get(aid) or {}
+            seen_in_run += 1
 
-            if not entry.get('firstSeen'):
-                entry['firstSeen'] = TODAY
-            entry['lastSeen'] = TODAY
-
-            # Catalog-live signal: if the scraper told us explicitly via a
-            # `has_catalog` column, trust it — the scraper knows best whether
-            # the URL goes to a real catalog (vs a landing page or generic
-            # portal). Fall back to a heuristic otherwise.
+            # Catalog-live signal: trust the scraper's explicit flag
+            # when present; heuristic otherwise.
             raw_flag = (r.get('has_catalog') or '').strip().lower()
             if raw_flag in ('true', 'false'):
                 has_real_catalog = raw_flag == 'true'
@@ -792,49 +801,72 @@ def process_auctions():
             if has_real_catalog and not entry.get('catalogLiveAt'):
                 entry['catalogLiveAt'] = TODAY
 
-            entry['lastUrl']   = url
-            entry['lastTitle'] = title
-            state[aid] = entry
-
-            # Prefer the scraper's explicit status hint when present
-            # (e.g. Monaco Legend's "Bidding Open" = live even before
-            # the auction's stated start date — pre-bidding phase).
-            # Fall back to date-based derivation otherwise.
+            # Upsert full sale identity into the registry. Preserve
+            # firstSeen; everything else is a "latest known" snapshot.
+            if not entry.get('firstSeen'):
+                entry['firstSeen'] = TODAY
+            entry['lastSeen']   = TODAY
+            entry['house']      = house
+            entry['title']      = title
+            entry['location']   = location
+            entry['dateStart']  = date_start
+            entry['dateEnd']    = date_end or date_start
+            entry['dateLabel']  = date_label
+            entry['lastUrl']    = url
+            entry['lastTitle']  = title
+            entry['hasCatalog'] = has_real_catalog
+            # Preserve the BEST known catalog URL separately from
+            # lastUrl. Per-house scrapers may revert their lastUrl to
+            # a generic listings page once a sale ends (Antiquorum
+            # canonical case) — without this preservation, downstream
+            # lot enumeration loses the working catalog URL forever
+            # on the first post-sale run. catalogUrl is only ever
+            # SET (not overwritten) when has_real_catalog is true.
+            if has_real_catalog and url:
+                entry['catalogUrl'] = url
             hint = (r.get('status_hint') or '').strip().lower()
             if hint in ('live', 'upcoming', 'past'):
-                status = hint
-            else:
-                status = auction_status(date_start, date_end)
+                entry['statusHint'] = hint
+            state[aid] = entry
 
-            # Date-sanity override: hints can go stale (Monaco Legend
-            # left Exclusive Timepieces 40 marked "live" on its calendar
-            # for days after April 26 ended). The auction can't be live
-            # past its end date, full stop.
-            if (date_end or date_start) and _days_since(date_end or date_start) is not None and _days_since(date_end or date_start) > 0:
-                if status == 'live':
-                    status = 'past'
+    # --- Pass 2: emit auctions.json from the FULL registry ----------------
+    auctions = []
+    for aid, entry in state.items():
+        house = entry.get('house') or ''
+        title = entry.get('title') or entry.get('lastTitle') or ''
+        if not house or not title:
+            # Pre-registry-expansion entries (only had firstSeen +
+            # lastSeen + lastUrl/lastTitle) get backfilled the next
+            # time their CSV row appears. Skip until then.
+            continue
+        date_start = entry.get('dateStart') or ''
+        date_end   = entry.get('dateEnd') or date_start
 
-            # Past auctions stay in the emitted feed forever — the
-            # AuctionCalendar Archive section surfaces them, and they
-            # match the sold lots in the listings archive 1:1. State
-            # entry is preserved either way.
+        # Status: prefer scraper hint, else derive from dates. Then
+        # date-sanity override (a 'live' hint can't outlast the end).
+        hint = entry.get('statusHint') or ''
+        status = hint if hint in ('live', 'upcoming', 'past') else auction_status(date_start, date_end)
+        if (date_end or date_start):
+            ds = _days_since(date_end or date_start)
+            if ds is not None and ds > 0 and status == 'live':
+                status = 'past'
 
-            auctions.append({
-                'id':            aid,
-                'house':         house,
-                'title':         title,
-                'location':      location,
-                'dateStart':     date_start,
-                'dateEnd':       date_end or date_start,
-                'dateLabel':     date_label,
-                'url':           url,
-                'hasCatalog':    has_real_catalog,
-                'catalogLiveAt': entry.get('catalogLiveAt'),
-                'status':        status,
-                'firstSeen':     entry['firstSeen'],
-            })
+        auctions.append({
+            'id':            aid,
+            'house':         house,
+            'title':         title,
+            'location':      entry.get('location', ''),
+            'dateStart':     date_start,
+            'dateEnd':       date_end,
+            'dateLabel':     entry.get('dateLabel', ''),
+            'url':           entry.get('lastUrl', ''),
+            'hasCatalog':    bool(entry.get('hasCatalog')),
+            'catalogLiveAt': entry.get('catalogLiveAt'),
+            'status':        status,
+            'firstSeen':     entry.get('firstSeen'),
+        })
 
-    # Sort: live first, then upcoming by start date
+    # Sort: live first, then upcoming by start date, then past.
     status_rank = {'live': 0, 'upcoming': 1, 'past': 2}
     auctions.sort(key=lambda a: (status_rank.get(a['status'], 9), a['dateStart'] or '9999-99-99'))
 
@@ -844,8 +876,9 @@ def process_auctions():
         json.dump(state, f, separators=(',', ':'), sort_keys=True)
 
     live_count = sum(1 for a in auctions if a['status'] == 'live')
-    print(f"\nAuctions: {len(auctions)} upcoming/live ({live_count} live now)")
-    print(f"  State entries: {state_before} -> {len(state)}")
+    past_count = sum(1 for a in auctions if a['status'] == 'past')
+    print(f"\nAuctions: {len(auctions)} emitted ({live_count} live · {past_count} past · {len(auctions)-live_count-past_count} upcoming)")
+    print(f"  Registry: {state_before} entries before, {len(state)} after (this run touched {seen_in_run} via CSVs)")
     print(f"Written {AUCTIONS_PATH} and {AUCTIONS_STATE_PATH}")
 
 
