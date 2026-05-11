@@ -43,7 +43,7 @@ function EditorialHero({ isMobile }) {
     }}>
       <div style={{ height: 0.5, background: "var(--border)", margin: isMobile ? "0 0 22px" : "0 0 30px" }} />
       <h1 style={{
-        margin: 0,
+        margin: isMobile ? "0 0 22px" : "0 0 30px",
         fontFamily: "inherit",
         fontSize: isMobile ? 34 : 56,
         fontWeight: 400,
@@ -57,17 +57,6 @@ function EditorialHero({ isMobile }) {
       }}>
         Watchlist
       </h1>
-      <p style={{
-        margin: isMobile ? "14px 0 22px" : "18px 0 30px",
-        fontFamily: "inherit",
-        fontStyle: "italic",
-        fontSize: isMobile ? 13 : 15,
-        fontWeight: 400,
-        color: "var(--text2)",
-        letterSpacing: "0.01em",
-      }}>
-        A vintage watch directory · est. 2026
-      </p>
       <div style={{ height: 0.5, background: "var(--border)" }} />
     </section>
   );
@@ -85,25 +74,35 @@ function LiveCounts({ counts }) {
       fontSize: 11, fontWeight: 500, letterSpacing: "0.18em",
       textTransform: "uppercase", color: "var(--text3)",
     }}>
-      {fmt(counts.listings)} listings · {fmt(counts.lots)} lots · {counts.houses} houses
+      Status: {fmt(counts.listings)} listings · {fmt(counts.lots)} lots
     </div>
   );
 }
 
-// Search composite — phase 4b (2026-05-11). Listings is the primary
-// submit (dark pill inside the input on the right; Enter also fires
-// it). Auctions and Sold sit RIGHT UNDER that button as a small
-// secondary chip cluster — popover-style, right-aligned to the
-// primary action. Reads as "the same dropdown, but flattened" — no
-// open/close toggle state, no JS, just visual hierarchy.
-function HomeSearchBar({ onSubmit, isMobile }) {
+// Search composite — phase 4d (2026-05-11). Now in a full-width
+// inverted bleed band: the dark treatment moved off the Ending-Next
+// section (white cards on black read as harsh) onto the search
+// surface, which is text + input only and absorbs the dark mood
+// cleanly. Negative-margin escape uses shellPad to bleed past the
+// parent shell's horizontal padding. The search input itself stays
+// light/elevated so it reads as a tappable surface against the dark
+// frame.
+function HomeSearchBar({ onSubmit, isMobile, shellPad }) {
   const [draft, setDraft] = useState("");
   const fire = (target) => {
     const q = draft.trim();
     onSubmit(q, target);
   };
   return (
-    <section style={{ padding: isMobile ? "0 16px 28px" : "0 16px 36px", maxWidth: 720, margin: "0 auto", width: "100%" }}>
+    <section style={{
+      background: "var(--text1)",
+      color: "var(--bg)",
+      marginLeft: -shellPad,
+      marginRight: -shellPad,
+      padding: isMobile ? "32px 16px 28px" : "44px 20px 40px",
+      marginBottom: isMobile ? 28 : 36,
+    }}>
+    <div style={{ maxWidth: 720, margin: "0 auto", width: "100%" }}>
       <div style={{
         display: "flex", alignItems: "stretch",
         background: "var(--surface)", borderRadius: 12,
@@ -145,27 +144,28 @@ function HomeSearchBar({ onSubmit, isMobile }) {
           Listings button, right-aligned. Visual descendents of the
           primary CTA; reads as an "or…" dropdown without needing a
           toggle interaction. */}
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 8, paddingRight: 2 }}>
-        <span style={{ fontSize: 11, color: "var(--text3)", alignSelf: "center", marginRight: 2 }}>Search in</span>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 10, paddingRight: 2 }}>
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", alignSelf: "center", marginRight: 2 }}>Search in</span>
         <button onClick={() => fire("auctions")}
           style={{
             padding: "5px 12px", borderRadius: 999,
-            border: "0.5px solid var(--border)", background: "var(--card-bg)",
-            color: "var(--text1)", fontFamily: "inherit", fontSize: 12,
-            fontWeight: 500, cursor: "pointer",
+            border: "0.5px solid rgba(255,255,255,0.18)",
+            background: "transparent", color: "var(--bg)",
+            fontFamily: "inherit", fontSize: 12, fontWeight: 500, cursor: "pointer",
           }}>
           Auctions
         </button>
         <button onClick={() => fire("sold")}
           style={{
             padding: "5px 12px", borderRadius: 999,
-            border: "0.5px solid var(--border)", background: "var(--card-bg)",
-            color: "var(--text1)", fontFamily: "inherit", fontSize: 12,
-            fontWeight: 500, cursor: "pointer",
+            border: "0.5px solid rgba(255,255,255,0.18)",
+            background: "transparent", color: "var(--bg)",
+            fontFamily: "inherit", fontSize: 12, fontWeight: 500, cursor: "pointer",
           }}>
           Sold
         </button>
       </div>
+    </div>
     </section>
   );
 }
@@ -230,7 +230,11 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
       }}>
         {slice.map(item => (
           <div key={item.id} style={isMobile ? {
-            flex: "0 0 60%", maxWidth: 240, scrollSnapAlign: "start", background: "var(--card-bg)",
+            // Smaller mobile tiles — Mark feedback 2026-05-11: previous
+            // 60% / 240px tiles were too tall, the next section sat off-
+            // screen. Tighter slots let row 1 + the top of the next
+            // section show together so the page reads as scrollable.
+            flex: "0 0 44%", maxWidth: 180, scrollSnapAlign: "start", background: "var(--card-bg)",
           } : { minWidth: 0 }}>
             <Card item={item} wished={!!watchlist[item.id]} onWish={handleWish}
               compact={compact}
@@ -250,7 +254,7 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
 // discovery sections and the footer that nudges signed-in users back
 // into the collection-management surfaces (Saved listings, My watches,
 // Lists). Three small text-style CTAs — no card chrome, no images.
-function ManageCallout({ goToSavedListings, goToMyWatches, goToLists, isMobile }) {
+function ManageCallout({ goToSavedLists, goToMyWatches, goToChallenges, isMobile }) {
   return (
     <section style={{
       margin: isMobile ? "8px 16px 28px" : "16px 16px 36px",
@@ -260,30 +264,30 @@ function ManageCallout({ goToSavedListings, goToMyWatches, goToLists, isMobile }
       borderRadius: 14,
       background: "var(--bg)",
     }}>
-      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.28em", textTransform: "uppercase", color: "var(--text3)", marginBottom: 12 }}>
-        For your collection
-      </div>
       <h2 style={{ margin: 0, fontSize: isMobile ? 22 : 28, fontWeight: 600, color: "var(--text1)", letterSpacing: "-0.3px" }}>
-        Build the collection in your head
+        Build your collection
       </h2>
       <p style={{ margin: "10px auto 0", maxWidth: 520, fontSize: 14, color: "var(--text2)", lineHeight: 1.5 }}>
         Save what catches your eye, keep track of what you own, and plan what's next — all from the same feed.
       </p>
       <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 22, flexWrap: "wrap" }}>
-        <button onClick={goToSavedListings} style={calloutCtaStyle()}>Open your saved list →</button>
-        <button onClick={goToMyWatches} style={calloutCtaStyle()}>My watches →</button>
-        <button onClick={goToLists} style={calloutCtaStyle()}>Lists →</button>
+        <button onClick={goToSavedLists} style={calloutCtaStyle()}>Saved lists</button>
+        <button onClick={goToMyWatches} style={calloutCtaStyle()}>My watches</button>
+        <button onClick={goToChallenges} style={calloutCtaStyle()}>Challenges</button>
       </div>
     </section>
   );
 }
 
+// Filled pill buttons — clearer "this is a CTA" affordance than the
+// outline-with-arrow look (Mark feedback 2026-05-11: those read as
+// breadcrumb links, not buttons). Dark fill, light text, no arrow.
 function calloutCtaStyle() {
   return {
-    padding: "8px 14px", borderRadius: 999,
-    border: "0.5px solid var(--border)", background: "var(--card-bg)",
-    color: "var(--text1)", fontFamily: "inherit", fontSize: 13,
-    fontWeight: 500, cursor: "pointer",
+    padding: "10px 18px", borderRadius: 999,
+    border: "none", background: "var(--text1)",
+    color: "var(--bg)", fontFamily: "inherit", fontSize: 13,
+    fontWeight: 600, letterSpacing: "0.02em", cursor: "pointer",
   };
 }
 
@@ -324,7 +328,7 @@ export function HomeTab(props) {
     goToRecentAdded, goToRecentSold, goToEndingNext,
     homeSearchSubmit,
     homeCounts,
-    goToSavedListings, goToMyWatches, goToLists,
+    goToSavedLists, goToMyWatches, goToChallenges,
     openAbout, signInWithGoogle,
     isMobile,
     watchlist, hidden, handleWish, toggleHide, primaryCurrency,
@@ -341,13 +345,11 @@ export function HomeTab(props) {
   return (
     <div style={{ paddingBottom: 0 }}>
       <EditorialHero isMobile={isMobile} />
-      <LiveCounts counts={homeCounts} />
       {homeSearchSubmit && (
-        <HomeSearchBar onSubmit={homeSearchSubmit} isMobile={isMobile} />
+        <HomeSearchBar onSubmit={homeSearchSubmit} isMobile={isMobile} shellPad={shellPad} />
       )}
       <SectionStrip
         heading="Recently added"
-        descriptor="The newest pieces from the dealers I follow — straight off the wire."
         items={homeRecentAdded}
         onViewAll={goToRecentAdded}
         isMobile={isMobile} shellPad={shellPad}
@@ -359,7 +361,6 @@ export function HomeTab(props) {
       />
       <SectionStrip
         heading="Recently sold"
-        descriptor="What just changed hands — dealers and auction houses, the most recent results first."
         items={homeRecentSold}
         onViewAll={goToRecentSold}
         isMobile={isMobile} shellPad={shellPad}
@@ -370,9 +371,7 @@ export function HomeTab(props) {
         user={user} compact={compact}
       />
       <SectionStrip
-        inverted
         heading="Ending next at auction"
-        descriptor="Bids about to close across Antiquorum, Christie's, Sotheby's, and Phillips."
         items={homeEndingNext}
         onViewAll={goToEndingNext}
         isMobile={isMobile} shellPad={shellPad}
@@ -383,9 +382,9 @@ export function HomeTab(props) {
         user={user} compact={compact}
       />
       <ManageCallout
-        goToSavedListings={goToSavedListings}
+        goToSavedLists={goToSavedLists}
         goToMyWatches={goToMyWatches}
-        goToLists={goToLists}
+        goToChallenges={goToChallenges}
         isMobile={isMobile}
       />
       <FooterBand openAbout={openAbout} signInWithGoogle={signInWithGoogle} user={user} />
