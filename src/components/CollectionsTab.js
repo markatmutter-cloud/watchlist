@@ -461,7 +461,12 @@ function MyCollectionView({
   // collapsed title row.
   const myWatchesTotal = ownedItems.length + soldItems.length + (wishlistItems || []).length;
   return (
-    <div>
+    // paddingTop:4 added 2026-05-11 to match the other Saved sub-tabs
+    // (Lists, Challenges, etc.) that use the same outer wrapper.
+    // Was a bare <div> here — made My Watches' SubTabIntro sit 4px
+    // higher than the others. Mark feedback: "the expanding
+    // descriptors on the watchlist subtabs" don't line up.
+    <div style={{ paddingTop: 4 }}>
       <SubTabIntro
         title="My watches"
         blurb={<>

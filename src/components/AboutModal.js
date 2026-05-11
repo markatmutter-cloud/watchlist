@@ -159,14 +159,20 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
                 }}
               />
               <div style={{ minWidth: 0 }}>
+                {/* Editorial wordmark — matches the Home hero (just
+                    smaller) so the brand mark reads consistent
+                    across the app. Subtitle drops a size + italicises
+                    so it reads as supporting text under the brand
+                    mark (Mark feedback 2026-05-11). */}
                 <div style={{
-                  fontSize: 20, fontWeight: 700, color: "var(--text1)",
-                  letterSpacing: "-0.3px",
+                  fontSize: 18, fontWeight: 300, color: "var(--text1)",
+                  letterSpacing: "0.14em", textTransform: "uppercase",
+                  paddingLeft: "0.14em",
                 }}>
-                  Welcome to Watchlist
+                  Watchlist
                 </div>
-                <div style={{ fontSize: 13, color: "var(--text2)", marginTop: 2 }}>
-                  Vintage watches, in one feed.
+                <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4, fontStyle: "italic" }}>
+                  Welcome — vintage watches, in one feed.
                 </div>
               </div>
             </div>

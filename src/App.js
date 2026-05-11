@@ -2475,8 +2475,11 @@ export default function Watchlist() {
   const listingsSubTabsJSX = tab !== "listings" ? null : (
     <>
       <div style={{
-        display: "flex", gap: 20, alignItems: "center",
-        padding: "0 20px",
+        // Tighter gap + side padding on mobile (Mark feedback
+        // 2026-05-11). Saved's 4 longer labels were the tight case;
+        // listings strip benefits too. Desktop spacing unchanged.
+        display: "flex", gap: isMobile ? 14 : 20, alignItems: "center",
+        padding: isMobile ? "0 14px" : "0 20px",
         background: "var(--bg)",
         borderBottom: "0.5px solid var(--border)",
         flexShrink: 0,
@@ -2740,8 +2743,11 @@ export default function Watchlist() {
     // the wrapper was display:flex without overflow, so the buttons
     // got clipped.
     <div style={{
-      display: "flex", gap: 20, alignItems: "center",
-      padding: "0 20px",
+      // Tighter gap + side padding on mobile so the 4 longer Saved
+      // labels (Lists / Searches / My Watches / Challenges) fit on
+      // one line at iPhone SE (375px) without horizontal-scrolling.
+      display: "flex", gap: isMobile ? 14 : 20, alignItems: "center",
+      padding: isMobile ? "0 14px" : "0 20px",
       background: "var(--bg)",
       borderBottom: "0.5px solid var(--border)",
       flexShrink: 0,
