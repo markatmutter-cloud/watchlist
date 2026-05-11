@@ -366,7 +366,10 @@ export default function Watchlist() {
       if (URL_TAB_TO_INTERNAL[t]) return URL_TAB_TO_INTERNAL[t];
       if (TAB_VALUES.includes(t)) return t;
     }
-    return "listings";
+    // Default cold landing: home (2026-05-11). Was "listings" before
+    // the editorial Home reached parity. Existing `?tab=listings`
+    // bookmarks still resolve via the matcher above.
+    return "home";
   });
 
   // Saved-view staleness snapshot. Mark feedback 2026-05-07: when a
@@ -439,9 +442,11 @@ export default function Watchlist() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("shared") === "1") return;
     // Naming alignment 2026-05-08: emit external URL keys (saved /
-    // learn) for the watchlist / references internal values. Strip
-    // Listings is the default and stays stripped from the URL.
-    if (tab === "listings") params.delete("tab");
+    // learn) for the watchlist / references internal values.
+    // Default cold landing flipped from listings → home 2026-05-11;
+    // home is now the value that stays stripped from the URL. Any
+    // other tab writes its key.
+    if (tab === "home") params.delete("tab");
     else params.set("tab", INTERNAL_TAB_TO_URL[tab] || tab);
     if (tab === "listings" && listingsSubTab !== "live") {
       params.set("sub", listingsSubTab);
