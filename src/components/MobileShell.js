@@ -129,7 +129,13 @@ export function MobileShell(props) {
         </div>
         {/* Sticky stack: search row (with filter + dark-mode buttons) and
             sort/clear pills row. Stays pinned to the viewport top so
-            filters are one tap away at any scroll depth. */}
+            filters are one tap away at any scroll depth.
+            Hidden entirely on Home — Mark spec 2026-05-11: the
+            HomeTab editorial hero + its own search composite are
+            the canonical surface there; the persistent sticky search
+            would be redundant and visually competes. Other tabs
+            unchanged. */}
+        {tab !== "home" && (
         <div style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--bg)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 16px 4px", borderBottom: "0.5px solid var(--border)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 0 }}>
@@ -296,6 +302,7 @@ export function MobileShell(props) {
             the prop is kept on the destructure for backward compat
             with the mock fixture. */}
         </div>
+        )}
         {/* Share-receive surface — self-contained component, hooks
             isolated. Renders null when no share intent in URL. */}
         {shareReceiverJSX}

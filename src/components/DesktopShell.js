@@ -388,6 +388,13 @@ export function DesktopShell(props) {
             </button>
           ))}
         </div>
+        {/* Top-bar search is suppressed on Home (Mark spec 2026-05-11):
+            the HomeTab editorial hero owns the search composite. A
+            flex spacer takes the room so the top bar layout stays
+            balanced — auth chrome stays right-aligned. */}
+        {tab === "home" ? (
+          <div style={{ flex: 1 }} />
+        ) : (
         <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "7px 12px", width: "100%", maxWidth: 640 }}>
             <SearchIcon />
@@ -418,6 +425,7 @@ export function DesktopShell(props) {
             )}
           </div>
         </div>
+        )}
         {authJSX}
       </div>
       {/* Sub-tab strips — Listings on tab=listings, Watchlist on
