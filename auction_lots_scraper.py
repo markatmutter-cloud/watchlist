@@ -1336,6 +1336,39 @@ def main():
             except Exception as e:
                 print(f"  [manual] scrape failed {url}: {e}")
 
+    # Persist historical sold lots permanently (Mark spec 2026-05-11:
+    # "I want auction sales to be kept with price permanently"). Without
+    # this, any lot whose parent sale falls out of the active scrape
+    # window — or whose URL reverts to a generic listings page once the
+    # sale ends — gets nuked from auction_lots.json on the next run,
+    # losing the realized sold_price forever. The fresh scrape's data
+    # wins for any URL still being scraped; for URLs no longer present
+    # in the current scrape, we keep the prior entry IFF it carries a
+    # realized sold_price (an unambiguous "this lot was sold" signal).
+    # Passed / unsold / never-resolved lots are NOT preserved — they
+    # have no realized result and become dead weight over time.
+    prior = {}
+    if os.path.exists(OUTPUT_JSON):
+        try:
+            with open(OUTPUT_JSON) as f:
+                prior = json.load(f) or {}
+            if not isinstance(prior, dict):
+                prior = {}
+        except Exception as e:
+            print(f"  warn: couldn't read existing {OUTPUT_JSON} for sold-lot persistence: {e}")
+            prior = {}
+    persisted = 0
+    for url, data in prior.items():
+        if url in out:
+            continue
+        sp = data.get("sold_price") if isinstance(data, dict) else None
+        if sp is None or sp == 0:
+            continue
+        out[url] = data
+        persisted += 1
+    if persisted:
+        print(f"Persisted {persisted} historical sold lot(s) not in the current scrape")
+
     print(f"\nTotal lots: {len(out)}")
     with open(OUTPUT_JSON, "w") as f:
         json.dump(out, f, indent=2, ensure_ascii=False, sort_keys=True)
