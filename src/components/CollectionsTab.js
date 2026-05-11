@@ -1446,6 +1446,23 @@ function ListsView({
     // Share.
     const isOwner = !!(user?.id && selected?.userId && user.id === selected.userId);
     const showActions = !selected.isSharedInbox && !isHiddenColl && !isSavedColl;
+    // Recipient context (Mark feedback 2026-05-11): when the viewing
+    // user is a collaborator on someone else's shared list, frame the
+    // page as a "you've been asked for your take" surface rather than
+    // a clone of the owner's view. Drives a banner above the cards and
+    // a "To review" bucket pinned to the top.
+    const isSharedList = memberCount >= 2;
+    const isRecipient = isSharedList && !isOwner && !isHiddenColl && !isSavedColl;
+    const ownerName = (selected?.userId && memberMap.get(selected.userId)) || "Someone";
+    const myUserId = user?.id || null;
+    const itemHasMyReaction = (item) => {
+      if (!myUserId) return false;
+      const rs = reactionsByItem.get(item.rowId) || [];
+      return rs.some(r => r.user_id === myUserId);
+    };
+    const myReactedCount = isRecipient
+      ? items.reduce((acc, i) => acc + (itemHasMyReaction(i) ? 1 : 0), 0)
+      : 0;
     // Share callback — copies a `?list=<id>&shared=1` link via the Web
     // Share API (or clipboard fallback). Recipients land on
     // ListReceiver which fetches via the public `get_public_list` RPC.
@@ -1522,6 +1539,35 @@ function ListsView({
           )}
           {overflowItems.length > 0 && <ListActionsMenu items={overflowItems} />}
         </div>
+        {/* Recipient banner (Mark feedback 2026-05-11): when the
+            viewing user is a collaborator on someone else's shared
+            list, frame the page as "you've been asked for your take"
+            so they understand what to do. Dropped once they've
+            reacted to every item (the to-do is empty, the banner
+            stops being a hint and becomes noise). */}
+        {isRecipient && items.length > 0 && myReactedCount < items.length && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 12,
+            margin: "0 0 12px",
+            padding: "12px 14px",
+            borderRadius: 10,
+            border: "0.5px solid var(--border)",
+            background: "var(--surface)",
+          }}>
+            <span aria-hidden style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>📋</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, color: "var(--text1)", lineHeight: 1.4 }}>
+                <strong>{ownerName}</strong> shared this list — tap{" "}
+                <span aria-hidden>❤️</span> /{" "}
+                <span aria-hidden>👍</span> /{" "}
+                <span aria-hidden>❌</span> on each watch to share your take.
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 4 }}>
+                {myReactedCount} of {items.length} reacted
+              </div>
+            </div>
+          </div>
+        )}
         {items.length === 0 ? (
           <EmptyState
             icon={isHiddenColl ? "👁" : isSavedColl ? "♡" : "📂"}
@@ -1549,7 +1595,9 @@ function ListsView({
             // classification sets so older reactions written before
             // the 2026-05-11 simplification still bucket correctly —
             // they just aren't offered as new picks in the strip.
-            const isSharedList = memberCount >= 2;
+            // `isSharedList` + recipient state are computed above (next
+            // to `isOwner`) so the banner above the cards can branch
+            // on them too. Don't redeclare here.
             let renderEntries;
             if (isSharedList) {
               const POSITIVE = new Set(["❤️", "👍", "🔥"]);
@@ -1565,11 +1613,30 @@ function ListsView({
                 if (hasNegative) return "negative";
                 return "neutral";
               };
-              const buckets = { positive: [], neutral: [], negative: [] };
-              for (const it of items) buckets[classify(it)].push(it);
+              // Recipient view (Mark feedback 2026-05-11): pin items
+              // the current user hasn't reacted to into a dedicated
+              // "To review" bucket above everything else. Their to-do
+              // is what's NOT been weighed in on yet, regardless of
+              // what the owner / other collaborators thought. Items
+              // already reacted-on by the current user still bucket by
+              // overall sentiment below.
+              const buckets = { toReview: [], positive: [], neutral: [], negative: [] };
+              for (const it of items) {
+                if (isRecipient && !itemHasMyReaction(it)) {
+                  buckets.toReview.push(it);
+                } else {
+                  buckets[classify(it)].push(it);
+                }
+              }
               renderEntries = [];
-              const showHeaders = (buckets.positive.length > 0 ? 1 : 0)
+              const showHeaders = (buckets.toReview.length > 0 ? 1 : 0)
+                                + (buckets.positive.length > 0 ? 1 : 0)
                                 + (buckets.negative.length > 0 ? 1 : 0) > 0;
+              if (buckets.toReview.length > 0) {
+                renderEntries.push({ kind: "header", key: "h-todo",
+                  label: `📋 To review · ${buckets.toReview.length}` });
+                for (const it of buckets.toReview) renderEntries.push({ kind: "item", item: it });
+              }
               if (buckets.positive.length > 0) {
                 renderEntries.push({ kind: "header", key: "h-pos",
                   label: `❤️ Liked · ${buckets.positive.length}` });
@@ -1584,10 +1651,6 @@ function ListsView({
               }
               if (buckets.negative.length > 0) {
                 renderEntries.push({ kind: "header", key: "h-neg",
-                  // "Disliked" reads as the direct counterpart to
-                  // "Liked" — Mark feedback 2026-05-11: "set aside"
-                  // sounded too soft and made the sentiment pair
-                  // (👍 vs 👎) less obvious.
                   label: `❌ Disliked · ${buckets.negative.length}` });
                 for (const it of buckets.negative) renderEntries.push({ kind: "item", item: it });
               }
