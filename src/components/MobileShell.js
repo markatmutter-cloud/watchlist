@@ -120,21 +120,14 @@ export function MobileShell(props) {
               Watchlist
             </button>
           ) : <span />}
-          {/* Top-right link cluster — About always; Sign in surfaces
-              on Home when signed-out (the persistent authJSX lives
-              inside the sticky search bar which is hidden on Home).
-              Mark report 2026-05-11: no sign-in option visible on
-              mobile Home before this. */}
-          <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
-            {tab === "home" && !user && signInWithGoogle && (
-              <button onClick={() => signInWithGoogle()}
-                style={{ background: "none", border: "none", cursor: "pointer",
-                        padding: 0, fontFamily: "inherit", fontSize: 12,
-                        fontWeight: 600, color: "var(--text1)",
-                        letterSpacing: "0.04em" }}>
-                Sign in
-              </button>
-            )}
+          {/* Top-right cluster. About always; on Home we ALSO render
+              authJSX here because the persistent auth chrome
+              normally lives inside the sticky search row (hidden on
+              Home). authJSX is the canonical sign-in surface — it
+              becomes a "Sign in with Google" button for signed-out
+              users and the user dropdown / avatar for signed-in.
+              Other tabs keep authJSX in the sticky search row only. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <button onClick={() => setAboutModalOpen(true)}
               style={{ background: "none", border: "none", cursor: "pointer",
                       padding: 0, fontFamily: "inherit", fontSize: 12,
@@ -142,6 +135,7 @@ export function MobileShell(props) {
                       letterSpacing: "0.04em" }}>
               About
             </button>
+            {tab === "home" && authJSX}
           </div>
         </div>
         {/* Sticky stack: search row (with filter + dark-mode buttons) and
