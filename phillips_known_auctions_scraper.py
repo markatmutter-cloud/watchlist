@@ -40,6 +40,15 @@ from datetime import datetime
 
 import requests
 
+# Reuse the Turbo-Stream resolver auction_lots_scraper uses to pull
+# auction meta. Phillips encodes the page payload as nested JSON-
+# string-encoded chunks (Remix-v3 / React-Router-v7 hydration) — a
+# flat regex over the raw HTML can't reliably find string fields.
+# Initial draft of this file used a simple regex; it returned 0
+# rows on CH080226 because the title sat inside escaped JSON. The
+# proper resolver in auction_lots_scraper handles the full unescape.
+from auction_lots_scraper import _phillips_extract_auction_meta
+
 KNOWN_CODES_FILE = "data/phillips_known_codes.json"
 TRACKED_LOTS_FILE = "public/tracked_lots.json"
 OUTPUT_FILE = "data/phillips_known_auctions.csv"
@@ -93,10 +102,7 @@ def codes_from_tracked_lots():
 
 def fetch_auction_meta(code):
     """Fetch phillips.com/auction/<code> and extract title + location +
-    dates. Returns a dict or None on failure. We hit the same auction
-    page that auction_lots_scraper's enumerate_phillips uses (Turbo-
-    Stream payload) — the meta lives in the same React Router
-    `loaderData.auction` object."""
+    dates via auction_lots_scraper's resolver."""
     url = f"https://www.phillips.com/auction/{code}"
     try:
         r = requests.get(url, headers=HEADERS, timeout=30)
@@ -105,22 +111,22 @@ def fetch_auction_meta(code):
         print(f"  [{code}] fetch failed: {e}")
         return None
 
-    # Look for the Turbo-Stream chunks. Title sits in the auction's
-    # `auctionName`; start/end in `auctionStartDateTime` /
-    # `auctionEndDateTime`. Location is in `location.name` or similar
-    # — we'll best-effort extract.
-    html = r.text
-    title = _extract_field(html, "auctionName")
-    start = _extract_field(html, "auctionStartDateTime")
-    end   = _extract_field(html, "auctionEndDateTime")
-    location = _extract_field(html, "locationName") or _extract_field(html, "city") or ""
+    auction = _phillips_extract_auction_meta(r.text) or {}
+    title    = auction.get("auctionName") or ""
+    start    = auction.get("auctionStartDateTime") or ""
+    end      = auction.get("auctionEndDateTime") or start
+    location = auction.get("city") or auction.get("locationName") or ""
+    if not location:
+        loc = auction.get("location")
+        if isinstance(loc, dict):
+            location = loc.get("name") or loc.get("city") or ""
+
     if not title:
-        # Fall back to <title>: "<Auction Name>" pattern
-        m = re.search(r"<title>([^<]+?)</title>", html)
+        m = re.search(r"<title>([^<|]+?)(?:\s*\||\s*</title>)", r.text)
         if m:
             title = m.group(1).strip()
     if not (title and start):
-        print(f"  [{code}] title/start not found in payload")
+        print(f"  [{code}] title/start not found in payload (title={title!r}, start={start!r})")
         return None
     return {
         "code":     code,
@@ -130,15 +136,6 @@ def fetch_auction_meta(code):
         "end":      _iso_date(end) or _iso_date(start),
         "url":      url,
     }
-
-
-def _extract_field(html, key):
-    """Find the first `"<key>"<separator>"<value>"` JSON-encoded pair in
-    HTML. The Phillips Turbo-Stream uses a flat-array reference format
-    so the value can be either inline or a reference. For string fields
-    (title / dates / location), the inline string is the common case."""
-    m = re.search(r'"' + re.escape(key) + r'"\s*[:,]\s*"([^"]+)"', html)
-    return m.group(1) if m else None
 
 
 def _iso_date(s):
