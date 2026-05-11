@@ -463,9 +463,15 @@ export default function Watchlist() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("shared") === "1") return;
     // Naming alignment 2026-05-08: emit external URL keys (saved /
-    // learn) for the watchlist / references internal values. Listings
-    // is the default and stays stripped from the URL.
-    if (tab === "listings") params.delete("tab");
+    // learn) for the watchlist / references internal values. Strip
+    // the `tab` param only on the active default — that way a
+    // refresh on a non-default tab keeps the user where they were.
+    // NEW_UI on: "home" is default (stripped); ?tab=listings is
+    // written explicitly when on Listings. NEW_UI off: "listings"
+    // is default (stripped); ?tab=home is written if Home is
+    // somehow reached.
+    const defaultTabForUrl = NEW_UI ? "home" : "listings";
+    if (tab === defaultTabForUrl) params.delete("tab");
     else params.set("tab", INTERNAL_TAB_TO_URL[tab] || tab);
     if (tab === "listings" && listingsSubTab !== "live") {
       params.set("sub", listingsSubTab);
@@ -523,7 +529,7 @@ export default function Watchlist() {
       // Compute the target tab. Bundle 2A.2 (2026-05-07): old
       // `?tab=collections` URLs collapse onto `?tab=watchlist` with
       // the sub-tab key preserved.
-      let nextTab = "listings";
+      let nextTab = NEW_UI ? "home" : "listings";
       // Same external→internal translation as the init useState.
       if (URL_TAB_TO_INTERNAL[tParam]) {
         nextTab = URL_TAB_TO_INTERNAL[tParam];
