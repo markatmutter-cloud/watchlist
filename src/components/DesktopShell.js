@@ -160,10 +160,12 @@ export function DesktopShell(props) {
             Toggle UI removed because there's no longer a meaningful
             alternate ordering — the sort always reads as you'd see
             it on the auction house's own site. */}
-        {/* ♥ Saved-only filter pill (Bundle 2B) — Listings tab
-            only, signed-in users only. Same data as the Saved tab
-            sub-tabs; this is the in-flow alternate access path. */}
-        {tab === "listings" && user && listingsSubTab !== "calendar" && (
+        {/* ♥ Saved-only filter pill (Bundle 2B) — Listings + Home,
+            signed-in users only. Same data as the Saved tab
+            sub-tabs; this is the in-flow alternate access path. On
+            Home the click routes to Listings via the interact-routes
+            effect in App.js. */}
+        {(tab === "listings" || tab === "home") && user && listingsSubTab !== "calendar" && (
           <button onClick={() => setFilterHearted && setFilterHearted(!filterHearted)}
             aria-pressed={!!filterHearted}
             title={filterHearted ? "Show all" : "Show only saved"}
