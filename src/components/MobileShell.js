@@ -190,8 +190,14 @@ export function MobileShell(props) {
               auctions; sold-date on All sold). Dispatch lives in
               App.js's allFiltered memo. */}
           {(() => {
-            const label = sort === "date" ? "Date ↓" : sort === "date-asc" ? "Date ↑" : "Date";
-            const active = sort === "date" || sort === "date-asc";
+            // On Home the activity grouping is the order — not a date
+            // sort. Suppress active state on Home so the pill doesn't
+            // imply state Home isn't in.
+            const label = tab === "home" ? "Date"
+                        : sort === "date" ? "Date ↓"
+                        : sort === "date-asc" ? "Date ↑"
+                        : "Date";
+            const active = tab !== "home" && (sort === "date" || sort === "date-asc");
             return (
               <button onClick={() => {
                 if (sort === "date") setSort("date-asc");
@@ -202,8 +208,11 @@ export function MobileShell(props) {
           })()}
           {/* Price sort pill */}
           {(() => {
-            const label = sort === "price-asc" ? "Price ↑" : sort === "price-desc" ? "Price ↓" : "Price";
-            const active = sort === "price-asc" || sort === "price-desc";
+            const label = tab === "home" ? "Price"
+                        : sort === "price-asc" ? "Price ↑"
+                        : sort === "price-desc" ? "Price ↓"
+                        : "Price";
+            const active = tab !== "home" && (sort === "price-asc" || sort === "price-desc");
             return (
               <button onClick={() => {
                 if (sort === "price-asc") setSort("price-desc");
