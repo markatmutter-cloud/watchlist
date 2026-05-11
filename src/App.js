@@ -2087,6 +2087,40 @@ export default function Watchlist() {
       )}
     </div>
   );
+  // Home tab slice memos — MUST sit before the loading/loadError
+  // early returns below. React #310 (rendered more hooks than during
+  // the previous render) fires when hook calls live downstream of an
+  // early return: render 1 (loading) stops at the return, render 2
+  // (post-load) keeps going and runs three new hooks. React tracks
+  // hook count per render. Position is load-bearing — do not move
+  // these back into the JSX-const block. (CLAUDE.md "Don't add new
+  // useState/useMemo/useCallback deep into App.js" — this is exactly
+  // that warning. Origin: 2026-05-11 hotfix after PR #223 shipped
+  // with them too deep and white-screened production.)
+  const homeRecentAdded = useMemo(() => {
+    const live = items.filter(i => !i.sold && !hidden[i.id] && !adminHidden.has(i.id));
+    const sortKey = (i) => i.firstSeen || i.scrapedAt || "";
+    return [...live].sort((a, b) => (sortKey(b) || "").localeCompare(sortKey(a) || "")).slice(0, 12);
+  }, [items, hidden, adminHidden]);
+  const homeEndingNext = useMemo(() => {
+    const now = Date.now();
+    const active = auctionLotItems.filter(i => {
+      if (hidden[i.id] || adminHidden.has(i.id)) return false;
+      if (i.status === "ended") return false;
+      const end = i.auction_end ? Date.parse(i.auction_end) : NaN;
+      return !Number.isNaN(end) && end > now;
+    });
+    return active.sort((a, b) => Date.parse(a.auction_end) - Date.parse(b.auction_end)).slice(0, 12);
+  }, [auctionLotItems, hidden, adminHidden]);
+  const homeRecentSold = useMemo(() => {
+    const merged = [...items, ...auctionLotItems].filter(i => {
+      if (hidden[i.id] || adminHidden.has(i.id)) return false;
+      return i.sold || i.status === "ended" || i.sold_price;
+    });
+    const soldKey = (i) => i.soldAt || i.auction_end || i.lastSeen || "";
+    return merged.sort((a, b) => (soldKey(b) || "").localeCompare(soldKey(a) || "")).slice(0, 12);
+  }, [items, auctionLotItems, hidden, adminHidden]);
+
   if (loading) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Pulling the latest listings…</div>;
   if (loadError) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Couldn't pull the listings — refresh to try again.</div>;
 
@@ -2480,53 +2514,13 @@ export default function Watchlist() {
     <AdminTab watchItems={watchItems} hiddenItems={hiddenItems} />
   );
 
-  // Home tab JSX — step 1 (2026-05-11). Three horizontal section
-  // strips: Recently added (live dealer items), Closing next (active
-  // auction lots ending soonest), Recently sold (dealer + auction
-  // sold lots). Each section's "View all →" routes to the matching
-  // Listings sub-tab. Built as a self-contained component
-  // (`HomeTab`) following the ShareReceiver pattern — no new hooks
-  // added to App.js, avoiding the React #310 regression that killed
-  // the prior Home attempt.
-  //
-  // Slice computation lives inline here rather than inside HomeTab
-  // because it leans on the same `items` / `auctionLotItems` arrays
-  // every other tab uses — keeping it here means HomeTab stays
-  // render-only.
-  const homeRecentAdded = useMemo(() => {
-    // Live dealer items only, sorted by firstSeen desc. Skip items
-    // the user has hidden and items already marked sold (the section
-    // header reads "Recently added" — sold items belong in their own
-    // section below). Cap at 12 so the strip has a small buffer
-    // beyond what HomeTab renders (HomeTab slices to 6 itself).
-    const live = items.filter(i => !i.sold && !hidden[i.id] && !adminHidden.has(i.id));
-    const sortKey = (i) => i.firstSeen || i.scrapedAt || "";
-    return [...live].sort((a, b) => (sortKey(b) || "").localeCompare(sortKey(a) || "")).slice(0, 12);
-  }, [items, hidden, adminHidden]);
-  const homeEndingNext = useMemo(() => {
-    // Active auction lots (status !== "ended", auction_end in the
-    // future), sorted ending-soonest first. Same ending-soon sort
-    // the Live auctions sub-tab uses, just the head slice.
-    const now = Date.now();
-    const active = auctionLotItems.filter(i => {
-      if (hidden[i.id] || adminHidden.has(i.id)) return false;
-      if (i.status === "ended") return false;
-      const end = i.auction_end ? Date.parse(i.auction_end) : NaN;
-      return !Number.isNaN(end) && end > now;
-    });
-    return active.sort((a, b) => Date.parse(a.auction_end) - Date.parse(b.auction_end)).slice(0, 12);
-  }, [auctionLotItems, hidden, adminHidden]);
-  const homeRecentSold = useMemo(() => {
-    // Sold dealer items + sold auction lots, sorted by sold-date desc.
-    // Mirrors the All-sold sub-tab default sort.
-    const merged = [...items, ...auctionLotItems].filter(i => {
-      if (hidden[i.id] || adminHidden.has(i.id)) return false;
-      return i.sold || i.status === "ended" || i.sold_price;
-    });
-    const soldKey = (i) => i.soldAt || i.auction_end || i.lastSeen || "";
-    return merged.sort((a, b) => (soldKey(b) || "").localeCompare(soldKey(a) || "")).slice(0, 12);
-  }, [items, auctionLotItems, hidden, adminHidden]);
-
+  // Home tab JSX — step 1 (2026-05-11). The three slice memos
+  // (homeRecentAdded / homeEndingNext / homeRecentSold) live ABOVE
+  // the loading/loadError early returns higher up — moving them
+  // here triggers React #310 because the hook count varies between
+  // the loading render and the post-load render. Only the JSX const
+  // sits here. See the load-bearing comment up there for the full
+  // explanation.
   const homeTabJSX = (
     <HomeTab
       homeRecentAdded={homeRecentAdded}
