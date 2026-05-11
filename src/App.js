@@ -2547,6 +2547,21 @@ export default function Watchlist() {
         setListingsSubTab(target);
         setPage(1);
       }}
+      // Live counts strip under the hero. Pulled from the same arrays
+      // every other surface reads; admin-hidden subtraction handled
+      // inside the slice so counts match what users actually see.
+      homeCounts={{
+        listings: items.filter(i => !adminHidden.has(i.id)).length,
+        lots: auctionLotItems.filter(i => !adminHidden.has(i.id)).length,
+        houses: 6,
+      }}
+      // Manage-your-collection callout CTAs route into Saved.
+      goToSavedListings={() => { setTab("watchlist"); setWatchTopTab("listings"); setPage(1); }}
+      goToMyWatches={() => { setTab("watchlist"); setWatchTopTab("my-collection"); setPage(1); }}
+      goToLists={() => { setTab("watchlist"); setWatchTopTab("lists"); setPage(1); }}
+      // Footer routes
+      openAbout={() => setAboutModalOpen(true)}
+      signInWithGoogle={triggerSignInPrompt}
       isMobile={isMobile}
       watchlist={watchlist}
       hidden={hidden}
