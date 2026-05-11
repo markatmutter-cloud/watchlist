@@ -441,6 +441,12 @@ export const Card = memo(function Card({
                   borderRadius: 8, padding: 4,
                   whiteSpace: "nowrap",
                   boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
+                  // Portal mounts to document.body; without an explicit
+                  // font-family the inherit chain hits the browser's
+                  // default (serif). Mark report 2026-05-11: Share /
+                  // Add to / Hide were rendering in Times. Pin to the
+                  // system sans the rest of the app uses.
+                  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
                 }}>
                 {onShare && (
                   <button onClick={async e => {
