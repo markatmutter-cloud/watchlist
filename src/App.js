@@ -2151,13 +2151,12 @@ export default function Watchlist() {
       onClickListing={onClickListing} />
   ), [watchlist, handleWish, compact, isAdmin, toggleHide, hidden, user, openCollectionPicker, primaryCurrency, handleShare, observeCard, onClickListing]);
 
-  // "Interact-on-Home routes to Listings" contract. The Home tab
-  // renders the same sub-tab strip + filter row chrome as Listings,
-  // but Home has no flat feed to filter. So when the user touches
-  // any of these controls while on Home, route them to Listings
-  // and let the new state take effect there. Watch the underlying
-  // state values; the ref guards against firing on the initial mount
-  // render where these are just initialised, not interacted with.
+  // "Interact-on-Home routes to Listings" contract. Home renders the
+  // same sub-tab strip + filter row chrome as Listings, but Home has
+  // no flat feed to filter. So when the user touches any of those
+  // controls while on Home, route them to Listings and let the new
+  // state take effect there. The ref guards against firing on the
+  // initial mount tick (state-initialisation, not user interaction).
   const homeInteractRouteRef = useRef(false);
   useEffect(() => {
     if (!homeInteractRouteRef.current) { homeInteractRouteRef.current = true; return; }
@@ -2165,11 +2164,7 @@ export default function Watchlist() {
       setTab("listings");
       setPage(1);
     }
-    // Intentionally omitting setTab/setPage/tab from deps — we only
-    // want this to fire on actual filter / sort / sub-tab / search
-    // change, not on tab changes themselves (which would loop).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listingsSubTab, sort, search, filterHearted, filterSources, filterBrands, filterRefs, minPriceText, maxPriceText]);
+  }, [tab, setTab, setPage, listingsSubTab, sort, search, filterHearted, filterSources, filterBrands, filterRefs, minPriceText, maxPriceText]);
 
   if (loading) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Pulling the latest listings…</div>;
   if (loadError) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Couldn't pull the listings — refresh to try again.</div>;
