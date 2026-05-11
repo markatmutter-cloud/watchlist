@@ -1035,7 +1035,15 @@ export default function Watchlist() {
       // realised sold_price is the strongest signal — trust it over
       // the calendar-level end date.
       const hasRealisedSale = data.sold_price != null && data.sold_price > 0;
-      let isEnded = data.status === "ended";
+      // Mark report 2026-05-11: sold session-1 lots in multi-session
+      // auctions (Phillips, Sotheby's) carry `status:"active"` because
+      // the parent auction's calendar end is still in the future
+      // (session 2 hasn't run). They have a realised sold_price but
+      // were never being flipped to ended, so they showed up in Live
+      // auctions with a current_bid forever. A realised sold_price is
+      // an unambiguous signal — count it as ended regardless of what
+      // status or auction_end say.
+      let isEnded = data.status === "ended" || hasRealisedSale;
       if (isEnded && !hasRealisedSale && data.auction_start) {
         const startMs = new Date(data.auction_start).getTime();
         if (Number.isFinite(startMs) && startMs > Date.now()) {
@@ -1116,7 +1124,17 @@ export default function Watchlist() {
         auction_start: data.auction_start,
         auction_title: data.auction_title,
         lot_number: data.lot_number,
-        soldAt: isEnded ? (data.auction_end || data.scraped_at || "") : null,
+        // For sold session-1 lots with a future auction_end, scraped_at
+        // is the closer-to-truth sale date — using auction_end would
+        // put them in a future date bucket. Prefer auction_end when
+        // it's actually in the past (the normal case).
+        soldAt: isEnded
+          ? (() => {
+              const end = data.auction_end ? new Date(data.auction_end).getTime() : 0;
+              const endInPast = end > 0 && end <= Date.now();
+              return endInPast ? data.auction_end : (data.scraped_at || data.auction_end || "");
+            })()
+          : null,
       });
     }
     return arr;
@@ -1587,15 +1605,19 @@ export default function Watchlist() {
       // Same time-aware override as the auction-lots projection above
       // (see that comment for the bug detail). Both auction_start
       // and auction_end checks because date-only end strings give a
-      // false positive on the same calendar day.
-      let isEnded = data.status === "ended";
-      if (isEnded && data.auction_start) {
+      // false positive on the same calendar day. 2026-05-11: count a
+      // realised sold_price as ended regardless of status — covers
+      // Phillips/Sotheby's multi-session session-1 lots whose parent
+      // auction_end is still in the future.
+      const hasRealisedSale = data.sold_price != null && data.sold_price > 0;
+      let isEnded = data.status === "ended" || hasRealisedSale;
+      if (isEnded && !hasRealisedSale && data.auction_start) {
         const startMs = new Date(data.auction_start).getTime();
         if (Number.isFinite(startMs) && startMs > Date.now()) {
           isEnded = false;
         }
       }
-      if (isEnded && data.auction_end) {
+      if (isEnded && !hasRealisedSale && data.auction_end) {
         const endMs = new Date(data.auction_end).getTime();
         if (Number.isFinite(endMs) && endMs > Date.now()) {
           isEnded = false;
@@ -1671,7 +1693,13 @@ export default function Watchlist() {
         auction_title: data.auction_title,
         lot_number: data.lot_number,
         savedAt: trackedLotAddedAt[url] || "",
-        soldAt: isEnded ? (data.auction_end || data.scraped_at || "") : null,
+        soldAt: isEnded
+          ? (() => {
+              const end = data.auction_end ? new Date(data.auction_end).getTime() : 0;
+              const endInPast = end > 0 && end <= Date.now();
+              return endInPast ? data.auction_end : (data.scraped_at || data.auction_end || "");
+            })()
+          : null,
       });
     }
     // Watchlist sub-tab scopes the saved set BEFORE other filters
