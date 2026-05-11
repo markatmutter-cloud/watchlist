@@ -30,38 +30,63 @@ import { SearchIcon } from "./icons";
 const CARDS_PER_SECTION = 7;
 const COLS_PER_ROW = 7;
 
-// Centered "WATCHLIST" editorial wordmark.
-// References Mark sent (Fratello + Hodinkee): centered, uppercase,
-// generous whitespace, refined weight — not bold. Hodinkee in
-// particular stands the wordmark alone with no tagline ornament;
-// that restraint is what makes it read as editorial rather than
-// branded-for-loudness. No new typefaces — letter-spacing + size
-// + the existing system stack do the lift. Thin hairline rule
-// below separates the editorial header from the body content
-// (mirrors the rule both references use under their wordmark).
+// Editorial hero — phase 4c (2026-05-11). Restraint dial-up per
+// Mark feedback after #228: drop the weight and tracking a notch,
+// flank an italic tagline with hairline rules above + below. Reads
+// as a masthead rather than a header label. No new typefaces — the
+// system stack carries the italic via the regular `font-style`.
 function EditorialHero({ isMobile }) {
   return (
     <section style={{
-      padding: isMobile ? "24px 16px 18px" : "40px 16px 22px",
+      padding: isMobile ? "28px 16px 22px" : "52px 16px 30px",
       textAlign: "center",
-      borderBottom: "0.5px solid var(--border)",
-      marginBottom: isMobile ? 20 : 28,
     }}>
+      <div style={{ height: 0.5, background: "var(--border)", margin: isMobile ? "0 0 22px" : "0 0 30px" }} />
       <h1 style={{
         margin: 0,
         fontFamily: "inherit",
-        fontSize: isMobile ? 32 : 52,
-        fontWeight: 500,
-        letterSpacing: isMobile ? "0.16em" : "0.18em",
+        fontSize: isMobile ? 34 : 56,
+        fontWeight: 400,
+        letterSpacing: isMobile ? "0.14em" : "0.16em",
         color: "var(--text1)",
         textTransform: "uppercase",
-        // Preserve the trailing letter-spacing visually by nudging
-        // the wordmark right by half a "track" so it looks centered.
-        paddingLeft: isMobile ? "0.16em" : "0.18em",
+        // Visual centering: nudge right by half a "track" so the
+        // trailing letter-spacing on the last glyph doesn't pull
+        // the wordmark visually left.
+        paddingLeft: isMobile ? "0.14em" : "0.16em",
       }}>
         Watchlist
       </h1>
+      <p style={{
+        margin: isMobile ? "14px 0 22px" : "18px 0 30px",
+        fontFamily: "inherit",
+        fontStyle: "italic",
+        fontSize: isMobile ? 13 : 15,
+        fontWeight: 400,
+        color: "var(--text2)",
+        letterSpacing: "0.01em",
+      }}>
+        A vintage watch directory · est. 2026
+      </p>
+      <div style={{ height: 0.5, background: "var(--border)" }} />
     </section>
+  );
+}
+
+// Live counts strip — small caps under the hero confirming the
+// value prop at a glance. Numbers come from the same arrays
+// every other surface reads.
+function LiveCounts({ counts }) {
+  if (!counts) return null;
+  const fmt = (n) => (n || 0).toLocaleString("en-US");
+  return (
+    <div style={{
+      textAlign: "center", padding: "14px 16px 22px",
+      fontSize: 11, fontWeight: 500, letterSpacing: "0.18em",
+      textTransform: "uppercase", color: "var(--text3)",
+    }}>
+      {fmt(counts.listings)} listings · {fmt(counts.lots)} lots · {counts.houses} houses
+    </div>
   );
 }
 
@@ -85,14 +110,14 @@ function HomeSearchBar({ onSubmit, isMobile }) {
         border: "0.5px solid var(--border)",
         overflow: "hidden",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 14px", flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 10, padding: isMobile ? "0 12px" : "0 14px", flex: 1, minWidth: 0 }}>
           <SearchIcon />
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); fire("live"); } }}
-            placeholder="Reference, brand, model…"
-            style={{ flex: 1, border: "none", background: "transparent", fontSize: 15, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0, padding: "13px 0" }}
+            placeholder={isMobile ? "Reference or brand…" : "Reference, brand, model…"}
+            style={{ flex: 1, border: "none", background: "transparent", fontSize: isMobile ? 14 : 15, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0, padding: isMobile ? "11px 0" : "13px 0" }}
           />
           {draft && (
             <button onClick={() => setDraft("")} aria-label="Clear" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text3)", padding: 2, fontFamily: "inherit", display: "flex", flexShrink: 0 }}>
@@ -103,16 +128,17 @@ function HomeSearchBar({ onSubmit, isMobile }) {
           )}
         </div>
         <button onClick={() => fire("live")}
+          aria-label="Search Listings"
           style={{
             flexShrink: 0,
             border: "none", borderLeft: "0.5px solid var(--border)",
             background: "var(--text1)", color: "var(--bg)",
-            fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+            fontFamily: "inherit", fontSize: isMobile ? 12 : 13, fontWeight: 600,
             letterSpacing: "0.04em", cursor: "pointer",
-            padding: isMobile ? "0 16px" : "0 22px",
-            display: "flex", alignItems: "center", gap: 6,
+            padding: isMobile ? "0 14px" : "0 22px",
+            display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
           }}>
-          Search Listings <span aria-hidden style={{ fontSize: 14 }}>→</span>
+          {isMobile ? "Search" : "Search Listings"} <span aria-hidden style={{ fontSize: 14 }}>→</span>
         </button>
       </div>
       {/* Secondary search targets — sit directly under the Search
@@ -120,7 +146,7 @@ function HomeSearchBar({ onSubmit, isMobile }) {
           primary CTA; reads as an "or…" dropdown without needing a
           toggle interaction. */}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 8, paddingRight: 2 }}>
-        <span style={{ fontSize: 11, color: "var(--text3)", alignSelf: "center", marginRight: 2 }}>or in</span>
+        <span style={{ fontSize: 11, color: "var(--text3)", alignSelf: "center", marginRight: 2 }}>Search in</span>
         <button onClick={() => fire("auctions")}
           style={{
             padding: "5px 12px", borderRadius: 999,
@@ -152,35 +178,53 @@ function HomeSearchBar({ onSubmit, isMobile }) {
 // duplicated the heading text below ("ON THE FEED" + "Recently
 // added"). Heading + descriptor carry the editorial signal on
 // their own.
-function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchlist, hidden, handleWish, toggleHide, primaryCurrency, onShare, onView, onClickListing, openCollectionPicker, isAdmin, user, compact }) {
+function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchlist, hidden, handleWish, toggleHide, primaryCurrency, onShare, onView, onClickListing, openCollectionPicker, isAdmin, user, compact, inverted, shellPad }) {
   if (!items || items.length === 0) return null;
   const slice = items.slice(0, CARDS_PER_SECTION);
+  // Inverted bleed (phase 4c, 2026-05-11): one section gets a dark
+  // band that runs edge-to-edge of the viewport, breaking the
+  // visual rhythm of the page (editorial trick — Mark's v0.5
+  // mockup had this for one section). We escape the parent shell's
+  // horizontal padding via negative margins matching `shellPad`,
+  // then add our own padding back inside so card content sits in
+  // the right rhythm.
+  const wrapperStyle = inverted ? {
+    background: "var(--text1)",
+    marginLeft: -shellPad,
+    marginRight: -shellPad,
+    padding: `${isMobile ? 26 : 34}px ${shellPad}px ${isMobile ? 30 : 38}px`,
+    marginBottom: isMobile ? 30 : 36,
+  } : { marginBottom: 28 };
+  const headingColor = inverted ? "var(--bg)" : "var(--text1)";
+  const descriptorColor = inverted ? "rgba(255,255,255,0.62)" : "var(--text2)";
+  const viewAllColor = inverted ? "rgba(255,255,255,0.78)" : "var(--text2)";
   return (
-    <section style={{ marginBottom: 28 }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "0 16px", marginBottom: 12, gap: 12 }}>
+    <section style={wrapperStyle}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: inverted ? 0 : "0 16px", marginBottom: 12, gap: 12 }}>
         <div style={{ minWidth: 0 }}>
-          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: "var(--text1)", letterSpacing: "-0.3px" }}>
+          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: headingColor, letterSpacing: "-0.3px" }}>
             {heading}
           </h2>
           {descriptor && (
-            <div style={{ fontSize: 13, color: "var(--text2)", marginTop: 4, maxWidth: 480 }}>
+            <div style={{ fontSize: 13, color: descriptorColor, marginTop: 4, maxWidth: 480 }}>
               {descriptor}
             </div>
           )}
         </div>
         <button onClick={onViewAll}
-          style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "inherit", fontSize: 13, fontWeight: 500, color: "var(--text2)" }}>
+          style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "inherit", fontSize: 13, fontWeight: 500, color: viewAllColor }}>
           View all →
         </button>
       </div>
       <div style={{
         ...(isMobile ? {
           display: "flex", gap: 1, overflowX: "auto", overflowY: "hidden",
-          padding: "0 16px 4px", scrollSnapType: "x mandatory",
-          WebkitOverflowScrolling: "touch", background: "var(--border)",
+          padding: inverted ? "0 0 4px" : "0 16px 4px", scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch", background: inverted ? "rgba(255,255,255,0.1)" : "var(--border)",
         } : {
           display: "grid", gridTemplateColumns: `repeat(${COLS_PER_ROW}, minmax(0, 1fr))`,
-          gap: 1, background: "var(--border)", padding: 0, margin: "0 16px",
+          gap: 1, background: inverted ? "rgba(255,255,255,0.1)" : "var(--border)",
+          padding: 0, margin: inverted ? 0 : "0 16px",
           borderRadius: 10, overflow: "hidden",
         }),
       }}>
@@ -202,20 +246,102 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
   );
 }
 
+// Manage-your-collection callout. Single editorial strip between the
+// discovery sections and the footer that nudges signed-in users back
+// into the collection-management surfaces (Saved listings, My watches,
+// Lists). Three small text-style CTAs — no card chrome, no images.
+function ManageCallout({ goToSavedListings, goToMyWatches, goToLists, isMobile }) {
+  return (
+    <section style={{
+      margin: isMobile ? "8px 16px 28px" : "16px 16px 36px",
+      padding: isMobile ? "28px 20px" : "44px 28px",
+      textAlign: "center",
+      border: "0.5px solid var(--border)",
+      borderRadius: 14,
+      background: "var(--bg)",
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.28em", textTransform: "uppercase", color: "var(--text3)", marginBottom: 12 }}>
+        For your collection
+      </div>
+      <h2 style={{ margin: 0, fontSize: isMobile ? 22 : 28, fontWeight: 600, color: "var(--text1)", letterSpacing: "-0.3px" }}>
+        Build the collection in your head
+      </h2>
+      <p style={{ margin: "10px auto 0", maxWidth: 520, fontSize: 14, color: "var(--text2)", lineHeight: 1.5 }}>
+        Save what catches your eye, keep track of what you own, and plan what's next — all from the same feed.
+      </p>
+      <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 22, flexWrap: "wrap" }}>
+        <button onClick={goToSavedListings} style={calloutCtaStyle()}>Open your saved list →</button>
+        <button onClick={goToMyWatches} style={calloutCtaStyle()}>My watches →</button>
+        <button onClick={goToLists} style={calloutCtaStyle()}>Lists →</button>
+      </div>
+    </section>
+  );
+}
+
+function calloutCtaStyle() {
+  return {
+    padding: "8px 14px", borderRadius: 999,
+    border: "0.5px solid var(--border)", background: "var(--card-bg)",
+    color: "var(--text1)", fontFamily: "inherit", fontSize: 13,
+    fontWeight: 500, cursor: "pointer",
+  };
+}
+
+// Footer band — closes the page rather than trailing off. Hairline
+// rule above the link row, small centered text. About + Privacy +
+// Terms always; Sign in only when signed-out.
+function FooterBand({ openAbout, signInWithGoogle, user }) {
+  const linkStyle = {
+    background: "none", border: "none", padding: 0,
+    fontFamily: "inherit", fontSize: 12, color: "var(--text2)",
+    cursor: "pointer", letterSpacing: "0.02em",
+  };
+  return (
+    <footer style={{
+      marginTop: 24,
+      padding: "24px 16px 16px",
+      borderTop: "0.5px solid var(--border)",
+      textAlign: "center",
+    }}>
+      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 16, alignItems: "baseline" }}>
+        <button onClick={openAbout} style={linkStyle}>About</button>
+        <a href="/privacy.html" style={{ ...linkStyle, textDecoration: "none" }}>Privacy</a>
+        <a href="/terms.html" style={{ ...linkStyle, textDecoration: "none" }}>Terms</a>
+        {!user && signInWithGoogle && (
+          <button onClick={signInWithGoogle} style={linkStyle}>Sign in</button>
+        )}
+      </div>
+      <div style={{ fontSize: 10, color: "var(--text3)", letterSpacing: "0.18em", textTransform: "uppercase", marginTop: 14 }}>
+        © Watchlist · 2026
+      </div>
+    </footer>
+  );
+}
+
 export function HomeTab(props) {
   const {
     homeRecentAdded, homeRecentSold, homeEndingNext,
     goToRecentAdded, goToRecentSold, goToEndingNext,
     homeSearchSubmit,
+    homeCounts,
+    goToSavedListings, goToMyWatches, goToLists,
+    openAbout, signInWithGoogle,
     isMobile,
     watchlist, hidden, handleWish, toggleHide, primaryCurrency,
     onShare, onView, onClickListing, openCollectionPicker, isAdmin,
     user, compact,
   } = props;
 
+  // The shell adds horizontal padding around its main content (16px
+  // mobile, 20px desktop). The inverted-bleed section needs to extend
+  // past that padding to reach the viewport edges — pass shellPad
+  // through so the negative-margin escape uses the right value.
+  const shellPad = isMobile ? 16 : 20;
+
   return (
-    <div style={{ paddingBottom: 40 }}>
+    <div style={{ paddingBottom: 0 }}>
       <EditorialHero isMobile={isMobile} />
+      <LiveCounts counts={homeCounts} />
       {homeSearchSubmit && (
         <HomeSearchBar onSubmit={homeSearchSubmit} isMobile={isMobile} />
       )}
@@ -224,7 +350,7 @@ export function HomeTab(props) {
         descriptor="The newest pieces from the dealers I follow — straight off the wire."
         items={homeRecentAdded}
         onViewAll={goToRecentAdded}
-        isMobile={isMobile}
+        isMobile={isMobile} shellPad={shellPad}
         watchlist={watchlist} hidden={hidden} handleWish={handleWish}
         toggleHide={toggleHide} primaryCurrency={primaryCurrency}
         onShare={onShare} onView={onView} onClickListing={onClickListing}
@@ -236,7 +362,7 @@ export function HomeTab(props) {
         descriptor="What just changed hands — dealers and auction houses, the most recent results first."
         items={homeRecentSold}
         onViewAll={goToRecentSold}
-        isMobile={isMobile}
+        isMobile={isMobile} shellPad={shellPad}
         watchlist={watchlist} hidden={hidden} handleWish={handleWish}
         toggleHide={toggleHide} primaryCurrency={primaryCurrency}
         onShare={onShare} onView={onView} onClickListing={onClickListing}
@@ -244,17 +370,25 @@ export function HomeTab(props) {
         user={user} compact={compact}
       />
       <SectionStrip
+        inverted
         heading="Ending next at auction"
         descriptor="Bids about to close across Antiquorum, Christie's, Sotheby's, and Phillips."
         items={homeEndingNext}
         onViewAll={goToEndingNext}
-        isMobile={isMobile}
+        isMobile={isMobile} shellPad={shellPad}
         watchlist={watchlist} hidden={hidden} handleWish={handleWish}
         toggleHide={toggleHide} primaryCurrency={primaryCurrency}
         onShare={onShare} onView={onView} onClickListing={onClickListing}
         openCollectionPicker={openCollectionPicker} isAdmin={isAdmin}
         user={user} compact={compact}
       />
+      <ManageCallout
+        goToSavedListings={goToSavedListings}
+        goToMyWatches={goToMyWatches}
+        goToLists={goToLists}
+        isMobile={isMobile}
+      />
+      <FooterBand openAbout={openAbout} signInWithGoogle={signInWithGoogle} user={user} />
     </div>
   );
 }
