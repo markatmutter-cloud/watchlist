@@ -171,32 +171,6 @@ function HomeSearchBar({ onSubmit, isMobile }) {
   );
 }
 
-// Main-nav tab pills, rendered below the search composite on Home
-// (desktop only — mobile already has these as the persistent
-// bottom-nav). On Home we hide the top-bar pills in DesktopShell
-// so this row is the single canonical place to jump to Listings /
-// Watchlists / Learn. Same visual style as the top-bar pills so
-// muscle memory transfers across tabs.
-function HomeNavTabs({ goToListings, goToWatchlists, goToLearn }) {
-  const pillStyle = {
-    padding: "8px 18px", borderRadius: 999,
-    border: "0.5px solid var(--border)", background: "var(--surface)",
-    color: "var(--text2)", fontFamily: "inherit", fontSize: 13,
-    fontWeight: 500, cursor: "pointer",
-    display: "inline-flex", alignItems: "center", gap: 6,
-  };
-  return (
-    <nav style={{
-      display: "flex", justifyContent: "center", gap: 8,
-      padding: "4px 16px 32px",
-    }}>
-      <button onClick={goToListings} style={pillStyle}>Listings</button>
-      <button onClick={goToWatchlists} style={pillStyle}>Watchlists</button>
-      <button onClick={goToLearn} style={pillStyle}>Learn</button>
-    </nav>
-  );
-}
-
 // One-row horizontal section. Desktop renders 7 cards in a CSS grid;
 // mobile flips to a horizontal scroll with snap so cards 4-7 slide in
 // from the right. The strip surfaces 7 — App.js still caps the slice
@@ -281,23 +255,34 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
 // discovery sections and the footer that nudges signed-in users back
 // into the collection-management surfaces (Saved listings, My watches,
 // Lists). Three small text-style CTAs — no card chrome, no images.
-function ManageCallout({ goToSavedLists, goToMyWatches, goToChallenges, isMobile }) {
+// Manage callout — phase 4e (2026-05-11). Tried the inverted-bleed
+// treatment on the search composite (#232 → reverted) and the Ending
+// Next section (#230 → reverted) and both crashed: too heavy at the
+// top, and white cards on dark read as broken respectively. The
+// callout is the right surface for the bleed band — it's mid-page
+// (visual rhythm break lands cleanly), all text + CTAs (no card
+// photography), and reads as a "pause and think" beat between the
+// discovery sections and the footer. Negative-margin escape via
+// shellPad so the band runs edge-to-edge of the viewport.
+function ManageCallout({ goToSavedLists, goToMyWatches, goToChallenges, isMobile, shellPad }) {
   return (
     <section style={{
-      margin: isMobile ? "8px 16px 28px" : "16px 16px 36px",
-      padding: isMobile ? "28px 20px" : "44px 28px",
+      background: "var(--text1)",
+      color: "var(--bg)",
+      marginLeft: -shellPad,
+      marginRight: -shellPad,
+      marginTop: isMobile ? 8 : 16,
+      marginBottom: isMobile ? 28 : 36,
+      padding: isMobile ? "36px 20px" : "56px 28px",
       textAlign: "center",
-      border: "0.5px solid var(--border)",
-      borderRadius: 14,
-      background: "var(--bg)",
     }}>
-      <h2 style={{ margin: 0, fontSize: isMobile ? 22 : 28, fontWeight: 600, color: "var(--text1)", letterSpacing: "-0.3px" }}>
+      <h2 style={{ margin: 0, fontSize: isMobile ? 22 : 28, fontWeight: 600, color: "var(--bg)", letterSpacing: "-0.3px" }}>
         Build your collection
       </h2>
-      <p style={{ margin: "10px auto 0", maxWidth: 520, fontSize: 14, color: "var(--text2)", lineHeight: 1.5 }}>
+      <p style={{ margin: "10px auto 0", maxWidth: 520, fontSize: 14, color: "rgba(255,255,255,0.62)", lineHeight: 1.5 }}>
         Save what catches your eye, keep track of what you own, and plan what's next — all from the same feed.
       </p>
-      <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 22, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 24, flexWrap: "wrap" }}>
         <button onClick={goToSavedLists} style={calloutCtaStyle()}>Saved lists</button>
         <button onClick={goToMyWatches} style={calloutCtaStyle()}>My watches</button>
         <button onClick={goToChallenges} style={calloutCtaStyle()}>Challenges</button>
@@ -306,14 +291,14 @@ function ManageCallout({ goToSavedLists, goToMyWatches, goToChallenges, isMobile
   );
 }
 
-// Filled pill buttons — clearer "this is a CTA" affordance than the
-// outline-with-arrow look (Mark feedback 2026-05-11: those read as
-// breadcrumb links, not buttons). Dark fill, light text, no arrow.
+// Filled pill buttons against a dark band — light fill, dark text
+// (inverted from the previous outline-on-light scheme since the
+// callout is now on a dark bleed band).
 function calloutCtaStyle() {
   return {
     padding: "10px 18px", borderRadius: 999,
-    border: "none", background: "var(--text1)",
-    color: "var(--bg)", fontFamily: "inherit", fontSize: 13,
+    border: "none", background: "var(--bg)",
+    color: "var(--text1)", fontFamily: "inherit", fontSize: 13,
     fontWeight: 600, letterSpacing: "0.02em", cursor: "pointer",
   };
 }
@@ -356,7 +341,6 @@ export function HomeTab(props) {
     homeSearchSubmit,
     homeCounts,
     goToSavedLists, goToMyWatches, goToChallenges,
-    goToListings, goToWatchlists, goToLearn,
     openAbout, signInWithGoogle,
     isMobile,
     watchlist, hidden, handleWish, toggleHide, primaryCurrency,
@@ -375,16 +359,6 @@ export function HomeTab(props) {
       <EditorialHero isMobile={isMobile} />
       {homeSearchSubmit && (
         <HomeSearchBar onSubmit={homeSearchSubmit} isMobile={isMobile} />
-      )}
-      {/* Main-nav tabs below the search composite — desktop only.
-          Mobile already has these as the persistent bottom-nav, so
-          rendering them here too would just be visual noise on phones. */}
-      {!isMobile && goToListings && (
-        <HomeNavTabs
-          goToListings={goToListings}
-          goToWatchlists={goToWatchlists}
-          goToLearn={goToLearn}
-        />
       )}
       <SectionStrip
         heading="Recently added"
@@ -424,6 +398,7 @@ export function HomeTab(props) {
         goToMyWatches={goToMyWatches}
         goToChallenges={goToChallenges}
         isMobile={isMobile}
+        shellPad={shellPad}
       />
       <FooterBand openAbout={openAbout} signInWithGoogle={signInWithGoogle} user={user} />
     </div>

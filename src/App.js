@@ -2564,11 +2564,6 @@ export default function Watchlist() {
       goToSavedLists={() => { setTab("watchlist"); setWatchTopTab("lists"); setPage(1); }}
       goToMyWatches={() => { setTab("watchlist"); setWatchTopTab("my-collection"); setPage(1); }}
       goToChallenges={() => { setTab("watchlist"); setWatchTopTab("challenges"); setPage(1); }}
-      // Main-nav tab pills rendered below the search bar on Home
-      // (desktop only — mobile already has these as the bottom-nav).
-      goToListings={() => { setTab("listings"); setPage(1); }}
-      goToWatchlists={() => { setTab("watchlist"); setPage(1); }}
-      goToLearn={() => { setTab("references"); setPage(1); }}
       // Footer routes
       openAbout={() => setAboutModalOpen(true)}
       signInWithGoogle={triggerSignInPrompt}
