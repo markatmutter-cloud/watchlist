@@ -419,6 +419,7 @@ export function DesktopShell(props) {
           watchSubTabsJSX. Prop kept on destructure for backward
           compat with the mock fixture. */}
       {anyShareActive ? null : (
+        tab === "home" ||
         (tab === "listings" && showListingsFilterRow) ||
         inListsDrillIn ||
         (tab === "watchlist" && watchTopTab !== "searches" &&
