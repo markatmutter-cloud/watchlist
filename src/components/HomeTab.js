@@ -38,14 +38,19 @@ const COLS_PER_ROW = 7;
 function EditorialHero({ isMobile }) {
   return (
     <section style={{
-      padding: isMobile ? "28px 16px 22px" : "52px 16px 30px",
+      // Mobile compressed 2026-05-11 — Mark flagged the prior 28/22
+      // padding as wasted vertical real estate (top of phone had ~150px
+      // of empty space between URL bar and the wordmark). Halve the
+      // breathing room on phones without making it feel cramped on
+      // desktop.
+      padding: isMobile ? "12px 16px 14px" : "52px 16px 30px",
       textAlign: "center",
     }}>
-      <div style={{ height: 0.5, background: "var(--border)", margin: isMobile ? "0 0 22px" : "0 0 30px" }} />
+      <div style={{ height: 0.5, background: "var(--border)", margin: isMobile ? "0 0 12px" : "0 0 30px" }} />
       <h1 style={{
-        margin: isMobile ? "0 0 22px" : "0 0 30px",
+        margin: isMobile ? "0 0 12px" : "0 0 30px",
         fontFamily: "inherit",
-        fontSize: isMobile ? 34 : 56,
+        fontSize: isMobile ? 30 : 56,
         fontWeight: 400,
         letterSpacing: isMobile ? "0.14em" : "0.16em",
         color: "var(--text1)",
@@ -79,15 +84,11 @@ function LiveCounts({ counts }) {
   );
 }
 
-// Search composite — phase 4d (2026-05-11). Now in a full-width
-// inverted bleed band: the dark treatment moved off the Ending-Next
-// section (white cards on black read as harsh) onto the search
-// surface, which is text + input only and absorbs the dark mood
-// cleanly. Negative-margin escape uses shellPad to bleed past the
-// parent shell's horizontal padding. The search input itself stays
-// light/elevated so it reads as a tappable surface against the dark
-// frame.
-function HomeSearchBar({ onSubmit, isMobile, shellPad }) {
+// Search composite (2026-05-11). Light surface — the brief inverted
+// experiment (PR #232) read as too heavy at the top of the page;
+// reverted in the next round. Search input + primary CTA + secondary
+// chip cluster all on the page's normal background.
+function HomeSearchBar({ onSubmit, isMobile }) {
   const [draft, setDraft] = useState("");
   const fire = (target) => {
     const q = draft.trim();
@@ -95,14 +96,11 @@ function HomeSearchBar({ onSubmit, isMobile, shellPad }) {
   };
   return (
     <section style={{
-      background: "var(--text1)",
-      color: "var(--bg)",
-      marginLeft: -shellPad,
-      marginRight: -shellPad,
-      padding: isMobile ? "32px 16px 28px" : "44px 20px 40px",
-      marginBottom: isMobile ? 28 : 36,
+      padding: isMobile ? "0 16px 28px" : "0 16px 36px",
+      maxWidth: 720,
+      margin: "0 auto",
+      width: "100%",
     }}>
-    <div style={{ maxWidth: 720, margin: "0 auto", width: "100%" }}>
       <div style={{
         display: "flex", alignItems: "stretch",
         background: "var(--surface)", borderRadius: 12,
@@ -145,27 +143,26 @@ function HomeSearchBar({ onSubmit, isMobile, shellPad }) {
           primary CTA; reads as an "or…" dropdown without needing a
           toggle interaction. */}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 10, paddingRight: 2 }}>
-        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", alignSelf: "center", marginRight: 2 }}>Search in</span>
+        <span style={{ fontSize: 11, color: "var(--text3)", alignSelf: "center", marginRight: 2 }}>Search in</span>
         <button onClick={() => fire("auctions")}
           style={{
             padding: "5px 12px", borderRadius: 999,
-            border: "0.5px solid rgba(255,255,255,0.18)",
-            background: "transparent", color: "var(--bg)",
-            fontFamily: "inherit", fontSize: 12, fontWeight: 500, cursor: "pointer",
+            border: "0.5px solid var(--border)", background: "var(--card-bg)",
+            color: "var(--text1)", fontFamily: "inherit", fontSize: 12,
+            fontWeight: 500, cursor: "pointer",
           }}>
           Auctions
         </button>
         <button onClick={() => fire("sold")}
           style={{
             padding: "5px 12px", borderRadius: 999,
-            border: "0.5px solid rgba(255,255,255,0.18)",
-            background: "transparent", color: "var(--bg)",
-            fontFamily: "inherit", fontSize: 12, fontWeight: 500, cursor: "pointer",
+            border: "0.5px solid var(--border)", background: "var(--card-bg)",
+            color: "var(--text1)", fontFamily: "inherit", fontSize: 12,
+            fontWeight: 500, cursor: "pointer",
           }}>
           Sold
         </button>
       </div>
-    </div>
     </section>
   );
 }
@@ -346,7 +343,7 @@ export function HomeTab(props) {
     <div style={{ paddingBottom: 0 }}>
       <EditorialHero isMobile={isMobile} />
       {homeSearchSubmit && (
-        <HomeSearchBar onSubmit={homeSearchSubmit} isMobile={isMobile} shellPad={shellPad} />
+        <HomeSearchBar onSubmit={homeSearchSubmit} isMobile={isMobile} />
       )}
       <SectionStrip
         heading="Recently added"
