@@ -17,6 +17,25 @@ function fmtMonthBand(key) {
   return `${months[idx]} ${y}`;
 }
 
+// Format an ISO date ("2026-04-29") as "Apr 29". Returns null for falsy.
+function fmtShortDate(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
+// Format a sale's date range. Single-day → "Apr 29". Multi-day →
+// "Apr 29 – May 13". Falls back to raw dateLabel or "Date TBD".
+function fmtSaleDateRange(a) {
+  const start = fmtShortDate(a.dateStart);
+  const end = fmtShortDate(a.dateEnd);
+  if (start && end && end !== start) return `${start} – ${end}`;
+  if (start) return start;
+  return a.dateLabel || "Date TBD";
+}
+
 function AuctionDateBlock({ a }) {
   if (!a.dateStart) {
     return (
@@ -231,7 +250,7 @@ function MonthBlock({ group, firstBlock, archive = false }) {
                 </div>
                 <div style={{ fontSize: 12, color: "var(--text2)",
                             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {a.dateLabel || a.dateStart || "Date TBD"}
+                  {fmtSaleDateRange(a)}
                   {a.location ? ` · ${a.location}` : ""}
                 </div>
               </div>
