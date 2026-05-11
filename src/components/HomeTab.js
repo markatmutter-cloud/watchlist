@@ -26,7 +26,12 @@ import { Card } from "./Card";
 // new App.js hooks". HomeTab here is render-only — every slice it
 // shows is precomputed in App.js and handed in as a prop.
 
-const CARDS_PER_SECTION = 6;
+// Two rows × six columns = 12 cards per section. Per Mark 2026-05-11:
+// one row felt thin; two reads as a curated set without losing the
+// "this is a slice, not the firehose" feel. The App.js slice memos
+// already cap at 12 so this just renders all of them.
+const CARDS_PER_SECTION = 12;
+const COLS_PER_ROW = 6;
 
 // Horizontal scroll on mobile; CSS Grid on desktop with the same
 // column count as the Listings grid would have at the user's
@@ -55,20 +60,28 @@ function SectionStrip({ eyebrow, heading, items, onViewAll, isMobile, watchlist,
         </button>
       </div>
       <div style={{
-        // Mobile: horizontal scroll snap. Desktop: 6-up grid.
+        // Mobile: 2-row horizontal scroll (grid-auto-flow:column so
+        // items flow top-to-bottom then left-to-right; row 1 has card
+        // 1+3+5..., row 2 has card 2+4+6...). Desktop: 6-col × 2-row
+        // grid that wraps naturally. Both surface 12 cards.
         ...(isMobile ? {
-          display: "flex", gap: 1, overflowX: "auto", overflowY: "hidden",
-          padding: "0 16px 4px", scrollSnapType: "x mandatory",
+          display: "grid", gridAutoFlow: "column",
+          gridTemplateRows: "repeat(2, minmax(0, auto))",
+          gridAutoColumns: "70%",
+          gap: 1, overflowX: "auto", overflowY: "hidden",
+          padding: "0 16px 4px",
+          scrollSnapType: "x mandatory",
           WebkitOverflowScrolling: "touch",
+          background: "var(--border)",
         } : {
-          display: "grid", gridTemplateColumns: `repeat(${Math.min(CARDS_PER_SECTION, slice.length)}, minmax(0, 1fr))`,
+          display: "grid", gridTemplateColumns: `repeat(${COLS_PER_ROW}, minmax(0, 1fr))`,
           gap: 1, background: "var(--border)", padding: 0, margin: "0 16px",
           borderRadius: 10, overflow: "hidden",
         }),
       }}>
         {slice.map(item => (
           <div key={item.id} style={isMobile ? {
-            flex: "0 0 70%", maxWidth: 280, scrollSnapAlign: "start", background: "var(--card-bg)",
+            scrollSnapAlign: "start", background: "var(--card-bg)", minWidth: 0,
           } : { minWidth: 0 }}>
             <Card item={item} wished={!!watchlist[item.id]} onWish={handleWish}
               compact={compact}
