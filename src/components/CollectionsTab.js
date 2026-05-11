@@ -1582,7 +1582,7 @@ function ListsView({
                       priceUSD: item.savedPriceUSD || item.savedPrice,
                       sold: item._isSold,
                     } : item}
-                    wished={isSavedColl ? true : !!watchlist[item.id]}
+                    wished={!!watchlist[item.id]}
                     onWish={handleWish}
                     compact={compact}
                     onHide={isHiddenColl
