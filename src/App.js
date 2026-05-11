@@ -2489,7 +2489,7 @@ export default function Watchlist() {
     <>
       <div style={{
         display: "flex", gap: 20, alignItems: "center",
-        padding: "0 16px",
+        padding: "0 20px",
         background: "var(--bg)",
         borderBottom: "0.5px solid var(--border)",
         flexShrink: 0,
@@ -2696,7 +2696,7 @@ export default function Watchlist() {
     // got clipped.
     <div style={{
       display: "flex", gap: 20, alignItems: "center",
-      padding: "0 16px",
+      padding: "0 20px",
       background: "var(--bg)",
       borderBottom: "0.5px solid var(--border)",
       flexShrink: 0,

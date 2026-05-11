@@ -91,7 +91,7 @@ export function DesktopShell(props) {
       // cluster doesn't feel like it's touching the first section
       // header in the listings grid below. Top padding stays 8 —
       // chips visually anchor to the pill above without much space.
-      padding: "8px 16px 20px",
+      padding: "8px 20px 20px",
       borderBottom: "0.5px solid var(--border)",
       background: "var(--surface)",
       display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center",
@@ -100,7 +100,7 @@ export function DesktopShell(props) {
     const expandedBrand  = activeFilterPop === "brand";
     return (
     <>
-    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 20px",
                   borderBottom: expandedSource || expandedBrand ? "none" : "0.5px solid var(--border)",
                   flexShrink: 0, flexWrap: "wrap", position: "relative" }}>
       {/* Status segment retired 2026-05-04 — both Listings AND
@@ -341,7 +341,7 @@ export function DesktopShell(props) {
   return (
     <div style={{ ...baseStyle, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* Full-width top bar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 20px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
         <button onClick={() => { setTab(newUi ? "home" : "listings"); setPage(1); }}
           style={{ background: "none", border: "none", cursor: "pointer",
                   padding: 0, fontFamily: "inherit",
@@ -433,14 +433,14 @@ export function DesktopShell(props) {
           // Spacer row that matches the real filter pill row's height,
           // so switching to a filter-less sub-tab (Calendar / Searches
           // / Collections / Challenges) doesn't pop content up.
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 20px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
             <span style={{ fontSize: 13, padding: "6px 12px", borderRadius: 20, visibility: "hidden" }}>placeholder</span>
           </div>
         )}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
         {/* Top padding is 0 on Watchlist so the sub-tab strip sits flush
             against the filter pill row. Listings keeps the breathing room. */}
-        <div data-desktop-main style={{ flex: 1, overflowY: "auto", padding: `${tab === "watchlist" ? 0 : 14}px 16px 32px` }}>
+        <div data-desktop-main style={{ flex: 1, overflowY: "auto", padding: `${tab === "watchlist" ? 0 : 14}px 20px 32px` }}>
           {/* Share-receive surface — self-contained component. */}
           {shareReceiverJSX}
           {/* Watch Challenges receive surface (v1.5). */}

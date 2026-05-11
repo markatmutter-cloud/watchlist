@@ -104,7 +104,7 @@ export function MobileShell(props) {
             content, leaving only one row of cards visible above the
             fold. Reduced font + padding here saves ~14px without
             losing the home-tap affordance. */}
-        <div style={{ padding: "2px 14px 0" }}>
+        <div style={{ padding: "2px 16px 0" }}>
           {/* Tap the title to jump back to Available (home). */}
           <button onClick={() => { setTab(newUi ? "home" : "listings"); setPage(1); }}
             style={{ background: "none", border: "none", cursor: "pointer",
@@ -118,7 +118,7 @@ export function MobileShell(props) {
             sort/clear pills row. Stays pinned to the viewport top so
             filters are one tap away at any scroll depth. */}
         <div style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--bg)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 14px 4px", borderBottom: "0.5px solid var(--border)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 16px 4px", borderBottom: "0.5px solid var(--border)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 0 }}>
             <SearchIcon />
             <input value={search} onChange={e => setSearch(e.target.value)}
@@ -160,12 +160,12 @@ export function MobileShell(props) {
             share-receive landing so the recipient sees the focused
             card without browse chrome above it. */}
         {!anyShareActive && noFilterableList && (
-          <div style={{ display: "flex", gap: 6, padding: "4px 14px 6px", borderBottom: "0.5px solid var(--border)", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 6, padding: "4px 16px 6px", borderBottom: "0.5px solid var(--border)", alignItems: "center" }}>
             <span style={{ fontSize: 13, padding: "9px 14px", borderRadius: 20, border: "0.5px solid transparent", visibility: "hidden" }}>placeholder</span>
           </div>
         )}
         {!anyShareActive && !noFilterableList && (
-        <div style={{ display: "flex", gap: 6, padding: "4px 14px 6px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+        <div style={{ display: "flex", gap: 6, padding: "4px 16px 6px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
           {/* Fixed-width count slot (2026-05-09) so the pills don't
               jitter horizontally when the count drops from 4-digit
               (3309) to 3-digit (136) on filter toggles. Right-align
@@ -302,7 +302,7 @@ export function MobileShell(props) {
             challenge), skip the regular tab content so the recipient
             sees a clean first-impression page. */}
         {!anyShareActive && (
-          <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 14px 100px` }}>
+          <div style={{ padding: `${tab === "watchlist" ? 0 : 12}px 16px 100px` }}>
             {/* (Ending-soon pinned section retired 2026-05-04 —
                 Watchlist > Saved auctions sub-tab IS the ending-soon
                 view now.) */}
