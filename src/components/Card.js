@@ -165,7 +165,12 @@ export const Card = memo(function Card({
         : matchesPrimary
           ? fmt(item.price, primaryCurrency)
           : (primaryAmount != null
-              ? `~${primarySym}${primaryAmount.toLocaleString()}`
+              // Drop the `~` prefix on converted amounts (Mark
+              // 2026-05-11): the tilde was misaligning the price
+              // column when some rows had it and others didn't.
+              // The fact that this is a conversion is already
+              // signalled by the native-currency line below.
+              ? `${primarySym}${primaryAmount.toLocaleString()}`
               // No conversion possible (no priceUSD bridge): fall back
               // to native so the user still sees a price rather than "—".
               : fmt(item.price, itemCurrency));
@@ -226,7 +231,10 @@ export const Card = memo(function Card({
     : lotPrimaryAmount != null
       ? (matchesPrimary
           ? fmtLotPrice(lotPrimaryAmount, primaryCurrency) || "—"
-          : `~${primarySym}${Math.round(lotPrimaryAmount).toLocaleString()}`)
+          // Drop the `~` prefix on converted amounts (Mark
+          // 2026-05-11) — see the dealer-card branch above for the
+          // alignment reason.
+          : `${primarySym}${Math.round(lotPrimaryAmount).toLocaleString()}`)
       : fmtLotPrice(lotNativeValue, item.currency) || "—";
   const lotShowNative = isLot && !matchesPrimary && lotNativeValue;
   // Estimate line — only shows on active auction-format lots when

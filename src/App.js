@@ -2051,15 +2051,25 @@ export default function Watchlist() {
           <div style={{ height: "0.5px", background: "var(--border)", margin: "8px -8px 4px" }} />
           {isAdmin && (
             // Site Stats is admin-only — shown only to Mark. Mark
-            // feedback 2026-05-07: shade it and drop the trailing
-            // arrow so it reads as "yours" rather than the same
-            // weight as user-facing entries.
+            // feedback 2026-05-11: lift this back up the visual
+            // hierarchy. (Earlier feedback had it muted + italic;
+            // newer ask is to make admin entries more prominent.)
+            // Same weight + colour as the other menu items now,
+            // with a small "ADMIN" eyebrow chip on the right so the
+            // role of the entry stays unambiguous.
             <button onClick={() => { setShowUserMenu(false); setTab("admin"); setPage(1); }}
-              style={{ display: "block", width: "100%", textAlign: "left",
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+                      gap: 8, width: "100%", textAlign: "left",
                       padding: "6px 8px", border: "none", background: "transparent",
-                      color: "var(--text3)", cursor: "pointer", fontFamily: "inherit",
-                      fontSize: 12, borderRadius: 6, fontStyle: "italic" }}>
-              Site stats
+                      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                      fontSize: 13, fontWeight: 500, borderRadius: 6 }}>
+              <span>Site stats</span>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em",
+                            textTransform: "uppercase", color: "var(--bg)",
+                            background: "var(--text1)",
+                            padding: "2px 6px", borderRadius: 4 }}>
+                Admin
+              </span>
             </button>
           )}
           {/* Report-a-bug entry — fires the contextualized mailto so

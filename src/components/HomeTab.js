@@ -264,9 +264,23 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
             </div>
           )}
         </div>
+        {/* "View all" lifted from a muted text link to a bordered
+            pill button (Mark feedback 2026-05-11: needs to read as
+            "this is a real destination" rather than incidental
+            metadata). Keeps a low-key affordance — outline pill,
+            not a CTA fill — but the border + slightly bolder weight
+            communicates clickability. */}
         <button onClick={onViewAll}
-          style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "inherit", fontSize: 13, fontWeight: 500, color: viewAllColor }}>
-          View all →
+          style={{
+            flexShrink: 0, cursor: "pointer", fontFamily: "inherit",
+            fontSize: 12, fontWeight: 600, letterSpacing: "0.04em",
+            padding: "7px 14px", borderRadius: 999,
+            border: `0.5px solid ${inverted ? "rgba(255,255,255,0.4)" : "var(--text2)"}`,
+            background: "transparent",
+            color: viewAllColor,
+            display: "inline-flex", alignItems: "center", gap: 6,
+          }}>
+          View all <span aria-hidden style={{ fontSize: 13 }}>→</span>
         </button>
       </div>
       <div style={{
