@@ -46,7 +46,7 @@ export function MobileShell(props) {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
-    adminTabJSX, homeTabJSX, newUi, listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
+    adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
     // View-settings (2026-05-09): rendered inline in the filter
     // drawer so currency / theme / columns are one tap from the
     // current view rather than buried behind Settings.
@@ -106,7 +106,7 @@ export function MobileShell(props) {
             losing the home-tap affordance. */}
         <div style={{ padding: "2px 16px 0" }}>
           {/* Tap the title to jump back to Available (home). */}
-          <button onClick={() => { setTab(newUi ? "home" : "listings"); setPage(1); }}
+          <button onClick={() => { setTab("listings"); setPage(1); }}
             style={{ background: "none", border: "none", cursor: "pointer",
                     padding: 0, fontFamily: "inherit",
                     fontSize: 15, fontWeight: 600, letterSpacing: "-0.3px",
@@ -193,11 +193,8 @@ export function MobileShell(props) {
             // On Home the activity grouping is the order — not a date
             // sort. Suppress active state on Home so the pill doesn't
             // imply state Home isn't in.
-            const label = tab === "home" ? "Date"
-                        : sort === "date" ? "Date ↓"
-                        : sort === "date-asc" ? "Date ↑"
-                        : "Date";
-            const active = tab !== "home" && (sort === "date" || sort === "date-asc");
+            const label = sort === "date" ? "Date ↓" : sort === "date-asc" ? "Date ↑" : "Date";
+            const active = sort === "date" || sort === "date-asc";
             return (
               <button onClick={() => {
                 if (sort === "date") setSort("date-asc");
@@ -208,11 +205,8 @@ export function MobileShell(props) {
           })()}
           {/* Price sort pill */}
           {(() => {
-            const label = tab === "home" ? "Price"
-                        : sort === "price-asc" ? "Price ↑"
-                        : sort === "price-desc" ? "Price ↓"
-                        : "Price";
-            const active = tab !== "home" && (sort === "price-asc" || sort === "price-desc");
+            const label = sort === "price-asc" ? "Price ↑" : sort === "price-desc" ? "Price ↓" : "Price";
+            const active = sort === "price-asc" || sort === "price-desc";
             return (
               <button onClick={() => {
                 if (sort === "price-asc") setSort("price-desc");
@@ -230,7 +224,7 @@ export function MobileShell(props) {
               parity with desktop). Hidden on Calendar (no items).
               On Home the click routes to Listings via the
               interact-routes effect in App.js. */}
-          {(tab === "listings" || tab === "home") && user && listingsSubTab !== "calendar" && (
+          {tab === "listings" && user && listingsSubTab !== "calendar" && (
             <button onClick={() => setFilterHearted && setFilterHearted(!filterHearted)}
               aria-pressed={!!filterHearted}
               title={filterHearted ? "Show all" : "Show only saved"}
@@ -320,8 +314,7 @@ export function MobileShell(props) {
                 tab (`tab === "watchlist"`) via the `watchlistTabJSX`
                 prop, which App.js dispatches between Watchlist and
                 Collections content based on the active sub-tab. */}
-            {tab === "home" ? homeTabJSX
-              : tab === "listings" ? listingsTabContentJSX
+            {tab === "listings" ? listingsTabContentJSX
               : tab === "references" ? referencesTabJSX
               : tab === "admin" ? adminTabJSX
               : watchlistTabJSX}

@@ -18,7 +18,6 @@ import { useFavSearchModal } from "./hooks/useFavSearchModal";
 import { useViewSettings } from "./hooks/useViewSettings";
 import { useFilters } from "./hooks/useFilters";
 import { Card } from "./components/Card";
-import { HomeTab } from "./components/HomeTab";
 // AuctionsTab retired 2026-04-30 — Tracked lots merged into Watchlist
 // Listings; calendar moved to Watchlist > Auction Calendar sub-tab via
 // the new AuctionCalendar component (AuctionsTab.js deleted 2026-04-30).
@@ -51,27 +50,6 @@ import { tabPill, innerToggleButton, actionButton } from "./styles";
 // to keep the GitHub repo identity off the production network tab.
 const LISTINGS_URL = "/listings.json";
 const AUCTIONS_URL = "/auctions.json";
-
-// Home tab feature flag. `?new-ui=1` flips it on and persists into
-// localStorage; `?new-ui=0` clears it. When on: the "Watchlist"
-// wordmark routes to a new Home tab (aggregator landing with three
-// activity-grouped sections), and a bare URL defaults to Home.
-// Module-level so the value is captured once at app boot — toggling
-// requires a reload, by design.
-const NEW_UI = (() => {
-  if (typeof window === "undefined") return false;
-  try {
-    const p = new URLSearchParams(window.location.search).get("new-ui");
-    if (p === "1") { localStorage.setItem("dial_new_ui", "1"); return true; }
-    if (p === "0") { localStorage.removeItem("dial_new_ui"); return false; }
-    return localStorage.getItem("dial_new_ui") === "1";
-  } catch { return false; }
-})();
-
-// Time-window constant for the Home tab's "closing soon" + "recently
-// sold" slices. Module-level so its identity stays stable across
-// renders (matters for useMemo deps).
-const HOME_HOUR_MS = 60 * 60 * 1000;
 const TRACKED_LOTS_URL = "/tracked_lots.json";
 // Comprehensive auction-lot scrape — populated by auction_lots_scraper.py
 // (Antiquorum + Christie's + Sotheby's + Phillips). Same shape as
@@ -367,10 +345,7 @@ export default function Watchlist() {
   // `?tab=collections` redirect to `?tab=watchlist` with the same
   // sub-tab key (the sub-tab values were already preserved when
   // SUB_VALUES_COLLECTIONS was folded into watchTopTab above).
-  // "home" is the redesign aggregator landing (2026-05-10). Always in
-  // TAB_VALUES so ?tab=home works even without the feature flag (lets
-  // anyone preview); only set as default when NEW_UI is on.
-  const TAB_VALUES = ["home", "listings", "watchlist", "references", "admin"];
+  const TAB_VALUES = ["listings", "watchlist", "references", "admin"];
   // URL-key translation. Naming alignment 2026-05-08 (Mark feedback:
   // "?sub=sold&tab=watchlist" reads as ugly internal state in the
   // address bar). The URL now uses `saved` / `learn` as the
@@ -390,7 +365,7 @@ export default function Watchlist() {
       if (URL_TAB_TO_INTERNAL[t]) return URL_TAB_TO_INTERNAL[t];
       if (TAB_VALUES.includes(t)) return t;
     }
-    return NEW_UI ? "home" : "listings";
+    return "listings";
   });
 
   // Saved-view staleness snapshot. Mark feedback 2026-05-07: when a
@@ -464,14 +439,8 @@ export default function Watchlist() {
     if (params.get("shared") === "1") return;
     // Naming alignment 2026-05-08: emit external URL keys (saved /
     // learn) for the watchlist / references internal values. Strip
-    // the `tab` param only on the active default — that way a
-    // refresh on a non-default tab keeps the user where they were.
-    // NEW_UI on: "home" is default (stripped); ?tab=listings is
-    // written explicitly when on Listings. NEW_UI off: "listings"
-    // is default (stripped); ?tab=home is written if Home is
-    // somehow reached.
-    const defaultTabForUrl = NEW_UI ? "home" : "listings";
-    if (tab === defaultTabForUrl) params.delete("tab");
+    // Listings is the default and stays stripped from the URL.
+    if (tab === "listings") params.delete("tab");
     else params.set("tab", INTERNAL_TAB_TO_URL[tab] || tab);
     if (tab === "listings" && listingsSubTab !== "live") {
       params.set("sub", listingsSubTab);
@@ -529,7 +498,7 @@ export default function Watchlist() {
       // Compute the target tab. Bundle 2A.2 (2026-05-07): old
       // `?tab=collections` URLs collapse onto `?tab=watchlist` with
       // the sub-tab key preserved.
-      let nextTab = NEW_UI ? "home" : "listings";
+      let nextTab = "listings";
       // Same external→internal translation as the init useState.
       if (URL_TAB_TO_INTERNAL[tParam]) {
         nextTab = URL_TAB_TO_INTERNAL[tParam];
@@ -2089,105 +2058,8 @@ export default function Watchlist() {
       )}
     </div>
   );
-  // Home tab data (2026-05-10). Three activity-grouped slices off the
-  // same `mainFeedItems` pool the Listings tab uses, so admin-hidden
-  // and merged-auction-lots semantics stay identical. Time windows:
-  // 24h for new listings; 48h for closing-soon + recently-sold.
-  //
-  // CRITICAL placement: these hooks sit BEFORE the loading/loadError
-  // early returns below. The previous round of this work put them
-  // after — hooks were skipped on the loading-state render and ran
-  // on the post-fetch render, tripping React error #310.
-  const homeNewListings = useMemo(() => {
-    const isLot = (i) => !!i._isAuctionFormat || !!i._isTrackedLot;
-    return mainFeedItems
-      .filter(i => !i.sold && !isLot(i) && !i.backfilled && !hidden[i.id])
-      .filter(i => daysAgo(freshDate(i)) <= 1)
-      .sort((a, b) => new Date(freshDate(b) || 0) - new Date(freshDate(a) || 0));
-  }, [mainFeedItems, hidden]);
-
-  const homeClosingSoon = useMemo(() => {
-    const now = Date.now();
-    const isLot = (i) => !!i._isAuctionFormat || !!i._isTrackedLot;
-    return mainFeedItems
-      .filter(i => isLot(i) && !i.sold && !hidden[i.id] && i.auction_end)
-      .filter(i => {
-        const end = new Date(i.auction_end).getTime();
-        return end > now && end - now <= 48 * HOME_HOUR_MS;
-      })
-      .sort((a, b) => new Date(a.auction_end) - new Date(b.auction_end));
-  }, [mainFeedItems, hidden]);
-
-  const homeRecentlySold = useMemo(() => {
-    const now = Date.now();
-    return mainFeedItems
-      .filter(i => i.sold && !hidden[i.id])
-      .filter(i => {
-        const sold = i.soldAt || i.lastSeen || i.auction_end;
-        if (!sold) return false;
-        return now - new Date(sold).getTime() <= 48 * HOME_HOUR_MS;
-      })
-      .sort((a, b) => {
-        const sa = a.soldAt || a.lastSeen || a.auction_end;
-        const sb = b.soldAt || b.lastSeen || b.auction_end;
-        return new Date(sb || 0) - new Date(sa || 0);
-      });
-  }, [mainFeedItems, hidden]);
-
-  // Routes a "View all →" click into the corresponding Listings sub-tab.
-  const goToListingsSub = useCallback((subKey) => {
-    setTab("listings");
-    setListingsSubTab(subKey);
-    setPage(1);
-  }, [setTab, setListingsSubTab, setPage]);
-
-  // Card renderer used by HomeTab. Matches the Card prop bag from
-  // listingsGridJSX so heart, ⋯ menu, share, collection-add all
-  // behave the same on Home as they do on Listings.
-  const renderHomeCard = useCallback((item) => (
-    <Card key={item.id} item={item}
-      wished={!!watchlist[item.id]} onWish={handleWish}
-      compact={compact}
-      onHide={isAdmin ? toggleHide : undefined}
-      isHidden={!!hidden[item.id]}
-      onAddToCollection={user ? openCollectionPicker : undefined}
-      primaryCurrency={primaryCurrency}
-      onShare={handleShare}
-      onView={observeCard}
-      onClickListing={onClickListing} />
-  ), [watchlist, handleWish, compact, isAdmin, toggleHide, hidden, user, openCollectionPicker, primaryCurrency, handleShare, observeCard, onClickListing]);
-
-  // "Interact-on-Home routes to Listings" contract. Home renders the
-  // same sub-tab strip + filter row chrome as Listings, but Home has
-  // no flat feed to filter. So when the user touches any of those
-  // controls while on Home, route them to Listings and let the new
-  // state take effect there. The ref guards against firing on the
-  // initial mount tick (state-initialisation, not user interaction).
-  const homeInteractRouteRef = useRef(false);
-  useEffect(() => {
-    if (!homeInteractRouteRef.current) { homeInteractRouteRef.current = true; return; }
-    if (tab === "home") {
-      setTab("listings");
-      setPage(1);
-    }
-  }, [tab, setTab, setPage, listingsSubTab, sort, search, filterHearted, filterSources, filterBrands, filterRefs, minPriceText, maxPriceText]);
-
   if (loading) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Pulling the latest listings…</div>;
   if (loadError) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Couldn't pull the listings — refresh to try again.</div>;
-
-  // homeTabJSX is below the early returns intentionally — it's plain
-  // JSX, not a hook, so it doesn't violate rules of hooks. Keeping it
-  // here colocates with the rest of the per-tab JSX expressions.
-  const homeTabJSX = (
-    <HomeTab
-      newListings={homeNewListings}
-      closingSoon={homeClosingSoon}
-      recentlySold={homeRecentlySold}
-      onViewAll={goToListingsSub}
-      renderCard={renderHomeCard}
-      cols={isMobile ? 2 : (typeof desktopCols === "number" ? desktopCols : 5)}
-    />
-  );
 
   // ── SHARED STYLE TOKEN ───────────────────────────────────────────────────
   // sectionHeadingStyle still consumed by MobileShell for the filter
@@ -2389,35 +2261,19 @@ export default function Watchlist() {
       <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
         {visibleWithDividers.map((entry, idx) => (
           entry.kind === "divider" ? (
-            // Date-band section header (Mark spec 2026-05-11: "grey
-            // headers with rounded edges"). Each band header renders
-            // as a content-width pill, left-aligned in the divider
-            // row. Pill shape (borderRadius 999) means the rounded
-            // edges are visible on every header — not just the
-            // first one (which the grid's own borderRadius clips).
-            // Same divider component fires on listings date sort,
-            // sold date sort, and auctions closing-time sort.
             <div key={`div-${idx}-${entry.label}`} style={{
               gridColumn: "1/-1",
-              padding: idx === 0 ? "6px 0 8px" : "22px 0 8px",
-              display: "flex",
-              alignItems: "center",
+              padding: idx === 0 ? "14px 14px 12px" : "28px 14px 12px",
+              display: "flex", alignItems: "baseline", gap: 12,
+              borderBottom: "0.5px solid var(--border)",
+              marginBottom: 4,
             }}>
-              <div style={{
-                display: "inline-flex",
-                alignItems: "baseline",
-                gap: 10,
-                background: "var(--surface)",
-                borderRadius: 999,
-                padding: "8px 16px",
-              }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text1)" }}>
-                  {entry.label}
-                </span>
-                <span style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500 }}>
-                  {entry.total.toLocaleString()}
-                </span>
-              </div>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
+                {entry.label}
+              </span>
+              <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
+                {entry.total.toLocaleString()}
+              </span>
             </div>
           ) : (
             <Card key={entry.item.id} item={entry.item} wished={!!watchlist[entry.item.id]} onWish={handleWish} compact={compact} onHide={isAdmin ? toggleHide : undefined} isHidden={!!hidden[entry.item.id]} onAddToCollection={user ? openCollectionPicker : undefined} primaryCurrency={primaryCurrency} onShare={handleShare} onView={observeCard} onClickListing={onClickListing} />
@@ -2498,10 +2354,7 @@ export default function Watchlist() {
   // Listings tab sub-tab strip — mirrors the Watchlist sub-tab strip
   // pattern (tabPill underline buttons, horizontally scrollable).
   // Live listings | Live auctions | All sold | Auction calendar.
-  // Sub-tab strip renders on Home too — Mark feedback 2026-05-10:
-  // chrome should be visible on Home with a "click routes to Listings"
-  // contract (see the navigateToListingsOnInteraction effect below).
-  const listingsSubTabsJSX = (tab !== "listings" && tab !== "home") ? null : (
+  const listingsSubTabsJSX = tab !== "listings" ? null : (
     <>
       <div style={{
         display: "flex", gap: 20, alignItems: "center",
@@ -2521,23 +2374,9 @@ export default function Watchlist() {
           ["sold", isMobile ? "Archive" : "Archive (Sold)"],
           ["calendar", isMobile ? "Calendar" : "Auction calendar"],
         ].map(([key, label]) => {
-          // On Home, no sub-tab is "active" — Home is its own surface,
-          // and the strip is a quick-jump into Listings. Highlighting
-          // a pill would falsely imply Home is showing that sub-tab's
-          // content. The interact-routes-to-Listings effect handles
-          // the navigation; clicking re-selects the sub-tab there.
-          const active = tab === "listings" && listingsSubTab === key;
+          const active = listingsSubTab === key;
           return (
-            <button key={key} onClick={() => {
-              // On Home, force a tab change even if the user clicks
-              // the sub-tab that's already in listingsSubTab state.
-              // (Otherwise the state setter no-ops and the
-              // interact-routes effect doesn't fire.)
-              if (tab === "home") { setTab("listings"); setPage(1); }
-              setListingsSubTab(key);
-              setDrawerOpen(false);
-              setPage(1);
-            }}
+            <button key={key} onClick={() => { setListingsSubTab(key); setDrawerOpen(false); setPage(1); }}
               style={{ ...tabPill(active), flexShrink: 0 }}>
               {label}
             </button>
@@ -3057,11 +2896,6 @@ export default function Watchlist() {
     // Collections style) computed by `savedContentJSX`.
     watchlistTabJSX: savedContentJSX,
     adminTabJSX, referencesTabJSX, collectionsTabJSX,
-    homeTabJSX,
-    // Redesign feature flag — shells use this to gate the
-    // wordmark-routes-to-Home behaviour. Off ⇒ wordmark goes to
-    // Listings (today). On ⇒ wordmark goes to Home.
-    newUi: NEW_UI,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     // Whether a share-receive landing surface is taking over the
