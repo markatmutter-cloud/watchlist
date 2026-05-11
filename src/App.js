@@ -17,6 +17,7 @@ import { useTrackModal } from "./hooks/useTrackModal";
 import { useFavSearchModal } from "./hooks/useFavSearchModal";
 import { useViewSettings } from "./hooks/useViewSettings";
 import { useFilters } from "./hooks/useFilters";
+import { useHomeHidden } from "./hooks/useHomeHidden";
 import { Card } from "./components/Card";
 // AuctionsTab retired 2026-04-30 — Tracked lots merged into Watchlist
 // Listings; calendar moved to Watchlist > Auction Calendar sub-tab via
@@ -591,6 +592,11 @@ export default function Watchlist() {
   // (RLS-gated) and gets called from the toggleHide wrapper below
   // when the current user is admin.
   const { ids: adminHidden, toggle: toggleAdminHidden } = useAdminHidden();
+  // Home-only hide set (admin curation, localStorage). The × overlay
+  // on Home cards writes here; the rest of the site reads through
+  // hidden / adminHidden and is unaffected. See useHomeHidden for
+  // the rationale.
+  const { ids: homeHidden, toggle: toggleHomeHide } = useHomeHidden();
   // Admin gate, hoisted above toggleHide so the wrapper can decide
   // whether to propagate a per-user hide into the global blocklist.
   // Comma-separated emails in REACT_APP_ADMIN_EMAILS (Vercel + .env);
@@ -2113,10 +2119,27 @@ export default function Watchlist() {
   // that warning. Origin: 2026-05-11 hotfix after PR #223 shipped
   // with them too deep and white-screened production.)
   const homeRecentAdded = useMemo(() => {
-    const live = items.filter(i => !i.sold && !hidden[i.id] && !adminHidden.has(i.id));
+    const live = items.filter(i => !i.sold && !hidden[i.id] && !adminHidden.has(i.id) && !homeHidden.has(i.id));
     const sortKey = (i) => i.firstSeen || i.scrapedAt || "";
     return [...live].sort((a, b) => (sortKey(b) || "").localeCompare(sortKey(a) || "")).slice(0, 12);
-  }, [items, hidden, adminHidden]);
+  }, [items, hidden, adminHidden, homeHidden]);
+  // User's most-recently hearted items — second row on Home for
+  // signed-in users only. Mark spec 2026-05-11. Pulls from
+  // `watchlist` (the raw heart map keyed by id, values have savedAt
+  // + listing snapshot) directly rather than `watchItems` so the
+  // hook stays above the loading early returns (watchItems lives
+  // farther down). Hidden + admin-hidden + home-hidden subtractions
+  // apply.
+  const homeRecentlyHearted = useMemo(() => {
+    if (!user) return [];
+    const arr = Object.values(watchlist || {}).filter(it => {
+      if (!it || !it.id) return false;
+      if (hidden[it.id] || adminHidden.has(it.id) || homeHidden.has(it.id)) return false;
+      return true;
+    });
+    const k = (it) => it.savedAt || "";
+    return arr.sort((a, b) => (k(b) || "").localeCompare(k(a) || "")).slice(0, 12);
+  }, [user, watchlist, hidden, adminHidden, homeHidden]);
   const homeEndingNext = useMemo(() => {
     // auctionLotItems is the PROJECTED shape — `sold` is the
     // derived isEnded flag (data.status === "ended" || sold_price set),
@@ -2129,21 +2152,21 @@ export default function Watchlist() {
     // SOLD cards appearing in both Recently sold and Ending next.)
     const now = Date.now();
     const active = auctionLotItems.filter(i => {
-      if (hidden[i.id] || adminHidden.has(i.id)) return false;
+      if (hidden[i.id] || adminHidden.has(i.id) || homeHidden.has(i.id)) return false;
       if (i.sold) return false;
       const end = i.auction_end ? Date.parse(i.auction_end) : NaN;
       return !Number.isNaN(end) && end > now;
     });
     return active.sort((a, b) => Date.parse(a.auction_end) - Date.parse(b.auction_end)).slice(0, 12);
-  }, [auctionLotItems, hidden, adminHidden]);
+  }, [auctionLotItems, hidden, adminHidden, homeHidden]);
   const homeRecentSold = useMemo(() => {
     const merged = [...items, ...auctionLotItems].filter(i => {
-      if (hidden[i.id] || adminHidden.has(i.id)) return false;
+      if (hidden[i.id] || adminHidden.has(i.id) || homeHidden.has(i.id)) return false;
       return i.sold || i.status === "ended" || i.sold_price;
     });
     const soldKey = (i) => i.soldAt || i.auction_end || i.lastSeen || "";
     return merged.sort((a, b) => (soldKey(b) || "").localeCompare(soldKey(a) || "")).slice(0, 12);
-  }, [items, auctionLotItems, hidden, adminHidden]);
+  }, [items, auctionLotItems, hidden, adminHidden, homeHidden]);
 
   if (loading) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Pulling the latest listings…</div>;
   if (loadError) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Couldn't pull the listings — refresh to try again.</div>;
@@ -2577,6 +2600,23 @@ export default function Watchlist() {
       // Footer routes
       openAbout={() => setAboutModalOpen(true)}
       signInWithGoogle={triggerSignInPrompt}
+      // Admin × overlay on Home cards writes here (Home-only hide).
+      // Wired only for admin; HomeTab gates the overlay render too.
+      toggleHomeHide={isAdmin ? toggleHomeHide : undefined}
+      // Signed-in user's most-recently hearted strip + View-all route.
+      homeRecentlyHearted={homeRecentlyHearted}
+      goToSavedHearts={() => { setTab("watchlist"); setWatchTopTab("listings"); setPage(1); }}
+      // Dealer typeahead — popover under the search bar suggests
+      // matching dealer names when the user starts typing. Clicking
+      // a dealer routes to Listings filtered by that source.
+      homeDealerSources={DEALER_SOURCES}
+      homeJumpToDealer={(name) => {
+        setSearch("");
+        setFilterSources([name]);
+        setTab("listings");
+        setListingsSubTab("live");
+        setPage(1);
+      }}
       isMobile={isMobile}
       watchlist={watchlist}
       hidden={hidden}
