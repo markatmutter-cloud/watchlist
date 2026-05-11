@@ -385,8 +385,12 @@ export function MobileShell(props) {
           position: "fixed", bottom: 0, left: 0, right: 0,
           display: "flex",
           background: "var(--surface)",
-          borderTop: "2px solid #3b4a36",
-          boxShadow: "0 -8px 20px rgba(59, 74, 54, 0.30)",
+          // 2026-05-11: dropped the 2px dark-green borderTop +
+          // green-tinted boxShadow that flagged the bottom-nav.
+          // Mark's call: too loud, doesn't match the editorial
+          // direction. A 0.5px hairline in `--border` reads as
+          // intentional without screaming for attention.
+          borderTop: "0.5px solid var(--border)",
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
         }}>
           {/* Admin is desktop-only — mobile bottom bar shows
