@@ -369,12 +369,7 @@ export function DesktopShell(props) {
                 Its sub-tabs (my-collection / wishlist / lists /
                 challenges) are now part of the Saved sub-tab strip.
                 `?tab=collections` redirects to `?tab=watchlist`. */}
-          {/* On Home, the three main-nav pills move into HomeTab body
-              below the search composite (Mark spec 2026-05-11: tabs
-              inline with the search bar). Top bar is editorial-clean
-              on Home — just the title-less left, search-less center,
-              and About + auth on the right. Other tabs unchanged. */}
-          {tab !== "home" && [["listings", "Listings"], ["watchlist", "Watchlists"], ["references", "Learn"]].map(([key, label]) => (
+          {[["listings", "Listings"], ["watchlist", "Watchlists"], ["references", "Learn"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               padding: "6px 14px", borderRadius: 20, border: "0.5px solid var(--border)", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,
