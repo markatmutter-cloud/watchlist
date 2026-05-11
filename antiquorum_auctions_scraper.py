@@ -19,15 +19,11 @@ import requests
 import csv
 import re
 import sys
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 
 URL = "https://www.antiquorum.swiss/en/auctions/upcoming"
 UPCOMING_PAGE = "https://www.antiquorum.swiss/upcoming-auctions-and-viewings/"
 CATALOG_BASE = "https://catalog.antiquorum.swiss/en/auctions"
-# Catalogs typically go live 4-6 weeks before a sale. Use a generous
-# 60-day window: before this, link to the generic upcoming page. Within
-# it, build the per-sale catalog URL.
-CATALOG_WINDOW_DAYS = 60
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -125,30 +121,29 @@ def scrape():
             continue
         seen.add(key)
 
-        # Decide which URL to expose. Catalogs open an unpredictable number
-        # of weeks before a sale; instead of guessing, HEAD-check each
-        # candidate URL. Only sales whose catalog actually responds 200 get
-        # the specific URL + the Catalog chip. Everyone else links to the
-        # generic upcoming-auctions page.
-        today = date.today()
-        try:
-            days_until = (datetime.fromisoformat(start).date() - today).days
-        except ValueError:
-            days_until = 9999
+        # Always HEAD-probe the catalog URL — no day-window gate. The
+        # previous `0 <= days_until <= 60` gate meant the moment a
+        # sale ended (days_until went negative), the scraper reverted
+        # to the generic UPCOMING_PAGE for that sale. Downstream
+        # auction_lots_scraper couldn't enumerate it, sold prices
+        # never made it into our data, hearted-by-users lots
+        # rendered as still-active forever (Mark report 2026-05-11).
+        # Antiquorum's catalog pages stay up for years post-sale —
+        # if HEAD returns 200, the URL is good; if 404, we naturally
+        # fall back to the generic page.
         candidate = build_catalog_url(location, date_str)
         has_catalog = False
         url = UPCOMING_PAGE
-        if 0 <= days_until <= CATALOG_WINDOW_DAYS:
-            try:
-                hr = requests.head(candidate, headers=HEADERS, timeout=15, allow_redirects=True)
-                # Some catalogs return 200 with a redirect to /lots; both are fine.
-                if hr.status_code == 200:
-                    url = candidate
-                    has_catalog = True
-                else:
-                    print(f"    catalog check {hr.status_code} for {candidate}")
-            except Exception as e:
-                print(f"    catalog check failed: {e}")
+        try:
+            hr = requests.head(candidate, headers=HEADERS, timeout=15, allow_redirects=True)
+            # Some catalogs return 200 with a redirect to /lots; both are fine.
+            if hr.status_code == 200:
+                url = candidate
+                has_catalog = True
+            else:
+                print(f"    catalog check {hr.status_code} for {candidate}")
+        except Exception as e:
+            print(f"    catalog check failed: {e}")
 
         results.append({
             'house':       'Antiquorum',
