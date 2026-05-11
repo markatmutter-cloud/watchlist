@@ -307,7 +307,12 @@ export function WatchlistTab(props) {
   // into the Watchlist tab. Signed-out fallback handled by the outer
   // !user branch in render() via SIGNED_OUT_BY_SUBTAB.
   const searchesTabJSX = (
-    <div style={{ paddingTop: 4 }}>
+    // No outer paddingTop — every other Saved sub-tab renders its
+    // SubTabIntro directly under the shell padding. The 4px here
+    // was making the Searches intro sit 4px lower than the others.
+    // (Mark feedback 2026-05-11: "SubTabIntro alignment is
+    // different across the subtabs".)
+    <div>
       {/* Intro banner — mirrors the Lists sub-tab pattern (2026-05-04)
           so the two "add a thing" sub-tabs read consistently. The
           + button used to live in the Watchlist sub-tab strip, but
@@ -377,8 +382,20 @@ export function WatchlistTab(props) {
                 flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "14px 16px", border: "none", background: "transparent",
                 cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: "inherit",
+                gap: 12,
               }}>
-                <div>
+                {/* Magnifying-glass icon left of the label — mirrors
+                    the bookmark/list icons elsewhere so saved-search
+                    rows read as "a thing of this kind" at a glance
+                    (Mark feedback 2026-05-11). */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
+                  <span aria-hidden style={{ flexShrink: 0, color: "var(--text3)", display: "flex" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="7"/>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                  </span>
+                  <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 2 }}>{s.label}</div>
                   <div style={{ fontSize: 12, color: "var(--text2)" }}>
                     {s.count} for sale
@@ -391,6 +408,7 @@ export function WatchlistTab(props) {
                       "–" +
                       `${s.maxPrice != null ? "$" + Number(s.maxPrice).toLocaleString() : ""}`
                     )}
+                  </div>
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
