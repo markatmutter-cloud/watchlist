@@ -43,12 +43,16 @@ function EditorialHero({ isMobile }) {
       // of empty space between URL bar and the wordmark). Halve the
       // breathing room on phones without making it feel cramped on
       // desktop.
-      padding: isMobile ? "12px 16px 14px" : "52px 16px 30px",
+      // Desktop top padding tightened 52 → 18 (2026-05-11). Top bar
+      // tab pills are about to be hidden on Home (moved inline below
+      // the search bar), so the wordmark sits closer to the top edge
+      // and the hero feels less wasteful.
+      padding: isMobile ? "12px 16px 14px" : "18px 16px 22px",
       textAlign: "center",
     }}>
-      <div style={{ height: 0.5, background: "var(--border)", margin: isMobile ? "0 0 12px" : "0 0 30px" }} />
+      <div style={{ height: 0.5, background: "var(--border)", margin: isMobile ? "0 0 12px" : "0 0 22px" }} />
       <h1 style={{
-        margin: isMobile ? "0 0 12px" : "0 0 30px",
+        margin: isMobile ? "0 0 12px" : "0 0 22px",
         fontFamily: "inherit",
         fontSize: isMobile ? 30 : 56,
         fontWeight: 400,
@@ -164,6 +168,32 @@ function HomeSearchBar({ onSubmit, isMobile }) {
         </button>
       </div>
     </section>
+  );
+}
+
+// Main-nav tab pills, rendered below the search composite on Home
+// (desktop only — mobile already has these as the persistent
+// bottom-nav). On Home we hide the top-bar pills in DesktopShell
+// so this row is the single canonical place to jump to Listings /
+// Watchlists / Learn. Same visual style as the top-bar pills so
+// muscle memory transfers across tabs.
+function HomeNavTabs({ goToListings, goToWatchlists, goToLearn }) {
+  const pillStyle = {
+    padding: "8px 18px", borderRadius: 999,
+    border: "0.5px solid var(--border)", background: "var(--surface)",
+    color: "var(--text2)", fontFamily: "inherit", fontSize: 13,
+    fontWeight: 500, cursor: "pointer",
+    display: "inline-flex", alignItems: "center", gap: 6,
+  };
+  return (
+    <nav style={{
+      display: "flex", justifyContent: "center", gap: 8,
+      padding: "4px 16px 32px",
+    }}>
+      <button onClick={goToListings} style={pillStyle}>Listings</button>
+      <button onClick={goToWatchlists} style={pillStyle}>Watchlists</button>
+      <button onClick={goToLearn} style={pillStyle}>Learn</button>
+    </nav>
   );
 }
 
@@ -326,6 +356,7 @@ export function HomeTab(props) {
     homeSearchSubmit,
     homeCounts,
     goToSavedLists, goToMyWatches, goToChallenges,
+    goToListings, goToWatchlists, goToLearn,
     openAbout, signInWithGoogle,
     isMobile,
     watchlist, hidden, handleWish, toggleHide, primaryCurrency,
@@ -344,6 +375,16 @@ export function HomeTab(props) {
       <EditorialHero isMobile={isMobile} />
       {homeSearchSubmit && (
         <HomeSearchBar onSubmit={homeSearchSubmit} isMobile={isMobile} />
+      )}
+      {/* Main-nav tabs below the search composite — desktop only.
+          Mobile already has these as the persistent bottom-nav, so
+          rendering them here too would just be visual noise on phones. */}
+      {!isMobile && goToListings && (
+        <HomeNavTabs
+          goToListings={goToListings}
+          goToWatchlists={goToWatchlists}
+          goToLearn={goToLearn}
+        />
       )}
       <SectionStrip
         heading="Recently added"
