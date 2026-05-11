@@ -262,7 +262,32 @@ def enumerate_antiquorum(sale_url, sale=None):
     actually paginates — and the server caps `?limit=1000` at the
     actual lot count, so it's future-proof without us tracking
     individual sale sizes.
+
+    POST-SALE DISPATCH (2026-05-11). Once a sale ends, the live page
+    archives — the catalog → live URL bridge stops finding per-lot
+    live links, so this enumerator started returning 0 lots for closed
+    sales (the original issue Mark reported for Geneva May 9-10). For
+    past sales we route to `enumerate_antiquorum_catalog` which reads
+    sold prices directly from the catalog detail pages. That path is
+    capped at 20 lots/sale by vendor-broken pagination — see the
+    catalog enumerator's docstring for the workaround
+    (data/manual_lot_urls.json for the lots beyond the first 20).
     """
+    # Post-sale: catalog page is the only surface still publishing
+    # realized prices. The live page archives soon after end.
+    today = date.today()
+    sale_end_str = (sale or {}).get("dateEnd") or (sale or {}).get("dateStart") or ""
+    try:
+        sale_end_date = datetime.fromisoformat(sale_end_str[:10]).date()
+    except (ValueError, TypeError):
+        sale_end_date = None
+    if sale_end_date and sale_end_date < today and "catalog.antiquorum.swiss" in sale_url:
+        print(
+            f"  [Antiquorum] sale ended {sale_end_date.isoformat()}; "
+            f"routing to catalog enumerator for realized prices"
+        )
+        return enumerate_antiquorum_catalog(sale_url, sale)
+
     # Accept either the catalog URL (as it lands in auctions.json) OR
     # a pre-resolved live auction URL — useful when manually running
     # the scraper against a known live sale.
@@ -405,6 +430,101 @@ def enumerate_antiquorum(sale_url, sale=None):
             "auction_url":   auction_url,
             "scraped_at":    time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }))
+    return out
+
+
+def enumerate_antiquorum_catalog(sale_url, sale=None):
+    """Walk an Antiquorum sale's CATALOG page (catalog.antiquorum.swiss)
+    and scrape per-lot detail pages for realized sold prices.
+
+    Used for sales that have ENDED. The live surface
+    (live.antiquorum.swiss/auctions/<id>) archives post-sale and the
+    catalog → live URL bridge (`_resolve_antiquorum_live_auction_url`)
+    stops finding per-lot live links — that's why the previous bulk
+    path returns 0 for closed sales. The catalog page itself stays up
+    for years post-sale AND publishes the realized "Sold: CHF X" panel
+    directly in static HTML on each lot's detail page.
+
+    Pagination quirk (verified 2026-05-11): plain `?page=N` requests
+    301-redirect to page 1 — including with proper browser UA + Referer
+    headers. The frontend's lazy-load works because it sends
+    `X-Requested-With: XMLHttpRequest`, which the server treats as the
+    canonical Rails xhr signal and returns the actual page-N chunk.
+    Add that header and full pagination unlocks (page 34 → 672 lots
+    confirmed for Geneva May 9-10).
+    """
+    xhr_headers = dict(HEADERS)
+    xhr_headers["Referer"] = sale_url
+    xhr_headers["X-Requested-With"] = "XMLHttpRequest"
+
+    # Walk pages until one returns no NEW lot anchors. Antiquorum's
+    # server quietly returns page 1's content for out-of-range `?page=N`
+    # values, so a "no new lots" page is the stop signal — not status
+    # code, not empty body. The dedupe set across pages catches that.
+    seen = set()
+    unique_paths = []
+    for page in range(1, 200):  # 200-page ceiling = ~4000 lots; well past real-world
+        page_url = sale_url if page == 1 else f"{sale_url}?page={page}"
+        try:
+            r = requests.get(page_url, headers=xhr_headers, timeout=30)
+            r.raise_for_status()
+        except Exception as e:
+            print(f"  [Antiquorum catalog] page {page} fetch failed: {e}")
+            break
+        # Each lot anchor appears ~4× on a page (image link, title
+        # link, "view details" button, etc.) — dedupe within the page
+        # via dict.fromkeys (preserves order) before merging with the
+        # cross-page seen set.
+        paths_on_page = list(dict.fromkeys(
+            re.findall(r"/en/lots/[a-z0-9\-]+-lot-\d+-\d+", r.text)
+        ))
+        new_paths = [p for p in paths_on_page if p not in seen]
+        if not new_paths:
+            # Either past the last page or hit the silent-redirect-to-1
+            # fallback. Either way: nothing new — stop walking.
+            break
+        for p in new_paths:
+            seen.add(p)
+            unique_paths.append(p)
+        # Gentle pause between page fetches; auction lots get a sleep
+        # in the per-lot loop below, so pages don't need much.
+        time.sleep(0.2)
+
+    if not unique_paths:
+        print("  [Antiquorum catalog] no lot anchors found on sale page")
+        return []
+
+    print(
+        f"  [Antiquorum catalog] walked {page} page(s); found "
+        f"{len(unique_paths)} unique lot anchor(s)"
+    )
+
+    sale_start = (sale or {}).get("dateStart")
+    sale_end = (sale or {}).get("dateEnd") or sale_start
+
+    out = []
+    for path in unique_paths:
+        full_url = f"https://catalog.antiquorum.swiss{path}"
+        try:
+            time.sleep(PER_LOT_SLEEP_SECONDS)
+            data = scrape_catalog_antiquorum_lot(full_url)
+        except Exception as e:
+            print(f"  [Antiquorum catalog] lot scrape failed {path}: {e}")
+            continue
+        if not isinstance(data, dict):
+            continue
+        if is_excluded_title(data.get("title")):
+            continue
+        # Backfill calendar-level dates onto the lot's auction_* fields
+        # (the catalog lot page only carries a human-readable label, not
+        # ISO timestamps).
+        if not data.get("auction_start"):
+            data["auction_start"] = sale_start
+        if not data.get("auction_end"):
+            data["auction_end"] = sale_end
+        if not data.get("auction_url"):
+            data["auction_url"] = sale_url
+        out.append((full_url, data))
     return out
 
 
