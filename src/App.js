@@ -23,6 +23,7 @@ import { Card } from "./components/Card";
 // the new AuctionCalendar component (AuctionsTab.js deleted 2026-04-30).
 import { ReferencesTab } from "./components/ReferencesTab";
 import { CollectionsTab } from "./components/CollectionsTab";
+import { HomeTab } from "./components/HomeTab";
 import { TrackNewItemModal } from "./components/TrackNewItemModal";
 import { FavSearchModal } from "./components/FavSearchModal";
 import { AddSearchModal } from "./components/AddSearchModal";
@@ -345,7 +346,7 @@ export default function Watchlist() {
   // `?tab=collections` redirect to `?tab=watchlist` with the same
   // sub-tab key (the sub-tab values were already preserved when
   // SUB_VALUES_COLLECTIONS was folded into watchTopTab above).
-  const TAB_VALUES = ["listings", "watchlist", "references", "admin"];
+  const TAB_VALUES = ["home", "listings", "watchlist", "references", "admin"];
   // URL-key translation. Naming alignment 2026-05-08 (Mark feedback:
   // "?sub=sold&tab=watchlist" reads as ugly internal state in the
   // address bar). The URL now uses `saved` / `learn` as the
@@ -2479,6 +2480,77 @@ export default function Watchlist() {
     <AdminTab watchItems={watchItems} hiddenItems={hiddenItems} />
   );
 
+  // Home tab JSX — step 1 (2026-05-11). Three horizontal section
+  // strips: Recently added (live dealer items), Closing next (active
+  // auction lots ending soonest), Recently sold (dealer + auction
+  // sold lots). Each section's "View all →" routes to the matching
+  // Listings sub-tab. Built as a self-contained component
+  // (`HomeTab`) following the ShareReceiver pattern — no new hooks
+  // added to App.js, avoiding the React #310 regression that killed
+  // the prior Home attempt.
+  //
+  // Slice computation lives inline here rather than inside HomeTab
+  // because it leans on the same `items` / `auctionLotItems` arrays
+  // every other tab uses — keeping it here means HomeTab stays
+  // render-only.
+  const homeRecentAdded = useMemo(() => {
+    // Live dealer items only, sorted by firstSeen desc. Skip items
+    // the user has hidden and items already marked sold (the section
+    // header reads "Recently added" — sold items belong in their own
+    // section below). Cap at 12 so the strip has a small buffer
+    // beyond what HomeTab renders (HomeTab slices to 6 itself).
+    const live = items.filter(i => !i.sold && !hidden[i.id] && !adminHidden.has(i.id));
+    const sortKey = (i) => i.firstSeen || i.scrapedAt || "";
+    return [...live].sort((a, b) => (sortKey(b) || "").localeCompare(sortKey(a) || "")).slice(0, 12);
+  }, [items, hidden, adminHidden]);
+  const homeEndingNext = useMemo(() => {
+    // Active auction lots (status !== "ended", auction_end in the
+    // future), sorted ending-soonest first. Same ending-soon sort
+    // the Live auctions sub-tab uses, just the head slice.
+    const now = Date.now();
+    const active = auctionLotItems.filter(i => {
+      if (hidden[i.id] || adminHidden.has(i.id)) return false;
+      if (i.status === "ended") return false;
+      const end = i.auction_end ? Date.parse(i.auction_end) : NaN;
+      return !Number.isNaN(end) && end > now;
+    });
+    return active.sort((a, b) => Date.parse(a.auction_end) - Date.parse(b.auction_end)).slice(0, 12);
+  }, [auctionLotItems, hidden, adminHidden]);
+  const homeRecentSold = useMemo(() => {
+    // Sold dealer items + sold auction lots, sorted by sold-date desc.
+    // Mirrors the All-sold sub-tab default sort.
+    const merged = [...items, ...auctionLotItems].filter(i => {
+      if (hidden[i.id] || adminHidden.has(i.id)) return false;
+      return i.sold || i.status === "ended" || i.sold_price;
+    });
+    const soldKey = (i) => i.soldAt || i.auction_end || i.lastSeen || "";
+    return merged.sort((a, b) => (soldKey(b) || "").localeCompare(soldKey(a) || "")).slice(0, 12);
+  }, [items, auctionLotItems, hidden, adminHidden]);
+
+  const homeTabJSX = (
+    <HomeTab
+      homeRecentAdded={homeRecentAdded}
+      homeRecentSold={homeRecentSold}
+      homeEndingNext={homeEndingNext}
+      goToRecentAdded={() => { setTab("listings"); setListingsSubTab("live"); setPage(1); }}
+      goToRecentSold={() => { setTab("listings"); setListingsSubTab("sold"); setPage(1); }}
+      goToEndingNext={() => { setTab("listings"); setListingsSubTab("auctions"); setPage(1); }}
+      isMobile={isMobile}
+      watchlist={watchlist}
+      hidden={hidden}
+      handleWish={handleWish}
+      toggleHide={isAdmin ? toggleHide : undefined}
+      primaryCurrency={primaryCurrency}
+      onShare={handleShare}
+      onView={observeCard}
+      onClickListing={onClickListing}
+      openCollectionPicker={user ? openCollectionPicker : undefined}
+      isAdmin={isAdmin}
+      user={user}
+      compact={compact}
+    />
+  );
+
   // References tab JSX. Watch Challenges moved out to the new
   // Collections tab on 2026-05-06 (PR #86); References (Cool Stuff)
   // now hosts only Watch size comparison + Links.
@@ -2923,7 +2995,7 @@ export default function Watchlist() {
     // tab — the value is now the dispatched content (Watchlist or
     // Collections style) computed by `savedContentJSX`.
     watchlistTabJSX: savedContentJSX,
-    adminTabJSX, referencesTabJSX, collectionsTabJSX,
+    adminTabJSX, referencesTabJSX, collectionsTabJSX, homeTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     // Whether a share-receive landing surface is taking over the
