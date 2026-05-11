@@ -25,9 +25,15 @@ URL = "https://www.antiquorum.swiss/en/auctions/upcoming"
 UPCOMING_PAGE = "https://www.antiquorum.swiss/upcoming-auctions-and-viewings/"
 CATALOG_BASE = "https://catalog.antiquorum.swiss/en/auctions"
 # Catalogs typically go live 4-6 weeks before a sale. Use a generous
-# 60-day window: before this, link to the generic upcoming page. Within
-# it, build the per-sale catalog URL.
-CATALOG_WINDOW_DAYS = 60
+# 60-day window BEFORE the sale: link to the generic upcoming page
+# outside that window. We also keep the catalog URL for some time
+# AFTER the sale so the auction-lots scraper can read post-sale
+# results (sold_price / "passed" status). Mark report 2026-05-11:
+# Antiquorum was dropping out of the Live auctions Source filter the
+# moment a sale ended, because the URL reverted to the generic page
+# and auction_lots_scraper couldn't enumerate it.
+CATALOG_WINDOW_DAYS_BEFORE = 60
+CATALOG_WINDOW_DAYS_AFTER  = 60
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -129,7 +135,9 @@ def scrape():
         # of weeks before a sale; instead of guessing, HEAD-check each
         # candidate URL. Only sales whose catalog actually responds 200 get
         # the specific URL + the Catalog chip. Everyone else links to the
-        # generic upcoming-auctions page.
+        # generic upcoming-auctions page. We also keep the catalog URL
+        # for some time AFTER the sale so post-sale results stay scrapable
+        # (sold_price, passed/unsold status).
         today = date.today()
         try:
             days_until = (datetime.fromisoformat(start).date() - today).days
@@ -138,7 +146,7 @@ def scrape():
         candidate = build_catalog_url(location, date_str)
         has_catalog = False
         url = UPCOMING_PAGE
-        if 0 <= days_until <= CATALOG_WINDOW_DAYS:
+        if -CATALOG_WINDOW_DAYS_AFTER <= days_until <= CATALOG_WINDOW_DAYS_BEFORE:
             try:
                 hr = requests.head(candidate, headers=HEADERS, timeout=15, allow_redirects=True)
                 # Some catalogs return 200 with a redirect to /lots; both are fine.
