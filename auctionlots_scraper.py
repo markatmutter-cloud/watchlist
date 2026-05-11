@@ -192,11 +192,13 @@ def scrape_catalog_antiquorum_lot(url):
     """Return a dict of fields scraped from one catalog.antiquorum.swiss lot.
 
     catalog.antiquorum.swiss is the *published catalog* surface — used
-    before a sale opens for live bidding. live.antiquorum.swiss is the
-    interactive platform once bidding is live. Different system,
-    different markup. The catalog page is static HTML with RDFa
-    microdata (`property="schema:..."` attributes), no Apollo/Next.js
-    JSON blob to crack.
+    before a sale opens for live bidding AND as the durable record of
+    realized prices once bidding is over. live.antiquorum.swiss is the
+    interactive platform during the active sale window.
+
+    The catalog page is static HTML with RDFa microdata
+    (`property="schema:..."` attributes), no Apollo/Next.js JSON blob
+    to crack.
 
     Available fields on the catalog page:
       - <title>: "<watch desc> | <auction name> | <city, date>"
@@ -204,13 +206,19 @@ def scrape_catalog_antiquorum_lot(url):
       - rel="schema:image" resource attribute (S3 URL)
       - <h4>{CCY} {low} - {high}</h4> for the estimate range
       - URL slug: /en/lots/<title-slug>-lot-{auction_id}-{lot_number}
+      - Sold price (post-sale only): a red-styled <h4> directly under
+        the estimate: `<h4 style="...color: #c71c1c...">Sold: CHF X</h4>`.
+        Also surfaces in the page <meta description> as "Sold for CHF X".
+        Absent for upcoming/active sales — the estimate sits alone.
 
-    Bid state (current bid / sold price) lives behind a JS bid widget;
-    for upcoming auctions there's nothing to read yet, and once bidding
-    is live users would watch via live.antiquorum.swiss anyway.
-    Status is therefore always "active" until the lot's auction date
-    passes (caller can derive an "ended" view from auction_end if
-    needed).
+    Pre-sale: status="active", sold_price=None (bid state lives behind
+    JS during the live window, which we don't try to read here — users
+    would watch via live.antiquorum.swiss anyway).
+
+    Post-sale: status="ended" when the Sold: panel is present, with
+    sold_price extracted. If the lot passed (no sold panel post-sale),
+    we leave status="active" rather than guessing — the calling
+    enumerator can apply auction_end-based fallback if it cares.
     """
     r = requests.get(url, headers=HEADERS, timeout=20)
     r.raise_for_status()
@@ -262,6 +270,46 @@ def scrape_catalog_antiquorum_lot(url):
         auction_id = slug_match.group(1)
         lot_number = slug_match.group(2)
 
+    # Sold price (post-sale). Verified pattern 2026-05-11 against
+    # Geneva May 9-10 sale: a red-styled <h4> sits directly under the
+    # estimate range:
+    #   <h4 style="...color: #c71c1c..."> Sold: CHF 4,750 </h4>
+    # Currency in the sold line is authoritative for this lot (in case
+    # the page-level schema:priceCurrency differs). Use a non-greedy
+    # style attribute match so layout changes don't break extraction.
+    sold_price = None
+    sold_currency = None
+    sold_match = re.search(
+        r"<h4[^>]*color:\s*#c71c1c[^>]*>\s*Sold:\s*([A-Z]{3})\s+([\d,]+)\s*</h4>",
+        html,
+    )
+    if sold_match:
+        sold_currency = sold_match.group(1).upper()
+        try:
+            sold_price = int(sold_match.group(2).replace(",", ""))
+        except ValueError:
+            sold_price = None
+    else:
+        # Backup: the page <meta description> also contains "Sold for
+        # CHF X" on sold lots. Catches layout variants of the red <h4>.
+        meta_sold = re.search(
+            r'name="description"[^>]*content="[^"]*\bSold for\s+([A-Z]{3})\s+([\d,]+)',
+            html,
+        )
+        if meta_sold:
+            sold_currency = meta_sold.group(1).upper()
+            try:
+                sold_price = int(meta_sold.group(2).replace(",", ""))
+            except ValueError:
+                sold_price = None
+
+    # If the lot has a realized price, the price line's own currency is
+    # the canonical one to use across all monetary fields. Otherwise
+    # fall back to the page-level schema:priceCurrency.
+    if sold_currency:
+        currency = sold_currency
+    status = "ended" if sold_price is not None else "active"
+
     return {
         "house": "Antiquorum",
         "lot_id": f"{auction_id}-{lot_number}" if auction_id and lot_number else None,
@@ -273,13 +321,13 @@ def scrape_catalog_antiquorum_lot(url):
         "estimate_high": estimate_high,
         "starting_price": None,
         "current_bid": None,
-        "sold_price": None,
+        "sold_price": sold_price,
         "estimate_low_usd":   to_usd(estimate_low,   currency),
         "estimate_high_usd":  to_usd(estimate_high,  currency),
         "starting_price_usd": None,
         "current_bid_usd":    None,
-        "sold_price_usd":     None,
-        "status": "active",
+        "sold_price_usd":     to_usd(sold_price,     currency),
+        "status": status,
         "image": img_url,
         "auction_title": auction_title,
         "auction_start": None,                     # catalog page only carries

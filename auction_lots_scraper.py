@@ -262,7 +262,32 @@ def enumerate_antiquorum(sale_url, sale=None):
     actually paginates — and the server caps `?limit=1000` at the
     actual lot count, so it's future-proof without us tracking
     individual sale sizes.
+
+    POST-SALE DISPATCH (2026-05-11). Once a sale ends, the live page
+    archives — the catalog → live URL bridge stops finding per-lot
+    live links, so this enumerator started returning 0 lots for closed
+    sales (the original issue Mark reported for Geneva May 9-10). For
+    past sales we route to `enumerate_antiquorum_catalog` which reads
+    sold prices directly from the catalog detail pages. That path is
+    capped at 20 lots/sale by vendor-broken pagination — see the
+    catalog enumerator's docstring for the workaround
+    (data/manual_lot_urls.json for the lots beyond the first 20).
     """
+    # Post-sale: catalog page is the only surface still publishing
+    # realized prices. The live page archives soon after end.
+    today = date.today()
+    sale_end_str = (sale or {}).get("dateEnd") or (sale or {}).get("dateStart") or ""
+    try:
+        sale_end_date = datetime.fromisoformat(sale_end_str[:10]).date()
+    except (ValueError, TypeError):
+        sale_end_date = None
+    if sale_end_date and sale_end_date < today and "catalog.antiquorum.swiss" in sale_url:
+        print(
+            f"  [Antiquorum] sale ended {sale_end_date.isoformat()}; "
+            f"routing to catalog enumerator for realized prices"
+        )
+        return enumerate_antiquorum_catalog(sale_url, sale)
+
     # Accept either the catalog URL (as it lands in auctions.json) OR
     # a pre-resolved live auction URL — useful when manually running
     # the scraper against a known live sale.
@@ -405,6 +430,90 @@ def enumerate_antiquorum(sale_url, sale=None):
             "auction_url":   auction_url,
             "scraped_at":    time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }))
+    return out
+
+
+def enumerate_antiquorum_catalog(sale_url, sale=None):
+    """Walk an Antiquorum sale's CATALOG page (catalog.antiquorum.swiss)
+    and scrape per-lot detail pages for realized sold prices.
+
+    Used for sales that have ENDED. The live surface
+    (live.antiquorum.swiss/auctions/<id>) archives post-sale and the
+    catalog → live URL bridge (`_resolve_antiquorum_live_auction_url`)
+    stops finding per-lot live links — that's why the previous bulk
+    path returns 0 for closed sales. The catalog page itself stays up
+    for years post-sale AND publishes the realized "Sold: CHF X" panel
+    directly in static HTML on each lot's detail page.
+
+    KNOWN CONSTRAINT (verified 2026-05-11): Antiquorum's catalog server
+    301-redirects `?page=N` to `/lots` (page 1), even with browser
+    headers + Referer. Real users hitting page-2 also can't get past
+    page 1 — it's a vendor-side bug, not a bot guard. Net effect: this
+    enumerator can only see the first 20 of a sale's lots. The
+    remaining lots can be added via data/manual_lot_urls.json on a
+    per-lot basis until Antiquorum fixes pagination (or we add a
+    Playwright bridge via the Mac mini phase).
+    """
+    try:
+        r = requests.get(sale_url, headers=HEADERS, timeout=30)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"  [Antiquorum catalog] sale page fetch failed: {e}")
+        return []
+
+    # Extract lot anchor URLs. Pattern: /en/lots/<slug>-lot-<auction_id>-<N>.
+    # The auction_id is shared across all lots of one sale (e.g. 386 for
+    # Geneva May 9-10, 2026); the trailing number is the lot index.
+    lot_paths = re.findall(
+        r"/en/lots/[a-z0-9\-]+-lot-\d+-\d+",
+        r.text,
+    )
+    # Dedupe while preserving order (each lot anchor often appears
+    # multiple times — image + title + "view" button).
+    seen = set()
+    unique_paths = []
+    for p in lot_paths:
+        if p in seen:
+            continue
+        seen.add(p)
+        unique_paths.append(p)
+
+    if not unique_paths:
+        print("  [Antiquorum catalog] no lot anchors found on sale page")
+        return []
+
+    print(
+        f"  [Antiquorum catalog] found {len(unique_paths)} lot anchor(s) "
+        f"on page 1 (vendor pagination broken — remaining lots can be "
+        f"added via data/manual_lot_urls.json)"
+    )
+
+    sale_start = (sale or {}).get("dateStart")
+    sale_end = (sale or {}).get("dateEnd") or sale_start
+
+    out = []
+    for path in unique_paths:
+        full_url = f"https://catalog.antiquorum.swiss{path}"
+        try:
+            time.sleep(PER_LOT_SLEEP_SECONDS)
+            data = scrape_catalog_antiquorum_lot(full_url)
+        except Exception as e:
+            print(f"  [Antiquorum catalog] lot scrape failed {path}: {e}")
+            continue
+        if not isinstance(data, dict):
+            continue
+        if is_excluded_title(data.get("title")):
+            continue
+        # Backfill calendar-level dates onto the lot's auction_* fields
+        # (the catalog lot page only carries a human-readable label, not
+        # ISO timestamps).
+        if not data.get("auction_start"):
+            data["auction_start"] = sale_start
+        if not data.get("auction_end"):
+            data["auction_end"] = sale_end
+        if not data.get("auction_url"):
+            data["auction_url"] = sale_url
+        out.append((full_url, data))
     return out
 
 
