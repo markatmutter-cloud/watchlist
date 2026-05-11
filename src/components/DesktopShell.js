@@ -43,7 +43,7 @@ export function DesktopShell(props) {
     authJSX, baseStyle,
     collectionEditModalJSX, collectionPickerModalJSX,
     favSearchModalJSX,
-    adminTabJSX, homeTabJSX, newUi, listingsGridJSX, listingsTabContentJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX,
+    adminTabJSX, listingsGridJSX, listingsTabContentJSX, primaryCurrency, settingsModalJSX, shareReceiverJSX,
     challengeReceiverJSX,
     listReceiverJSX,
     listingsSubTabsJSX,
@@ -131,9 +131,8 @@ export function DesktopShell(props) {
           // a date sort. Suppress the active state on Home so the
           // pill doesn't lie about state. Click still routes to
           // Listings via the interact-routes effect.
-          const isDate = tab !== "home" && (sort === "date" || sort === "date-asc");
-          const label = tab === "home" ? "Date"
-                      : sort === "date" ? "Date ↓"
+          const isDate = sort === "date" || sort === "date-asc";
+          const label = sort === "date" ? "Date ↓"
                       : sort === "date-asc" ? "Date ↑"
                       : "Date";
           return (
@@ -145,9 +144,8 @@ export function DesktopShell(props) {
           );
         })()}
         {(() => {
-          const isPrice = tab !== "home" && (sort === "price-asc" || sort === "price-desc");
-          const label = tab === "home" ? "Price"
-                      : sort === "price-desc" ? "Price ↓"
+          const isPrice = sort === "price-asc" || sort === "price-desc";
+          const label = sort === "price-desc" ? "Price ↓"
                       : sort === "price-asc" ? "Price ↑"
                       : "Price";
           return (
@@ -171,7 +169,7 @@ export function DesktopShell(props) {
             sub-tabs; this is the in-flow alternate access path. On
             Home the click routes to Listings via the interact-routes
             effect in App.js. */}
-        {(tab === "listings" || tab === "home") && user && listingsSubTab !== "calendar" && (
+        {tab === "listings" && user && listingsSubTab !== "calendar" && (
           <button onClick={() => setFilterHearted && setFilterHearted(!filterHearted)}
             aria-pressed={!!filterHearted}
             title={filterHearted ? "Show all" : "Show only saved"}
@@ -348,7 +346,7 @@ export function DesktopShell(props) {
     <div style={{ ...baseStyle, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* Full-width top bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 20px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-        <button onClick={() => { setTab(newUi ? "home" : "listings"); setPage(1); }}
+        <button onClick={() => { setTab("listings"); setPage(1); }}
           style={{ background: "none", border: "none", cursor: "pointer",
                   padding: 0, fontFamily: "inherit",
                   fontSize: 18, fontWeight: 500, letterSpacing: "-0.5px",
@@ -427,7 +425,6 @@ export function DesktopShell(props) {
           watchSubTabsJSX. Prop kept on destructure for backward
           compat with the mock fixture. */}
       {anyShareActive ? null : (
-        tab === "home" ||
         (tab === "listings" && showListingsFilterRow) ||
         inListsDrillIn ||
         (tab === "watchlist" && watchTopTab !== "searches" &&
@@ -472,8 +469,7 @@ export function DesktopShell(props) {
                   `watchlistTabJSX` prop, which App.js dispatches
                   between Watchlist and Collections content based on
                   the active sub-tab. */}
-              {tab === "home" ? homeTabJSX
-                : tab === "listings" ? listingsTabContentJSX
+              {tab === "listings" ? listingsTabContentJSX
                 : tab === "references" ? referencesTabJSX
                 : tab === "admin" ? adminTabJSX
                 : watchlistTabJSX}
