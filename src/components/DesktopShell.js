@@ -346,24 +346,19 @@ export function DesktopShell(props) {
     <div style={{ ...baseStyle, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* Full-width top bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 20px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-        <button onClick={() => { setTab("home"); setPage(1); }}
-          style={{ background: "none", border: "none", cursor: "pointer",
-                  padding: 0, fontFamily: "inherit",
-                  fontSize: 22, fontWeight: 700, letterSpacing: "-0.6px",
-                  color: "var(--text1)", flexShrink: 0 }}>
-          Watchlist
-        </button>
-        {/* About link surfaced in the desktop top bar (phase 3,
-            2026-05-11). Sits between the wordmark and the tab pills
-            so first-time visitors have an obvious "what is this?"
-            affordance — was previously buried in the user dropdown. */}
-        <button onClick={() => setAboutModalOpen(true)}
-          style={{ background: "none", border: "none", cursor: "pointer",
-                  padding: "6px 8px", fontFamily: "inherit", fontSize: 12,
-                  fontWeight: 500, color: "var(--text2)",
-                  letterSpacing: "0.04em", flexShrink: 0 }}>
-          About
-        </button>
+        {/* Top wordmark hidden on Home (editorial hero in body is the
+            brand mark there). Stays visible on every other tab as the
+            home-tap affordance. About link relocated to the right
+            side of the top bar — see the authJSX area below. */}
+        {tab !== "home" && (
+          <button onClick={() => { setTab("home"); setPage(1); }}
+            style={{ background: "none", border: "none", cursor: "pointer",
+                    padding: 0, fontFamily: "inherit",
+                    fontSize: 22, fontWeight: 700, letterSpacing: "-0.6px",
+                    color: "var(--text1)", flexShrink: 0 }}>
+            Watchlist
+          </button>
+        )}
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 4 }}>
           {/* 2026-05-07 IA pass:
               - 2A.1 renamed UI labels: Watchlist → Saved, Cool Stuff
@@ -426,6 +421,18 @@ export function DesktopShell(props) {
           </div>
         </div>
         )}
+        {/* About link — top-right area, before the auth chrome.
+            Was previously next to the top-left wordmark; relocated
+            2026-05-11 so it lives in the same zone as sign-in (per
+            the Fratello/Hodinkee reference patterns Mark sent: brand
+            on one side, account/about on the other). */}
+        <button onClick={() => setAboutModalOpen(true)}
+          style={{ background: "none", border: "none", cursor: "pointer",
+                  padding: "6px 8px", fontFamily: "inherit", fontSize: 12,
+                  fontWeight: 500, color: "var(--text2)",
+                  letterSpacing: "0.04em", flexShrink: 0 }}>
+          About
+        </button>
         {authJSX}
       </div>
       {/* Sub-tab strips — Listings on tab=listings, Watchlist on
