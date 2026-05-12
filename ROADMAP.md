@@ -653,14 +653,82 @@ approach 2026-05-07 because the recurring use-case (couples /
 family) wants persistent identity per contributor, not viral
 reach.
 
+### Top-level Share tab (shipped 2026-05-11, PR #248 + #251)
+
+Sharing has its own home now — 4th top-level pill (Listings ·
+Watchlists · Share · Learn). Two sections: "Shared with you"
+(incoming) + "Shared by you" (outgoing). `+ Share a list` CTA
+opens a list-picker modal that fires the native share sheet on
+the chosen list. The previous list-share entry from the Lists
+drill-in still works; Share is the discovery + send surface,
+the drill-in is the work surface (recipient banner, To-review
+bucket, review mode all live in the drill-in).
+
+### Recipient journey (shipped 2026-05-11, PRs #245 / #246 / #249 / #253)
+
+When a viewer is a collaborator on someone else's list:
+- **Recipient banner** above the cards naming the owner and
+  current progress ("Jacquelin shared this list — tap ❤️ / 👍 /
+  ❌ on each watch · 3 of 49 reacted"). Drops out when complete.
+- **📋 To review · N bucket** pinned to the top of the sentiment
+  buckets so unreacted items are the visible to-do.
+- **Review one at a time mode** (`ListReviewMode`): fullscreen
+  overlay, big card per screen, three reaction buttons, Tinder-
+  style swipes (right = 👍, left = ❌, up = ❤️), 🎉 finish state.
+- **Undo affordances** (PR #253): re-tap to remove was already
+  the underlying behaviour, but explicit `Remove my reaction`
+  link in review mode + `Reset my reactions (N)` in the drill-in
+  ⋯ overflow surface it.
+
+### Reviewer / Writer journey (queued, Mark 2026-05-12)
+
+Current shape works for *send a list and get reactions*, but
+doesn't yet differentiate journeys for:
+- **Reviewer** — auction critic, watch journalist. Wants to
+  publish their take with commentary, not just reactions.
+- **Writer** — long-form opinion under each watch.
+The substrate is partway there: `collection_item_comments`
+table exists (0 rows), reactions are in. The unanswered design
+questions:
+- Reviewer + writer — same persona at different intensity, or
+  two distinct journeys with different UI?
+- Where does the commentary surface live — inline under each
+  card, in a dedicated panel, or as a separate "review mode"?
+- Should there be a `mode` enum on `collections` (`personal` /
+  `shared` / `poll` / `review`) so a list can declare its
+  journey at creation time?
+First task tomorrow: scope what each journey actually needs,
+pick one to ship first.
+
+### Editorial emoji set (queued, Mark 2026-05-12)
+
+The current ❤️ / 👍 / ❌ emoji set reads as cellphone-y and
+clashes with the editorial wordmark + quiet chrome elsewhere.
+Replace with monochrome SVG glyphs or refined text labels
+(e.g. `♥ / ✓ / ✕` in `var(--text1)`, or text-only "Love · Yes ·
+Pass" with hairline icons). Affects:
+- `REACTION_EMOJIS` in `CollectionsTab.js`
+- `ReactionStrip` chips + Card-level reaction trigger SVG
+- `ListReviewMode` buttons + swipe stamps + commit hint line
+- Recipient banner copy
+- Bucket labels (`❤️ Liked`, `❌ Disliked`, `📋 To review`)
+The classification sets (POSITIVE / NEGATIVE) keep legacy emoji
+strings for back-compat with existing reaction rows.
+
 ### Things explicitly NOT in scope (reaffirmed)
 
-- In-app messaging, reactions, replies — chosen messenger handles.
-- Sender-identity exposure on the receive banner — keeps the
-  primitive lightweight + deniable.
-- Notifications for new shares — out-of-app messenger handles.
-- Auto-redirect of shared listing links to dealer / external site —
-  recipient sees the listing in the same UI they'd browse.
+- **Notifications** for new shares — out-of-app messenger handles.
+- **Auto-redirect** of shared listing links to dealer / external
+  site — recipient sees the listing in the same UI they'd browse.
+
+(Previously this list included in-app reactions and sender-
+identity exposure — both shipped 2026-05-10 / 2026-05-11 under
+the recipient-journey work. The narrowness has loosened: lists
+are richer than the original one-tap-share primitive. The
+underlying principle still holds — Watchlist hosts the
+*collection*, not a parallel chat app — but reactions + named
+sender attribution turned out to belong to the collection
+surface, not to messaging.)
 
 ## Epic 5: References
 
