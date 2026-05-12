@@ -608,7 +608,6 @@ function MyCollectionView({
               label="Collection"
               count={ownedItems.length}
               totalUSD={ownedTotal}
-              avgUSD={ownedItems.length ? ownedTotal / ownedItems.length : 0}
             />
             <CollectionGrid
               items={ownedItems}
@@ -643,7 +642,6 @@ function MyCollectionView({
               label="Archive"
               count={soldItems.length}
               totalUSD={soldTotal}
-              avgUSD={soldItems.length ? soldTotal / soldItems.length : 0}
             />
             <CollectionGrid
               items={soldItems}
@@ -671,11 +669,12 @@ function MyCollectionView({
 // Stat-card row above Collection / Archive grids. Mark spec
 // 2026-05-10: surface total value front-and-centre, not buried in
 // a Section label. Same shape as the PlanView running totals.
-function CollectionSummary({ label, count, totalUSD, avgUSD }) {
+// Average-price card dropped 2026-05-12 (Mark): low signal next to
+// count + total.
+function CollectionSummary({ label, count, totalUSD }) {
   const cards = [
     [`${label} count`, `${count}`, count === 1 ? "watch" : "watches"],
     [`Total value`, fmtUSD(totalUSD || 0), label === "Archive" ? "lifetime sold value" : "estimated portfolio value"],
-    [`Average price`, fmtUSD(avgUSD || 0), `per watch`],
   ];
   return (
     <div style={{
