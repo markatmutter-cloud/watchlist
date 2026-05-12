@@ -27,7 +27,14 @@ import { SearchIcon } from "./icons";
 // returns (CLAUDE.md "Don't add new useState/useMemo/useCallback
 // deep into App.js").
 
-const CARDS_PER_SECTION = 7;
+// Desktop: 7-col grid fits everything in view at once, so 7 is also
+// the slice ceiling. Mobile: the strip horizontally scrolls one tile
+// at a time, so we serve a wider slice for more swipe depth (Mark
+// spec 2026-05-12: "could the rows be sliders on mobile? Maybe 7-10
+// or whatever seems best."). 14 ≈ two desktop rows' worth — keeps
+// the slider meaty without lazy-loading complexity.
+const CARDS_PER_SECTION_DESKTOP = 7;
+const CARDS_PER_SECTION_MOBILE = 14;
 const COLS_PER_ROW = 7;
 
 // Editorial hero — phase 4c (2026-05-11). Restraint dial-up per
@@ -280,7 +287,7 @@ function HomeSearchBar({ onSubmit, isMobile, dealerSources, onJumpToDealer }) {
 // their own.
 function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchlist, hidden, handleWish, toggleHide, toggleHomeHide, primaryCurrency, onShare, onView, onClickListing, openCollectionPicker, isAdmin, user, compact, inverted, shellPad }) {
   if (!items || items.length === 0) return null;
-  const slice = items.slice(0, CARDS_PER_SECTION);
+  const slice = items.slice(0, isMobile ? CARDS_PER_SECTION_MOBILE : CARDS_PER_SECTION_DESKTOP);
   // Inverted bleed (phase 4c, 2026-05-11): one section gets a dark
   // band that runs edge-to-edge of the viewport, breaking the
   // visual rhythm of the page (editorial trick — Mark's v0.5
