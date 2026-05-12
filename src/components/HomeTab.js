@@ -27,15 +27,12 @@ import { SearchIcon } from "./icons";
 // returns (CLAUDE.md "Don't add new useState/useMemo/useCallback
 // deep into App.js").
 
-// Desktop: 7-col grid fits everything in view at once, so 7 is also
-// the slice ceiling. Mobile: the strip horizontally scrolls one tile
-// at a time, so we serve a wider slice for more swipe depth (Mark
-// spec 2026-05-12: "could the rows be sliders on mobile? Maybe 7-10
-// or whatever seems best."). 14 ≈ two desktop rows' worth — keeps
-// the slider meaty without lazy-loading complexity.
-const CARDS_PER_SECTION_DESKTOP = 7;
-const CARDS_PER_SECTION_MOBILE = 14;
-const COLS_PER_ROW = 7;
+// Both mobile and desktop now use a horizontal slider strip (Mark
+// spec 2026-05-12: "I meant slider for desktop browser like mobile").
+// 14 items per section — about two screens' worth of swipe depth on
+// either viewport. No lazy-loading; the full set is rendered and the
+// browser virtualises with its own scroll-paint optimisations.
+const CARDS_PER_SECTION = 14;
 
 // Editorial hero — phase 4c (2026-05-11). Restraint dial-up per
 // Mark feedback after #228: drop the weight and tracking a notch,
@@ -287,7 +284,7 @@ function HomeSearchBar({ onSubmit, isMobile, dealerSources, onJumpToDealer }) {
 // their own.
 function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchlist, hidden, handleWish, toggleHide, toggleHomeHide, primaryCurrency, onShare, onView, onClickListing, openCollectionPicker, isAdmin, user, compact, inverted, shellPad }) {
   if (!items || items.length === 0) return null;
-  const slice = items.slice(0, isMobile ? CARDS_PER_SECTION_MOBILE : CARDS_PER_SECTION_DESKTOP);
+  const slice = items.slice(0, CARDS_PER_SECTION);
   // Inverted bleed (phase 4c, 2026-05-11): one section gets a dark
   // band that runs edge-to-edge of the viewport, breaking the
   // visual rhythm of the page (editorial trick — Mark's v0.5
@@ -337,17 +334,19 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
           View all <span aria-hidden style={{ fontSize: 13 }}>→</span>
         </button>
       </div>
+      {/* Unified horizontal-slider strip (Mark spec 2026-05-12):
+          desktop now scrolls horizontally like mobile rather than
+          rendering everything in a 7-col grid. Tile widths differ by
+          viewport — narrower flex-percentage tiles on mobile, fixed
+          pixel-width tiles on desktop so the slider feels intentional
+          at large viewports. */}
       <div style={{
-        ...(isMobile ? {
-          display: "flex", gap: 1, overflowX: "auto", overflowY: "hidden",
-          padding: inverted ? "0 0 4px" : "0 16px 4px", scrollSnapType: "x mandatory",
-          WebkitOverflowScrolling: "touch", background: inverted ? "rgba(255,255,255,0.1)" : "var(--border)",
-        } : {
-          display: "grid", gridTemplateColumns: `repeat(${COLS_PER_ROW}, minmax(0, 1fr))`,
-          gap: 1, background: inverted ? "rgba(255,255,255,0.1)" : "var(--border)",
-          padding: 0, margin: inverted ? 0 : "0 16px",
-          borderRadius: 10, overflow: "hidden",
-        }),
+        display: "flex", gap: 1, overflowX: "auto", overflowY: "hidden",
+        padding: inverted ? "0 0 4px" : "0 16px 4px",
+        scrollSnapType: "x mandatory",
+        WebkitOverflowScrolling: "touch",
+        scrollbarWidth: "none", msOverflowStyle: "none",
+        background: inverted ? "rgba(255,255,255,0.1)" : "var(--border)",
       }}>
         {slice.map(item => (
           <div key={item.id} style={isMobile ? {
@@ -357,7 +356,14 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
             // section show together so the page reads as scrollable.
             flex: "0 0 44%", maxWidth: 180, scrollSnapAlign: "start", background: "var(--card-bg)",
             position: "relative",
-          } : { minWidth: 0, position: "relative" }}>
+          } : {
+            // Desktop tiles — fixed pixel width so the strip reads as a
+            // proper slider regardless of viewport. ~210px lands ~6 tiles
+            // visible on a typical 1440px window with the rest hinting
+            // off the right edge.
+            flex: "0 0 210px", scrollSnapAlign: "start", background: "var(--card-bg)",
+            position: "relative",
+          }}>
             <Card item={item} wished={!!watchlist[item.id]} onWish={handleWish}
               compact={compact}
               onHide={isAdmin ? toggleHide : undefined}
