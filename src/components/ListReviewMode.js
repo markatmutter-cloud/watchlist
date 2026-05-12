@@ -1,6 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { imgSrc, fmtUSD } from "../utils";
+
+// Swipe-gesture thresholds. Anything past these on release commits
+// the corresponding reaction; below, the card springs back. Values
+// tuned on iPhone SE (375px wide) — ~25% of viewport width to commit.
+const SWIPE_THRESHOLD_X = 90;
+const SWIPE_THRESHOLD_Y = 80;
+// How much rotation per pixel of horizontal drag (radians-ish; small
+// number reads as a natural tilt without spinning).
+const SWIPE_ROTATE_PER_PX = 0.06;
 
 // Fullscreen one-at-a-time review mode for a recipient who's been
 // asked for their take on someone else's shared list. Per Mark spec
@@ -74,6 +83,19 @@ export function ListReviewMode({
     return mine?.emoji || null;
   })();
 
+  // Swipe-gesture state. `drag` is the live translation (drives the
+  // card's transform); `flyOut` is "we're past the threshold — animate
+  // off-screen then commit." The dragStart ref captures the touch's
+  // origin without re-rendering.
+  const dragStartRef = useRef(null);
+  const [drag, setDrag] = useState({ x: 0, y: 0 });
+  const [flyOut, setFlyOut] = useState(null);  // null | "left" | "right" | "up"
+  // Reset drag whenever the current item changes (incl. after commit).
+  useEffect(() => {
+    setDrag({ x: 0, y: 0 });
+    setFlyOut(null);
+  }, [idx]);
+
   const handleReact = async (emoji) => {
     if (!current) return;
     // toggleReaction is "if tapped emoji matches existing, remove;
@@ -90,6 +112,72 @@ export function ListReviewMode({
 
   const handleSkip = () => setIdx(i => i + 1);
   const handlePrev = () => setIdx(i => Math.max(0, i - 1));
+
+  // Pointer-event handlers — work for touch + mouse + pen via one
+  // path. We only enable while the card is on-screen (not done) and
+  // not already committing (flyOut === null).
+  const onPointerDown = (e) => {
+    if (!current || flyOut) return;
+    dragStartRef.current = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
+    // Capture the pointer so move/up keep firing even if the finger
+    // leaves the element bounds during a fast swipe.
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch {}
+  };
+  const onPointerMove = (e) => {
+    if (!dragStartRef.current || flyOut) return;
+    setDrag({
+      x: e.clientX - dragStartRef.current.x,
+      y: e.clientY - dragStartRef.current.y,
+    });
+  };
+  const onPointerUp = (e) => {
+    if (!dragStartRef.current || flyOut) return;
+    const { x, y } = {
+      x: e.clientX - dragStartRef.current.x,
+      y: e.clientY - dragStartRef.current.y,
+    };
+    dragStartRef.current = null;
+    // Direction precedence: up beats horizontal (so a diagonal
+    // up-and-right reads as "love" rather than "yes"), and only
+    // counts as up if vertical magnitude dominates.
+    const isUp = y < -SWIPE_THRESHOLD_Y && Math.abs(y) > Math.abs(x);
+    const isRight = !isUp && x > SWIPE_THRESHOLD_X;
+    const isLeft = !isUp && x < -SWIPE_THRESHOLD_X;
+    if (isUp) {
+      setFlyOut("up");
+      setDrag({ x: 0, y: -window.innerHeight - 200 });
+      setTimeout(() => handleReact("❤️"), 220);
+    } else if (isRight) {
+      setFlyOut("right");
+      setDrag({ x: window.innerWidth + 200, y: y * 0.5 });
+      setTimeout(() => handleReact("👍"), 220);
+    } else if (isLeft) {
+      setFlyOut("left");
+      setDrag({ x: -window.innerWidth - 200, y: y * 0.5 });
+      setTimeout(() => handleReact("❌"), 220);
+    } else {
+      // Spring back.
+      setDrag({ x: 0, y: 0 });
+    }
+  };
+  const onPointerCancel = () => {
+    if (flyOut) return;
+    dragStartRef.current = null;
+    setDrag({ x: 0, y: 0 });
+  };
+
+  // Visual cue overlays based on current drag direction. Opacity
+  // ramps with distance so the user gets feedback before they hit
+  // the commit threshold.
+  const cueOpacity = (axis, sign) => {
+    if (axis === "y") {
+      // Up cue: y is negative.
+      const v = sign === -1 ? Math.max(0, -drag.y) : Math.max(0, drag.y);
+      return Math.min(1, v / SWIPE_THRESHOLD_Y);
+    }
+    const v = sign === 1 ? Math.max(0, drag.x) : Math.max(0, -drag.x);
+    return Math.min(1, v / SWIPE_THRESHOLD_X);
+  };
 
   const overlay = (
     <div style={{
@@ -172,29 +260,57 @@ export function ListReviewMode({
             </button>
           </div>
         ) : current ? (
-          <>
+          // Swipeable card: image + details bundled into one stack
+          // that translates/rotates with the drag. Pointer events
+          // unify touch + mouse + pen so desktop preview works too.
+          // touchAction:"none" stops the browser interpreting the
+          // gesture as a page scroll.
+          <div
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            style={{
+              width: "100%", maxWidth: 480,
+              touchAction: "none",
+              transform: `translate(${drag.x}px, ${drag.y}px) rotate(${drag.x * SWIPE_ROTATE_PER_PX}deg)`,
+              transition: (dragStartRef.current || flyOut)
+                ? (flyOut ? "transform 220ms ease-out" : "none")
+                : "transform 220ms ease-out",
+              userSelect: "none",
+              position: "relative",
+            }}>
             {/* Big image */}
             <div style={{
-              width: "100%", maxWidth: 480,
+              width: "100%",
               aspectRatio: "1 / 1",
               borderRadius: 12, overflow: "hidden",
               background: "var(--surface)",
               border: "0.5px solid var(--border)",
               display: "flex", alignItems: "center", justifyContent: "center",
+              position: "relative",
             }}>
               {current.image ? (
                 <img src={imgSrc(current.image)} alt={current.title || ""}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  draggable={false}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }}
                   loading="eager"
                   onError={(e) => { e.currentTarget.style.display = "none"; }}
                 />
               ) : (
                 <div style={{ fontSize: 13, color: "var(--text3)" }}>No image</div>
               )}
+              {/* Swipe-direction cues — three large emoji stamps on
+                  the image, each fading in as the user drags toward
+                  the corresponding direction. Reads like a
+                  Tinder/Bumble card. */}
+              <SwipeCue position="left"  emoji="❌" label="Pass" opacity={cueOpacity("x", -1)} />
+              <SwipeCue position="right" emoji="👍" label="Yes"  opacity={cueOpacity("x",  1)} />
+              <SwipeCue position="top"   emoji="❤️" label="Love" opacity={cueOpacity("y", -1)} />
             </div>
 
             {/* Details */}
-            <div style={{ width: "100%", maxWidth: 480, textAlign: "center" }}>
+            <div style={{ width: "100%", textAlign: "center", paddingTop: 16 }}>
               {current.source && (
                 <div style={{ fontSize: 11, color: "var(--text3)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
                   {current.source}
@@ -224,7 +340,7 @@ export function ListReviewMode({
                 </div>
               )}
             </div>
-          </>
+          </div>
         ) : null}
       </div>
 
@@ -267,6 +383,17 @@ export function ListReviewMode({
               );
             })}
           </div>
+          {/* Swipe hint — quiet caption so first-time users know
+              about the gesture without it shouting. Drops out after
+              the first commit (idx > 0) so it isn't permanent noise. */}
+          {idx === 0 && (
+            <div style={{
+              textAlign: "center", marginTop: 8,
+              fontSize: 11, color: "var(--text3)", letterSpacing: "0.04em",
+            }}>
+              Swipe right Yes · left Pass · up Love
+            </div>
+          )}
           <div style={{
             display: "flex", justifyContent: "space-between", alignItems: "center",
             marginTop: 10, maxWidth: 480, margin: "10px auto 0",
@@ -301,4 +428,38 @@ export function ListReviewMode({
   // overflow. Same pattern as Card's ⋯ menu + WatchDetailSheet.
   if (typeof document === "undefined") return null;
   return createPortal(overlay, document.body);
+}
+
+// Direction stamp overlaid on the card while swiping — fades in as
+// the user drags, gives the same "you're about to like this" feedback
+// as Tinder/Bumble. Positioned absolutely on top of the image; the
+// parent has `position: relative`.
+function SwipeCue({ position, emoji, label, opacity }) {
+  const base = {
+    position: "absolute",
+    background: "rgba(0,0,0,0.55)",
+    color: "#fff",
+    padding: "6px 12px",
+    borderRadius: 10,
+    fontFamily: "inherit",
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    fontSize: 11,
+    display: "flex", alignItems: "center", gap: 6,
+    pointerEvents: "none",
+    opacity,
+    transition: "opacity 80ms linear",
+  };
+  const pos = position === "left"
+    ? { top: 16, left: 16, transform: "rotate(-12deg)" }
+    : position === "right"
+      ? { top: 16, right: 16, transform: "rotate(12deg)" }
+      : { top: 16, left: "50%", transform: "translateX(-50%) scale(1.05)" };
+  return (
+    <div style={{ ...base, ...pos }}>
+      <span aria-hidden style={{ fontSize: 16, lineHeight: 1 }}>{emoji}</span>
+      <span>{label}</span>
+    </div>
+  );
 }
