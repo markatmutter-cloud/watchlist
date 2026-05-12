@@ -509,7 +509,15 @@ export function HomeTab(props) {
   return (
     <div style={{ paddingBottom: 0 }}>
       <EditorialHero isMobile={isMobile} />
-      {homeSearchSubmit && (
+      {/* Hero search bar — desktop only. On mobile the shell renders
+          a sticky search bar at the top of Home (restored 2026-05-11
+          per Mark spec: "search and sign-in circle should stay at the
+          top of the page like on the other tabs"). Showing a second
+          search bar inside the hero on mobile read as a duplicate
+          (Mark report 2026-05-12). Desktop keeps it — the top-bar
+          search is suppressed on Home there, so the hero search is
+          the canonical entry point. */}
+      {homeSearchSubmit && !isMobile && (
         <HomeSearchBar
           onSubmit={homeSearchSubmit}
           isMobile={isMobile}
