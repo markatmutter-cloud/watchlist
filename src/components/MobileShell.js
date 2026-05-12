@@ -110,7 +110,13 @@ export function MobileShell(props) {
             (right-aligned) and skip the redundant top wordmark. On
             every other tab, render wordmark + About so the home-tap
             affordance stays where users expect it. */}
-        <div style={{ padding: "6px 16px 4px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, minHeight: 28 }}>
+        {/* Title block tightened again 2026-05-12 — Mark feedback: most
+            users hit the site via mobile browser (not the PWA bookmark)
+            so the URL bar + our chrome eat the top of the viewport
+            twice. Trimmed vertical padding 6/4 → 2/2 and dropped the
+            28px min-height; the wordmark's own line-height takes the
+            row height, no minimum needed. */}
+        <div style={{ padding: "2px 16px 2px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
           {tab !== "home" ? (
             // Smaller-but-editorial wordmark on other tabs — matches
             // the Home hero's weight + tracking + uppercase, just
@@ -384,23 +390,20 @@ export function MobileShell(props) {
           position: "fixed", bottom: 0, left: 0, right: 0,
           display: "flex",
           background: "var(--surface)",
-          // 2026-05-11: dropped the 2px dark-green borderTop +
-          // green-tinted boxShadow that flagged the bottom-nav.
-          // Mark's call: too loud, doesn't match the editorial
-          // direction. A 0.5px hairline in `--border` reads as
-          // intentional without screaming for attention.
           borderTop: "0.5px solid var(--border)",
-          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+          // 2026-05-12 (Mark feedback): most users hit the site via
+          // mobile browser, NOT the PWA bookmark, so `env(safe-area-
+          // inset-bottom)` resolves to 0 for the majority. The
+          // previous +12px baseline left a fat gap below the pills in
+          // browser mode. Trim to +4 — still clears the iOS home
+          // indicator in PWA mode (env() adds its 34px), and reads
+          // tight without burning real estate in Safari.
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)",
         }}>
-          {/* Admin is desktop-only — mobile bottom bar shows
-              Listings / Saved / Learn (3 pills, fits cleanly on
-              375px viewports). Bundle 2A.2 (2026-05-07) collapsed
-              the standalone Collections tab into Saved; Learn
-              replaces what used to be the Collections pill on
-              mobile (Mark's call: Learn deserves bottom-nav
-              prominence over the now-folded Collections). */}
           {[["listings", "Listings"], ["watchlist", "Watchlists"], ["references", "Learn"]].map(([key, label]) => (
-            <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "8px 0 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            // Button padding 8/6 → 6/4: same density argument as the
+            // container padding above.
+            <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "6px 0 4px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               {tab === key
                 ? <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--brand)" }} />
                 : <TabIcon kind={key} />}
