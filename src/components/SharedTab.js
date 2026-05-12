@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../supabase";
 import { EmptyState } from "./EmptyState";
 import { signInButton } from "../styles";
+import { ShareListPickerModal } from "./ShareListPickerModal";
 
 // Top-level Share tab — the landing surface for lists you've sent
 // out + lists people have shared with you. Per Mark spec 2026-05-12:
@@ -36,6 +37,10 @@ export function SharedTab({
   // accepted collaborator — RLS scopes the query to "rows I can see").
   // Same fetch ListsView does; lifted here so SharedTab is independent.
   const [collaboratorIds, setCollaboratorIds] = useState(() => new Set());
+  // Send-flow modal (Mark feedback 2026-05-12: there was no way to
+  // instigate sharing from the Share tab). Opens via the "+ Share a
+  // list" CTA at the top of the page.
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!user || !supabase) {
@@ -94,6 +99,58 @@ export function SharedTab({
     && collaboratorIds.has(c.id)
   );
 
+  // Every list the user OWNS — used to populate the picker. Not
+  // filtered by "already shared" so the user can share something
+  // brand-new without going through Manage first.
+  const myLists = (cols || [])
+    .filter(c =>
+      !c.isSystem
+      && c.type !== "challenge"
+      && !c.isSharedInbox
+      && c.userId === user.id
+    )
+    .map(c => ({
+      id: c.id,
+      name: c.name,
+      count: (itemsByColl[c.id] || []).length,
+    }));
+
+  // Share-link handler — same shape the list drill-in uses. Builds
+  // `?list=<id>&shared=1`, then prefers Web Share API (native sheet
+  // on iOS / Android), falls back to clipboard. Returns `{ copied:
+  // true }` on clipboard so the modal can show a "Copied" toast.
+  const shareListLink = async (listId) => {
+    const list = (cols || []).find(c => c.id === listId);
+    if (!list) return {};
+    const url = `${window.location.origin}/?list=${encodeURIComponent(listId)}&shared=1`;
+    const shareData = {
+      title: `${list.name} — Watchlist`,
+      text: `${list.name} — a list on Watchlist`,
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return {};
+      }
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        return { copied: true };
+      }
+      window.prompt("Copy this link to share:", url);
+      return { copied: true };
+    } catch (e) {
+      if (e?.name === "AbortError") return {};  // user cancelled native sheet
+      try {
+        await navigator.clipboard?.writeText(url);
+        return { copied: true };
+      } catch {
+        window.prompt("Copy this link to share:", url);
+        return { copied: true };
+      }
+    }
+  };
+
   const listRow = (c, opts = {}) => {
     const count = c.isSharedInbox
       ? (itemsByColl[c.id] || []).length
@@ -128,23 +185,39 @@ export function SharedTab({
 
   return (
     <div style={{ paddingTop: 4 }}>
-      {/* Page intro — kept short. The two sections below carry the
-          actual work; no need for a heavy preamble here. */}
+      {/* Page intro + send CTA. The "+ Share a list" button is the
+          send-flow entry point — opens the list picker, which then
+          fires the native share sheet on the picked list. */}
       <div style={{
         margin: "0 0 14px",
         padding: "12px 14px",
         borderRadius: 10,
         border: "0.5px solid var(--border)",
         background: "var(--surface)",
+        display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
       }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text1)", marginBottom: 4 }}>
-          Share & collaborate
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text1)", marginBottom: 4 }}>
+            Share & collaborate
+          </div>
+          <div style={{ fontSize: 12, lineHeight: 1.5, color: "var(--text2)" }}>
+            Send a list to a friend for their take, or get a group to vote on a
+            shortlist. Lists shared with you appear here — react ❤️ / 👍 / ❌
+            on each watch, or open the one-at-a-time review mode.
+          </div>
         </div>
-        <div style={{ fontSize: 12, lineHeight: 1.5, color: "var(--text2)" }}>
-          Send a list to a friend for their take, or get a group to vote on a
-          shortlist. Lists shared with you appear here — react ❤️ / 👍 / ❌
-          on each watch, or open the one-at-a-time review mode.
-        </div>
+        <button onClick={() => setPickerOpen(true)}
+          style={{
+            flexShrink: 0,
+            padding: "10px 16px",
+            borderRadius: 10,
+            border: "none",
+            background: "var(--brand)", color: "#fff",
+            fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+            cursor: "pointer",
+          }}>
+          + Share a list
+        </button>
       </div>
 
       {/* SECTION 1 — Shared with me */}
@@ -180,6 +253,17 @@ export function SharedTab({
           {sharedByMe.map(c => listRow(c, { subtitle: "Shared by you" }))}
         </div>
       )}
+
+      <ShareListPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        myLists={myLists}
+        onShareLink={shareListLink}
+        onOpenList={(id) => {
+          setPickerOpen(false);
+          openSharedList?.(id);
+        }}
+      />
     </div>
   );
 }
