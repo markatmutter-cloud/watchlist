@@ -10,6 +10,7 @@ import { ListingPickerModal } from "./ListingPickerModal";
 import { MarkAsSoldModal } from "./MarkAsSoldModal";
 import { ManageListSheet } from "./ManageListSheet";
 import { WatchDetailSheet } from "./WatchDetailSheet";
+import { ListReviewMode } from "./ListReviewMode";
 import { fmtUSD, matchesSearch } from "../utils";
 import { actionButton, signInButton } from "../styles";
 import { EmptyState } from "./EmptyState";
@@ -1221,6 +1222,11 @@ function ListsView({
   toggleReaction,
   fetchReactionCounts,
 }) {
+  // One-at-a-time recipient review mode (Mark spec 2026-05-11).
+  // Triggered by the recipient banner's "Start review" CTA. Opens a
+  // fullscreen overlay walking through items the current user hasn't
+  // reacted to yet. Closed via Done / ESC / completing the queue.
+  const [reviewModeOpen, setReviewModeOpen] = useState(false);
   // Membership map for the active drill-in. Populated on drill-in
   // (best-effort — non-members get an empty array, which means no
   // chips). Used to resolve `whoAdded` user_id → display name.
@@ -1544,10 +1550,14 @@ function ListsView({
             list, frame the page as "you've been asked for your take"
             so they understand what to do. Dropped once they've
             reacted to every item (the to-do is empty, the banner
-            stops being a hint and becomes noise). */}
+            stops being a hint and becomes noise).
+            "Review one at a time" CTA opens a fullscreen overlay that
+            walks the unreacted items one big card per screen — per
+            Mark's mockup, "1 photo width on mobile to review things
+            shared with you" (ListReviewMode). */}
         {isRecipient && items.length > 0 && myReactedCount < items.length && (
           <div style={{
-            display: "flex", alignItems: "center", gap: 12,
+            display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
             margin: "0 0 12px",
             padding: "12px 14px",
             borderRadius: 10,
@@ -1555,7 +1565,7 @@ function ListsView({
             background: "var(--surface)",
           }}>
             <span aria-hidden style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>📋</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ fontSize: 13, color: "var(--text1)", lineHeight: 1.4 }}>
                 <strong>{ownerName}</strong> shared this list — tap{" "}
                 <span aria-hidden>❤️</span> /{" "}
@@ -1566,7 +1576,32 @@ function ListsView({
                 {myReactedCount} of {items.length} reacted
               </div>
             </div>
+            <button onClick={() => setReviewModeOpen(true)}
+              title="Walk through unreacted items one at a time"
+              style={{
+                flexShrink: 0,
+                padding: "10px 16px",
+                borderRadius: 10,
+                border: "none",
+                background: "var(--brand)", color: "#fff",
+                fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+                cursor: "pointer",
+              }}>
+              Review one at a time →
+            </button>
           </div>
+        )}
+        {reviewModeOpen && isRecipient && (
+          <ListReviewMode
+            items={items}
+            listName={selected.name}
+            ownerName={ownerName}
+            currentUserId={user?.id || null}
+            reactionsByItem={reactionsByItem}
+            onToggleReaction={onToggleReaction}
+            onClose={() => setReviewModeOpen(false)}
+            primaryCurrency={primaryCurrency}
+          />
         )}
         {items.length === 0 ? (
           <EmptyState
