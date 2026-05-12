@@ -192,16 +192,17 @@ export function MobileShell(props) {
           )}
           {authJSX}
         </div>
-        {/* Sort row — only when the current sub-tab has a filterable
-            list. Otherwise render a spacer of the same height so
-            sub-tab switching doesn't pop content up. Hidden during
-            share-receive landing so the recipient sees the focused
-            card without browse chrome above it. */}
-        {!anyShareActive && noFilterableList && (
-          <div style={{ display: "flex", gap: 6, padding: "4px 16px 6px", borderBottom: "0.5px solid var(--border)", alignItems: "center" }}>
-            <span style={{ fontSize: 13, padding: "9px 14px", borderRadius: 20, border: "0.5px solid transparent", visibility: "hidden" }}>placeholder</span>
-          </div>
-        )}
+        {/* Sort/filter row — only when the current sub-tab has a
+            filterable list. Hidden during share-receive landing so
+            the recipient sees the focused card without browse chrome
+            above it. (Previously rendered a ~40px hidden spacer here
+            on filter-less sub-tabs to avoid content-jumping on
+            sub-tab switch — Mark report 2026-05-12: the spacer read
+            as "weird empty space" between the search row and the
+            sub-tab strip on Watchlists > Lists. Dropped: the search
+            row above + sub-tab strip below each carry their own
+            border, so removing the spacer doesn't break the divider
+            chain. Small one-time jump on switch is the tradeoff.) */}
         {!anyShareActive && !noFilterableList && (
         <div style={{ display: "flex", gap: 6, padding: "4px 16px 6px", borderBottom: "0.5px solid var(--border)", position: "relative", alignItems: "center", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
           {/* Fixed-width count slot (2026-05-09) so the pills don't
