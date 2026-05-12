@@ -714,22 +714,108 @@ image. Frontend prefers `row.cached_img_url` over the snapshot's
 dealer URL on listing-backed rows; manual entries are unaffected
 (their photo is in `watch-photos`).
 
-**Reactions sentiment-bucket grid (2026-05-10, PRs #183–#185).**
+**Reactions sentiment-bucket grid (2026-05-10, PRs #183–#185;
+revised 2026-05-11 PRs #242 / #243).**
 Shared lists (`memberCount >= 2`) split items into three
 buckets via `gridColumn: 1/-1` sub-headers:
-👍 Liked → Open → ❌ Set aside. Classification:
-- any `👍`/`❤️`/`🔥` reaction → positive (top)
+❤️ Liked → Open → ❌ Disliked. Classification:
+- any `❤️`/`👍`/`🔥` reaction → positive (top)
 - `❌` and no positive → negative (bottom)
 - everything else (no reactions OR `🤔`-only) → neutral (middle)
 
 POSITIVE / NEGATIVE constants live next to the bucketing IIFE
 in `CollectionsTab.js`. Solo lists keep the plain unsorted
-order. Per-list **count chip** ("👍 N") on Lists view rows is
-driven by `list_reaction_counts_for_user()` (excludes the
-caller's own reactions server-side); refreshes when the user
-returns from a drill-in. Both the picker-trigger SVG and the
-list-row count chip use brand blue, not yellow emoji — matches
-the rest of the interface.
+order. The active reaction set is `["❤️", "👍", "❌"]` (PR
+#242 simplified from 5 emojis); legacy 🔥 / 🤔 reactions written
+under the old set still bucket correctly because POSITIVE keeps
+🔥 and the neutral fallthrough catches 🤔. Per-list **count chip**
+("👍 N") on Lists view rows is driven by
+`list_reaction_counts_for_user()` (excludes the caller's own
+reactions server-side); refreshes when the user returns from a
+drill-in. Both the picker-trigger SVG and the list-row count
+chip use brand blue, not yellow emoji — matches the rest of the
+interface.
+
+**Recipient experience on shared lists (2026-05-11, PRs #245–
+#249, #251, #253).** When a viewing user is a member of a list
+but NOT its owner, they get a different surface:
+- **Recipient banner** above the cards: "<Owner> shared this
+  list — tap ❤️ / 👍 / ❌ on each watch to share your take · N of
+  M reacted". Auto-hides once every item has the user's reaction.
+- **📋 To review · N bucket** pinned to the top of the sentiment
+  buckets — items the current user hasn't reacted to. Items the
+  user HAS reacted on still bucket by overall sentiment below.
+- **Review one at a time** CTA on the banner opens
+  `ListReviewMode` — a fullscreen portal-rendered overlay walking
+  through unreacted items. Big card per screen, ❤️ / 👍 / ❌
+  buttons, Tinder-style swipes (right = 👍, left = ❌, up = ❤️),
+  swipe stamps + commit hint that fade in past threshold, "All
+  reviewed!" 🎉 finish state. Up beats horizontal in direction
+  precedence so a diagonal up-right reads as Love not Yes.
+
+**Recipient detection (canonical predicate):**
+```js
+const isRecipient =
+  memberCount >= 2
+  && user.id !== selected.userId
+  && !isHiddenColl
+  && !isSavedColl;
+```
+Anywhere that branches owner vs recipient must use this exact
+shape. Don't fork the predicate into "almost the same" variants.
+
+**Undo / reset affordances (PR #253).** Re-tapping the same
+emoji removes the reaction via `toggleReaction`, but
+discoverability was zero. Two surfaces now expose the undo:
+- In `ListReviewMode`, when the current item has the user's
+  reaction, the swipe hint below the buttons is replaced with
+  a `Remove my reaction` link. Tap clears + stays on card.
+- In the list drill-in's ⋯ overflow menu, `Reset my reactions
+  (N)` walks `reactionsByItem`, collects every row authored by
+  the current user, toggles each off in parallel. Confirms
+  before wiping. Available to any participant with at least
+  one reaction (owner or collaborator).
+
+**Top-level Share tab (2026-05-11, PR #248 + #251).** New `tab=share`
+in `TAB_VALUES`, 4th pill in both top nav (desktop) and bottom
+nav (mobile): Listings · Watchlists · Share · Learn. Renders
+`SharedTab.js` — two sections (Shared with you / Shared by you)
+plus a `+ Share a list` CTA that opens `ShareListPickerModal`
+for the send flow. Tapping a row in the picker fires
+`navigator.share` (or clipboard fallback) on the
+`?list=<id>&shared=1` URL; tapping "Open" navigates to the
+drill-in for the Manage path. The shared-list work surface
+(banner, To-review bucket, review mode) still lives in the Lists
+drill-in — Share is the *discovery + send* surface, the
+drill-in is the *work* surface.
+
+`SharedTab.openSharedList(listId)` does the URL push BEFORE
+flipping tab state so `CollectionsTab`'s `useState` initialiser
+reads `?col=` on first mount and lands on the drill-in directly.
+This dance matters; reversing the order makes the drill-in fail
+to open.
+
+**Home strips are horizontal sliders on both viewports
+(2026-05-12, PRs #255 / #256).** Was a 7-col grid on desktop +
+horizontal-scroll on mobile. Both now use the flex/overflowX
+slider layout with scroll-snap. Tile sizing differs by viewport
+(mobile 44% / maxWidth 180; desktop fixed 210px). 14 cards per
+section on both. Hidden scrollbar (`scrollbarWidth: none`) on
+the wrapper.
+
+**Mobile chrome conventions (PRs #247 / #250 / #252).**
+- Top wordmark row: `padding: "2px 16px 2px"`, no min-height.
+- Bottom nav container: `paddingBottom: "calc(env(safe-area-
+  inset-bottom, 0px) + 4px)"`. PWA mode adds the home-indicator
+  clear via env(); browser mode stays tight.
+- Bottom nav buttons: `padding: "6px 0 4px"`.
+- Filter-row spacer on filter-less tabs DROPPED — was a hidden
+  ~40px placeholder div, read as dead whitespace. Search row's
+  bottom border + sub-tab strip's bottom border preserve
+  divider continuity without the spacer.
+- On Home, the hero search bar is rendered only on desktop
+  (`!isMobile`); mobile uses the sticky top-bar search to avoid
+  duplicate search bars.
 
 **Don't push followup commits to an already-open PR
 (2026-05-10).** PR #176 was merged with only its first commit;
@@ -1106,6 +1192,26 @@ again; it's permanently blocked at the platform layer.
 
 ## Things to never do
 
+- **Don't use `useMemo` for snapshot semantics — use `useState` lazy
+  init.** `ListReviewMode.initialQueue` freezes the to-review list at
+  mount. Earlier draft used `useMemo([items, reactionsByItem])`; that
+  re-derives whenever reactionsByItem updates, shifting the current
+  item out from under the user mid-flow. `useState(() => …)` runs the
+  initialiser exactly once on first render — that's the snapshot
+  semantic. If you reach for useMemo to "snapshot at mount," stop:
+  useMemo doesn't snapshot, it memoises. Reference: the swipe PR
+  (#249) shipped broken once because of this.
+- **Don't reverse the swipe gesture polarity** in `ListReviewMode`.
+  Right = positive primary (👍), Left = negative primary (❌), Up =
+  stronger positive (❤️). Tinder/Bumble convention is what users
+  expect; reversing makes the gesture unlearnable.
+- **Don't write `// eslint-disable-next-line` for a rule that isn't
+  configured in CRA.** `react-hooks/exhaustive-deps` is NOT configured;
+  `no-unused-vars` IS. Unknown-rule disable comments fail under
+  `CI=true` with "Definition for rule 'X' was not found" → Vercel red.
+  Cost a build failure on PR #246 (lazy-init swipe fix). If you intend
+  to omit a hook dep, either accept the dep array as-is or refactor;
+  don't reach for the disable comment.
 - **Don't add `to authenticated` (or any role scope) to a new RLS
   policy unless every other policy on the same table already uses the
   same role scope.** Postgres applies a policy only when the connection's
