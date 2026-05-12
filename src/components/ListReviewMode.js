@@ -112,6 +112,17 @@ export function ListReviewMode({
 
   const handleSkip = () => setIdx(i => i + 1);
   const handlePrev = () => setIdx(i => Math.max(0, i - 1));
+  // Clear the current user's reaction on this item without advancing
+  // (Mark feedback 2026-05-12: "is it possible to undo or reset
+  // ratings"). toggleReaction is the same RPC used elsewhere — tapping
+  // the same emoji you already have removes it. We stay on the
+  // current card so the user can pick a different one (or just leave
+  // it unrated).
+  const handleClearCurrent = async () => {
+    if (!current || !myReactionOnCurrent) return;
+    try { await onToggleReaction(current.rowId, myReactionOnCurrent); }
+    catch (e) { /* swallow */ }
+  };
 
   // Pointer-event handlers — work for touch + mouse + pen via one
   // path. We only enable while the card is on-screen (not done) and
@@ -383,17 +394,32 @@ export function ListReviewMode({
               );
             })}
           </div>
-          {/* Swipe hint — quiet caption so first-time users know
-              about the gesture without it shouting. Drops out after
-              the first commit (idx > 0) so it isn't permanent noise. */}
-          {idx === 0 && (
+          {/* Swipe hint (first card only) OR clear-reaction affordance
+              (when the user already has a reaction on this item).
+              The clear line wins precedence on cards they've reacted
+              to so the undo action is always discoverable when
+              relevant. */}
+          {myReactionOnCurrent ? (
+            <div style={{ textAlign: "center", marginTop: 8 }}>
+              <button onClick={handleClearCurrent}
+                style={{
+                  border: "none", background: "transparent",
+                  color: "var(--text3)", fontFamily: "inherit",
+                  fontSize: 12, padding: "4px 10px",
+                  cursor: "pointer", textDecoration: "underline",
+                  textUnderlineOffset: 2,
+                }}>
+                Remove my reaction
+              </button>
+            </div>
+          ) : idx === 0 ? (
             <div style={{
               textAlign: "center", marginTop: 8,
               fontSize: 11, color: "var(--text3)", letterSpacing: "0.04em",
             }}>
               Swipe right Yes · left Pass · up Love
             </div>
-          )}
+          ) : null}
           <div style={{
             display: "flex", justifyContent: "space-between", alignItems: "center",
             marginTop: 10, maxWidth: 480, margin: "10px auto 0",

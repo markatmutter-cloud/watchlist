@@ -1492,15 +1492,45 @@ function ListsView({
         }
       }
     };
-    const overflowItems = (showActions && isOwner) ? [
-      { label: "Manage collaborators", onClick: () => setManageListOpen(true) },
-      { label: "Rename list", onClick: () => setEditingCollection({ id: selected.id, name: selected.name }) },
-      { label: "Delete list", danger: true, onClick: async () => {
-        if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
-        await deleteCollection(selected.id);
-        setSelectedListId(null);
-      } },
-    ] : [];
+    // My reactions on this list — used by the overflow menu's
+    // "Reset my reactions" item. Walks reactionsByItem and pulls every
+    // row authored by the current user. Mark feedback 2026-05-12: "is
+    // it possible to undo or reset ratings on watches" — yes via
+    // re-tap, but discoverability was zero; this exposes it.
+    const myReactionsOnList = [];
+    if (myUserId && reactionsByItem && isSharedList) {
+      for (const [itemId, rs] of reactionsByItem.entries()) {
+        for (const r of rs) {
+          if (r.user_id === myUserId) myReactionsOnList.push({ itemId, emoji: r.emoji });
+        }
+      }
+    }
+    const overflowItems = [];
+    // Reset action (any participant on a shared list with at least
+    // one of their own reactions to clear). Goes at the top so it's
+    // not buried under destructive actions.
+    if (myReactionsOnList.length > 0) {
+      overflowItems.push({
+        label: `Reset my reactions (${myReactionsOnList.length})`,
+        onClick: async () => {
+          if (!window.confirm(`Clear all ${myReactionsOnList.length} of your reactions on this list?`)) return;
+          // Toggle each one off in parallel. toggleReaction deletes
+          // when the tapped emoji matches the existing row.
+          await Promise.all(myReactionsOnList.map(({ itemId, emoji }) => onToggleReaction(itemId, emoji)));
+        },
+      });
+    }
+    if (showActions && isOwner) {
+      overflowItems.push(
+        { label: "Manage collaborators", onClick: () => setManageListOpen(true) },
+        { label: "Rename list", onClick: () => setEditingCollection({ id: selected.id, name: selected.name }) },
+        { label: "Delete list", danger: true, onClick: async () => {
+          if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
+          await deleteCollection(selected.id);
+          setSelectedListId(null);
+        } },
+      );
+    }
     return (
       <div style={{ paddingTop: 4 }}>
         {/* Drill-in header — compact single-row layout (Mark feedback
