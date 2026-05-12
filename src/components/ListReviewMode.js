@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { imgSrc, fmtUSD } from "../utils";
 
@@ -30,20 +30,19 @@ export function ListReviewMode({
   onClose,
   primaryCurrency,
 }) {
-  // Snapshot only items without a reaction from the current user at
-  // mount. Subsequent renders DON'T re-filter (so reacting to the
-  // current item doesn't yank it out from under us).
-  const initialQueue = useMemo(() => {
+  // Snapshot the to-review queue once at mount via a lazy-init
+  // useState. We deliberately want a frozen snapshot — using useMemo
+  // with [items, reactionsByItem] as deps would re-derive every time
+  // the user records a reaction (since reactionsByItem updates), and
+  // that would shift the current item out from under them mid-flow.
+  // Lazy useState runs the initializer exactly once on first render.
+  const [initialQueue] = useState(() => {
     if (!currentUserId) return items;
     return items.filter(it => {
       const rs = reactionsByItem.get(it.rowId) || [];
       return !rs.some(r => r.user_id === currentUserId);
     });
-  // Only re-derive when the items array identity changes (i.e. caller
-  // remounts with a new list). reactionsByItem updates over the
-  // session — intentional snapshot.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, currentUserId]);
+  });
 
   const [idx, setIdx] = useState(0);
   const total = initialQueue.length;
