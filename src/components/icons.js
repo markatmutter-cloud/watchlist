@@ -74,5 +74,17 @@ export function TabIcon({ kind }) {
       <path d="M2 9h20"/>
     </svg>
   );
+  if (kind === "share") return (
+    // Share-arrow glyph — three-node network/share icon. Reads as
+    // "send / collaborate" without competing with the watchlist
+    // bookmark or the references book.
+    <svg {...props}>
+      <circle cx="18" cy="5" r="3"/>
+      <circle cx="6" cy="12" r="3"/>
+      <circle cx="18" cy="19" r="3"/>
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+    </svg>
+  );
   return null;
 }

@@ -49,6 +49,7 @@ export function DesktopShell(props) {
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchHeartedToggleJSX, collectionsSubTabsJSX, watchlistTabJSX,
     referencesTabJSX, collectionsTabJSX,
+    shareTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     shareActive,
@@ -372,7 +373,7 @@ export function DesktopShell(props) {
                 Its sub-tabs (my-collection / wishlist / lists /
                 challenges) are now part of the Saved sub-tab strip.
                 `?tab=collections` redirects to `?tab=watchlist`. */}
-          {[["listings", "Listings"], ["watchlist", "Watchlists"], ["references", "Learn"]].map(([key, label]) => (
+          {[["listings", "Listings"], ["watchlist", "Watchlists"], ["share", "Share"], ["references", "Learn"]].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               padding: "6px 14px", borderRadius: 20, border: "0.5px solid var(--border)", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,
@@ -507,6 +508,7 @@ export function DesktopShell(props) {
                   the active sub-tab. */}
               {tab === "home" ? homeTabJSX
                 : tab === "listings" ? listingsTabContentJSX
+                : tab === "share" ? shareTabJSX
                 : tab === "references" ? referencesTabJSX
                 : tab === "admin" ? adminTabJSX
                 : watchlistTabJSX}

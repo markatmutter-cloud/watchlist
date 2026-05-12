@@ -24,6 +24,7 @@ import { Card } from "./components/Card";
 // the new AuctionCalendar component (AuctionsTab.js deleted 2026-04-30).
 import { ReferencesTab } from "./components/ReferencesTab";
 import { CollectionsTab } from "./components/CollectionsTab";
+import { SharedTab } from "./components/SharedTab";
 import { HomeTab } from "./components/HomeTab";
 import { TrackNewItemModal } from "./components/TrackNewItemModal";
 import { FavSearchModal } from "./components/FavSearchModal";
@@ -347,7 +348,7 @@ export default function Watchlist() {
   // `?tab=collections` redirect to `?tab=watchlist` with the same
   // sub-tab key (the sub-tab values were already preserved when
   // SUB_VALUES_COLLECTIONS was folded into watchTopTab above).
-  const TAB_VALUES = ["home", "listings", "watchlist", "references", "admin"];
+  const TAB_VALUES = ["home", "listings", "watchlist", "share", "references", "admin"];
   // URL-key translation. Naming alignment 2026-05-08 (Mark feedback:
   // "?sub=sold&tab=watchlist" reads as ugly internal state in the
   // address bar). The URL now uses `saved` / `learn` as the
@@ -2664,6 +2665,41 @@ export default function Watchlist() {
   // lists / challenges). The dispatch between WatchlistTab and
   // CollectionsTab content lives in `savedContentJSX` below — shells
   // just render whichever the dispatch chose.
+  // Top-level Share tab content (2026-05-12). Self-contained component
+  // — owns its own fetch for collaborator ids. App.js supplies the
+  // openSharedList callback that navigates the user from the Share
+  // landing into the standard Lists drill-in (which carries the
+  // recipient banner + review-mode CTA built earlier in this arc).
+  const shareTabJSX = (
+    <SharedTab
+      user={user}
+      cols={collectionsApi?.collections || []}
+      itemsByColl={collectionsApi?.itemsByCollection || {}}
+      signInWithGoogle={triggerSignInPrompt}
+      isAuthConfigured={isAuthConfigured}
+      openSharedList={(listId) => {
+        // Push the target URL BEFORE flipping tab state so
+        // CollectionsTab's useState initializer reads `?col=` on
+        // mount and lands on the drill-in directly. Order matters:
+        // (1) URL write — gives CollectionsTab its initial selected
+        //     id when it mounts.
+        // (2) setTab + setWatchTopTab — triggers the mount.
+        // App.js's URL-sync effect sees the URL already matches
+        // (tab=saved&sub=lists&col=X) and no-ops, so no fight.
+        if (typeof window !== "undefined") {
+          const params = new URLSearchParams(window.location.search);
+          params.set("tab", "saved");
+          params.set("sub", "lists");
+          params.set("col", listId);
+          window.history.pushState({}, "", "?" + params.toString());
+        }
+        setTab("watchlist");
+        setWatchTopTab("lists");
+        setPage(1);
+      }}
+    />
+  );
+
   const collectionsTabJSX = (
     <CollectionsTab
       user={user}
@@ -3092,6 +3128,7 @@ export default function Watchlist() {
     // Collections style) computed by `savedContentJSX`.
     watchlistTabJSX: savedContentJSX,
     adminTabJSX, referencesTabJSX, collectionsTabJSX, homeTabJSX,
+    shareTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     // Whether a share-receive landing surface is taking over the
