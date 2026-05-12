@@ -57,6 +57,14 @@ export function ChallengesView({
   // creatingNew=true now renders CreateStage WITHOUT a row, and the
   // create only happens on form submit. Cancel just clears the flag.
   const [creatingNew, setCreatingNew] = useState(false);
+  // 2026-05-12 fix: `createError` was previously declared further down,
+  // below the `if (!user)` and `if (selected)` early returns. Drilling
+  // into a challenge (selected truthy) made the component call 3 hooks
+  // instead of 4, tripping React #300 "Rendered fewer hooks than
+  // expected." Hoisted up here so the hook count is constant across
+  // all render paths. Same rule as the App.js entries in CLAUDE.md's
+  // Things-to-never-do — hooks BEFORE every early return, always.
+  const [createError, setCreateError] = useState("");
 
   if (!user) {
     return (
@@ -106,7 +114,8 @@ export function ChallengesView({
     setCreatingNew(true);
   };
 
-  const [createError, setCreateError] = useState("");
+  // `createError` useState hoisted to the top of the component
+  // (above all early returns) on 2026-05-12 — see comment up there.
   const submitNewChallenge = async (config) => {
     setCreateError("");
     const res = await collectionsApi.createChallenge(config);
