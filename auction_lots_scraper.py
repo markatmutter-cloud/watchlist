@@ -979,11 +979,38 @@ def enumerate_sothebys(sale_url, sale=None):
         currency = currency.upper()
         low = hit.get("lowEstimate") if hit else None
         high = hit.get("highEstimate") if hit else None
-        sold_price = (hit.get("price") if hit else None) or None
-        if sold_price == 0: sold_price = None
         status_state = ((hit.get("lotState") or "").lower()) if hit else ""
         auction_state = ((hit.get("auctionState") or "").lower()) if hit else ""
         status = "ended" if auction_state in ("closed", "complete", "completed") or status_state == "sold" else "active"
+        # hit.price has dual meaning in Sotheby's algoliaJson:
+        # for SOLD lots it's the realised hammer; for everything else
+        # it's the low estimate (the catalog "starting from" display).
+        # Without gating, every active lot ended up with
+        # sold_price = low_estimate, downstream merge.py + App.js
+        # flagged the lot as sold while bidding was still live (Mark
+        # report 2026-05-13 — multiple Sotheby's lots showed Sold the
+        # day before their auction-end; Daytona ref 6262 showed Sold
+        # at $40k = low estimate while still taking bids).
+        #
+        # Two-gate defence:
+        # (a) lotState must be explicitly "sold". If Sotheby's later
+        #     exposes a closed-without-sale state, sold_price stays
+        #     null — the correct semantics for an unsold lot.
+        # (b) Reject sold_price == low_estimate. Even when lotState
+        #     transiently flips to "sold", there's a window where
+        #     `price` is still the low-estimate placeholder before
+        #     the hammer propagates. Better to leave null and let
+        #     the next scrape settle it than to publish a false
+        #     "sold for low estimate." Cost: rare lots that genuinely
+        #     hammer at low estimate need the second scrape pass to
+        #     resolve — acceptable trade vs the alternative.
+        sold_price = None
+        if status_state == "sold":
+            candidate = (hit.get("price") if hit else None) or None
+            if candidate == 0: candidate = None
+            if candidate is not None and low is not None and candidate == low:
+                candidate = None
+            sold_price = candidate
         # auction_start was previously taken from algoliaJson's
         # `openDate` — Sotheby's online portion opens days/weeks
         # before the live session, so this triggered the `tier 0
