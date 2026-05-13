@@ -83,9 +83,12 @@ async function fetchImage(url) {
 }
 
 async function cacheUncached() {
+  // watchlist_items PK is (user_id, listing_id) — no `id` column.
+  // Earlier versions selected/eq'd on "id" and silently no-op'd every
+  // update. Use the composite key for both read + write.
   const { data: rows, error } = await supabase
     .from("watchlist_items")
-    .select("id, listing_id, listing_snapshot, cached_img_url")
+    .select("user_id, listing_id, listing_snapshot, cached_img_url")
     .is("cached_img_url", null);
   if (error) { console.error("supabase select", error.message); return; }
   console.log(`${rows.length} watchlist row(s) without cached image`);
@@ -96,7 +99,8 @@ async function cacheUncached() {
     if (!img) {
       // Mark as processed-without-image so we don't re-check every run.
       // An empty string is distinguishable from NULL in our query.
-      await supabase.from("watchlist_items").update({ cached_img_url: "" }).eq("id", row.id);
+      await supabase.from("watchlist_items").update({ cached_img_url: "" })
+        .eq("user_id", row.user_id).eq("listing_id", row.listing_id);
       console.log(`  ${listingId}: no source image, marking processed`);
       continue;
     }
@@ -119,7 +123,8 @@ async function cacheUncached() {
       const { error: upd } = await supabase
         .from("watchlist_items")
         .update({ cached_img_url: blob.url })
-        .eq("id", row.id);
+        .eq("user_id", row.user_id)
+        .eq("listing_id", row.listing_id);
       if (upd) {
         console.error(`  ${listingId}: db update failed`, upd.message);
         continue;
