@@ -968,8 +968,14 @@ export function useCollections(user) {
     // onto manual_price_currency too — keeps the displayed currency
     // consistent on the Sold card.
     if (opts.currency) patch.manual_price_currency = opts.currency;
-    const { data, error } = await supabase.from('collection_items')
-      .update(patch).eq('id', rowId).select().single();
+    // Don't chain `.select().single()` here. PostgREST's returning-set
+    // is filtered through the post-update SELECT RLS policy; rare cases
+    // produce 0 rows in the response even when the write succeeded,
+    // and `.single()` then errors with "Cannot coerce the result to a
+    // single JSON object." We don't need the round-trip values — the
+    // patch object IS what was written. Trust the write.
+    const { error } = await supabase.from('collection_items')
+      .update(patch).eq('id', rowId);
     if (error) return { error: error.message };
     // Move the local cache: drop from the source collection, add to
     // Sold with the updated fields. The source could be Owned, a
@@ -988,8 +994,8 @@ export function useCollections(user) {
       if (moved) {
         const updated = {
           ...moved,
-          soldPrice: data.manual_sold_price,
-          soldDate:  data.manual_sold_date,
+          soldPrice: patch.manual_sold_price,
+          soldDate:  patch.manual_sold_date,
           ...(opts.currency ? { currency: opts.currency } : {}),
         };
         next[sold.id] = [updated, ...(next[sold.id] || [])];
