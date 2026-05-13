@@ -301,8 +301,8 @@ export function ListReviewMode({
               display: "flex", alignItems: "center", justifyContent: "center",
               position: "relative",
             }}>
-              {current.image ? (
-                <img src={imgSrc(current.image)} alt={current.title || ""}
+              {current.img ? (
+                <img src={imgSrc(current.img)} alt={current.title || ""}
                   draggable={false}
                   style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }}
                   loading="eager"
