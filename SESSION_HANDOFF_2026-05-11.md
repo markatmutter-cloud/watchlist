@@ -1,7 +1,28 @@
-# Watchlist — Session Handoff (2026-05-11 EOD)
+# Watchlist — Session Handoff (2026-05-11 EOD → 2026-05-13 morning)
 
 For working conventions, see [CLAUDE.md](CLAUDE.md). For roadmap, see [ROADMAP.md](ROADMAP.md).
 This is an in-flight snapshot; durable rules graduate to CLAUDE.md.
+
+## 2026-05-13 morning — addendum
+
+Brief intra-session bug fix before tomorrow's journey work:
+
+- **PR #258 — React #300 white-screen on Challenges drill-in/out.**
+  Mark report. Root cause: `useState(createError)` was declared at
+  line ~109 of `ChallengesView.js`, **below** two early returns at
+  lines 61 (`if (!user)`) and 83 (`if (selected)`). Drilling into a
+  challenge → 3 hooks called; drilling back → 4 hooks. React invariant
+  300: "Rendered fewer hooks than expected." Fix hoists the hook to
+  the top of the function so the hook count is constant across every
+  render path. Same class as the App.js #310 traps already documented
+  in CLAUDE.md's Things-to-never-do — that rule now applies to
+  ChallengesView too. **Action item for the next session**: sweep
+  CollectionsTab, WatchlistTab, and App.js for any other hook-below-
+  early-return survivors.
+
+Other PRs from the EOD list (#253–#257) also waiting on review/merge
+when Mark resumes. Original handoff state below for the planned
+journey + emoji work follows unchanged.
 
 ## TL;DR
 
