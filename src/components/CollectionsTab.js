@@ -1623,6 +1623,7 @@ function ListsView({
         {reviewModeOpen && isRecipient && (
           <ListReviewMode
             items={items}
+            listId={selected.id}
             listName={selected.name}
             ownerName={ownerName}
             currentUserId={user?.id || null}
@@ -1630,6 +1631,11 @@ function ListsView({
             onToggleReaction={onToggleReaction}
             onClose={() => setReviewModeOpen(false)}
             primaryCurrency={primaryCurrency}
+            watchlist={watchlist}
+            handleWish={handleWish}
+            openCollectionPicker={openCollectionPicker}
+            onShare={handleShare}
+            onOpenDetail={(item) => setDetailRowId(item.rowId)}
           />
         )}
         {items.length === 0 ? (
