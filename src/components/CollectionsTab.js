@@ -1125,7 +1125,6 @@ function PoolCard({ item, busy, onAdd, primaryCurrency }) {
 const LIST_VIEW_STATE_KEY = "dial_list_view_state";
 const DEFAULT_LIST_VIEW_STATE = {
   viewMode: "buckets", // "buckets" | "flat"
-  bucketVisibility: { toReview: true, loved: true, liked: true, passed: true },
 };
 function loadListViewState(listId) {
   if (!listId || typeof window === "undefined") return DEFAULT_LIST_VIEW_STATE;
@@ -1135,10 +1134,6 @@ function loadListViewState(listId) {
     const parsed = JSON.parse(raw);
     return {
       viewMode: parsed.viewMode === "flat" ? "flat" : "buckets",
-      bucketVisibility: {
-        ...DEFAULT_LIST_VIEW_STATE.bucketVisibility,
-        ...(parsed.bucketVisibility || {}),
-      },
     };
   } catch {
     return DEFAULT_LIST_VIEW_STATE;
@@ -1154,11 +1149,18 @@ function saveListViewState(listId, state) {
   } catch {/* localStorage full / private-mode */}
 }
 
-// Threshold past which a bucket flips from slider to grid by default.
-// Below this, horizontal scroll-snap tiles read well; above it, the
-// slider gets cramped and a normal grid is faster to scan. Mark spec
-// 2026-05-14 — user can still flip back with the "Compact" link.
+// Threshold past which a bucket auto-flips from slider to grid by
+// default. Below this, horizontal scroll-snap tiles read well; above
+// it, the slider gets cramped and a normal grid is faster to scan.
 const BUCKET_SLIDER_LIMIT = 20;
+
+// Threshold past which the density toggle ("View all" / "Compact")
+// is exposed regardless of default mode. Mark feedback 2026-05-14:
+// the toggle was only appearing when count > 20, so a bucket with
+// 15 items (slider-default) gave the user no way to flip to grid
+// even though grid would be useful. Lowered so the user always has
+// agency over density once a bucket has more than a handful.
+const BUCKET_TOGGLE_MIN = 6;
 
 // Monochrome bucket glyphs — share the screening palette so the
 // surface reads as one visual system. ❤ loved / ★ liked (check) /
@@ -1207,6 +1209,94 @@ const BUCKET_COLOR = {
   liked: "var(--brand)",
   passed: "var(--text3)",
 };
+
+// Share dropdown in the drill-in header (Mark spec 2026-05-14).
+// Replaces the single one-tap Share button. The Manage panel (now
+// "Reactions") no longer carries sharing or collaboration rows —
+// everything social lives behind this button instead. Owners see
+// both "Share this list" and "Manage collaborators"; collaborators
+// see only the share-link entry. Click-outside + Escape close.
+function ShareMenu({ triggerShare, onManageCollaborators }) {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef(null);
+  const portalRef = useRef(null);
+  const [pos, setPos] = useState(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => {
+      const inTrigger = triggerRef.current && triggerRef.current.contains(e.target);
+      const inPortal  = portalRef.current && portalRef.current.contains(e.target);
+      if (!inTrigger && !inPortal) setOpen(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    const t = setTimeout(() => {
+      document.addEventListener("mousedown", onDown);
+      document.addEventListener("keydown", onKey);
+    }, 0);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  return (
+    <>
+      <button ref={triggerRef}
+        onClick={() => {
+          if (!open && triggerRef.current) {
+            const r = triggerRef.current.getBoundingClientRect();
+            const estimatedWidth = 220;
+            const safeMargin = 8;
+            const desiredRight = window.innerWidth - r.right;
+            const maxRight = Math.max(
+              safeMargin,
+              window.innerWidth - estimatedWidth - safeMargin,
+            );
+            setPos({
+              top: r.bottom + 4,
+              right: Math.max(safeMargin, Math.min(desiredRight, maxRight)),
+            });
+          }
+          setOpen(o => !o);
+        }}
+        title="Share this list"
+        style={{
+          ...actionButton({ variant: "primary" }),
+          flexShrink: 0,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+        }}
+      >
+        <span>Share</span>
+        <span style={{ fontSize: 10, opacity: 0.8 }}>▾</span>
+      </button>
+      {open && pos && createPortal(
+        <div ref={portalRef} style={{
+          position: "fixed",
+          top: pos.top, right: pos.right,
+          zIndex: 1000, minWidth: 200,
+          background: "var(--bg)", border: "0.5px solid var(--border)",
+          borderRadius: 8, padding: 4,
+          boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+        }}>
+          <button onClick={() => { setOpen(false); triggerShare(); }}
+            style={menuItemStyle("var(--text1)")}>
+            Share this list ↗
+          </button>
+          {onManageCollaborators && (
+            <button onClick={() => { setOpen(false); onManageCollaborators(); }}
+              style={menuItemStyle("var(--text1)")}>
+              Manage collaborators
+            </button>
+          )}
+        </div>,
+        document.body,
+      )}
+    </>
+  );
+}
 
 // One bucket section in the Lists drill-in (Mark spec 2026-05-14
 // polish pass). Header is the bucket's identity at a glance: tinted
@@ -1647,19 +1737,61 @@ function ListsView({
         }
       }
     };
-    // My reactions on this list — used by the overflow menu's
-    // "Reset my reactions" item. Walks reactionsByItem and pulls every
-    // row authored by the current user. Mark feedback 2026-05-12: "is
-    // it possible to undo or reset ratings on watches" — yes via
-    // re-tap, but discoverability was zero; this exposes it.
+    // My reactions on this list — used by the Manage panel's
+    // "Reset my reactions" action. Mark spec 2026-05-14: Reset
+    // **must not touch hearts**. Hearts (watchlist_items) are an
+    // explicit "save this watch" signal that should never be wiped
+    // by a list-level reset; the ❤️/🔥 rows in
+    // collection_item_reactions exist (post-Slice-B) only as the
+    // shared-list mirror of those hearts. Filter them out here so
+    // every reset path (panel, ListReviewMode) sees only the Yes
+    // (👍) / Pass (❌) verdicts.
     const myReactionsOnList = [];
     if (myUserId && reactionsByItem && isSharedList) {
       for (const [itemId, rs] of reactionsByItem.entries()) {
         for (const r of rs) {
-          if (r.user_id === myUserId) myReactionsOnList.push({ itemId, emoji: r.emoji });
+          if (r.user_id !== myUserId) continue;
+          if (r.emoji === "❤️" || r.emoji === "🔥") continue;
+          myReactionsOnList.push({ itemId, emoji: r.emoji });
         }
       }
     }
+    // Heart-on-shared-list also writes a ❤️ reaction (Mark spec
+    // 2026-05-14 Slice B). On solo lists the heart stays private —
+    // only watchlist_items moves — so this wrapper is a no-op there.
+    // On shared lists the action stays "tap the heart once" from the
+    // user's perspective; under the hood we sync the love-reaction
+    // so other members see your hearts in the aggregate strip.
+    //
+    // Idempotent: reads the current reaction state before deciding
+    // whether to insert or delete the ❤️ row, so out-of-sync legacy
+    // data (a heart already in watchlist but no ❤️ reaction yet, or
+    // vice versa) converges on the next toggle rather than getting
+    // stuck. Both legacy emojis (❤️ and 🔥) are treated as "love"
+    // when deciding what to clear.
+    const wrappedHandleWish = (item) => {
+      // Fire the underlying watchlist toggle first — this is what
+      // the user sees as the primary effect. Errors from reaction
+      // sync below don't block it.
+      handleWish(item);
+      if (!isSharedList || !item?.rowId || !myUserId || !onToggleReaction) return;
+      const wasWished = !!watchlist[item.id];
+      const willBeWished = !wasWished;
+      const mine = (reactionsByItem.get(item.rowId) || [])
+        .filter(r => r.user_id === myUserId
+                  && (r.emoji === "❤️" || r.emoji === "🔥"));
+      if (willBeWished && mine.length === 0) {
+        // Heart was off → now on. Add a ❤️ reaction.
+        Promise.resolve(onToggleReaction(item.rowId, "❤️")).catch(() => {});
+      } else if (!willBeWished && mine.length > 0) {
+        // Heart was on → now off. Remove every legacy love-reaction
+        // row from this user (covers both ❤️ and 🔥 from old picker).
+        for (const r of mine) {
+          Promise.resolve(onToggleReaction(item.rowId, r.emoji)).catch(() => {});
+        }
+      }
+    };
+
     // 2026-05-14: the inline overflow menu retired in favour of the
     // sectioned Manage panel (back link · title · ⋯ Manage). Every
     // action that used to live in the overflow now hangs off the
@@ -1698,7 +1830,10 @@ function ListsView({
               flexShrink: 0,
             }}>← All lists</button>
             <span style={{
-              fontSize: 14, fontWeight: 600, color: "var(--text1)",
+              fontFamily: "'Hoefler Text', 'Garamond', 'Georgia', 'Times New Roman', serif",
+              fontSize: 20, fontWeight: 500,
+              color: "var(--text1)",
+              letterSpacing: "-0.01em",
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
               minWidth: 0,
             }}>
@@ -1742,14 +1877,17 @@ function ListsView({
               </span>
             )}
             {showActions && (
-              <button onClick={triggerShare}
-                title="Share this list"
-                style={{ ...actionButton({ variant: "primary" }), flexShrink: 0 }}>Share</button>
+              <ShareMenu
+                triggerShare={triggerShare}
+                onManageCollaborators={isOwner
+                  ? () => setManageListOpen(true)
+                  : undefined}
+              />
             )}
             <button
               onClick={() => setManagePanelOpen(true)}
-              title="List settings"
-              aria-label="List settings"
+              title="Reactions & view"
+              aria-label="Reactions & view"
               style={{
                 ...actionButton({ variant: "subtle" }),
                 flexShrink: 0,
@@ -1758,12 +1896,13 @@ function ListsView({
                 gap: 6,
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <circle cx="5" cy="12" r="1.5"/>
-                <circle cx="12" cy="12" r="1.5"/>
-                <circle cx="19" cy="12" r="1.5"/>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="1.6"
+                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                <circle cx="12" cy="12" r="3"/>
               </svg>
-              <span>Manage</span>
+              <span>Reactions</span>
             </button>
           </div>
         )}
@@ -1780,7 +1919,7 @@ function ListsView({
             onClose={() => setReviewModeOpen(false)}
             primaryCurrency={primaryCurrency}
             watchlist={watchlist}
-            handleWish={handleWish}
+            handleWish={wrappedHandleWish}
             openCollectionPicker={openCollectionPicker}
             onShare={handleShare}
             onOpenDetail={(item) => setDetailRowId(item.rowId)}
@@ -1839,7 +1978,7 @@ function ListsView({
                       sold: item._isSold,
                     } : item}
                     wished={!!watchlist[item.id]}
-                    onWish={handleWish}
+                    onWish={wrappedHandleWish}
                     compact={compact}
                     onHide={isHiddenColl
                       ? toggleHide
@@ -1923,7 +2062,6 @@ function ListsView({
                 {order.map((key) => {
                   const bucketItems = buckets[key];
                   if (bucketItems.length === 0) return null;
-                  if (listViewState.bucketVisibility[key] === false) return null;
                   const override = bucketDensityOverride[key];
                   const isGrid = override === "grid"
                     || (override !== "slider" && bucketItems.length > BUCKET_SLIDER_LIMIT);
@@ -1935,7 +2073,7 @@ function ListsView({
                       glyph={BUCKET_GLYPH[key]}
                       color={BUCKET_COLOR[key]}
                       isGrid={isGrid}
-                      showDensitySwitch={bucketItems.length > BUCKET_SLIDER_LIMIT}
+                      showDensitySwitch={bucketItems.length > BUCKET_TOGGLE_MIN}
                       onToggleDensity={() =>
                         setBucketDensityOverride((prev) => ({
                           ...prev,
@@ -1956,57 +2094,21 @@ function ListsView({
           open={managePanelOpen}
           onClose={() => setManagePanelOpen(false)}
           isWide={isWide}
-          isOwner={isOwner}
-          isRecipient={isRecipient}
-          isSharedList={isSharedList}
           myReactionsCount={myReactionsOnList.length}
           unreviewedCount={isRecipient ? Math.max(0, items.length - myReactedCount) : 0}
           viewMode={listViewState.viewMode}
           onViewModeChange={(next) =>
             updateListViewState((prev) => ({ ...prev, viewMode: next }))
           }
-          bucketVisibility={listViewState.bucketVisibility}
-          onBucketToggle={(key) =>
-            updateListViewState((prev) => ({
-              ...prev,
-              bucketVisibility: {
-                ...prev.bucketVisibility,
-                [key]: !prev.bucketVisibility[key],
-              },
-            }))
-          }
-          // Screening trigger is recipient-only for now (slice 1).
-          // Solo + owner-on-shared-list screening is a follow-up slice.
           onStartScreening={isRecipient
             ? () => { setManagePanelOpen(false); setReviewModeOpen(true); }
             : undefined}
           onResetReactions={myReactionsOnList.length > 0
             ? async () => {
-                if (!window.confirm(`Clear all ${myReactionsOnList.length} of your reactions on this list?`)) return;
+                if (!window.confirm(`Clear all ${myReactionsOnList.length} of your Yes / Pass ratings on this list? (Your hearts stay where they are.)`)) return;
                 setManagePanelOpen(false);
                 await Promise.all(myReactionsOnList.map(({ itemId, emoji }) =>
                   onToggleReaction(itemId, emoji)));
-              }
-            : undefined}
-          onTriggerShare={showActions
-            ? () => { setManagePanelOpen(false); triggerShare(); }
-            : undefined}
-          onSharePicksBack={undefined /* deferred — next slice */}
-          onManageCollaborators={(showActions && isOwner)
-            ? () => { setManagePanelOpen(false); setManageListOpen(true); }
-            : undefined}
-          onRename={(showActions && isOwner)
-            ? () => {
-                setManagePanelOpen(false);
-                setEditingCollection({ id: selected.id, name: selected.name });
-              }
-            : undefined}
-          onDelete={(showActions && isOwner)
-            ? async () => {
-                if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
-                setManagePanelOpen(false);
-                await deleteCollection(selected.id);
-                setSelectedListId(null);
               }
             : undefined}
         />

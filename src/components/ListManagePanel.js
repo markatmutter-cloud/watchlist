@@ -12,37 +12,18 @@ import { createPortal } from "react-dom";
 const SANS_STACK =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
 
-const BUCKET_ORDER = ["toReview", "loved", "liked", "passed"];
-const BUCKET_LABEL = {
-  toReview: "To review",
-  loved: "Loved",
-  liked: "Liked",
-  passed: "Passed",
-};
-
 export function ListManagePanel({
   open,
   onClose,
   isWide,
-  // Context flags
-  isOwner,
-  isRecipient,
-  isSharedList,
   myReactionsCount,
   unreviewedCount,
   // View state (persisted in parent via localStorage)
   viewMode, // "buckets" | "flat"
   onViewModeChange,
-  bucketVisibility, // { toReview: bool, loved: bool, liked: bool, passed: bool }
-  onBucketToggle,
   // Action handlers — undefined means "don't show this row"
   onStartScreening, // shown only when isRecipient
   onResetReactions, // shown only when myReactionsCount > 0
-  onTriggerShare, // always shown when sharing applicable
-  onSharePicksBack, // deferred — stub disabled if not provided
-  onManageCollaborators, // owner-only
-  onRename, // owner-only
-  onDelete, // owner-only
 }) {
   const panelRef = useRef(null);
 
@@ -113,7 +94,7 @@ export function ListManagePanel({
             textTransform: "uppercase",
             color: "var(--text2)",
           }}>
-            List settings
+            Reactions &amp; view
           </div>
           <button
             onClick={onClose}
@@ -154,14 +135,19 @@ export function ListManagePanel({
               <Row
                 onClick={onResetReactions}
                 label={`Reset my reactions (${myReactionsCount})`}
-                hint="Clears every ❤ / ★ / ✕ you've added to this list"
+                hint="Clears your Yes / Pass ratings on this list. Hearts stay where they are."
                 danger
               />
             )}
           </Section>
         )}
 
-        {/* VIEW — always shown */}
+        {/* VIEW — Mark spec 2026-05-14: per-bucket visibility
+            checkboxes retired ("don't think buckets is a good one
+            to have on off checks for"). Show-as Buckets/Flat stays
+            as the single escape hatch. Future view options here:
+            see-others-reactions toggle, sort by Mine / By group /
+            By person. */}
         <Section title="View">
           <SegmentedRow
             label="Show as"
@@ -172,92 +158,13 @@ export function ListManagePanel({
             ]}
             onChange={onViewModeChange}
           />
-          {viewMode === "buckets" && bucketVisibility && (
-            <div style={{ padding: "8px 18px 14px" }}>
-              <div style={{
-                fontSize: 11,
-                color: "var(--text3)",
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                marginBottom: 8,
-              }}>
-                Show buckets
-              </div>
-              {BUCKET_ORDER.map((k) => (
-                <label key={k} style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "6px 0",
-                  cursor: "pointer",
-                  fontSize: 13,
-                  color: "var(--text1)",
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={!!bucketVisibility[k]}
-                    onChange={() => onBucketToggle(k)}
-                  />
-                  {BUCKET_LABEL[k]}
-                </label>
-              ))}
-            </div>
-          )}
         </Section>
 
-        {/* SHARE */}
-        {(onTriggerShare || onSharePicksBack) && (
-          <Section title="Share">
-            {onTriggerShare && (
-              <Row
-                onClick={onTriggerShare}
-                label="Share this list"
-                hint="Open the native share sheet"
-              />
-            )}
-            {onSharePicksBack ? (
-              <Row
-                onClick={onSharePicksBack}
-                label="Share my picks back"
-                hint="Send your reactions back to the list owner"
-              />
-            ) : isRecipient && (
-              <Row
-                disabled
-                label="Share my picks back"
-                hint="Coming soon"
-              />
-            )}
-          </Section>
-        )}
-
-        {/* COLLABORATION */}
-        {onManageCollaborators && (
-          <Section title="Collaboration">
-            <Row
-              onClick={onManageCollaborators}
-              label="Manage collaborators"
-              hint="Invite people · change roles"
-            />
-          </Section>
-        )}
-
-        {/* LIST */}
-        {(onRename || onDelete) && (
-          <Section title="List">
-            {onRename && (
-              <Row onClick={onRename} label="Rename list" />
-            )}
-            {onDelete && (
-              <Row
-                onClick={onDelete}
-                label="Delete list"
-                hint="Watches stay in your hearts — only the list is removed"
-                danger
-              />
-            )}
-          </Section>
-        )}
+        {/* SHARE / COLLABORATION / LIST sections removed 2026-05-14
+            (Mark spec): everything social moved to the header Share
+            dropdown; Rename / Delete moved to the list-row actions
+            on the list-of-lists view. This panel is now scoped to
+            reactions + view settings only. */}
       </div>
     </div>,
     document.body
