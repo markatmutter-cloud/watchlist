@@ -2,9 +2,9 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Card } from "./Card";
 import { ageBucketFromDate, fmtUSD } from "../utils";
 import { importLocalData } from "../supabase";
-import { SubTabIntro } from "./SubTabIntro";
 import { actionButton, signInButton, inputBase } from "../styles";
 import { EmptyState } from "./EmptyState";
+import { ListRow } from "./ListRow";
 
 
 
@@ -313,139 +313,133 @@ export function WatchlistTab(props) {
     // Searches made the alignment WORSE, not better. Now all four
     // SubTabIntros line up at the same y-offset.
     <div style={{ paddingTop: 4 }}>
-      {/* Intro banner — mirrors the Lists sub-tab pattern (2026-05-04)
-          so the two "add a thing" sub-tabs read consistently. The
-          + button used to live in the Watchlist sub-tab strip, but
-          that pushed the strip into a horizontal scroller on mobile;
-          now it sits inline with the section blurb. */}
-      <SubTabIntro
-        title="Saved searches"
-        blurb={<>
-          Searches you keep coming back to — a reference, a brand cut, a
-          phrase ("tropical dial"), or a price band. Save once, tap any time
-          to re-run across every dealer in the feed.
-          <br/>
-          Build a search from the Listings tab: type your query, optionally
-          add a price range, then tap the heart next to the search bar.
-          Saved searches land here and the count next to each one shows how
-          many live listings match right now.
-        </>}
-        actionLabel="+ Add search"
-        onAction={startAddSearch}
-        expandable
-        defaultExpanded={savedSearchStats.length === 0}
-      />
-
-      {/* eBay source-searches block was removed 2026-05-06 — only
-          surface was an admin "Edit on GitHub" link Mark didn't
-          want public. The hook (useEBaySearches) was deleted on
-          2026-05-10 alongside the GitHub-repo URL cleanup. The
-          scraper still reads data/ebay_searches.json server-side;
-          if a future in-app editor is wanted, route it through a
-          Supabase table rather than re-exposing the GitHub URL. */}
-
-      {/* Saved searches — user-defined filters over the existing feed. */}
-      {savedSearchStats.length > 0 && (
-        // Same divider treatment as the Source · eBay header above
-        // and the Listings / Calendar sub-tab dividers — fontSize 14,
-        // fontWeight 600, borderBottom. Trailing count on the right
-        // mirrors the "Today (14)" pattern.
-        <div style={{
-          display: "flex", alignItems: "baseline", gap: 12,
-          padding: "14px 14px 12px",
-          borderBottom: "0.5px solid var(--border)",
-          marginBottom: 4,
-        }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
-            Saved searches
-          </span>
-          <span style={{ fontSize: 12, color: "var(--text3)", marginLeft: "auto" }}>
-            {savedSearchStats.length}
-          </span>
-        </div>
-      )}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {/* New-search creation moved to AddSearchModal 2026-04-30
-            (parity with Track New Item). Inline editor still
-            handles edits to existing searches below. */}
-
-        {savedSearchStats.map((s) => (
-          searchEditor && searchEditor.id === s.id ? (
-            <div key={s.id}>{renderSearchEditor()}</div>
-          ) : (
-            <div key={s.id} style={{
-              display: "flex", alignItems: "stretch",
-              borderRadius: 12, overflow: "hidden",
-              border: "0.5px solid var(--border)", background: "var(--card-bg)",
-            }}>
-              <button onClick={() => runSearch(s)} style={{
-                flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "14px 16px", border: "none", background: "transparent",
-                cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: "inherit",
-                gap: 12,
+      {/* 2026-05-14 (Mark spec): SubTabIntro + duplicate "Saved
+          searches" inline section header retired. The sub-tab strip
+          + the eyebrow group header below carry the section identity;
+          three labels saying the same thing was visual debt.
+          Saved-search rows now render through `ListRow` so they match
+          the Lists view exactly — tinted-disc icon, two-line text,
+          trailing chevron, inline action icons for Edit + Delete. */}
+      {savedSearchStats.length === 0 && !searchEditor ? (
+        <EmptyState
+          icon="🔍"
+          heading="No saved searches yet"
+          blurb="Save a search and run it with one tap. Useful for tracking specific references across every dealer in the feed."
+          action={
+            <button onClick={startAddSearch}
+              style={{
+                cursor: "pointer", fontFamily: "inherit",
+                fontSize: 13, fontWeight: 600, letterSpacing: "0.04em",
+                padding: "8px 16px", borderRadius: 999,
+                border: "0.5px solid var(--text2)",
+                background: "transparent",
+                color: "var(--text2)",
+                display: "inline-flex", alignItems: "center", gap: 4,
               }}>
-                {/* Magnifying-glass icon left of the label — mirrors
-                    the bookmark/list icons elsewhere so saved-search
-                    rows read as "a thing of this kind" at a glance
-                    (Mark feedback 2026-05-11). */}
-                <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
-                  <span aria-hidden style={{ flexShrink: 0, color: "var(--text3)", display: "flex" }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="11" cy="11" r="7"/>
-                      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                  </span>
-                  <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)", marginBottom: 2 }}>{s.label}</div>
-                  <div style={{ fontSize: 12, color: "var(--text2)" }}>
-                    {s.count} for sale
-                    {s.query && s.query !== s.label ? ` · "${s.query}"` : ""}
-                    {/* Saved $ band — shows when either guard is set
-                        so the user can see what's persisted on the
-                        row without opening the editor. (2026-05-08) */}
-                    {(s.minPrice != null || s.maxPrice != null) && (
-                      ` · ${s.minPrice != null ? "$" + Number(s.minPrice).toLocaleString() : ""}` +
-                      "–" +
-                      `${s.maxPrice != null ? "$" + Number(s.maxPrice).toLocaleString() : ""}`
-                    )}
-                  </div>
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {/* "X new this week" chip retired 2026-05-09 (Mark
-                      feedback). The information is still available via
-                      the search itself (run the search → date sort
-                      shows recency); the chip added visual noise to a
-                      dense saved-search row. */}
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-                </div>
-              </button>
-              <div style={{ display: "flex", alignItems: "center", borderLeft: "0.5px solid var(--border)" }}>
-                <button onClick={() => startEditSearch(s)} title="Edit" style={{
-                  border: "none", background: "transparent", color: "var(--text2)",
-                  padding: "0 12px", height: "100%", cursor: "pointer", fontFamily: "inherit", fontSize: 14,
-                }}>✎</button>
-                <button onClick={() => { if (window.confirm(`Delete "${s.label}"?`)) removeSearch(s.id); }} title="Delete" style={{
-                  border: "none", borderLeft: "0.5px solid var(--border)",
-                  background: "transparent", color: "var(--text2)",
-                  padding: "0 12px", height: "100%", cursor: "pointer", fontFamily: "inherit", fontSize: 14,
-                }}>✕</button>
-              </div>
-            </div>
-          )
-        ))}
-
-        {savedSearchStats.length === 0 && !searchEditor && (
-          // Same shell as the Watchlist + Calendar empty states —
-          // icon + heading + blurb. Was a single line of muted text;
-          // now matches the rest so empty surfaces feel native.
-          <EmptyState
-            icon="🔍"
-            heading="No saved searches yet"
-            blurb="Save a search and run it with one tap. Useful for tracking specific references across every dealer in the feed."
-          />
-        )}
-      </div>
+              + Add search
+            </button>
+          }
+        />
+      ) : (
+        <section>
+          {/* Eyebrow group header — matches the Lists view pattern
+              (SAVED / MY LISTS / SHARED WITH ME). Inline + New CTA
+              replaces the SubTabIntro action button. */}
+          <div style={{
+            display: "flex", alignItems: "center",
+            padding: "0 4px 10px",
+            gap: 12,
+          }}>
+            <span style={{
+              fontSize: 11, fontWeight: 600,
+              letterSpacing: "0.10em",
+              textTransform: "uppercase",
+              color: "var(--text3)",
+            }}>
+              Saved searches
+            </span>
+            <div style={{ flex: 1 }} />
+            <button onClick={startAddSearch}
+              style={{
+                flexShrink: 0, cursor: "pointer", fontFamily: "inherit",
+                fontSize: 12, fontWeight: 600, letterSpacing: "0.04em",
+                padding: "6px 12px", borderRadius: 999,
+                border: "0.5px solid var(--text2)",
+                background: "transparent",
+                color: "var(--text2)",
+                display: "inline-flex", alignItems: "center", gap: 4,
+                lineHeight: 1,
+              }}>
+              + New search
+            </button>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {savedSearchStats.map((s) => {
+              if (searchEditor && searchEditor.id === s.id) {
+                return <div key={s.id}>{renderSearchEditor()}</div>;
+              }
+              const searchIcon = (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="var(--brand)" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              );
+              const subtitleBits = [`${s.count} for sale`];
+              if (s.query && s.query !== s.label) subtitleBits.push(`"${s.query}"`);
+              if (s.minPrice != null || s.maxPrice != null) {
+                const min = s.minPrice != null ? "$" + Number(s.minPrice).toLocaleString() : "";
+                const max = s.maxPrice != null ? "$" + Number(s.maxPrice).toLocaleString() : "";
+                subtitleBits.push(`${min}–${max}`);
+              }
+              const editIcon = (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 20h9"/>
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+              );
+              const trashIcon = (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/>
+                  <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+                </svg>
+              );
+              return (
+                <ListRow
+                  key={s.id}
+                  icon={searchIcon}
+                  title={s.label}
+                  subtitle={subtitleBits.join(" · ")}
+                  onClick={() => runSearch(s)}
+                  actions={[
+                    {
+                      ariaLabel: `Edit ${s.label}`,
+                      title: "Edit search",
+                      icon: editIcon,
+                      onClick: () => startEditSearch(s),
+                    },
+                    {
+                      ariaLabel: `Delete ${s.label}`,
+                      title: "Delete search",
+                      icon: trashIcon,
+                      onClick: () => {
+                        if (window.confirm(`Delete "${s.label}"?`)) removeSearch(s.id);
+                      },
+                    },
+                  ]}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 
