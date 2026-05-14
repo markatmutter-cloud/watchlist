@@ -60,7 +60,6 @@ export function MobileShell(props) {
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchHeartedToggleJSX, collectionsSubTabsJSX, watchlistTabJSX,
     referencesTabJSX, collectionsTabJSX,
-    shareTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     shareActive,
@@ -90,7 +89,6 @@ export function MobileShell(props) {
     (tab === "watchlist" && watchTopTab === "searches") ||
     (tab === "watchlist" && (watchTopTab === "my-collection" || watchTopTab === "wishlist" || watchTopTab === "challenges")) ||
     (tab === "watchlist" && watchTopTab === "lists" && !inListsDrillIn) ||
-    tab === "share" ||
     tab === "references" ||
     tab === "admin";
 
@@ -355,7 +353,6 @@ export function MobileShell(props) {
                 Collections content based on the active sub-tab. */}
             {tab === "home" ? homeTabJSX
               : tab === "listings" ? listingsTabContentJSX
-              : tab === "share" ? shareTabJSX
               : tab === "references" ? referencesTabJSX
               : tab === "admin" ? adminTabJSX
               : watchlistTabJSX}
@@ -408,7 +405,7 @@ export function MobileShell(props) {
               / Share / Learn. Share added as the home for shared-list
               journeys (incoming + outgoing) and, in future iterations,
               challenges + voting/polls. Admin is desktop-only. */}
-          {[["listings", "Listings"], ["watchlist", "Watchlists"], ["share", "Share"], ["references", "Learn"]].map(([key, label]) => (
+          {[["listings", "Listings"], ["watchlist", "Watchlists"], ["references", "Collecting"]].map(([key, label]) => (
             // Button padding 8/6 → 6/4: same density argument as the
             // container padding above.
             <button key={key} onClick={() => { setTab(key); if (key === "listings") setSearch(""); }} style={{ flex: 1, padding: "6px 0 4px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: tab === key ? "var(--text1)" : "var(--text3)", fontWeight: tab === key ? 500 : 400, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>

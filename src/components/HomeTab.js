@@ -447,7 +447,7 @@ function ManageCallout({ goToSavedLists, goToMyWatches, goToChallenges, isMobile
       </p>
       <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 24, flexWrap: "wrap" }}>
         <button onClick={goToSavedLists} style={calloutCtaStyle()}>Saved lists</button>
-        <button onClick={goToMyWatches} style={calloutCtaStyle()}>My watches</button>
+        <button onClick={goToMyWatches} style={calloutCtaStyle()}>My Watches</button>
         <button onClick={goToChallenges} style={calloutCtaStyle()}>Challenges</button>
       </div>
     </section>

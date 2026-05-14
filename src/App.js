@@ -24,7 +24,6 @@ import { Card } from "./components/Card";
 // the new AuctionCalendar component (AuctionsTab.js deleted 2026-04-30).
 import { ReferencesTab } from "./components/ReferencesTab";
 import { CollectionsTab } from "./components/CollectionsTab";
-import { SharedTab } from "./components/SharedTab";
 import { HomeTab } from "./components/HomeTab";
 import { TrackNewItemModal } from "./components/TrackNewItemModal";
 import { FavSearchModal } from "./components/FavSearchModal";
@@ -348,16 +347,17 @@ export default function Watchlist() {
   // `?tab=collections` redirect to `?tab=watchlist` with the same
   // sub-tab key (the sub-tab values were already preserved when
   // SUB_VALUES_COLLECTIONS was folded into watchTopTab above).
-  const TAB_VALUES = ["home", "listings", "watchlist", "share", "references", "admin"];
-  // URL-key translation. Naming alignment 2026-05-08 (Mark feedback:
-  // "?sub=sold&tab=watchlist" reads as ugly internal state in the
-  // address bar). The URL now uses `saved` / `learn` as the
-  // canonical externally-visible keys; internals keep `watchlist` /
-  // `references` per the documented divergence (renaming the state
-  // var + 80+ call sites was the bigger refactor we explicitly chose
-  // not to take). URL parse accepts BOTH old + new; URL write below
-  // emits the new keys so address bars + share links read cleanly.
-  const URL_TAB_TO_INTERNAL = { saved: "watchlist", learn: "references", collections: "watchlist" };
+  // Top-level tabs (Mark spec 2026-05-14): Listings · Watchlists ·
+  // Collection. "Share" tab retired — the IA work in #279-#281
+  // absorbed its functions (Watchlists > Lists > SHARED WITH ME
+  // group covers discovery; per-list Share button covers send).
+  // `references` keeps its internal key for backward compat; the UI
+  // label is now "Collection" (was "Learn").
+  const TAB_VALUES = ["home", "listings", "watchlist", "references", "admin"];
+  // URL-key translation. Stale `share` URLs route to Watchlists >
+  // Lists (where the Shared with me group lives now). `learn` also
+  // still routes to references for back-compat.
+  const URL_TAB_TO_INTERNAL = { saved: "watchlist", learn: "references", collections: "watchlist", share: "watchlist" };
   const INTERNAL_TAB_TO_URL = { watchlist: "saved", references: "learn" };
   const [tab, setTab] = useState(() => {
     if (typeof window !== "undefined") {
@@ -2664,41 +2664,12 @@ export default function Watchlist() {
   // it's now reached via Saved sub-tabs (my-collection / wishlist /
   // lists / challenges). The dispatch between WatchlistTab and
   // CollectionsTab content lives in `savedContentJSX` below — shells
-  // just render whichever the dispatch chose.
-  // Top-level Share tab content (2026-05-12). Self-contained component
-  // — owns its own fetch for collaborator ids. App.js supplies the
-  // openSharedList callback that navigates the user from the Share
-  // landing into the standard Lists drill-in (which carries the
-  // recipient banner + review-mode CTA built earlier in this arc).
-  const shareTabJSX = (
-    <SharedTab
-      user={user}
-      cols={collectionsApi?.collections || []}
-      itemsByColl={collectionsApi?.itemsByCollection || {}}
-      signInWithGoogle={triggerSignInPrompt}
-      isAuthConfigured={isAuthConfigured}
-      openSharedList={(listId) => {
-        // Push the target URL BEFORE flipping tab state so
-        // CollectionsTab's useState initializer reads `?col=` on
-        // mount and lands on the drill-in directly. Order matters:
-        // (1) URL write — gives CollectionsTab its initial selected
-        //     id when it mounts.
-        // (2) setTab + setWatchTopTab — triggers the mount.
-        // App.js's URL-sync effect sees the URL already matches
-        // (tab=saved&sub=lists&col=X) and no-ops, so no fight.
-        if (typeof window !== "undefined") {
-          const params = new URLSearchParams(window.location.search);
-          params.set("tab", "saved");
-          params.set("sub", "lists");
-          params.set("col", listId);
-          window.history.pushState({}, "", "?" + params.toString());
-        }
-        setTab("watchlist");
-        setWatchTopTab("lists");
-        setPage(1);
-      }}
-    />
-  );
+  // Top-level Share tab retired 2026-05-14 (Mark spec). Its two roles
+  // — discovery of incoming shared lists + send-a-list CTA — were
+  // absorbed by Watchlists > Lists (SHARED WITH ME group) and the
+  // per-list Share button respectively. `?tab=share` URLs redirect
+  // to Watchlists. `SharedTab` component file kept in case a future
+  // dedicated share-activity surface earns its slot back.
 
   const collectionsTabJSX = (
     <CollectionsTab
@@ -3128,7 +3099,6 @@ export default function Watchlist() {
     // Collections style) computed by `savedContentJSX`.
     watchlistTabJSX: savedContentJSX,
     adminTabJSX, referencesTabJSX, collectionsTabJSX, homeTabJSX,
-    shareTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
     // Whether a share-receive landing surface is taking over the

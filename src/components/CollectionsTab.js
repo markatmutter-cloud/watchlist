@@ -475,7 +475,7 @@ function MyCollectionView({
     // descriptors on the watchlist subtabs" don't line up.
     <div style={{ paddingTop: 4 }}>
       <SubTabIntro
-        title="My watches"
+        title="My Watches"
         blurb={<>
           Three views over your collection. <strong>Collection</strong> is what
           you own today. <strong>Archive</strong> is what you've sold.
