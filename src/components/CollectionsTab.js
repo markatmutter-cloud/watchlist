@@ -13,7 +13,7 @@ import { WatchDetailSheet } from "./WatchDetailSheet";
 import { ListReviewMode } from "./ListReviewMode";
 import { ListManagePanel } from "./ListManagePanel";
 import { fmtUSD, matchesSearch } from "../utils";
-import { actionButton, signInButton, producedPill } from "../styles";
+import { actionButton, signInButton } from "../styles";
 import { EmptyState } from "./EmptyState";
 import { Section } from "./Section";
 
@@ -1346,16 +1346,46 @@ function BucketSection({
         {showDensitySwitch && (
           <button
             onClick={onToggleDensity}
-            style={producedPill({ tone: "brand" })}>
+            aria-label={isGrid ? "Switch to linear view" : "Switch to grid view"}
+            style={{
+              // Match the Home "View all" pill (HomeTab.js) — Mark
+              // feedback 2026-05-14: the bucket toggle had grown
+              // too heavy after the produced-CTA pass and clashed
+              // with Home's lighter pills. Same hairline outline +
+              // weight + tracking + radius 999.
+              flexShrink: 0, cursor: "pointer", fontFamily: "inherit",
+              fontSize: 12, fontWeight: 600, letterSpacing: "0.04em",
+              padding: "6px 12px", borderRadius: 999,
+              border: "0.5px solid var(--text2)",
+              background: "transparent",
+              color: "var(--text2)",
+              display: "inline-flex", alignItems: "center", gap: 6,
+              lineHeight: 1,
+            }}>
             {isGrid ? (
               <>
-                <span>Compact</span>
-                <span style={{ fontSize: 13, fontWeight: 300, letterSpacing: 0 }}>↑</span>
+                {/* Linear / row icon — three horizontal bars. */}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" aria-hidden="true">
+                  <line x1="4" y1="7" x2="20" y2="7"/>
+                  <line x1="4" y1="12" x2="20" y2="12"/>
+                  <line x1="4" y1="17" x2="20" y2="17"/>
+                </svg>
+                Linear view
               </>
             ) : (
               <>
-                <span>Expand</span>
-                <span style={{ fontSize: 13, fontWeight: 300, letterSpacing: 0 }}>→</span>
+                {/* Grid icon — 2x2 squares. */}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2"
+                  strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3.5" y="3.5" width="7" height="7"/>
+                  <rect x="13.5" y="3.5" width="7" height="7"/>
+                  <rect x="3.5" y="13.5" width="7" height="7"/>
+                  <rect x="13.5" y="13.5" width="7" height="7"/>
+                </svg>
+                Grid view
               </>
             )}
           </button>
