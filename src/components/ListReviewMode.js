@@ -410,21 +410,38 @@ export function ListReviewMode({
           {isWide ? "Exit" : "Done"}
         </button>
         <div style={{
+          // Mark feedback 2026-05-14: the all-caps + 0.18em tracking
+          // was chewing horizontal space and forcing mid-word ellipsis
+          // ("TEST — PICK MY NEXT WA..."). Dropped to title-case sans
+          // at weight 500 / tight tracking so longer list names fit
+          // without truncation. Sub-eyebrow "Reviewing" label sits
+          // above so the screening context still reads at a glance.
           fontFamily: SANS_STACK,
-          fontSize: 13, color: "var(--text2)",
-          letterSpacing: "0.18em", textTransform: "uppercase",
-          fontWeight: 400, textAlign: "center",
-          minWidth: 0, flex: 1,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          minWidth: 0, flex: 1, textAlign: "center",
+          overflow: "hidden",
         }}>
-          {listName}
+          <div style={{
+            fontSize: 10, color: "var(--text3)",
+            letterSpacing: "0.16em", textTransform: "uppercase",
+            fontWeight: 600, marginBottom: 1,
+          }}>
+            Reviewing
+          </div>
+          <div style={{
+            fontSize: 14, color: "var(--text1)",
+            fontWeight: 500, letterSpacing: "-0.005em",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
+            {listName}
+          </div>
         </div>
         <div style={{
           fontFamily: SANS_STACK,
-          fontSize: 13, color: "var(--text2)", flexShrink: 0,
+          fontSize: 12, color: "var(--text3)", flexShrink: 0,
           minWidth: 56, textAlign: "right",
           fontVariantNumeric: "tabular-nums",
-          letterSpacing: "0.04em",
+          letterSpacing: "0.02em",
+          fontWeight: 500,
         }}>
           {done ? `${total} / ${total}` : `${idx + 1} / ${total}`}
         </div>
