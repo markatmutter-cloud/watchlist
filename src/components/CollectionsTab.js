@@ -2116,15 +2116,111 @@ function ListsView({
     );
   }
 
-  // Permanent system rows render at the top — Saved (hearts) +
-  // Shared with me (sharedInbox). Both can't be deleted; both
-  // surface ahead of user-created lists.
-  const visibleCols = [
-    ...(savedRow ? [savedRow] : []),
-    ...(sharedInbox ? [sharedInbox] : []),
-    ...userCols,
-    ...(hiddenRow ? [hiddenRow] : []),
-  ];
+  // Grouped lists view (Mark spec 2026-05-14). Three labelled
+  // sections instead of one long list:
+  //   Saved      — virtual hearts row (single entry)
+  //   My lists   — user-created lists where the current user is
+  //                owner
+  //   Shared with me — the single-listings inbox + collaborator
+  //                lists where the owner is someone else
+  // Empty groups don't render their header. Eyebrow style on the
+  // headers matches the bucket headers in a drill-in for visual
+  // consistency.
+  const myUserId = user?.id || null;
+  const ownedLists = userCols.filter(c => c.userId && c.userId === myUserId);
+  const collabLists = userCols.filter(c => c.userId && c.userId !== myUserId);
+  const groups = [
+    { key: "saved",  title: "Saved",          rows: savedRow ? [savedRow] : [] },
+    { key: "owned",  title: "My lists",       rows: ownedLists },
+    { key: "shared", title: "Shared with me", rows: [
+      ...(sharedInbox ? [sharedInbox] : []),
+      ...collabLists,
+    ] },
+  ].filter(g => g.rows.length > 0);
+  const totalRows = groups.reduce((acc, g) => acc + g.rows.length, 0);
+
+  // Per-row renderer — shared across all three groups so the row
+  // styling stays in one place. Closes over the local state of
+  // ListsView (watchItems / hiddenItems / itemsByColl / etc.).
+  const renderListRow = (c) => {
+    const isInbox = c.isSharedInbox;
+    const isHiddenRowItem = c.id === HIDDEN_COLLECTION_ID;
+    const isSavedRowItem  = c.id === SAVED_COLLECTION_ID;
+    const count = isSavedRowItem
+      ? (watchItems || []).length
+      : isHiddenRowItem
+        ? hiddenItems.length
+        : (itemsByColl[c.id] || []).length;
+    const isShared = sharedListIds.has(c.id);
+    const icon = isSavedRowItem ? heartIcon
+               : isInbox        ? inboxIcon
+               : isHiddenRowItem ? eyeOffIcon
+               : isShared      ? usersIcon
+               : folderIcon;
+    const subtitle = isSavedRowItem
+      ? `${count} hearted watch${count === 1 ? "" : "es"}`
+      : isInbox
+        ? `${count} listing${count === 1 ? "" : "s"} shared with you`
+        : isHiddenRowItem
+          ? `${count} listing${count === 1 ? "" : "s"} hidden from feed`
+          : `${count} watch${count === 1 ? "" : "es"}${isShared ? " · shared" : ""}`;
+    const isOwner = !!(myUserId && c?.userId && myUserId === c.userId);
+    const isSyntheticOrInbox = isInbox || isHiddenRowItem || isSavedRowItem;
+    const actions = [];
+    if (!isSyntheticOrInbox && isOwner && setEditingCollection) {
+      actions.push({
+        ariaLabel: `Rename ${c.name}`,
+        title: "Rename list",
+        icon: pencilIcon,
+        onClick: () => setEditingCollection({ id: c.id, name: c.name }),
+      });
+    }
+    if (!isSyntheticOrInbox && isOwner && deleteCollection) {
+      actions.push({
+        ariaLabel: `Delete ${c.name}`,
+        title: "Delete list",
+        icon: trashIcon,
+        onClick: async () => {
+          if (!window.confirm(`Delete "${c.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
+          await deleteCollection(c.id);
+        },
+      });
+    }
+    const otherCount = otherReactionCounts.get(c.id) || 0;
+    // Inbox row sits inside the "Shared with me" group whose header
+    // already says that — rename the row's display title to
+    // "Listings" so the two don't echo. Other rows use c.name.
+    const displayName = isInbox ? "Listings" : c.name;
+    const titleNode = otherCount > 0 ? (
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+        <span>{displayName}</span>
+        <span title={`${otherCount} reaction${otherCount === 1 ? "" : "s"} from collaborators`}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 4,
+            padding: "2px 8px", borderRadius: 999,
+            background: "var(--brand-tint-12)",
+            color: "var(--brand)",
+            fontSize: 11, fontWeight: 600, lineHeight: 1.3,
+          }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+          </svg>
+          {otherCount}
+        </span>
+      </span>
+    ) : displayName;
+    return (
+      <ListRow
+        key={c.id}
+        icon={icon}
+        title={titleNode}
+        subtitle={subtitle}
+        onClick={() => setSelectedListId(c.id)}
+        actions={actions.length > 0 ? actions : undefined}
+      />
+    );
+  };
 
   return (
     <div style={{ paddingTop: 4 }}>
@@ -2136,112 +2232,41 @@ function ListsView({
           Add to a list from any card via <strong style={{ color: "var(--text1)" }}>⋯</strong> →
           <em> Add to…</em>
           <br/>
-          Lists are private by default. Open one and tap <em>Manage</em> to
-          share with someone — read-only, or as a collaborator who can add
-          watches alongside you. <strong>Saved</strong> at the top is every
-          watch you've hearted; the <strong>Shared</strong> inbox is every
-          list someone shared with you.
+          Lists are private by default. Open one and tap <em>Share</em> to
+          send a copy or invite a collaborator. <strong>Saved</strong>
+          {" "}at the top is every watch you've hearted; <strong>Shared
+          with me</strong> collects single listings and lists others
+          have shared with you.
         </>}
         actionLabel="+ New list"
         onAction={startCreateCollection}
         expandable
-        defaultExpanded={visibleCols.length === 0}
+        defaultExpanded={totalRows === 0}
       />
-      {visibleCols.length === 0 ? (
+      {totalRows === 0 ? (
         <EmptyState
           icon="📂"
           heading="No lists yet"
           blurb={<>You haven't created any lists. Tap <strong style={{ color: "var(--text1)" }}>+ New list</strong> above to start one.</>}
         />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {visibleCols.map(c => {
-            const isInbox = c.isSharedInbox;
-            const isHiddenRowItem = c.id === HIDDEN_COLLECTION_ID;
-            const isSavedRowItem  = c.id === SAVED_COLLECTION_ID;
-            const count = isSavedRowItem
-              ? (watchItems || []).length
-              : isHiddenRowItem
-                ? hiddenItems.length
-                : (itemsByColl[c.id] || []).length;
-            const isShared = sharedListIds.has(c.id);
-            const icon = isSavedRowItem ? heartIcon
-                       : isInbox        ? inboxIcon
-                       : isHiddenRowItem ? eyeOffIcon
-                       : isShared      ? usersIcon
-                       : folderIcon;
-            const subtitle = isSavedRowItem
-              ? `${count} hearted watch${count === 1 ? "" : "es"}`
-              : isInbox
-                ? `${count} listing${count === 1 ? "" : "s"} shared with you`
-                : isHiddenRowItem
-                  ? `${count} listing${count === 1 ? "" : "s"} hidden from feed`
-                  : `${count} watch${count === 1 ? "" : "es"}${isShared ? " · shared" : ""}`;
-            // Inline edit / delete actions on user-list rows (Mark
-            // request 2026-05-09 — match the Challenges card pattern
-            // so Rename + Delete don't require drilling in first).
-            // Hidden on virtual rows (Saved / Hidden), shared inbox,
-            // and shared-with-me collaborator lists (non-owners can't
-            // mutate). System lists (Owned/Sold/Wishlist) are
-            // excluded from userCols already.
-            const isOwner = !!(user?.id && c?.userId && user.id === c.userId);
-            const isSyntheticOrInbox = isInbox || isHiddenRowItem || isSavedRowItem;
-            const actions = [];
-            if (!isSyntheticOrInbox && isOwner && setEditingCollection) {
-              actions.push({
-                ariaLabel: `Rename ${c.name}`,
-                title: "Rename list",
-                icon: pencilIcon,
-                onClick: () => setEditingCollection({ id: c.id, name: c.name }),
-              });
-            }
-            if (!isSyntheticOrInbox && isOwner && deleteCollection) {
-              actions.push({
-                ariaLabel: `Delete ${c.name}`,
-                title: "Delete list",
-                icon: trashIcon,
-                onClick: async () => {
-                  if (!window.confirm(`Delete "${c.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
-                  await deleteCollection(c.id);
-                },
-              });
-            }
-            // Reactions-by-other count chip (2026-05-10). Shows on
-            // any list with at least one collaborator-made reaction.
-            // Refreshes when the user navigates back from a drill-in
-            // (selectedListId changes) so "since I last looked" is
-            // implicit.
-            const otherCount = otherReactionCounts.get(c.id) || 0;
-            const titleNode = otherCount > 0 ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <span>{c.name}</span>
-                <span title={`${otherCount} reaction${otherCount === 1 ? "" : "s"} from collaborators`}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 4,
-                    padding: "2px 8px", borderRadius: 999,
-                    background: "var(--brand-tint-12)",
-                    color: "var(--brand)",
-                    fontSize: 11, fontWeight: 600, lineHeight: 1.3,
-                  }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
-                  </svg>
-                  {otherCount}
-                </span>
-              </span>
-            ) : c.name;
-            return (
-              <ListRow
-                key={c.id}
-                icon={icon}
-                title={titleNode}
-                subtitle={subtitle}
-                onClick={() => setSelectedListId(c.id)}
-                actions={actions.length > 0 ? actions : undefined}
-              />
-            );
-          })}
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          {groups.map(g => (
+            <section key={g.key}>
+              <div style={{
+                fontSize: 11, fontWeight: 600,
+                letterSpacing: "0.10em",
+                textTransform: "uppercase",
+                color: "var(--text3)",
+                padding: "0 4px 6px",
+              }}>
+                {g.title}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {g.rows.map(renderListRow)}
+              </div>
+            </section>
+          ))}
         </div>
       )}
     </div>
