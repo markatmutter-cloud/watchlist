@@ -640,6 +640,13 @@ export default function Watchlist() {
   // session's open seeds the next session's lastVisit.
   const { lastVisit, newSince, markSeen: markFeedSeen } = useLastVisit();
   const [feedScreenerOpen, setFeedScreenerOpen] = useState(false);
+  // Auction-catalog screener (Mark spec 2026-05-14): the ⋯ menu on
+  // each Listings > Auction calendar row exposes a "Review catalog"
+  // action. Clicking opens the same fullscreen screening primitive
+  // used by feed-mode, scoped to that auction's lots. Stored as the
+  // auction object (or null) so we can derive the URL → matching
+  // lot subset at mount time.
+  const [auctionScreenerAuction, setAuctionScreenerAuction] = useState(null);
   // (colDrillInId state moved up earlier in the file — needed by the
   // savedItemsSnapshot effect which depends on it.)
   // Bumps each time the user explicitly navigates away from a
@@ -1181,6 +1188,25 @@ export default function Watchlist() {
     const merged = [...items, ...auctionLotItems];
     return hasAdminHide ? merged.filter(filterAdminHidden) : merged;
   }, [items, auctionLotItems, adminHidden]);
+
+  // Auction-catalog screener queue (Mark spec 2026-05-14): live,
+  // non-hidden lots whose parent auction_url matches the selected
+  // auction. Sorted by lot_number where available so the screening
+  // walks the catalog in the order the house listed it. No cap —
+  // user opted into reviewing the whole catalog by tapping Review.
+  const auctionScreenerItems = useMemo(() => {
+    if (!auctionScreenerAuction || !auctionScreenerAuction.url) return [];
+    const lotPool = auctionLotItems.filter(i =>
+      !i.sold && !hidden[i.id] && i.auction_url === auctionScreenerAuction.url
+    );
+    lotPool.sort((a, b) => {
+      const la = parseInt(a.lot_number, 10);
+      const lb = parseInt(b.lot_number, 10);
+      if (Number.isFinite(la) && Number.isFinite(lb)) return la - lb;
+      return (a.lot_number || "").localeCompare(b.lot_number || "");
+    });
+    return lotPool;
+  }, [auctionScreenerAuction, auctionLotItems, hidden]);
 
   // Feed-screening queue (Mark spec 2026-05-14): live, non-hidden
   // items added since the user's last visit, sorted newest first
@@ -2383,7 +2409,10 @@ export default function Watchlist() {
   // (its own sub-tab) after the listings sub-tabs restructure.
   const auctionCalendarJSX = (
     <div style={{ paddingTop: 4 }}>
-      <AuctionCalendar auctions={auctions || []} />
+      <AuctionCalendar
+        auctions={auctions || []}
+        onReviewCatalog={(a) => setAuctionScreenerAuction(a)}
+      />
     </div>
   );
 
@@ -3167,6 +3196,19 @@ export default function Watchlist() {
             setFeedScreenerOpen(false);
             markFeedSeen();
           }}
+        />
+      )}
+      {auctionScreenerAuction && auctionScreenerItems.length > 0 && (
+        <ListReviewMode
+          mode="feed"
+          items={auctionScreenerItems}
+          listName={auctionScreenerAuction.title}
+          watchlist={watchlist}
+          handleWish={handleWish}
+          primaryCurrency={primaryCurrency}
+          reactionsByItem={new Map()}
+          onToggleReaction={() => {}}
+          onClose={() => setAuctionScreenerAuction(null)}
         />
       )}
     </ErrorBoundary>
