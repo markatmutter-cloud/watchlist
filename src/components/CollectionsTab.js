@@ -1149,17 +1149,19 @@ function saveListViewState(listId, state) {
   } catch {/* localStorage full / private-mode */}
 }
 
-// Threshold past which a bucket auto-flips from slider to grid by
-// default. Below this, horizontal scroll-snap tiles read well; above
-// it, the slider gets cramped and a normal grid is faster to scan.
-const BUCKET_SLIDER_LIMIT = 20;
-
-// Threshold past which the density toggle ("Expand →" / "Compact ↑")
-// is exposed regardless of default mode. Mark feedback 2026-05-14:
-// the toggle was only appearing when count > 20, so a bucket with
-// 15 items (slider-default) gave the user no way to flip to grid
-// even though grid would be useful. Lowered so the user always has
-// agency over density once a bucket has more than a handful.
+// Default bucket density (Mark spec 2026-05-14): Lists buckets
+// render in GRID mode by default, with a "Linear view" toggle for
+// users who prefer the horizontal slider per-bucket. Inverts the
+// previous slider-default behaviour — Mark's reasoning: when you're
+// drilled INTO a specific list, you want to see everything in that
+// list at a glance; the slider was hiding most of each bucket
+// behind a scroll affordance. The Home page strips stay
+// slider-only by nature — they're discovery surfaces with a
+// "View all" handoff to the dedicated tab.
+//
+// BUCKET_TOGGLE_MIN — past this count the Linear/Grid toggle is
+// exposed in the bucket header. Below it, slider vs grid look
+// nearly identical so the toggle is hidden as noise.
 const BUCKET_TOGGLE_MIN = 6;
 
 // Monochrome bucket glyphs — share the screening palette so the
@@ -2093,8 +2095,9 @@ function ListsView({
                   const bucketItems = buckets[key];
                   if (bucketItems.length === 0) return null;
                   const override = bucketDensityOverride[key];
-                  const isGrid = override === "grid"
-                    || (override !== "slider" && bucketItems.length > BUCKET_SLIDER_LIMIT);
+                  // Default = grid; user can opt into linear via the
+                  // header toggle. Override wins over the default.
+                  const isGrid = override !== "slider";
                   return (
                     <BucketSection
                       key={key}
