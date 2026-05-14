@@ -11,7 +11,6 @@ import { MarkAsSoldModal } from "./MarkAsSoldModal";
 import { ManageListSheet } from "./ManageListSheet";
 import { WatchDetailSheet } from "./WatchDetailSheet";
 import { ListReviewMode } from "./ListReviewMode";
-import { ListManagePanel } from "./ListManagePanel";
 import { fmtUSD, matchesSearch } from "../utils";
 import { actionButton, signInButton } from "../styles";
 import { EmptyState } from "./EmptyState";
@@ -1119,35 +1118,12 @@ function PoolCard({ item, busy, onAdd, primaryCurrency }) {
 }
 
 
-// Per-list view preferences (Mark spec 2026-05-14). Stored under
-// `dial_list_view_state_<listId>` so collapse / density / show-as
-// preferences survive revisits without bleeding across lists.
-const LIST_VIEW_STATE_KEY = "dial_list_view_state";
-const DEFAULT_LIST_VIEW_STATE = {
-  viewMode: "buckets", // "buckets" | "flat"
-};
-function loadListViewState(listId) {
-  if (!listId || typeof window === "undefined") return DEFAULT_LIST_VIEW_STATE;
-  try {
-    const raw = window.localStorage.getItem(`${LIST_VIEW_STATE_KEY}_${listId}`);
-    if (!raw) return DEFAULT_LIST_VIEW_STATE;
-    const parsed = JSON.parse(raw);
-    return {
-      viewMode: parsed.viewMode === "flat" ? "flat" : "buckets",
-    };
-  } catch {
-    return DEFAULT_LIST_VIEW_STATE;
-  }
-}
-function saveListViewState(listId, state) {
-  if (!listId || typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(
-      `${LIST_VIEW_STATE_KEY}_${listId}`,
-      JSON.stringify(state),
-    );
-  } catch {/* localStorage full / private-mode */}
-}
+// Per-list view-mode preferences (flat vs buckets) retired
+// 2026-05-14 with the Review panel — buckets are the only view now
+// on shared lists. The DEFAULT_LIST_VIEW_STATE / load / save helpers
+// here were the last consumers; removed in the same pass. Stale
+// `dial_list_view_state_<listId>` localStorage entries become dead
+// data (harmless).
 
 // Default bucket density (Mark spec 2026-05-14): Lists buckets
 // render in GRID mode by default, with a "Linear view" toggle for
@@ -1212,93 +1188,12 @@ const BUCKET_COLOR = {
   passed: "var(--text3)",
 };
 
-// Share dropdown in the drill-in header (Mark spec 2026-05-14).
-// Replaces the single one-tap Share button. The Manage panel (now
-// "Reactions") no longer carries sharing or collaboration rows —
-// everything social lives behind this button instead. Owners see
-// both "Share this list" and "Manage collaborators"; collaborators
-// see only the share-link entry. Click-outside + Escape close.
-function ShareMenu({ triggerShare, onManageCollaborators }) {
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef(null);
-  const portalRef = useRef(null);
-  const [pos, setPos] = useState(null);
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e) => {
-      const inTrigger = triggerRef.current && triggerRef.current.contains(e.target);
-      const inPortal  = portalRef.current && portalRef.current.contains(e.target);
-      if (!inTrigger && !inPortal) setOpen(false);
-    };
-    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
-    const t = setTimeout(() => {
-      document.addEventListener("mousedown", onDown);
-      document.addEventListener("keydown", onKey);
-    }, 0);
-    return () => {
-      clearTimeout(t);
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-  return (
-    <>
-      <button ref={triggerRef}
-        onClick={() => {
-          if (!open && triggerRef.current) {
-            const r = triggerRef.current.getBoundingClientRect();
-            const estimatedWidth = 220;
-            const safeMargin = 8;
-            const desiredRight = window.innerWidth - r.right;
-            const maxRight = Math.max(
-              safeMargin,
-              window.innerWidth - estimatedWidth - safeMargin,
-            );
-            setPos({
-              top: r.bottom + 4,
-              right: Math.max(safeMargin, Math.min(desiredRight, maxRight)),
-            });
-          }
-          setOpen(o => !o);
-        }}
-        title="Share this list"
-        style={{
-          ...actionButton({ variant: "primary" }),
-          flexShrink: 0,
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 4,
-        }}
-      >
-        <span>Share</span>
-        <span style={{ fontSize: 10, opacity: 0.8 }}>▾</span>
-      </button>
-      {open && pos && createPortal(
-        <div ref={portalRef} style={{
-          position: "fixed",
-          top: pos.top, right: pos.right,
-          zIndex: 1000, minWidth: 200,
-          background: "var(--bg)", border: "0.5px solid var(--border)",
-          borderRadius: 8, padding: 4,
-          boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-        }}>
-          <button onClick={() => { setOpen(false); triggerShare(); }}
-            style={menuItemStyle("var(--text1)")}>
-            Share this list ↗
-          </button>
-          {onManageCollaborators && (
-            <button onClick={() => { setOpen(false); onManageCollaborators(); }}
-              style={menuItemStyle("var(--text1)")}>
-              Manage collaborators
-            </button>
-          )}
-        </div>,
-        document.body,
-      )}
-    </>
-  );
-}
+// ShareMenu retired 2026-05-14 — replaced by a single flat Share
+// button that opens the unified Share modal (ManageListSheet) for
+// owners or fires the native share sheet directly for non-owners.
+// Mark feedback: the dropdown chevron was too subtle and the
+// "Share this list" + "Manage collaborators" split confused users
+// when both end up surfacing the same kind of link.
 
 // One bucket section in the Lists drill-in (Mark spec 2026-05-14
 // polish pass). Header is the bucket's identity at a glance: tinted
@@ -1487,25 +1382,10 @@ function ListsView({
     return () => window.removeEventListener("resize", onResize);
   }, []);
   const [screeningResetTick, setScreeningResetTick] = useState(0);
-  // Manage panel + per-list view preferences (Mark spec 2026-05-14).
-  // The panel hosts every list-level action (screening / view / share /
-  // collaboration / list) in one portal'd surface; persistent prefs
-  // are stored per-list under `dial_list_view_state_<listId>`.
-  const [managePanelOpen, setManagePanelOpen] = useState(false);
-  const [listViewState, setListViewState] = useState(DEFAULT_LIST_VIEW_STATE);
-  useEffect(() => {
-    setListViewState(loadListViewState(selectedListId));
-    // Close the panel when navigating between lists so the state of
-    // the previous list's panel doesn't bleed into the new one.
-    setManagePanelOpen(false);
-  }, [selectedListId]);
-  const updateListViewState = (mutator) => {
-    setListViewState((prev) => {
-      const next = typeof mutator === "function" ? mutator(prev) : mutator;
-      saveListViewState(selectedListId, next);
-      return next;
-    });
-  };
+  // Whether the next screening pass walks ALL items or just unreacted
+  // ones (Mark spec 2026-05-14 re-screen fix). Set true when the
+  // user taps Review on a fully-reacted list; otherwise resume.
+  const [screenAllMode, setScreenAllMode] = useState(false);
   // Per-bucket density override (in-memory only). `expanded` flips a
   // bucket from slider → grid even when its count is ≤ threshold; the
   // opposite (force-slider when >threshold) is also stored here. Reset
@@ -1893,20 +1773,6 @@ function ListsView({
                     <strong style={{ color: "var(--text1)", fontWeight: 500 }}>{ownerName}</strong> shared · {myReactedCount}/{items.length} reacted
                   </span>
                 </span>
-                <button onClick={() => setReviewModeOpen(true)}
-                  title="Walk through unreacted items one at a time"
-                  style={{
-                    flexShrink: 0,
-                    padding: "6px 12px",
-                    borderRadius: 6,
-                    border: "none",
-                    background: "var(--brand)", color: "#fff",
-                    fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-                    letterSpacing: "0.04em",
-                    cursor: "pointer",
-                  }}>
-                  Review →
-                </button>
               </>
             )}
             <div style={{ flex: 1 }} />
@@ -1918,34 +1784,60 @@ function ListsView({
                 Link copied
               </span>
             )}
+            {/* Mark spec 2026-05-14: three flat header buttons
+                replace the Share dropdown + Review panel trigger.
+                Share opens the unified Share modal (owner) or fires
+                native share (non-owner). Review opens screening —
+                resume if there's unrated items, otherwise re-screens
+                the full list. Reset clears your Yes/Pass on this
+                list with a confirm. */}
             {showActions && (
-              <ShareMenu
-                triggerShare={triggerShare}
-                onManageCollaborators={isOwner
-                  ? () => setManageListOpen(true)
-                  : undefined}
-              />
+              <button onClick={isOwner ? () => setManageListOpen(true) : triggerShare}
+                title="Share this list"
+                style={{ ...actionButton({ variant: "primary" }), flexShrink: 0 }}>
+                Share
+              </button>
             )}
-            <button
-              onClick={() => setManagePanelOpen(true)}
-              title="Review mode — screening, reactions, view"
-              aria-label="Review mode"
-              style={{
-                ...actionButton({ variant: "subtle" }),
-                flexShrink: 0,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="1.6"
-                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              <span>Review</span>
-            </button>
+            {isRecipient && (
+              <button
+                onClick={() => {
+                  setScreenAllMode(myReactedCount >= items.length && items.length > 0);
+                  setReviewModeOpen(true);
+                  setScreeningResetTick(t => t + 1);
+                }}
+                title={myReactedCount >= items.length && items.length > 0
+                  ? "Re-screen this list"
+                  : "Walk through unreacted items one at a time"}
+                style={{
+                  ...actionButton({ variant: "subtle" }),
+                  flexShrink: 0,
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="1.6"
+                  strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Review
+              </button>
+            )}
+            {myReactionsOnList.length > 0 && (
+              <button
+                onClick={async () => {
+                  if (!window.confirm(`Clear all ${myReactionsOnList.length} of your Yes / Pass ratings on this list? (Your hearts stay where they are.)`)) return;
+                  await Promise.all(myReactionsOnList.map(({ itemId, emoji }) =>
+                    onToggleReaction(itemId, emoji)));
+                }}
+                title={`Reset your ${myReactionsOnList.length} Yes / Pass ratings`}
+                style={{
+                  ...actionButton({ variant: "subtle" }),
+                  flexShrink: 0,
+                  color: "var(--danger, #c0392b)",
+                }}>
+                Reset
+              </button>
+            )}
           </div>
         )}
         {reviewModeOpen && isRecipient && (
@@ -1958,13 +1850,14 @@ function ListsView({
             currentUserId={user?.id || null}
             reactionsByItem={reactionsByItem}
             onToggleReaction={onToggleReaction}
-            onClose={() => setReviewModeOpen(false)}
+            onClose={() => { setReviewModeOpen(false); setScreenAllMode(false); }}
             primaryCurrency={primaryCurrency}
             watchlist={watchlist}
             handleWish={wrappedHandleWish}
             openCollectionPicker={openCollectionPicker}
             onShare={handleShare}
             onOpenDetail={(item) => setDetailRowId(item.rowId)}
+            screenAll={screenAllMode}
             onReset={async () => {
               if (!myUserId || !reactionsByItem || myReactionsOnList.length === 0) return;
               await Promise.all(myReactionsOnList.map(({ itemId, emoji }) =>
@@ -2063,7 +1956,12 @@ function ListsView({
             // Bucketing only applies on shared lists (where reactions
             // exist) AND when the user hasn't opted to "Flat list" in
             // the Manage panel. Otherwise fall back to the plain grid.
-            const useBuckets = isSharedList && listViewState.viewMode !== "flat";
+            // Mark spec 2026-05-14: flat-list view toggle retired
+            // with the panel — buckets are the only view now on
+            // shared lists (solo lists fall through to the plain
+            // grid below). Re-introduce a toggle here if the flat
+            // view is ever asked for again.
+            const useBuckets = isSharedList;
             if (!useBuckets) {
               return (
                 <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
@@ -2134,28 +2032,12 @@ function ListsView({
             );
           })()
         )}
-        <ListManagePanel
-          open={managePanelOpen}
-          onClose={() => setManagePanelOpen(false)}
-          isWide={isWide}
-          myReactionsCount={myReactionsOnList.length}
-          unreviewedCount={isRecipient ? Math.max(0, items.length - myReactedCount) : 0}
-          viewMode={listViewState.viewMode}
-          onViewModeChange={(next) =>
-            updateListViewState((prev) => ({ ...prev, viewMode: next }))
-          }
-          onStartScreening={isRecipient
-            ? () => { setManagePanelOpen(false); setReviewModeOpen(true); }
-            : undefined}
-          onResetReactions={myReactionsOnList.length > 0
-            ? async () => {
-                if (!window.confirm(`Clear all ${myReactionsOnList.length} of your Yes / Pass ratings on this list? (Your hearts stay where they are.)`)) return;
-                setManagePanelOpen(false);
-                await Promise.all(myReactionsOnList.map(({ itemId, emoji }) =>
-                  onToggleReaction(itemId, emoji)));
-              }
-            : undefined}
-        />
+        {/* ListManagePanel retired 2026-05-14 — its actions (Resume
+            screening / Reset / View) are now first-class header
+            buttons (Share / Review / Reset) plus the bucket-default-
+            grid change makes the view toggle unnecessary. The
+            ./ListManagePanel.js component file stays in case a
+            future surface wants it. */}
       </div>
     );
   }
