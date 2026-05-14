@@ -1126,7 +1126,6 @@ const LIST_VIEW_STATE_KEY = "dial_list_view_state";
 const DEFAULT_LIST_VIEW_STATE = {
   viewMode: "buckets", // "buckets" | "flat"
   bucketVisibility: { toReview: true, loved: true, liked: true, passed: true },
-  bucketCollapsed:  { toReview: false, loved: false, liked: false, passed: true },
 };
 function loadListViewState(listId) {
   if (!listId || typeof window === "undefined") return DEFAULT_LIST_VIEW_STATE;
@@ -1139,10 +1138,6 @@ function loadListViewState(listId) {
       bucketVisibility: {
         ...DEFAULT_LIST_VIEW_STATE.bucketVisibility,
         ...(parsed.bucketVisibility || {}),
-      },
-      bucketCollapsed: {
-        ...DEFAULT_LIST_VIEW_STATE.bucketCollapsed,
-        ...(parsed.bucketCollapsed || {}),
       },
     };
   } catch {
@@ -1213,108 +1208,96 @@ const BUCKET_COLOR = {
   passed: "var(--text3)",
 };
 
-// One bucket section in the Lists drill-in (Mark spec 2026-05-14).
-// Header row with glyph + label + count + collapse chevron +
-// density switch ("View all" / "Compact"); body renders either as
-// a horizontal scroll-snap slider (≤ BUCKET_SLIDER_LIMIT) or as the
-// regular Card grid. `renderItem` is the per-item render passed in
-// from ListsView so flat + bucketed paths share the same Card setup.
+// One bucket section in the Lists drill-in (Mark spec 2026-05-14
+// polish pass). Header is the bucket's identity at a glance: tinted
+// glyph + readable label + count, with the density toggle as the
+// only affordance on the right ("View all" → grid, "Compact ↑" →
+// slider). Mark feedback 2026-05-14: collapse chevron retired —
+// slider IS the compact form, and stacking two density mechanisms
+// on the same row added cognitive load without adding capability.
+// To hide a bucket entirely, use the View > Show buckets toggle in
+// the Manage panel. `renderItem` is passed in from ListsView so
+// flat + bucketed paths share the same Card setup.
 function BucketSection({
   label, count, glyph, color,
-  collapsed, onToggleCollapsed,
   isGrid, showDensitySwitch, onToggleDensity,
   gridStyle, items, renderItem,
 }) {
   return (
     <section>
       <div style={{
-        display: "flex", alignItems: "center", gap: 10,
-        padding: "10px 14px 8px",
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "16px 14px 10px",
+        borderBottom: "0.5px solid var(--border)",
+        marginBottom: 10,
       }}>
-        <button
-          onClick={onToggleCollapsed}
-          aria-label={collapsed ? "Expand bucket" : "Collapse bucket"}
-          style={{
-            background: "transparent", border: "none",
-            color: "var(--text3)", padding: 0,
-            cursor: "pointer", lineHeight: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: 18, height: 18,
-          }}
-        >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="2.2"
-            strokeLinecap="round" strokeLinejoin="round"
-            style={{
-              transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)",
-              transition: "transform 120ms ease",
-            }}>
-            <path d="M6 9l6 6 6-6"/>
-          </svg>
-        </button>
         <span style={{
-          color, display: "inline-flex", alignItems: "center",
-          lineHeight: 0,
+          color,
+          display: "inline-flex", alignItems: "center",
+          lineHeight: 0, flexShrink: 0,
         }}>
-          {glyph(14)}
+          {glyph(18)}
         </span>
         <span style={{
-          fontSize: 12, fontWeight: 600,
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
+          fontSize: 15, fontWeight: 600,
           color: "var(--text1)",
+          letterSpacing: "-0.005em",
         }}>
           {label}
         </span>
         <span style={{
-          fontSize: 12, color: "var(--text3)",
+          fontSize: 14, color: "var(--text3)",
           fontVariantNumeric: "tabular-nums",
+          fontWeight: 400,
         }}>
-          · {count}
+          {count}
         </span>
         <div style={{ flex: 1 }} />
-        {showDensitySwitch && !collapsed && (
+        {showDensitySwitch && (
           <button
             onClick={onToggleDensity}
             style={{
-              background: "transparent", border: "none",
+              background: "transparent",
+              border: "0.5px solid var(--border)",
               color: "var(--brand)",
               fontSize: 12, fontFamily: "inherit",
-              cursor: "pointer", padding: "4px 6px",
+              fontWeight: 500,
+              cursor: "pointer",
+              padding: "6px 10px",
+              borderRadius: 6,
+              flexShrink: 0,
             }}>
             {isGrid ? "Compact ↑" : `View all (${count}) →`}
           </button>
         )}
       </div>
-      {!collapsed && (
-        isGrid ? (
-          <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-            {items.map(renderItem)}
-          </div>
-        ) : (
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              overflowX: "auto",
-              scrollSnapType: "x mandatory",
-              padding: "0 14px 8px",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              WebkitOverflowScrolling: "touch",
-            }}
-          >
-            {items.map((it) => (
-              <div key={it.id} style={{
-                flex: "0 0 auto",
-                width: 280,
-                scrollSnapAlign: "start",
-              }}>
-                {renderItem(it)}
-              </div>
-            ))}
-          </div>
-        )
+      {isGrid ? (
+        <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+          {items.map(renderItem)}
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            overflowX: "auto",
+            scrollSnapType: "x mandatory",
+            padding: "0 14px 8px",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          {items.map((it) => (
+            <div key={it.id} style={{
+              flex: "0 0 auto",
+              width: 280,
+              scrollSnapAlign: "start",
+            }}>
+              {renderItem(it)}
+            </div>
+          ))}
+        </div>
       )}
     </section>
   );
@@ -1931,12 +1914,11 @@ function ListsView({
             }
             const order = ["toReview", "loved", "liked", "passed"];
             return (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 {order.map((key) => {
                   const bucketItems = buckets[key];
                   if (bucketItems.length === 0) return null;
                   if (listViewState.bucketVisibility[key] === false) return null;
-                  const collapsed = !!listViewState.bucketCollapsed[key];
                   const override = bucketDensityOverride[key];
                   const isGrid = override === "grid"
                     || (override !== "slider" && bucketItems.length > BUCKET_SLIDER_LIMIT);
@@ -1947,16 +1929,6 @@ function ListsView({
                       count={bucketItems.length}
                       glyph={BUCKET_GLYPH[key]}
                       color={BUCKET_COLOR[key]}
-                      collapsed={collapsed}
-                      onToggleCollapsed={() =>
-                        updateListViewState((prev) => ({
-                          ...prev,
-                          bucketCollapsed: {
-                            ...prev.bucketCollapsed,
-                            [key]: !prev.bucketCollapsed[key],
-                          },
-                        }))
-                      }
                       isGrid={isGrid}
                       showDensitySwitch={bucketItems.length > BUCKET_SLIDER_LIMIT}
                       onToggleDensity={() =>
