@@ -117,6 +117,7 @@ export function buildMockShellProps(overrides = {}) {
     collectionsSubTabsJSX: <div data-testid="collections-sub-tabs" />,
     endingSoonJSX: null,
     watchlistTabJSX: <div data-testid="watchlist-tab" />,
+    watchboxTabJSX: <div data-testid="watchbox-tab" />,
     adminTabJSX: <div data-testid="admin-tab" />,
     referencesTabJSX: <div data-testid="references-tab" />,
     collectionsTabJSX: <div data-testid="collections-tab" />,

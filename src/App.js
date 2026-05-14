@@ -234,7 +234,17 @@ export default function Watchlist() {
   // existing share URLs + localStorage prefs.
   const SAVED_HEARTED_SUBS = ["listings", "auctions", "sold"];
   const [watchTopTab, setWatchTopTab] = useState(() => {
-    const normalize = (v) => (v === "calendar") ? "listings" : v;
+    // "my-collection" left the Watchlists sub-tab strip on 2026-05-14
+    // when My Watches moved to the avatar dropdown as Watchbox. If a
+    // user's stored watchTopTab still holds the old value, coerce to
+    // the new default ("lists") so they aren't stuck on a sub-tab
+    // with no visible pill. Legacy URL redirects handle the tab=watchlist
+    // + sub=my-collection case separately in the setTab init.
+    const normalize = (v) => {
+      if (v === "calendar") return "listings";
+      if (v === "my-collection") return "lists";
+      return v;
+    };
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const t = params.get("tab");
@@ -355,16 +365,27 @@ export default function Watchlist() {
   // group covers discovery; per-list Share button covers send).
   // `references` keeps its internal key for backward compat; the UI
   // label is now "Collection" (was "Learn").
-  const TAB_VALUES = ["home", "listings", "watchlist", "references", "admin"];
+  // 2026-05-14: "watchbox" — formerly the Watchlists > My Watches
+  // sub-tab — promoted out of the sub-tab strip into its own top-level
+  // tab. There's no pill in the main nav; the avatar dropdown is the
+  // entry point (Mark spec, eBay analogy: "kind of like my ebay"). The
+  // URL key `?tab=watchbox` is canonical; legacy `?tab=watchlist&sub=my-collection`
+  // redirects to it on init.
+  const TAB_VALUES = ["home", "listings", "watchlist", "watchbox", "references", "admin"];
   // URL-key translation. Stale `share` URLs route to Watchlists >
   // Lists (where the Shared with me group lives now). `learn` also
-  // still routes to references for back-compat.
-  const URL_TAB_TO_INTERNAL = { saved: "watchlist", learn: "references", collections: "watchlist", share: "watchlist" };
+  // still routes to references for back-compat. `mywatches` is a
+  // short-link alias for Watchbox so external shares can be terse.
+  const URL_TAB_TO_INTERNAL = { saved: "watchlist", learn: "references", collections: "watchlist", share: "watchlist", mywatches: "watchbox" };
   const INTERNAL_TAB_TO_URL = { watchlist: "saved", references: "learn" };
   const [tab, setTab] = useState(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const t = params.get("tab");
+      const sub = params.get("sub");
+      // Legacy redirect: ?tab=watchlist&sub=my-collection points at
+      // the old sub-tab home for My Watches. Now lands on Watchbox.
+      if (t === "watchlist" && sub === "my-collection") return "watchbox";
       // External → internal redirect: ?tab=saved / ?tab=learn /
       // ?tab=collections (legacy) all map to internal values.
       if (URL_TAB_TO_INTERNAL[t]) return URL_TAB_TO_INTERNAL[t];
@@ -2098,6 +2119,34 @@ export default function Watchlist() {
             {userName}
           </div>
           <div style={{ height: "0.5px", background: "var(--border)", margin: "4px -8px 4px" }} />
+          {/* Watchbox — primary destination, lifted out of the
+              Watchlists sub-tabs (Mark spec 2026-05-14, eBay analogy:
+              "kind of like my ebay"). No pill in the main nav strip;
+              the avatar dropdown is the canonical entry point. Bold
+              + tinted disc icon so it reads as the menu's primary
+              action vs the muted About / Settings rows. */}
+          <button onClick={() => { setShowUserMenu(false); setTab("watchbox"); setPage(1); }}
+            style={{ display: "flex", alignItems: "center", gap: 10,
+                    width: "100%", textAlign: "left",
+                    padding: "8px", border: "none", background: "transparent",
+                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                    fontSize: 14, fontWeight: 600, borderRadius: 6 }}>
+            <span style={{
+              width: 24, height: 24, borderRadius: "50%",
+              background: "var(--brand-tint-12)", color: "var(--brand)",
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="7"/>
+                <path d="M12 8v4l2 2"/>
+              </svg>
+            </span>
+            Watchbox
+          </button>
+          <div style={{ height: "0.5px", background: "var(--border)", margin: "4px -8px 4px" }} />
           {/* About Watchlist — surfaced as a top-level dropdown entry
               (Mark feedback 2026-05-07: "have About Watchlist not
               hidden under Settings"). Settings keeps a fallback entry
@@ -2751,7 +2800,7 @@ export default function Watchlist() {
       }}
       // Manage-your-collection callout CTAs — three sub-tabs of Saved.
       goToSavedLists={() => { setTab("watchlist"); setWatchTopTab("lists"); setPage(1); }}
-      goToMyWatches={() => { setTab("watchlist"); setWatchTopTab("my-collection"); setPage(1); }}
+      goToMyWatches={() => { setTab("watchbox"); setPage(1); }}
       goToChallenges={() => { setTab("watchlist"); setWatchTopTab("challenges"); setPage(1); }}
       // Footer routes
       openAbout={() => setAboutModalOpen(true)}
@@ -2872,6 +2921,49 @@ export default function Watchlist() {
     ? collectionsTabJSX
     : watchlistTabJSX_inner;
 
+  // Watchbox tab (Mark spec 2026-05-14): re-uses the same
+  // CollectionsTab component but pinned to the My Watches view.
+  // Reached only via the avatar dropdown — no pill in the main nav
+  // strip, no sub-tab strip above. Internal pre-tab-watchbox URLs
+  // (?tab=watchlist&sub=my-collection) redirect to ?tab=watchbox on
+  // init via the legacy-URL handler in setTab.
+  const watchboxTabJSX = (
+    <CollectionsTab
+      user={user}
+      isAuthConfigured={isAuthConfigured}
+      signInWithGoogle={triggerSignInPrompt}
+      collectionsApi={collectionsApi}
+      hiddenItems={hiddenItems}
+      toggleHide={toggleHide}
+      watchlist={watchlist}
+      watchItems={watchItems}
+      hidden={hidden}
+      allListings={items}
+      primaryCurrency={primaryCurrency}
+      handleShare={handleShare}
+      handleWish={handleWish}
+      compact={compact}
+      gridStyle={gridStyle}
+      setEditingCollection={setEditingCollection}
+      openCollectionPicker={openCollectionPicker}
+      startCreateCollection={startCreateCollection}
+      observeCard={observeCard}
+      onClickListing={onClickListing}
+      pendingChallengeDrillId={pendingChallengeDrillId}
+      clearPendingChallengeDrill={() => setPendingChallengeDrillId(null)}
+      // Force-pin to My Watches regardless of watchTopTab — Watchbox
+      // is the surface; the Watchlists sub-tab strip isn't shown.
+      collectionsSubTab="my-collection"
+      setCollectionsSubTab={() => { /* fixed on Watchbox */ }}
+      tabResetTick={tab === "watchbox" ? tabResetTick : 0}
+      filterValues={{
+        filterSources, filterBrands, search, sort,
+        minPrice, maxPrice,
+      }}
+      onDrillInChange={setColDrillInId}
+    />
+  );
+
   // ── MOBILE ────────────────────────────────────────────────────────────────
   // (EndingSoon pinned strip retired 2026-05-04 — Watchlist > Saved
   // auctions sub-tab IS the ending-soon view now, with its own
@@ -2925,10 +3017,9 @@ export default function Watchlist() {
           sub-tab also lost its pill; the value still routes to
           MyCollectionView in shortlist-toggle mode for old URLs. */}
       {[
-        ["lists",         "Lists"],
-        ["searches",      "Searches"],
-        ["my-collection", "My Watches"],
-        ["challenges",    "Challenges"],
+        ["lists",      "Lists"],
+        ["searches",   "Searches"],
+        ["challenges", "Challenges"],
       ].map(([key, label]) => {
         const active = watchTopTab === key;
         return (
@@ -3260,6 +3351,7 @@ export default function Watchlist() {
     // tab — the value is now the dispatched content (Watchlist or
     // Collections style) computed by `savedContentJSX`.
     watchlistTabJSX: savedContentJSX,
+    watchboxTabJSX,
     adminTabJSX, referencesTabJSX, collectionsTabJSX, homeTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
