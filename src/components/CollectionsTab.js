@@ -1154,7 +1154,24 @@ function ListActionsMenu({ items }) {
         onClick={() => {
           if (!open && triggerRef.current) {
             const r = triggerRef.current.getBoundingClientRect();
-            setPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) });
+            // Right-anchor the menu under the trigger, BUT clamp so
+            // the menu's left edge stays inside the viewport (Mark
+            // report 2026-05-14: "Reset my reactions (N)" item was
+            // wider than the default 160 minWidth and the menu
+            // overflowed off-screen on mobile). Use the menu's
+            // estimated max width (260px covers the longest label)
+            // to compute the maximum allowable `right` offset.
+            const estimatedMenuWidth = 260;
+            const safeMargin = 8;
+            const desiredRight = window.innerWidth - r.right;
+            const maxRight = Math.max(
+              safeMargin,
+              window.innerWidth - estimatedMenuWidth - safeMargin
+            );
+            setPos({
+              top: r.bottom + 4,
+              right: Math.max(safeMargin, Math.min(desiredRight, maxRight)),
+            });
           }
           setOpen(o => !o);
         }}
