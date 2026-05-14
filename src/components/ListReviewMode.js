@@ -690,23 +690,25 @@ export function ListReviewMode({
             gap: 10, alignItems: "center",
             maxWidth: 720, margin: "0 auto",
           }}>
-            <button onClick={handleUndo} disabled={idx === 0} style={edgeNavStyle(idx === 0)}>
-              ← Undo
+            {/* Action bar (Mark feedback 2026-05-14): arrows
+                migrate from the secondary buttons (Undo / Skip) onto
+                the primary reactions so the direction reads "Pass =
+                swipe left" / "Yes = swipe right". Undo + Skip drop
+                arrows entirely and shrink so they don't compete with
+                the rating decision. */}
+            <button onClick={handleUndo} disabled={idx === 0} style={edgeNavStyle(idx === 0, { small: true })}>
+              Undo
             </button>
             <button onClick={handlePass} style={reactionBtnStyle("pass", myReactionOnCurrent === "❌")}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                <path d="M18 6L6 18M6 6l12 12"/>
-              </svg>
+              <span style={{ fontSize: 14, fontWeight: 400 }}>←</span>
               <span>Pass</span>
             </button>
             <button onClick={handleYes} style={reactionBtnStyle("yes", myReactionOnCurrent === "👍")}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 6L9 17l-5-5"/>
-              </svg>
               <span>Yes</span>
+              <span style={{ fontSize: 14, fontWeight: 400 }}>→</span>
             </button>
-            <button onClick={handleSkip} style={edgeNavStyle(false)}>
-              Skip →
+            <button onClick={handleSkip} style={edgeNavStyle(false, { small: true })}>
+              Skip
             </button>
           </div>
           {myReactionOnCurrent && (
@@ -1153,16 +1155,16 @@ function reactionBtnStyle(kind, active) {
   };
 }
 
-function edgeNavStyle(disabled) {
+function edgeNavStyle(disabled, { small = false } = {}) {
   return {
     border: "none", background: "transparent",
     color: disabled ? "var(--text3)" : "var(--text2)",
     fontFamily: SANS_STACK,
-    fontSize: 13,
+    fontSize: small ? 11 : 13,
     letterSpacing: "0.10em", textTransform: "uppercase",
-    padding: "12px 10px",
+    padding: small ? "8px 8px" : "12px 10px",
     cursor: disabled ? "default" : "pointer",
-    fontWeight: 500,
+    fontWeight: 400,
   };
 }
 

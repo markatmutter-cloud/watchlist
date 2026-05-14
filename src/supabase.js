@@ -581,12 +581,6 @@ export function useCollections(user) {
           url:            row.manual_source_url || null,
         } : {};
         const item = {
-          rowId:           row.id,                 // collection_items.id (for delete)
-          // Manual items use the row UUID as their app-facing id —
-          // listing_id is null, but the UI needs a stable React key
-          // and a target for delete. UUIDs don't collide with the
-          // shortHash listing IDs (different lengths + character set).
-          id:              row.listing_id || row.id,
           savedPrice:      row.saved_price,
           savedCurrency:   row.saved_currency,
           savedPriceUSD:   row.saved_price_usd,
@@ -624,6 +618,20 @@ export function useCollections(user) {
           manualSellNetUsd:  row.manual_sell_net_usd || null,
           ...snap,
           ...manualShape,
+          // Row-authoritative identity fields go AFTER the spread so
+          // a stale `rowId` or `id` carried inside the snapshot (e.g.,
+          // tracked-lot watchlist projections set rowId on the snapshot
+          // before it was persisted into collection_items.listing_snapshot)
+          // can't clobber the DB row's id. Bug surfaced 2026-05-14: a
+          // Sotheby's Cartier Tank Cintrée with snapshot.rowId set to a
+          // phantom UUID had its reactions silently FK-fail because the
+          // toggle was binding to a non-existent collection_item_id.
+          rowId:           row.id,                 // collection_items.id (for delete + reactions)
+          // Manual items use the row UUID as their app-facing id —
+          // listing_id is null, but the UI needs a stable React key
+          // and a target for delete. UUIDs don't collide with the
+          // shortHash listing IDs (different lengths + character set).
+          id:              row.listing_id || row.id,
           // 2026-05-10 — listing-backed rows prefer the cached blob
           // URL (set by cache_watchlist_images.mjs) over the dealer's
           // own URL in the snapshot, so images keep working after the
@@ -820,8 +828,6 @@ export function useCollections(user) {
         ...prev,
         [collectionId]: [
           {
-            rowId:           data.id,
-            id:              data.listing_id,
             savedPrice:      data.saved_price,
             savedCurrency:   data.saved_currency,
             savedPriceUSD:   data.saved_price_usd,
@@ -829,6 +835,11 @@ export function useCollections(user) {
             sharedByHandle:  data.shared_by_handle,
             savedAt:         data.added_at,
             ...listing,
+            // Identity AFTER spread — same hazard as the items
+            // projection above. If `listing` carries a rowId/id from
+            // an upstream projection, our DB values must win.
+            rowId:           data.id,
+            id:              data.listing_id,
           },
           ...(prev[collectionId] || []),
         ],
@@ -1242,13 +1253,15 @@ export function useCollections(user) {
         ...prev,
         [challengeId]: [
           {
-            rowId: data.id, id: data.listing_id,
             savedPrice:    payload.saved_price,
             savedCurrency: payload.saved_currency,
             savedPriceUSD: payload.saved_price_usd,
             sourceOfEntry: data.source_of_entry, savedAt: data.added_at,
             isPick, reasoning: '',
             ...listing,
+            // Identity AFTER spread — see useCollections items
+            // projection note. data.id is collection_items.id.
+            rowId: data.id, id: data.listing_id,
           },
           ...(prev[challengeId] || []),
         ],
