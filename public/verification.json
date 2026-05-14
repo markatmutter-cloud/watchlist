@@ -1,13 +1,13 @@
 {
-  "date": "2026-05-13",
+  "date": "2026-05-14",
   "alerts": [],
   "counts": {
-    "Wind Vintage": 96,
-    "Tropical Watch": 100,
+    "Wind Vintage": 97,
+    "Tropical Watch": 98,
     "Menta Watches": 34,
     "Collectors Corner NY": 59,
     "Falco Watches": 102,
-    "Grey & Patina": 46,
+    "Grey & Patina": 48,
     "Oliver & Clarke": 93,
     "Craft & Tailored": 78,
     "Watch Brothers London": 20,
@@ -25,11 +25,11 @@
     "Huntington Company": 72,
     "The Vintage Watch": 28,
     "Chronoholic": 5,
-    "Vintage Watch Fam": 445,
+    "Vintage Watch Fam": 442,
     "Shuck the Oyster": 113,
     "Central Watch": 177,
     "European Watch": 23,
-    "Vintage Watch Collective": 38,
+    "Vintage Watch Collective": 39,
     "Watchurbia": 8,
     "Maunder Watches": 94,
     "Watch Club": 19,
@@ -42,6 +42,6 @@
     "Swiss Hours": 79,
     "eBay": 19
   },
-  "total_listings": 3321,
+  "total_listings": 3320,
   "sources_tracked": 39
 }
