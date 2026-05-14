@@ -83,6 +83,16 @@ export function ListReviewMode({
   // any prior reaction, not jump straight to the recap. Default
   // false preserves the resume-where-you-left-off flow.
   screenAll = false,
+  // Screening mode (Mark spec 2026-05-14):
+  //   "list" (default) — shared-list screening. Yes/Pass write
+  //                      reactions to collection_item_reactions;
+  //                      Heart toggles watchlist.
+  //   "feed" — feed-screening (e.g., "new listings since last visit").
+  //            No reactions table involved. "Yes" gestures act as
+  //            heart-toggles; "Pass" gestures are pure skip. Recap
+  //            counts hearted vs passed, not the three-way list
+  //            tally.
+  mode = "list",
 }) {
   // Frozen queue at mount.
   const [initialQueue] = useState(() => {
@@ -170,20 +180,32 @@ export function ListReviewMode({
   }, [isWide]);
 
   const myReactionOnCurrent = useMemo(() => {
+    // Feed mode doesn't write to the reactions table, so there's no
+    // "current reaction" to highlight — one-pass-through-the-queue.
+    if (mode === "feed") return null;
     if (!current || !currentUserId) return null;
     const rs = reactionsByItem.get(current.rowId) || [];
     const mine = rs.find(r => r.user_id === currentUserId);
     return mine?.emoji || null;
-  }, [current, currentUserId, reactionsByItem]);
+  }, [mode, current, currentUserId, reactionsByItem]);
 
-  // Cumulative tally — derived from reactionsByItem (not a session
-  // counter) so resume + recap reflects ALL reactions on this list.
-  // Counts an item once even if it has both Yes AND Pass rows
-  // (defensive against any historical pre-v1.3.3 duplicates). Yes
-  // wins ties as the more recent intent is harder to derive without
-  // iterating timestamps; not worth the cycles.
+  // Cumulative tally — list mode derives from reactionsByItem so
+  // resume + recap reflect ALL reactions on this list; feed mode
+  // tracks session-only counts since there are no per-item reaction
+  // rows in collection_item_reactions for feed surfaces.
+  const [sessionPassedSet, setSessionPassedSet] = useState(() => new Set());
   const cumulativeTally = useMemo(() => {
     let yes = 0, pass = 0, hearted = 0;
+    if (mode === "feed") {
+      // Feed mode: hearted = current count from watchlist within
+      // the screened queue; pass = items the user explicitly skipped
+      // this session. No "yes" concept here.
+      pass = sessionPassedSet.size;
+      for (const item of items) {
+        if (watchlist && watchlist[item.id]) hearted++;
+      }
+      return { yes, pass, hearted };
+    }
     if (!currentUserId) return { yes, pass, hearted };
     for (const item of items) {
       const rs = reactionsByItem.get(item.rowId) || [];
@@ -194,7 +216,7 @@ export function ListReviewMode({
       if (watchlist && watchlist[item.id]) hearted++;
     }
     return { yes, pass, hearted };
-  }, [items, reactionsByItem, currentUserId, watchlist]);
+  }, [items, reactionsByItem, currentUserId, watchlist, mode, sessionPassedSet]);
 
   // Swipe / mount-rise state.
   const dragStartRef = useRef(null);
@@ -253,8 +275,37 @@ export function ListReviewMode({
     advance();
   };
 
-  const handleYes = () => recordReaction("👍");
-  const handlePass = () => recordReaction("❌");
+  // Feed mode (Mark spec 2026-05-14): no reactions table involved.
+  // "Yes" gestures fire the heart toggle (the only positive signal
+  // for feed surfaces); "Pass" gestures pure-advance and log the
+  // listing in a session-only passed set so the recap tally is
+  // accurate.
+  const handleYes = () => {
+    if (mode === "feed") {
+      haptic(15);
+      if (current && handleWish && !(watchlist && watchlist[current.id])) {
+        handleWish(current);
+      }
+      advance();
+      return;
+    }
+    recordReaction("👍");
+  };
+  const handlePass = () => {
+    if (mode === "feed") {
+      haptic(15);
+      if (current) {
+        setSessionPassedSet(prev => {
+          const next = new Set(prev);
+          next.add(current.id);
+          return next;
+        });
+      }
+      advance();
+      return;
+    }
+    recordReaction("❌");
+  };
   const handleSkip = () => advance();
 
   // Undo — step back one AND clear ALL the user's Yes/Pass on the
@@ -337,11 +388,13 @@ export function ListReviewMode({
     if (dx > SWIPE_THRESHOLD_X) {
       setFlyOut("right");
       setDrag({ x: window.innerWidth + 200, y: dy * 0.4 });
-      setTimeout(() => recordReaction("👍"), 220);
+      // Route through handleYes so feed mode's heart-toggle path
+      // fires instead of the reactions-table write.
+      setTimeout(() => handleYes(), 220);
     } else if (dx < -SWIPE_THRESHOLD_X) {
       setFlyOut("left");
       setDrag({ x: -window.innerWidth - 200, y: dy * 0.4 });
-      setTimeout(() => recordReaction("❌"), 220);
+      setTimeout(() => handlePass(), 220);
     } else {
       setDrag({ x: 0, y: 0 });
     }
@@ -379,7 +432,11 @@ export function ListReviewMode({
 
   // ── Render ────────────────────────────────────────────────────
 
-  const outerStyle = isWide ? {
+  // Feed mode always renders as a fullscreen portal — there's no
+  // inline drill-in for it to live inside (it's launched from Home /
+  // any tab), so the desktop inline-panel layout doesn't apply.
+  const usePortalLayout = mode === "feed" || !isWide;
+  const outerStyle = !usePortalLayout ? {
     // v1.3: chrome around the drill-in (title row + recipient banner)
     // is hidden when screening is active, so the wordmark + nav +
     // filter row are the only chrome above us. Tighter constant
@@ -514,7 +571,7 @@ export function ListReviewMode({
         )}
 
         {done ? (
-          <RecapView tally={cumulativeTally} total={total} ownerName={ownerName} onClose={onClose} />
+          <RecapView tally={cumulativeTally} total={total} ownerName={ownerName} onClose={onClose} mode={mode} />
         ) : current ? (
           <>
             {/* Image stack with peek behind. Desktop card sized so
@@ -760,7 +817,7 @@ export function ListReviewMode({
               <span>Pass</span>
             </button>
             <button onClick={handleYes} style={reactionBtnStyle("yes", myReactionOnCurrent === "👍")}>
-              <span>Yes</span>
+              <span>{mode === "feed" ? "Save" : "Yes"}</span>
               <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: 0, marginLeft: -2 }}>→</span>
             </button>
             <button onClick={handleSkip} style={edgeNavStyle(false, { small: true })}>
@@ -814,7 +871,7 @@ export function ListReviewMode({
   );
 
   if (typeof document === "undefined") return null;
-  if (isWide) return overlay;                            // inline content surface
+  if (!usePortalLayout) return overlay;                  // inline content surface
   return createPortal(overlay, document.body);           // fullscreen portal
 }
 
@@ -1095,7 +1152,8 @@ function BreakInterstitial({ idx, total, onContinue, onPause }) {
   );
 }
 
-function RecapView({ tally, total, ownerName, onClose }) {
+function RecapView({ tally, total, ownerName, onClose, mode }) {
+  const isFeed = mode === "feed";
   return (
     <div style={{
       textAlign: "center", maxWidth: 460,
@@ -1115,13 +1173,15 @@ function RecapView({ tally, total, ownerName, onClose }) {
         lineHeight: 1.2, marginBottom: 26,
         letterSpacing: "-0.005em",
       }}>
-        Your take on this list.
+        {isFeed ? `You reviewed ${total} new listings.` : "Your take on this list."}
       </div>
       <div style={{
-        display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
-        gap: 10, margin: "0 auto 26px", maxWidth: 340,
+        display: "grid",
+        gridTemplateColumns: isFeed ? "repeat(2, 1fr)" : "repeat(3, 1fr)",
+        gap: 10, margin: "0 auto 26px",
+        maxWidth: isFeed ? 240 : 340,
       }}>
-        <TallyCard label="Yes" value={tally.yes} color="var(--brand)" />
+        {!isFeed && <TallyCard label="Yes" value={tally.yes} color="var(--brand)" />}
         <TallyCard label="Hearted" value={tally.hearted} color="#d92626" />
         <TallyCard label="Pass" value={tally.pass} color="var(--text2)" />
       </div>
@@ -1130,10 +1190,14 @@ function RecapView({ tally, total, ownerName, onClose }) {
         marginBottom: 26, lineHeight: 1.5,
         fontStyle: "italic",
       }}>
-        {ownerName ? `${ownerName} will see your reactions next time they open the list.` : "Your reactions are saved."}
+        {isFeed
+          ? "Hearts saved to your watchlist."
+          : ownerName
+            ? `${ownerName} will see your reactions next time they open the list.`
+            : "Your reactions are saved."}
       </div>
       <button onClick={onClose} style={primaryBtnStyle()}>
-        Back to list
+        {isFeed ? "Done" : "Back to list"}
       </button>
     </div>
   );

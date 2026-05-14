@@ -1140,52 +1140,11 @@ function PoolCard({ item, busy, onAdd, primaryCurrency }) {
 // nearly identical so the toggle is hidden as noise.
 const BUCKET_TOGGLE_MIN = 6;
 
-// Monochrome bucket glyphs — share the screening palette so the
-// surface reads as one visual system. ❤ loved / ★ liked (check) /
-// ✕ passed / 📋 to review. Stroke colour comes from the parent.
-const BUCKET_GLYPH = {
-  toReview: (s = 14) => (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
-      strokeLinejoin="round" aria-hidden="true">
-      <path d="M9 4h6a2 2 0 0 1 2 2v0H7v0a2 2 0 0 1 2-2z"/>
-      <rect x="5" y="6" width="14" height="16" rx="2"/>
-      <path d="M9 12h6M9 16h4"/>
-    </svg>
-  ),
-  loved: (s = 14) => (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor"
-      stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"
-      aria-hidden="true">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-    </svg>
-  ),
-  liked: (s = 14) => (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"
-      strokeLinejoin="round" aria-hidden="true">
-      <path d="M20 6L9 17l-5-5"/>
-    </svg>
-  ),
-  passed: (s = 14) => (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
-      aria-hidden="true">
-      <path d="M18 6L6 18M6 6l12 12"/>
-    </svg>
-  ),
-};
 const BUCKET_LABEL = {
   toReview: "To review",
   loved: "Loved",
   liked: "Liked",
   passed: "Passed",
-};
-const BUCKET_COLOR = {
-  toReview: "var(--text2)",
-  loved: "#e0322b",
-  liked: "var(--brand)",
-  passed: "var(--text3)",
 };
 
 // ShareMenu retired 2026-05-14 — replaced by a single flat Share
@@ -1195,51 +1154,44 @@ const BUCKET_COLOR = {
 // "Share this list" + "Manage collaborators" split confused users
 // when both end up surfacing the same kind of link.
 
-// One bucket section in the Lists drill-in (Mark spec 2026-05-14
-// polish pass). Header is the bucket's identity at a glance: tinted
-// glyph + readable label + count, with the density toggle as the
-// only affordance on the right ("Expand →" → grid, "Compact ↑" →
-// slider). Mark feedback 2026-05-14: collapse chevron retired —
-// slider IS the compact form, and stacking two density mechanisms
-// on the same row added cognitive load without adding capability.
-// To hide a bucket entirely, use the View > Show buckets toggle in
-// the Manage panel. `renderItem` is passed in from ListsView so
-// flat + bucketed paths share the same Card setup.
+// One bucket section in the Lists drill-in. Header mirrors the
+// Listings tab's date-divider banner — same surface band, label
+// weight, and right-aligned count — so the two surfaces read as
+// the same primitive when scanning. The density toggle hangs off
+// the right of the count on buckets that pass the size threshold.
 function BucketSection({
-  label, count, glyph, color,
+  label, count,
   isGrid, showDensitySwitch, onToggleDensity,
   gridStyle, items, renderItem, isMobile,
 }) {
   return (
     <section>
       <div style={{
-        display: "flex", alignItems: "center", gap: 12,
-        padding: "16px 14px 10px",
+        // 2026-05-14: match the Listings tab date-divider banner so
+        // bucket headers and date dividers read as the same primitive
+        // when scanning. Surface background + baseline alignment +
+        // count pushed to far right (above the density toggle).
+        gridColumn: "1/-1",
+        display: "flex", alignItems: "baseline", gap: 12,
+        padding: "14px 14px 12px",
         borderBottom: "0.5px solid var(--border)",
-        marginBottom: 10,
+        background: "var(--surface)",
+        marginBottom: 4,
       }}>
         <span style={{
-          color,
-          display: "inline-flex", alignItems: "center",
-          lineHeight: 0, flexShrink: 0,
-        }}>
-          {glyph(18)}
-        </span>
-        <span style={{
-          fontSize: 15, fontWeight: 600,
+          fontSize: 14, fontWeight: 600,
           color: "var(--text1)",
-          letterSpacing: "-0.005em",
         }}>
           {label}
         </span>
         <span style={{
-          fontSize: 14, color: "var(--text3)",
+          fontSize: 12, color: "var(--text3)",
           fontVariantNumeric: "tabular-nums",
           fontWeight: 400,
+          marginLeft: "auto",
         }}>
           {count}
         </span>
-        <div style={{ flex: 1 }} />
         {showDensitySwitch && (
           <button
             onClick={onToggleDensity}
@@ -2011,8 +1963,6 @@ function ListsView({
                       key={key}
                       label={BUCKET_LABEL[key]}
                       count={bucketItems.length}
-                      glyph={BUCKET_GLYPH[key]}
-                      color={BUCKET_COLOR[key]}
                       isGrid={isGrid}
                       showDensitySwitch={bucketItems.length > BUCKET_TOGGLE_MIN}
                       onToggleDensity={() =>
