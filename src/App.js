@@ -18,6 +18,8 @@ import { useFavSearchModal } from "./hooks/useFavSearchModal";
 import { useViewSettings } from "./hooks/useViewSettings";
 import { useFilters } from "./hooks/useFilters";
 import { useHomeHidden } from "./hooks/useHomeHidden";
+import { useLastVisit } from "./hooks/useLastVisit";
+import { ListReviewMode } from "./components/ListReviewMode";
 import { Card } from "./components/Card";
 // AuctionsTab retired 2026-04-30 — Tracked lots merged into Watchlist
 // Listings; calendar moved to Watchlist > Auction Calendar sub-tab via
@@ -631,6 +633,13 @@ export default function Watchlist() {
   // pattern — one-bit mirror; the ListReceiver component owns its
   // own intent state.
   const [listShareActive, setListShareActive] = useState(false);
+  // Feed-screening (Mark spec 2026-05-14): the user can review new
+  // listings since their last visit via the same screening primitive
+  // used on shared lists. lastVisit is the PREVIOUS session's open
+  // timestamp; useLastVisit bumps storage to NOW on mount so this
+  // session's open seeds the next session's lastVisit.
+  const { lastVisit, newSince, markSeen: markFeedSeen } = useLastVisit();
+  const [feedScreenerOpen, setFeedScreenerOpen] = useState(false);
   // (colDrillInId state moved up earlier in the file — needed by the
   // savedItemsSnapshot effect which depends on it.)
   // Bumps each time the user explicitly navigates away from a
@@ -1172,6 +1181,23 @@ export default function Watchlist() {
     const merged = [...items, ...auctionLotItems];
     return hasAdminHide ? merged.filter(filterAdminHidden) : merged;
   }, [items, auctionLotItems, adminHidden]);
+
+  // Feed-screening queue (Mark spec 2026-05-14): live, non-hidden
+  // items added since the user's last visit, sorted newest first
+  // and capped at 50. Auction lots included (they show up in the
+  // unified main feed). Hidden items skipped — explicit "don't show
+  // me this again" signal. Hearted items kept so the user can see
+  // what they've already saved across visits.
+  const feedScreenerItems = useMemo(() => {
+    if (!lastVisit) return [];
+    const live = mainFeedItems.filter(i => !i.sold && !hidden[i.id]);
+    live.sort((a, b) => {
+      const fa = a.firstSeen ? new Date(a.firstSeen).getTime() : 0;
+      const fb = b.firstSeen ? new Date(b.firstSeen).getTime() : 0;
+      return fb - fa;
+    });
+    return newSince(live, 50);
+  }, [mainFeedItems, hidden, lastVisit, newSince]);
 
   // Sources for the filter UI, split by kind so the sidebar/drawer can
   // group them under Dealers / Auction houses sub-headers. SOURCES is
@@ -2642,6 +2668,11 @@ export default function Watchlist() {
       isAdmin={isAdmin}
       user={user}
       compact={compact}
+      // Feed-screening entry banner: only renders when there's a real
+      // diff to review (lastVisit present + items to screen).
+      lastVisit={lastVisit}
+      feedScreenerItemsCount={feedScreenerItems.length}
+      openFeedScreener={() => setFeedScreenerOpen(true)}
     />
   );
 
@@ -3111,6 +3142,11 @@ export default function Watchlist() {
     // Drill-in mirror so the shell can show the filter row when
     // we're inside a list (Watchlists > Lists > [list]).
     colDrillInId,
+    // Feed-screening (new listings since last visit). HomeTab reads
+    // these to render the entry banner.
+    lastVisit,
+    feedScreenerItemsCount: feedScreenerItems.length,
+    openFeedScreener: () => setFeedScreenerOpen(true),
   };
 
   return (
@@ -3118,6 +3154,21 @@ export default function Watchlist() {
       {isMobile
         ? <MobileShell {...shellProps} />
         : <DesktopShell {...shellProps} />}
+      {feedScreenerOpen && (
+        <ListReviewMode
+          mode="feed"
+          items={feedScreenerItems}
+          watchlist={watchlist}
+          handleWish={handleWish}
+          primaryCurrency={primaryCurrency}
+          reactionsByItem={new Map()}
+          onToggleReaction={() => {}}
+          onClose={() => {
+            setFeedScreenerOpen(false);
+            markFeedSeen();
+          }}
+        />
+      )}
     </ErrorBoundary>
   );
 }

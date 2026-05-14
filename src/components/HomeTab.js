@@ -466,6 +466,58 @@ function calloutCtaStyle() {
   };
 }
 
+// Feed-screening entry banner (Mark spec 2026-05-14). Renders only
+// when there's a real diff to review — first-ever visitors get no
+// lastVisit and no banner; an already-current visitor with zero new
+// listings since their last open also gets nothing.
+function NewSinceLastVisitBanner({ lastVisit, count, onScreen, isMobile }) {
+  if (!lastVisit || !count || count <= 0 || !onScreen) return null;
+  const dateLabel = formatLastVisit(lastVisit);
+  return (
+    <div style={{
+      display: "flex", alignItems: "center",
+      gap: 12, flexWrap: "wrap",
+      padding: isMobile ? "12px 14px" : "14px 16px",
+      margin: isMobile ? "8px 0 14px" : "12px 0 18px",
+      background: "var(--surface)",
+      border: "0.5px solid var(--border)",
+      borderRadius: 10,
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: 14, fontWeight: 600, color: "var(--text1)",
+          letterSpacing: "-0.005em",
+        }}>
+          {count} new {count === 1 ? "listing" : "listings"} since {dateLabel}
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text3)", marginTop: 2 }}>
+          Screen them one at a time — save the ones you like, pass on the rest.
+        </div>
+      </div>
+      <button onClick={onScreen} style={{
+        flexShrink: 0, cursor: "pointer", fontFamily: "inherit",
+        fontSize: 13, fontWeight: 600, letterSpacing: "0.02em",
+        padding: "8px 16px", borderRadius: 999,
+        border: "none", background: "var(--brand)", color: "#fff",
+      }}>
+        Start screening
+      </button>
+    </div>
+  );
+}
+
+function formatLastVisit(d) {
+  if (!(d instanceof Date) || isNaN(d.getTime())) return "your last visit";
+  const now = new Date();
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const days = Math.floor((now.getTime() - d.getTime()) / msPerDay);
+  if (days <= 0) return "earlier today";
+  if (days === 1) return "yesterday";
+  if (days < 7) return `${days} days ago`;
+  const opts = { month: "short", day: "numeric" };
+  return d.toLocaleDateString(undefined, opts);
+}
+
 // Footer band — closes the page rather than trailing off. Hairline
 // rule above the link row, small centered text. About + Privacy +
 // Terms always; Sign in only when signed-out.
@@ -511,6 +563,7 @@ export function HomeTab(props) {
     watchlist, hidden, handleWish, toggleHide, toggleHomeHide, primaryCurrency,
     onShare, onView, onClickListing, openCollectionPicker, isAdmin,
     user, compact,
+    lastVisit, feedScreenerItemsCount, openFeedScreener,
   } = props;
 
   // The shell adds horizontal padding around its main content (16px
@@ -538,6 +591,12 @@ export function HomeTab(props) {
           onJumpToDealer={homeJumpToDealer}
         />
       )}
+      <NewSinceLastVisitBanner
+        lastVisit={lastVisit}
+        count={feedScreenerItemsCount}
+        onScreen={openFeedScreener}
+        isMobile={isMobile}
+      />
       <SectionStrip
         heading="Recently added"
         items={homeRecentAdded}
