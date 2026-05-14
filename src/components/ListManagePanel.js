@@ -94,7 +94,7 @@ export function ListManagePanel({
             textTransform: "uppercase",
             color: "var(--text2)",
           }}>
-            Reactions &amp; view
+            Review mode
           </div>
           <button
             onClick={onClose}

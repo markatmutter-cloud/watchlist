@@ -1886,8 +1886,8 @@ function ListsView({
             )}
             <button
               onClick={() => setManagePanelOpen(true)}
-              title="Reactions & view"
-              aria-label="Reactions & view"
+              title="Review mode — screening, reactions, view"
+              aria-label="Review mode"
               style={{
                 ...actionButton({ variant: "subtle" }),
                 flexShrink: 0,
@@ -1902,7 +1902,7 @@ function ListsView({
                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <span>Reactions</span>
+              <span>Review</span>
             </button>
           </div>
         )}
