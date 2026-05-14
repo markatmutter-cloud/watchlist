@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { fmtUSD } from "../utils";
 import { resizeImage } from "../resizeImage";
 import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase, actionButton } from "../styles";
@@ -209,7 +210,13 @@ export function WatchDetailSheet({
     maxHeight: "90vh", overflowY: "auto",
   };
 
-  return (
+  // Portal to document.body so the sheet shares a stacking context
+  // with other body-level overlays (Screening mode) and z-indexes
+  // resolve cleanly. Without this, ancestor stacking contexts in
+  // CollectionsTab could trap the sheet beneath the screening
+  // overlay even when its zIndex is higher.
+  if (typeof document === "undefined") return null;
+  return createPortal((
     <div onClick={onClose} style={modalBackdrop}>
       <div onClick={e => e.stopPropagation()} style={sheetStyle}>
         <div style={modalTitleRow}>
@@ -459,7 +466,7 @@ export function WatchDetailSheet({
         )}
       </div>
     </div>
-  );
+  ), document.body);
 }
 
 function EditField({ draft, setDraft, multiline, placeholder, inputMode, onSave, onCancel }) {
