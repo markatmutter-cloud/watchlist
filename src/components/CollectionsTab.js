@@ -1713,6 +1713,59 @@ function ListsView({
             }}>
               {selected.name}
             </span>
+            {/* Review + Reset cluster — Mark spec 2026-05-14: pair
+                lives next to the list name (not at the far right
+                with Share) so the relationship between them reads
+                visually. "Reset ratings" spells out what Reset
+                clears so the action isn't ambiguous next to other
+                affordances. Share moves to the right edge by itself. */}
+            {(isRecipient || myReactionsOnList.length > 0) && (
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                flexShrink: 0,
+              }}>
+                {isRecipient && (
+                  <button
+                    onClick={() => {
+                      setScreenAllMode(myReactedCount >= items.length && items.length > 0);
+                      setReviewModeOpen(true);
+                      setScreeningResetTick(t => t + 1);
+                    }}
+                    title={myReactedCount >= items.length && items.length > 0
+                      ? "Re-screen this list"
+                      : "Walk through unreacted items one at a time"}
+                    style={{
+                      ...actionButton({ variant: "subtle" }),
+                      flexShrink: 0,
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                    }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="1.6"
+                      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    Review
+                  </button>
+                )}
+                {myReactionsOnList.length > 0 && (
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm(`Clear all ${myReactionsOnList.length} of your Yes / Pass ratings on this list? (Your hearts stay where they are.)`)) return;
+                      await Promise.all(myReactionsOnList.map(({ itemId, emoji }) =>
+                        onToggleReaction(itemId, emoji)));
+                    }}
+                    title={`Reset your ${myReactionsOnList.length} Yes / Pass ratings`}
+                    style={{
+                      ...actionButton({ variant: "subtle" }),
+                      flexShrink: 0,
+                      color: "var(--danger, #c0392b)",
+                    }}>
+                    Reset ratings
+                  </button>
+                )}
+              </div>
+            )}
             {isRecipient && items.length > 0 && myReactedCount < items.length && (
               <>
                 <span style={{ color: "var(--text3)", fontSize: 13, flexShrink: 0 }}>·</span>
@@ -1736,58 +1789,13 @@ function ListsView({
                 Link copied
               </span>
             )}
-            {/* Mark spec 2026-05-14: three flat header buttons
-                replace the Share dropdown + Review panel trigger.
-                Share opens the unified Share modal (owner) or fires
-                native share (non-owner). Review opens screening —
-                resume if there's unrated items, otherwise re-screens
-                the full list. Reset clears your Yes/Pass on this
-                list with a confirm. */}
+            {/* Share sits alone on the right — distribution action,
+                separate from the "act on your reactions" pair above. */}
             {showActions && (
               <button onClick={isOwner ? () => setManageListOpen(true) : triggerShare}
                 title="Share this list"
                 style={{ ...actionButton({ variant: "primary" }), flexShrink: 0 }}>
                 Share
-              </button>
-            )}
-            {isRecipient && (
-              <button
-                onClick={() => {
-                  setScreenAllMode(myReactedCount >= items.length && items.length > 0);
-                  setReviewModeOpen(true);
-                  setScreeningResetTick(t => t + 1);
-                }}
-                title={myReactedCount >= items.length && items.length > 0
-                  ? "Re-screen this list"
-                  : "Walk through unreacted items one at a time"}
-                style={{
-                  ...actionButton({ variant: "subtle" }),
-                  flexShrink: 0,
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="1.6"
-                  strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-                Review
-              </button>
-            )}
-            {myReactionsOnList.length > 0 && (
-              <button
-                onClick={async () => {
-                  if (!window.confirm(`Clear all ${myReactionsOnList.length} of your Yes / Pass ratings on this list? (Your hearts stay where they are.)`)) return;
-                  await Promise.all(myReactionsOnList.map(({ itemId, emoji }) =>
-                    onToggleReaction(itemId, emoji)));
-                }}
-                title={`Reset your ${myReactionsOnList.length} Yes / Pass ratings`}
-                style={{
-                  ...actionButton({ variant: "subtle" }),
-                  flexShrink: 0,
-                  color: "var(--danger, #c0392b)",
-                }}>
-                Reset
               </button>
             )}
           </div>
