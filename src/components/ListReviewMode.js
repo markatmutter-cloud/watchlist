@@ -661,14 +661,29 @@ export function ListReviewMode({
               )}
               {current.url && (
                 <div style={{
-                  fontSize: 11, color: "var(--brand)",
-                  marginTop: isWide ? 18 : 10,
-                  letterSpacing: "0.06em",
-                  fontWeight: 500,
-                  textDecoration: "underline",
-                  textUnderlineOffset: 3,
+                  marginTop: isWide ? 20 : 14,
+                  // Center the pill on mobile (the detail block is
+                  // centered there); left-aligned on desktop where the
+                  // block sits beside the image.
+                  textAlign: isWide ? "left" : "center",
                 }}>
-                  View original listing ↗
+                  <span style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "9px 18px",
+                    border: "1px solid var(--brand)",
+                    borderRadius: 6,
+                    color: "var(--brand)",
+                    fontFamily: SANS_STACK,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                  }}>
+                    View listing
+                    <span style={{ fontSize: 14, fontWeight: 400, letterSpacing: 0 }}>→</span>
+                  </span>
                 </div>
               )}
             </a>
@@ -700,12 +715,12 @@ export function ListReviewMode({
               Undo
             </button>
             <button onClick={handlePass} style={reactionBtnStyle("pass", myReactionOnCurrent === "❌")}>
-              <span style={{ fontSize: 14, fontWeight: 400 }}>←</span>
+              <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: 0, marginRight: -2 }}>←</span>
               <span>Pass</span>
             </button>
             <button onClick={handleYes} style={reactionBtnStyle("yes", myReactionOnCurrent === "👍")}>
               <span>Yes</span>
-              <span style={{ fontSize: 14, fontWeight: 400 }}>→</span>
+              <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: 0, marginLeft: -2 }}>→</span>
             </button>
             <button onClick={handleSkip} style={edgeNavStyle(false, { small: true })}>
               Skip
@@ -840,7 +855,7 @@ function OverflowMenu({ triggerRef, onClose, item, openCollectionPicker, onShare
       fontFamily: SANS_STACK,
     }}>
       {openSourceListing && item.url && (
-        <MenuItem label="View original listing ↗" onClick={() => { onClose(); openSourceListing(); }} />
+        <MenuItem label="View listing →" onClick={() => { onClose(); openSourceListing(); }} />
       )}
       {openCollectionPicker && (
         <MenuItem label="Add to list…" onClick={() => { onClose(); openCollectionPicker(item); }} />
@@ -1135,23 +1150,42 @@ const subtleLinkStyle = {
 };
 
 function reactionBtnStyle(kind, active) {
-  // Mark spec 2026-05-14: "no as grey background and blue for yes."
-  // Yes = brand-blue, Pass = neutral grey.
-  const color = kind === "yes" ? "var(--brand)" : "var(--text2)";
-  const tintActive = kind === "yes"
-    ? "var(--brand-tint-12)"
-    : "rgba(0,0,0,0.06)";
+  // Mark feedback 2026-05-14: action buttons "look a bit basic text"
+  // — needed stronger presence to read as designed primary/secondary
+  // CTAs rather than text-on-rectangles. Yes is now a solid brand-blue
+  // primary fill (high contrast, weight 600); Pass is a substantial
+  // ghost with a heavier 1px border + var(--text1) label. Active
+  // states stay subtle so the rated card doesn't shout.
+  if (kind === "yes") {
+    return {
+      padding: "14px 22px",
+      border: "1px solid var(--brand)",
+      background: "var(--brand)",
+      color: "#fff",
+      fontFamily: SANS_STACK,
+      fontSize: 14, fontWeight: 600,
+      letterSpacing: "0.18em", textTransform: "uppercase",
+      borderRadius: 8, cursor: "pointer",
+      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+      minHeight: 52,
+      // Subtle press-state shadow so it feels like a CTA, not flat.
+      boxShadow: active
+        ? "inset 0 0 0 2px var(--brand), 0 0 0 1px var(--brand)"
+        : "0 1px 2px rgba(0,0,0,0.08)",
+    };
+  }
+  // Pass — substantial outlined ghost.
   return {
-    padding: "13px 18px",
-    border: active ? `1px solid ${color}` : `0.5px solid var(--border)`,
-    background: active ? tintActive : "var(--surface)",
-    color: color,
+    padding: "14px 22px",
+    border: active ? "1px solid var(--text1)" : "1px solid var(--border)",
+    background: active ? "var(--text1)" : "var(--surface)",
+    color: active ? "var(--bg)" : "var(--text1)",
     fontFamily: SANS_STACK,
-    fontSize: 13, fontWeight: 500,
+    fontSize: 14, fontWeight: 600,
     letterSpacing: "0.18em", textTransform: "uppercase",
     borderRadius: 8, cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-    minHeight: 48,
+    minHeight: 52,
   };
 }
 
