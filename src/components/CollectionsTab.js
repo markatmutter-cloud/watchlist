@@ -1313,7 +1313,7 @@ function ShareMenu({ triggerShare, onManageCollaborators }) {
 function BucketSection({
   label, count, glyph, color,
   isGrid, showDensitySwitch, onToggleDensity,
-  gridStyle, items, renderItem,
+  gridStyle, items, renderItem, isMobile,
 }) {
   return (
     <section>
@@ -1398,10 +1398,16 @@ function BucketSection({
           {items.map(renderItem)}
         </div>
       ) : (
+        // Tile sizing matches the Home page strips (HomeTab.js) —
+        // Mark spec 2026-05-14: Linear view should read at the same
+        // scale as Home, ~7 tiles visible on a typical desktop
+        // viewport instead of the wider ~4-tile pattern that was
+        // here before. Mobile: 44% flex-basis / 180px cap. Desktop:
+        // fixed 210px so the slider feels intentional at any width.
         <div
           style={{
             display: "flex",
-            gap: 12,
+            gap: 1,
             overflowX: "auto",
             scrollSnapType: "x mandatory",
             padding: "0 14px 8px",
@@ -1411,10 +1417,14 @@ function BucketSection({
           }}
         >
           {items.map((it) => (
-            <div key={it.id} style={{
-              flex: "0 0 auto",
-              width: 280,
+            <div key={it.id} style={isMobile ? {
+              flex: "0 0 44%", maxWidth: 180,
               scrollSnapAlign: "start",
+              background: "var(--card-bg)",
+            } : {
+              flex: "0 0 210px",
+              scrollSnapAlign: "start",
+              background: "var(--card-bg)",
             }}>
               {renderItem(it)}
             </div>
@@ -2116,6 +2126,7 @@ function ListsView({
                       gridStyle={gridStyle}
                       items={bucketItems}
                       renderItem={renderItemCard}
+                      isMobile={!isWide}
                     />
                   );
                 })}
