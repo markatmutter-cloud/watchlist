@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import { supabase } from "../supabase";
 import { Card } from "./Card";
 import { ListRow } from "./ListRow";
-import { SubTabIntro } from "./SubTabIntro";
 import { ChallengesView } from "./ChallengesView";
 import { ManualEntryForm } from "./ManualEntryForm";
 import { ListingPickerModal } from "./ListingPickerModal";
@@ -468,32 +467,15 @@ function MyCollectionView({
   // collapsed title row.
   const myWatchesTotal = ownedItems.length + soldItems.length + (wishlistItems || []).length;
   return (
-    // paddingTop:4 added 2026-05-11 to match the other Saved sub-tabs
-    // (Lists, Challenges, etc.) that use the same outer wrapper.
-    // Was a bare <div> here — made My Watches' SubTabIntro sit 4px
-    // higher than the others. Mark feedback: "the expanding
-    // descriptors on the watchlist subtabs" don't line up.
-    <div style={{ paddingTop: 4 }}>
-      <SubTabIntro
-        title="My Watches"
-        blurb={<>
-          Three views over your collection. <strong>Collection</strong> is what
-          you own today. <strong>Archive</strong> is what you've sold.
-          <strong> Plan</strong> is what you're thinking about next — the
-          watches you'd sell, the watches you'd buy, and the cash impact if
-          you make those moves.
-          <br/>
-          Add a watch with <strong>+ Add a watch</strong> (off-platform — upload
-          a photo) or <strong>+ From feed</strong> (pull in a tracked dealer
-          listing). Tap any tile for the detail sheet — your thoughts,
-          buy/sell numbers, P&amp;L, and a dated journal.
-        </>}
-        expandable
-        defaultExpanded={myWatchesTotal === 0}
-      />
+    // paddingTop bumped 4 → 16 on 2026-05-14 (Mark feedback) — sub-tab
+    // strip + first content row were crowding each other after the
+    // SubTabIntro retirement; the intro card used to provide implicit
+    // vertical room. Keeps the segmented Collection/Archive/Plan
+    // toggle below the sub-tab strip with breathing space.
+    <div style={{ paddingTop: 16 }}>
       <div style={{
         display: "flex", alignItems: "center", gap: 12,
-        padding: "8px 0 14px",
+        padding: "0 0 14px",
         marginBottom: 8, flexWrap: "wrap",
       }}>
         {/* Segmented control — Collection / Archive / Plan.
@@ -2128,12 +2110,12 @@ function ListsView({
   };
 
   return (
-    <div style={{ paddingTop: 4 }}>
-      {/* 2026-05-14 (Mark spec): SubTabIntro retired — the grouped
-          eyebrow headers + the inline + New CTA carry the same
-          affordances without the duplicate guidance card. Empty
-          state below carries the onboarding text for first-time
-          users. */}
+    // paddingTop bumped 4 → 16 on 2026-05-14 (Mark feedback): the
+    // sub-tab strip was crowding the first group banner. The grouped
+    // eyebrow headers now use the Listings date-divider shape (grey
+    // surface band) so the visual primitive is consistent across
+    // both tabs.
+    <div style={{ paddingTop: 16 }}>
       {totalRows === 0 ? (
         <EmptyState
           icon="📂"
@@ -2150,19 +2132,24 @@ function ListsView({
           {groups.map(g => (
             <section key={g.key}>
               <div style={{
-                display: "flex", alignItems: "center",
-                padding: "0 4px 6px",
-                gap: 12,
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "14px 14px 12px",
+                borderBottom: "0.5px solid var(--border)",
+                background: "var(--surface)",
+                marginBottom: 10,
               }}>
                 <span style={{
-                  fontSize: 11, fontWeight: 600,
-                  letterSpacing: "0.10em",
-                  textTransform: "uppercase",
-                  color: "var(--text3)",
+                  fontSize: 14, fontWeight: 600, color: "var(--text1)",
                 }}>
                   {g.title}
                 </span>
-                <div style={{ flex: 1 }} />
+                <span style={{
+                  fontSize: 12, color: "var(--text3)",
+                  fontVariantNumeric: "tabular-nums",
+                  marginLeft: "auto",
+                }}>
+                  {g.rows.length.toLocaleString()}
+                </span>
                 {g.key === "owned" && (
                   <button onClick={startCreateCollection}
                     style={inlineNewListStyle}>

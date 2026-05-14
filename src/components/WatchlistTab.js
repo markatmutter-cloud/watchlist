@@ -307,19 +307,10 @@ export function WatchlistTab(props) {
   // into the Watchlist tab. Signed-out fallback handled by the outer
   // !user branch in render() via SIGNED_OUT_BY_SUBTAB.
   const searchesTabJSX = (
-    // paddingTop:4 restored 2026-05-11 — turns out most Saved
-    // sub-tabs (Lists, My Watches, Challenges via CollectionsTab)
-    // also use paddingTop:4. The previous fix that dropped it from
-    // Searches made the alignment WORSE, not better. Now all four
-    // SubTabIntros line up at the same y-offset.
-    <div style={{ paddingTop: 4 }}>
-      {/* 2026-05-14 (Mark spec): SubTabIntro + duplicate "Saved
-          searches" inline section header retired. The sub-tab strip
-          + the eyebrow group header below carry the section identity;
-          three labels saying the same thing was visual debt.
-          Saved-search rows now render through `ListRow` so they match
-          the Lists view exactly — tinted-disc icon, two-line text,
-          trailing chevron, inline action icons for Edit + Delete. */}
+    // paddingTop bumped 4 → 16 on 2026-05-14 (Mark feedback): same
+    // crowding issue between sub-tab strip and the first group
+    // banner that hit My Watches / Lists.
+    <div style={{ paddingTop: 16 }}>
       {savedSearchStats.length === 0 && !searchEditor ? (
         <EmptyState
           icon="🔍"
@@ -342,23 +333,28 @@ export function WatchlistTab(props) {
         />
       ) : (
         <section>
-          {/* Eyebrow group header — matches the Lists view pattern
-              (SAVED / MY LISTS / SHARED WITH ME). Inline + New CTA
-              replaces the SubTabIntro action button. */}
+          {/* Eyebrow uses the Listings date-divider banner shape —
+              grey surface band, baseline align, count right (Mark
+              spec 2026-05-14, consistency with Listings + Lists). */}
           <div style={{
-            display: "flex", alignItems: "center",
-            padding: "0 4px 10px",
-            gap: 12,
+            display: "flex", alignItems: "center", gap: 12,
+            padding: "14px 14px 12px",
+            borderBottom: "0.5px solid var(--border)",
+            background: "var(--surface)",
+            marginBottom: 10,
           }}>
             <span style={{
-              fontSize: 11, fontWeight: 600,
-              letterSpacing: "0.10em",
-              textTransform: "uppercase",
-              color: "var(--text3)",
+              fontSize: 14, fontWeight: 600, color: "var(--text1)",
             }}>
               Saved searches
             </span>
-            <div style={{ flex: 1 }} />
+            <span style={{
+              fontSize: 12, color: "var(--text3)",
+              fontVariantNumeric: "tabular-nums",
+              marginLeft: "auto",
+            }}>
+              {savedSearchStats.length.toLocaleString()}
+            </span>
             <button onClick={startAddSearch}
               style={{
                 flexShrink: 0, cursor: "pointer", fontFamily: "inherit",

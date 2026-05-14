@@ -4,7 +4,6 @@ import { ListRow } from "./ListRow";
 import { fmtUSD } from "../utils";
 import { signInButton } from "../styles";
 import { EmptyState } from "./EmptyState";
-import { SubTabIntro } from "./SubTabIntro";
 
 // Challenges view — extracted from WatchlistTab.js on 2026-05-04
 // when Challenges moved from a Watchlist sub-tab to a resource under
@@ -150,9 +149,13 @@ export function ChallengesView({
   }
 
   return (
-    <div style={{ paddingTop: 4 }}>
-      {/* Back button (drill-in only) sits above the SubTabIntro so
-          navigation remains the first thing the user sees. */}
+    // paddingTop bumped 4 → 16 on 2026-05-14 (Mark feedback): the
+    // first group banner was crowding the sub-tab strip after the
+    // SubTabIntro retirement. "+ New challenge" affordance moves onto
+    // the "Yours" group banner inline (replaces the SubTabIntro
+    // action button) + the empty-state's action prop.
+    <div style={{ paddingTop: 16 }}>
+      {/* Back button (drill-in only). */}
       {onBack && (
         <div style={{ marginBottom: 8 }}>
           <button onClick={onBack} aria-label="Back" style={{
@@ -165,33 +168,25 @@ export function ChallengesView({
           </button>
         </div>
       )}
-      {/* Intro banner consistent with Lists / Searches / My Watches
-          (2026-05-09 — Mark feedback: sub-tabs jumped vertically as
-          you switched). Collapsed when you have content; expanded
-          when empty so first-timers see the explainer. */}
-      <SubTabIntro
-        title="Challenges"
-        blurb={<>
-          Build a virtual collection within constraints — "5 watches, $50k
-          total" or "3 chronographs from before 1970". Pick from the feed,
-          share the spec with a friend, see what they'd pick under the same
-          rules. A pure thought experiment, no money moves.
-          <br/>
-          Tap <strong>+ New challenge</strong> to set the rules; pick from
-          your hearts or the live feed; share the result via the native
-          share sheet. Friends who open your link land on the same picker
-          and can save their own version back.
-        </>}
-        actionLabel="+ New challenge"
-        onAction={handleNewChallenge}
-        expandable
-        defaultExpanded={allChallenges.length === 0}
-      />
 
       {allChallenges.length === 0 ? (
         <EmptyState
           heading="No challenges yet"
           blurb="Create a virtual collection. Share your picks. Challenge someone else to do the same under your constraints."
+          action={
+            <button onClick={handleNewChallenge}
+              style={{
+                cursor: "pointer", fontFamily: "inherit",
+                fontSize: 13, fontWeight: 600, letterSpacing: "0.04em",
+                padding: "8px 16px", borderRadius: 999,
+                border: "0.5px solid var(--text2)",
+                background: "transparent",
+                color: "var(--text2)",
+                display: "inline-flex", alignItems: "center", gap: 4,
+              }}>
+              + New challenge
+            </button>
+          }
         />
       ) : (() => {
         // PR #90 grouping: split sender-attributed (Sent to you) from
@@ -203,22 +198,40 @@ export function ChallengesView({
         const sentToYou = allChallenges.filter(c => c.senderName);
         const yours     = allChallenges.filter(c => !c.senderName);
         return (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
             {sentToYou.length > 0 && (
-              <div>
-                <SectionHeader>Sent to you · {sentToYou.length}</SectionHeader>
+              <section>
+                <SectionBanner label="Sent to you" count={sentToYou.length} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {sentToYou.map(renderChallengeRow)}
                 </div>
-              </div>
+              </section>
             )}
             {yours.length > 0 && (
-              <div>
-                {sentToYou.length > 0 && <SectionHeader>Yours · {yours.length}</SectionHeader>}
+              <section>
+                <SectionBanner
+                  label={sentToYou.length > 0 ? "Yours" : "Challenges"}
+                  count={yours.length}
+                  action={
+                    <button onClick={handleNewChallenge}
+                      style={{
+                        flexShrink: 0, cursor: "pointer", fontFamily: "inherit",
+                        fontSize: 12, fontWeight: 600, letterSpacing: "0.04em",
+                        padding: "6px 12px", borderRadius: 999,
+                        border: "0.5px solid var(--text2)",
+                        background: "transparent",
+                        color: "var(--text2)",
+                        display: "inline-flex", alignItems: "center", gap: 4,
+                        lineHeight: 1,
+                      }}>
+                      + New challenge
+                    </button>
+                  }
+                />
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {yours.map(renderChallengeRow)}
                 </div>
-              </div>
+              </section>
             )}
           </div>
         );
@@ -356,12 +369,32 @@ const trashIcon = (
   </svg>
 );
 
-function SectionHeader({ children }) {
+// SectionBanner matches the Listings date-divider banner shape so
+// the eyebrow rows on Watchlist sub-tabs all read as the same
+// primitive (Mark spec 2026-05-14). Optional action slot sits to
+// the right of the count.
+function SectionBanner({ label, count, action }) {
   return (
     <div style={{
-      fontSize: 11, fontWeight: 600, color: "var(--text3)",
-      textTransform: "uppercase", letterSpacing: "0.04em",
-      padding: "0 4px 8px",
-    }}>{children}</div>
+      display: "flex", alignItems: "center", gap: 12,
+      padding: "14px 14px 12px",
+      borderBottom: "0.5px solid var(--border)",
+      background: "var(--surface)",
+      marginBottom: 10,
+    }}>
+      <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>
+        {label}
+      </span>
+      {count !== undefined && (
+        <span style={{
+          fontSize: 12, color: "var(--text3)",
+          fontVariantNumeric: "tabular-nums",
+          marginLeft: "auto",
+        }}>
+          {count.toLocaleString()}
+        </span>
+      )}
+      {action}
+    </div>
   );
 }
