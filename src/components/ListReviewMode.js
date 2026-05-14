@@ -31,6 +31,15 @@ function markIntroSeen() {
   try { localStorage.setItem(INTRO_SEEN_KEY, "1"); } catch {}
 }
 
+// Tiny haptic helper — uses the Web Vibration API. Android browsers
+// honour it; iOS Safari / iOS PWAs don't support it, so this is a
+// silent no-op there until iOS adds a haptic API (or we wrap into
+// a native shell). Cost of including: zero on iOS, a faint tap on
+// Android.
+function haptic(pattern) {
+  try { navigator.vibrate?.(pattern); } catch {}
+}
+
 // Per-list persistence keyed by rowId so resume locates the right
 // card even when the queue shrinks (items reacted to drop out).
 const persistenceKey = (listId) => `screening_${listId || "default"}`;
@@ -99,6 +108,16 @@ export function ListReviewMode({
     if (done || !current) clearPersistedRowId(listId);
     else writePersistedRowId(listId, current.rowId);
   }, [current, done, listId]);
+
+  // Completion haptic — fires once when the queue finishes.
+  // Three-pulse pattern reads as "done" vs the per-reaction tap.
+  const didCompleteHapticRef = useRef(false);
+  useEffect(() => {
+    if (done && total > 0 && !didCompleteHapticRef.current) {
+      didCompleteHapticRef.current = true;
+      haptic([40, 30, 40, 30, 60]);
+    }
+  }, [done, total]);
 
   // Break interstitial trigger.
   const [showBreak, setShowBreak] = useState(false);
@@ -202,23 +221,21 @@ export function ListReviewMode({
 
   const recordReaction = async (emoji) => {
     if (!current) return;
+    // Short tap haptic on every reaction. Android only — iOS no-ops.
+    haptic(15);
     // Screening enforces a single primary reaction per item (Yes XOR
     // Pass — Heart is a separate signal). The underlying
     // toggleReaction RPC only acts on the SPECIFIC emoji passed, so
     // switching from Yes to Pass without explicitly clearing Yes
-    // leaves both rows in the DB. Mark report 2026-05-13: "I hit
-    // like/pass and it kept adding to the summary not changing."
-    // Fix: enumerate the user's existing Yes/Pass on this item and
-    // clear them all before inserting the new one. Same pattern in
-    // handleClearCurrent / handleUndo below.
+    // leaves both rows in the DB. Fix: enumerate the user's existing
+    // Yes/Pass on this item and clear them all before inserting the
+    // new one. Same pattern in handleClearCurrent / handleUndo below.
     const mineYesPass = (reactionsByItem.get(current.rowId) || [])
       .filter(r => r.user_id === currentUserId && (r.emoji === "👍" || r.emoji === "❌"));
     for (const r of mineYesPass) {
       try { await onToggleReaction(current.rowId, r.emoji); }
       catch (e) { /* swallow */ }
     }
-    // Tap-same-emoji means "toggle off" — already cleared above;
-    // skip the re-insert.
     const tappingSameAsOnly = mineYesPass.length === 1
       && mineYesPass[0].emoji === emoji;
     if (!tappingSameAsOnly) {
@@ -273,13 +290,11 @@ export function ListReviewMode({
     setShowIntro(false);
   };
 
-  // Reset list confirm.
-  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
-  const confirmReset = async () => {
-    setResetConfirmOpen(false);
-    if (onReset) await onReset();
-    // Parent bumps a key on this component → fresh mount.
-  };
+  // Reset action retired from the in-screening UI 2026-05-14 (Mark
+  // spec: "take the reset off desktop as well"). Reset still
+  // reachable via the list-level ⋯ overflow menu ("Reset my
+  // reactions (N)"). The onReset prop is currently unused — leaving
+  // wired in case a future surface (e.g., post-recap CTA) wants it.
 
   // Pointer handlers — skip drag when target is a no-drag descendant
   // (heart, ⋯ menu) so their onClicks fire.
@@ -439,8 +454,8 @@ export function ListReviewMode({
             edges as the card flies off. */}
         {!done && current && (
           <>
-            <EdgeWash side="left" color="var(--danger)" label="Pass" opacity={washOpacity(-1)} />
-            <EdgeWash side="right" color="var(--accent-positive)" label="Yes" opacity={washOpacity(1)} />
+            <EdgeWash side="left" color="rgba(30,30,30,1)" label="Pass" opacity={washOpacity(-1)} />
+            <EdgeWash side="right" color="var(--brand)" label="Yes" opacity={washOpacity(1)} />
           </>
         )}
 
@@ -671,20 +686,10 @@ export function ListReviewMode({
         }}>
           <div style={{
             display: "grid",
-            // Mobile: 4 cols (Undo · Pass · Yes · Skip). Reset hidden
-            // on mobile (Mark feedback 2026-05-13: buttons don't all
-            // fit) — still reachable via the list's ⋯ overflow menu.
-            gridTemplateColumns: isWide
-              ? "auto auto 1fr 1fr auto"
-              : "auto 1fr 1fr auto",
+            gridTemplateColumns: "auto 1fr 1fr auto",
             gap: 10, alignItems: "center",
             maxWidth: 720, margin: "0 auto",
           }}>
-            {isWide && onReset ? (
-              <button onClick={() => setResetConfirmOpen(true)} style={subtleLinkStyle}>
-                Reset
-              </button>
-            ) : null}
             <button onClick={handleUndo} disabled={idx === 0} style={edgeNavStyle(idx === 0)}>
               ← Undo
             </button>
@@ -736,14 +741,6 @@ export function ListReviewMode({
           ownerName={ownerName}
           total={total}
           onDismiss={dismissIntro}
-        />
-      )}
-
-      {/* Reset confirm */}
-      {resetConfirmOpen && (
-        <ResetConfirm
-          onCancel={() => setResetConfirmOpen(false)}
-          onConfirm={confirmReset}
         />
       )}
 
@@ -1066,9 +1063,9 @@ function RecapView({ tally, total, ownerName, onClose }) {
         display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
         gap: 10, margin: "0 auto 26px", maxWidth: 340,
       }}>
-        <TallyCard label="Yes" value={tally.yes} color="var(--accent-positive)" />
+        <TallyCard label="Yes" value={tally.yes} color="var(--brand)" />
         <TallyCard label="Hearted" value={tally.hearted} color="#d92626" />
-        <TallyCard label="Pass" value={tally.pass} color="var(--danger)" />
+        <TallyCard label="Pass" value={tally.pass} color="var(--text2)" />
       </div>
       <div style={{
         fontSize: 13, color: "var(--text2)",
@@ -1136,8 +1133,12 @@ const subtleLinkStyle = {
 };
 
 function reactionBtnStyle(kind, active) {
-  const color = kind === "yes" ? "var(--accent-positive)" : "var(--danger)";
-  const tintActive = kind === "yes" ? "rgba(27,143,58,0.10)" : "rgba(192,57,43,0.10)";
+  // Mark spec 2026-05-14: "no as grey background and blue for yes."
+  // Yes = brand-blue, Pass = neutral grey.
+  const color = kind === "yes" ? "var(--brand)" : "var(--text2)";
+  const tintActive = kind === "yes"
+    ? "var(--brand-tint-12)"
+    : "rgba(0,0,0,0.06)";
   return {
     padding: "13px 18px",
     border: active ? `1px solid ${color}` : `0.5px solid var(--border)`,
