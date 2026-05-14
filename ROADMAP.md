@@ -352,6 +352,7 @@ remains the active mode.
 | Wrist Icons | WordPress; `/wp-json/wc/store/v1/products` returned 301 — follow redirect to confirm WooCommerce |
 | Vision Vintage Watches | Wix (not Squarespace despite the URL trick); needs custom HTML parsing |
 | Specific pushers.io dealers | reuse the Moonphase pattern (~30 lines per dealer) |
+| ADM Horloger ([adm-horloger.com](https://adm-horloger.com)) | Mark add 2026-05-14; identify platform + scrape pattern |
 
 ### Scraper refactor — shared helper library
 

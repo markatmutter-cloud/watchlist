@@ -11,6 +11,7 @@ import { MarkAsSoldModal } from "./MarkAsSoldModal";
 import { ManageListSheet } from "./ManageListSheet";
 import { WatchDetailSheet } from "./WatchDetailSheet";
 import { ListReviewMode } from "./ListReviewMode";
+import { ListManagePanel } from "./ListManagePanel";
 import { fmtUSD, matchesSearch } from "../utils";
 import { actionButton, signInButton } from "../styles";
 import { EmptyState } from "./EmptyState";
@@ -1118,96 +1119,204 @@ function PoolCard({ item, busy, onAdd, primaryCurrency }) {
 }
 
 
-// Compact ⋯ overflow menu for the list drill-in header. Replaces the
-// previous row of Manage / Rename / Delete buttons (Mark feedback
-// 2026-05-11: too many actions stacked next to Share — collapse the
-// owner-only ones into one menu). Click-outside + Escape close;
-// portals to document.body so it isn't clipped by any ancestor with
-// overflow:hidden (same pattern as Card.js).
-function ListActionsMenu({ items }) {
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef(null);
-  const portalRef = useRef(null);
-  const [pos, setPos] = useState(null);
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e) => {
-      const inTrigger = triggerRef.current && triggerRef.current.contains(e.target);
-      const inPortal  = portalRef.current && portalRef.current.contains(e.target);
-      if (!inTrigger && !inPortal) setOpen(false);
+// Per-list view preferences (Mark spec 2026-05-14). Stored under
+// `dial_list_view_state_<listId>` so collapse / density / show-as
+// preferences survive revisits without bleeding across lists.
+const LIST_VIEW_STATE_KEY = "dial_list_view_state";
+const DEFAULT_LIST_VIEW_STATE = {
+  viewMode: "buckets", // "buckets" | "flat"
+  bucketVisibility: { toReview: true, loved: true, liked: true, passed: true },
+  bucketCollapsed:  { toReview: false, loved: false, liked: false, passed: true },
+};
+function loadListViewState(listId) {
+  if (!listId || typeof window === "undefined") return DEFAULT_LIST_VIEW_STATE;
+  try {
+    const raw = window.localStorage.getItem(`${LIST_VIEW_STATE_KEY}_${listId}`);
+    if (!raw) return DEFAULT_LIST_VIEW_STATE;
+    const parsed = JSON.parse(raw);
+    return {
+      viewMode: parsed.viewMode === "flat" ? "flat" : "buckets",
+      bucketVisibility: {
+        ...DEFAULT_LIST_VIEW_STATE.bucketVisibility,
+        ...(parsed.bucketVisibility || {}),
+      },
+      bucketCollapsed: {
+        ...DEFAULT_LIST_VIEW_STATE.bucketCollapsed,
+        ...(parsed.bucketCollapsed || {}),
+      },
     };
-    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
-    const t = setTimeout(() => {
-      document.addEventListener("mousedown", onDown);
-      document.addEventListener("keydown", onKey);
-    }, 0);
-    return () => {
-      clearTimeout(t);
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-  if (!items || items.length === 0) return null;
+  } catch {
+    return DEFAULT_LIST_VIEW_STATE;
+  }
+}
+function saveListViewState(listId, state) {
+  if (!listId || typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      `${LIST_VIEW_STATE_KEY}_${listId}`,
+      JSON.stringify(state),
+    );
+  } catch {/* localStorage full / private-mode */}
+}
+
+// Threshold past which a bucket flips from slider to grid by default.
+// Below this, horizontal scroll-snap tiles read well; above it, the
+// slider gets cramped and a normal grid is faster to scan. Mark spec
+// 2026-05-14 — user can still flip back with the "Compact" link.
+const BUCKET_SLIDER_LIMIT = 20;
+
+// Monochrome bucket glyphs — share the screening palette so the
+// surface reads as one visual system. ❤ loved / ★ liked (check) /
+// ✕ passed / 📋 to review. Stroke colour comes from the parent.
+const BUCKET_GLYPH = {
+  toReview: (s = 14) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
+      strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 4h6a2 2 0 0 1 2 2v0H7v0a2 2 0 0 1 2-2z"/>
+      <rect x="5" y="6" width="14" height="16" rx="2"/>
+      <path d="M9 12h6M9 16h4"/>
+    </svg>
+  ),
+  loved: (s = 14) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor"
+      stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"
+      aria-hidden="true">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </svg>
+  ),
+  liked: (s = 14) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"
+      strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 6L9 17l-5-5"/>
+    </svg>
+  ),
+  passed: (s = 14) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+      aria-hidden="true">
+      <path d="M18 6L6 18M6 6l12 12"/>
+    </svg>
+  ),
+};
+const BUCKET_LABEL = {
+  toReview: "To review",
+  loved: "Loved",
+  liked: "Liked",
+  passed: "Passed",
+};
+const BUCKET_COLOR = {
+  toReview: "var(--text2)",
+  loved: "#e0322b",
+  liked: "var(--brand)",
+  passed: "var(--text3)",
+};
+
+// One bucket section in the Lists drill-in (Mark spec 2026-05-14).
+// Header row with glyph + label + count + collapse chevron +
+// density switch ("View all" / "Compact"); body renders either as
+// a horizontal scroll-snap slider (≤ BUCKET_SLIDER_LIMIT) or as the
+// regular Card grid. `renderItem` is the per-item render passed in
+// from ListsView so flat + bucketed paths share the same Card setup.
+function BucketSection({
+  label, count, glyph, color,
+  collapsed, onToggleCollapsed,
+  isGrid, showDensitySwitch, onToggleDensity,
+  gridStyle, items, renderItem,
+}) {
   return (
-    <>
-      <button ref={triggerRef}
-        onClick={() => {
-          if (!open && triggerRef.current) {
-            const r = triggerRef.current.getBoundingClientRect();
-            // Right-anchor the menu under the trigger, BUT clamp so
-            // the menu's left edge stays inside the viewport (Mark
-            // report 2026-05-14: "Reset my reactions (N)" item was
-            // wider than the default 160 minWidth and the menu
-            // overflowed off-screen on mobile). Use the menu's
-            // estimated max width (260px covers the longest label)
-            // to compute the maximum allowable `right` offset.
-            const estimatedMenuWidth = 260;
-            const safeMargin = 8;
-            const desiredRight = window.innerWidth - r.right;
-            const maxRight = Math.max(
-              safeMargin,
-              window.innerWidth - estimatedMenuWidth - safeMargin
-            );
-            setPos({
-              top: r.bottom + 4,
-              right: Math.max(safeMargin, Math.min(desiredRight, maxRight)),
-            });
-          }
-          setOpen(o => !o);
-        }}
-        aria-label="More actions"
-        title="More actions"
-        style={{
-          width: 32, height: 32, borderRadius: 8,
-          border: "0.5px solid var(--border)",
-          background: "var(--surface)", color: "var(--text1)",
-          cursor: "pointer", fontFamily: "inherit",
-          fontSize: 18, lineHeight: 1, padding: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0,
-        }}>⋯</button>
-      {open && pos && createPortal(
-        <div ref={portalRef}
+    <section>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "10px 14px 8px",
+      }}>
+        <button
+          onClick={onToggleCollapsed}
+          aria-label={collapsed ? "Expand bucket" : "Collapse bucket"}
           style={{
-            position: "fixed",
-            top: pos.top, right: pos.right,
-            zIndex: 1000, minWidth: 160,
-            background: "var(--bg)", border: "0.5px solid var(--border)",
-            borderRadius: 8, padding: 4,
-            boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-          }}>
-          {items.map((it, i) => (
-            <button key={i}
-              onClick={() => { setOpen(false); it.onClick(); }}
-              style={menuItemStyle(it.danger ? "var(--danger)" : "var(--text1)")}>
-              {it.label}
-            </button>
-          ))}
-        </div>,
-        document.body,
+            background: "transparent", border: "none",
+            color: "var(--text3)", padding: 0,
+            cursor: "pointer", lineHeight: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 18, height: 18,
+          }}
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2.2"
+            strokeLinecap="round" strokeLinejoin="round"
+            style={{
+              transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)",
+              transition: "transform 120ms ease",
+            }}>
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </button>
+        <span style={{
+          color, display: "inline-flex", alignItems: "center",
+          lineHeight: 0,
+        }}>
+          {glyph(14)}
+        </span>
+        <span style={{
+          fontSize: 12, fontWeight: 600,
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          color: "var(--text1)",
+        }}>
+          {label}
+        </span>
+        <span style={{
+          fontSize: 12, color: "var(--text3)",
+          fontVariantNumeric: "tabular-nums",
+        }}>
+          · {count}
+        </span>
+        <div style={{ flex: 1 }} />
+        {showDensitySwitch && !collapsed && (
+          <button
+            onClick={onToggleDensity}
+            style={{
+              background: "transparent", border: "none",
+              color: "var(--brand)",
+              fontSize: 12, fontFamily: "inherit",
+              cursor: "pointer", padding: "4px 6px",
+            }}>
+            {isGrid ? "Compact ↑" : `View all (${count}) →`}
+          </button>
+        )}
+      </div>
+      {!collapsed && (
+        isGrid ? (
+          <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+            {items.map(renderItem)}
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              overflowX: "auto",
+              scrollSnapType: "x mandatory",
+              padding: "0 14px 8px",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            {items.map((it) => (
+              <div key={it.id} style={{
+                flex: "0 0 auto",
+                width: 280,
+                scrollSnapAlign: "start",
+              }}>
+                {renderItem(it)}
+              </div>
+            ))}
+          </div>
+        )
       )}
-    </>
+    </section>
   );
 }
 
@@ -1263,6 +1372,32 @@ function ListsView({
     return () => window.removeEventListener("resize", onResize);
   }, []);
   const [screeningResetTick, setScreeningResetTick] = useState(0);
+  // Manage panel + per-list view preferences (Mark spec 2026-05-14).
+  // The panel hosts every list-level action (screening / view / share /
+  // collaboration / list) in one portal'd surface; persistent prefs
+  // are stored per-list under `dial_list_view_state_<listId>`.
+  const [managePanelOpen, setManagePanelOpen] = useState(false);
+  const [listViewState, setListViewState] = useState(DEFAULT_LIST_VIEW_STATE);
+  useEffect(() => {
+    setListViewState(loadListViewState(selectedListId));
+    // Close the panel when navigating between lists so the state of
+    // the previous list's panel doesn't bleed into the new one.
+    setManagePanelOpen(false);
+  }, [selectedListId]);
+  const updateListViewState = (mutator) => {
+    setListViewState((prev) => {
+      const next = typeof mutator === "function" ? mutator(prev) : mutator;
+      saveListViewState(selectedListId, next);
+      return next;
+    });
+  };
+  // Per-bucket density override (in-memory only). `expanded` flips a
+  // bucket from slider → grid even when its count is ≤ threshold; the
+  // opposite (force-slider when >threshold) is also stored here. Reset
+  // on list change since "Liked is expanded" only makes sense in
+  // context of the active list.
+  const [bucketDensityOverride, setBucketDensityOverride] = useState({});
+  useEffect(() => { setBucketDensityOverride({}); }, [selectedListId]);
   // Membership map for the active drill-in. Populated on drill-in
   // (best-effort — non-members get an empty array, which means no
   // chips). Used to resolve `whoAdded` user_id → display name.
@@ -1542,32 +1677,12 @@ function ListsView({
         }
       }
     }
-    const overflowItems = [];
-    // Reset action (any participant on a shared list with at least
-    // one of their own reactions to clear). Goes at the top so it's
-    // not buried under destructive actions.
-    if (myReactionsOnList.length > 0) {
-      overflowItems.push({
-        label: `Reset my reactions (${myReactionsOnList.length})`,
-        onClick: async () => {
-          if (!window.confirm(`Clear all ${myReactionsOnList.length} of your reactions on this list?`)) return;
-          // Toggle each one off in parallel. toggleReaction deletes
-          // when the tapped emoji matches the existing row.
-          await Promise.all(myReactionsOnList.map(({ itemId, emoji }) => onToggleReaction(itemId, emoji)));
-        },
-      });
-    }
-    if (showActions && isOwner) {
-      overflowItems.push(
-        { label: "Manage collaborators", onClick: () => setManageListOpen(true) },
-        { label: "Rename list", onClick: () => setEditingCollection({ id: selected.id, name: selected.name }) },
-        { label: "Delete list", danger: true, onClick: async () => {
-          if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
-          await deleteCollection(selected.id);
-          setSelectedListId(null);
-        } },
-      );
-    }
+    // 2026-05-14: the inline overflow menu retired in favour of the
+    // sectioned Manage panel (back link · title · ⋯ Manage). Every
+    // action that used to live in the overflow now hangs off the
+    // panel via props below: Reset / Manage collaborators / Rename
+    // / Delete / Share / Screening trigger.
+    //
     // Screening v1.3 (2026-05-13): on desktop with screening active,
     // hide the drill-in header (back link + list title + share + ⋯)
     // AND the recipient banner. Reasons (Mark feedback): the
@@ -1648,7 +1763,25 @@ function ListsView({
                 title="Share this list"
                 style={{ ...actionButton({ variant: "primary" }), flexShrink: 0 }}>Share</button>
             )}
-            {overflowItems.length > 0 && <ListActionsMenu items={overflowItems} />}
+            <button
+              onClick={() => setManagePanelOpen(true)}
+              title="List settings"
+              aria-label="List settings"
+              style={{
+                ...actionButton({ variant: "subtle" }),
+                flexShrink: 0,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <circle cx="5" cy="12" r="1.5"/>
+                <circle cx="12" cy="12" r="1.5"/>
+                <circle cx="19" cy="12" r="1.5"/>
+              </svg>
+              <span>Manage</span>
+            </button>
           </div>
         )}
         {reviewModeOpen && isRecipient && (
@@ -1696,116 +1829,19 @@ function ListsView({
           />
         ) : (
           (() => {
-            // Sentiment-bucketed sorting on shared lists (Mark spec
-            // 2026-05-10): liked items float to the top, set-aside
-            // items sink to the bottom, undecided in the middle.
-            // Sub-headers (gridColumn: 1/-1) call out the boundaries
-            // so a glance at the list tells you "what we agreed on
-            // / what's open / what we've ruled out."
-            //
-            // Classification: any ❤️/👍 reaction → positive; ❌ (and
-            // no positive) → negative; everything else → neutral (no
-            // reactions). The legacy 🔥 and 🤔 emojis are kept in the
-            // classification sets so older reactions written before
-            // the 2026-05-11 simplification still bucket correctly —
-            // they just aren't offered as new picks in the strip.
-            // `isSharedList` + recipient state are computed above (next
-            // to `isOwner`) so the banner above the cards can branch
-            // on them too. Don't redeclare here.
-            let renderEntries;
-            if (isSharedList) {
-              const POSITIVE = new Set(["❤️", "👍", "🔥"]);
-              const NEGATIVE = new Set(["❌"]);
-              const classify = (item) => {
-                const rs = reactionsByItem.get(item.rowId) || [];
-                let hasPositive = false, hasNegative = false;
-                for (const r of rs) {
-                  if (POSITIVE.has(r.emoji)) hasPositive = true;
-                  else if (NEGATIVE.has(r.emoji)) hasNegative = true;
-                }
-                if (hasPositive) return "positive";
-                if (hasNegative) return "negative";
-                return "neutral";
-              };
-              // Recipient view (Mark feedback 2026-05-11): pin items
-              // the current user hasn't reacted to into a dedicated
-              // "To review" bucket above everything else. Their to-do
-              // is what's NOT been weighed in on yet, regardless of
-              // what the owner / other collaborators thought. Items
-              // already reacted-on by the current user still bucket by
-              // overall sentiment below.
-              const buckets = { toReview: [], positive: [], neutral: [], negative: [] };
-              for (const it of items) {
-                if (isRecipient && !itemHasMyReaction(it)) {
-                  buckets.toReview.push(it);
-                } else {
-                  buckets[classify(it)].push(it);
-                }
-              }
-              renderEntries = [];
-              const showHeaders = (buckets.toReview.length > 0 ? 1 : 0)
-                                + (buckets.positive.length > 0 ? 1 : 0)
-                                + (buckets.negative.length > 0 ? 1 : 0) > 0;
-              if (buckets.toReview.length > 0) {
-                renderEntries.push({ kind: "header", key: "h-todo",
-                  label: `📋 To review · ${buckets.toReview.length}` });
-                for (const it of buckets.toReview) renderEntries.push({ kind: "item", item: it });
-              }
-              if (buckets.positive.length > 0) {
-                renderEntries.push({ kind: "header", key: "h-pos",
-                  label: `❤️ Liked · ${buckets.positive.length}` });
-                for (const it of buckets.positive) renderEntries.push({ kind: "item", item: it });
-              }
-              if (buckets.neutral.length > 0) {
-                if (showHeaders) {
-                  renderEntries.push({ kind: "header", key: "h-neu",
-                    label: `Open · ${buckets.neutral.length}` });
-                }
-                for (const it of buckets.neutral) renderEntries.push({ kind: "item", item: it });
-              }
-              if (buckets.negative.length > 0) {
-                renderEntries.push({ kind: "header", key: "h-neg",
-                  label: `❌ Disliked · ${buckets.negative.length}` });
-                for (const it of buckets.negative) renderEntries.push({ kind: "item", item: it });
-              }
-            } else {
-              renderEntries = items.map(it => ({ kind: "item", item: it }));
-            }
-            return (
-          <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
-            {renderEntries.map(entry => {
-              if (entry.kind === "header") {
-                return (
-                  <div key={entry.key} style={{
-                    gridColumn: "1/-1",
-                    background: "var(--bg)",
-                    padding: "12px 14px 8px",
-                    fontSize: 11, fontWeight: 600,
-                    color: "var(--text3)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                  }}>{entry.label}</div>
-                );
-              }
-              const item = entry.item;
-              // Slice 4: only show the attribution chip on shared
-              // (multi-member) lists. On single-owner lists every
-              // item was added by the owner and the chip is just
-              // visual noise.
-              // Hide self-attribution — Mark feedback 2026-05-10:
-              // "Added by Mark" on every one of his own items is
-              // noise. Only show when SOMEONE ELSE added it.
+            // Per-item card render — shared between flat and bucketed
+            // paths so reactions / attribution / Card wiring stay in
+            // one place. Mark spec 2026-05-14: bucket the list view by
+            // each user's own reactions (To review / Loved / Liked /
+            // Passed) and let the user collapse / re-density each
+            // section. Solo lists and Flat-list view fall through to
+            // the plain grid.
+            const renderItemCard = (item) => {
               const showChip = memberCount >= 2
                 && !!item.whoAdded
                 && item.whoAdded !== user?.id;
               const addedByName = showChip ? memberMap.get(item.whoAdded) : null;
               const itemReactions = reactionsByItem.get(item.rowId) || [];
-              // 2026-05-10 — Mark feedback: the reaction strip + added-by
-              // chip used to float between cards with the grid's border
-              // bleed making it ambiguous which card they belonged to.
-              // Now wrapped with the card's own bg so the unit reads as
-              // one card: image on top, reactions + attribution as a
-              // tight footer below.
               return (
                 <div key={item.id} style={{
                   display: "flex", flexDirection: "column",
@@ -1853,11 +1889,150 @@ function ListsView({
                   )}
                 </div>
               );
-            })}
-          </div>
+            };
+
+            // Bucketing only applies on shared lists (where reactions
+            // exist) AND when the user hasn't opted to "Flat list" in
+            // the Manage panel. Otherwise fall back to the plain grid.
+            const useBuckets = isSharedList && listViewState.viewMode !== "flat";
+            if (!useBuckets) {
+              return (
+                <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>
+                  {items.map(renderItemCard)}
+                </div>
+              );
+            }
+
+            // Classify by the current user's reaction. Loved (❤️/🔥)
+            // beats Liked (👍) beats Passed (❌); legacy emojis still
+            // bucket sensibly (🔥 → loved, 🤔 → toReview by default
+            // since it doesn't match any of the active sets).
+            const myUid = user?.id || null;
+            const myReactionFor = (item) => {
+              if (!myUid) return null;
+              const rs = reactionsByItem.get(item.rowId) || [];
+              let love = false, like = false, pass = false;
+              for (const r of rs) {
+                if (r.user_id !== myUid) continue;
+                if (r.emoji === "❤️" || r.emoji === "🔥") love = true;
+                else if (r.emoji === "👍") like = true;
+                else if (r.emoji === "❌") pass = true;
+              }
+              if (love) return "loved";
+              if (like) return "liked";
+              if (pass) return "passed";
+              return null;
+            };
+            const buckets = { toReview: [], loved: [], liked: [], passed: [] };
+            for (const it of items) {
+              const r = myReactionFor(it);
+              if (r) buckets[r].push(it);
+              else buckets.toReview.push(it);
+            }
+            const order = ["toReview", "loved", "liked", "passed"];
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {order.map((key) => {
+                  const bucketItems = buckets[key];
+                  if (bucketItems.length === 0) return null;
+                  if (listViewState.bucketVisibility[key] === false) return null;
+                  const collapsed = !!listViewState.bucketCollapsed[key];
+                  const override = bucketDensityOverride[key];
+                  const isGrid = override === "grid"
+                    || (override !== "slider" && bucketItems.length > BUCKET_SLIDER_LIMIT);
+                  return (
+                    <BucketSection
+                      key={key}
+                      label={BUCKET_LABEL[key]}
+                      count={bucketItems.length}
+                      glyph={BUCKET_GLYPH[key]}
+                      color={BUCKET_COLOR[key]}
+                      collapsed={collapsed}
+                      onToggleCollapsed={() =>
+                        updateListViewState((prev) => ({
+                          ...prev,
+                          bucketCollapsed: {
+                            ...prev.bucketCollapsed,
+                            [key]: !prev.bucketCollapsed[key],
+                          },
+                        }))
+                      }
+                      isGrid={isGrid}
+                      showDensitySwitch={bucketItems.length > BUCKET_SLIDER_LIMIT}
+                      onToggleDensity={() =>
+                        setBucketDensityOverride((prev) => ({
+                          ...prev,
+                          [key]: isGrid ? "slider" : "grid",
+                        }))
+                      }
+                      gridStyle={gridStyle}
+                      items={bucketItems}
+                      renderItem={renderItemCard}
+                    />
+                  );
+                })}
+              </div>
             );
           })()
         )}
+        <ListManagePanel
+          open={managePanelOpen}
+          onClose={() => setManagePanelOpen(false)}
+          isWide={isWide}
+          isOwner={isOwner}
+          isRecipient={isRecipient}
+          isSharedList={isSharedList}
+          myReactionsCount={myReactionsOnList.length}
+          unreviewedCount={isRecipient ? Math.max(0, items.length - myReactedCount) : 0}
+          viewMode={listViewState.viewMode}
+          onViewModeChange={(next) =>
+            updateListViewState((prev) => ({ ...prev, viewMode: next }))
+          }
+          bucketVisibility={listViewState.bucketVisibility}
+          onBucketToggle={(key) =>
+            updateListViewState((prev) => ({
+              ...prev,
+              bucketVisibility: {
+                ...prev.bucketVisibility,
+                [key]: !prev.bucketVisibility[key],
+              },
+            }))
+          }
+          // Screening trigger is recipient-only for now (slice 1).
+          // Solo + owner-on-shared-list screening is a follow-up slice.
+          onStartScreening={isRecipient
+            ? () => { setManagePanelOpen(false); setReviewModeOpen(true); }
+            : undefined}
+          onResetReactions={myReactionsOnList.length > 0
+            ? async () => {
+                if (!window.confirm(`Clear all ${myReactionsOnList.length} of your reactions on this list?`)) return;
+                setManagePanelOpen(false);
+                await Promise.all(myReactionsOnList.map(({ itemId, emoji }) =>
+                  onToggleReaction(itemId, emoji)));
+              }
+            : undefined}
+          onTriggerShare={showActions
+            ? () => { setManagePanelOpen(false); triggerShare(); }
+            : undefined}
+          onSharePicksBack={undefined /* deferred — next slice */}
+          onManageCollaborators={(showActions && isOwner)
+            ? () => { setManagePanelOpen(false); setManageListOpen(true); }
+            : undefined}
+          onRename={(showActions && isOwner)
+            ? () => {
+                setManagePanelOpen(false);
+                setEditingCollection({ id: selected.id, name: selected.name });
+              }
+            : undefined}
+          onDelete={(showActions && isOwner)
+            ? async () => {
+                if (!window.confirm(`Delete "${selected.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
+                setManagePanelOpen(false);
+                await deleteCollection(selected.id);
+                setSelectedListId(null);
+              }
+            : undefined}
+        />
       </div>
     );
   }
