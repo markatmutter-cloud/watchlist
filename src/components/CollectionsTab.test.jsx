@@ -155,6 +155,45 @@ describe("CollectionsTab render-without-crash", () => {
     }
   });
 
+  test("Lists drill-in as recipient (shared list, not owner) renders without throwing", () => {
+    // Coverage gap from the 2026-05-13 v1.2 white-screen — App.test
+    // doesn't exercise the recipient drill-in path, and the per-list
+    // bucket layout introduced 2026-05-14 also branches on
+    // isRecipient. Stub fetchListMembers to return two members so
+    // memberCount >= 2 → isSharedList; set the list's userId to a
+    // different user so isOwner=false → isRecipient=true.
+    const stub = {
+      ...baseCollectionsApi,
+      collections: [{
+        id: "shared-list-uuid",
+        name: "Shared with me",
+        description: null,
+        type: "free-form",
+        userId: "other-user",
+        isSharedInbox: false,
+        isSystem: false,
+      }],
+      itemsByCollection: { "shared-list-uuid": [] },
+      fetchListMembers: async () => ({ error: null, members: [
+        { user_id: "test-user", user_name: "Test", user_email: "test@example.com" },
+        { user_id: "other-user", user_name: "Owner", user_email: "owner@example.com" },
+      ] }),
+    };
+    const origLocation = window.location;
+    delete window.location;
+    window.location = { ...origLocation, search: "?col=shared-list-uuid" };
+    try {
+      expect(() => {
+        render(<CollectionsTab {...buildProps({
+          collectionsSubTab: "lists",
+          collectionsApi: stub,
+        })} />);
+      }).not.toThrow();
+    } finally {
+      window.location = origLocation;
+    }
+  });
+
   test("Signed-out user gets the sign-in prompt (no crash)", () => {
     expect(() => {
       render(<CollectionsTab {...buildProps({ user: null })} />);
