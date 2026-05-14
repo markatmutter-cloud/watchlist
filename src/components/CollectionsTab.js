@@ -1154,7 +1154,7 @@ function saveListViewState(listId, state) {
 // it, the slider gets cramped and a normal grid is faster to scan.
 const BUCKET_SLIDER_LIMIT = 20;
 
-// Threshold past which the density toggle ("View all" / "Compact")
+// Threshold past which the density toggle ("Expand →" / "Compact ↑")
 // is exposed regardless of default mode. Mark feedback 2026-05-14:
 // the toggle was only appearing when count > 20, so a bucket with
 // 15 items (slider-default) gave the user no way to flip to grid
@@ -1301,7 +1301,7 @@ function ShareMenu({ triggerShare, onManageCollaborators }) {
 // One bucket section in the Lists drill-in (Mark spec 2026-05-14
 // polish pass). Header is the bucket's identity at a glance: tinted
 // glyph + readable label + count, with the density toggle as the
-// only affordance on the right ("View all" → grid, "Compact ↑" →
+// only affordance on the right ("Expand →" → grid, "Compact ↑" →
 // slider). Mark feedback 2026-05-14: collapse chevron retired —
 // slider IS the compact form, and stacking two density mechanisms
 // on the same row added cognitive load without adding capability.
@@ -1357,7 +1357,7 @@ function BucketSection({
               borderRadius: 6,
               flexShrink: 0,
             }}>
-            {isGrid ? "Compact ↑" : `View all (${count}) →`}
+            {isGrid ? "Compact ↑" : "Expand →"}
           </button>
         )}
       </div>
@@ -1830,8 +1830,8 @@ function ListsView({
               flexShrink: 0,
             }}>← All lists</button>
             <span style={{
-              fontFamily: "'Hoefler Text', 'Garamond', 'Georgia', 'Times New Roman', serif",
-              fontSize: 20, fontWeight: 500,
+              fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif",
+              fontSize: 18, fontWeight: 600,
               color: "var(--text1)",
               letterSpacing: "-0.01em",
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
