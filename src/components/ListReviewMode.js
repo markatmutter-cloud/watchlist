@@ -406,11 +406,14 @@ export function ListReviewMode({
           <RecapView tally={cumulativeTally} total={total} ownerName={ownerName} onClose={onClose} />
         ) : current ? (
           <>
-            {/* Image stack with peek behind. */}
+            {/* Image stack with peek behind. Desktop card sized so
+                the image + side details + bottom action bar all fit
+                in a typical desktop viewport without scroll (Mark
+                feedback 2026-05-13). Was 520 → 420. */}
             <div style={{
               position: "relative",
               width: "100%",
-              maxWidth: isWide ? 520 : 380,
+              maxWidth: isWide ? 420 : 380,
               flexShrink: 0,
               alignSelf: "center",
               zIndex: 1,
