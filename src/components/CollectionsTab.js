@@ -1557,8 +1557,18 @@ function ListsView({
     // page as a "you've been asked for your take" surface rather than
     // a clone of the owner's view. Drives a banner above the cards and
     // a "To review" bucket pinned to the top.
-    const isSharedList = memberCount >= 2;
-    const isRecipient = isSharedList && !isOwner && !isHiddenColl && !isSavedColl;
+    // isSharedList — any list with 2+ members, excluding the
+    // synthetic Hidden/Saved rows AND the Shared-with-me inbox (the
+    // inbox holds single-listing shares; recipient's options are
+    // heart / add-to-list / share-onward, NOT react). Drives screening
+    // availability + per-card ReactionStrip rendering. Mark spec
+    // 2026-05-14: owners of shared lists also get screening + reactions;
+    // the recipient banner stays recipient-only.
+    const isSharedList = memberCount >= 2
+      && !isHiddenColl
+      && !isSavedColl
+      && !selected.isSharedInbox;
+    const isRecipient = isSharedList && !isOwner;
     const ownerName = (selected?.userId && memberMap.get(selected.userId)) || "Someone";
     const myUserId = user?.id || null;
     const itemHasMyReaction = (item) => {
@@ -1566,7 +1576,10 @@ function ListsView({
       const rs = reactionsByItem.get(item.rowId) || [];
       return rs.some(r => r.user_id === myUserId);
     };
-    const myReactedCount = isRecipient
+    // Compute for the owner as well as recipients — owner-self-review
+    // needs the same "have I reacted to everything yet" signal to
+    // decide between resume + re-screen on the Review button.
+    const myReactedCount = isSharedList
       ? items.reduce((acc, i) => acc + (itemHasMyReaction(i) ? 1 : 0), 0)
       : 0;
     // Share callback — copies a `?list=<id>&shared=1` link via the Web
@@ -1662,7 +1675,7 @@ function ListsView({
     // once we're in screening, and the chrome was pushing the
     // interaction space below the fold. Mobile keeps the chrome
     // since screening portals over it anyway.
-    const inlineScreeningActive = reviewModeOpen && isRecipient && isWide;
+    const inlineScreeningActive = reviewModeOpen && isSharedList && isWide;
     return (
       <div style={{ paddingTop: 4 }}>
         {/* Drill-in header — single row layout (Mark feedback
@@ -1701,12 +1714,12 @@ function ListsView({
                 visually. "Reset ratings" spells out what Reset
                 clears so the action isn't ambiguous next to other
                 affordances. Share moves to the right edge by itself. */}
-            {(isRecipient || myReactionsOnList.length > 0) && (
+            {(isSharedList || myReactionsOnList.length > 0) && (
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
                 flexShrink: 0,
               }}>
-                {isRecipient && (
+                {isSharedList && (
                   <button
                     onClick={() => {
                       setScreenAllMode(myReactedCount >= items.length && items.length > 0);
@@ -1782,13 +1795,16 @@ function ListsView({
             )}
           </div>
         )}
-        {reviewModeOpen && isRecipient && (
+        {reviewModeOpen && isSharedList && (
           <ListReviewMode
             key={screeningResetTick}
             items={items}
             listId={selected.id}
             listName={selected.name}
-            ownerName={ownerName}
+            // Owner-self-review: don't surface "{ownerName} will see
+            // your reactions" — the user IS the owner. Recipient
+            // flow gets the attribution copy.
+            ownerName={isOwner ? null : ownerName}
             currentUserId={user?.id || null}
             reactionsByItem={reactionsByItem}
             onToggleReaction={onToggleReaction}
@@ -1814,7 +1830,7 @@ function ListsView({
             entirely while inline-screening is active. On mobile the
             screening overlay portals to body, so the grid still
             renders underneath (covered visually). */}
-        {(reviewModeOpen && isRecipient && isWide) ? null : items.length === 0 ? (
+        {(reviewModeOpen && isSharedList && isWide) ? null : items.length === 0 ? (
           <EmptyState
             icon={isHiddenColl ? "👁" : isSavedColl ? "♡" : "📂"}
             heading={isHiddenColl ? "Nothing hidden"
