@@ -278,8 +278,12 @@ export function ListReviewMode({
     dragStartRef.current = null;
     const moved = Math.hypot(dx, dy);
     if (moved < TAP_MAX_MOVE) {
+      // Tap on the image area is a no-op (only swipes register here).
+      // Mark feedback 2026-05-13: opening the WatchDetailSheet on tap
+      // surfaced an editing card meant for the My Watches surface,
+      // not for screening someone else's list. Side-panel title/price
+      // is the click target now, opening the original listing.
       setDrag({ x: 0, y: 0 });
-      if (current && onOpenDetail) onOpenDetail(current);
       return;
     }
     if (dx > SWIPE_THRESHOLD_X) {
@@ -294,16 +298,29 @@ export function ListReviewMode({
       setDrag({ x: 0, y: 0 });
     }
   };
+
+  // Open the listing's source URL in a new tab. Used by the
+  // clickable side detail block and the ⋯ menu's "View original
+  // listing" item.
+  const openSourceListing = () => {
+    if (!current?.url) return;
+    try { window.open(current.url, "_blank", "noopener,noreferrer"); }
+    catch {}
+  };
   const onPointerCancel = () => {
     if (flyOut) return;
     dragStartRef.current = null;
     setDrag({ x: 0, y: 0 });
   };
 
-  // Subtler edge washes (Mark spec).
+  // Full-background tint that washes the whole screening surface in
+  // direction-coded color (Mark feedback 2026-05-13: "shaded color
+  // across the whole of background, not just the half you are
+  // sliding it towards"). Slightly lower max opacity than the
+  // earlier edge-only variant since a full bg is more impactful.
   const washOpacity = (sign) => {
     const v = sign === 1 ? Math.max(0, drag.x) : Math.max(0, -drag.x);
-    return Math.min(0.32, v / SWIPE_THRESHOLD_X * 0.32);
+    return Math.min(0.20, v / SWIPE_THRESHOLD_X * 0.20);
   };
 
   const cardScale = rising ? 0.94 : 1;
@@ -406,11 +423,14 @@ export function ListReviewMode({
           <RecapView tally={cumulativeTally} total={total} ownerName={ownerName} onClose={onClose} />
         ) : current ? (
           <>
-            {/* Image stack with peek behind. */}
+            {/* Image stack with peek behind. Desktop card sized so
+                the image + side details + bottom action bar all fit
+                in a typical desktop viewport without scroll (Mark
+                feedback 2026-05-13). Was 520 → 420. */}
             <div style={{
               position: "relative",
               width: "100%",
-              maxWidth: isWide ? 520 : 380,
+              maxWidth: isWide ? 420 : 380,
               flexShrink: 0,
               alignSelf: "center",
               zIndex: 1,
@@ -513,15 +533,29 @@ export function ListReviewMode({
               </div>
             </div>
 
-            {/* Detail block — beside image on wide, below on mobile. */}
-            <div style={{
-              width: "100%",
-              maxWidth: isWide ? 380 : 480,
-              textAlign: isWide ? "left" : "center",
-              flexShrink: 0,
-              minWidth: 0,
-              fontFamily: SANS_STACK,
-            }}>
+            {/* Detail block — beside image on wide, below on mobile.
+                Clickable: opens the original listing in a new tab
+                (Mark spec 2026-05-13). Use a <a> so middle-click /
+                cmd-click / context-menu behave naturally. */}
+            <a
+              href={current.url || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                if (!current.url) e.preventDefault();
+              }}
+              style={{
+                display: "block",
+                width: "100%",
+                maxWidth: isWide ? 380 : 480,
+                textAlign: isWide ? "left" : "center",
+                flexShrink: 0,
+                minWidth: 0,
+                fontFamily: SANS_STACK,
+                textDecoration: "none",
+                color: "inherit",
+                cursor: current.url ? "pointer" : "default",
+              }}>
               {current.source && (
                 <div style={{
                   fontSize: 11, color: "var(--text3)",
@@ -585,16 +619,19 @@ export function ListReviewMode({
                   )}
                 </div>
               )}
-              <div style={{
-                fontSize: 11, color: "var(--text3)",
-                marginTop: isWide ? 18 : 10,
-                letterSpacing: "0.10em",
-                textTransform: "uppercase",
-                fontWeight: 500,
-              }}>
-                Tap card to view full details
-              </div>
-            </div>
+              {current.url && (
+                <div style={{
+                  fontSize: 11, color: "var(--brand)",
+                  marginTop: isWide ? 18 : 10,
+                  letterSpacing: "0.06em",
+                  fontWeight: 500,
+                  textDecoration: "underline",
+                  textUnderlineOffset: 3,
+                }}>
+                  View original listing ↗
+                </div>
+              )}
+            </a>
           </>
         ) : null}
       </div>
@@ -609,15 +646,20 @@ export function ListReviewMode({
         }}>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "auto auto 1fr 1fr auto",
+            // Mobile: 4 cols (Undo · Pass · Yes · Skip). Reset hidden
+            // on mobile (Mark feedback 2026-05-13: buttons don't all
+            // fit) — still reachable via the list's ⋯ overflow menu.
+            gridTemplateColumns: isWide
+              ? "auto auto 1fr 1fr auto"
+              : "auto 1fr 1fr auto",
             gap: 10, alignItems: "center",
             maxWidth: 720, margin: "0 auto",
           }}>
-            {onReset ? (
+            {isWide && onReset ? (
               <button onClick={() => setResetConfirmOpen(true)} style={subtleLinkStyle}>
                 Reset
               </button>
-            ) : <span />}
+            ) : null}
             <button onClick={handleUndo} disabled={idx === 0} style={edgeNavStyle(idx === 0)}>
               ← Undo
             </button>
@@ -659,7 +701,7 @@ export function ListReviewMode({
           item={current}
           openCollectionPicker={openCollectionPicker}
           onShare={onShare}
-          onOpenDetail={onOpenDetail}
+          openSourceListing={openSourceListing}
         />
       )}
 
@@ -713,32 +755,26 @@ function referenceChip(item) {
 }
 
 function EdgeWash({ side, color, label, opacity }) {
-  const gradient = side === "left"
-    ? `linear-gradient(to right, ${color} 0%, ${color} 12%, transparent 100%)`
-    : `linear-gradient(to left,  ${color} 0%, ${color} 12%, transparent 100%)`;
   return (
     <div aria-hidden style={{
       position: "absolute",
-      top: 0, bottom: 0,
-      [side]: 0,
-      width: "32%",
-      maxWidth: 280,
-      background: gradient,
+      inset: 0,
+      background: color,
       opacity,
       pointerEvents: "none",
       transition: "opacity 80ms linear",
       display: "flex", alignItems: "center",
       justifyContent: side === "left" ? "flex-start" : "flex-end",
-      padding: side === "left" ? "0 0 0 26px" : "0 26px 0 0",
+      padding: side === "left" ? "0 0 0 36px" : "0 36px 0 0",
       zIndex: 0,
     }}>
       <span style={{
         fontFamily: SANS_STACK,
         color: "#fff",
-        fontSize: 14, fontWeight: 500,
-        letterSpacing: "0.22em", textTransform: "uppercase",
-        textShadow: "0 1px 3px rgba(0,0,0,0.30)",
-        opacity: Math.min(1, opacity * 2),
+        fontSize: 15, fontWeight: 600,
+        letterSpacing: "0.24em", textTransform: "uppercase",
+        textShadow: "0 1px 3px rgba(0,0,0,0.35)",
+        opacity: Math.min(1, opacity * 3),
       }}>
         {label}
       </span>
@@ -746,7 +782,7 @@ function EdgeWash({ side, color, label, opacity }) {
   );
 }
 
-function OverflowMenu({ triggerRef, onClose, item, openCollectionPicker, onShare, onOpenDetail }) {
+function OverflowMenu({ triggerRef, onClose, item, openCollectionPicker, onShare, openSourceListing }) {
   const portalRef = useRef(null);
   useEffect(() => {
     const onDown = (e) => {
@@ -779,8 +815,8 @@ function OverflowMenu({ triggerRef, onClose, item, openCollectionPicker, onShare
       zIndex: 2100,
       fontFamily: SANS_STACK,
     }}>
-      {onOpenDetail && (
-        <MenuItem label="Watch details" onClick={() => { onClose(); onOpenDetail(item); }} />
+      {openSourceListing && item.url && (
+        <MenuItem label="View original listing ↗" onClick={() => { onClose(); openSourceListing(); }} />
       )}
       {openCollectionPicker && (
         <MenuItem label="Add to list…" onClick={() => { onClose(); openCollectionPicker(item); }} />
