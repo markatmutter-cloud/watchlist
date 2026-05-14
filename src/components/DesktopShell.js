@@ -88,14 +88,21 @@ export function DesktopShell(props) {
     // pattern (vs the prior floating popover) so all filter controls
     // share the same "tap a pill" interaction.
     const expansionPanelStyle = {
-      // Bottom padding bumped 12 → 20 on 2026-05-05 so the chip
-      // cluster doesn't feel like it's touching the first section
-      // header in the listings grid below. Top padding stays 8 —
-      // chips visually anchor to the pill above without much space.
-      padding: "8px 20px 20px",
+      // Bottom padding bumped 20 → 28 on 2026-05-14 — Mark report
+      // showed the chip cluster bottom edge clipped against the
+      // border-bottom on the panel. Extra 8px gives the rounded
+      // corners breathing room. Top padding stays 8 — chips visually
+      // anchor to the pill above without much space.
+      padding: "10px 20px 28px",
       borderBottom: "0.5px solid var(--border)",
       background: "var(--surface)",
-      display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center",
+      display: "flex", flexWrap: "wrap", gap: 8,
+      alignItems: "flex-start",
+      // Explicit lineHeight so the chip pills don't collide vertically
+      // when they wrap to multiple rows. Without this the inherited
+      // line-height-1 from <button> can push wrapped chips into one
+      // another's box.
+      lineHeight: 1.5,
     };
     const expandedSource = activeFilterPop === "source";
     const expandedBrand  = activeFilterPop === "brand";

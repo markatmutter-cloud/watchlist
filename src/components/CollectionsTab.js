@@ -13,7 +13,7 @@ import { WatchDetailSheet } from "./WatchDetailSheet";
 import { ListReviewMode } from "./ListReviewMode";
 import { ListManagePanel } from "./ListManagePanel";
 import { fmtUSD, matchesSearch } from "../utils";
-import { actionButton, signInButton } from "../styles";
+import { actionButton, signInButton, producedPill } from "../styles";
 import { EmptyState } from "./EmptyState";
 import { Section } from "./Section";
 
@@ -1154,7 +1154,7 @@ function saveListViewState(listId, state) {
 // it, the slider gets cramped and a normal grid is faster to scan.
 const BUCKET_SLIDER_LIMIT = 20;
 
-// Threshold past which the density toggle ("View all" / "Compact")
+// Threshold past which the density toggle ("Expand →" / "Compact ↑")
 // is exposed regardless of default mode. Mark feedback 2026-05-14:
 // the toggle was only appearing when count > 20, so a bucket with
 // 15 items (slider-default) gave the user no way to flip to grid
@@ -1301,7 +1301,7 @@ function ShareMenu({ triggerShare, onManageCollaborators }) {
 // One bucket section in the Lists drill-in (Mark spec 2026-05-14
 // polish pass). Header is the bucket's identity at a glance: tinted
 // glyph + readable label + count, with the density toggle as the
-// only affordance on the right ("View all" → grid, "Compact ↑" →
+// only affordance on the right ("Expand →" → grid, "Compact ↑" →
 // slider). Mark feedback 2026-05-14: collapse chevron retired —
 // slider IS the compact form, and stacking two density mechanisms
 // on the same row added cognitive load without adding capability.
@@ -1346,18 +1346,18 @@ function BucketSection({
         {showDensitySwitch && (
           <button
             onClick={onToggleDensity}
-            style={{
-              background: "transparent",
-              border: "0.5px solid var(--border)",
-              color: "var(--brand)",
-              fontSize: 12, fontFamily: "inherit",
-              fontWeight: 500,
-              cursor: "pointer",
-              padding: "6px 10px",
-              borderRadius: 6,
-              flexShrink: 0,
-            }}>
-            {isGrid ? "Compact ↑" : `View all (${count}) →`}
+            style={producedPill({ tone: "brand" })}>
+            {isGrid ? (
+              <>
+                <span>Compact</span>
+                <span style={{ fontSize: 13, fontWeight: 300, letterSpacing: 0 }}>↑</span>
+              </>
+            ) : (
+              <>
+                <span>Expand</span>
+                <span style={{ fontSize: 13, fontWeight: 300, letterSpacing: 0 }}>→</span>
+              </>
+            )}
           </button>
         )}
       </div>
@@ -1830,8 +1830,8 @@ function ListsView({
               flexShrink: 0,
             }}>← All lists</button>
             <span style={{
-              fontFamily: "'Hoefler Text', 'Garamond', 'Georgia', 'Times New Roman', serif",
-              fontSize: 20, fontWeight: 500,
+              fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif",
+              fontSize: 18, fontWeight: 600,
               color: "var(--text1)",
               letterSpacing: "-0.01em",
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -1886,8 +1886,8 @@ function ListsView({
             )}
             <button
               onClick={() => setManagePanelOpen(true)}
-              title="Reactions & view"
-              aria-label="Reactions & view"
+              title="Review mode — screening, reactions, view"
+              aria-label="Review mode"
               style={{
                 ...actionButton({ variant: "subtle" }),
                 flexShrink: 0,
@@ -1902,7 +1902,7 @@ function ListsView({
                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <span>Reactions</span>
+              <span>Review</span>
             </button>
           </div>
         )}

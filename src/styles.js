@@ -101,6 +101,55 @@ export const actionButton = ({ variant = "subtle" } = {}) => {
   };
 };
 
+// "Produced" pill buttons — Mark spec 2026-05-14. The editorial-CTA
+// shape used on the screening surface (View listing) and the bucket
+// density toggle (Expand → / Compact ↑). Outlined rounded corners,
+// uppercase tracked, 11–12px, weight 600. Tone:
+//   brand:   brand-blue border + label (default)
+//   neutral: hairline border + text1 label
+//   solid:   brand fill + white label (dominant CTA)
+// Use these when you want a button that reads as a polished CTA
+// rather than a generic chrome action — primary screening verbs,
+// bucket density switches, "View listing" type prompts.
+export const producedPill = ({ tone = "brand" } = {}) => {
+  const base = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: "7px 14px",
+    borderRadius: 6,
+    fontFamily: "inherit",
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+  };
+  if (tone === "solid") return {
+    ...base,
+    border: "1px solid var(--brand)",
+    background: "var(--brand)",
+    color: "#fff",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+  };
+  if (tone === "neutral") return {
+    ...base,
+    border: "1px solid var(--border)",
+    background: "transparent",
+    color: "var(--text1)",
+  };
+  // brand (default)
+  return {
+    ...base,
+    border: "1px solid var(--brand)",
+    background: "transparent",
+    color: "var(--brand)",
+  };
+};
+
 // Sign-in / large primary CTA. One size class above actionButton —
 // padding and radius scale up because these are typically the dominant
 // CTA on a focused signed-out surface (CollectionsTab gate, WatchlistTab

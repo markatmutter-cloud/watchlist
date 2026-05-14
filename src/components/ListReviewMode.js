@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { imgSrc, fmtUSD } from "../utils";
+import { producedPill } from "../styles";
 
 // Swipe gesture thresholds + tap detection.
 const SWIPE_THRESHOLD_X = 90;
@@ -410,21 +411,38 @@ export function ListReviewMode({
           {isWide ? "Exit" : "Done"}
         </button>
         <div style={{
+          // Mark feedback 2026-05-14: the all-caps + 0.18em tracking
+          // was chewing horizontal space and forcing mid-word ellipsis
+          // ("TEST — PICK MY NEXT WA..."). Dropped to title-case sans
+          // at weight 500 / tight tracking so longer list names fit
+          // without truncation. Sub-eyebrow "Reviewing" label sits
+          // above so the screening context still reads at a glance.
           fontFamily: SANS_STACK,
-          fontSize: 13, color: "var(--text2)",
-          letterSpacing: "0.18em", textTransform: "uppercase",
-          fontWeight: 400, textAlign: "center",
-          minWidth: 0, flex: 1,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          minWidth: 0, flex: 1, textAlign: "center",
+          overflow: "hidden",
         }}>
-          {listName}
+          <div style={{
+            fontSize: 10, color: "var(--text3)",
+            letterSpacing: "0.16em", textTransform: "uppercase",
+            fontWeight: 600, marginBottom: 1,
+          }}>
+            Reviewing
+          </div>
+          <div style={{
+            fontSize: 14, color: "var(--text1)",
+            fontWeight: 500, letterSpacing: "-0.005em",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
+            {listName}
+          </div>
         </div>
         <div style={{
           fontFamily: SANS_STACK,
-          fontSize: 13, color: "var(--text2)", flexShrink: 0,
+          fontSize: 12, color: "var(--text3)", flexShrink: 0,
           minWidth: 56, textAlign: "right",
           fontVariantNumeric: "tabular-nums",
-          letterSpacing: "0.04em",
+          letterSpacing: "0.02em",
+          fontWeight: 500,
         }}>
           {done ? `${total} / ${total}` : `${idx + 1} / ${total}`}
         </div>
@@ -439,6 +457,35 @@ export function ListReviewMode({
           transition: "width 200ms ease",
         }} />
       </div>
+
+      {/* Running tally — Mark spec 2026-05-14: surface what you've
+          done so far at the top of the screening surface, not just
+          at the end. Tiny chip row in the screening palette; only
+          renders buckets with non-zero counts so a fresh queue
+          starts clean. */}
+      {(cumulativeTally.hearted > 0 || cumulativeTally.yes > 0 || cumulativeTally.pass > 0) && (
+        <div style={{
+          display: "flex",
+          gap: 6,
+          padding: "8px 16px 6px",
+          borderBottom: "0.5px solid var(--border)",
+          background: "var(--bg)",
+          flexShrink: 0,
+          justifyContent: "center",
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}>
+          {cumulativeTally.hearted > 0 && (
+            <TallyChip emoji="❤️" count={cumulativeTally.hearted} />
+          )}
+          {cumulativeTally.yes > 0 && (
+            <TallyChip emoji="👍" count={cumulativeTally.yes} />
+          )}
+          {cumulativeTally.pass > 0 && (
+            <TallyChip emoji="❌" count={cumulativeTally.pass} />
+          )}
+        </div>
+      )}
 
       {/* Body */}
       <div style={{
@@ -661,14 +708,16 @@ export function ListReviewMode({
               )}
               {current.url && (
                 <div style={{
-                  fontSize: 11, color: "var(--brand)",
-                  marginTop: isWide ? 18 : 10,
-                  letterSpacing: "0.06em",
-                  fontWeight: 500,
-                  textDecoration: "underline",
-                  textUnderlineOffset: 3,
+                  marginTop: isWide ? 20 : 14,
+                  // Center the pill on mobile (the detail block is
+                  // centered there); left-aligned on desktop where the
+                  // block sits beside the image.
+                  textAlign: isWide ? "left" : "center",
                 }}>
-                  View original listing ↗
+                  <span style={producedPill({ tone: "brand" })}>
+                    View listing
+                    <span style={{ fontSize: 14, fontWeight: 400, letterSpacing: 0 }}>→</span>
+                  </span>
                 </div>
               )}
             </a>
@@ -700,12 +749,12 @@ export function ListReviewMode({
               Undo
             </button>
             <button onClick={handlePass} style={reactionBtnStyle("pass", myReactionOnCurrent === "❌")}>
-              <span style={{ fontSize: 14, fontWeight: 400 }}>←</span>
+              <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: 0, marginRight: -2 }}>←</span>
               <span>Pass</span>
             </button>
             <button onClick={handleYes} style={reactionBtnStyle("yes", myReactionOnCurrent === "👍")}>
               <span>Yes</span>
-              <span style={{ fontSize: 14, fontWeight: 400 }}>→</span>
+              <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: 0, marginLeft: -2 }}>→</span>
             </button>
             <button onClick={handleSkip} style={edgeNavStyle(false, { small: true })}>
               Skip
@@ -840,7 +889,7 @@ function OverflowMenu({ triggerRef, onClose, item, openCollectionPicker, onShare
       fontFamily: SANS_STACK,
     }}>
       {openSourceListing && item.url && (
-        <MenuItem label="View original listing ↗" onClick={() => { onClose(); openSourceListing(); }} />
+        <MenuItem label="View listing →" onClick={() => { onClose(); openSourceListing(); }} />
       )}
       {openCollectionPicker && (
         <MenuItem label="Add to list…" onClick={() => { onClose(); openCollectionPicker(item); }} />
@@ -1134,24 +1183,93 @@ const subtleLinkStyle = {
   letterSpacing: "0.04em",
 };
 
+// Compact running-tally chip — used at the top of the screening
+// surface to show how many ❤ / 👍 / ❌ you've put down in this list.
+// Monochrome SVG glyphs in the screening palette so the visual
+// language matches the bottom action buttons + the per-card
+// aggregate cluster in the list view.
+function TallyChip({ emoji, count }) {
+  const color = emoji === "❤️" ? "#e0322b"
+              : emoji === "👍" ? "var(--brand)"
+              : "var(--text3)";
+  return (
+    <span style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 5,
+      padding: "3px 9px",
+      borderRadius: 999,
+      border: "0.5px solid var(--border)",
+      background: "var(--surface)",
+      color,
+      fontFamily: SANS_STACK,
+      fontSize: 11, fontWeight: 600,
+      fontVariantNumeric: "tabular-nums",
+      lineHeight: 1.4,
+      letterSpacing: "0.02em",
+    }}>
+      {emoji === "❤️" && (
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"
+          stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden="true">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      )}
+      {emoji === "👍" && (
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2.4"
+          strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+      )}
+      {emoji === "❌" && (
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2"
+          strokeLinecap="round" aria-hidden="true">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      )}
+      <span style={{ color: "var(--text2)" }}>{count}</span>
+    </span>
+  );
+}
+
 function reactionBtnStyle(kind, active) {
-  // Mark spec 2026-05-14: "no as grey background and blue for yes."
-  // Yes = brand-blue, Pass = neutral grey.
-  const color = kind === "yes" ? "var(--brand)" : "var(--text2)";
-  const tintActive = kind === "yes"
-    ? "var(--brand-tint-12)"
-    : "rgba(0,0,0,0.06)";
+  // Mark feedback 2026-05-14: action buttons "look a bit basic text"
+  // — needed stronger presence to read as designed primary/secondary
+  // CTAs rather than text-on-rectangles. Yes is now a solid brand-blue
+  // primary fill (high contrast, weight 600); Pass is a substantial
+  // ghost with a heavier 1px border + var(--text1) label. Active
+  // states stay subtle so the rated card doesn't shout.
+  if (kind === "yes") {
+    return {
+      padding: "14px 22px",
+      border: "1px solid var(--brand)",
+      background: "var(--brand)",
+      color: "#fff",
+      fontFamily: SANS_STACK,
+      fontSize: 14, fontWeight: 600,
+      letterSpacing: "0.18em", textTransform: "uppercase",
+      borderRadius: 8, cursor: "pointer",
+      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+      minHeight: 52,
+      // Subtle press-state shadow so it feels like a CTA, not flat.
+      boxShadow: active
+        ? "inset 0 0 0 2px var(--brand), 0 0 0 1px var(--brand)"
+        : "0 1px 2px rgba(0,0,0,0.08)",
+    };
+  }
+  // Pass — substantial outlined ghost.
   return {
-    padding: "13px 18px",
-    border: active ? `1px solid ${color}` : `0.5px solid var(--border)`,
-    background: active ? tintActive : "var(--surface)",
-    color: color,
+    padding: "14px 22px",
+    border: active ? "1px solid var(--text1)" : "1px solid var(--border)",
+    background: active ? "var(--text1)" : "var(--surface)",
+    color: active ? "var(--bg)" : "var(--text1)",
     fontFamily: SANS_STACK,
-    fontSize: 13, fontWeight: 500,
+    fontSize: 14, fontWeight: 600,
     letterSpacing: "0.18em", textTransform: "uppercase",
     borderRadius: 8, cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-    minHeight: 48,
+    minHeight: 52,
   };
 }
 
