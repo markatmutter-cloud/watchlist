@@ -149,8 +149,23 @@ export function ListReviewMode({
     return mine?.emoji || null;
   }, [current, currentUserId, reactionsByItem]);
 
-  // Running tally for the recap screen.
-  const [tally, setTally] = useState({ yes: 0, pass: 0, hearted: 0 });
+  // Cumulative tally — derived from reactionsByItem (not a session
+  // counter) so when a user exits mid-flow and comes back, the recap
+  // reflects ALL their reactions on this list, not just this session.
+  // Mark feedback 2026-05-13: "should have total of all in this list
+  // reviewed."
+  const cumulativeTally = useMemo(() => {
+    let yes = 0, pass = 0, hearted = 0;
+    if (!currentUserId) return { yes, pass, hearted };
+    for (const item of items) {
+      const rs = reactionsByItem.get(item.rowId) || [];
+      const mine = rs.find(r => r.user_id === currentUserId);
+      if (mine?.emoji === "👍") yes++;
+      else if (mine?.emoji === "❌") pass++;
+      if (watchlist && watchlist[item.id]) hearted++;
+    }
+    return { yes, pass, hearted };
+  }, [items, reactionsByItem, currentUserId, watchlist]);
 
   // Swipe / mount-rise state.
   const dragStartRef = useRef(null);
@@ -189,8 +204,6 @@ export function ListReviewMode({
       try { await onToggleReaction(current.rowId, emoji); }
       catch (e) { /* swallow */ }
     }
-    if (emoji === "👍") setTally(t => ({ ...t, yes: t.yes + 1 }));
-    if (emoji === "❌") setTally(t => ({ ...t, pass: t.pass + 1 }));
     advance();
   };
 
@@ -208,8 +221,6 @@ export function ListReviewMode({
     if (myPrev) {
       try { await onToggleReaction(prevItem.rowId, myPrev.emoji); }
       catch (e) { /* swallow */ }
-      if (myPrev.emoji === "👍") setTally(t => ({ ...t, yes: Math.max(0, t.yes - 1) }));
-      if (myPrev.emoji === "❌") setTally(t => ({ ...t, pass: Math.max(0, t.pass - 1) }));
     }
     goBack();
   };
@@ -224,7 +235,6 @@ export function ListReviewMode({
   const handleHeart = () => {
     if (!current || !handleWish) return;
     handleWish(current);
-    if (!isHearted) setTally(t => ({ ...t, hearted: t.hearted + 1 }));
   };
 
   // ⋯ menu state.
@@ -305,10 +315,14 @@ export function ListReviewMode({
   // ── Render ────────────────────────────────────────────────────
 
   const outerStyle = isWide ? {
+    // v1.3: chrome around the drill-in (title row + recipient banner)
+    // is hidden when screening is active, so the wordmark + nav +
+    // filter row are the only chrome above us. Tighter constant
+    // keeps the action bar in the visible viewport without scroll.
     display: "flex", flexDirection: "column",
     width: "100%",
-    height: "calc(100vh - 220px)",
-    minHeight: 540,
+    height: "calc(100vh - 150px)",
+    minHeight: 520,
     background: "var(--bg)",
     border: "0.5px solid var(--border)",
     borderRadius: 14,
@@ -389,7 +403,7 @@ export function ListReviewMode({
         )}
 
         {done ? (
-          <RecapView tally={tally} total={total} ownerName={ownerName} onClose={onClose} />
+          <RecapView tally={cumulativeTally} total={total} ownerName={ownerName} onClose={onClose} />
         ) : current ? (
           <>
             {/* Image stack with peek behind. */}
@@ -595,21 +609,26 @@ export function ListReviewMode({
         }}>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "auto 1fr 1fr auto",
-            gap: 12, alignItems: "center",
+            gridTemplateColumns: "auto auto 1fr 1fr auto",
+            gap: 10, alignItems: "center",
             maxWidth: 720, margin: "0 auto",
           }}>
+            {onReset ? (
+              <button onClick={() => setResetConfirmOpen(true)} style={subtleLinkStyle}>
+                Reset
+              </button>
+            ) : <span />}
             <button onClick={handleUndo} disabled={idx === 0} style={edgeNavStyle(idx === 0)}>
               ← Undo
             </button>
             <button onClick={handlePass} style={reactionBtnStyle("pass", myReactionOnCurrent === "❌")}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
                 <path d="M18 6L6 18M6 6l12 12"/>
               </svg>
               <span>Pass</span>
             </button>
             <button onClick={handleYes} style={reactionBtnStyle("yes", myReactionOnCurrent === "👍")}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 6L9 17l-5-5"/>
               </svg>
               <span>Yes</span>
@@ -618,23 +637,17 @@ export function ListReviewMode({
               Skip →
             </button>
           </div>
-          <div style={{
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-            marginTop: 8, maxWidth: 720,
-            marginLeft: "auto", marginRight: "auto",
-            gap: 10,
-          }}>
-            {onReset ? (
-              <button onClick={() => setResetConfirmOpen(true)} style={subtleLinkStyle}>
-                Reset list
-              </button>
-            ) : <span />}
-            {myReactionOnCurrent ? (
+          {myReactionOnCurrent && (
+            <div style={{
+              textAlign: "right",
+              marginTop: 6, maxWidth: 720,
+              marginLeft: "auto", marginRight: "auto",
+            }}>
               <button onClick={handleClearCurrent} style={subtleLinkStyle}>
                 Remove my reaction
               </button>
-            ) : <span />}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -810,20 +823,30 @@ function OnboardingCard({ ownerName, total, onDismiss }) {
           Screening
         </div>
         <div style={{
-          fontFamily: SERIF_DISPLAY_STACK,
-          fontSize: 30, fontWeight: 500, color: "var(--text1)",
-          lineHeight: 1.15, marginBottom: 8,
-          letterSpacing: "-0.01em",
+          fontFamily: SANS_STACK,
+          fontSize: 24, fontWeight: 600, color: "var(--text1)",
+          lineHeight: 1.2, marginBottom: 12,
+          letterSpacing: "-0.005em",
         }}>
           Quick review
         </div>
+        {/* Why — the purpose of the feature, not just the mechanics
+            (Mark feedback 2026-05-13). */}
         <div style={{
           fontFamily: SANS_STACK,
-          fontSize: 14, color: "var(--text2)",
-          lineHeight: 1.5, marginBottom: 22,
-          fontStyle: "italic",
+          fontSize: 13, color: "var(--text2)",
+          lineHeight: 1.55, marginBottom: 18,
         }}>
-          {total} {total === 1 ? "watch" : "watches"} {ownerName ? `from ${ownerName}` : "to review"}.
+          Screen watches one by one to get through a list or auction
+          catalog and quickly shortlist what's worth coming back to.
+          Results group at the bottom of this list when you're done.
+        </div>
+        <div style={{
+          fontFamily: SANS_STACK,
+          fontSize: 12, color: "var(--text3)",
+          lineHeight: 1.5, marginBottom: 18,
+        }}>
+          {total} {total === 1 ? "watch" : "watches"}{ownerName ? ` from ${ownerName}` : ""}.
         </div>
         <ul style={{
           listStyle: "none", margin: 0, padding: 0,
@@ -846,7 +869,7 @@ function OnboardingCard({ ownerName, total, onDismiss }) {
           </IntroRow>
         </ul>
         <button onClick={onDismiss} style={primaryBtnStyle()}>
-          Start reviewing
+          Start review
         </button>
       </div>
     </div>
@@ -889,9 +912,9 @@ function ResetConfirm({ onCancel, onConfirm }) {
           Reset
         </div>
         <div style={{
-          fontFamily: SERIF_DISPLAY_STACK,
-          fontSize: 24, fontWeight: 500, color: "var(--text1)",
-          lineHeight: 1.2, marginBottom: 10,
+          fontFamily: SANS_STACK,
+          fontSize: 20, fontWeight: 600, color: "var(--text1)",
+          lineHeight: 1.25, marginBottom: 10,
           letterSpacing: "-0.005em",
         }}>
           Clear all your reactions?
@@ -929,9 +952,9 @@ function BreakInterstitial({ idx, total, onContinue, onPause }) {
           Pause
         </div>
         <div style={{
-          fontFamily: SERIF_DISPLAY_STACK,
-          fontSize: 26, fontWeight: 500, color: "var(--text1)",
-          lineHeight: 1.2, marginBottom: 10,
+          fontFamily: SANS_STACK,
+          fontSize: 22, fontWeight: 600, color: "var(--text1)",
+          lineHeight: 1.25, marginBottom: 10,
           letterSpacing: "-0.005em",
         }}>
           Take a break?
@@ -971,12 +994,12 @@ function RecapView({ tally, total, ownerName, onClose }) {
         All reviewed
       </div>
       <div style={{
-        fontFamily: SERIF_DISPLAY_STACK,
-        fontSize: 32, fontWeight: 500, color: "var(--text1)",
-        lineHeight: 1.15, marginBottom: 26,
-        letterSpacing: "-0.01em",
+        fontFamily: SANS_STACK,
+        fontSize: 24, fontWeight: 600, color: "var(--text1)",
+        lineHeight: 1.2, marginBottom: 26,
+        letterSpacing: "-0.005em",
       }}>
-        {total} {total === 1 ? "watch" : "watches"}, sorted.
+        Your take on this list.
       </div>
       <div style={{
         display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
@@ -1009,12 +1032,11 @@ function TallyCard({ label, value, color }) {
       background: "var(--surface)",
     }}>
       <div style={{
-        fontFamily: SERIF_DISPLAY_STACK,
-        fontSize: 30, fontWeight: 500,
+        fontFamily: SANS_STACK,
+        fontSize: 26, fontWeight: 600,
         color: value > 0 ? color : "var(--text3)",
-        fontVariantNumeric: "tabular-nums",
+        fontVariantNumeric: "tabular-nums lining-nums",
         lineHeight: 1,
-        letterSpacing: "-0.01em",
       }}>
         {value}
       </div>

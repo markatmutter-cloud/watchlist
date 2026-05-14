@@ -290,6 +290,7 @@ export function CollectionsTab({
         selectedListId={selectedListId}
         setSelectedListId={setSelectedListId}
         setManageListOpen={setManageListOpen}
+        setDetailRowId={setDetailRowId}
         filterValues={filterValues}
         fetchListMembers={collectionsApi?.fetchListMembers}
         fetchReactions={collectionsApi?.fetchReactions}
@@ -1210,6 +1211,11 @@ function ListsView({
   deleteCollection, removeItemFromCollection,
   selectedListId, setSelectedListId,
   setManageListOpen,
+  // Watch-detail sheet trigger from inside the drill-in (tap card
+  // in screening mode opens the detail sheet). Lives in
+  // CollectionsTab state; threaded through so the screening
+  // overlay can fire it.
+  setDetailRowId,
   // Filter row values from App.js. Same shape useFilters exposes.
   // Applied to drilled-in items via applyDrillInFilters below.
   filterValues,
@@ -1545,93 +1551,87 @@ function ListsView({
         } },
       );
     }
+    // Screening v1.3 (2026-05-13): on desktop with screening active,
+    // hide the drill-in header (back link + list title + share + ⋯)
+    // AND the recipient banner. Reasons (Mark feedback): the
+    // screening overlay carries its own list-name header and Exit
+    // link, the banner's "Review one at a time" CTA is redundant
+    // once we're in screening, and the chrome was pushing the
+    // interaction space below the fold. Mobile keeps the chrome
+    // since screening portals over it anyway.
+    const inlineScreeningActive = reviewModeOpen && isRecipient && isWide;
     return (
       <div style={{ paddingTop: 4 }}>
-        {/* Drill-in header — compact single-row layout (Mark feedback
-            2026-05-11: caption + 4-button action row took two rows of
-            vertical space; push the actions to the right edge instead
-            so they use horizontal space). Back + title on the left;
-            Share + ⋯ overflow menu on the right. Manage / Rename /
-            Delete moved into the overflow menu. Date-axis caption
-            dropped — the Date pill in the filter row already explains
-            its own scope, and the caption was a quiet duplicate. */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 12,
-          padding: "14px 14px 12px",
-          borderBottom: "0.5px solid var(--border)",
-          marginBottom: 12,
-        }}>
-          <button onClick={() => setSelectedListId(null)} style={{
-            border: "none", background: "transparent", cursor: "pointer",
-            color: "var(--brand)", fontFamily: "inherit", fontSize: 13, padding: 0,
-            flexShrink: 0,
-          }}>← All lists</button>
-          <span style={{
-            fontSize: 14, fontWeight: 600, color: "var(--text1)",
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            flex: 1, minWidth: 0,
-          }}>
-            {selected.name}
-          </span>
-          {shareCopied && (
-            <span style={{
-              fontSize: 12, color: "var(--brand)", fontWeight: 500,
-              flexShrink: 0,
-            }}>
-              Link copied
-            </span>
-          )}
-          {showActions && (
-            <button onClick={triggerShare}
-              title="Share this list"
-              style={{ ...actionButton({ variant: "primary" }), flexShrink: 0 }}>Share</button>
-          )}
-          {overflowItems.length > 0 && <ListActionsMenu items={overflowItems} />}
-        </div>
-        {/* Recipient banner (Mark feedback 2026-05-11): when the
-            viewing user is a collaborator on someone else's shared
-            list, frame the page as "you've been asked for your take"
-            so they understand what to do. Dropped once they've
-            reacted to every item (the to-do is empty, the banner
-            stops being a hint and becomes noise).
-            "Review one at a time" CTA opens a fullscreen overlay that
-            walks the unreacted items one big card per screen — per
-            Mark's mockup, "1 photo width on mobile to review things
-            shared with you" (ListReviewMode). */}
-        {isRecipient && items.length > 0 && myReactedCount < items.length && (
+        {/* Drill-in header — single row layout (Mark feedback
+            2026-05-13 "condense the discovery from its own line —
+            maybe in line with the list name / all lists link"). Back
+            link + title + discovery caption (recipient only) + Share +
+            ⋯, all on one row. The recipient banner that previously
+            occupied its own row is gone — the discovery caption + a
+            small "Review →" CTA carry the same information inline.
+            Hidden entirely when inline-screening on desktop. */}
+        {!inlineScreeningActive && (
           <div style={{
             display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
-            margin: "0 0 12px",
-            padding: "12px 14px",
-            borderRadius: 10,
-            border: "0.5px solid var(--border)",
-            background: "var(--surface)",
+            padding: "14px 14px 12px",
+            borderBottom: "0.5px solid var(--border)",
+            marginBottom: 12,
           }}>
-            <span aria-hidden style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>📋</span>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontSize: 13, color: "var(--text1)", lineHeight: 1.4 }}>
-                <strong>{ownerName}</strong> shared this list — tap{" "}
-                <span aria-hidden>❤️</span> /{" "}
-                <span aria-hidden>👍</span> /{" "}
-                <span aria-hidden>❌</span> on each watch to share your take.
-              </div>
-              <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 4 }}>
-                {myReactedCount} of {items.length} reacted
-              </div>
-            </div>
-            <button onClick={() => setReviewModeOpen(true)}
-              title="Walk through unreacted items one at a time"
-              style={{
+            <button onClick={() => setSelectedListId(null)} style={{
+              border: "none", background: "transparent", cursor: "pointer",
+              color: "var(--brand)", fontFamily: "inherit", fontSize: 13, padding: 0,
+              flexShrink: 0,
+            }}>← All lists</button>
+            <span style={{
+              fontSize: 14, fontWeight: 600, color: "var(--text1)",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              minWidth: 0,
+            }}>
+              {selected.name}
+            </span>
+            {isRecipient && items.length > 0 && myReactedCount < items.length && (
+              <>
+                <span style={{ color: "var(--text3)", fontSize: 13, flexShrink: 0 }}>·</span>
+                <span style={{
+                  fontSize: 12, color: "var(--text2)",
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  minWidth: 0,
+                }}>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <strong style={{ color: "var(--text1)", fontWeight: 500 }}>{ownerName}</strong> shared · {myReactedCount}/{items.length} reacted
+                  </span>
+                </span>
+                <button onClick={() => setReviewModeOpen(true)}
+                  title="Walk through unreacted items one at a time"
+                  style={{
+                    flexShrink: 0,
+                    padding: "6px 12px",
+                    borderRadius: 6,
+                    border: "none",
+                    background: "var(--brand)", color: "#fff",
+                    fontFamily: "inherit", fontSize: 12, fontWeight: 500,
+                    letterSpacing: "0.04em",
+                    cursor: "pointer",
+                  }}>
+                  Review →
+                </button>
+              </>
+            )}
+            <div style={{ flex: 1 }} />
+            {shareCopied && (
+              <span style={{
+                fontSize: 12, color: "var(--brand)", fontWeight: 500,
                 flexShrink: 0,
-                padding: "10px 16px",
-                borderRadius: 10,
-                border: "none",
-                background: "var(--brand)", color: "#fff",
-                fontFamily: "inherit", fontSize: 13, fontWeight: 600,
-                cursor: "pointer",
               }}>
-              Review one at a time →
-            </button>
+                Link copied
+              </span>
+            )}
+            {showActions && (
+              <button onClick={triggerShare}
+                title="Share this list"
+                style={{ ...actionButton({ variant: "primary" }), flexShrink: 0 }}>Share</button>
+            )}
+            {overflowItems.length > 0 && <ListActionsMenu items={overflowItems} />}
           </div>
         )}
         {reviewModeOpen && isRecipient && (
