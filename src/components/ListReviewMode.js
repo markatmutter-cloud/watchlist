@@ -614,7 +614,14 @@ export function ListReviewMode({
 
               {/* Active card */}
               <div
-                key={current.rowId}
+                // Stable per-card key so the DOM node remounts on
+                // advance — otherwise CSS transitions the transform
+                // from the fly-out position (off-screen) back to 0,
+                // making the next card "slide in from the side"
+                // instead of rising up from the deck. Feed-mode
+                // items don't carry rowId (that's a collection_items
+                // concept), so fall back to listing id.
+                key={current.rowId || current.id}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
