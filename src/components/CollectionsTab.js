@@ -1853,13 +1853,18 @@ function ListsView({
                     onShare={handleShare}
                     onView={observeCard}
                     onClickListing={onClickListing}
+                    myRating={isSharedList && item.rowId
+                      ? (() => {
+                          const mine = (itemReactions || []).find(r => r.user_id === user?.id);
+                          return mine?.emoji || null;
+                        })()
+                      : null}
+                    onRate={isSharedList && item.rowId
+                      ? (emoji) => onToggleReaction(item.rowId, emoji)
+                      : undefined}
                   />
                   {isSharedList && item.rowId && (
-                    <ReactionStrip
-                      reactions={itemReactions}
-                      currentUserId={user?.id}
-                      onToggle={(emoji) => onToggleReaction(item.rowId, emoji)}
-                    />
+                    <ReactionAggregateChips reactions={itemReactions} />
                   )}
                   {addedByName && (
                     <div style={{
@@ -2440,117 +2445,88 @@ const trashIcon = (
 // member sees the chip update without a refresh (ListsView's
 // effect refetches on every event).
 
-// Simplified set (2026-05-11). Was ["👍", "❤️", "🔥", "🤔", "❌"];
-// Mark feedback: too many overlapping options. Dropped 🔥 (intensifier
-// on ❤️, no distinct meaning) and 🤔 (the "no reaction" state already
-// covers undecided). Three clean tiers: love / yes / no. Reactions
-// written under the old set still display and still bucket correctly
-// — see the POSITIVE/NEGATIVE sets above.
-const REACTION_EMOJIS = ["❤️", "👍", "❌"];
+// Screening-palette glyphs — shared across the reaction surfaces so
+// the aggregate strip + the in-menu picker + the bucket headers all
+// read as one visual system. Stroke colour comes from the parent.
+const REACTION_GLYPH = {
+  "❤️": (s = 12) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor"
+      stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"
+      aria-hidden="true">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </svg>
+  ),
+  "👍": (s = 12) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 6L9 17l-5-5"/>
+    </svg>
+  ),
+  "❌": (s = 12) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+      aria-hidden="true">
+      <path d="M18 6L6 18M6 6l12 12"/>
+    </svg>
+  ),
+};
+const REACTION_COLOR = {
+  "❤️": "#e0322b",
+  "👍": "var(--brand)",
+  "❌": "var(--text3)",
+};
 
-// Thumbs-up SVG used as the empty-state trigger for the reactions
-// picker (Mark feedback 2026-05-10: a "+ react" text button looked
-// like a generic CTA; an icon reads as a reaction affordance).
-const thumbsUpIcon = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
-  </svg>
-);
-
-function ReactionStrip({ reactions, currentUserId, onToggle }) {
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const grouped = React.useMemo(() => {
-    const map = new Map();
-    for (const r of (reactions || [])) {
-      if (!map.has(r.emoji)) map.set(r.emoji, []);
-      map.get(r.emoji).push(r);
-    }
-    return [...map.entries()].sort((a, b) => b[1].length - a[1].length);
-  }, [reactions]);
-
-  // Tight padding so the strip butts against the card's bottom edge.
-  // No internal border — Mark feedback 2026-05-10: the borderTop
-  // looked like a card boundary INSIDE the unit, breaking the
-  // image-then-reactions visual flow. Card image already provides
-  // a clear bottom edge via its content; the strip is just the
-  // footer of the same card.
-  const stripStyle = {
-    display: "flex", flexWrap: "wrap", gap: 4,
-    padding: "6px 10px 6px",
-    alignItems: "center",
-  };
-
-  if (grouped.length === 0 && !pickerOpen) {
-    return (
-      <div style={stripStyle}>
-        <button onClick={() => setPickerOpen(true)}
-          aria-label="Add reaction"
-          title="Add reaction"
-          style={addReactionButtonStyle}>
-          {thumbsUpIcon}
-        </button>
-      </div>
-    );
+// Aggregate count chips below each card on shared lists (Mark spec
+// 2026-05-14, Slice A). iMessage / Teams-style "who reacted" cluster
+// — ❤ 3 · 👍 5 · ✕ 1, only buckets with non-zero counts. Read-only
+// in Slice A; Slice C will wire the tap-to-see-who attribution sheet
+// off this same chip cluster.
+//
+// Legacy emoji rollup: 🔥 → ❤️ (intensifier on love), 🤔 → ignored
+// (those were retired from the picker in 2026-05-11). Same set as
+// the bucket classifier.
+function ReactionAggregateChips({ reactions }) {
+  const counts = { "❤️": 0, "👍": 0, "❌": 0 };
+  for (const r of (reactions || [])) {
+    if (r.emoji === "❤️" || r.emoji === "🔥") counts["❤️"] += 1;
+    else if (r.emoji === "👍") counts["👍"] += 1;
+    else if (r.emoji === "❌") counts["❌"] += 1;
   }
-
+  const total = counts["❤️"] + counts["👍"] + counts["❌"];
+  if (total === 0) return null;
+  const order = ["❤️", "👍", "❌"];
   return (
-    <div style={stripStyle}>
-      {grouped.map(([emoji, rs]) => {
-        const meActive = currentUserId && rs.some(r => r.user_id === currentUserId);
-        const names = rs.map(r => r.user_name).filter(Boolean).join(", ");
-        return (
-          <button key={emoji}
-            onClick={() => onToggle(emoji)}
-            title={names || emoji}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 4,
-              padding: "3px 8px", borderRadius: 999,
-              border: meActive ? "0.5px solid var(--brand)" : "0.5px solid var(--border)",
-              background: meActive ? "var(--brand-tint-12)" : "var(--surface)",
-              color: "var(--text1)",
-              cursor: "pointer", fontFamily: "inherit",
-              fontSize: 12, fontWeight: 500, lineHeight: 1.4,
-            }}>
-            <span>{emoji}</span>
-            {rs.length > 1 && <span style={{ fontSize: 11, color: "var(--text2)" }}>{rs.length}</span>}
-          </button>
-        );
-      })}
-      <button onClick={() => setPickerOpen(p => !p)}
-        style={addReactionButtonStyle}
-        aria-label={pickerOpen ? "Close picker" : "Add reaction"}
-        title={pickerOpen ? "Close picker" : "Add reaction"}>
-        {pickerOpen ? <span style={{ fontSize: 14, lineHeight: 1 }}>×</span> : thumbsUpIcon}
-      </button>
-      {pickerOpen && (
-        <div style={{
-          display: "inline-flex", gap: 2,
-          padding: "2px 4px", borderRadius: 999,
-          border: "0.5px solid var(--border)", background: "var(--bg)",
+    <div style={{
+      display: "flex", flexWrap: "wrap", gap: 6,
+      padding: "6px 10px 8px",
+      alignItems: "center",
+    }}>
+      {order.filter(k => counts[k] > 0).map(k => (
+        <span key={k} style={{
+          display: "inline-flex", alignItems: "center", gap: 4,
+          padding: "3px 8px", borderRadius: 999,
+          border: "0.5px solid var(--border)",
+          background: "var(--surface)",
+          color: REACTION_COLOR[k],
+          fontSize: 11, fontWeight: 500,
+          fontVariantNumeric: "tabular-nums",
+          lineHeight: 1.4,
         }}>
-          {REACTION_EMOJIS.map(e => (
-            <button key={e}
-              onClick={() => { onToggle(e); setPickerOpen(false); }}
-              style={{
-                border: "none", background: "transparent",
-                padding: "3px 6px", borderRadius: 999,
-                cursor: "pointer", fontFamily: "inherit", fontSize: 14,
-              }}>{e}</button>
-          ))}
-        </div>
-      )}
+          {REACTION_GLYPH[k](12)}
+          <span style={{ color: "var(--text2)" }}>{counts[k]}</span>
+        </span>
+      ))}
     </div>
   );
 }
 
-const addReactionButtonStyle = {
-  display: "inline-flex", alignItems: "center", justifyContent: "center",
-  minWidth: 28, height: 24, padding: "0 8px",
-  borderRadius: 999, border: "0.5px solid var(--border)",
-  background: "var(--surface)", color: "var(--brand)",
-  cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-};
+// 2026-05-14 Slice A: the old `ReactionStrip` (thumbs-up button +
+// chip picker rendered under each card) was retired. The rating
+// input moved into the Card's ⋯ menu (Card.js `onRate` / `myRating`
+// props), and the read-only count cluster lives in
+// `ReactionAggregateChips` above. Card.js inlines the two-emoji
+// picker (👍 / ❌) directly.
 
 // ── Drill-in filter helper (2026-05-09) ─────────────────────────
 //
