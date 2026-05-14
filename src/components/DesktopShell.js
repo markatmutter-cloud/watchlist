@@ -48,6 +48,7 @@ export function DesktopShell(props) {
     listReceiverJSX,
     listingsSubTabsJSX,
     trackNewItemModalJSX, watchSubTabsJSX, watchHeartedToggleJSX, collectionsSubTabsJSX, watchlistTabJSX,
+    watchboxTabJSX,
     referencesTabJSX, collectionsTabJSX,
     lotMigrationBannerJSX,
     userLimitBannerJSX,
@@ -508,6 +509,7 @@ export function DesktopShell(props) {
                 : tab === "listings" ? listingsTabContentJSX
                 : tab === "references" ? referencesTabJSX
                 : tab === "admin" ? adminTabJSX
+                : tab === "watchbox" ? watchboxTabJSX
                 : watchlistTabJSX}
             </>
           )}
