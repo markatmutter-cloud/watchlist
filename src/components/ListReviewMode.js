@@ -77,9 +77,16 @@ export function ListReviewMode({
   onShare,
   onOpenDetail,
   onReset,           // parent clears the reactions; we just trigger
+  // When true, queue ALL items (not just unreacted ones). Used by
+  // the "Re-screen this list" affordance — Mark spec 2026-05-14:
+  // re-screening should let the user walk every item and change
+  // any prior reaction, not jump straight to the recap. Default
+  // false preserves the resume-where-you-left-off flow.
+  screenAll = false,
 }) {
   // Frozen queue at mount.
   const [initialQueue] = useState(() => {
+    if (screenAll) return items;
     if (!currentUserId) return items;
     return items.filter(it => {
       const rs = reactionsByItem.get(it.rowId) || [];

@@ -165,28 +165,63 @@ export function ManageListSheet({
 
   if (!open || !collection) return null;
 
+  // Two clearly-separated sections (Mark spec 2026-05-14): "Send
+  // view-only link" as a single primary CTA at the top, then
+  // "Collaborators" with the email invite form + roster below. The
+  // previous design had two competing buttons inside the invite form
+  // (View Only Link + Collaboration Link) which read as confusing —
+  // one is now its own top-level action, the other IS the invite.
   return (
     <div onClick={busy ? undefined : onClose} style={modalBackdrop}>
       <div onClick={e => e.stopPropagation()} style={{
         ...modalShell, maxWidth: 480, maxHeight: "90vh", overflowY: "auto",
       }}>
         <div style={modalTitleRow}>
-          <div style={modalTitle}>Manage "{collection.name}"</div>
+          <div style={modalTitle}>Share "{collection.name}"</div>
           <button onClick={onClose} aria-label="Close" style={modalCloseButton}
                   disabled={busy}>×</button>
         </div>
-        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5 }}>
-          Invite people by email. They'll see the list under their Saved &gt; Lists once they
-          accept. Editors can add and remove items; viewers can only see.
+
+        {/* Section 1 — Send view-only link. Single big CTA. */}
+        <Label>Send view-only link</Label>
+        <button onClick={copyShareUrl}
+          disabled={busy}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            width: "100%",
+            border: "none",
+            background: "var(--brand)", color: "#fff",
+            padding: "12px 16px", borderRadius: 8,
+            cursor: busy ? "wait" : "pointer",
+            fontFamily: "inherit", fontSize: 14, fontWeight: 600,
+            letterSpacing: "0.02em",
+            marginBottom: 8,
+          }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+            <polyline points="16 6 12 2 8 6"/>
+            <line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+          {shareCopyState === "copied-readonly" ? "Link copied to clipboard ✓"
+           : shareCopyState === "shared-readonly" ? "Shared ✓"
+           : "Share view-only link"}
+        </button>
+        <div style={{
+          fontSize: 11, color: "var(--text3)",
+          marginBottom: 22, lineHeight: 1.5,
+        }}>
+          Anyone with the link can view the list. No sign-in needed.
         </div>
 
-        {/* Invite form */}
+        {/* Section 2 — Collaborators (invite form + roster). */}
+        <Label>Invite a collaborator</Label>
         <div style={{
           padding: 12, borderRadius: 10,
           border: "0.5px solid var(--border)", background: "var(--card-bg)",
           marginBottom: 14,
         }}>
-          <Label>Invite by email</Label>
           <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
             <input
               type="email"
@@ -207,36 +242,23 @@ export function ManageListSheet({
               <option value="viewer">Viewer</option>
             </select>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <button onClick={copyShareUrl}
-              disabled={busy}
-              style={{
-                border: "0.5px solid var(--border)", background: "transparent",
-                color: "var(--text2)", padding: "6px 12px", borderRadius: 6,
-                cursor: busy ? "wait" : "pointer", fontFamily: "inherit", fontSize: 12,
-              }}>
-              {shareCopyState === "copied-readonly" ? "Link copied to clipboard ✓"
-               : shareCopyState === "shared-readonly" ? "Shared ✓"
-               : "View Only Link"}
-            </button>
-            <button onClick={submitInvite} disabled={busy || !email.trim()}
-              style={{
-                border: "none", background: "var(--brand)", color: "#fff",
-                padding: "6px 14px", borderRadius: 6,
-                cursor: busy ? "wait" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-                opacity: (!email.trim() || busy) ? 0.5 : 1,
-              }}>
-              {busy ? "Sharing…"
-               : shareCopyState === "copied-collab" ? "Link copied to clipboard ✓"
-               : shareCopyState === "shared-collab" ? "Shared ✓"
-               : "Collaboration Link"}
-            </button>
-          </div>
-          <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 8, lineHeight: 1.4 }}>
-            <strong>View Only Link</strong> shares the list as read-only — no email needed.
-            <br/>
-            <strong>Collaboration Link</strong> needs an email; the recipient signs in and
-            can add or remove watches alongside you.
+          <button onClick={submitInvite} disabled={busy || !email.trim()}
+            style={{
+              display: "block", width: "100%",
+              border: "0.5px solid var(--brand)",
+              background: "transparent", color: "var(--brand)",
+              padding: "8px 14px", borderRadius: 6,
+              cursor: busy ? "wait" : "pointer",
+              fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+              opacity: (!email.trim() || busy) ? 0.5 : 1,
+            }}>
+            {busy ? "Sending…"
+             : shareCopyState === "copied-collab" ? "Invite copied to clipboard ✓"
+             : shareCopyState === "shared-collab" ? "Sent ✓"
+             : "Send invite"}
+          </button>
+          <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 8, lineHeight: 1.5 }}>
+            Editors can add and remove watches. Viewers see read-only.
           </div>
         </div>
 
