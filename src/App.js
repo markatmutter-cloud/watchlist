@@ -2806,7 +2806,7 @@ export default function Watchlist() {
           MyCollectionView in shortlist-toggle mode for old URLs. */}
       {[
         ["lists",         "Lists"],
-        ["searches",      isMobile ? "Searches" : "Favorite searches"],
+        ["searches",      "Searches"],
         ["my-collection", "My Watches"],
         ["challenges",    "Challenges"],
       ].map(([key, label]) => {

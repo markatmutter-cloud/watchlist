@@ -2159,15 +2159,20 @@ function ListsView({
   const myUserId = user?.id || null;
   const ownedLists = userCols.filter(c => c.userId && c.userId === myUserId);
   const collabLists = userCols.filter(c => c.userId && c.userId !== myUserId);
+  // The owned group is special: even when empty we render its
+  // header + "+ New list" CTA so the user can always discover the
+  // create flow (Mark spec 2026-05-14, after SubTabIntro was
+  // retired). Saved + Shared groups hide entirely when empty.
+  const sharedRows = [
+    ...(sharedInbox ? [sharedInbox] : []),
+    ...collabLists,
+  ];
   const groups = [
-    { key: "saved",  title: "Saved",          rows: savedRow ? [savedRow] : [] },
-    { key: "owned",  title: "My lists",       rows: ownedLists },
-    { key: "shared", title: "Shared with me", rows: [
-      ...(sharedInbox ? [sharedInbox] : []),
-      ...collabLists,
-    ] },
-  ].filter(g => g.rows.length > 0);
-  const totalRows = groups.reduce((acc, g) => acc + g.rows.length, 0);
+    { key: "saved",  title: "Saved",          rows: savedRow ? [savedRow] : [], hideIfEmpty: true },
+    { key: "owned",  title: "My lists",       rows: ownedLists,                 hideIfEmpty: false },
+    { key: "shared", title: "Shared with me", rows: sharedRows,                 hideIfEmpty: true },
+  ].filter(g => !g.hideIfEmpty || g.rows.length > 0);
+  const totalRows = (savedRow ? 1 : 0) + ownedLists.length + sharedRows.length;
 
   // Per-row renderer — shared across all three groups so the row
   // styling stays in one place. Closes over the local state of
@@ -2252,49 +2257,86 @@ function ListsView({
     );
   };
 
+  // Empty-state CTA shape — reused from the Searches view so the
+  // "no entries yet" pattern reads identical across sub-tabs.
+  const ctaButtonStyle = {
+    cursor: "pointer", fontFamily: "inherit",
+    fontSize: 13, fontWeight: 600, letterSpacing: "0.04em",
+    padding: "8px 16px", borderRadius: 999,
+    border: "0.5px solid var(--text2)",
+    background: "transparent",
+    color: "var(--text2)",
+    display: "inline-flex", alignItems: "center", gap: 4,
+  };
+  // Inline "+ New" CTA on the My Lists group header (replaces the
+  // SubTabIntro action button retired 2026-05-14).
+  const inlineNewListStyle = {
+    flexShrink: 0, cursor: "pointer", fontFamily: "inherit",
+    fontSize: 12, fontWeight: 600, letterSpacing: "0.04em",
+    padding: "6px 12px", borderRadius: 999,
+    border: "0.5px solid var(--text2)",
+    background: "transparent",
+    color: "var(--text2)",
+    display: "inline-flex", alignItems: "center", gap: 4,
+    lineHeight: 1,
+  };
+
   return (
     <div style={{ paddingTop: 4 }}>
-      <SubTabIntro
-        title="Lists"
-        blurb={<>
-          Group watches the way you think about them — "Rolex 5513s",
-          "Vintage divers", "Watches for our anniversary", whatever helps.
-          Add to a list from any card via <strong style={{ color: "var(--text1)" }}>⋯</strong> →
-          <em> Add to…</em>
-          <br/>
-          Lists are private by default. Open one and tap <em>Share</em> to
-          send a copy or invite a collaborator. <strong>Saved</strong>
-          {" "}at the top is every watch you've hearted; <strong>Shared
-          with me</strong> collects single listings and lists others
-          have shared with you.
-        </>}
-        actionLabel="+ New list"
-        onAction={startCreateCollection}
-        expandable
-        defaultExpanded={totalRows === 0}
-      />
+      {/* 2026-05-14 (Mark spec): SubTabIntro retired — the grouped
+          eyebrow headers + the inline + New CTA carry the same
+          affordances without the duplicate guidance card. Empty
+          state below carries the onboarding text for first-time
+          users. */}
       {totalRows === 0 ? (
         <EmptyState
           icon="📂"
           heading="No lists yet"
-          blurb={<>You haven't created any lists. Tap <strong style={{ color: "var(--text1)" }}>+ New list</strong> above to start one.</>}
+          blurb="Group watches the way you think about them — by reference, era, occasion, anything. Lists are private by default; share to invite a collaborator."
+          action={
+            <button onClick={startCreateCollection} style={ctaButtonStyle}>
+              + New list
+            </button>
+          }
         />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           {groups.map(g => (
             <section key={g.key}>
               <div style={{
-                fontSize: 11, fontWeight: 600,
-                letterSpacing: "0.10em",
-                textTransform: "uppercase",
-                color: "var(--text3)",
+                display: "flex", alignItems: "center",
                 padding: "0 4px 6px",
+                gap: 12,
               }}>
-                {g.title}
+                <span style={{
+                  fontSize: 11, fontWeight: 600,
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
+                  color: "var(--text3)",
+                }}>
+                  {g.title}
+                </span>
+                <div style={{ flex: 1 }} />
+                {g.key === "owned" && (
+                  <button onClick={startCreateCollection}
+                    style={inlineNewListStyle}>
+                    + New list
+                  </button>
+                )}
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {g.rows.map(renderListRow)}
-              </div>
+              {g.rows.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {g.rows.map(renderListRow)}
+                </div>
+              ) : g.key === "owned" ? (
+                <div style={{
+                  fontSize: 12, color: "var(--text3)",
+                  padding: "8px 4px 4px",
+                  fontStyle: "italic",
+                }}>
+                  Create your first list to start grouping watches.
+                </div>
+              ) : null}
             </section>
           ))}
         </div>

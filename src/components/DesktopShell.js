@@ -469,21 +469,13 @@ export function DesktopShell(props) {
           watchTopTab !== "lists" && watchTopTab !== "challenges")
       )
         ? filterRowJSX
-        : (
-          // Spacer row that matches the real filter pill row's height,
-          // so switching to a filter-less sub-tab (Calendar / Searches
-          // / Collections / Challenges) doesn't pop content up.
-          // Home gets no spacer either — the editorial layout should
-          // breathe right up against the top nav.
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 20px", borderBottom: "0.5px solid var(--border)", flexShrink: 0 }}>
-            {/* Placeholder pill dimensions match `pillBase` (compact) —
-                padding "7px 14px" — so the spacer row is exactly the
-                same height as the real filter row. Was "6px 12px"
-                which made the border-bottom sit ~1px higher on
-                Calendar (Mark feedback 2026-05-11). */}
-            <span style={{ fontSize: 13, padding: "7px 14px", borderRadius: 20, visibility: "hidden" }}>placeholder</span>
-          </div>
-        )}
+        : null
+      /* Filter-row spacer dropped 2026-05-14 (Mark feedback): on
+         Watchlists sub-tabs (Lists / Searches / My Watches /
+         Challenges) the empty placeholder row read as wasted space.
+         Tabs that genuinely need the filter row (Listings,
+         in-list drill-in) still render it; everywhere else, content
+         starts directly under the sub-tab strip. */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
         {/* Top padding is 0 on Watchlist so the sub-tab strip sits flush
             against the filter pill row. Listings keeps the breathing room. */}
