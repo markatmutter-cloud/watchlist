@@ -150,18 +150,20 @@ export function ListReviewMode({
   }, [current, currentUserId, reactionsByItem]);
 
   // Cumulative tally — derived from reactionsByItem (not a session
-  // counter) so when a user exits mid-flow and comes back, the recap
-  // reflects ALL their reactions on this list, not just this session.
-  // Mark feedback 2026-05-13: "should have total of all in this list
-  // reviewed."
+  // counter) so resume + recap reflects ALL reactions on this list.
+  // Counts an item once even if it has both Yes AND Pass rows
+  // (defensive against any historical pre-v1.3.3 duplicates). Yes
+  // wins ties as the more recent intent is harder to derive without
+  // iterating timestamps; not worth the cycles.
   const cumulativeTally = useMemo(() => {
     let yes = 0, pass = 0, hearted = 0;
     if (!currentUserId) return { yes, pass, hearted };
     for (const item of items) {
       const rs = reactionsByItem.get(item.rowId) || [];
-      const mine = rs.find(r => r.user_id === currentUserId);
-      if (mine?.emoji === "👍") yes++;
-      else if (mine?.emoji === "❌") pass++;
+      const hasYes = rs.some(r => r.user_id === currentUserId && r.emoji === "👍");
+      const hasPass = rs.some(r => r.user_id === currentUserId && r.emoji === "❌");
+      if (hasYes) yes++;
+      else if (hasPass) pass++;
       if (watchlist && watchlist[item.id]) hearted++;
     }
     return { yes, pass, hearted };
@@ -200,7 +202,26 @@ export function ListReviewMode({
 
   const recordReaction = async (emoji) => {
     if (!current) return;
-    if (myReactionOnCurrent !== emoji) {
+    // Screening enforces a single primary reaction per item (Yes XOR
+    // Pass — Heart is a separate signal). The underlying
+    // toggleReaction RPC only acts on the SPECIFIC emoji passed, so
+    // switching from Yes to Pass without explicitly clearing Yes
+    // leaves both rows in the DB. Mark report 2026-05-13: "I hit
+    // like/pass and it kept adding to the summary not changing."
+    // Fix: enumerate the user's existing Yes/Pass on this item and
+    // clear them all before inserting the new one. Same pattern in
+    // handleClearCurrent / handleUndo below.
+    const mineYesPass = (reactionsByItem.get(current.rowId) || [])
+      .filter(r => r.user_id === currentUserId && (r.emoji === "👍" || r.emoji === "❌"));
+    for (const r of mineYesPass) {
+      try { await onToggleReaction(current.rowId, r.emoji); }
+      catch (e) { /* swallow */ }
+    }
+    // Tap-same-emoji means "toggle off" — already cleared above;
+    // skip the re-insert.
+    const tappingSameAsOnly = mineYesPass.length === 1
+      && mineYesPass[0].emoji === emoji;
+    if (!tappingSameAsOnly) {
       try { await onToggleReaction(current.rowId, emoji); }
       catch (e) { /* swallow */ }
     }
@@ -211,24 +232,28 @@ export function ListReviewMode({
   const handlePass = () => recordReaction("❌");
   const handleSkip = () => advance();
 
-  // Undo — step back one AND clear the user's reaction on the
-  // previous card if one exists.
+  // Undo — step back one AND clear ALL the user's Yes/Pass on the
+  // previous card (defensive against pre-fix stale duplicates).
   const handleUndo = async () => {
     if (idx === 0) return;
     const prevItem = initialQueue[idx - 1];
-    const prevReactions = reactionsByItem.get(prevItem.rowId) || [];
-    const myPrev = prevReactions.find(r => r.user_id === currentUserId);
-    if (myPrev) {
-      try { await onToggleReaction(prevItem.rowId, myPrev.emoji); }
+    const myPrev = (reactionsByItem.get(prevItem.rowId) || [])
+      .filter(r => r.user_id === currentUserId && (r.emoji === "👍" || r.emoji === "❌"));
+    for (const r of myPrev) {
+      try { await onToggleReaction(prevItem.rowId, r.emoji); }
       catch (e) { /* swallow */ }
     }
     goBack();
   };
 
   const handleClearCurrent = async () => {
-    if (!current || !myReactionOnCurrent) return;
-    try { await onToggleReaction(current.rowId, myReactionOnCurrent); }
-    catch (e) { /* swallow */ }
+    if (!current) return;
+    const mine = (reactionsByItem.get(current.rowId) || [])
+      .filter(r => r.user_id === currentUserId && (r.emoji === "👍" || r.emoji === "❌"));
+    for (const r of mine) {
+      try { await onToggleReaction(current.rowId, r.emoji); }
+      catch (e) { /* swallow */ }
+    }
   };
 
   const isHearted = !!(watchlist && current && watchlist[current.id]);
