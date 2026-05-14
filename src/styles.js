@@ -149,8 +149,13 @@ export const iconButton = ({ size = 40, active = false } = {}) => ({
 
 // Full-viewport dimmed backdrop. All 4 modals (Hidden / About / Track /
 // FavSearch) used 0.5 opacity after Mark unified them on 2026-04-30.
+// z-index bumped from 200 → 2500 on 2026-05-13 so modals invoked from
+// inside the screening overlay (zIndex 2000) — WatchDetailSheet from
+// tap-to-expand, CollectionPicker from the ⋯ menu — render on top of
+// the screening surface instead of behind it. UserLimitBanner (9000)
+// still floats above all modals.
 export const modalBackdrop = {
-  position: "fixed", inset: 0, zIndex: 200,
+  position: "fixed", inset: 0, zIndex: 2500,
   background: "rgba(0,0,0,0.5)",
   display: "flex", alignItems: "center", justifyContent: "center",
   padding: 20,
