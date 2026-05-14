@@ -64,6 +64,13 @@ export const Card = memo(function Card({
   // 2026-05-10 — Mark spec: replicate the pool's ↑ pattern on
   // owned cards so flagging for sale doesn't require the menu.
   quickAction,
+  // Optional rating wiring (Slice A, Mark spec 2026-05-14). When
+  // both supplied, the ⋯ menu gets a "Give rating" section with two
+  // inline chips (Yes / Pass) using the screening palette glyphs.
+  // myRating is the current user's reaction emoji on this card
+  // ("👍" / "❌" / "❤️" legacy / null); onRate(emoji) toggles.
+  myRating,
+  onRate,
 }) {
   // When the dealer's image URL goes 404 (e.g. they cleaned up their CDN
   // for a sold listing), the browser shows an ugly broken-image icon.
@@ -456,6 +463,70 @@ export const Card = memo(function Card({
                   // system sans the rest of the app uses.
                   fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
                 }}>
+                {onRate && (
+                  <>
+                    <div style={{
+                      padding: "6px 10px 2px",
+                      fontSize: 10, fontWeight: 600,
+                      color: "var(--text3)",
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                    }}>
+                      Give rating
+                    </div>
+                    <div style={{
+                      display: "flex", gap: 4, padding: "2px 6px 6px",
+                    }}>
+                      {[
+                        { emoji: "👍", label: "Yes", color: "var(--brand)" },
+                        { emoji: "❌", label: "Pass", color: "var(--text3)" },
+                      ].map(({ emoji, label, color }) => {
+                        const active = myRating === emoji;
+                        return (
+                          <button key={emoji} onClick={e => {
+                            e.preventDefault(); e.stopPropagation();
+                            setMenuOpen(false);
+                            onRate(emoji);
+                          }} style={{
+                            flex: 1,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                            padding: "6px 8px",
+                            border: active ? `1px solid ${color}` : "0.5px solid var(--border)",
+                            borderRadius: 6,
+                            background: active ? "var(--brand-tint-12)" : "transparent",
+                            color: active ? color : "var(--text1)",
+                            cursor: "pointer",
+                            fontFamily: "inherit",
+                            fontSize: 12,
+                            fontWeight: 500,
+                          }}>
+                            {emoji === "👍" ? (
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="2.2"
+                                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M20 6L9 17l-5-5"/>
+                              </svg>
+                            ) : (
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="1.8"
+                                strokeLinecap="round" aria-hidden="true">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                              </svg>
+                            )}
+                            <span>{label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div style={{
+                      height: 1, margin: "2px 6px 4px",
+                      background: "var(--border)",
+                    }} />
+                  </>
+                )}
                 {onShare && (
                   <button onClick={async e => {
                     e.preventDefault(); e.stopPropagation();
