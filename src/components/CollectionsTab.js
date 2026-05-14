@@ -13,7 +13,7 @@ import { WatchDetailSheet } from "./WatchDetailSheet";
 import { ListReviewMode } from "./ListReviewMode";
 import { ListManagePanel } from "./ListManagePanel";
 import { fmtUSD, matchesSearch } from "../utils";
-import { actionButton, signInButton } from "../styles";
+import { actionButton, signInButton, producedPill } from "../styles";
 import { EmptyState } from "./EmptyState";
 import { Section } from "./Section";
 
@@ -1346,18 +1346,18 @@ function BucketSection({
         {showDensitySwitch && (
           <button
             onClick={onToggleDensity}
-            style={{
-              background: "transparent",
-              border: "0.5px solid var(--border)",
-              color: "var(--brand)",
-              fontSize: 12, fontFamily: "inherit",
-              fontWeight: 500,
-              cursor: "pointer",
-              padding: "6px 10px",
-              borderRadius: 6,
-              flexShrink: 0,
-            }}>
-            {isGrid ? "Compact ↑" : "Expand →"}
+            style={producedPill({ tone: "brand" })}>
+            {isGrid ? (
+              <>
+                <span>Compact</span>
+                <span style={{ fontSize: 13, fontWeight: 300, letterSpacing: 0 }}>↑</span>
+              </>
+            ) : (
+              <>
+                <span>Expand</span>
+                <span style={{ fontSize: 13, fontWeight: 300, letterSpacing: 0 }}>→</span>
+              </>
+            )}
           </button>
         )}
       </div>

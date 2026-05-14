@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { imgSrc, fmtUSD } from "../utils";
+import { producedPill } from "../styles";
 
 // Swipe gesture thresholds + tap detection.
 const SWIPE_THRESHOLD_X = 90;
@@ -457,6 +458,35 @@ export function ListReviewMode({
         }} />
       </div>
 
+      {/* Running tally — Mark spec 2026-05-14: surface what you've
+          done so far at the top of the screening surface, not just
+          at the end. Tiny chip row in the screening palette; only
+          renders buckets with non-zero counts so a fresh queue
+          starts clean. */}
+      {(cumulativeTally.hearted > 0 || cumulativeTally.yes > 0 || cumulativeTally.pass > 0) && (
+        <div style={{
+          display: "flex",
+          gap: 6,
+          padding: "8px 16px 6px",
+          borderBottom: "0.5px solid var(--border)",
+          background: "var(--bg)",
+          flexShrink: 0,
+          justifyContent: "center",
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}>
+          {cumulativeTally.hearted > 0 && (
+            <TallyChip emoji="❤️" count={cumulativeTally.hearted} />
+          )}
+          {cumulativeTally.yes > 0 && (
+            <TallyChip emoji="👍" count={cumulativeTally.yes} />
+          )}
+          {cumulativeTally.pass > 0 && (
+            <TallyChip emoji="❌" count={cumulativeTally.pass} />
+          )}
+        </div>
+      )}
+
       {/* Body */}
       <div style={{
         flex: 1, overflow: "hidden",
@@ -684,20 +714,7 @@ export function ListReviewMode({
                   // block sits beside the image.
                   textAlign: isWide ? "left" : "center",
                 }}>
-                  <span style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "9px 18px",
-                    border: "1px solid var(--brand)",
-                    borderRadius: 6,
-                    color: "var(--brand)",
-                    fontFamily: SANS_STACK,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    letterSpacing: "0.16em",
-                    textTransform: "uppercase",
-                  }}>
+                  <span style={producedPill({ tone: "brand" })}>
                     View listing
                     <span style={{ fontSize: 14, fontWeight: 400, letterSpacing: 0 }}>→</span>
                   </span>
@@ -1165,6 +1182,56 @@ const subtleLinkStyle = {
   textUnderlineOffset: 2,
   letterSpacing: "0.04em",
 };
+
+// Compact running-tally chip — used at the top of the screening
+// surface to show how many ❤ / 👍 / ❌ you've put down in this list.
+// Monochrome SVG glyphs in the screening palette so the visual
+// language matches the bottom action buttons + the per-card
+// aggregate cluster in the list view.
+function TallyChip({ emoji, count }) {
+  const color = emoji === "❤️" ? "#e0322b"
+              : emoji === "👍" ? "var(--brand)"
+              : "var(--text3)";
+  return (
+    <span style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 5,
+      padding: "3px 9px",
+      borderRadius: 999,
+      border: "0.5px solid var(--border)",
+      background: "var(--surface)",
+      color,
+      fontFamily: SANS_STACK,
+      fontSize: 11, fontWeight: 600,
+      fontVariantNumeric: "tabular-nums",
+      lineHeight: 1.4,
+      letterSpacing: "0.02em",
+    }}>
+      {emoji === "❤️" && (
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"
+          stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden="true">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      )}
+      {emoji === "👍" && (
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2.4"
+          strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+      )}
+      {emoji === "❌" && (
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2"
+          strokeLinecap="round" aria-hidden="true">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      )}
+      <span style={{ color: "var(--text2)" }}>{count}</span>
+    </span>
+  );
+}
 
 function reactionBtnStyle(kind, active) {
   // Mark feedback 2026-05-14: action buttons "look a bit basic text"
