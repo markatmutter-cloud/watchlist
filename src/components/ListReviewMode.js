@@ -92,7 +92,16 @@ export function ListReviewMode({
   //            heart-toggles; "Pass" gestures are pure skip. Recap
   //            counts hearted vs passed, not the three-way list
   //            tally.
+  //   "auction" — auction-catalog screening. Same one-pass shape as
+  //               feed, but Yes calls onYesAdd(item) to append to the
+  //               auction's auto-list. Heart button still hearts
+  //               (watchlist) and tracks per-item state. Recap reads
+  //               "X added to {listName}" instead of "hearted".
   mode = "list",
+  // Auction mode callback — invoked for each Yes-swipe / Save tap
+  // with the underlying item so the parent can append to the
+  // target list. Ignored in list/feed modes.
+  onYesAdd,
 }) {
   // Frozen queue at mount.
   const [initialQueue] = useState(() => {
@@ -190,16 +199,28 @@ export function ListReviewMode({
   }, [mode, current, currentUserId, reactionsByItem]);
 
   // Cumulative tally — list mode derives from reactionsByItem so
-  // resume + recap reflect ALL reactions on this list; feed mode
-  // tracks session-only counts since there are no per-item reaction
-  // rows in collection_item_reactions for feed surfaces.
+  // resume + recap reflect ALL reactions on this list; feed/auction
+  // modes track session-only counts since there are no per-item
+  // reaction rows in collection_item_reactions for those surfaces.
   const [sessionPassedSet, setSessionPassedSet] = useState(() => new Set());
+  const [sessionAddedSet, setSessionAddedSet] = useState(() => new Set());
   const cumulativeTally = useMemo(() => {
     let yes = 0, pass = 0, hearted = 0;
     if (mode === "feed") {
       // Feed mode: hearted = current count from watchlist within
       // the screened queue; pass = items the user explicitly skipped
       // this session. No "yes" concept here.
+      pass = sessionPassedSet.size;
+      for (const item of items) {
+        if (watchlist && watchlist[item.id]) hearted++;
+      }
+      return { yes, pass, hearted };
+    }
+    if (mode === "auction") {
+      // Auction mode: yes = items added to the auction's auto-list
+      // this session; pass = items skipped; hearted tracks the
+      // independent watchlist-heart signal across the queue.
+      yes = sessionAddedSet.size;
       pass = sessionPassedSet.size;
       for (const item of items) {
         if (watchlist && watchlist[item.id]) hearted++;
@@ -216,7 +237,7 @@ export function ListReviewMode({
       if (watchlist && watchlist[item.id]) hearted++;
     }
     return { yes, pass, hearted };
-  }, [items, reactionsByItem, currentUserId, watchlist, mode, sessionPassedSet]);
+  }, [items, reactionsByItem, currentUserId, watchlist, mode, sessionPassedSet, sessionAddedSet]);
 
   // Swipe / mount-rise state.
   const dragStartRef = useRef(null);
@@ -275,11 +296,11 @@ export function ListReviewMode({
     advance();
   };
 
-  // Feed mode (Mark spec 2026-05-14): no reactions table involved.
-  // "Yes" gestures fire the heart toggle (the only positive signal
-  // for feed surfaces); "Pass" gestures pure-advance and log the
-  // listing in a session-only passed set so the recap tally is
-  // accurate.
+  // Feed/auction modes (Mark spec 2026-05-14): no reactions-table
+  // writes. Feed mode: Yes = heart-toggle. Auction mode: Yes =
+  // append-to-auto-list (via onYesAdd callback). Pass in either
+  // mode is a pure skip + record in the session set so the recap
+  // tally is accurate.
   const handleYes = () => {
     if (mode === "feed") {
       haptic(15);
@@ -289,10 +310,23 @@ export function ListReviewMode({
       advance();
       return;
     }
+    if (mode === "auction") {
+      haptic(15);
+      if (current && onYesAdd) {
+        onYesAdd(current);
+        setSessionAddedSet(prev => {
+          const next = new Set(prev);
+          next.add(current.id);
+          return next;
+        });
+      }
+      advance();
+      return;
+    }
     recordReaction("👍");
   };
   const handlePass = () => {
-    if (mode === "feed") {
+    if (mode === "feed" || mode === "auction") {
       haptic(15);
       if (current) {
         setSessionPassedSet(prev => {
@@ -571,7 +605,7 @@ export function ListReviewMode({
         )}
 
         {done ? (
-          <RecapView tally={cumulativeTally} total={total} ownerName={ownerName} onClose={onClose} mode={mode} />
+          <RecapView tally={cumulativeTally} total={total} ownerName={ownerName} listName={listName} onClose={onClose} mode={mode} />
         ) : current ? (
           <>
             {/* Image stack with peek behind. Desktop card sized so
@@ -824,7 +858,11 @@ export function ListReviewMode({
               <span>Pass</span>
             </button>
             <button onClick={handleYes} style={reactionBtnStyle("yes", myReactionOnCurrent === "👍")}>
-              <span>{mode === "feed" ? "Save" : "Yes"}</span>
+              <span>
+                {mode === "feed" ? "Save"
+                  : mode === "auction" ? "Add"
+                  : "Yes"}
+              </span>
               <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: 0, marginLeft: -2 }}>→</span>
             </button>
             <button onClick={handleSkip} style={edgeNavStyle(false, { small: true })}>
@@ -1159,8 +1197,10 @@ function BreakInterstitial({ idx, total, onContinue, onPause }) {
   );
 }
 
-function RecapView({ tally, total, ownerName, onClose, mode }) {
+function RecapView({ tally, total, ownerName, listName, onClose, mode }) {
   const isFeed = mode === "feed";
+  const isAuction = mode === "auction";
+  const isOnePass = isFeed || isAuction;
   return (
     <div style={{
       textAlign: "center", maxWidth: 460,
@@ -1180,7 +1220,9 @@ function RecapView({ tally, total, ownerName, onClose, mode }) {
         lineHeight: 1.2, marginBottom: 26,
         letterSpacing: "-0.005em",
       }}>
-        {isFeed ? `You reviewed ${total} new listings.` : "Your take on this list."}
+        {isFeed   ? `You reviewed ${total} new listings.`
+         : isAuction ? `You reviewed ${total} lots.`
+         : "Your take on this list."}
       </div>
       <div style={{
         display: "grid",
@@ -1188,7 +1230,12 @@ function RecapView({ tally, total, ownerName, onClose, mode }) {
         gap: 10, margin: "0 auto 26px",
         maxWidth: isFeed ? 240 : 340,
       }}>
-        {!isFeed && <TallyCard label="Yes" value={tally.yes} color="var(--brand)" />}
+        {!isFeed && (
+          <TallyCard
+            label={isAuction ? "Added" : "Yes"}
+            value={tally.yes}
+            color="var(--brand)" />
+        )}
         <TallyCard label="Hearted" value={tally.hearted} color="#d92626" />
         <TallyCard label="Pass" value={tally.pass} color="var(--text2)" />
       </div>
@@ -1197,14 +1244,15 @@ function RecapView({ tally, total, ownerName, onClose, mode }) {
         marginBottom: 26, lineHeight: 1.5,
         fontStyle: "italic",
       }}>
-        {isFeed
-          ? "Hearts saved to your watchlist."
-          : ownerName
-            ? `${ownerName} will see your reactions next time they open the list.`
-            : "Your reactions are saved."}
+        {isFeed   ? "Hearts saved to your watchlist."
+         : isAuction
+            ? (listName ? `Added picks saved to "${listName}". Hearts also saved to your watchlist.` : "Picks saved.")
+            : ownerName
+              ? `${ownerName} will see your reactions next time they open the list.`
+              : "Your reactions are saved."}
       </div>
       <button onClick={onClose} style={primaryBtnStyle()}>
-        {isFeed ? "Done" : "Back to list"}
+        {isOnePass ? "Done" : "Back to list"}
       </button>
     </div>
   );

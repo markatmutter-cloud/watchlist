@@ -1,5 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import React, { useMemo, useState, useEffect } from "react";
 
 // Auction calendar — month-banded list of every auction-house sale
 // in the emitted feed. Live + upcoming render in the top section;
@@ -65,7 +64,15 @@ function AuctionDateBlock({ a }) {
   );
 }
 
-export function AuctionCalendar({ auctions = [], onReviewCatalog }) {
+export function AuctionCalendar({
+  auctions = [],
+  // url → scraped lot count, for surfacing "N lots" on each row +
+  // gating Add/Review on whether the actions actually have items.
+  lotCounts = {},
+  onReviewCatalog,
+  onAddToList,
+  busyAuctionUrl,
+}) {
   // Archive expands on demand — past auctions accumulate forever and
   // the user typically wants the upcoming view first. localStorage
   // persists the toggle so re-opens remember the user's preference.
@@ -155,7 +162,11 @@ export function AuctionCalendar({ auctions = [], onReviewCatalog }) {
       </div>
 
       {upcomingGroups.map((group, idx) => (
-        <MonthBlock key={group.key} group={group} firstBlock={idx === 0} onReviewCatalog={onReviewCatalog} />
+        <MonthBlock key={group.key} group={group} firstBlock={idx === 0}
+          lotCounts={lotCounts}
+          onReviewCatalog={onReviewCatalog}
+          onAddToList={onAddToList}
+          busyAuctionUrl={busyAuctionUrl} />
       ))}
 
       {/* Archive — past auctions, collapsed by default. The same
@@ -184,7 +195,11 @@ export function AuctionCalendar({ auctions = [], onReviewCatalog }) {
             </span>
           </button>
           {archiveOpen && pastGroups.map((group, idx) => (
-            <MonthBlock key={group.key} group={group} firstBlock={idx === 0} archive onReviewCatalog={onReviewCatalog} />
+            <MonthBlock key={group.key} group={group} firstBlock={idx === 0} archive
+              lotCounts={lotCounts}
+              onReviewCatalog={onReviewCatalog}
+              onAddToList={onAddToList}
+              busyAuctionUrl={busyAuctionUrl} />
           ))}
         </div>
       )}
@@ -195,7 +210,7 @@ export function AuctionCalendar({ auctions = [], onReviewCatalog }) {
 // One month-banded section of the calendar. Lifted from the inline
 // map in 2026-05-10's calendar/Archive split — same render shape
 // reused for both upcoming and past sections.
-function MonthBlock({ group, firstBlock, archive = false, onReviewCatalog }) {
+function MonthBlock({ group, firstBlock, archive = false, lotCounts = {}, onReviewCatalog, onAddToList, busyAuctionUrl }) {
   return (
     <div style={{ marginBottom: 28 }}>
       <div style={{
@@ -214,23 +229,30 @@ function MonthBlock({ group, firstBlock, archive = false, onReviewCatalog }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {group.items.map(a => (
           <AuctionRow key={a.id} a={a} archive={archive}
-            onReviewCatalog={onReviewCatalog} />
+            lotCount={lotCounts[a.url] || 0}
+            onReviewCatalog={onReviewCatalog}
+            onAddToList={onAddToList}
+            busy={busyAuctionUrl === a.url} />
         ))}
       </div>
     </div>
   );
 }
 
-// Single calendar row + ⋯ menu (Mark spec 2026-05-14). Row click =
-// open the auction house's external catalog page in a new tab
-// (matches the pre-2026-05-14 anchor behaviour). The ⋯ menu adds:
-//   • View auction page — same external link, surfaced as an
-//     explicit menu item
-//   • Review catalog — opens the screening overlay on the auction's
-//     lots ("Tinder swipe" through every lot in the catalog)
-// Menu portals to document.body so it isn't clipped by parent
-// overflow / borders, same pattern as Card.js.
-function AuctionRow({ a, archive, onReviewCatalog }) {
+// Single calendar row + three inline action buttons (Mark spec
+// 2026-05-14, revised): visible buttons beat a hidden ⋯ menu —
+// one click to act, no discovery cost. Buttons hide entirely when
+// the auction has no lots scraped yet (the actions would no-op).
+//   • View catalog — opens the house's external auction page in a
+//     new tab
+//   • Add to list — bulk-adds every lot from the catalog into the
+//     auction's auto-list (idempotent — re-tapping doesn't dupe)
+//   • Review — opens the screening overlay; the auto-list is
+//     created on entry, Yes-swipes append to it (mode="auction"
+//     in ListReviewMode)
+// On closed past auctions only View catalog renders — there's
+// nothing useful to add to a watchlist or review for upcoming.
+function AuctionRow({ a, archive, lotCount = 0, onReviewCatalog, onAddToList, busy }) {
   const isLive   = a.status === "live";
   const isClosed = a.status === "past";
   const catalogAgeDays = a.catalogLiveAt
@@ -238,47 +260,25 @@ function AuctionRow({ a, archive, onReviewCatalog }) {
     : null;
   const catalogJustOpened = !isClosed && catalogAgeDays !== null && catalogAgeDays <= 7;
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState(null);
-  const triggerRef = useRef(null);
-  const portalRef = useRef(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onDocDown = (e) => {
-      const inTrigger = triggerRef.current && triggerRef.current.contains(e.target);
-      const inPortal  = portalRef.current && portalRef.current.contains(e.target);
-      if (!inTrigger && !inPortal) setMenuOpen(false);
-    };
-    const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
-    document.addEventListener("mousedown", onDocDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDocDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menuOpen]);
-
   const openExternal = () => {
     if (a.url) window.open(a.url, "_blank", "noopener,noreferrer");
   };
-  const onRowClick = (e) => {
-    // Ignore clicks that originated inside the ⋯ trigger / portal.
-    if (e.target.closest && e.target.closest("[data-no-row-click]")) return;
-    openExternal();
-  };
+
+  // Lot-actions are only useful when the auction has scraped lots.
+  // No lots → silence the Add/Review buttons; View catalog still
+  // works (it's just an external link).
+  const lotActionsAvailable = !isClosed && lotCount > 0;
 
   return (
-    <div onClick={onRowClick}
-      style={{
-        display: "flex", alignItems: "stretch",
-        borderRadius: 12, overflow: "hidden",
-        border: "0.5px solid var(--border)", background: "var(--card-bg)",
-        color: "inherit", fontFamily: "inherit", cursor: "pointer",
-        transition: "border-color 120ms ease",
-        opacity: archive ? 0.85 : 1,
-        position: "relative",
-      }}>
+    <div style={{
+      display: "flex", alignItems: "stretch",
+      borderRadius: 12, overflow: "hidden",
+      border: "0.5px solid var(--border)", background: "var(--card-bg)",
+      color: "inherit", fontFamily: "inherit",
+      transition: "border-color 120ms ease",
+      opacity: archive ? 0.85 : 1,
+      position: "relative",
+    }}>
       <AuctionDateBlock a={a} />
       <div style={{ flex: 1, minWidth: 0, padding: "12px 14px",
                   display: "flex", flexDirection: "column", justifyContent: "center", gap: 4 }}>
@@ -295,6 +295,11 @@ function AuctionRow({ a, archive, onReviewCatalog }) {
           {catalogJustOpened && (
             <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "var(--brand)", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>NEW CATALOG</span>
           )}
+          {lotActionsAvailable && (
+            <span style={{ fontSize: 10, color: "var(--text3)", fontVariantNumeric: "tabular-nums" }}>
+              · {lotCount.toLocaleString()} lots
+            </span>
+          )}
         </div>
         <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -306,73 +311,43 @@ function AuctionRow({ a, archive, onReviewCatalog }) {
           {a.location ? ` · ${a.location}` : ""}
         </div>
       </div>
-      <div data-no-row-click
-        style={{ display: "flex", alignItems: "center", padding: "0 6px 0 6px", flexShrink: 0 }}>
-        <button ref={triggerRef}
-          data-no-row-click
-          aria-label="More actions"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!menuOpen && triggerRef.current) {
-              const r = triggerRef.current.getBoundingClientRect();
-              setMenuPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) });
-            }
-            setMenuOpen(o => !o);
-          }}
-          style={{
-            width: 32, height: 32, borderRadius: "50%",
-            border: "none", background: menuOpen ? "var(--surface)" : "transparent",
-            color: "var(--text2)", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 18, lineHeight: 1, padding: 0,
-          }}>
-          ⋯
-        </button>
-        {menuOpen && menuPos && createPortal(
-          <div ref={portalRef}
-            data-no-row-click
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              position: "fixed",
-              top: menuPos.top, right: menuPos.right,
-              zIndex: 1000,
-              maxWidth: `calc(100vw - ${menuPos.right + 16}px)`,
-              background: "var(--bg)", border: "0.5px solid var(--border)",
-              borderRadius: 8, padding: 4,
-              whiteSpace: "nowrap",
-              boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
-              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-            }}>
-            <MenuItem label="View auction page" onClick={() => {
-              setMenuOpen(false);
-              openExternal();
-            }} />
-            {onReviewCatalog && !isClosed && (
-              <MenuItem label="Review catalog" onClick={() => {
-                setMenuOpen(false);
-                onReviewCatalog(a);
-              }} />
-            )}
-          </div>,
-          document.body
+      <div style={{
+        display: "flex", alignItems: "center", gap: 6,
+        padding: "0 10px", flexShrink: 0,
+      }}>
+        <ActionButton label="View catalog" onClick={openExternal} />
+        {lotActionsAvailable && onAddToList && (
+          <ActionButton label="Add to list"
+            onClick={() => onAddToList(a)}
+            disabled={busy} />
+        )}
+        {lotActionsAvailable && onReviewCatalog && (
+          <ActionButton label="Review"
+            onClick={() => onReviewCatalog(a)}
+            primary
+            disabled={busy} />
         )}
       </div>
     </div>
   );
 }
 
-function MenuItem({ label, onClick }) {
+function ActionButton({ label, onClick, primary, disabled }) {
   return (
-    <button onClick={onClick}
+    <button onClick={onClick} disabled={disabled}
       style={{
-        all: "unset", display: "block",
-        padding: "8px 12px", borderRadius: 6,
-        cursor: "pointer", fontSize: 13,
-        color: "var(--text1)", width: "100%",
-        boxSizing: "border-box",
-      }}
-      onMouseEnter={e => e.currentTarget.style.background = "var(--surface)"}
-      onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+        flexShrink: 0,
+        cursor: disabled ? "default" : "pointer",
+        fontFamily: "inherit", fontSize: 12, fontWeight: 600,
+        letterSpacing: "0.02em",
+        padding: "6px 12px", borderRadius: 999,
+        border: primary ? "none" : "0.5px solid var(--text2)",
+        background: primary ? "var(--brand)" : "transparent",
+        color: primary ? "#fff" : "var(--text2)",
+        opacity: disabled ? 0.5 : 1,
+        lineHeight: 1.2,
+        whiteSpace: "nowrap",
+      }}>
       {label}
     </button>
   );

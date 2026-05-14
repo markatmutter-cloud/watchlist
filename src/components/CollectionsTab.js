@@ -2009,22 +2009,30 @@ function ListsView({
   // headers matches the bucket headers in a drill-in for visual
   // consistency.
   const myUserId = user?.id || null;
-  const ownedLists = userCols.filter(c => c.userId && c.userId === myUserId);
+  // Auction catalogs get their own group — type='auction' lists are
+  // auto-created when the user taps Review catalog or Add to list on
+  // an auction calendar row. Filtered out of "My lists" so the
+  // user-created lists section doesn't get diluted by every catalog
+  // the user has ever reviewed.
+  const ownedUserLists = userCols.filter(c => c.userId && c.userId === myUserId);
+  const ownedLists      = ownedUserLists.filter(c => c.type !== 'auction');
+  const auctionLists    = ownedUserLists.filter(c => c.type === 'auction');
   const collabLists = userCols.filter(c => c.userId && c.userId !== myUserId);
   // The owned group is special: even when empty we render its
   // header + "+ New list" CTA so the user can always discover the
   // create flow (Mark spec 2026-05-14, after SubTabIntro was
-  // retired). Saved + Shared groups hide entirely when empty.
+  // retired). Saved / Shared / Auctions groups hide entirely when empty.
   const sharedRows = [
     ...(sharedInbox ? [sharedInbox] : []),
     ...collabLists,
   ];
   const groups = [
-    { key: "saved",  title: "Saved",          rows: savedRow ? [savedRow] : [], hideIfEmpty: true },
-    { key: "owned",  title: "My lists",       rows: ownedLists,                 hideIfEmpty: false },
-    { key: "shared", title: "Shared with me", rows: sharedRows,                 hideIfEmpty: true },
+    { key: "saved",    title: "Saved",            rows: savedRow ? [savedRow] : [], hideIfEmpty: true },
+    { key: "owned",    title: "My lists",         rows: ownedLists,                 hideIfEmpty: false },
+    { key: "shared",   title: "Shared with me",   rows: sharedRows,                 hideIfEmpty: true },
+    { key: "auctions", title: "Auction catalogs", rows: auctionLists,               hideIfEmpty: true },
   ].filter(g => !g.hideIfEmpty || g.rows.length > 0);
-  const totalRows = (savedRow ? 1 : 0) + ownedLists.length + sharedRows.length;
+  const totalRows = (savedRow ? 1 : 0) + ownedLists.length + sharedRows.length + auctionLists.length;
 
   // Per-row renderer — shared across all three groups so the row
   // styling stays in one place. Closes over the local state of
