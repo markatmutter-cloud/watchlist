@@ -15,16 +15,18 @@ describe("DesktopShell", () => {
     expect(watchlistButtons.length).toBeGreaterThanOrEqual(1);
   });
 
-  test("renders the three main tabs (Listings / Watchlists / Learn)", () => {
+  test("renders the three main tabs (Listings / Watchlists / Collecting)", () => {
     render(<DesktopShell {...buildMockShellProps()} />);
     expect(screen.getByText("Listings")).toBeInTheDocument();
-    // Bundle 2A.2 (2026-05-07) collapsed the standalone Collections
-    // tab into Saved; 2026-05-09 IA pass renamed "Saved" → "Watchlists".
-    // Nav pill is now Listings / Watchlists / Learn.
+    // 2026-05-14 IA pass: Share tab retired, Learn renamed to
+    // "Collecting" (verb framing). Three pills: Listings /
+    // Watchlists / Collecting.
     expect(screen.getByText("Watchlists")).toBeInTheDocument();
-    expect(screen.getByText("Learn")).toBeInTheDocument();
+    expect(screen.getByText("Collecting")).toBeInTheDocument();
     // Collections is no longer a top-level tab pill.
     expect(screen.queryByText("Collections")).not.toBeInTheDocument();
+    expect(screen.queryByText("Learn")).not.toBeInTheDocument();
+    expect(screen.queryByText("Share")).not.toBeInTheDocument();
   });
 
   test("renders the filter row on Listings tab", () => {
