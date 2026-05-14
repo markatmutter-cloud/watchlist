@@ -98,21 +98,6 @@ export function CollectionsTab({
   // item from itemsByCollection and re-renders without a close-reopen.
   const [detailRowId, setDetailRowId] = useState(null);
 
-  // Screening v1.2 (2026-05-13). isWide drives inline-on-desktop
-  // (vs fullscreen portal on mobile) for the screening surface.
-  // screeningResetTick is incremented when the user resets their
-  // reactions mid-screen — used as a React key on ListReviewMode so
-  // the component remounts with a fresh queue snapshot.
-  const [isWide, setIsWide] = useState(() =>
-    typeof window !== "undefined" && window.innerWidth >= 900
-  );
-  useEffect(() => {
-    const onResize = () => setIsWide(window.innerWidth >= 900);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-  const [screeningResetTick, setScreeningResetTick] = useState(0);
-
   // Lists sub-tab drill-in selection — moved here from the top-level
   // CollectionsTab pre-restructure. URL-synced via `?col=`. Only
   // active when subTab === "lists"; cleared on sub-tab change so a
@@ -1241,6 +1226,20 @@ function ListsView({
   // fullscreen overlay walking through items the current user hasn't
   // reacted to yet. Closed via Done / ESC / completing the queue.
   const [reviewModeOpen, setReviewModeOpen] = useState(false);
+  // Screening v1.2 (2026-05-13). isWide drives inline-on-desktop
+  // (vs fullscreen portal on mobile) for the screening surface.
+  // screeningResetTick is incremented when the user resets their
+  // reactions mid-screen — used as a React key on ListReviewMode so
+  // the component remounts with a fresh queue snapshot.
+  const [isWide, setIsWide] = useState(() =>
+    typeof window !== "undefined" && window.innerWidth >= 900
+  );
+  useEffect(() => {
+    const onResize = () => setIsWide(window.innerWidth >= 900);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const [screeningResetTick, setScreeningResetTick] = useState(0);
   // Membership map for the active drill-in. Populated on drill-in
   // (best-effort — non-members get an empty array, which means no
   // chips). Used to resolve `whoAdded` user_id → display name.
