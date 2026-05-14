@@ -121,7 +121,6 @@ export function buildMockShellProps(overrides = {}) {
     referencesTabJSX: <div data-testid="references-tab" />,
     collectionsTabJSX: <div data-testid="collections-tab" />,
     homeTabJSX: <div data-testid="home-tab" />,
-    shareTabJSX: <div data-testid="share-tab" />,
 
     ...overrides,
   };
