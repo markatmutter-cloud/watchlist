@@ -2,26 +2,37 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { imgSrc, fmtUSD } from "../utils";
 
-// Swipe-gesture thresholds. Past this on release commits the
-// corresponding reaction; below, the card springs back. Values
-// tuned on iPhone SE (375px wide) — ~25% of viewport to commit.
+// Swipe gesture thresholds + tap detection.
 const SWIPE_THRESHOLD_X = 90;
 const SWIPE_ROTATE_PER_PX = 0.06;
-// Tap detection — if pointer moved less than this between down/up,
-// treat as a tap-to-expand rather than a swipe.
 const TAP_MAX_MOVE = 8;
-// Insert a "take a break?" interstitial every N reviewed cards on
-// long queues (auction catalogs of 600+ lots, see [[feedback-
-// screening-long-queues]]).
+// "Take a break?" interstitial every N reviewed cards on long
+// queues (see [[feedback-screening-long-queues]]).
 const BREAK_INTERVAL = 25;
-// Viewport breakpoint for side-by-side desktop layout.
+// At/above this viewport width the screening surface renders
+// INLINE in the tab body (Mark spec 2026-05-13 "Approach B" — top
+// wordmark / nav / filter row stay visible). Mobile gets the
+// fullscreen portal for focus.
 const SIDE_BY_SIDE_MIN = 900;
 
-// Per-list persistence — survives mid-flow exit + browser refresh.
-// Keyed by listId; stores the rowId of the last reviewed item, NOT
-// the numeric index. On resume, we re-locate that rowId in the
-// freshly-filtered queue so an off-by-one doesn't happen when the
-// queue shrinks because items were reacted to.
+// Editorial type stacks.
+const SANS_STACK = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif";
+// Serif system stack for display headlines — Mark feedback
+// "title and option fonts still a bit simple, don't look produced."
+const SERIF_DISPLAY_STACK = "'Hoefler Text', 'Garamond', 'Georgia', 'Times New Roman', serif";
+
+// One-time onboarding flag — global per browser.
+const INTRO_SEEN_KEY = "screening_intro_seen_v1";
+function readIntroSeen() {
+  try { return !!localStorage.getItem(INTRO_SEEN_KEY); }
+  catch { return false; }
+}
+function markIntroSeen() {
+  try { localStorage.setItem(INTRO_SEEN_KEY, "1"); } catch {}
+}
+
+// Per-list persistence keyed by rowId so resume locates the right
+// card even when the queue shrinks (items reacted to drop out).
 const persistenceKey = (listId) => `screening_${listId || "default"}`;
 function readPersistedRowId(listId) {
   try {
@@ -40,23 +51,6 @@ function clearPersistedRowId(listId) {
   try { localStorage.removeItem(persistenceKey(listId)); } catch {}
 }
 
-// Editorial Screening mode (Mark's "tinder function" — see
-// [[feedback-screening-mode-naming]]). Fullscreen one-at-a-time
-// review of items in a list (or, later, an auction catalog).
-// Editorial chrome — thin borders, monochrome SVG glyphs, brand-blue
-// + danger accents. Explicitly NOT cellphone-emoji thumbs/hearts.
-//
-// Reactions: Yes + Pass. Heart is a separate tap action that
-// promotes the item to the user's own watchlist (independent of the
-// list-reaction layer). Per Mark feedback 2026-05-13: "three
-// responses is tough... heart for serious interest rather than
-// swipe up."
-//
-// Swipe right = Yes / left = Pass / tap = open detail sheet.
-// Edge color washes (rendered OUTSIDE the moving card so they stay
-// on the screen edges during fly-out) give feedback that can't be
-// hidden by the user's thumb.
-
 export function ListReviewMode({
   items,
   listId,
@@ -72,10 +66,9 @@ export function ListReviewMode({
   openCollectionPicker,
   onShare,
   onOpenDetail,
+  onReset,           // parent clears the reactions; we just trigger
 }) {
-  // Frozen queue at mount via lazy-init useState — items the user
-  // hasn't reacted to. useMemo would re-derive when reactionsByItem
-  // updates, shifting the current item out from under the user.
+  // Frozen queue at mount.
   const [initialQueue] = useState(() => {
     if (!currentUserId) return items;
     return items.filter(it => {
@@ -86,18 +79,11 @@ export function ListReviewMode({
 
   const total = initialQueue.length;
 
-  // Resume from a persisted rowId if there is one. We find the
-  // index of that rowId in the freshly-filtered queue (the item the
-  // user was last LOOKING at when they exited). If it's been
-  // reacted to since (so filtered out of the new queue), start at
-  // the first item past it in the original items ordering.
   const [idx, setIdx] = useState(() => {
     const persistedRowId = readPersistedRowId(listId);
     if (!persistedRowId) return 0;
     const directHit = initialQueue.findIndex(it => it.rowId === persistedRowId);
     if (directHit >= 0) return directHit;
-    // Not in the new queue — find the first queue item whose
-    // original-list position is at/after the persisted item's.
     const persistedPos = items.findIndex(it => it.rowId === persistedRowId);
     if (persistedPos < 0) return 0;
     const next = initialQueue.findIndex(it => items.indexOf(it) > persistedPos);
@@ -105,17 +91,16 @@ export function ListReviewMode({
   });
   const done = idx >= total;
   const current = done ? null : initialQueue[idx];
+  const nextCard = !done && idx + 1 < total ? initialQueue[idx + 1] : null;
 
-  // Persist the rowId of the item the user is CURRENTLY viewing
-  // (not the next-to-view). Resume lands the user back on this
-  // exact card.
+  // Persist current rowId.
   useEffect(() => {
     if (!listId) return;
     if (done || !current) clearPersistedRowId(listId);
     else writePersistedRowId(listId, current.rowId);
   }, [current, done, listId]);
 
-  // Break-interstitial trigger.
+  // Break interstitial trigger.
   const [showBreak, setShowBreak] = useState(false);
   const lastBreakRef = useRef(0);
   useEffect(() => {
@@ -131,21 +116,15 @@ export function ListReviewMode({
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") onClose?.();
-      else if (e.key === "ArrowRight" && idx < total) setIdx(i => i + 1);
-      else if (e.key === "ArrowLeft" && idx > 0) setIdx(i => i - 1);
+      else if (e.key === "ArrowRight" && idx < total) advance();
+      else if (e.key === "ArrowLeft" && idx > 0) goBack();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line
   }, [onClose, idx, total]);
 
-  // Lock body scroll while open.
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
-  }, []);
-
-  // Responsive layout — side-by-side on wide viewports.
+  // Responsive layout — inline on desktop, fullscreen on mobile.
   const [isWide, setIsWide] = useState(() =>
     typeof window !== "undefined" && window.innerWidth >= SIDE_BY_SIDE_MIN
   );
@@ -155,6 +134,14 @@ export function ListReviewMode({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // Body-scroll lock only in fullscreen mode.
+  useEffect(() => {
+    if (isWide) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [isWide]);
+
   const myReactionOnCurrent = useMemo(() => {
     if (!current || !currentUserId) return null;
     const rs = reactionsByItem.get(current.rowId) || [];
@@ -162,32 +149,39 @@ export function ListReviewMode({
     return mine?.emoji || null;
   }, [current, currentUserId, reactionsByItem]);
 
-  // Running tally for the recap.
+  // Running tally for the recap screen.
   const [tally, setTally] = useState({ yes: 0, pass: 0, hearted: 0 });
 
-  // Swipe state.
+  // Swipe / mount-rise state.
   const dragStartRef = useRef(null);
   const [drag, setDrag] = useState({ x: 0, y: 0 });
   const [flyOut, setFlyOut] = useState(null);
-  // Mount-rise animation — new cards rise from the deck (scale
-  // 0.94 → 1.0) instead of sliding in from the swipe-out direction.
-  // Per Mark feedback 2026-05-13: "new cards come in from the left
-  // — be good if they came from behind so up from the phone screen
-  // to the top like a deck of cards."
   const [rising, setRising] = useState(false);
-  const prevIdxRef = useRef(idx);
+  // After mount with rising=true (scale 0.94), flip to false on the
+  // next frame so the transition animates up to 1.0.
   useEffect(() => {
+    if (!rising) return undefined;
+    const t = setTimeout(() => setRising(false), 30);
+    return () => clearTimeout(t);
+  }, [rising]);
+
+  // Advance + back batch the drag/flyOut/rising reset with the idx
+  // change so the new card mounts at scale 0.94 with drag {0,0} —
+  // not inheriting the fly-out transform, which would slide it in
+  // from the swipe-off direction.
+  const advance = () => {
     setDrag({ x: 0, y: 0 });
     setFlyOut(null);
-    if (idx > prevIdxRef.current) {
-      // Advancing — animate the new card up from the peek state.
-      setRising(true);
-      const t = setTimeout(() => setRising(false), 240);
-      prevIdxRef.current = idx;
-      return () => clearTimeout(t);
-    }
-    prevIdxRef.current = idx;
-  }, [idx]);
+    setRising(true);
+    setIdx(i => i + 1);
+  };
+  const goBack = () => {
+    if (idx === 0) return;
+    setDrag({ x: 0, y: 0 });
+    setFlyOut(null);
+    setRising(true);
+    setIdx(i => Math.max(0, i - 1));
+  };
 
   const recordReaction = async (emoji) => {
     if (!current) return;
@@ -197,13 +191,29 @@ export function ListReviewMode({
     }
     if (emoji === "👍") setTally(t => ({ ...t, yes: t.yes + 1 }));
     if (emoji === "❌") setTally(t => ({ ...t, pass: t.pass + 1 }));
-    setIdx(i => i + 1);
+    advance();
   };
 
   const handleYes = () => recordReaction("👍");
   const handlePass = () => recordReaction("❌");
-  const handleSkip = () => setIdx(i => i + 1);
-  const handlePrev = () => setIdx(i => Math.max(0, i - 1));
+  const handleSkip = () => advance();
+
+  // Undo — step back one AND clear the user's reaction on the
+  // previous card if one exists.
+  const handleUndo = async () => {
+    if (idx === 0) return;
+    const prevItem = initialQueue[idx - 1];
+    const prevReactions = reactionsByItem.get(prevItem.rowId) || [];
+    const myPrev = prevReactions.find(r => r.user_id === currentUserId);
+    if (myPrev) {
+      try { await onToggleReaction(prevItem.rowId, myPrev.emoji); }
+      catch (e) { /* swallow */ }
+      if (myPrev.emoji === "👍") setTally(t => ({ ...t, yes: Math.max(0, t.yes - 1) }));
+      if (myPrev.emoji === "❌") setTally(t => ({ ...t, pass: Math.max(0, t.pass - 1) }));
+    }
+    goBack();
+  };
+
   const handleClearCurrent = async () => {
     if (!current || !myReactionOnCurrent) return;
     try { await onToggleReaction(current.rowId, myReactionOnCurrent); }
@@ -217,14 +227,27 @@ export function ListReviewMode({
     if (!isHearted) setTally(t => ({ ...t, hearted: t.hearted + 1 }));
   };
 
-  // ⋯ menu state — portal-rendered.
+  // ⋯ menu state.
   const [menuOpen, setMenuOpen] = useState(false);
   const menuTriggerRef = useRef(null);
 
-  // Pointer handlers. Skip drag/capture entirely if the pointer
-  // started on an interactive overlay (heart, ⋯ menu) — otherwise
-  // the parent's setPointerCapture swallows the events and the
-  // button's onClick never fires.
+  // Onboarding card — once per browser before the first card.
+  const [showIntro, setShowIntro] = useState(() => !readIntroSeen() && total > 0);
+  const dismissIntro = () => {
+    markIntroSeen();
+    setShowIntro(false);
+  };
+
+  // Reset list confirm.
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const confirmReset = async () => {
+    setResetConfirmOpen(false);
+    if (onReset) await onReset();
+    // Parent bumps a key on this component → fresh mount.
+  };
+
+  // Pointer handlers — skip drag when target is a no-drag descendant
+  // (heart, ⋯ menu) so their onClicks fire.
   const onPointerDown = (e) => {
     if (!current || flyOut) return;
     if (e.target.closest && e.target.closest('[data-no-drag]')) return;
@@ -267,30 +290,43 @@ export function ListReviewMode({
     setDrag({ x: 0, y: 0 });
   };
 
-  // Edge-wash opacity from drag distance.
+  // Subtler edge washes (Mark spec).
   const washOpacity = (sign) => {
     const v = sign === 1 ? Math.max(0, drag.x) : Math.max(0, -drag.x);
-    return Math.min(0.55, v / SWIPE_THRESHOLD_X * 0.55);
+    return Math.min(0.32, v / SWIPE_THRESHOLD_X * 0.32);
   };
 
-  // Card transform — combines drag, rotation, and the rise-from-peek
-  // mount animation.
   const cardScale = rising ? 0.94 : 1;
   const cardTransform = `translate(${drag.x}px, ${drag.y}px) rotate(${drag.x * SWIPE_ROTATE_PER_PX}deg) scale(${cardScale})`;
   const cardTransition = flyOut
     ? "transform 220ms ease-out"
-    : (dragStartRef.current ? "none" : "transform 220ms ease-out");
+    : (dragStartRef.current ? "none" : "transform 240ms cubic-bezier(0.22, 0.61, 0.36, 1)");
+
+  // ── Render ────────────────────────────────────────────────────
+
+  const outerStyle = isWide ? {
+    display: "flex", flexDirection: "column",
+    width: "100%",
+    height: "calc(100vh - 220px)",
+    minHeight: 540,
+    background: "var(--bg)",
+    border: "0.5px solid var(--border)",
+    borderRadius: 14,
+    overflow: "hidden",
+    fontFamily: SANS_STACK,
+    position: "relative",
+  } : {
+    position: "fixed", inset: 0, zIndex: 2000,
+    background: "var(--bg)",
+    display: "flex", flexDirection: "column",
+    fontFamily: SANS_STACK,
+    paddingTop: "env(safe-area-inset-top)",
+    paddingBottom: "env(safe-area-inset-bottom)",
+  };
 
   const overlay = (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 2000,
-      background: "var(--bg)",
-      display: "flex", flexDirection: "column",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-      paddingTop: "env(safe-area-inset-top)",
-      paddingBottom: "env(safe-area-inset-bottom)",
-    }}>
-      {/* Top bar — Done · list name · counter */}
+    <div style={outerStyle}>
+      {/* Top bar */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         gap: 12, padding: "12px 16px",
@@ -300,11 +336,12 @@ export function ListReviewMode({
       }}>
         <button onClick={onClose} style={topLinkStyle}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-          Done
+          {isWide ? "Exit" : "Done"}
         </button>
         <div style={{
+          fontFamily: SANS_STACK,
           fontSize: 13, color: "var(--text2)",
-          letterSpacing: "0.10em", textTransform: "uppercase",
+          letterSpacing: "0.18em", textTransform: "uppercase",
           fontWeight: 400, textAlign: "center",
           minWidth: 0, flex: 1,
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -312,9 +349,11 @@ export function ListReviewMode({
           {listName}
         </div>
         <div style={{
+          fontFamily: SANS_STACK,
           fontSize: 13, color: "var(--text2)", flexShrink: 0,
           minWidth: 56, textAlign: "right",
           fontVariantNumeric: "tabular-nums",
+          letterSpacing: "0.04em",
         }}>
           {done ? `${total} / ${total}` : `${idx + 1} / ${total}`}
         </div>
@@ -330,25 +369,22 @@ export function ListReviewMode({
         }} />
       </div>
 
-      {/* Body — relative-positioned so edge washes can pin to its sides. */}
+      {/* Body */}
       <div style={{
         flex: 1, overflow: "hidden",
         display: "flex",
         flexDirection: isWide ? "row" : "column",
         alignItems: "center", justifyContent: "center",
-        padding: isWide ? "24px 32px 24px" : "16px 16px 12px",
+        padding: isWide ? "24px 32px" : "16px 16px 12px",
         gap: isWide ? 32 : 12,
         position: "relative",
       }}>
-        {/* Edge washes — rendered OUTSIDE the moving card so the
-            colored area stays visible on the viewport edge as the
-            card flies off. Per Mark feedback 2026-05-13: "the color
-            on the car as you swipe is good but maybe behind the card
-            as the car is off the screen." */}
+        {/* Edge washes pinned to body container — stay on viewport
+            edges as the card flies off. */}
         {!done && current && (
           <>
-            <EdgeWash side="left" color="var(--danger)" label="PASS" opacity={washOpacity(-1)} />
-            <EdgeWash side="right" color="var(--brand)" label="YES" opacity={washOpacity(1)} />
+            <EdgeWash side="left" color="var(--danger)" label="Pass" opacity={washOpacity(-1)} />
+            <EdgeWash side="right" color="var(--accent-positive)" label="Yes" opacity={washOpacity(1)} />
           </>
         )}
 
@@ -356,31 +392,42 @@ export function ListReviewMode({
           <RecapView tally={tally} total={total} ownerName={ownerName} onClose={onClose} />
         ) : current ? (
           <>
-            {/* Image stack — image card on top, peek behind. */}
+            {/* Image stack with peek behind. */}
             <div style={{
               position: "relative",
               width: "100%",
               maxWidth: isWide ? 520 : 380,
               flexShrink: 0,
               alignSelf: "center",
+              zIndex: 1,
             }}>
-              {/* Card-stack peek — slightly down + scaled, with its
-                  own shadow so it reads as a layer behind. */}
-              {idx + 1 < total && (
+              {/* Peek — shows the NEXT card's image so the deck reads
+                  as real (was a blank placeholder before). */}
+              {nextCard && (
                 <div aria-hidden style={{
                   position: "absolute",
-                  top: 14, left: "4%", right: "4%",
+                  top: 16, left: "4%", right: "4%",
                   aspectRatio: "1 / 1",
                   borderRadius: 14,
                   background: "var(--surface)",
                   border: "0.5px solid var(--border)",
-                  boxShadow: "0 8px 20px rgba(0,0,0,0.10)",
+                  boxShadow: "0 10px 22px rgba(0,0,0,0.10)",
+                  overflow: "hidden",
                   pointerEvents: "none",
-                }} />
+                }}>
+                  {nextCard.img && (
+                    <img src={imgSrc(nextCard.img)} alt=""
+                      style={{
+                        width: "100%", height: "100%",
+                        objectFit: "cover",
+                        opacity: 0.55,
+                        filter: "saturate(0.85)",
+                      }} />
+                  )}
+                </div>
               )}
 
-              {/* Active card — image only (details live next to it
-                  on wide viewports, below it on mobile). */}
+              {/* Active card */}
               <div
                 key={current.rowId}
                 onPointerDown={onPointerDown}
@@ -394,13 +441,13 @@ export function ListReviewMode({
                   borderRadius: 14, overflow: "hidden",
                   background: "var(--surface)",
                   border: "0.5px solid var(--border)",
-                  boxShadow: "0 14px 32px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.06)",
+                  boxShadow: "0 18px 36px rgba(0,0,0,0.16), 0 2px 6px rgba(0,0,0,0.06)",
                   touchAction: "none",
                   transform: cardTransform,
                   transition: cardTransition,
                   userSelect: "none",
                   cursor: dragStartRef.current ? "grabbing" : "grab",
-                  zIndex: 1,
+                  zIndex: 2,
                 }}>
                 {current.img ? (
                   <img src={imgSrc(current.img)} alt={current.title || ""}
@@ -413,33 +460,35 @@ export function ListReviewMode({
                   <div style={{
                     width: "100%", height: "100%",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 11, color: "var(--text3)", letterSpacing: "0.10em",
+                    fontSize: 11, color: "var(--text3)", letterSpacing: "0.12em",
+                    fontFamily: SANS_STACK,
                   }}>
                     NO IMAGE
                   </div>
                 )}
 
-                {/* Heart — top-right. Stays Card-like. */}
+                {/* Heart — top-right. Standard red bg when active
+                    (matches Card.js convention). */}
                 {handleWish && (
                   <button data-no-drag
                     onClick={(e) => { e.stopPropagation(); handleHeart(); }}
                     aria-label={isHearted ? "Remove from watchlist" : "Add to watchlist"}
-                    style={overlayIconBtn("right", 10, isHearted)}>
+                    style={overlayIconBtn("right", 10, "heart", isHearted)}>
                     <svg width="15" height="15" viewBox="0 0 24 24"
-                      fill={isHearted ? "currentColor" : "none"}
-                      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      fill={isHearted ? "#fff" : "none"}
+                      stroke="#fff"
+                      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                     </svg>
                   </button>
                 )}
 
-                {/* ⋯ — top-right under heart so it stacks like
-                    Card.js's chrome (Mark feedback 2026-05-13). */}
+                {/* ⋯ menu — top-right under heart. */}
                 {(openCollectionPicker || onShare || onOpenDetail) && (
                   <button data-no-drag ref={menuTriggerRef}
                     onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v); }}
                     aria-label="More actions"
-                    style={overlayIconBtn("right", 52)}>
+                    style={overlayIconBtn("right", 52, "menu", menuOpen)}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                       <circle cx="5" cy="12" r="1.5"/>
                       <circle cx="12" cy="12" r="1.5"/>
@@ -447,62 +496,45 @@ export function ListReviewMode({
                     </svg>
                   </button>
                 )}
-
-                {/* Price chip — subtle, bottom-left. */}
-                {current.priceUSD > 0 && (
-                  <div style={{
-                    position: "absolute", bottom: 12, left: 12,
-                    background: "rgba(0,0,0,0.55)",
-                    color: "#fff",
-                    padding: "5px 9px",
-                    borderRadius: 4,
-                    fontSize: 13, fontWeight: 500,
-                    letterSpacing: "0.02em",
-                    pointerEvents: "none",
-                    fontVariantNumeric: "tabular-nums",
-                    backdropFilter: "blur(4px)",
-                  }}>
-                    {fmtUSD(current.priceUSD)}
-                    {current.sold ? "  ·  SOLD" : ""}
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Detail block — beside the image on wide, below on
-                mobile. Compact on mobile so the whole interface
-                fits within typical phone viewport height without
-                requiring scroll. */}
+            {/* Detail block — beside image on wide, below on mobile. */}
             <div style={{
               width: "100%",
               maxWidth: isWide ? 380 : 480,
               textAlign: isWide ? "left" : "center",
               flexShrink: 0,
               minWidth: 0,
+              fontFamily: SANS_STACK,
             }}>
               {current.source && (
                 <div style={{
                   fontSize: 11, color: "var(--text3)",
-                  letterSpacing: "0.14em", textTransform: "uppercase",
-                  fontWeight: 500, marginBottom: isWide ? 12 : 6,
+                  letterSpacing: "0.20em", textTransform: "uppercase",
+                  fontWeight: 500, marginBottom: isWide ? 14 : 6,
                 }}>
                   {current.source}
                 </div>
               )}
               {current.brand && (
                 <div style={{
-                  fontSize: isWide ? 28 : 20, fontWeight: 600, color: "var(--text1)",
-                  lineHeight: 1.2, marginBottom: 4,
-                  letterSpacing: "-0.01em",
+                  fontFamily: SERIF_DISPLAY_STACK,
+                  fontSize: isWide ? 36 : 26,
+                  fontWeight: 500, color: "var(--text1)",
+                  lineHeight: 1.1, marginBottom: 6,
+                  letterSpacing: "-0.005em",
+                  fontVariantLigatures: "common-ligatures",
                 }}>
                   {current.brand}
                 </div>
               )}
               <div style={{
-                fontSize: isWide ? 15 : 13, color: "var(--text2)",
-                lineHeight: 1.4, marginBottom: isWide ? 14 : 6,
+                fontSize: isWide ? 14 : 13, color: "var(--text2)",
+                lineHeight: 1.45, marginBottom: isWide ? 16 : 6,
                 overflow: "hidden", textOverflow: "ellipsis",
                 display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                fontStyle: "italic",
               }}>
                 {modelTitle(current)}
               </div>
@@ -510,27 +542,29 @@ export function ListReviewMode({
                 <div style={{
                   display: "inline-block",
                   fontSize: 11, color: "var(--text2)",
-                  letterSpacing: "0.05em",
-                  padding: "3px 8px",
+                  letterSpacing: "0.06em",
+                  padding: "4px 9px",
                   border: "0.5px solid var(--border)",
                   borderRadius: 4,
-                  marginBottom: isWide ? 14 : 6,
+                  marginBottom: isWide ? 16 : 6,
                   fontVariantNumeric: "tabular-nums",
+                  textTransform: "uppercase",
                 }}>
                   {referenceChip(current)}
                 </div>
               )}
               {current.priceUSD > 0 && (
                 <div style={{
-                  fontSize: isWide ? 22 : 17, color: "var(--text1)", fontWeight: 600,
+                  fontSize: isWide ? 24 : 18, color: "var(--text1)", fontWeight: 600,
                   fontVariantNumeric: "tabular-nums",
-                  marginTop: 4,
+                  marginTop: 6,
+                  letterSpacing: "-0.005em",
                 }}>
                   {fmtUSD(current.priceUSD)}
                   {current.currency && current.currency !== primaryCurrency && current.price > 0 && (
                     <span style={{
                       color: "var(--text3)", fontWeight: 400,
-                      marginLeft: 8, fontSize: isWide ? 14 : 12,
+                      marginLeft: 10, fontSize: isWide ? 14 : 12,
                     }}>
                       · {current.currency} {current.price.toLocaleString()}
                     </span>
@@ -538,9 +572,11 @@ export function ListReviewMode({
                 </div>
               )}
               <div style={{
-                fontSize: 12, color: "var(--text3)",
+                fontSize: 11, color: "var(--text3)",
                 marginTop: isWide ? 18 : 10,
-                letterSpacing: "0.04em",
+                letterSpacing: "0.10em",
+                textTransform: "uppercase",
+                fontWeight: 500,
               }}>
                 Tap card to view full details
               </div>
@@ -561,10 +597,10 @@ export function ListReviewMode({
             display: "grid",
             gridTemplateColumns: "auto 1fr 1fr auto",
             gap: 12, alignItems: "center",
-            maxWidth: 640, margin: "0 auto",
+            maxWidth: 720, margin: "0 auto",
           }}>
-            <button onClick={handlePrev} disabled={idx === 0} style={edgeNavStyle(idx === 0)}>
-              ← Back
+            <button onClick={handleUndo} disabled={idx === 0} style={edgeNavStyle(idx === 0)}>
+              ← Undo
             </button>
             <button onClick={handlePass} style={reactionBtnStyle("pass", myReactionOnCurrent === "❌")}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
@@ -582,21 +618,23 @@ export function ListReviewMode({
               Skip →
             </button>
           </div>
-          {myReactionOnCurrent ? (
-            <div style={{ textAlign: "center", marginTop: 8 }}>
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            marginTop: 8, maxWidth: 720,
+            marginLeft: "auto", marginRight: "auto",
+            gap: 10,
+          }}>
+            {onReset ? (
+              <button onClick={() => setResetConfirmOpen(true)} style={subtleLinkStyle}>
+                Reset list
+              </button>
+            ) : <span />}
+            {myReactionOnCurrent ? (
               <button onClick={handleClearCurrent} style={subtleLinkStyle}>
                 Remove my reaction
               </button>
-            </div>
-          ) : idx === 0 ? (
-            <div style={{
-              textAlign: "center", marginTop: 8,
-              fontSize: 12, color: "var(--text3)", letterSpacing: "0.03em",
-              lineHeight: 1.4,
-            }}>
-              Swipe the card right for Yes, left for Pass — or use the buttons. Tap the card for details, tap heart for serious interest.
-            </div>
-          ) : null}
+            ) : <span />}
+          </div>
         </div>
       )}
 
@@ -612,6 +650,23 @@ export function ListReviewMode({
         />
       )}
 
+      {/* Onboarding (one-time per browser) */}
+      {showIntro && current && (
+        <OnboardingCard
+          ownerName={ownerName}
+          total={total}
+          onDismiss={dismissIntro}
+        />
+      )}
+
+      {/* Reset confirm */}
+      {resetConfirmOpen && (
+        <ResetConfirm
+          onCancel={() => setResetConfirmOpen(false)}
+          onConfirm={confirmReset}
+        />
+      )}
+
       {/* Break interstitial */}
       {showBreak && (
         <BreakInterstitial
@@ -624,11 +679,12 @@ export function ListReviewMode({
   );
 
   if (typeof document === "undefined") return null;
-  return createPortal(overlay, document.body);
+  if (isWide) return overlay;                            // inline content surface
+  return createPortal(overlay, document.body);           // fullscreen portal
 }
 
-// Derive the secondary identification line. Listings use `ref` as a
-// title-blob; manual entries have separate model/ref columns.
+// ── Helpers ─────────────────────────────────────────────────────
+
 function modelTitle(item) {
   if (item.model && item.model.trim()) return item.model.trim();
   const raw = (item.ref || item.title || "").trim();
@@ -643,34 +699,33 @@ function referenceChip(item) {
   return null;
 }
 
-// Edge color wash — pinned to the viewport edge, stays put as the
-// card flies off.
 function EdgeWash({ side, color, label, opacity }) {
   const gradient = side === "left"
-    ? `linear-gradient(to right, ${color} 0%, ${color} 20%, transparent 100%)`
-    : `linear-gradient(to left,  ${color} 0%, ${color} 20%, transparent 100%)`;
+    ? `linear-gradient(to right, ${color} 0%, ${color} 12%, transparent 100%)`
+    : `linear-gradient(to left,  ${color} 0%, ${color} 12%, transparent 100%)`;
   return (
     <div aria-hidden style={{
       position: "absolute",
       top: 0, bottom: 0,
       [side]: 0,
-      width: "40%",
-      maxWidth: 320,
+      width: "32%",
+      maxWidth: 280,
       background: gradient,
       opacity,
       pointerEvents: "none",
       transition: "opacity 80ms linear",
       display: "flex", alignItems: "center",
       justifyContent: side === "left" ? "flex-start" : "flex-end",
-      padding: side === "left" ? "0 0 0 24px" : "0 24px 0 0",
+      padding: side === "left" ? "0 0 0 26px" : "0 26px 0 0",
       zIndex: 0,
     }}>
       <span style={{
+        fontFamily: SANS_STACK,
         color: "#fff",
-        fontSize: 15, fontWeight: 500,
-        letterSpacing: "0.18em", textTransform: "uppercase",
-        textShadow: "0 1px 3px rgba(0,0,0,0.35)",
-        opacity: Math.min(1, opacity * 1.5),
+        fontSize: 14, fontWeight: 500,
+        letterSpacing: "0.22em", textTransform: "uppercase",
+        textShadow: "0 1px 3px rgba(0,0,0,0.30)",
+        opacity: Math.min(1, opacity * 2),
       }}>
         {label}
       </span>
@@ -695,8 +750,6 @@ function OverflowMenu({ triggerRef, onClose, item, openCollectionPicker, onShare
   }, [onClose, triggerRef]);
   const rect = triggerRef.current?.getBoundingClientRect();
   if (!rect) return null;
-  // Anchor under the trigger; if it would clip off the right edge of
-  // the viewport, right-align instead.
   const minWidth = 180;
   const left = Math.min(rect.left, window.innerWidth - minWidth - 12);
   const menu = (
@@ -711,7 +764,7 @@ function OverflowMenu({ triggerRef, onClose, item, openCollectionPicker, onShare
       boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
       padding: "4px 0",
       zIndex: 2100,
-      fontFamily: "inherit",
+      fontFamily: SANS_STACK,
     }}>
       {onOpenDetail && (
         <MenuItem label="Watch details" onClick={() => { onClose(); onOpenDetail(item); }} />
@@ -733,7 +786,10 @@ function MenuItem({ label, onClick }) {
       display: "block", width: "100%",
       padding: "10px 14px",
       border: "none", background: "transparent",
-      color: "var(--text1)", fontFamily: "inherit", fontSize: 13,
+      color: "var(--text1)",
+      fontFamily: SANS_STACK,
+      fontSize: 13, fontWeight: 400,
+      letterSpacing: "0.01em",
       textAlign: "left", cursor: "pointer",
     }}>
       {label}
@@ -741,61 +797,157 @@ function MenuItem({ label, onClick }) {
   );
 }
 
+function OnboardingCard({ ownerName, total, onDismiss }) {
+  return (
+    <div style={modalScrim(2120)}>
+      <div style={editorialPanel(420)}>
+        <div style={{
+          fontFamily: SANS_STACK,
+          fontSize: 11, color: "var(--text3)",
+          letterSpacing: "0.20em", textTransform: "uppercase",
+          fontWeight: 500, marginBottom: 16,
+        }}>
+          Screening
+        </div>
+        <div style={{
+          fontFamily: SERIF_DISPLAY_STACK,
+          fontSize: 30, fontWeight: 500, color: "var(--text1)",
+          lineHeight: 1.15, marginBottom: 8,
+          letterSpacing: "-0.01em",
+        }}>
+          Quick review
+        </div>
+        <div style={{
+          fontFamily: SANS_STACK,
+          fontSize: 14, color: "var(--text2)",
+          lineHeight: 1.5, marginBottom: 22,
+          fontStyle: "italic",
+        }}>
+          {total} {total === 1 ? "watch" : "watches"} {ownerName ? `from ${ownerName}` : "to review"}.
+        </div>
+        <ul style={{
+          listStyle: "none", margin: 0, padding: 0,
+          fontFamily: SANS_STACK,
+          fontSize: 13, color: "var(--text1)",
+          lineHeight: 1.55,
+          marginBottom: 24,
+        }}>
+          <IntroRow color="var(--accent-positive)" glyph="→">
+            <strong>Yes</strong> — swipe right or tap Yes. Watches you want to consider.
+          </IntroRow>
+          <IntroRow color="var(--danger)" glyph="←">
+            <strong>Pass</strong> — swipe left or tap Pass. Not for you.
+          </IntroRow>
+          <IntroRow color="#d92626" glyph="♥">
+            <strong>Heart</strong> — tap to save to your watchlist. Independent from this list.
+          </IntroRow>
+          <IntroRow color="var(--text2)" glyph="↗">
+            <strong>Details</strong> — tap the card to read the full listing.
+          </IntroRow>
+        </ul>
+        <button onClick={onDismiss} style={primaryBtnStyle()}>
+          Start reviewing
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function IntroRow({ color, glyph, children }) {
+  return (
+    <li style={{
+      display: "flex", alignItems: "flex-start",
+      gap: 12, marginBottom: 12,
+    }}>
+      <span style={{
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        flexShrink: 0,
+        width: 24, height: 24, borderRadius: "50%",
+        background: "var(--surface)",
+        border: `0.5px solid ${color}`,
+        color, fontSize: 12, fontWeight: 600,
+        marginTop: 1,
+        fontFamily: SANS_STACK,
+      }}>
+        {glyph}
+      </span>
+      <span>{children}</span>
+    </li>
+  );
+}
+
+function ResetConfirm({ onCancel, onConfirm }) {
+  return (
+    <div style={modalScrim(2130)}>
+      <div style={editorialPanel(360)}>
+        <div style={{
+          fontFamily: SANS_STACK,
+          fontSize: 11, color: "var(--text3)",
+          letterSpacing: "0.20em", textTransform: "uppercase",
+          fontWeight: 500, marginBottom: 14,
+        }}>
+          Reset
+        </div>
+        <div style={{
+          fontFamily: SERIF_DISPLAY_STACK,
+          fontSize: 24, fontWeight: 500, color: "var(--text1)",
+          lineHeight: 1.2, marginBottom: 10,
+          letterSpacing: "-0.005em",
+        }}>
+          Clear all your reactions?
+        </div>
+        <div style={{
+          fontFamily: SANS_STACK,
+          fontSize: 13, color: "var(--text2)",
+          lineHeight: 1.5, marginBottom: 22,
+        }}>
+          Removes every Yes / Pass you've placed on this list and starts you over at the first card. Hearted items stay in your watchlist.
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onCancel} style={ghostBtnStyle()}>
+            Keep my reactions
+          </button>
+          <button onClick={onConfirm} style={dangerBtnStyle()}>
+            Clear &amp; restart
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BreakInterstitial({ idx, total, onContinue, onPause }) {
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 2050,
-      background: "rgba(0,0,0,0.45)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 24,
-    }}>
-      <div style={{
-        background: "var(--bg)",
-        border: "0.5px solid var(--border)",
-        borderRadius: 14,
-        padding: "32px 24px",
-        maxWidth: 380, width: "100%",
-        textAlign: "center",
-        fontFamily: "inherit",
-        boxShadow: "0 24px 60px rgba(0,0,0,0.20)",
-      }}>
+    <div style={modalScrim(2050)}>
+      <div style={editorialPanel(380)}>
         <div style={{
+          fontFamily: SANS_STACK,
           fontSize: 11, color: "var(--text3)",
-          letterSpacing: "0.16em", textTransform: "uppercase",
+          letterSpacing: "0.20em", textTransform: "uppercase",
           fontWeight: 500, marginBottom: 14,
         }}>
           Pause
         </div>
         <div style={{
-          fontSize: 24, fontWeight: 600, color: "var(--text1)",
-          lineHeight: 1.25, marginBottom: 10,
-          letterSpacing: "-0.01em",
+          fontFamily: SERIF_DISPLAY_STACK,
+          fontSize: 26, fontWeight: 500, color: "var(--text1)",
+          lineHeight: 1.2, marginBottom: 10,
+          letterSpacing: "-0.005em",
         }}>
           Take a break?
         </div>
         <div style={{
+          fontFamily: SANS_STACK,
           fontSize: 14, color: "var(--text2)",
           lineHeight: 1.5, marginBottom: 24,
         }}>
           {idx} of {total} reviewed. Come back anytime — your place is saved.
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onPause} style={{
-            flex: 1, padding: "12px 14px",
-            border: "0.5px solid var(--border)",
-            background: "transparent", color: "var(--text2)",
-            borderRadius: 8, fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-            cursor: "pointer",
-          }}>
+          <button onClick={onPause} style={ghostBtnStyle()}>
             Pause &amp; bookmark
           </button>
-          <button onClick={onContinue} style={{
-            flex: 1, padding: "12px 14px",
-            border: "none",
-            background: "var(--brand)", color: "#fff",
-            borderRadius: 8, fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-            cursor: "pointer",
-          }}>
+          <button onClick={onContinue} style={primaryBtnStyle()}>
             Keep going
           </button>
         </div>
@@ -807,41 +959,41 @@ function BreakInterstitial({ idx, total, onContinue, onPause }) {
 function RecapView({ tally, total, ownerName, onClose }) {
   return (
     <div style={{
-      textAlign: "center", maxWidth: 420,
-      margin: "auto", padding: "40px 16px",
+      textAlign: "center", maxWidth: 460,
+      margin: "auto", padding: "32px 16px",
+      fontFamily: SANS_STACK,
     }}>
       <div style={{
         fontSize: 11, color: "var(--text3)",
-        letterSpacing: "0.18em", textTransform: "uppercase",
-        fontWeight: 500, marginBottom: 14,
+        letterSpacing: "0.22em", textTransform: "uppercase",
+        fontWeight: 500, marginBottom: 16,
       }}>
         All reviewed
       </div>
       <div style={{
-        fontSize: 28, fontWeight: 600, color: "var(--text1)",
-        lineHeight: 1.2, marginBottom: 22,
+        fontFamily: SERIF_DISPLAY_STACK,
+        fontSize: 32, fontWeight: 500, color: "var(--text1)",
+        lineHeight: 1.15, marginBottom: 26,
         letterSpacing: "-0.01em",
       }}>
         {total} {total === 1 ? "watch" : "watches"}, sorted.
       </div>
       <div style={{
         display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
-        gap: 10, margin: "0 auto 24px", maxWidth: 320,
+        gap: 10, margin: "0 auto 26px", maxWidth: 340,
       }}>
-        <TallyCard label="Yes" value={tally.yes} color="var(--brand)" />
-        <TallyCard label="Hearted" value={tally.hearted} color="var(--brand)" />
+        <TallyCard label="Yes" value={tally.yes} color="var(--accent-positive)" />
+        <TallyCard label="Hearted" value={tally.hearted} color="#d92626" />
         <TallyCard label="Pass" value={tally.pass} color="var(--danger)" />
       </div>
-      <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 24, lineHeight: 1.5 }}>
-        {ownerName} will see your reactions next time they open the list.
-      </div>
-      <button onClick={onClose} style={{
-        padding: "12px 30px", borderRadius: 8,
-        border: "none", background: "var(--brand)", color: "#fff",
-        fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-        cursor: "pointer",
-        letterSpacing: "0.02em",
+      <div style={{
+        fontSize: 13, color: "var(--text2)",
+        marginBottom: 26, lineHeight: 1.5,
+        fontStyle: "italic",
       }}>
+        {ownerName ? `${ownerName} will see your reactions next time they open the list.` : "Your reactions are saved."}
+      </div>
+      <button onClick={onClose} style={primaryBtnStyle()}>
         Back to list
       </button>
     </div>
@@ -851,23 +1003,26 @@ function RecapView({ tally, total, ownerName, onClose }) {
 function TallyCard({ label, value, color }) {
   return (
     <div style={{
-      padding: "14px 8px",
+      padding: "16px 8px",
       border: "0.5px solid var(--border)",
       borderRadius: 10,
       background: "var(--surface)",
     }}>
       <div style={{
-        fontSize: 24, fontWeight: 600,
+        fontFamily: SERIF_DISPLAY_STACK,
+        fontSize: 30, fontWeight: 500,
         color: value > 0 ? color : "var(--text3)",
         fontVariantNumeric: "tabular-nums",
         lineHeight: 1,
+        letterSpacing: "-0.01em",
       }}>
         {value}
       </div>
       <div style={{
+        fontFamily: SANS_STACK,
         fontSize: 10, color: "var(--text3)",
-        letterSpacing: "0.14em", textTransform: "uppercase",
-        marginTop: 6, fontWeight: 500,
+        letterSpacing: "0.18em", textTransform: "uppercase",
+        marginTop: 8, fontWeight: 500,
       }}>
         {label}
       </div>
@@ -875,38 +1030,39 @@ function TallyCard({ label, value, color }) {
   );
 }
 
-// ── shared style helpers ────────────────────────────────────────
+// ── Shared styles ───────────────────────────────────────────────
 
 const topLinkStyle = {
   border: "none", background: "transparent", cursor: "pointer",
-  color: "var(--brand)", fontFamily: "inherit", fontSize: 14, padding: 0,
+  color: "var(--brand)",
+  fontFamily: SANS_STACK,
+  fontSize: 14, padding: 0,
   display: "flex", alignItems: "center", gap: 4,
   fontWeight: 500,
+  letterSpacing: "0.02em",
 };
 
 const subtleLinkStyle = {
   border: "none", background: "transparent",
-  color: "var(--text3)", fontFamily: "inherit",
+  color: "var(--text3)",
+  fontFamily: SANS_STACK,
   fontSize: 12, padding: "4px 10px",
   cursor: "pointer", textDecoration: "underline",
   textUnderlineOffset: 2,
+  letterSpacing: "0.04em",
 };
 
-// Reaction buttons. Editorial CTA treatment: light-tracked label,
-// brand/danger accent color does the work (not weight). Bigger
-// presence than the surrounding chrome but quieter than emoji
-// chips. Per Mark feedback 2026-05-13.
 function reactionBtnStyle(kind, active) {
-  const color = kind === "yes" ? "var(--brand)" : "var(--danger)";
-  const tintActive = kind === "yes" ? "var(--brand-tint-12)" : "rgba(199,82,84,0.12)";
+  const color = kind === "yes" ? "var(--accent-positive)" : "var(--danger)";
+  const tintActive = kind === "yes" ? "rgba(27,143,58,0.10)" : "rgba(192,57,43,0.10)";
   return {
     padding: "13px 18px",
     border: active ? `1px solid ${color}` : `0.5px solid var(--border)`,
     background: active ? tintActive : "var(--surface)",
     color: color,
-    fontFamily: "inherit",
+    fontFamily: SANS_STACK,
     fontSize: 13, fontWeight: 500,
-    letterSpacing: "0.14em", textTransform: "uppercase",
+    letterSpacing: "0.18em", textTransform: "uppercase",
     borderRadius: 8, cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
     minHeight: 48,
@@ -917,14 +1073,19 @@ function edgeNavStyle(disabled) {
   return {
     border: "none", background: "transparent",
     color: disabled ? "var(--text3)" : "var(--text2)",
-    fontFamily: "inherit", fontSize: 13,
-    letterSpacing: "0.04em",
+    fontFamily: SANS_STACK,
+    fontSize: 13,
+    letterSpacing: "0.10em", textTransform: "uppercase",
     padding: "12px 10px",
     cursor: disabled ? "default" : "pointer",
+    fontWeight: 500,
   };
 }
 
-function overlayIconBtn(side, top, active = false) {
+function overlayIconBtn(side, top, kind, active = false) {
+  let bg = "rgba(0,0,0,0.50)";
+  if (kind === "heart" && active) bg = "rgba(217,38,38,0.92)";
+  else if (kind === "menu" && active) bg = "rgba(0,0,0,0.72)";
   return {
     position: "absolute",
     top,
@@ -933,11 +1094,73 @@ function overlayIconBtn(side, top, active = false) {
     width: 34, height: 34,
     borderRadius: "50%",
     border: "none",
-    background: "rgba(0,0,0,0.50)",
-    color: active ? "var(--brand)" : "#fff",
-    cursor: "pointer", fontFamily: "inherit",
+    background: bg,
+    color: "#fff",
+    cursor: "pointer",
+    fontFamily: SANS_STACK,
     display: "flex", alignItems: "center", justifyContent: "center",
     padding: 0,
     backdropFilter: "blur(6px)",
+  };
+}
+
+function modalScrim(z) {
+  return {
+    position: "fixed", inset: 0, zIndex: z,
+    background: "rgba(0,0,0,0.45)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    padding: 24,
+  };
+}
+
+function editorialPanel(maxWidth) {
+  return {
+    background: "var(--bg)",
+    border: "0.5px solid var(--border)",
+    borderRadius: 14,
+    padding: "32px 28px",
+    maxWidth, width: "100%",
+    fontFamily: SANS_STACK,
+    boxShadow: "0 24px 60px rgba(0,0,0,0.20)",
+  };
+}
+
+function ghostBtnStyle() {
+  return {
+    flex: 1, padding: "12px 14px",
+    border: "0.5px solid var(--border)",
+    background: "transparent", color: "var(--text2)",
+    borderRadius: 8,
+    fontFamily: SANS_STACK,
+    fontSize: 13, fontWeight: 500,
+    letterSpacing: "0.06em",
+    cursor: "pointer",
+  };
+}
+
+function primaryBtnStyle() {
+  return {
+    width: "100%",
+    padding: "13px 18px",
+    border: "none",
+    background: "var(--brand)", color: "#fff",
+    borderRadius: 8,
+    fontFamily: SANS_STACK,
+    fontSize: 13, fontWeight: 500,
+    letterSpacing: "0.14em", textTransform: "uppercase",
+    cursor: "pointer",
+  };
+}
+
+function dangerBtnStyle() {
+  return {
+    flex: 1, padding: "12px 14px",
+    border: "none",
+    background: "var(--danger)", color: "#fff",
+    borderRadius: 8,
+    fontFamily: SANS_STACK,
+    fontSize: 13, fontWeight: 500,
+    letterSpacing: "0.06em",
+    cursor: "pointer",
   };
 }
