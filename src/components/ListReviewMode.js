@@ -84,24 +84,18 @@ export function ListReviewMode({
   // false preserves the resume-where-you-left-off flow.
   screenAll = false,
   // Screening mode (Mark spec 2026-05-14):
-  //   "list" (default) — shared-list screening. Yes/Pass write
-  //                      reactions to collection_item_reactions;
-  //                      Heart toggles watchlist.
+  //   "list" (default) — list screening. Yes/Pass write reactions to
+  //                      collection_item_reactions; Heart toggles
+  //                      watchlist. Used for shared lists AND for
+  //                      auction-catalog lists (post-#55, 2026-05-15)
+  //                      so Pass items survive in the Disliked bucket
+  //                      instead of being lost to a session-only skip.
   //   "feed" — feed-screening (e.g., "new listings since last visit").
   //            No reactions table involved. "Yes" gestures act as
   //            heart-toggles; "Pass" gestures are pure skip. Recap
   //            counts hearted vs passed, not the three-way list
   //            tally.
-  //   "auction" — auction-catalog screening. Same one-pass shape as
-  //               feed, but Yes calls onYesAdd(item) to append to the
-  //               auction's auto-list. Heart button still hearts
-  //               (watchlist) and tracks per-item state. Recap reads
-  //               "X added to {listName}" instead of "hearted".
   mode = "list",
-  // Auction mode callback — invoked for each Yes-swipe / Save tap
-  // with the underlying item so the parent can append to the
-  // target list. Ignored in list/feed modes.
-  onYesAdd,
 }) {
   // Frozen queue at mount.
   const [initialQueue] = useState(() => {
@@ -198,28 +192,16 @@ export function ListReviewMode({
   }, [mode, current, currentUserId, reactionsByItem]);
 
   // Cumulative tally — list mode derives from reactionsByItem so
-  // resume + recap reflect ALL reactions on this list; feed/auction
-  // modes track session-only counts since there are no per-item
-  // reaction rows in collection_item_reactions for those surfaces.
+  // resume + recap reflect ALL reactions on this list; feed mode
+  // tracks session-only counts since there are no per-item reaction
+  // rows in collection_item_reactions for that surface.
   const [sessionPassedSet, setSessionPassedSet] = useState(() => new Set());
-  const [sessionAddedSet, setSessionAddedSet] = useState(() => new Set());
   const cumulativeTally = useMemo(() => {
     let yes = 0, pass = 0, hearted = 0;
     if (mode === "feed") {
       // Feed mode: hearted = current count from watchlist within
       // the screened queue; pass = items the user explicitly skipped
       // this session. No "yes" concept here.
-      pass = sessionPassedSet.size;
-      for (const item of items) {
-        if (watchlist && watchlist[item.id]) hearted++;
-      }
-      return { yes, pass, hearted };
-    }
-    if (mode === "auction") {
-      // Auction mode: yes = items added to the auction's auto-list
-      // this session; pass = items skipped; hearted tracks the
-      // independent watchlist-heart signal across the queue.
-      yes = sessionAddedSet.size;
       pass = sessionPassedSet.size;
       for (const item of items) {
         if (watchlist && watchlist[item.id]) hearted++;
@@ -236,7 +218,7 @@ export function ListReviewMode({
       if (watchlist && watchlist[item.id]) hearted++;
     }
     return { yes, pass, hearted };
-  }, [items, reactionsByItem, currentUserId, watchlist, mode, sessionPassedSet, sessionAddedSet]);
+  }, [items, reactionsByItem, currentUserId, watchlist, mode, sessionPassedSet]);
 
   // Swipe / mount-rise state.
   const dragStartRef = useRef(null);
@@ -295,11 +277,11 @@ export function ListReviewMode({
     advance();
   };
 
-  // Feed/auction modes (Mark spec 2026-05-14): no reactions-table
-  // writes. Feed mode: Yes = heart-toggle. Auction mode: Yes =
-  // append-to-auto-list (via onYesAdd callback). Pass in either
-  // mode is a pure skip + record in the session set so the recap
-  // tally is accurate.
+  // Feed mode (Mark spec 2026-05-14): no reactions-table writes —
+  // Yes = heart-toggle, Pass = pure skip + record in the session set
+  // so the recap tally is accurate. List mode (auction lists
+  // included, post-#55) writes 👍 / ❌ to collection_item_reactions
+  // via recordReaction so Pass items survive in the Disliked bucket.
   const handleYes = () => {
     if (mode === "feed") {
       haptic(15);
@@ -309,23 +291,10 @@ export function ListReviewMode({
       advance();
       return;
     }
-    if (mode === "auction") {
-      haptic(15);
-      if (current && onYesAdd) {
-        onYesAdd(current);
-        setSessionAddedSet(prev => {
-          const next = new Set(prev);
-          next.add(current.id);
-          return next;
-        });
-      }
-      advance();
-      return;
-    }
     recordReaction("👍");
   };
   const handlePass = () => {
-    if (mode === "feed" || mode === "auction") {
+    if (mode === "feed") {
       haptic(15);
       if (current) {
         setSessionPassedSet(prev => {
@@ -468,14 +437,9 @@ export function ListReviewMode({
   // Feed mode always renders as a fullscreen portal — there's no
   // inline drill-in for it to live inside (it's launched from Home /
   // any tab), so the desktop inline-panel layout doesn't apply.
-  // Feed + auction modes are launched from outside any list
-  // drill-in (Home banner, Auction calendar row), so they always
-  // need fullscreen-portal layout — otherwise the inline render
-  // path drops them as a stray block at the bottom of the calling
-  // tab's document flow. Mark report 2026-05-15: ListReviewMode
-  // for auction mode on desktop was rendering after the Archive
-  // section of the calendar.
-  const usePortalLayout = mode === "feed" || mode === "auction" || !isWide;
+  // List mode (including auction lists) is launched from inside the
+  // Lists drill-in, so the inline-on-desktop path applies there.
+  const usePortalLayout = mode === "feed" || !isWide;
   const outerStyle = !usePortalLayout ? {
     // v1.3: chrome around the drill-in (title row + recipient banner)
     // is hidden when screening is active, so the wordmark + nav +
@@ -865,9 +829,7 @@ export function ListReviewMode({
             </button>
             <button onClick={handleYes} style={reactionBtnStyle("yes", myReactionOnCurrent === "👍")}>
               <span>
-                {mode === "feed" ? "Save"
-                  : mode === "auction" ? "Add"
-                  : "Yes"}
+                {mode === "feed" ? "Save" : "Yes"}
               </span>
               <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: 0, marginLeft: -2 }}>→</span>
             </button>
@@ -1205,8 +1167,6 @@ function BreakInterstitial({ idx, total, onContinue, onPause }) {
 
 function RecapView({ tally, total, ownerName, listName, onClose, mode }) {
   const isFeed = mode === "feed";
-  const isAuction = mode === "auction";
-  const isOnePass = isFeed || isAuction;
   return (
     <div style={{
       textAlign: "center", maxWidth: 460,
@@ -1226,9 +1186,9 @@ function RecapView({ tally, total, ownerName, listName, onClose, mode }) {
         lineHeight: 1.2, marginBottom: 26,
         letterSpacing: "-0.005em",
       }}>
-        {isFeed   ? `You reviewed ${total} new listings.`
-         : isAuction ? `You reviewed ${total} lots.`
-         : "Your take on this list."}
+        {isFeed
+          ? `You reviewed ${total} new listings.`
+          : "Your take on this list."}
       </div>
       <div style={{
         display: "grid",
@@ -1237,10 +1197,7 @@ function RecapView({ tally, total, ownerName, listName, onClose, mode }) {
         maxWidth: isFeed ? 240 : 340,
       }}>
         {!isFeed && (
-          <TallyCard
-            label={isAuction ? "Added" : "Yes"}
-            value={tally.yes}
-            color="var(--brand)" />
+          <TallyCard label="Yes" value={tally.yes} color="var(--brand)" />
         )}
         <TallyCard label="Hearted" value={tally.hearted} color="var(--heart)" />
         <TallyCard label="Pass" value={tally.pass} color="var(--text2)" />
@@ -1250,15 +1207,16 @@ function RecapView({ tally, total, ownerName, listName, onClose, mode }) {
         marginBottom: 26, lineHeight: 1.5,
         fontStyle: "italic",
       }}>
-        {isFeed   ? "Hearts saved to your watchlist."
-         : isAuction
-            ? (listName ? `Added picks saved to "${listName}". Hearts also saved to your watchlist.` : "Picks saved.")
-            : ownerName
-              ? `${ownerName} will see your reactions next time they open the list.`
+        {isFeed
+          ? "Hearts saved to your watchlist."
+          : ownerName
+            ? `${ownerName} will see your reactions next time they open the list.`
+            : listName
+              ? `Your reactions saved to "${listName}".`
               : "Your reactions are saved."}
       </div>
       <button onClick={onClose} style={primaryBtnStyle()}>
-        {isOnePass ? "Done" : "Back to list"}
+        {isFeed ? "Done" : "Back to list"}
       </button>
     </div>
   );

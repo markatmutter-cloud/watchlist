@@ -668,11 +668,6 @@ export default function Watchlist() {
   // session's open seeds the next session's lastVisit.
   const { lastVisit, newSince, markSeen: markFeedSeen } = useLastVisit();
   const [feedScreenerOpen, setFeedScreenerOpen] = useState(false);
-  // Auction-catalog screener (Mark spec 2026-05-14). State drives
-  // both the Review action (full Tinder swipe) and surfaces the
-  // target collection id so Yes-swipes append to the auction's
-  // auto-list. Object shape: { auction, targetCollectionId }.
-  const [auctionScreenerState, setAuctionScreenerState] = useState(null);
   // Tracks the URL of the auction whose "Add to list" / "Review"
   // mutation is currently in flight so the calendar row buttons
   // can show disabled state. Single-slot — we don't expect two
@@ -693,6 +688,15 @@ export default function Watchlist() {
   // this; CollectionsTab forwards it to ChallengesView, which reads
   // it on mount and drills in.
   const [pendingChallengeDrillId, setPendingChallengeDrillId] = useState(null);
+  // Auction Review hand-off (post-#55, 2026-05-15). Set after
+  // handleReviewCatalog bulk-adds the catalog's lots; CollectionsTab
+  // / ListsView consumes it to drill into the list and auto-open the
+  // screener in mode="list" (so Pass items survive in the Disliked
+  // bucket like a shared list). Same set/consume/clear shape as
+  // pendingChallengeDrillId. Hooks live BEFORE the loading early
+  // returns to avoid the React #310 trap (CLAUDE.md "Don't add new
+  // useState near render-conditional code paths").
+  const [pendingReviewListId, setPendingReviewListId] = useState(null);
 
   // Two-phase sign-in: every "Sign in" CTA in the app fires the
   // SignInPromptModal first (the explainer + Google button). Mark
@@ -1306,12 +1310,6 @@ export default function Watchlist() {
     return o;
   }, [lotsByAuctionUrl]);
 
-  // Items for the screener mounted via auctionScreenerState.auction.
-  const auctionScreenerItems = useMemo(() => {
-    if (!auctionScreenerState?.auction?.url) return [];
-    return lotsByAuctionUrl.get(auctionScreenerState.auction.url) || [];
-  }, [auctionScreenerState, lotsByAuctionUrl]);
-
   // Auction-calendar action handlers (Mark spec 2026-05-14).
   // CRITICAL: these useCallbacks MUST live ABOVE the `loading` /
   // `loadError` early returns later in the function. Earlier draft
@@ -1321,16 +1319,21 @@ export default function Watchlist() {
   // false. See CLAUDE.md Things-to-never-do: hooks BEFORE every
   // early return, always.
   //
-  // Open the screening overlay on an auction's catalog. Auto-creates
-  // the user's auction list first (so Yes-swipes have somewhere to
-  // land) and stores its id on the screener state.
+  // Review-catalog (post-#55, 2026-05-15 — replaces the bespoke
+  // mode="auction" screener). Bulk-adds every lot to the auction's
+  // auto-list so Pass items survive in the Disliked bucket, then
+  // hands off to CollectionsTab via pendingReviewListId — ListsView
+  // drills into the list and auto-opens the screener in mode="list".
+  // Idempotent on the bulk-add (unique (collection_id, listing_id)
+  // index eats duplicates), so re-tapping Review after a previous
+  // pass adds nothing and re-screening just resumes / completes.
   const handleReviewCatalog = useCallback(async (auction) => {
     if (!auction?.url) return;
     // Don't create a phantom empty list. The AuctionCalendar gates
     // the Review button on lotCount > 0, but the url→lots lookup can
     // still return zero (e.g. all lots sold/hidden between count
     // computation and tap, or the calendar URL doesn't match the
-    // lots' auction_url field — Antiquorum currently. Mirrors the
+    // lots' auction_url field — Antiquorum currently). Mirrors the
     // guard already on handleAddCatalogToList.
     const lots = lotsByAuctionUrl.get(auction.url) || [];
     if (lots.length === 0) return;
@@ -1341,18 +1344,32 @@ export default function Watchlist() {
     }
     setAuctionActionBusyUrl(auction.url);
     try {
-      const res = await collectionsApi.getOrCreateAuctionList(auction);
-      if (res.error) {
-        console.warn("getOrCreateAuctionList failed:", res.error);
-        // Still open the screener — Yes will fall back to heart if no target id.
-        setAuctionScreenerState({ auction, targetCollectionId: null });
+      const create = await collectionsApi.getOrCreateAuctionList(auction);
+      if (create.error || !create.id) {
+        console.warn("getOrCreateAuctionList failed:", create.error);
         return;
       }
-      setAuctionScreenerState({ auction, targetCollectionId: res.id });
+      // Bulk-add (idempotent) — ensures every lot is in the list
+      // before screening starts so Pass writes to a real row.
+      // 23505 unique-violations on re-tap count as added.
+      const bulk = await collectionsApi.addItemsToCollection(create.id, lots, {
+        sourceOfEntry: "auction_bulk",
+      });
+      if (bulk?.added === 0) {
+        // Total bulk-add failure (likely network). Don't navigate to
+        // an empty list — leave the user where they are. The Add to
+        // list / Review buttons stay re-tappable.
+        console.warn("addItemsToCollection: 0 items added", bulk?.errors);
+        return;
+      }
+      // Navigate + hand off to ListsView's auto-open effect.
+      setTab("watchlist");
+      setWatchTopTab("lists");
+      setPendingReviewListId(create.id);
     } finally {
       setAuctionActionBusyUrl(null);
     }
-  }, [user, collectionsApi, lotsByAuctionUrl]);
+  }, [user, collectionsApi, lotsByAuctionUrl, setTab, setWatchTopTab]);
 
   // Bulk-add every lot from the catalog into the auction's auto-list.
   // Idempotent — the unique (collection_id, listing_id) index on
@@ -3007,6 +3024,8 @@ export default function Watchlist() {
       onClickListing={onClickListing}
       pendingChallengeDrillId={pendingChallengeDrillId}
       clearPendingChallengeDrill={() => setPendingChallengeDrillId(null)}
+      pendingReviewListId={pendingReviewListId}
+      clearPendingReviewList={() => setPendingReviewListId(null)}
       collectionsSubTab={collectionsSubTab}
       setCollectionsSubTab={setCollectionsSubTab}
       tabResetTick={tab === "watchlist" && SUB_VALUES_COLLECTIONS.includes(watchTopTab) ? tabResetTick : 0}
@@ -3523,38 +3542,6 @@ export default function Watchlist() {
             setFeedScreenerOpen(false);
             markFeedSeen();
           }}
-        />
-      )}
-      {auctionScreenerState && auctionScreenerItems.length > 0 && (
-        <ListReviewMode
-          // mode="auction" — Yes-swipes call onYesAdd (insert into
-          // the auction's auto-list) instead of toggling the heart.
-          // Heart button still hearts (watchlist). Pass = skip. If
-          // the auto-list creation failed earlier (targetCollectionId
-          // null), fall back to feed-mode behaviour so Yes still
-          // does something useful (hearts the lot).
-          mode={auctionScreenerState.targetCollectionId ? "auction" : "feed"}
-          items={auctionScreenerItems}
-          listName={auctionScreenerState.auction.title}
-          watchlist={watchlist}
-          handleWish={handleWish}
-          primaryCurrency={primaryCurrency}
-          reactionsByItem={new Map()}
-          onToggleReaction={() => {}}
-          // Per-card affordances (Mark feedback 2026-05-14): expose
-          // the standard ⋯ menu inside the screener.
-          openCollectionPicker={user ? openCollectionPicker : undefined}
-          onShare={handleShare}
-          onYesAdd={(item) => {
-            if (!auctionScreenerState.targetCollectionId) return;
-            // Fire-and-forget — the screener has already advanced;
-            // a per-row write failure shouldn't block the queue.
-            collectionsApi.addItemToCollection(
-              auctionScreenerState.targetCollectionId, item,
-              { sourceOfEntry: "auction_review" }
-            ).catch(() => {});
-          }}
-          onClose={() => setAuctionScreenerState(null)}
         />
       )}
     </ErrorBoundary>
