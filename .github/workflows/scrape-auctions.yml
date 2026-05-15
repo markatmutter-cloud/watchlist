@@ -122,6 +122,19 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python auction_lots_scraper.py
 
+      - name: Run Loupe This auction scraper
+        # Walks every page of api.loupethis.com/api/v1/auctions and
+        # writes public/loupethis_lots.json keyed by full lot URL.
+        # Loupe This is structurally a one-watch-per-auction
+        # marketplace (no catalog sales), so it sits outside
+        # auction_lots_scraper's read-from-auctions.json loop and
+        # writes its own file. Imports is_excluded_title from
+        # auction_lots_scraper to keep pocket/clock/dial filtering
+        # consistent. Soft-fail in case the upstream API has a
+        # transient outage — one breakage shouldn't kill the run.
+        continue-on-error: true
+        run: python loupethis_scraper.py
+
       - name: Verify auction-lot health
         # Mirror of the dealer-side verify_sources step — counts live
         # lots per auction house, alerts on drops to zero or below
