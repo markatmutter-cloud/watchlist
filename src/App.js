@@ -64,6 +64,12 @@ const AUCTION_LOTS_URL = "/auction_lots.json";
 // added sale and the result never changes (archive sales don't update
 // post-hoc). Loaded alongside auction_lots.json and merged by URL key.
 const MANUAL_ARCHIVE_LOTS_URL = "/manual_archive_lots.json";
+// Loupe This auction lots — populated by loupethis_scraper.py. Loupe
+// This is structurally a one-watch-per-auction marketplace (closer to
+// eBay than to catalog houses), so it doesn't fit auction_lots_scraper's
+// read-from-auctions.json loop and writes its own file. Loaded into a
+// separate state below and folded into the same projection.
+const LOUPETHIS_LOTS_URL = "/loupethis_lots.json";
 // Manually-curated historical sold listings (2026-05-09). Sits next
 // to manual_archive_lots.json conceptually but is shaped like a flat
 // listings.json entry rather than auction-lot data. Each item is a
@@ -196,6 +202,10 @@ export default function Watchlist() {
   // hearting is layered on top via watchlist_items.
   const [auctionLotsState, setAuctionLotsState] = useState({});
   const [manualArchiveLotsState, setManualArchiveLotsState] = useState({});
+  // Loupe This — one-watch-per-auction marketplace, scraped daily into
+  // its own file. Same shape as auction_lots.json so it folds into the
+  // same projection.
+  const [loupethisLotsState, setLoupethisLotsState] = useState({});
   // Sub-tab inside Watchlist > Auction lots: upcoming vs past.
   // Sub-tab on the Watchlist tab. Three values: "listings" (dealer
   // items you've hearted) or "searches" (saved searches editor). The
@@ -993,6 +1003,13 @@ export default function Watchlist() {
       .then(r => r.ok ? r.json() : {})
       .then(d => setManualArchiveLotsState(d && typeof d === "object" ? d : {}))
       .catch(() => {});
+
+    // Loupe This auction lots — independent scraper, same shape as
+    // auction_lots.json. Failing silently is fine on first deployment.
+    fetch(LOUPETHIS_LOTS_URL, fetchOpts)
+      .then(r => r.ok ? r.json() : {})
+      .then(d => setLoupethisLotsState(d && typeof d === "object" ? d : {}))
+      .catch(() => {});
   }, []);
 
   const c = dark ? {
@@ -1063,6 +1080,7 @@ export default function Watchlist() {
       ...(manualArchiveLotsState || {}),
       ...(trackedLotsState || {}),
       ...(auctionLotsState || {}),
+      ...(loupethisLotsState || {}),
     };
     for (const url of Object.keys(merged)) {
       const data = merged[url];
@@ -1196,7 +1214,7 @@ export default function Watchlist() {
       });
     }
     return arr;
-  }, [trackedLotsState, auctionLotsState, manualArchiveLotsState]);
+  }, [trackedLotsState, auctionLotsState, manualArchiveLotsState, loupethisLotsState]);
 
   // Main feed = dealer listings ∪ auction lots. Powers the Listings
   // tab's allFiltered memo; the listingsSubTab (live / auctions /
