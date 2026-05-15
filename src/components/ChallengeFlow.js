@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { fmtUSD, imgSrc } from "../utils";
+import { confirm } from "./ConfirmModal";
 
 // Watch Challenges (Build-a-collection v1) — multi-stage flow inside
 // Watchlist > Challenges. One collection per challenge with type=
@@ -455,10 +456,14 @@ function PickingStage({
             always visible regardless of where the user is scrolled. */}
         <div style={{ marginTop: 10 }}>
           <button disabled={!canComplete}
-            onClick={() => {
+            onClick={async () => {
               flushNote();
               if (overBudget) {
-                if (window.confirm(`You're ${fmtUSD(overBy)} over budget. Finish anyway?`)) onComplete();
+                if (await confirm({
+                  title: "Over budget",
+                  message: `You're ${fmtUSD(overBy)} over budget. Finish anyway?`,
+                  confirmLabel: "Finish anyway",
+                })) onComplete();
               } else { onComplete(); }
             }}
             style={{
@@ -962,9 +967,12 @@ export function ChallengeFlow({
   // the Lists card style. Confirms, deletes, then exits to the list.
   const handleDelete = useCallback(async () => {
     if (!collectionsApi?.deleteCollection) return;
-    const ok = window.confirm(
-      `Delete "${challenge.name}"? This can't be undone.`
-    );
+    const ok = await confirm({
+      title: "Delete challenge?",
+      message: `"${challenge.name}" will be removed permanently. This can't be undone.`,
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
     if (!ok) return;
     await collectionsApi.deleteCollection(challenge.id);
     if (typeof onExit === "function") onExit();

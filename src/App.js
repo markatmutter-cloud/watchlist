@@ -44,6 +44,7 @@ import { AdminTab } from "./components/AdminTab";
 import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ConfirmHost } from "./components/ConfirmModal";
 import { tabPill, innerToggleButton, actionButton } from "./styles";
 
 // Same-origin paths — Vercel serves everything in /public at the
@@ -3523,6 +3524,8 @@ export default function Watchlist() {
       {isMobile
         ? <MobileShell {...shellProps} />
         : <DesktopShell {...shellProps} />}
+      <ConfirmHost />
+
       {feedScreenerOpen && (
         <ListReviewMode
           mode="feed"

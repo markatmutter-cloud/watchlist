@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { fmtUSD } from "../utils";
 import { resizeImage } from "../resizeImage";
 import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase, actionButton } from "../styles";
+import { confirm } from "./ConfirmModal";
 
 // Per-watch detail sheet for the My Watches surface (2026-05-09 —
 // watch-management v1).
@@ -118,7 +119,12 @@ export function WatchDetailSheet({
   }, [rowId, commentBody, postComment]);
 
   const onDeleteComment = useCallback(async (commentId) => {
-    if (!window.confirm("Delete this journal entry?")) return;
+    if (!(await confirm({
+      title: "Delete journal entry?",
+      message: "This entry will be removed permanently.",
+      confirmLabel: "Delete",
+      tone: "danger",
+    }))) return;
     const res = await deleteComment(commentId);
     if (!res?.error) {
       setComments(prev => prev.filter(c => c.id !== commentId));
@@ -483,7 +489,12 @@ export function WatchDetailSheet({
           <>
             <div style={{ height: "0.5px", background: "var(--border)", margin: "20px 0 12px" }} />
             <button onClick={async () => {
-              if (!window.confirm("Remove this watch from your collection? The watch's journal entries will also be deleted.")) return;
+              if (!(await confirm({
+                title: "Remove from collection?",
+                message: "This watch will be removed from your collection. Any journal entries on it will also be deleted.",
+                confirmLabel: "Remove",
+                tone: "danger",
+              }))) return;
               await removeItemFromCollection(collectionId, item.id);
               onClose();
             }}
