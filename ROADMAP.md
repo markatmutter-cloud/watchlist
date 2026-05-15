@@ -162,6 +162,11 @@ when something breaks.
 
 ### References as first-class entities
 
+**ACTIVE — agreed next big feature (2026-05-15).** Maintenance
+session wrapped (11 PRs landed); Mark's call to start here. The
+foundation work for what the roadmap names as "potentially the
+platform's most differentiated feature."
+
 The data-layer prerequisite for jobs #4 (reference research) and #5
 (reference learning). Today every listing carries a `ref` field as a
 free-text title; nothing stitches multiple listings of the same
@@ -180,6 +185,30 @@ Manual curation for the unparseable.
 This is the substrate Epic 5 (research + learning) sits on. Until
 this lands, those epics can't ship cleanly.
 
+**Proposed slicing (2026-05-15, none built yet):**
+
+1. **Slice 1 — Epic 0 foundation.** Normalised `references` table
+   + detection pipeline (3 layers above). Listings + auction lots +
+   curated content FK to the reference. Invisible infrastructure.
+   ~1–2 sessions depending on detection aggressiveness.
+2. **Slice 2 — Reference grouping UI.** First user-visible payoff:
+   N saved 5548BAs collapse into one card with "N listings —
+   expand." Saved searches sharpen too. ~1 session.
+3. **Slice 3 — Per-reference research page** (Epic 5 sub-area).
+   "Click into 5548BA → every active listing across dealers +
+   every recent auction result (hammer prices, dates, photos) +
+   variation gallery." Several sessions.
+4. **Slice 4 — Reference encyclopedia** (Epic 5 sub-area). LLM-
+   synthesized guide + curated outbound links + live inventory
+   ribbon. Needs Mac mini Phase A (local LLM) or cloud LLM budget.
+
+**Recommended kick-off:** survey current `listings.json` to
+empirically measure what % of titles parse cleanly with a
+regex-first pass before committing to detection architecture. The
+top-5 brands (Rolex / Omega / Tudor / Patek / AP) probably catch
+60–70% of listings with simple regex; the long tail is where the
+LLM fallback decision matters.
+
 ### Verification + scrape health
 
 - **Pending — auction verification expansions.** Two checks that
@@ -190,6 +219,34 @@ this lands, those epics can't ship cleanly.
   catch silent breakage modes the count-vs-median check can't.
 
 ### Infrastructure / refactor track
+
+**Maintenance session 2026-05-15 paid down 11 PRs of accumulated
+debt** (#296–#307): test hardening (App.test loading→ready
+traversal + ListReviewMode render coverage), quick fixes (auction
+empty-list guard, list drill-in count), DB hygiene (anon ACL on
+accept_invite_by_token, RLS policy split, 4 unused indexes
+dropped), dead-code deletion (SharedTab + ListManagePanel −567
+lines), eslint cleanup (8 bare disables), 8 new design tokens
+(--shadow-modal, --heart, --danger-tint, --text-on-dark-*,
+--accent-warn-tint), doc sweep (README folder layout + CLAUDE.md
+Share tab retirement), Home banner → Screen pill, scale snap
+(fontSize 16→10 distinct, borderRadius 13→8), empty-state copy.
+See `SESSION_HANDOFF_2026-05-15.md` "Maintenance session
+addendum" for the full inventory.
+
+Still open from that session's audit:
+- **Button consolidation** — ~184 hand-rolled `<button>` elements
+  skip `actionButton` / `pillBase` / `iconButton`. Half-day diff.
+- **Eyebrow heading promotion** — 10-site re-roll of the same
+  `fontSize: 10/11, fontWeight: 600, uppercase, letterSpacing`
+  pattern. Promote to component or token.
+- **Padding scale snap** — ~16 distinct padding pairs; PR #305 did
+  fontSize + borderRadius, padding is the obvious follow-up.
+- **Missing empty states** — Listings filter-no-match, AuctionCalendar
+  empty, Home zero-recently-added. Component shape change.
+- **Loading states** — only the initial fetch has one; saved-search
+  results / list drill-ins / screener mount flicker through empty
+  UI for a beat.
 
 - **`listings.json` split by status.** Currently 3.5 MB; users
   fetch the whole file on every page load. Split into
