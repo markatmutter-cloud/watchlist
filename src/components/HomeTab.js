@@ -282,7 +282,7 @@ function HomeSearchBar({ onSubmit, isMobile, dealerSources, onJumpToDealer }) {
 // duplicated the heading text below ("ON THE FEED" + "Recently
 // added"). Heading + descriptor carry the editorial signal on
 // their own.
-function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchlist, hidden, handleWish, toggleHide, toggleHomeHide, primaryCurrency, onShare, onView, onClickListing, openCollectionPicker, isAdmin, user, compact, inverted, shellPad }) {
+function SectionStrip({ heading, descriptor, items, onViewAll, onScreen, screenCount, isMobile, watchlist, hidden, handleWish, toggleHide, toggleHomeHide, primaryCurrency, onShare, onView, onClickListing, openCollectionPicker, isAdmin, user, compact, inverted, shellPad }) {
   if (!items || items.length === 0) return null;
   const slice = items.slice(0, CARDS_PER_SECTION);
   // Inverted bleed (phase 4c, 2026-05-11): one section gets a dark
@@ -320,19 +320,41 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
             "this is a real destination" rather than incidental
             metadata). Keeps a low-key affordance — outline pill,
             not a CTA fill — but the border + slightly bolder weight
-            communicates clickability. */}
-        <button onClick={onViewAll}
-          style={{
-            flexShrink: 0, cursor: "pointer", fontFamily: "inherit",
-            fontSize: 12, fontWeight: 600, letterSpacing: "0.04em",
-            padding: "7px 14px", borderRadius: 999,
-            border: `0.5px solid ${inverted ? "var(--text-on-dark-3)" : "var(--text2)"}`,
-            background: "transparent",
-            color: viewAllColor,
-            display: "inline-flex", alignItems: "center", gap: 6,
-          }}>
-          View all <span aria-hidden style={{ fontSize: 13 }}>→</span>
-        </button>
+            communicates clickability.
+            "Screen N new" pill (2026-05-15) sits to the left when
+            there's a fresh-listings diff to review. Filled brand
+            because it's the primary action when present; the prior
+            grey-bar banner above the page got retired in favour of
+            this in-context affordance (Mark spec: "I want it to not
+            have a grey bar at the top"). */}
+        <div style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 8 }}>
+          {onScreen && screenCount > 0 && (
+            <button onClick={onScreen}
+              style={{
+                cursor: "pointer", fontFamily: "inherit",
+                fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
+                padding: "7px 14px", borderRadius: 999,
+                border: "none",
+                background: "var(--brand)",
+                color: "#fff",
+                display: "inline-flex", alignItems: "center", gap: 6,
+              }}>
+              Screen {screenCount} new
+            </button>
+          )}
+          <button onClick={onViewAll}
+            style={{
+              cursor: "pointer", fontFamily: "inherit",
+              fontSize: 12, fontWeight: 600, letterSpacing: "0.04em",
+              padding: "7px 14px", borderRadius: 999,
+              border: `0.5px solid ${inverted ? "var(--text-on-dark-3)" : "var(--text2)"}`,
+              background: "transparent",
+              color: viewAllColor,
+              display: "inline-flex", alignItems: "center", gap: 6,
+            }}>
+            View all <span aria-hidden style={{ fontSize: 13 }}>→</span>
+          </button>
+        </div>
       </div>
       {/* Unified horizontal-slider strip (Mark spec 2026-05-12):
           desktop now scrolls horizontally like mobile rather than
@@ -466,57 +488,11 @@ function calloutCtaStyle() {
   };
 }
 
-// Feed-screening entry banner (Mark spec 2026-05-14). Renders only
-// when there's a real diff to review — first-ever visitors get no
-// lastVisit and no banner; an already-current visitor with zero new
-// listings since their last open also gets nothing.
-function NewSinceLastVisitBanner({ lastVisit, count, onScreen, isMobile }) {
-  if (!lastVisit || !count || count <= 0 || !onScreen) return null;
-  const dateLabel = formatLastVisit(lastVisit);
-  return (
-    <div style={{
-      display: "flex", alignItems: "center",
-      gap: 12, flexWrap: "wrap",
-      padding: isMobile ? "12px 14px" : "14px 16px",
-      margin: isMobile ? "8px 0 14px" : "12px 0 18px",
-      background: "var(--surface)",
-      border: "0.5px solid var(--border)",
-      borderRadius: 10,
-    }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontSize: 14, fontWeight: 600, color: "var(--text1)",
-          letterSpacing: "-0.005em",
-        }}>
-          {count} new {count === 1 ? "listing" : "listings"} since {dateLabel}
-        </div>
-        <div style={{ fontSize: 12, color: "var(--text3)", marginTop: 2 }}>
-          Screen them one at a time — save the ones you like, pass on the rest.
-        </div>
-      </div>
-      <button onClick={onScreen} style={{
-        flexShrink: 0, cursor: "pointer", fontFamily: "inherit",
-        fontSize: 13, fontWeight: 600, letterSpacing: "0.02em",
-        padding: "8px 16px", borderRadius: 999,
-        border: "none", background: "var(--brand)", color: "#fff",
-      }}>
-        Start screening
-      </button>
-    </div>
-  );
-}
-
-function formatLastVisit(d) {
-  if (!(d instanceof Date) || isNaN(d.getTime())) return "your last visit";
-  const now = new Date();
-  const msPerDay = 24 * 60 * 60 * 1000;
-  const days = Math.floor((now.getTime() - d.getTime()) / msPerDay);
-  if (days <= 0) return "earlier today";
-  if (days === 1) return "yesterday";
-  if (days < 7) return `${days} days ago`;
-  const opts = { month: "short", day: "numeric" };
-  return d.toLocaleDateString(undefined, opts);
-}
+// (NewSinceLastVisitBanner retired 2026-05-15 — the grey bar at the
+// top of Home cycled back every few hours as scrapers landed fresh
+// items, which read as "the banner is stuck" rather than "fresh
+// listings landed since your last screening." Replaced by a "Screen
+// N new" pill on the Recently added section header.)
 
 // Footer band — closes the page rather than trailing off. Hairline
 // rule above the link row, small centered text. About + Privacy +
@@ -563,7 +539,7 @@ export function HomeTab(props) {
     watchlist, hidden, handleWish, toggleHide, toggleHomeHide, primaryCurrency,
     onShare, onView, onClickListing, openCollectionPicker, isAdmin,
     user, compact,
-    lastVisit, feedScreenerItemsCount, openFeedScreener,
+    feedScreenerItemsCount, openFeedScreener,
   } = props;
 
   // The shell adds horizontal padding around its main content (16px
@@ -591,16 +567,12 @@ export function HomeTab(props) {
           onJumpToDealer={homeJumpToDealer}
         />
       )}
-      <NewSinceLastVisitBanner
-        lastVisit={lastVisit}
-        count={feedScreenerItemsCount}
-        onScreen={openFeedScreener}
-        isMobile={isMobile}
-      />
       <SectionStrip
         heading="Recently added"
         items={homeRecentAdded}
         onViewAll={goToRecentAdded}
+        onScreen={openFeedScreener}
+        screenCount={feedScreenerItemsCount}
         isMobile={isMobile} shellPad={shellPad}
         watchlist={watchlist} hidden={hidden} handleWish={handleWish}
         toggleHide={toggleHide} toggleHomeHide={toggleHomeHide} primaryCurrency={primaryCurrency}
