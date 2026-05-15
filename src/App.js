@@ -2157,18 +2157,21 @@ export default function Watchlist() {
           aria-label="Watchbox · Account menu"
           title="Watchbox · Account menu"
           style={{
+            // Mark feedback 2026-05-15: brand-blue read as a CTA
+            // shout. Dropped to neutral (border + dark initial disc)
+            // so it sits as a navigation affordance, not an alert.
             display: "flex", alignItems: "center", gap: 8,
             height: 36, padding: "3px 14px 3px 3px",
             borderRadius: 999,
-            border: "0.5px solid var(--brand)",
-            background: showUserMenu ? "var(--brand-tint-12)" : "transparent",
-            color: "var(--brand)", cursor: "pointer", fontFamily: "inherit",
+            border: "0.5px solid var(--border)",
+            background: showUserMenu ? "var(--surface)" : "transparent",
+            color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
             flexShrink: 0,
             transition: "background 120ms ease",
           }}>
           <span style={{
             width: 28, height: 28, borderRadius: "50%",
-            background: "var(--brand)", color: "#fff",
+            background: "var(--text1)", color: "var(--bg)",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             fontSize: 13, fontWeight: 600,
             flexShrink: 0,
@@ -2177,7 +2180,7 @@ export default function Watchlist() {
           </span>
           <span style={{
             fontSize: 13, fontWeight: 600, letterSpacing: "0.01em",
-            color: "var(--brand)",
+            color: "var(--text1)",
           }}>
             Watchbox
           </span>
@@ -2188,9 +2191,9 @@ export default function Watchlist() {
           title="Watchbox · Account menu"
           style={{
             width: 40, height: 40, borderRadius: "50%",
-            border: "0.5px solid var(--brand)",
-            background: showUserMenu ? "var(--brand-tint-12)" : "var(--surface)",
-            color: "var(--brand)", cursor: "pointer", fontFamily: "inherit",
+            border: "0.5px solid var(--border)",
+            background: "var(--surface)",
+            color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
             fontSize: 14, fontWeight: 600,
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
@@ -2228,13 +2231,13 @@ export default function Watchlist() {
           <button onClick={() => { setShowUserMenu(false); setTab("watchbox"); setPage(1); }}
             style={{ display: "flex", alignItems: "center", gap: 12,
                     width: "100%", textAlign: "left",
-                    padding: "10px 12px", border: "0.5px solid var(--brand)",
-                    background: "var(--brand-tint-12)",
-                    color: "var(--brand)", cursor: "pointer", fontFamily: "inherit",
+                    padding: "10px 12px", border: "0.5px solid var(--border)",
+                    background: "var(--surface)",
+                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
                     fontSize: 15, fontWeight: 600, borderRadius: 10 }}>
             <span style={{
               width: 30, height: 30, borderRadius: "50%",
-              background: "var(--brand)", color: "#fff",
+              background: "var(--text1)", color: "var(--bg)",
               display: "inline-flex", alignItems: "center", justifyContent: "center",
               flexShrink: 0,
             }}>
@@ -2248,7 +2251,7 @@ export default function Watchlist() {
             <span style={{ flex: 1 }}>Watchbox</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"
-              aria-hidden="true" style={{ flexShrink: 0 }}>
+              aria-hidden="true" style={{ flexShrink: 0, color: "var(--text3)" }}>
               <path d="M9 18l6-6-6-6"/>
             </svg>
           </button>
@@ -2885,7 +2888,12 @@ export default function Watchlist() {
       // diff to review (lastVisit present + items to screen).
       lastVisit={lastVisit}
       feedScreenerItemsCount={feedScreenerItems.length}
-      openFeedScreener={() => setFeedScreenerOpen(true)}
+      // Bump markFeedSeen on OPEN (not just close): the moment the
+      // user taps Start screening, treat the queue as "notified" —
+      // banner clears immediately, regardless of whether they
+      // complete the queue or bail mid-review. Mark report
+      // 2026-05-15: re-running review left the banner stuck.
+      openFeedScreener={() => { markFeedSeen(); setFeedScreenerOpen(true); }}
     />
   );
 
@@ -3415,7 +3423,7 @@ export default function Watchlist() {
     // these to render the entry banner.
     lastVisit,
     feedScreenerItemsCount: feedScreenerItems.length,
-    openFeedScreener: () => setFeedScreenerOpen(true),
+    openFeedScreener: () => { markFeedSeen(); setFeedScreenerOpen(true); },
   };
 
   return (
