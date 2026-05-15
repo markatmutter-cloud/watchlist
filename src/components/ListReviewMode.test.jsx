@@ -2,14 +2,17 @@ import React from "react";
 import { render } from "@testing-library/react";
 import { ListReviewMode } from "./ListReviewMode";
 
-// Render-without-crash smoke tests for the three screening modes
-// (list / feed / auction) introduced 2026-05-14.
+// Render-without-crash smoke tests for the two screening modes
+// (list / feed). The original "auction" mode was retired in #55
+// (2026-05-15) — auction-catalog screening now goes through
+// mode="list" against the auction's auto-list so Pass items survive
+// in the Disliked bucket like a shared list.
 //
 // Why this exists: ListReviewMode is 1,500+ lines, owns complex
 // gesture/animation/persistence state, and is the entry point for
-// three distinct user flows (shared-list review, new-listings
-// screening, auction-catalog screening). A bug that wedges any one
-// mode would surface as either a white screen at the screener launch
+// two distinct user flows (list review — shared OR auction-catalog,
+// and new-listings feed screening). A bug that wedges either mode
+// would surface as either a white screen at the screener launch
 // OR a silent fall-through (the 2026-05-14 auction-mode constraint
 // failure landed in feed mode behaviour because the catch ate the
 // error). This test catches the obvious render-time class.
@@ -101,18 +104,6 @@ describe("ListReviewMode render-without-crash", () => {
         mode: "feed",
         items: [feedItem],
         listId: null,
-      })} />);
-    }).not.toThrow();
-  });
-
-  test("auction mode renders without throwing", () => {
-    // Auction mode is launched from the Auction calendar Review
-    // button. Yes-swipe invokes onYesAdd(item) to append to the
-    // auction's auto-list.
-    expect(() => {
-      render(<ListReviewMode {...baseProps({
-        mode: "auction",
-        onYesAdd: noop,
       })} />);
     }).not.toThrow();
   });

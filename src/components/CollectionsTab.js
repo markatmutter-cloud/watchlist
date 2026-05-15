@@ -65,6 +65,13 @@ export function CollectionsTab({
   onClickListing,
   pendingChallengeDrillId,
   clearPendingChallengeDrill,
+  // Auction calendar Review entry-point (post-#55, 2026-05-15). App.js
+  // sets pendingReviewListId after handleReviewCatalog bulk-adds the
+  // lots; ListsView consumes it to drill in + auto-open the screener
+  // once items + reactions have loaded for the target list. Same
+  // shape as pendingChallengeDrillId — set / consume / clear.
+  pendingReviewListId,
+  clearPendingReviewList,
   collectionsSubTab,
   setCollectionsSubTab,
   tabResetTick,
@@ -181,6 +188,16 @@ export function CollectionsTab({
     }
   }, [pendingChallengeDrillId, setCollectionsSubTab]);
 
+  // Auction Review hand-off — when App.js sets pendingReviewListId,
+  // switch to the Lists sub-tab so ListsView mounts and can pick up
+  // the prop. ListsView itself owns the "open screener once items
+  // load" effect.
+  useEffect(() => {
+    if (pendingReviewListId && setCollectionsSubTab) {
+      setCollectionsSubTab("lists");
+    }
+  }, [pendingReviewListId, setCollectionsSubTab]);
+
   if (!user) {
     return (
       <EmptyState
@@ -294,6 +311,8 @@ export function CollectionsTab({
         fetchReactions={collectionsApi?.fetchReactions}
         toggleReaction={collectionsApi?.toggleReaction}
         fetchReactionCounts={collectionsApi?.fetchReactionCounts}
+        pendingReviewListId={pendingReviewListId}
+        clearPendingReviewList={clearPendingReviewList}
       />
     );
   } else if (subTab === "challenges") {
@@ -1295,6 +1314,10 @@ function ListsView({
   fetchReactions,
   toggleReaction,
   fetchReactionCounts,
+  // Auction Review entry (post-#55). When set, drill into this list
+  // and auto-open the screener once items + reactions are loaded.
+  pendingReviewListId,
+  clearPendingReviewList,
 }) {
   // One-at-a-time recipient review mode (Mark spec 2026-05-11).
   // Triggered by the recipient banner's "Start review" CTA. Opens a
@@ -1319,6 +1342,34 @@ function ListsView({
   // ones (Mark spec 2026-05-14 re-screen fix). Set true when the
   // user taps Review on a fully-reacted list; otherwise resume.
   const [screenAllMode, setScreenAllMode] = useState(false);
+
+  // Auction Review hand-off (post-#55, 2026-05-15). Two stages:
+  //   1. pendingReviewListId arrives → drill into that list.
+  //   2. We're drilled in AND the bulk-added items have appeared in
+  //      itemsByColl → open the screener and clear the signal so a
+  //      subsequent visit doesn't auto-open again.
+  // Items can land asynchronously after addItemsToCollection resolves
+  // (useCollections's local cache update isn't always synchronous);
+  // gating on itemsByColl[id].length > 0 keeps the screener from
+  // mounting against an empty queue.
+  const pendingReviewItemCount = pendingReviewListId
+    ? ((itemsByColl || {})[pendingReviewListId] || []).length
+    : 0;
+  useEffect(() => {
+    if (!pendingReviewListId) return;
+    if (selectedListId !== pendingReviewListId) {
+      setSelectedListId(pendingReviewListId);
+      return;
+    }
+    if (pendingReviewItemCount > 0) {
+      setScreenAllMode(false);
+      setReviewModeOpen(true);
+      if (clearPendingReviewList) clearPendingReviewList();
+    }
+  }, [
+    pendingReviewListId, selectedListId, pendingReviewItemCount,
+    setSelectedListId, clearPendingReviewList,
+  ]);
   // Per-bucket density override (in-memory only). `expanded` flips a
   // bucket from slider → grid even when its count is ≤ threshold; the
   // opposite (force-slider when >threshold) is also stored here. Reset
@@ -1353,10 +1404,24 @@ function ListsView({
     return () => { cancelled = true; };
   }, [selectedListId, fetchListMembers]);
 
-  // Reactions for the active drill-in (2026-05-10). Loaded only on
-  // shared lists (memberCount >= 2) since solo lists don't need
-  // them. Realtime subscription pushes co-collaborator reactions
-  // live so the wife/whoever sees Mark's tap immediately.
+  // Whether the active drill-in is an auction-catalog list (post-#55,
+  // 2026-05-15). Auction lists are always solo (memberCount=1) but
+  // get the same screening + reactions surface as shared lists so
+  // Pass items survive in the Disliked bucket instead of being lost
+  // to a session-only skip. Driven off the col's `type` field —
+  // populated by useCollections from the `collections` table.
+  const isSelectedAuctionList = useMemo(() => {
+    if (!selectedListId) return false;
+    const col = (cols || []).find(c => c.id === selectedListId);
+    return col?.type === 'auction';
+  }, [selectedListId, cols]);
+
+  // Reactions for the active drill-in (2026-05-10). Loaded on shared
+  // lists (memberCount >= 2) AND on auction lists (post-#55) so the
+  // sentiment buckets work. Solo non-auction lists skip the load —
+  // no other reader, no buckets, nothing to fetch. Realtime
+  // subscription pushes co-collaborator reactions live so the
+  // wife/whoever sees Mark's tap immediately.
   //
   // 2026-05-10 hardening: subscription set up + teardown wrapped in
   // try/catch so a transient supabase-realtime issue (stale token,
@@ -1371,7 +1436,7 @@ function ListsView({
         || selectedListId === HIDDEN_COLLECTION_ID
         || selectedListId === SAVED_COLLECTION_ID
         || !fetchReactions
-        || memberCount < 2) {
+        || (memberCount < 2 && !isSelectedAuctionList)) {
       setReactionsByItem(new Map());
       return undefined;
     }
@@ -1421,7 +1486,7 @@ function ListsView({
         catch (e) { /* swallow — cleanup shouldn't crash */ }
       }
     };
-  }, [selectedListId, fetchReactions, memberCount]);
+  }, [selectedListId, fetchReactions, memberCount, isSelectedAuctionList]);
 
   const onToggleReaction = React.useCallback(async (itemId, emoji) => {
     if (!toggleReaction) return;
@@ -1566,6 +1631,14 @@ function ListsView({
       && !isHiddenColl
       && !isSavedColl
       && !selected.isSharedInbox;
+    // Auction-catalog list (post-#55, 2026-05-15) — solo by definition
+    // but joins isSharedList in lighting up the screening primitive
+    // (Review button, ListReviewMode, sentiment buckets, ReactionStrip).
+    // Recipient/owner-share concepts (banner copy, ❤️ love-sync to
+    // mirror hearts cross-user) stay gated on isSharedList alone since
+    // an auction list has no other readers.
+    const isAuctionList = selected?.type === 'auction';
+    const screensEnabled = isSharedList || isAuctionList;
     const isRecipient = isSharedList && !isOwner;
     const ownerName = (selected?.userId && memberMap.get(selected.userId)) || "Someone";
     const myUserId = user?.id || null;
@@ -1577,7 +1650,7 @@ function ListsView({
     // Compute for the owner as well as recipients — owner-self-review
     // needs the same "have I reacted to everything yet" signal to
     // decide between resume + re-screen on the Review button.
-    const myReactedCount = isSharedList
+    const myReactedCount = screensEnabled
       ? items.reduce((acc, i) => acc + (itemHasMyReaction(i) ? 1 : 0), 0)
       : 0;
     // Share callback — copies a `?list=<id>&shared=1` link via the Web
@@ -1614,7 +1687,7 @@ function ListsView({
     // every reset path (panel, ListReviewMode) sees only the Yes
     // (👍) / Pass (❌) verdicts.
     const myReactionsOnList = [];
-    if (myUserId && reactionsByItem && isSharedList) {
+    if (myUserId && reactionsByItem && screensEnabled) {
       for (const [itemId, rs] of reactionsByItem.entries()) {
         for (const r of rs) {
           if (r.user_id !== myUserId) continue;
@@ -1673,7 +1746,7 @@ function ListsView({
     // once we're in screening, and the chrome was pushing the
     // interaction space below the fold. Mobile keeps the chrome
     // since screening portals over it anyway.
-    const inlineScreeningActive = reviewModeOpen && isSharedList && isWide;
+    const inlineScreeningActive = reviewModeOpen && screensEnabled && isWide;
     return (
       <div style={{ paddingTop: 4 }}>
         {/* Drill-in header — single row layout (Mark feedback
@@ -1712,12 +1785,12 @@ function ListsView({
                 visually. "Reset ratings" spells out what Reset
                 clears so the action isn't ambiguous next to other
                 affordances. Share moves to the right edge by itself. */}
-            {(isSharedList || myReactionsOnList.length > 0) && (
+            {(screensEnabled || myReactionsOnList.length > 0) && (
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
                 flexShrink: 0,
               }}>
-                {isSharedList && (
+                {screensEnabled && (
                   <button
                     onClick={() => {
                       setScreenAllMode(myReactedCount >= items.length && items.length > 0);
@@ -1793,7 +1866,7 @@ function ListsView({
             )}
           </div>
         )}
-        {reviewModeOpen && isSharedList && (
+        {reviewModeOpen && screensEnabled && (
           <ListReviewMode
             key={screeningResetTick}
             items={items}
@@ -1828,7 +1901,7 @@ function ListsView({
             entirely while inline-screening is active. On mobile the
             screening overlay portals to body, so the grid still
             renders underneath (covered visually). */}
-        {(reviewModeOpen && isSharedList && isWide) ? null : items.length === 0 ? (
+        {(reviewModeOpen && screensEnabled && isWide) ? null : items.length === 0 ? (
           <EmptyState
             icon={isHiddenColl ? "👁" : isSavedColl ? "♡" : "📂"}
             heading={isHiddenColl ? "Nothing hidden"
@@ -1883,17 +1956,17 @@ function ListsView({
                     onShare={handleShare}
                     onView={observeCard}
                     onClickListing={onClickListing}
-                    myRating={isSharedList && item.rowId
+                    myRating={screensEnabled && item.rowId
                       ? (() => {
                           const mine = (itemReactions || []).find(r => r.user_id === user?.id);
                           return mine?.emoji || null;
                         })()
                       : null}
-                    onRate={isSharedList && item.rowId
+                    onRate={screensEnabled && item.rowId
                       ? (emoji) => onToggleReaction(item.rowId, emoji)
                       : undefined}
                   />
-                  {isSharedList && item.rowId && (
+                  {screensEnabled && item.rowId && (
                     <ReactionAggregateChips reactions={itemReactions} />
                   )}
                   {addedByName && (
@@ -1917,7 +1990,7 @@ function ListsView({
             // shared lists (solo lists fall through to the plain
             // grid below). Re-introduce a toggle here if the flat
             // view is ever asked for again.
-            const useBuckets = isSharedList;
+            const useBuckets = screensEnabled;
             if (!useBuckets) {
               return (
                 <div style={{ ...gridStyle, borderRadius: 10, overflow: "hidden" }}>

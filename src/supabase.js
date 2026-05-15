@@ -1606,9 +1606,9 @@ export function useCollections(user) {
     if (error) return { error: error.message };
     // Optimistic projection — if this list is fresh and the
     // collections fetcher hasn't reseen it yet, surface it locally
-    // so the Lists view + auctionScreener pickup are immediate. The
-    // next collections refresh will replace this with the canonical
-    // shape.
+    // so the Lists view (and the post-#55 auto-open Review hand-off)
+    // pick it up immediately. The next collections refresh replaces
+    // this with the canonical shape.
     setCollections(prev => prev.some(c => c.id === data) ? prev : [
       ...prev,
       {

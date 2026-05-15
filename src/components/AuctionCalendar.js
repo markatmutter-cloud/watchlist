@@ -251,9 +251,9 @@ function MonthBlock({ group, firstBlock, archive = false, lotCounts = {}, onRevi
 //     new tab
 //   • Add to list — bulk-adds every lot from the catalog into the
 //     auction's auto-list (idempotent — re-tapping doesn't dupe)
-//   • Review — opens the screening overlay; the auto-list is
-//     created on entry, Yes-swipes append to it (mode="auction"
-//     in ListReviewMode)
+//   • Review — bulk-adds every lot to the auction's auto-list, then
+//     opens the screener in mode="list" so Pass items survive in the
+//     Disliked bucket like a shared list (post-#55, 2026-05-15)
 // On closed past auctions only View catalog renders — there's
 // nothing useful to add to a watchlist or review for upcoming.
 function AuctionRow({ a, archive, lotCount = 0, onReviewCatalog, onAddToList, busy, isMobile = false }) {
