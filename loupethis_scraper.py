@@ -146,6 +146,16 @@ def project_lot(lot, brand_map, now_iso):
     slug = attrs.get("slug")
     if not slug:
         return None
+    # Drop lots that the public site hasn't published yet. The API
+    # returns the full pipeline (starts_at up to ~14 days out); the
+    # web UI only renders lots whose start time has passed. Detail
+    # pages for not-yet-started lots return a 200 but render
+    # "Looks like something went wrong" — bad click-throughs from
+    # our cards. Mark report 2026-05-15.
+    starts_at_raw = attrs.get("starts_at")
+    if starts_at_raw and starts_at_raw > now_iso:
+        return None
+
     # Older listings (~2022) carry slugs with raw spaces / uppercase
     # ("Audemars Piguet Royal Oak 4100ST"). The site serves them at
     # the URL-encoded path, so encode at construction time. `safe="/"`
