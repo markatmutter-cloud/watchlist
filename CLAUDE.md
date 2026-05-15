@@ -12,7 +12,7 @@ how to behave for the rest of it.
   (`src/styles.js`), reusable components (`src/components/`), and
   reach-for-this-first rules. Read this when doing UI work.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
-  The current one is [SESSION_HANDOFF_2026-05-10.md](SESSION_HANDOFF_2026-05-10.md);
+  The current one is [SESSION_HANDOFF_2026-05-15.md](SESSION_HANDOFF_2026-05-15.md);
   older ones live in `archive/`.
 
 If a gotcha or convention is durable (still true next session), graduate
@@ -331,6 +331,18 @@ The Listings tab no longer has a Status (Live/Sold/All) segment —
 the sub-tabs cover that role. (Watchlist also dropped the segment
 2026-05-04 PR #36 — see Watchlist sub-tabs note below.)
 
+**Watchbox — top-level tab, no main-nav pill (2026-05-14, PR #289).**
+My Watches lifted out of the Watchlists sub-tab strip into its own
+top-level destination reached only via the avatar dropdown (Mark
+framing: "kind of like my ebay"). New `tab=watchbox` value in
+`TAB_VALUES`. Built as `<CollectionsTab collectionsSubTab="my-collection"/>`
+in `watchboxTabJSX` — same component, just pinned and rerouted.
+Legacy `?tab=watchlist&sub=my-collection` redirects to `?tab=watchbox`
+on init; stale `dial_watch_top_tab=my-collection` localStorage coerces
+to `"lists"` so users aren't stuck on an invisible sub-tab. Short-link
+alias `?tab=mywatches` → `tab=watchbox`. The Watchlists sub-tab strip
+drops to 3 pills: Lists / Searches / Challenges.
+
 **Watchlist tab structure (sub-tabs, 2026-05-04 PR #36; Lists moved
 out 2026-05-06 PR #86).** Mirrors the Listings tab restructure.
 **Four** sub-tabs (was five before PR #86 lifted Lists into the new
@@ -435,9 +447,9 @@ auction-side scrapers (e.g. when Bonhams/MLA come online) should
 import + apply the same `is_excluded_title` predicate so the
 display layer can keep assuming inputs are pre-filtered.
 
-**Location URL params.** `tab` (listings | watchlist | references |
-admin) and `sub` (per-active-tab) reflect navigation state via
-`history.replaceState`. `sub` values:
+**Location URL params.** `tab` (home | listings | watchlist | watchbox |
+references | admin) and `sub` (per-active-tab) reflect navigation state
+via `history.replaceState`. `sub` values:
 - `tab=listings` → live | auctions | sold | calendar (default
   "live" stripped from URL)
 - `tab=watchlist` → listings | auctions | sold | searches (default
@@ -448,6 +460,10 @@ admin) and `sub` (per-active-tab) reflect navigation state via
 - `tab=collections` → my-collection | wishlist | lists | challenges
   (default "my-collection" stripped). Persisted under
   `dial_collections_sub_tab`.
+- `tab=watchbox` (2026-05-14, PR #289) → no `sub`. Reachable only
+  via the avatar dropdown; no main-nav pill. Legacy
+  `?tab=watchlist&sub=my-collection` redirects to `?tab=watchbox`
+  on init. Short-link alias `?tab=mywatches`.
 
 `col` (collection UUID, or `__hidden__` for the synthetic Hidden
 list) is Collections-only since 2026-05-06. App.js owns `tab` +
@@ -825,6 +841,68 @@ registered the second push. Re-shipped via #183 as a fresh
 branch. Rule of thumb going forward: every new logical change →
 its own branch + its own PR. Visible to the user before merge,
 and no race condition with squash-merges.
+
+**Screening modes (`ListReviewMode`, 2026-05-14 → 2026-05-15).**
+The screening primitive now supports three modes, all in
+`src/components/ListReviewMode.js`:
+
+| Mode | Yes | Pass | Heart | Mounted by |
+|---|---|---|---|---|
+| `list` (default) | write 👍 reaction to `collection_item_reactions` | write ❌ reaction | watchlist | Shared-list drill-in in `CollectionsTab.ListsView` (owner OR recipient) |
+| `feed` | heart + advance | session-only skip set, no DB writes | watchlist | App.js, mounted at `feedScreenerOpen=true` (Home banner → Start screening) |
+| `auction` | `onYesAdd(item)` → `addItemToCollection(target)` | session-only skip, no DB writes | watchlist | App.js, mounted at `auctionScreenerState` (Auction calendar → Review) |
+
+**Force portal layout for modes launched outside a list drill-in.**
+`usePortalLayout = mode === "feed" || mode === "auction" || !isWide`.
+`feed` and `auction` modes are launched from Home or the Auction
+calendar — there's no inline drill-in for them to render inside, so
+they must portal to `document.body`. Inline render path (`mode="list"`
+on desktop) replaces the drill-in body; portal render takes over the
+whole viewport.
+
+**Card key fallback.** `key={current.rowId || current.id}` on the
+active card div. Feed-mode items are unprojected listings — they
+don't carry rowId (a `collection_items` concept). Without the
+fallback, React reuses the same DOM node across advances and CSS
+transitions the transform from off-screen back to 0, making the next
+card slide in from the previous fly-out direction instead of rising
+from the deck.
+
+**Auction catalogs as `type='auction'` collections (2026-05-14 → 2026-05-15,
+PRs #287/#288/#291/#293).** Each auction calendar row exposes three
+inline actions: **View catalog** (external), **Add to list** (bulk-add
+every lot to the auto-list), **Review** (open `mode="auction"`
+screener targeting the auto-list). Schema:
+
+- `collections.source_auction_url` text column + partial index.
+- `collections.type='auction'` valid value (added via
+  `2026-05-14_collections_type_allow_auction`).
+- `collection_items.source_of_entry` values `'auction_bulk'` (from
+  Add to list) and `'auction_review'` (from Review Yes) added via
+  `2026-05-15_source_of_entry_auction_values`.
+- `get_or_create_auction_list(p_url, p_name, p_target_count)` —
+  SECURITY DEFINER RPC, same pattern as `create_challenge_v2`.
+  Returns the existing list's id for this user+URL or creates one.
+- `useCollections` gets `getOrCreateAuctionList(auction)` wrapper +
+  `addItemsToCollection(collectionId, items, opts)` bulk-add (loops
+  `addItemToCollection` via `Promise.all`).
+
+Auction lists land in a **AUCTION CATALOGS** group in Watchlists >
+Lists, filtered out of "My lists" (which now excludes
+`type === 'auction'`). Mobile: the 3-button cluster moves to a second
+row below the title block (stacked layout) so the title doesn't get
+crushed. Past auctions also expose Review + Add — useful for
+retrospective browsing of closed catalogs.
+
+**New-listings screener (`useLastVisit` + `mode="feed"`,
+2026-05-14, PR #283).** Tracks last-open timestamp in
+`localStorage.dial_last_visit_ts`. On HomeTab, when there are
+items with `firstSeen > lastVisit`, render the banner "N new
+listings since {date} — Start screening." Tap fires the feed
+screener with the (non-sold, non-hidden, newest-first, cap-50)
+queue. `markFeedSeen()` bumps the stored ts to NOW on **open**
+(not on close — bait at the moment of engagement, not the moment
+of completion, so the banner clears regardless of close path).
 
 ## Scraper conventions
 
@@ -1392,11 +1470,37 @@ again; it's permanently blocked at the platform layer.
 - **Don't add new `useState`/`useMemo`/`useCallback` deep into App.js**
   near render-conditional code paths. Adding hooks to the back of
   App.js's already-large hook list triggered React error #310
-  ("rendered more hooks than during the previous render") TWICE during
-  the Collections + Sharing build. New rule: if a feature needs new
+  ("rendered more hooks than during the previous render") **three times
+  now** (Collections + Sharing build twice, then PR #290 hotfix
+  2026-05-14 when `handleReviewCatalog = useCallback` shipped at
+  ~line 2496 past the `if (loading) return …` / `if (loadError) return …`
+  early returns at 2307–2308). The trap: while loading, the early
+  returns skip the post-return hooks; once loading flips false, hook
+  count jumps and React rejects. New rule: if a feature needs new
   hooks, put them in a self-contained component App.js mounts
-  unconditionally. `<ShareReceiver/>` (commit b6cb57b) is the
-  reference pattern.
+  unconditionally, OR lift the hooks ABOVE every early return in
+  App.js. `<ShareReceiver/>` (commit b6cb57b) is the reference pattern.
+  The App test doesn't traverse the load→ready transition, so the
+  suite is blind to this regression class — hardening queued.
+- **Don't introduce a new value for an enum-like text column without
+  auditing every check constraint that references it.** Hit twice in
+  the 2026-05-14 → 15 session — once on `collections.type` (`'auction'`
+  not allowed, list creation failed silently, screener fell back to
+  feed mode and items hearted instead of saved), once on
+  `collection_items.source_of_entry` (`'auction_bulk'` /
+  `'auction_review'` not allowed, every bulk-add insert failed). The
+  JS pattern of catching the error and falling back to a degraded
+  path hides the failure. Before introducing a new value, query
+  `pg_constraint` for every CHECK on the target table:
+  ```sql
+  select conname, pg_get_constraintdef(oid)
+  from pg_constraint pgc
+  join pg_class c on c.oid = pgc.conrelid
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname='public' and c.relname='<table>' and pgc.contype='c';
+  ```
+  Then write a single migration that updates ALL constraints in one
+  pass.
 - **Don't write `// eslint-disable-next-line <rule>` for a rule that
   isn't configured in this CRA project.** The setup doesn't enable
   `react-hooks/exhaustive-deps` (and several others), so an unknown-

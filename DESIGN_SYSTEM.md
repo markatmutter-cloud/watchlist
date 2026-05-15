@@ -1,8 +1,8 @@
 # Watchlist design system
 
 Reach-for-this-first when doing UI work. Keep this short — it's a
-reference, not a tutorial. Last refreshed 2026-05-08 after the gap-fix
-sweep.
+reference, not a tutorial. Last refreshed 2026-05-15 after the
+auction-screener + Watchbox-extraction sweep.
 
 The system has three layers:
 
@@ -80,9 +80,11 @@ state, no behavior. Compose with overrides via spread:
 - **Mobile bottom-nav active-dot vs desktop active-pill** — different visual signals for the active main tab; both work in their context.
 - **Mobile `× Clear` round 40×40 vs desktop "× Clear" inline** — horizontal-real-estate trade-off.
 - **Card overlay `rgba(...)` literals** — sit on images, no dark-mode adapt needed.
-- **`SubTabIntro` action button** is its own primitive (different size + role than `actionButton`).
+- **`SubTabIntro` action button** is its own primitive (different size + role than `actionButton`). SubTabIntro itself was retired from every Watchlists sub-tab during the 2026-05-14 IA sweep — the component still exists but is no longer mounted. Group eyebrow banners + EmptyState `action` carry the affordances now.
 - **`SizeCompare.js` has its own local `inp`** — local-scoped, intentionally denser than the shared `inputBase` for the calibration tools.
 - **AboutModal close-button absolute position** — hero band has 2-line title + tagline + favicon, the standard `modalTitleRow` would crush the title against the ×. Documented in-line at the override.
+- **Desktop avatar pill vs mobile avatar circle** — desktop shows initial + "Watchbox" label inside a hairline pill; mobile shows the bare 40px circle. Top-bar real estate constraint, intentional.
+- **Group eyebrow banner = Listings date-divider banner shape.** SAVED / MY LISTS / SHARED WITH ME / AUCTION CATALOGS / SAVED SEARCHES / "Sent to you" / "Yours" all use the same `--surface` band + baseline-aligned 14px label + count-pushed-right pattern as the Today / Yesterday date dividers on the Listings tab. Reuse the shape; don't introduce a new eyebrow primitive.
 
 ## Adding to the system
 

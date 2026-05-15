@@ -1,6 +1,6 @@
 # Watchlist Roadmap
 
-Last updated: 2026-05-10
+Last updated: 2026-05-15
 Living document. Updated as priorities shift.
 
 For project context and architecture, see [README.md](README.md). For
@@ -654,32 +654,81 @@ approach 2026-05-07 because the recurring use-case (couples /
 family) wants persistent identity per contributor, not viral
 reach.
 
-### Top-level Share tab (shipped 2026-05-11, PR #248 + #251)
+### Top-level Share tab (shipped 2026-05-11 PR #248 + #251; retired 2026-05-14 PR #282)
 
-Sharing has its own home now — 4th top-level pill (Listings ·
-Watchlists · Share · Learn). Two sections: "Shared with you"
-(incoming) + "Shared by you" (outgoing). `+ Share a list` CTA
-opens a list-picker modal that fires the native share sheet on
-the chosen list. The previous list-share entry from the Lists
-drill-in still works; Share is the discovery + send surface,
-the drill-in is the work surface (recipient banner, To-review
-bucket, review mode all live in the drill-in).
+Sharing briefly had its own top-level tab between 2026-05-11
+and 2026-05-14. It was retired in PR #282 — the Shared-with-me
+group inside Watchlists > Lists carries the discovery role and
+the per-list Share button on each list row covers the send
+flow, so the dedicated tab was duplicate surface. Main nav
+returned to three pills: Listings · Watchlists · Collecting
+(the latter being the renamed Learn tab, also in #282).
 
-### Recipient journey (shipped 2026-05-11, PRs #245 / #246 / #249 / #253)
+### Recipient journey (shipped 2026-05-11, PRs #245 / #246 / #249 / #253; widened to owners 2026-05-14 PR #286)
 
-When a viewer is a collaborator on someone else's list:
+When a viewer is a member of a list with 2+ members:
 - **Recipient banner** above the cards naming the owner and
   current progress ("Jacquelin shared this list — tap ❤️ / 👍 /
-  ❌ on each watch · 3 of 49 reacted"). Drops out when complete.
+  ❌ on each watch · 3 of 49 reacted"). Recipient-only — owner
+  doesn't see this.
 - **📋 To review · N bucket** pinned to the top of the sentiment
-  buckets so unreacted items are the visible to-do.
+  buckets so unreacted items are the visible to-do (recipient-
+  only).
 - **Review one at a time mode** (`ListReviewMode`): fullscreen
-  overlay, big card per screen, three reaction buttons, Tinder-
-  style swipes (right = 👍, left = ❌, up = ❤️), 🎉 finish state.
+  overlay (mobile) / inline replacement of the drill-in body
+  (desktop), big card per screen, three reaction buttons,
+  Tinder-style swipes (right = 👍, left = ❌, up = ❤️), 🎉 finish
+  state. **Owner + recipient both get the Review button now**
+  (PR #286 — Mark spec: "lists I own and shared would be good
+  to have reactions and tinder feature").
 - **Undo affordances** (PR #253): re-tap to remove was already
   the underlying behaviour, but explicit `Remove my reaction`
   link in review mode + `Reset my reactions (N)` in the drill-in
   ⋯ overflow surface it.
+
+### Screening on new entry points (shipped 2026-05-14, PRs #283 / #287–#293)
+
+The screening primitive ported to two new surfaces:
+
+- **New listings since last visit (`mode="feed"`).** HomeTab
+  shows a "N new listings since {date} — Start screening"
+  banner when there's a real diff. Tap → fullscreen screener
+  with the (live, non-hidden, newest-first, cap-50) queue.
+  Yes = heart, Pass = skip. `markFeedSeen` fires on open so
+  the banner clears immediately, regardless of close path.
+- **Auction catalogs (`mode="auction"`).** Every auction
+  calendar row has three inline actions: View catalog (external),
+  Add to list (bulk-add every lot to the auto-list), Review
+  (open the screener). Yes-swipe in Review = append to the
+  auction's auto-list (NOT heart — that's the next pivot
+  per Mark spec, see "Auction Review as list-mode screening"
+  below). Heart = watchlist. Past auctions also expose Review
+  + Add for retrospective browsing.
+
+Schema for the auction catalog system:
+- `collections.type='auction'` valid value.
+- `collections.source_auction_url` text column + partial index.
+- `get_or_create_auction_list(p_url, p_name)` SECURITY DEFINER
+  RPC for idempotent list creation.
+- `collection_items.source_of_entry` now allows `'auction_bulk'`
+  + `'auction_review'`.
+- New **AUCTION CATALOGS** group in Watchlists > Lists for
+  `type='auction'` collections.
+
+### Auction Review as list-mode screening (queued, Mark 2026-05-15)
+
+Mark's revised model: Review should bulk-add ALL lots to the
+auction list first, then open the screener in `mode="list"`
+(not `mode="auction"`). Yes/Pass write reactions on the list's
+items; the list ends up with 274 items, each in a Liked / Open /
+Disliked bucket. Pass items survive in the list rather than
+being skipped + lost. Same UX as reviewing a shared list a
+friend sent you.
+
+Implementation needs: extend `isSharedList` (or add a parallel
+`screensEnabled`) to include `type='auction'` so reactions +
+buckets work on a solo auction list. Drops the bespoke
+`mode="auction"` branch in `ListReviewMode` once shipped.
 
 ### Reviewer / Writer journey (queued, Mark 2026-05-12)
 
@@ -897,6 +946,13 @@ Collection Planner mental model or keep them as siblings.
   archiving older ones") preferred over hard limits.
 
 ### Watchbox v2 — real ownership tracking (deferred — high personal value)
+
+**Note 2026-05-14**: the *surface* of Watchbox shipped — My Watches
+lifted out of the Watchlists sub-tabs into a top-level `tab=watchbox`
+destination reached only via the avatar dropdown (PR #289). It still
+renders the existing MyCollectionView (Collection / Archive / Plan
+toggle). The *reflection-layer data model* below is what's still
+deferred — the surface is in place to host it when it ships.
 
 Track watches users actually own and have owned. A Watchbox is a
 collection with `type='watchbox'`.
