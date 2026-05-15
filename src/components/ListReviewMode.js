@@ -434,28 +434,15 @@ export function ListReviewMode({
 
   // ── Render ────────────────────────────────────────────────────
 
-  // Feed mode always renders as a fullscreen portal — there's no
-  // inline drill-in for it to live inside (it's launched from Home /
-  // any tab), so the desktop inline-panel layout doesn't apply.
-  // List mode (including auction lists) is launched from inside the
-  // Lists drill-in, so the inline-on-desktop path applies there.
-  const usePortalLayout = mode === "feed" || !isWide;
-  const outerStyle = !usePortalLayout ? {
-    // v1.3: chrome around the drill-in (title row + recipient banner)
-    // is hidden when screening is active, so the wordmark + nav +
-    // filter row are the only chrome above us. Tighter constant
-    // keeps the action bar in the visible viewport without scroll.
-    display: "flex", flexDirection: "column",
-    width: "100%",
-    height: "calc(100vh - 150px)",
-    minHeight: 520,
-    background: "var(--bg)",
-    border: "0.5px solid var(--border)",
-    borderRadius: 12,
-    overflow: "hidden",
-    fontFamily: SANS_STACK,
-    position: "relative",
-  } : {
+  // All modes render as a fullscreen portal (Mark feedback
+  // 2026-05-15 desktop audit: "feels like a tiny card in the middle
+  // of a huge screen. The mobile version works really well as it's
+  // more immersive"). Previously list mode rendered inline inside
+  // the drill-in on desktop to preserve nav context, but the card
+  // ended up ~33% of the available viewport with chrome dominating
+  // the rest. Portal takeover trades nav context for visual focus —
+  // the screener header already carries an Exit button for return.
+  const outerStyle = {
     position: "fixed", inset: 0, zIndex: 2000,
     background: "var(--bg)",
     display: "flex", flexDirection: "column",
@@ -581,11 +568,16 @@ export function ListReviewMode({
             {/* Image stack with peek behind. Desktop card sized so
                 the image + side details + bottom action bar all fit
                 in a typical desktop viewport without scroll (Mark
-                feedback 2026-05-13). Was 520 → 420. */}
+                feedback 2026-05-13 was 520→420). After the 2026-05-15
+                portal-fullscreen flip the screener takes the entire
+                viewport, so the card has the full vertical real
+                estate (~700+) and we can step back up. 520 brings
+                the card weight closer to mobile parity (where the
+                card is ~85% of the viewport width). */}
             <div style={{
               position: "relative",
               width: "100%",
-              maxWidth: isWide ? 420 : 380,
+              maxWidth: isWide ? 520 : 380,
               flexShrink: 0,
               alignSelf: "center",
               zIndex: 1,
@@ -709,7 +701,7 @@ export function ListReviewMode({
               style={{
                 display: "block",
                 width: "100%",
-                maxWidth: isWide ? 380 : 480,
+                maxWidth: isWide ? 440 : 480,
                 textAlign: isWide ? "left" : "center",
                 flexShrink: 0,
                 minWidth: 0,
@@ -884,8 +876,7 @@ export function ListReviewMode({
   );
 
   if (typeof document === "undefined") return null;
-  if (!usePortalLayout) return overlay;                  // inline content surface
-  return createPortal(overlay, document.body);           // fullscreen portal
+  return createPortal(overlay, document.body);
 }
 
 // ── Helpers ─────────────────────────────────────────────────────
