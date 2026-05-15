@@ -1276,6 +1276,14 @@ export default function Watchlist() {
   // land) and stores its id on the screener state.
   const handleReviewCatalog = useCallback(async (auction) => {
     if (!auction?.url) return;
+    // Don't create a phantom empty list. The AuctionCalendar gates
+    // the Review button on lotCount > 0, but the url→lots lookup can
+    // still return zero (e.g. all lots sold/hidden between count
+    // computation and tap, or the calendar URL doesn't match the
+    // lots' auction_url field — Antiquorum currently. Mirrors the
+    // guard already on handleAddCatalogToList.
+    const lots = lotsByAuctionUrl.get(auction.url) || [];
+    if (lots.length === 0) return;
     if (!user) {
       // Signed-out: prompt sign-in instead of trying to create a list.
       setSignInPromptOpen(true);
@@ -1294,7 +1302,7 @@ export default function Watchlist() {
     } finally {
       setAuctionActionBusyUrl(null);
     }
-  }, [user, collectionsApi]);
+  }, [user, collectionsApi, lotsByAuctionUrl]);
 
   // Bulk-add every lot from the catalog into the auction's auto-list.
   // Idempotent — the unique (collection_id, listing_id) index on
@@ -3347,7 +3355,20 @@ export default function Watchlist() {
   // allFiltered.length, which made the badge wildly misleading on the
   // Watchlist tab when no filters were on (showing the full ~1,800-item
   // dealer feed count next to a saved set of a few dozen).
-  const displayedCount = tab === "watchlist" ? watchItems.length : allFiltered.length;
+  // When drilled into a real user-created list, show that list's
+  // item count — pre-fix any drill-in showed the global saved-set
+  // count (e.g. "311 watches") regardless of how many items the
+  // drilled-in list actually contained. The synthetic __saved__ /
+  // __hidden__ rows keep the previous dispatch (for __saved__ the
+  // saved-set count IS the right answer; Hidden's drill-in body
+  // shows its own count below the chrome).
+  const drillInCollectionCount =
+    colDrillInId && colDrillInId !== "__hidden__" && colDrillInId !== "__saved__"
+      ? (collectionsApi.itemsByCollection?.[colDrillInId]?.length ?? null)
+      : null;
+  const displayedCount = drillInCollectionCount != null
+    ? drillInCollectionCount
+    : (tab === "watchlist" ? watchItems.length : allFiltered.length);
 
   const shellProps = {
     // Catalog / config
