@@ -126,6 +126,6 @@ const iconActionBtnStyle = {
 // Disc-tint lookup keyed by stroke accent. Two tones for now (brand
 // blue + draft gold); add new entries as new surfaces adopt the row.
 const ACCENT_TINTS = {
-  "var(--brand)": "rgba(24,95,165,0.08)",
-  "#c9a227": "rgba(201,162,39,0.10)",
+  "var(--brand)": "var(--brand-tint-08)",
+  "#c9a227": "var(--accent-warn-tint-10)",
 };

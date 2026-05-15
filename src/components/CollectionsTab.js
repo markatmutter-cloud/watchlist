@@ -2532,7 +2532,7 @@ const REACTION_GLYPH = {
   ),
 };
 const REACTION_COLOR = {
-  "❤️": "#e0322b",
+  "❤️": "var(--heart)",
   "👍": "var(--brand)",
   "❌": "var(--text3)",
 };

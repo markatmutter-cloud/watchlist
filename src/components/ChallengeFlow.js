@@ -878,7 +878,7 @@ function CompleteStage({ challenge, items, onShareSpec, onShareComplete, onBack,
       <div style={{
         background: "var(--card-bg)",
         borderRadius: 12, border: "0.5px solid var(--border)",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)",
+        boxShadow: "var(--shadow-modal)",
         padding: 18,
       }}>
         <div style={{

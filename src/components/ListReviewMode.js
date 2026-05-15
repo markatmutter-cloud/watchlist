@@ -1085,7 +1085,7 @@ function OnboardingCard({ ownerName, total, onDismiss }) {
           <IntroRow color="var(--danger)" glyph="←">
             <strong>Pass</strong> — swipe left or tap Pass. Not for you.
           </IntroRow>
-          <IntroRow color="#d92626" glyph="♥">
+          <IntroRow color="var(--heart)" glyph="♥">
             <strong>Heart</strong> — tap to save to your watchlist. Independent from this list.
           </IntroRow>
           <IntroRow color="var(--text2)" glyph="↗">
@@ -1242,7 +1242,7 @@ function RecapView({ tally, total, ownerName, listName, onClose, mode }) {
             value={tally.yes}
             color="var(--brand)" />
         )}
-        <TallyCard label="Hearted" value={tally.hearted} color="#d92626" />
+        <TallyCard label="Hearted" value={tally.hearted} color="var(--heart)" />
         <TallyCard label="Pass" value={tally.pass} color="var(--text2)" />
       </div>
       <div style={{
@@ -1321,7 +1321,7 @@ const subtleLinkStyle = {
 // language matches the bottom action buttons + the per-card
 // aggregate cluster in the list view.
 function TallyChip({ emoji, count }) {
-  const color = emoji === "❤️" ? "#e0322b"
+  const color = emoji === "❤️" ? "var(--heart)"
               : emoji === "👍" ? "var(--brand)"
               : "var(--text3)";
   return (
