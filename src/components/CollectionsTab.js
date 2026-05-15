@@ -127,7 +127,6 @@ export function CollectionsTab({
   // defined". `tabResetTick` is now in the destructure list above.)
   useEffect(() => {
     if (tabResetTick && tabResetTick > 0) setSelectedListId(null);
-    // eslint-disable-next-line
   }, [tabResetTick]);
 
   // URL-sync drill-in id (Lists sub-tab only). Same pattern as
@@ -1493,7 +1492,6 @@ function ListsView({
       });
     return () => { cancelled = true; };
   // userCols.length is the cheap signal that a list was added/removed.
-  // eslint-disable-next-line
   }, [user?.id, userCols.length]);
 
   // Hidden synthetic row retired 2026-05-07 (Mark feedback): user-
