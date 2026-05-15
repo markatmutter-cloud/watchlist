@@ -753,14 +753,14 @@ The screening primitive ported to two new surfaces:
   with the (live, non-hidden, newest-first, cap-50) queue.
   Yes = heart, Pass = skip. `markFeedSeen` fires on open so
   the banner clears immediately, regardless of close path.
-- **Auction catalogs (`mode="auction"`).** Every auction
-  calendar row has three inline actions: View catalog (external),
-  Add to list (bulk-add every lot to the auto-list), Review
-  (open the screener). Yes-swipe in Review = append to the
-  auction's auto-list (NOT heart — that's the next pivot
-  per Mark spec, see "Auction Review as list-mode screening"
-  below). Heart = watchlist. Past auctions also expose Review
-  + Add for retrospective browsing.
+- **Auction catalogs (`mode="list"` against the auction's auto-list,
+  post-#310 2026-05-15).** Every auction calendar row has three
+  inline actions: View catalog (external), Add to list (bulk-add
+  every lot to the auto-list), Review (bulk-add + auto-open the
+  screener in mode="list" so Pass items survive in the Disliked
+  bucket like a shared-list review). Heart = watchlist. Past auctions
+  also expose Review + Add for retrospective browsing. The bespoke
+  `mode="auction"` branch was retired in #310.
 
 Schema for the auction catalog system:
 - `collections.type='auction'` valid value.
@@ -772,20 +772,21 @@ Schema for the auction catalog system:
 - New **AUCTION CATALOGS** group in Watchlists > Lists for
   `type='auction'` collections.
 
-### Auction Review as list-mode screening (queued, Mark 2026-05-15)
+### Auction Review as list-mode screening (SHIPPED PR #310, 2026-05-15)
 
-Mark's revised model: Review should bulk-add ALL lots to the
-auction list first, then open the screener in `mode="list"`
-(not `mode="auction"`). Yes/Pass write reactions on the list's
-items; the list ends up with 274 items, each in a Liked / Open /
-Disliked bucket. Pass items survive in the list rather than
-being skipped + lost. Same UX as reviewing a shared list a
-friend sent you.
+Review on an auction calendar row bulk-adds ALL lots into the
+auction's auto-list (idempotent on re-tap), navigates to Watchlists
+> Lists > [the auction list], auto-opens the screener in
+`mode="list"`. Yes/Pass write 👍/❌ reactions on the list's items so
+Pass items survive in the Disliked bucket like a shared-list review.
 
-Implementation needs: extend `isSharedList` (or add a parallel
-`screensEnabled`) to include `type='auction'` so reactions +
-buckets work on a solo auction list. Drops the bespoke
-`mode="auction"` branch in `ListReviewMode` once shipped.
+Implementation: new `screensEnabled = isSharedList || isAuctionList`
+predicate in ListsView (drives Review button, ReactionStrip,
+sentiment buckets, screener mounting). Reactions effect gate widened
+to load on auction lists. New `pendingReviewListId` /
+`clearPendingReviewList` prop pair threads App → CollectionsTab →
+ListsView (mirrors `pendingChallengeDrillId` hand-off). The bespoke
+`mode="auction"` branch in `ListReviewMode` was retired.
 
 ### Reviewer / Writer journey (queued, Mark 2026-05-12)
 

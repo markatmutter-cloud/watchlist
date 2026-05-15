@@ -464,3 +464,178 @@ first pass before committing to detection architecture.
   when the Share tab retired. Reminder that comments that name
   specific surfaces / counts go stale fast; better to describe the
   invariant than the current implementation count.
+
+---
+
+# Evening continuation (2026-05-15 night)
+
+Picked up from the maintenance addendum. Four PRs landed in this
+session — three merged, one open + green. Mobile visual audit kicked
+off by Mark via 28 phone screenshots. Mark plans a parallel desktop-
+audit session starting now and will hold those merges until mobile
+work finishes.
+
+## PRs this session
+
+| PR | Title | Status |
+|---|---|---|
+| #309 | Loupe This: drop unpublished lots, fall back to last bid, scrape at close | merged |
+| #310 | #55 Auction Review as list-mode screening | merged |
+| #311 | Mobile home: shrink section headings 18→16; right-edge fade on slider strips | merged |
+| #312 | WatchDetailSheet: sticky header + density pass (#9) | **open · CI green · ready to merge** |
+
+## Workflow / migration changes
+
+- **Loupe This frequent refresh.** `scrape-auction-lots-frequent.yml`
+  gained a `0 17 * * *` cron + a `loupethis_scraper.py` step + a
+  `public/loupethis_lots.json` add to the commit. Realised hammer
+  prices on Loupe This lots (every lot ends 16:00–16:35 UTC daily)
+  now land within 25–60 min of close instead of 4 hours later.
+
+## Architectural notes
+
+### Auction Review as list-mode screening (#55, PR #310)
+
+Replaces the bespoke `mode="auction"` ListReviewMode with the
+existing list-mode flow against the auction's auto-list. Tap Review
+on an auction calendar row → bulk-add ALL lots into the auction's
+auto-list (idempotent on re-tap) → navigate to Watchlists > Lists >
+[the auction list] → screener auto-opens in `mode="list"`. Yes/Pass
+write 👍/❌ to `collection_item_reactions`; Pass items survive in
+the Disliked bucket like a shared-list review.
+
+Code shape:
+- `screensEnabled = isSharedList || isAuctionList` predicate in
+  ListsView. Drives Review button, ReactionStrip per-card, sentiment
+  buckets, ListReviewMode mounting. `isSharedList` preserved for
+  recipient-only branches (banner copy, ❤️ love-sync) since auction
+  lists are solo by definition.
+- Reactions effect gate widened to load `reactionsByItem` when
+  `memberCount >= 2` OR `selected.type === 'auction'`. Solo non-
+  auction lists still skip the load.
+- `pendingReviewListId` / `clearPendingReviewList` prop pair threaded
+  App → CollectionsTab → ListsView. Mirrors the
+  `pendingChallengeDrillId` hand-off pattern. Two-stage consume:
+  drill in, then open the screener once items have appeared in
+  `itemsByColl` (avoids mounting against an empty queue).
+- `mode="auction"` branch dropped from ListReviewMode entirely
+  (onYesAdd, sessionAddedSet, "Add" label, Recap "Added" tile, the
+  auction portal-layout override). Net negative LOC.
+
+### Loupe This stale-price + unpublished-lot fixes (PR #309)
+
+- **Bug 1 (USD 0 on Today sold).** App.js's reverse-direction
+  override flips lots to ended once `auction_end < now`, but the
+  scraper hadn't re-run since close so `sold_price` was still null
+  and the price chain bottomed at 0. Fix: extended the chain to fall
+  back to `current_bid` on stuck-ended lots in BOTH projection
+  blocks (`auctionLotItems` and the watchlist projection in App.js).
+- **Bug 2 (unpublished future lots 404).** Loupe This API returns
+  lots up to 14 days out; the public site only renders lots whose
+  `starts_at` has passed. Filter `starts_at > now` in
+  `project_lot` drops the 41 phantom rows.
+- **Cadence fix.** Added Loupe This to the frequent-refresh workflow
+  (was only in the daily 06:00 UTC main workflow) + new 17:00 UTC
+  pass for the Loupe This close window.
+
+### WatchDetailSheet sticky header + density (#9, PR #312)
+
+- Sticky header (title + close ×) pinned to the top of the sheet —
+  no more "where's the close button?" once you've scrolled. Safe-
+  area inset moved onto the sticky header so the iOS status-bar
+  clear travels with it.
+- Density pass: photo block 120→96, section label marginTop 18→12,
+  field padding 8x10→7x10, lineHeight 1.5→1.4. ~65px more visible
+  per viewport.
+
+## Mobile visual audit — outcome
+
+Mark provided 28 phone screenshots in `~/Desktop/Mobile Watchlist
+Screenshots/`. Findings + actions:
+
+**Shipped (PR #311, #312):**
+- Section heading 18→16 on home (Recently added etc.)
+- Right-edge fade on horizontal slider strips
+- WatchDetailSheet sticky header + density pass
+
+**Mark explicit "no change" decisions:**
+- #3 Wordmark (small TL on every page + large on landing) stays
+  as-is — small acts as link to home, large sets editorial theme
+- #4 Watchlist (singular) vs Watchlists (plural) drift is fine
+
+**Queued items (NOT in this session):**
+- #7 — Live Loupe This lots without bids show "USD 0" (e.g. Omega
+  Seamaster 300 with 12 days left in IMG_6533). Loupe This sets
+  `current_bid=null` when no bids; no estimates / starting_price
+  on this source; price chain bottoms at 0. Fix is at Card display
+  layer: render "No bids yet" or hide the price line entirely when
+  `price === 0` AND status live AND no estimates. Different code
+  path from PR #309's stuck-ended fix.
+- #5 Chrome stack tightening on Listings (~150px before first card)
+- #6 Active bottom-nav indicator too subtle (tiny blue dot)
+- #8 Challenge row truncation cuts off budget mid-string
+- #10 Add-to-collection picker info density (3 layers, "Watches
+  for Jackie" repeats across tabs + chips)
+- #11 Auction catalog drill-in card peek subtle
+- #12 Mobile safe-area / Safari toolbar overlap
+
+**UX trap surfaced:** the global search bar applies to list drill-
+ins via `applyDrillInFilters` (CollectionsTab.js:2686). When Mark
+had "Speedmaster" in the search bar from earlier and drilled into
+"Watches for Jackie" (51 watches), the drill-in showed empty →
+confusion ("watches for jackie in my lists seems to be empty").
+Pre-existing behavior (not introduced by any recent PR), but worth
+revisiting:
+- A. Keep current — drill-in respects global filters
+- B. Clear search on drill-in
+- C. Show a "Filtered to 0 of 51 — clear search" empty state
+Decision deferred — Mark said "ignore the empty list thing".
+
+## Parallel desktop audit (Mark, separate session)
+
+Mark started a separate session for desktop screenshot audit. Scope
+is desktop visual review + improvements; he's holding any merges
+from that session until mobile work concludes. The mobile pieces to
+finish first are the queued items above (#7 most actionable).
+
+For the desktop audit thread to consider as it lands:
+- WatchDetailSheet desktop is 540px max-width side panel — verify
+  the new sticky header + density changes (#312) feel right at that
+  width too. Same component, no isMobile branch in the new logic.
+- The right-edge fade on home slider strips (#311) ALSO applies on
+  desktop. Verify the 36px fade-to-`var(--bg)` doesn't obscure too
+  much of the rightmost card on wide viewports.
+- Section heading 18→16 also applies on desktop. Verify the home
+  page hierarchy still feels right with the smaller section banners.
+- The `screensEnabled` widening (#310) means auction lists now
+  surface the Review button + buckets on the Lists drill-in. Same
+  treatment on desktop.
+
+## Things still open
+
+- **#7 Loupe This live no-bid USD 0** — see audit section above
+- **#8 Lower-priority audit items** — see audit section above
+- **#55 Auction Review** — SHIPPED in #310, can drop from earlier
+  open list
+- **References (Epic 0)** — strategic next-feature; survey current
+  `listings.json` to empirically measure regex-parse hit rate
+  before committing to detection architecture
+- **Button consolidation** — 184 hand-rolled buttons skip
+  `actionButton` / `pillBase` / `iconButton`
+- **Eyebrow heading promotion** — 10-site re-roll
+- **Padding scale snap** — 16 distinct padding pairs
+
+## Process notes
+
+- **Image size cap.** Two screenshots Mark sent today were stripped
+  by the API ("image dimensions exceed max 2000px"). Standard
+  iPhone screenshots are fine; multi-monitor / wide captures need
+  resizing first (`Preview → Tools → Adjust Size → 2000 max`).
+- **GH Actions push-trigger glitch.** PR #309's tests didn't run on
+  the initial push. After close+reopen + an empty commit, they
+  fired. Whatever caused it was transient — every PR after that
+  triggered cleanly. Worth keeping an eye on but no action.
+- **Branch hygiene during the visual audit.** I lost a set of edits
+  during a `git checkout` shuffle while moving HomeTab.js between
+  branches. Re-applied from in-context but a reminder: stash before
+  branch checkouts that touch dirty working-tree files.
