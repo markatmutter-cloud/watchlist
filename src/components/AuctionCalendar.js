@@ -72,6 +72,7 @@ export function AuctionCalendar({
   onReviewCatalog,
   onAddToList,
   busyAuctionUrl,
+  isMobile = false,
 }) {
   // Archive expands on demand — past auctions accumulate forever and
   // the user typically wants the upcoming view first. localStorage
@@ -166,7 +167,8 @@ export function AuctionCalendar({
           lotCounts={lotCounts}
           onReviewCatalog={onReviewCatalog}
           onAddToList={onAddToList}
-          busyAuctionUrl={busyAuctionUrl} />
+          busyAuctionUrl={busyAuctionUrl}
+          isMobile={isMobile} />
       ))}
 
       {/* Archive — past auctions, collapsed by default. The same
@@ -199,7 +201,8 @@ export function AuctionCalendar({
               lotCounts={lotCounts}
               onReviewCatalog={onReviewCatalog}
               onAddToList={onAddToList}
-              busyAuctionUrl={busyAuctionUrl} />
+              busyAuctionUrl={busyAuctionUrl}
+              isMobile={isMobile} />
           ))}
         </div>
       )}
@@ -210,7 +213,7 @@ export function AuctionCalendar({
 // One month-banded section of the calendar. Lifted from the inline
 // map in 2026-05-10's calendar/Archive split — same render shape
 // reused for both upcoming and past sections.
-function MonthBlock({ group, firstBlock, archive = false, lotCounts = {}, onReviewCatalog, onAddToList, busyAuctionUrl }) {
+function MonthBlock({ group, firstBlock, archive = false, lotCounts = {}, onReviewCatalog, onAddToList, busyAuctionUrl, isMobile = false }) {
   return (
     <div style={{ marginBottom: 28 }}>
       <div style={{
@@ -232,7 +235,8 @@ function MonthBlock({ group, firstBlock, archive = false, lotCounts = {}, onRevi
             lotCount={lotCounts[a.url] || 0}
             onReviewCatalog={onReviewCatalog}
             onAddToList={onAddToList}
-            busy={busyAuctionUrl === a.url} />
+            busy={busyAuctionUrl === a.url}
+            isMobile={isMobile} />
         ))}
       </div>
     </div>
@@ -252,7 +256,7 @@ function MonthBlock({ group, firstBlock, archive = false, lotCounts = {}, onRevi
 //     in ListReviewMode)
 // On closed past auctions only View catalog renders — there's
 // nothing useful to add to a watchlist or review for upcoming.
-function AuctionRow({ a, archive, lotCount = 0, onReviewCatalog, onAddToList, busy }) {
+function AuctionRow({ a, archive, lotCount = 0, onReviewCatalog, onAddToList, busy, isMobile = false }) {
   const isLive   = a.status === "live";
   const isClosed = a.status === "past";
   const catalogAgeDays = a.catalogLiveAt
@@ -269,9 +273,43 @@ function AuctionRow({ a, archive, lotCount = 0, onReviewCatalog, onAddToList, bu
   // works (it's just an external link).
   const lotActionsAvailable = !isClosed && lotCount > 0;
 
+  // Action cluster — re-used for both layouts. Mobile drops it onto
+  // a second row below the title block (Mark report 2026-05-14: the
+  // 3-button cluster on a Christie's / Phillips row was crushing
+  // the title block; "expand the depth of the cards" so the buttons
+  // get their own breathing room).
+  const actionCluster = (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 6,
+      flexWrap: "wrap",
+      // Mobile: full-width row underneath the title block, padded
+      // inset on the left to clear the date block + tiny gap below
+      // the row above. Desktop: flush right of the title, vertically
+      // centered.
+      padding: isMobile ? "0 14px 12px" : "0 10px",
+      flexShrink: 0,
+      justifyContent: isMobile ? "flex-start" : "flex-end",
+    }}>
+      <ActionButton label="View catalog" onClick={openExternal} />
+      {lotActionsAvailable && onAddToList && (
+        <ActionButton label="Add to list"
+          onClick={() => onAddToList(a)}
+          disabled={busy} />
+      )}
+      {lotActionsAvailable && onReviewCatalog && (
+        <ActionButton label="Review"
+          onClick={() => onReviewCatalog(a)}
+          primary
+          disabled={busy} />
+      )}
+    </div>
+  );
+
   return (
     <div style={{
-      display: "flex", alignItems: "stretch",
+      display: "flex",
+      flexDirection: isMobile ? "column" : "row",
+      alignItems: "stretch",
       borderRadius: 12, overflow: "hidden",
       border: "0.5px solid var(--border)", background: "var(--card-bg)",
       color: "inherit", fontFamily: "inherit",
@@ -279,55 +317,45 @@ function AuctionRow({ a, archive, lotCount = 0, onReviewCatalog, onAddToList, bu
       opacity: archive ? 0.85 : 1,
       position: "relative",
     }}>
-      <AuctionDateBlock a={a} />
-      <div style={{ flex: 1, minWidth: 0, padding: "12px 14px",
-                  display: "flex", flexDirection: "column", justifyContent: "center", gap: 4 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 10, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>
-            {a.house}
-          </span>
-          {isLive && (
-            <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#c43", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>LIVE</span>
-          )}
-          {isClosed && (
-            <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#666", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>CLOSED</span>
-          )}
-          {catalogJustOpened && (
-            <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "var(--brand)", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>NEW CATALOG</span>
-          )}
-          {lotActionsAvailable && (
-            <span style={{ fontSize: 10, color: "var(--text3)", fontVariantNumeric: "tabular-nums" }}>
-              · {lotCount.toLocaleString()} lots
+      {/* Header row: date block + title block. Mobile keeps the
+          horizontal date/title pairing but loses the 3-button column
+          to its own row below. */}
+      <div style={{ display: "flex", alignItems: "stretch", minWidth: 0 }}>
+        <AuctionDateBlock a={a} />
+        <div style={{ flex: 1, minWidth: 0, padding: "12px 14px",
+                    display: "flex", flexDirection: "column", justifyContent: "center", gap: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 10, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>
+              {a.house}
             </span>
-          )}
+            {isLive && (
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#c43", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>LIVE</span>
+            )}
+            {isClosed && (
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#666", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>CLOSED</span>
+            )}
+            {catalogJustOpened && (
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "var(--brand)", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>NEW CATALOG</span>
+            )}
+            {lotActionsAvailable && (
+              <span style={{ fontSize: 10, color: "var(--text3)", fontVariantNumeric: "tabular-nums" }}>
+                · {lotCount.toLocaleString()} lots
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {a.title}
+          </div>
+          <div style={{ fontSize: 12, color: "var(--text2)",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {fmtSaleDateRange(a)}
+            {a.location ? ` · ${a.location}` : ""}
+          </div>
         </div>
-        <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {a.title}
-        </div>
-        <div style={{ fontSize: 12, color: "var(--text2)",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {fmtSaleDateRange(a)}
-          {a.location ? ` · ${a.location}` : ""}
-        </div>
+        {!isMobile && actionCluster}
       </div>
-      <div style={{
-        display: "flex", alignItems: "center", gap: 6,
-        padding: "0 10px", flexShrink: 0,
-      }}>
-        <ActionButton label="View catalog" onClick={openExternal} />
-        {lotActionsAvailable && onAddToList && (
-          <ActionButton label="Add to list"
-            onClick={() => onAddToList(a)}
-            disabled={busy} />
-        )}
-        {lotActionsAvailable && onReviewCatalog && (
-          <ActionButton label="Review"
-            onClick={() => onReviewCatalog(a)}
-            primary
-            disabled={busy} />
-        )}
-      </div>
+      {isMobile && actionCluster}
     </div>
   );
 }
