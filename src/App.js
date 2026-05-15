@@ -2927,9 +2927,8 @@ export default function Watchlist() {
   // Top-level Share tab retired 2026-05-14 (Mark spec). Its two roles
   // — discovery of incoming shared lists + send-a-list CTA — were
   // absorbed by Watchlists > Lists (SHARED WITH ME group) and the
-  // per-list Share button respectively. `?tab=share` URLs redirect
-  // to Watchlists. `SharedTab` component file kept in case a future
-  // dedicated share-activity surface earns its slot back.
+  // per-list Share button respectively. `?tab=share` URLs fall through
+  // to the default tab via TAB_VALUES's includes-check.
 
   const collectionsTabJSX = (
     <CollectionsTab

@@ -1991,9 +1991,7 @@ function ListsView({
         {/* ListManagePanel retired 2026-05-14 — its actions (Resume
             screening / Reset / View) are now first-class header
             buttons (Share / Review / Reset) plus the bucket-default-
-            grid change makes the view toggle unnecessary. The
-            ./ListManagePanel.js component file stays in case a
-            future surface wants it. */}
+            grid change makes the view toggle unnecessary. */}
       </div>
     );
   }
