@@ -2550,6 +2550,7 @@ export default function Watchlist() {
         onReviewCatalog={handleReviewCatalog}
         onAddToList={handleAddCatalogToList}
         busyAuctionUrl={auctionActionBusyUrl}
+        isMobile={isMobile}
       />
     </div>
   );
@@ -3386,6 +3387,12 @@ export default function Watchlist() {
           primaryCurrency={primaryCurrency}
           reactionsByItem={new Map()}
           onToggleReaction={() => {}}
+          // Per-card affordances (Mark feedback 2026-05-14): the
+          // screener was heart-only; add the standard ⋯ menu via
+          // these three props so users can also Add to list / Share
+          // / View listing without leaving the screener.
+          openCollectionPicker={user ? openCollectionPicker : undefined}
+          onShare={handleShare}
           onClose={() => {
             setFeedScreenerOpen(false);
             markFeedSeen();
@@ -3408,6 +3415,10 @@ export default function Watchlist() {
           primaryCurrency={primaryCurrency}
           reactionsByItem={new Map()}
           onToggleReaction={() => {}}
+          // Per-card affordances (Mark feedback 2026-05-14): expose
+          // the standard ⋯ menu inside the screener.
+          openCollectionPicker={user ? openCollectionPicker : undefined}
+          onShare={handleShare}
           onYesAdd={(item) => {
             if (!auctionScreenerState.targetCollectionId) return;
             // Fire-and-forget — the screener has already advanced;
