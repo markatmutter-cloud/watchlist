@@ -10,7 +10,6 @@ import {
   shortHash,
   matchesSearch,
   FORCE_OTHER_BRANDS, SUPPRESS_AT_SOLD_BRANDS,
-  buildFeedbackMailto, captureFeedbackContext,
 } from "./utils";
 import { useWidth, useSystemDark } from "./hooks";
 import { useTrackModal } from "./hooks/useTrackModal";
@@ -2146,88 +2145,168 @@ export default function Watchlist() {
     </div>
   ) : (
     <div style={{ position: "relative" }}>
-      {/* Avatar — circle initial, no chevron. Mark feedback
-          2026-05-07: chevron didn't read as a menu hint as
-          intended; reverted to plain initial circle. The
-          aria-label + title still convey "Account menu" for
-          assistive tech / hover. */}
-      <button onClick={() => setShowUserMenu(o => !o)}
-        aria-label="Account menu"
-        title="Account menu"
-        style={{
-          width: isMobile ? 40 : 32, height: isMobile ? 40 : 32, borderRadius: "50%",
-          border: "0.5px solid var(--border)", background: "var(--surface)",
-          color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-          fontSize: isMobile ? 14 : 13, fontWeight: 600,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0,
-        }}>
-        {userInitial.toUpperCase()}
-      </button>
+      {/* Desktop: brand-tinted pill that wraps the avatar initial +
+          a visible "Watchbox" label, so users discover where the
+          Watchbox lives (Mark feedback 2026-05-14 — the bare initial
+          gave no hint there was a primary destination behind it).
+          Mobile keeps the small initial circle to preserve the
+          tight top-bar layout — the dropdown reveals Watchbox as
+          its highlighted primary entry. */}
+      {!isMobile ? (
+        <button onClick={() => setShowUserMenu(o => !o)}
+          aria-label="Watchbox · Account menu"
+          title="Watchbox · Account menu"
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            height: 36, padding: "3px 14px 3px 3px",
+            borderRadius: 999,
+            border: "0.5px solid var(--brand)",
+            background: showUserMenu ? "var(--brand-tint-12)" : "transparent",
+            color: "var(--brand)", cursor: "pointer", fontFamily: "inherit",
+            flexShrink: 0,
+            transition: "background 120ms ease",
+          }}>
+          <span style={{
+            width: 28, height: 28, borderRadius: "50%",
+            background: "var(--brand)", color: "#fff",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            fontSize: 13, fontWeight: 600,
+            flexShrink: 0,
+          }}>
+            {userInitial.toUpperCase()}
+          </span>
+          <span style={{
+            fontSize: 13, fontWeight: 600, letterSpacing: "0.01em",
+            color: "var(--brand)",
+          }}>
+            Watchbox
+          </span>
+        </button>
+      ) : (
+        <button onClick={() => setShowUserMenu(o => !o)}
+          aria-label="Watchbox · Account menu"
+          title="Watchbox · Account menu"
+          style={{
+            width: 40, height: 40, borderRadius: "50%",
+            border: "0.5px solid var(--brand)",
+            background: showUserMenu ? "var(--brand-tint-12)" : "var(--surface)",
+            color: "var(--brand)", cursor: "pointer", fontFamily: "inherit",
+            fontSize: 14, fontWeight: 600,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+          {userInitial.toUpperCase()}
+        </button>
+      )}
       {showUserMenu && (
         <div style={{
-          position: "absolute", right: 0, top: isMobile ? 46 : 38, zIndex: 50,
+          position: "absolute", right: 0, top: isMobile ? 46 : 42, zIndex: 50,
           // Always open downward — both desktop and mobile buttons live in
           // the top header now, so opening up would push the menu off the
           // top of the viewport.
           background: "var(--bg)", border: "0.5px solid var(--border)",
-          borderRadius: 10, padding: 8, minWidth: 200,
+          borderRadius: 12, padding: 10, minWidth: 240,
           boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
         }}>
-          <div style={{ fontSize: 11, color: "var(--text3)", padding: "4px 8px" }}>Signed in as</div>
-          <div style={{ fontSize: 13, color: "var(--text1)", padding: "0 8px 8px",
+          {/* Identity header — small eyebrow + name. */}
+          <div style={{ fontSize: 10, color: "var(--text3)", letterSpacing: "0.12em",
+                       textTransform: "uppercase", fontWeight: 600,
+                       padding: "2px 8px" }}>
+            Signed in as
+          </div>
+          <div style={{ fontSize: 13, color: "var(--text1)", padding: "2px 8px 8px",
                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {userName}
           </div>
-          <div style={{ height: "0.5px", background: "var(--border)", margin: "4px -8px 4px" }} />
+
           {/* Watchbox — primary destination, lifted out of the
-              Watchlists sub-tabs (Mark spec 2026-05-14, eBay analogy:
-              "kind of like my ebay"). No pill in the main nav strip;
-              the avatar dropdown is the canonical entry point. Bold
-              + tinted disc icon so it reads as the menu's primary
-              action vs the muted About / Settings rows. */}
+              Watchlists sub-tabs on 2026-05-14. Brand-tinted card +
+              chevron so it reads visually as THE main action of the
+              menu (Mark feedback 2026-05-14: "make watchbox more
+              clearly the main part of this menu stack"). About /
+              Settings / Admin sit visually below as utilities. */}
           <button onClick={() => { setShowUserMenu(false); setTab("watchbox"); setPage(1); }}
-            style={{ display: "flex", alignItems: "center", gap: 10,
+            style={{ display: "flex", alignItems: "center", gap: 12,
                     width: "100%", textAlign: "left",
-                    padding: "8px", border: "none", background: "transparent",
-                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 14, fontWeight: 600, borderRadius: 6 }}>
+                    padding: "10px 12px", border: "0.5px solid var(--brand)",
+                    background: "var(--brand-tint-12)",
+                    color: "var(--brand)", cursor: "pointer", fontFamily: "inherit",
+                    fontSize: 15, fontWeight: 600, borderRadius: 10 }}>
             <span style={{
-              width: 24, height: 24, borderRadius: "50%",
-              background: "var(--brand-tint-12)", color: "var(--brand)",
+              width: 30, height: 30, borderRadius: "50%",
+              background: "var(--brand)", color: "#fff",
               display: "inline-flex", alignItems: "center", justifyContent: "center",
               flexShrink: 0,
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="2"
                 strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="7"/>
                 <path d="M12 8v4l2 2"/>
               </svg>
             </span>
-            Watchbox
+            <span style={{ flex: 1 }}>Watchbox</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"
+              aria-hidden="true" style={{ flexShrink: 0 }}>
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
           </button>
-          <div style={{ height: "0.5px", background: "var(--border)", margin: "4px -8px 4px" }} />
-          {/* About Watchlist — surfaced as a top-level dropdown entry
-              (Mark feedback 2026-05-07: "have About Watchlist not
-              hidden under Settings"). Settings keeps a fallback entry
-              too so existing muscle memory still works. */}
-          <button onClick={() => { setShowUserMenu(false); setAboutModalOpen(true); }}
-            style={{ display: "block", width: "100%", textAlign: "left",
-                    padding: "6px 8px", border: "none", background: "transparent",
-                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 13, borderRadius: 6 }}>
-            About Watchlist
-          </button>
-          {/* View-settings inline (2026-05-09 Mark feedback) — currency,
-              theme, columns surface directly in the desktop dropdown
-              rather than behind a Settings modal hop. On mobile the
-              same controls live in the filter drawer (per Mark's
-              "filter tray" preference); a fallback Settings entry
-              stays in the mobile dropdown for surfaces where the
-              filter button isn't shown. */}
+
+          {/* Utilities section — About + sign out, simple flat rows. */}
+          <div style={{ marginTop: 8 }}>
+            <button onClick={() => { setShowUserMenu(false); setAboutModalOpen(true); }}
+              style={{ display: "block", width: "100%", textAlign: "left",
+                      padding: "8px 12px", border: "none", background: "transparent",
+                      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                      fontSize: 13, borderRadius: 6 }}>
+              About Watchlist
+            </button>
+            {isAdmin && (
+              // Site Stats is admin-only — shown only to Mark.
+              <button onClick={() => { setShowUserMenu(false); setTab("admin"); setPage(1); }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+                        gap: 8, width: "100%", textAlign: "left",
+                        padding: "8px 12px", border: "none", background: "transparent",
+                        color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                        fontSize: 13, fontWeight: 500, borderRadius: 6 }}>
+                <span>Site stats</span>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em",
+                              textTransform: "uppercase", color: "var(--bg)",
+                              background: "var(--text1)",
+                              padding: "2px 6px", borderRadius: 4 }}>
+                  Admin
+                </span>
+              </button>
+            )}
+            <button onClick={() => { setShowUserMenu(false); signOut(); }}
+              style={{ display: "block", width: "100%", textAlign: "left",
+                      padding: "8px 12px", border: "none", background: "transparent",
+                      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                      fontSize: 13, borderRadius: 6 }}>
+              Sign out
+            </button>
+          </div>
+
+          {/* View settings — visually contained card (Mark spec
+              2026-05-14): currency / theme / columns. Surfaced
+              inline on desktop so users can flip these without a
+              modal hop; mobile shows a "Display settings" button
+              that opens the SettingsModal instead (filter drawer
+              owns most of those toggles already on mobile). */}
           {!isMobile ? (
-            <div style={{ padding: "8px 8px 4px" }}>
+            <div style={{
+              marginTop: 10,
+              padding: "10px 12px",
+              border: "0.5px solid var(--border)",
+              borderRadius: 10,
+              background: "var(--surface)",
+            }}>
+              <div style={{ fontSize: 10, color: "var(--text3)",
+                          letterSpacing: "0.12em", textTransform: "uppercase",
+                          fontWeight: 600, marginBottom: 6 }}>
+                View settings
+              </div>
               <ViewSettingsControls
                 primaryCurrency={primaryCurrency}
                 setPrimaryCurrency={setPrimaryCurrency}
@@ -2245,62 +2324,13 @@ export default function Watchlist() {
           ) : (
             <button onClick={() => { setShowUserMenu(false); setSettingsModalOpen(true); }}
               style={{ display: "block", width: "100%", textAlign: "left",
-                      padding: "6px 8px", border: "none", background: "transparent",
+                      marginTop: 4,
+                      padding: "8px 12px", border: "none", background: "transparent",
                       color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
                       fontSize: 13, borderRadius: 6 }}>
               Display settings
             </button>
           )}
-          <div style={{ height: "0.5px", background: "var(--border)", margin: "8px -8px 4px" }} />
-          {isAdmin && (
-            // Site Stats is admin-only — shown only to Mark. Mark
-            // feedback 2026-05-11: lift this back up the visual
-            // hierarchy. (Earlier feedback had it muted + italic;
-            // newer ask is to make admin entries more prominent.)
-            // Same weight + colour as the other menu items now,
-            // with a small "ADMIN" eyebrow chip on the right so the
-            // role of the entry stays unambiguous.
-            <button onClick={() => { setShowUserMenu(false); setTab("admin"); setPage(1); }}
-              style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-                      gap: 8, width: "100%", textAlign: "left",
-                      padding: "6px 8px", border: "none", background: "transparent",
-                      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                      fontSize: 13, fontWeight: 500, borderRadius: 6 }}>
-              <span>Site stats</span>
-              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em",
-                            textTransform: "uppercase", color: "var(--bg)",
-                            background: "var(--text1)",
-                            padding: "2px 6px", borderRadius: 4 }}>
-                Admin
-              </span>
-            </button>
-          )}
-          {/* Report-a-bug entry — fires the contextualized mailto so
-              Mark + future reporters get URL + currency + browser
-              prefilled in the body. Same helper backs the AboutModal
-              feedback link so the two surfaces stay in lockstep. */}
-          <button onClick={() => {
-            setShowUserMenu(false);
-            const href = buildFeedbackMailto({
-              subject: "Watchlist bug report",
-              opening: "Describe what you saw and what you expected:\n\n",
-              contextLines: captureFeedbackContext({ primaryCurrency }),
-            });
-            try { window.location.href = href; } catch {}
-          }}
-            style={{ display: "block", width: "100%", textAlign: "left",
-                    padding: "6px 8px", border: "none", background: "transparent",
-                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 13, borderRadius: 6 }}>
-            Report a bug
-          </button>
-          <button onClick={() => { setShowUserMenu(false); signOut(); }}
-            style={{ display: "block", width: "100%", textAlign: "left",
-                    padding: "6px 8px", border: "none", background: "transparent",
-                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 13, borderRadius: 6 }}>
-            Sign out
-          </button>
         </div>
       )}
     </div>
