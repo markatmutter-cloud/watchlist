@@ -20,8 +20,9 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 ## What it does
 
-Three top-level tabs in the main nav, plus a fourth top-level destination reached via the avatar dropdown (with internal-vs-UI naming divergence — see CLAUDE.md):
+Three top-level tabs in the main nav, plus a Home landing reached via the wordmark, a Watchbox destination reached via the avatar dropdown, and an admin-only Site stats surface. Internal-vs-UI naming divergence is real and documented in CLAUDE.md (the URLs use the rebranded names; internal state still says the old ones).
 
+- **Home** *(URL `?tab=home`; reached via the wordmark)* — landing surface with horizontal-slider strips of recently-added listings + thematic groups, plus a "N new listings since {date} — Start screening" banner that opens a fullscreen screener over the new arrivals.
 - **Listings** *(URL `?tab=listings`)* — aggregates 38 curated dealer sources + targeted eBay searches + the four major auction houses' active lots (Antiquorum, Christie's, Sotheby's, Phillips) into one feed. Sub-tabs: Live listings (dealer items) / Live auctions (auction lots, ending-soonest) / All sold / Auction calendar. Each calendar row has three inline actions: **View catalog** (external link), **Add to list** (bulk-add every lot to a user-private auction catalog list), **Review** (Tinder-swipe through the catalog).
 - **Watchlists** *(URL `?tab=saved`; internal key `watchlist`)* — three sub-tabs covering saved-from-feed surfaces and lists:
   - **Lists** *(default)* — user-created lists by reference, theme, research thread, plus a "Shared with me" inbox for single-listing shares and **Auction catalogs** populated by the Listings calendar's Review / Add to list actions. Email-invite collaborators with viewer / editor roles.
@@ -87,14 +88,17 @@ Plus:
             ┌─────────────────┴────────────────┐
             ▼                                  ▼
      Browser fetches JSON                 Supabase (Postgres + Auth)
-       — filter/sort/state                  — watchlist_items
-       lives in React                       — hidden_listings
+       — filter/sort/state                  Per-user data, all RLS-gated:
+       lives in React                       — watchlist_items / hidden_listings
                                             — saved_searches (with $ band)
                                             — collections + collection_items
                                             — collection_collaborators
-                                            — listing_events / _daily
-                                            — admin_emails / user_limits
-                                            — Google OAuth, RLS per-user
+                                            — collection_item_reactions / _comments
+                                            — listing_events / _daily (telemetry)
+                                            — user_profiles / user_settings / user_limits
+                                            — admin_emails / admin_hidden_listings
+                                            — tracked_lots (eBay only)
+                                            — Google OAuth provider
 ```
 
 Listings/auctions are static JSON committed to the repo. The only thing behind a server is per-user data (watchlist, hidden listings, saved searches, collections + items, collaborator invites, listing events for admin analytics), which lives in Supabase with row-level security so each user can only read/write their own rows. Anonymous visitors can browse and search; signing in unlocks saving.
@@ -230,13 +234,19 @@ watchlist/
 │   ├─ favicon-32.png              # browser tab favicon
 │   └─ index.html
 ├─ supabase/
-│   └─ schema/                     # SQL migrations — paste into Supabase SQL editor
-│       ├─ 2026-05-01_collections.sql  # collections + collection_items tables
-│       └─ 2026-05-03_challenges.sql   # Watch Challenges columns (target_count, budget, is_pick, reasoning, …)
+│   └─ schema/                     # 30+ SQL migrations dated by ship date.
+│                                  # Apply via the Supabase MCP `apply_migration`
+│                                  # tool or the dashboard SQL editor. The
+│                                  # foundational ones are 2026-05-01_collections
+│                                  # (collections + collection_items) and
+│                                  # 2026-05-03_challenges (Watch Challenges
+│                                  # columns); subsequent migrations layer on
+│                                  # hard lists, manual entries, reactions,
+│                                  # collaborators, RLS hardening, perf indexes.
 ├─ src/
-│   ├─ App.js                      # orchestrator — owns state, builds shellProps, delegates to shells
-│   ├─ supabase.js                 # auth + per-user data hooks
-│   ├─ styles.js                   # shared inline-style tokens (pillBase, modalShell, ...)
+│   ├─ App.js                      # orchestrator — owns state, builds shellProps, delegates to shells (~3300 lines)
+│   ├─ supabase.js                 # auth + per-user data hooks (~1900 lines)
+│   ├─ styles.js                   # shared inline-style tokens (pillBase, modalShell, actionButton, ...)
 │   ├─ utils.js                    # pure helpers + constants (matchesSearch, ageBucketFromDate, ...)
 │   ├─ hooks.js                    # useWidth, useSystemDark (DOM-tracker hooks)
 │   ├─ setupTests.js               # jest setup — auto-loaded
@@ -244,33 +254,53 @@ watchlist/
 │   ├─ hooks/                      # domain-state hooks
 │   │   ├─ useTrackModal.js        #   Track new item modal state + submit
 │   │   ├─ useFavSearchModal.js    #   Save-search prompt state + submit
-│   │   ├─ useViewSettings.js      #   theme + column count (View popover folded into Settings)
-│   │   └─ useFilters.js           #   the filter row's full input state
+│   │   ├─ useViewSettings.js      #   theme + column count
+│   │   ├─ useFilters.js           #   the filter row's full input state
+│   │   ├─ useLastVisit.js         #   "new since last visit" tracker for the Home screener banner
+│   │   ├─ useUserLimit.js         #   per-user watchlist cap state + soft/hard-warn thresholds
+│   │   └─ useEventTelemetry.js    #   fire-and-forget anonymous + signed-in event recording
 │   └─ components/
 │       ├─ MobileShell.js          # mobile render path (sticky stack, drawer, bottom nav)
 │       ├─ DesktopShell.js         # desktop render path (top bar, filter row, fluid grid)
-│       ├─ MobileShell.test.jsx    # render-without-crash + key visibility smoke tests
-│       ├─ DesktopShell.test.jsx   # symmetric smoke tests for desktop
-│       ├─ __fixtures__/
-│       │   └─ mockShellProps.js   # default props bag used by both test files
-│       ├─ WatchlistTab.js         # Watchlist tab body (Listings/Searches/Calendar sub-tabs)
-│       ├─ AuctionCalendar.js      # month-banded auction calendar (used inside WatchlistTab)
-│       ├─ ReferencesTab.js        # References-section landing list
+│       ├─ HomeTab.js              # Home landing — horizontal-slider strips + new-listings screener banner
+│       ├─ WatchlistTab.js         # Watchlists tab body (Lists / Searches / Challenges sub-tabs)
+│       ├─ CollectionsTab.js       # Lists / Wishlist / My collection / Challenges drill-in surface (~2600 lines)
+│       ├─ ChallengesView.js       # Challenges list view + drill-in to ChallengeFlow
+│       ├─ ChallengeFlow.js        # Watch Challenges multi-stage flow (Set / Pick / Share)
+│       ├─ ReferencesTab.js        # Collecting tab landing — print-to-scale + curated links
+│       ├─ AdminTab.js             # ?tab=admin dashboard (gated by REACT_APP_ADMIN_EMAILS)
+│       ├─ AuctionCalendar.js      # month-banded auction calendar (View / Add / Review per row)
 │       ├─ SizeCompare.js          # print-to-scale watch size comparison tool
-│       ├─ Card.js                 # listing card (also used for tracked lots)
+│       ├─ Links.js                # curated outbound-link aggregator under Collecting
+│       ├─ ListReviewMode.js       # Tinder-style screener (list / feed / auction modes, ~1500 lines)
+│       ├─ Card.js                 # listing card (also used for tracked lots + auction lots)
 │       ├─ Chip.js                 # filter pills (Chip + SidebarChip)
-│       ├─ icons.js                # Filter, Search, Tab icons
-│       ├─ AboutModal.js           # about modal
-│       ├─ TrackNewItemModal.js    # paste-a-URL flow for tracked lots
-│       ├─ FavSearchModal.js       # save-search prompt
-│       ├─ AddSearchModal.js       # add-search modal (parity with Track new item)
+│       ├─ ListRow.js              # collection-list row used in Lists view
+│       ├─ Section.js              # sub-section grouping primitive inside tab bodies
+│       ├─ EmptyState.js           # standard empty-state surface (compact / default / tall)
+│       ├─ SubTabIntro.js          # callout banner with optional action (largely retired post-2026-05-14)
+│       ├─ ViewSettingsControls.js # currency + theme + column-count picker (also embedded in Settings modal)
+│       ├─ WatchDetailSheet.js     # collection-item detail / edit drill-in
+│       ├─ ManageListSheet.js      # collaborator + member-roster panel for shared lists
+│       ├─ ShareReceiver.js        # hook-isolated mount for single-listing share-receive
+│       ├─ ListReceiver.js         #   shared-list receive flow
+│       ├─ ChallengeReceiver.js    #   shared-challenge receive flow
+│       ├─ ShareListPickerModal.js # send a shared-list link via native share sheet
+│       ├─ ListingPickerModal.js   # picker for adding listings to a collection
+│       ├─ CollectionPickerModal.js # picker for adding a listing to a collection
 │       ├─ CollectionEditModal.js  # create + rename collections
-│       ├─ CollectionPickerModal.js # add a listing to a collection
-│       ├─ SettingsModal.js        # currency picker + theme + columns + about (View menu lives here)
-│       ├─ ShareBanner.js          # in-app banner for ?listing=<id>&shared=1 receive flow
-│       ├─ ShareReceiver.js        # hook-isolated mount for share-receive logic (avoids App.js hook bloat)
-│       ├─ AdminTab.js             # source-quality dashboard at ?tab=admin (gated by REACT_APP_ADMIN_EMAILS)
-│       └─ ChallengeFlow.js        # Watch Challenges multi-stage flow (Watchlist > Challenges)
+│       ├─ ManualEntryForm.js      # add a manual entry (manual_* columns) to a collection
+│       ├─ MarkAsSoldModal.js      # mark an Owned collection item as Sold
+│       ├─ AddSearchModal.js / FavSearchModal.js  # saved-search add / inline-save flows
+│       ├─ TrackNewItemModal.js    # paste-a-URL flow for tracked lots (eBay)
+│       ├─ SettingsModal.js        # currency + theme + columns + about
+│       ├─ AboutModal.js           # about modal
+│       ├─ SignInPromptModal.js    # sign-in CTA modal triggered from gated actions
+│       ├─ UserLimitBanner.js      # top-of-app banner for watchlist-cap soft-warn / hard-cap
+│       ├─ LotMigrationBanner.js   # one-shot per-user tracked-lot → watchlist migration prompt
+│       ├─ ErrorBoundary.js        # wraps the App shell render — surfaces stack instead of white-screening
+│       ├─ icons.js                # shared SVG icon set
+│       └─ *.test.jsx              # render-without-crash smoke tests for App, shells, tab bodies, screener
 └─ package.json
 ```
 
