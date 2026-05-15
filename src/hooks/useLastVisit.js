@@ -53,7 +53,6 @@ export function useLastVisit() {
     writeStored(Date.now());
     // Intentionally NOT updating state — `lastVisit` stays frozen
     // for the duration of this session.
-    // eslint-disable-next-line
   }, []);
 
   const newSince = useCallback((items, limit = 50) => {

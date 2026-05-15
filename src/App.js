@@ -443,7 +443,6 @@ export default function Watchlist() {
     } else if (Object.keys(savedItemsSnapshot).length > 0) {
       setSavedItemsSnapshot({});
     }
-    // eslint-disable-next-line
   }, [tab, watchTopTab, colDrillInId]);
 
   // URL sync — reflect tab + sub-tab in the query string so refresh
@@ -551,7 +550,6 @@ export default function Watchlist() {
     return () => window.removeEventListener("popstate", onPop);
     // TAB_VALUES / SUB_VALUES / LISTINGS_SUB_VALUES are module-level
     // const arrays so they're stable references across renders.
-    // eslint-disable-next-line
   }, []);
   const [page, setPage] = useState(1);
   // (filterSources, filterBrands, filterRefs, filterAuctionsOnly, sort,

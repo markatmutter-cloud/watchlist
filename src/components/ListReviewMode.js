@@ -167,7 +167,6 @@ export function ListReviewMode({
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line
   }, [onClose, idx, total]);
 
   // Responsive layout — inline on desktop, fullscreen on mobile.

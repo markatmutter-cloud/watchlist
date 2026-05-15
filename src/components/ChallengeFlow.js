@@ -980,7 +980,6 @@ export function ChallengeFlow({
   useEffect(() => {
     if (challenge?.state === "complete" && stage !== "complete") setStage("complete");
     if (!challenge?.targetCount && stage !== "create") setStage("create");
-    // eslint-disable-next-line
   }, [challenge?.state, challenge?.targetCount]);
 
   // ── Stage-specific handlers ────────────────────────────────

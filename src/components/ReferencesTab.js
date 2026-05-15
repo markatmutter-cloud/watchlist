@@ -65,7 +65,6 @@ export function ReferencesTab(props) {
   // a deep-link drill-in.
   useEffect(() => {
     if (props.tabResetTick && props.tabResetTick > 0) setView("list");
-    // eslint-disable-next-line
   }, [props.tabResetTick]);
 
   if (view === "size-compare") {
