@@ -3,15 +3,6 @@
     {
       "date": "2026-05-09",
       "counts": {
-        "Antiquorum": 540,
-        "Christie's": 499,
-        "Phillips": 628,
-        "Sotheby's": 322
-      }
-    },
-    {
-      "date": "2026-05-09",
-      "counts": {
         "Antiquorum": 381,
         "Christie's": 499,
         "Phillips": 583,
@@ -113,6 +104,14 @@
       "date": "2026-05-14",
       "counts": {
         "Antiquorum": 55,
+        "Christie's": 272,
+        "Phillips": 427,
+        "Sotheby's": 162
+      }
+    },
+    {
+      "date": "2026-05-15",
+      "counts": {
         "Christie's": 272,
         "Phillips": 427,
         "Sotheby's": 162
