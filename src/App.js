@@ -1168,9 +1168,16 @@ export default function Watchlist() {
           if (hasTimeOfDay) isEnded = true;
         }
       }
-      const price = (isEnded ? data.sold_price : data.current_bid)
+      // Mark report 2026-05-15 (Loupe This): when the reverse-direction
+      // override above flips a lot to ended (auction_end has passed but
+      // the next scrape hasn't run yet), sold_price is still null —
+      // and Loupe This carries no estimates or starting prices, so the
+      // chain bottomed out at 0 and rendered "USD 0" on freshly-closed
+      // lots. Fall back to current_bid (the last known bid before close)
+      // until the next scrape pass picks up the realised hammer.
+      const price = (isEnded ? (data.sold_price || data.current_bid) : data.current_bid)
         || data.starting_price || data.estimate_low || 0;
-      const priceUsd = (isEnded ? data.sold_price_usd : data.current_bid_usd)
+      const priceUsd = (isEnded ? (data.sold_price_usd || data.current_bid_usd) : data.current_bid_usd)
         || data.starting_price_usd || data.estimate_low_usd || price;
       const isFixedPrice = data.buying_option === "BUY_IT_NOW"
                         || data.buying_option === "FIXED_PRICE";
@@ -1868,9 +1875,12 @@ export default function Watchlist() {
           if (hasTimeOfDay) isEnded = true;
         }
       }
-      const price = (isEnded ? data.sold_price : data.current_bid)
+      // Mirror of the auctionLotItems projection above — same fallback
+      // through current_bid when isEnded but sold_price hasn't landed
+      // yet. See comment there for context.
+      const price = (isEnded ? (data.sold_price || data.current_bid) : data.current_bid)
         || data.starting_price || data.estimate_low || 0;
-      const priceUsd = (isEnded ? data.sold_price_usd : data.current_bid_usd)
+      const priceUsd = (isEnded ? (data.sold_price_usd || data.current_bid_usd) : data.current_bid_usd)
         || data.starting_price_usd || data.estimate_low_usd || price;
       // eBay AUCTION + every traditional auction house = auction
       // format. eBay BIN + Chrono24 + Watchcollecting etc. = fixed

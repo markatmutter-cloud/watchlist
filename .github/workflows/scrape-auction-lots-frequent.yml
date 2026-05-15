@@ -15,16 +15,24 @@ name: Scrape auction lots (frequent)
 #
 # This workflow does NOT re-walk auction calendars (auctions.json)
 # or eBay tracked lots — both of those are owned by the daily main
-# workflow. It DOES re-run public/auction_lots.json so the per-lot
-# bid + status fields stay fresh for the active sale window.
+# workflow. It DOES re-run public/auction_lots.json AND
+# public/loupethis_lots.json so the per-lot bid + status fields stay
+# fresh for the active sale window.
 
 on:
   schedule:
-    # Three additional refreshes spaced through the day. The main
+    # Four additional refreshes spaced through the day. The main
     # daily workflow at 06:00 UTC handles the morning pass; these
     # cover EU evening (~20:00 UTC) and US business hours.
+    #
+    # The 17:00 UTC pass exists specifically for Loupe This — every
+    # lot ends in the 16:00–16:35 UTC window, daily. Without 17:00,
+    # realised hammer prices wouldn't land until the 20:00 run, so
+    # Mark would see a "Sold today USD 0" gap for ~4 hours after
+    # close (Mark report 2026-05-15).
     - cron: '0 12 * * *'
     - cron: '0 16 * * *'
+    - cron: '0 17 * * *'
     - cron: '0 20 * * *'
   workflow_dispatch:
 
@@ -59,6 +67,14 @@ jobs:
         continue-on-error: true
         run: python auction_lots_scraper.py
 
+      - name: Run Loupe This auction scraper
+        # Independent of auction_lots_scraper — Loupe This has its own
+        # API + own output file (public/loupethis_lots.json). Walks all
+        # ~3.9k lots; ~3 min runtime. The 17:00 UTC slot is the close-
+        # window catch (see schedule comment above).
+        continue-on-error: true
+        run: python loupethis_scraper.py
+
       - name: Set up Node (for image caching)
         # Same Node 22 pin as the main workflow — supabase-js boots
         # RealtimeClient unconditionally and Node 20 lacks native
@@ -85,7 +101,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/auction_lots.json
+          git add public/auction_lots.json public/loupethis_lots.json
           if git diff --staged --quiet; then
             echo "No changes to commit"
             exit 0
