@@ -469,7 +469,14 @@ export function ListReviewMode({
   // Feed mode always renders as a fullscreen portal — there's no
   // inline drill-in for it to live inside (it's launched from Home /
   // any tab), so the desktop inline-panel layout doesn't apply.
-  const usePortalLayout = mode === "feed" || !isWide;
+  // Feed + auction modes are launched from outside any list
+  // drill-in (Home banner, Auction calendar row), so they always
+  // need fullscreen-portal layout — otherwise the inline render
+  // path drops them as a stray block at the bottom of the calling
+  // tab's document flow. Mark report 2026-05-15: ListReviewMode
+  // for auction mode on desktop was rendering after the Archive
+  // section of the calendar.
+  const usePortalLayout = mode === "feed" || mode === "auction" || !isWide;
   const outerStyle = !usePortalLayout ? {
     // v1.3: chrome around the drill-in (title row + recipient banner)
     // is hidden when screening is active, so the wordmark + nav +

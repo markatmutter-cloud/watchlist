@@ -268,10 +268,12 @@ function AuctionRow({ a, archive, lotCount = 0, onReviewCatalog, onAddToList, bu
     if (a.url) window.open(a.url, "_blank", "noopener,noreferrer");
   };
 
-  // Lot-actions are only useful when the auction has scraped lots.
-  // No lots → silence the Add/Review buttons; View catalog still
-  // works (it's just an external link).
-  const lotActionsAvailable = !isClosed && lotCount > 0;
+  // Lot-actions are exposed whenever the auction has scraped lots —
+  // past auctions included (Mark spec 2026-05-15: Review + Add to
+  // list need to work on the archive too so users can build lists
+  // from closed catalogs). Lot count is the only gate; closed
+  // catalogs with 0 scraped lots show View catalog only.
+  const lotActionsAvailable = lotCount > 0;
 
   // Action cluster — re-used for both layouts. Mobile drops it onto
   // a second row below the title block (Mark report 2026-05-14: the
@@ -319,8 +321,12 @@ function AuctionRow({ a, archive, lotCount = 0, onReviewCatalog, onAddToList, bu
     }}>
       {/* Header row: date block + title block. Mobile keeps the
           horizontal date/title pairing but loses the 3-button column
-          to its own row below. */}
-      <div style={{ display: "flex", alignItems: "stretch", minWidth: 0 }}>
+          to its own row below. `flex: 1` so on desktop the title
+          block actually grows into the row width, pushing the
+          action cluster to the right edge (Mark report 2026-05-15:
+          buttons were hugging the title instead of sitting flush
+          right). */}
+      <div style={{ display: "flex", alignItems: "stretch", minWidth: 0, flex: 1 }}>
         <AuctionDateBlock a={a} />
         <div style={{ flex: 1, minWidth: 0, padding: "12px 14px",
                     display: "flex", flexDirection: "column", justifyContent: "center", gap: 4 }}>
