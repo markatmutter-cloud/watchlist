@@ -615,8 +615,8 @@ function MyCollectionView({
         soldItems.length === 0 ? (
           <EmptyState
             icon="📁"
-            heading="No archive yet"
-            blurb="Watches you've owned and sold land here. Mark a watch in your Collection as sold to start your archive."
+            heading="Nothing sold yet"
+            blurb="When you part with a piece, mark it sold from My collection. It moves here with the date and what it went for."
           />
         ) : (
           <>
@@ -802,7 +802,7 @@ function PlanView({
       >
         <SectionExplain text="Watches currently in your collection. Tap ↑ on a card to flag it for sale; the card slides down into Selling and stops counting toward Keeping value." />
         {keeping.length === 0 ? (
-          <EmptyHardListSection text="No watches in Keeping. Anything you flag for sale moves to the Selling section." />
+          <EmptyHardListSection text="Everything you own sits here by default. Flag a watch for sale and it moves down to Selling." />
         ) : (
           <CollectionGrid
             items={keeping}
@@ -836,7 +836,7 @@ function PlanView({
       >
         <SectionExplain text="Owned watches you've flagged for sale. Tap ↑ (red) to keep instead. The detail sheet has the assumed sell value field — set it so the proceeds total reads accurately." />
         {selling.length === 0 ? (
-          <EmptyHardListSection text="Nothing flagged for sale yet. Tap ↑ on any Keeping card or open the detail sheet → Flag for sale." />
+          <EmptyHardListSection text="Tap ↑ on a Keeping card to move it here when you're thinking about letting it go." />
         ) : (
           <CollectionGrid
             items={selling}
@@ -874,8 +874,8 @@ function PlanView({
         ) : wishlistItems.length === 0 ? (
           <EmptyState
             icon="★"
-            heading="Empty shortlist"
-            blurb="Pick a watch from one of your lists below, or tap + From feed to browse the global feed."
+            heading="Nothing on your wishlist"
+            blurb="Build the hunt list — references you're chasing, dial variants you'd buy if one surfaced. Pick from a list below or + From feed."
             action={
               <button onClick={onShortlistAddFromFeed} style={actionButton({ variant: "primary" })}>+ From feed</button>
             }
