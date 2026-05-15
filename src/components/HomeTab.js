@@ -339,7 +339,7 @@ function SectionStrip({ heading, descriptor, items, onViewAll, onScreen, screenC
                 color: "#fff",
                 display: "inline-flex", alignItems: "center", gap: 6,
               }}>
-              Screen {screenCount} new
+              Screen
             </button>
           )}
           <button onClick={onViewAll}
