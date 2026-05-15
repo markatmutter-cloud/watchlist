@@ -487,30 +487,69 @@ function ManageCallout({ goToSavedLists, goToMyWatches, goToChallenges, isMobile
       padding: isMobile ? "36px 20px" : "56px 28px",
       textAlign: "center",
     }}>
+      {/* Eyebrow — anchors the band to a single named destination
+          (Mark feedback 2026-05-15 desktop audit: "the watchbox
+          element on the home page is hidden or not clear enough
+          — could be better/clearer this is a separate engagement
+          surface"). The avatar pill + dropdown already promote
+          Watchbox at the chrome level; this band makes it a
+          discoverable destination FROM Home for users who haven't
+          ventured into the dropdown yet. */}
+      <div style={{
+        fontSize: 11, fontWeight: 600,
+        letterSpacing: "0.18em", textTransform: "uppercase",
+        color: "var(--text-on-dark-3)",
+        marginBottom: 12,
+      }}>
+        Your Watchbox
+      </div>
       <h2 style={{ margin: 0, fontSize: isMobile ? 22 : 28, fontWeight: 600, color: "var(--bg)", letterSpacing: "-0.3px" }}>
-        Build your collection
+        Your private space for everything you collect
       </h2>
-      <p style={{ margin: "10px auto 0", maxWidth: 520, fontSize: 14, color: "var(--text-on-dark-2)", lineHeight: 1.5 }}>
-        Save what catches your eye, keep track of what you own, and plan what's next — all from the same feed.
+      <p style={{ margin: "10px auto 0", maxWidth: 560, fontSize: 14, color: "var(--text-on-dark-2)", lineHeight: 1.5 }}>
+        Owned watches, what's sold, what's on the wishlist. Like an eBay account, but for vintage collectors.
       </p>
-      <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 24, flexWrap: "wrap" }}>
-        <button onClick={goToSavedLists} style={calloutCtaStyle()}>Saved lists</button>
-        <button onClick={goToMyWatches} style={calloutCtaStyle()}>Watchbox</button>
-        <button onClick={goToChallenges} style={calloutCtaStyle()}>Challenges</button>
+      <div style={{
+        display: "flex", justifyContent: "center", alignItems: "center",
+        gap: 12, marginTop: 26, flexWrap: "wrap",
+      }}>
+        <button onClick={goToMyWatches} style={calloutPrimaryCta()}>
+          Open Watchbox <span aria-hidden style={{ fontSize: 15 }}>→</span>
+        </button>
+      </div>
+      <div style={{
+        display: "flex", justifyContent: "center",
+        gap: 10, marginTop: 16, flexWrap: "wrap",
+      }}>
+        <button onClick={goToSavedLists} style={calloutSecondaryCta()}>Saved lists</button>
+        <button onClick={goToChallenges} style={calloutSecondaryCta()}>Challenges</button>
       </div>
     </section>
   );
 }
 
-// Filled pill buttons against a dark band — light fill, dark text
-// (inverted from the previous outline-on-light scheme since the
-// callout is now on a dark bleed band).
-function calloutCtaStyle() {
+// Primary CTA — dominant filled pill (light fill on dark band).
+// Marks the destination this band is anchored to.
+function calloutPrimaryCta() {
   return {
-    padding: "10px 18px", borderRadius: 999,
+    padding: "13px 28px", borderRadius: 999,
     border: "none", background: "var(--bg)",
-    color: "var(--text1)", fontFamily: "inherit", fontSize: 13,
+    color: "var(--text1)", fontFamily: "inherit", fontSize: 14,
     fontWeight: 600, letterSpacing: "0.02em", cursor: "pointer",
+    display: "inline-flex", alignItems: "center", gap: 8,
+  };
+}
+
+// Secondary CTAs — ghost pills for the related-but-not-primary
+// destinations. Lighter visual weight so the eye lands on the
+// primary first.
+function calloutSecondaryCta() {
+  return {
+    padding: "8px 16px", borderRadius: 999,
+    border: "0.5px solid var(--text-on-dark-3)",
+    background: "transparent",
+    color: "var(--text-on-dark-1)", fontFamily: "inherit", fontSize: 13,
+    fontWeight: 500, letterSpacing: "0.02em", cursor: "pointer",
   };
 }
 
