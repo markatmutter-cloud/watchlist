@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 
 // App-level render-without-crash smoke test.
 //
@@ -144,14 +144,36 @@ describe("App render-without-crash", () => {
   test("App mounts on the default Listings tab without crashing", async () => {
     const { default: App } = require("./App");
     render(<App />);
-    // The "Loading listings..." string appears during the
-    // listings.json fetch and is replaced by tab chrome once loaded.
-    // If App crashed during render, this query would throw with
-    // "found multiple elements" or similar test errors before this
-    // line is reached. Just asserting render-without-throw is the
-    // value here.
-    // (Specific UI assertions live in MobileShell / DesktopShell
-    // tests; this test is a tripwire for App-level regressions.)
+    // Synchronous-mount tripwire. The traversal test below catches
+    // the post-load hook-count regression class; this one catches
+    // anything that throws during the initial render before the
+    // early `if (loading) return …` even fires.
     expect(document.body).toBeInTheDocument();
+  });
+
+  test("App renders past loading state without crashing (React #310 tripwire)", async () => {
+    // This test catches the hooks-past-early-return regression class
+    // (React error #310 — "rendered more hooks than during the
+    // previous render"). The loading/loadError early returns at
+    // App.js:2401-2402 short-circuit rendering before any later
+    // useState / useCallback / useMemo executes. When loading flips
+    // false after the listings.json fetch resolves, every hook past
+    // the early return executes for the first time — and any added
+    // there since the previous render bumps the hook count, which
+    // React refuses to accept.
+    //
+    // Bit production THREE TIMES: the Collections + Sharing build
+    // (twice), then PR #290 hotfix 2026-05-14 when an auction
+    // useCallback shipped past the early returns. The sync-mount
+    // test above doesn't see this — it asserts mid-loading, before
+    // the transition. This test forces the transition.
+    const { default: App } = require("./App");
+    render(<App />);
+    await waitFor(() => {
+      // The loading message disappears once `loading` flips false.
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    // Sanity: post-load chrome rendered.
+    expect(screen.getAllByText(/Listings/i).length).toBeGreaterThan(0);
   });
 });
