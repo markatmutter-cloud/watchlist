@@ -229,7 +229,7 @@ export function ShareReceiver({
           // Light-mode lift: --card-bg is #fff (same as page) in light
           // mode, so without a shadow the card has no tone shift. The
           // shadow disappears against #000 in dark mode (no harm).
-          boxShadow: "0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)",
+          boxShadow: "var(--shadow-modal)",
           fontSize: 14, color: "var(--text2)", lineHeight: 1.6,
           maxWidth: 720,
         }}>
@@ -276,7 +276,7 @@ function FocusedShareCard({
       // Light-mode lift: --card-bg is #fff (same as page bg) in
       // light mode, so without a shadow the card has no tone shift.
       // Shadow disappears against #000 in dark mode (no harm).
-      boxShadow: "0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)",
+      boxShadow: "var(--shadow-modal)",
     }}
     className="share-receiver-focused-card"
     >
@@ -481,7 +481,7 @@ function OrientationAnchors({ signedIn, onClickAnchor, onSignIn, signInCopy }) {
       borderRadius: 12,
       border: "0.5px solid var(--border)",
       background: "var(--card-bg)",
-      boxShadow: "0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)",
+      boxShadow: "var(--shadow-modal)",
       display: "flex", flexDirection: "column",
       minHeight: 0,
       overflow: "hidden",

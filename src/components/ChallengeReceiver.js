@@ -212,7 +212,7 @@ export function ChallengeReceiver({
           padding: "24px 22px",
           border: "0.5px solid var(--border)",
           borderRadius: 12, background: "var(--card-bg)",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)",
+          boxShadow: "var(--shadow-modal)",
           marginBottom: 18,
         }}>
           <p style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.5, margin: 0 }}>
@@ -509,7 +509,7 @@ const landingPaneStyle = () => ({
 const focusedCardStyle = () => ({
   background: "var(--card-bg)",
   borderRadius: 12, border: "0.5px solid var(--border)",
-  boxShadow: "0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)",
+  boxShadow: "var(--shadow-modal)",
   overflow: "hidden",
 });
 

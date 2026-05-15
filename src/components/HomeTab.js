@@ -300,8 +300,8 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
     marginBottom: isMobile ? 30 : 36,
   } : { marginBottom: 28 };
   const headingColor = inverted ? "var(--bg)" : "var(--text1)";
-  const descriptorColor = inverted ? "rgba(255,255,255,0.62)" : "var(--text2)";
-  const viewAllColor = inverted ? "rgba(255,255,255,0.78)" : "var(--text2)";
+  const descriptorColor = inverted ? "var(--text-on-dark-2)" : "var(--text2)";
+  const viewAllColor = inverted ? "var(--text-on-dark-1)" : "var(--text2)";
   return (
     <section style={wrapperStyle}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: inverted ? 0 : "0 16px", marginBottom: 12, gap: 12 }}>
@@ -326,7 +326,7 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
             flexShrink: 0, cursor: "pointer", fontFamily: "inherit",
             fontSize: 12, fontWeight: 600, letterSpacing: "0.04em",
             padding: "7px 14px", borderRadius: 999,
-            border: `0.5px solid ${inverted ? "rgba(255,255,255,0.4)" : "var(--text2)"}`,
+            border: `0.5px solid ${inverted ? "var(--text-on-dark-3)" : "var(--text2)"}`,
             background: "transparent",
             color: viewAllColor,
             display: "inline-flex", alignItems: "center", gap: 6,
@@ -346,7 +346,7 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
         scrollSnapType: "x mandatory",
         WebkitOverflowScrolling: "touch",
         scrollbarWidth: "none", msOverflowStyle: "none",
-        background: inverted ? "rgba(255,255,255,0.1)" : "var(--border)",
+        background: inverted ? "var(--surface-on-dark)" : "var(--border)",
       }}>
         {slice.map(item => (
           <div key={item.id} style={isMobile ? {
@@ -442,7 +442,7 @@ function ManageCallout({ goToSavedLists, goToMyWatches, goToChallenges, isMobile
       <h2 style={{ margin: 0, fontSize: isMobile ? 22 : 28, fontWeight: 600, color: "var(--bg)", letterSpacing: "-0.3px" }}>
         Build your collection
       </h2>
-      <p style={{ margin: "10px auto 0", maxWidth: 520, fontSize: 14, color: "rgba(255,255,255,0.62)", lineHeight: 1.5 }}>
+      <p style={{ margin: "10px auto 0", maxWidth: 520, fontSize: 14, color: "var(--text-on-dark-2)", lineHeight: 1.5 }}>
         Save what catches your eye, keep track of what you own, and plan what's next — all from the same feed.
       </p>
       <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 24, flexWrap: "wrap" }}>

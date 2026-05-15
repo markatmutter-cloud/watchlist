@@ -1023,6 +1023,24 @@ export default function Watchlist() {
     "--brand-tint-10": "rgba(24,95,165,0.10)",
     "--brand-tint-12": "rgba(24,95,165,0.12)",
     "--accent-warn": "#c9a227",
+    "--accent-warn-tint-10": "rgba(201,162,39,0.10)",
+    // Danger tint + dark-text variant — UserLimitBanner hard-cap state.
+    "--danger-tint-10": "rgba(192,57,43,0.10)",
+    "--danger-text": "#7d1f17",
+    // Heart accent — intentionally NOT --brand. The screener heart +
+    // "Hearted" tally read as the action, not as primary brand UI.
+    "--heart": "#d92626",
+    // Modal / floating-surface shadow. Repeated verbatim across
+    // ShareReceiver / ChallengeReceiver / ChallengeFlow before this
+    // token landed.
+    "--shadow-modal": "0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)",
+    // On-dark text + surface — used inside the HomeTab inverted hero
+    // band, which is dark regardless of theme. Three opacity steps
+    // mirror the --text1/2/3 hierarchy on the light path.
+    "--text-on-dark-1": "rgba(255,255,255,0.78)",
+    "--text-on-dark-2": "rgba(255,255,255,0.62)",
+    "--text-on-dark-3": "rgba(255,255,255,0.40)",
+    "--surface-on-dark": "rgba(255,255,255,0.10)",
   } : {
     "--bg": "#fff", "--surface": "#f5f5f7", "--card-bg": "#fff",
     "--border": "rgba(0,0,0,0.09)", "--text1": "#1d1d1f",
@@ -1032,6 +1050,15 @@ export default function Watchlist() {
     "--brand-tint-10": "rgba(24,95,165,0.10)",
     "--brand-tint-12": "rgba(24,95,165,0.12)",
     "--accent-warn": "#c9a227",
+    "--accent-warn-tint-10": "rgba(201,162,39,0.10)",
+    "--danger-tint-10": "rgba(192,57,43,0.10)",
+    "--danger-text": "#7d1f17",
+    "--heart": "#d92626",
+    "--shadow-modal": "0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)",
+    "--text-on-dark-1": "rgba(255,255,255,0.78)",
+    "--text-on-dark-2": "rgba(255,255,255,0.62)",
+    "--text-on-dark-3": "rgba(255,255,255,0.40)",
+    "--surface-on-dark": "rgba(255,255,255,0.10)",
   };
 
   // Mirror the theme variables onto :root so portal-rendered nodes
