@@ -20,16 +20,16 @@ Not commercial. Not trying to be a marketplace. Just an aggregator for myself �
 
 ## What it does
 
-Three top-level tabs (with internal-vs-UI naming divergence — see CLAUDE.md):
+Three top-level tabs in the main nav, plus a fourth top-level destination reached via the avatar dropdown (with internal-vs-UI naming divergence — see CLAUDE.md):
 
-- **Listings** *(URL `?tab=listings`)* — aggregates 38 curated dealer sources + targeted eBay searches + the four major auction houses' active lots (Antiquorum, Christie's, Sotheby's, Phillips) into one feed. Sub-tabs: Live listings (dealer items) / Live auctions (auction lots, ending-soonest) / All sold / Auction calendar. Lot # sort pill on auction sub-tabs renders catalog order grouped by sale.
-- **Saved** *(URL `?tab=saved`; internal key `watchlist`)* — five sub-tabs covering saved-from-feed surfaces, collection planning, and lists:
-  - **Saved** *(default)* — hearted listings with a Listings/Auctions/Sold toggle. Toggle pills sit inline with the filter row; Listings shows currently-active hearted dealer items, Auctions shows hearted auction lots + all eBay items (ending-soonest), Sold shows hearted items that went sold.
+- **Listings** *(URL `?tab=listings`)* — aggregates 38 curated dealer sources + targeted eBay searches + the four major auction houses' active lots (Antiquorum, Christie's, Sotheby's, Phillips) into one feed. Sub-tabs: Live listings (dealer items) / Live auctions (auction lots, ending-soonest) / All sold / Auction calendar. Each calendar row has three inline actions: **View catalog** (external link), **Add to list** (bulk-add every lot to a user-private auction catalog list), **Review** (Tinder-swipe through the catalog).
+- **Watchlists** *(URL `?tab=saved`; internal key `watchlist`)* — three sub-tabs covering saved-from-feed surfaces and lists:
+  - **Lists** *(default)* — user-created lists by reference, theme, research thread, plus a "Shared with me" inbox for single-listing shares and **Auction catalogs** populated by the Listings calendar's Review / Add to list actions. Email-invite collaborators with viewer / editor roles.
   - **Searches** — saved searches editor. Each row stores label + query + optional `$ Min` / `$ Max` band; tapping a row applies all three to the Listings tab and lands you there. Live count + "X new this week" badge per row.
-  - **My watches** — Owned + Sold + Wishlist + Shortlist combined surface with a four-way toggle. Owned/Sold/All show your collection; Shortlist is a ranked list of representative listings you're scenario-planning against.
-  - **Lists** — user-created lists by reference, theme, or research thread. Auto-populates a "Shared with me" inbox when other users share lists with you. Email-invite collaborators with role (viewer / editor) — invitees accept via the share link.
   - **Challenges** — build-a-collection. Pick N watches under a budget from your own Lists / Favorites (or by pasting a URL), share the spec so a friend can build their own answer; or share the completed picks. Sender attribution on shared challenges ("James's 3 watches for $50k"). 20% over-budget soft-warn. Click-pick on every device.
-- **Learn** *(URL `?tab=learn`; internal key `references`)* — collector resource tools (print-to-scale watch size comparison + curated link aggregator; encyclopedia is roadmap'd).
+  - (Plus, when drilled into the "Saved" pseudo-list inside Lists: a Listings/Auctions/Sold toggle showing currently-active hearted dealer items / hearted auction lots + all eBay items / hearted items that went sold.)
+- **Collecting** *(URL `?tab=learn`; internal key `references`)* — collector resource tools (print-to-scale watch size comparison + curated link aggregator; encyclopedia is roadmap'd). Renamed from "Learn" 2026-05-14.
+- **Watchbox** *(URL `?tab=watchbox`; reached via the avatar dropdown — no main-nav pill)* — Owned + Sold + Wishlist combined surface with a three-way toggle (Collection / Archive / Plan). Watches you own today (Collection), watches you've sold (Archive), and a planning view (Plan) for what's next.
 - **Site stats** *(admin only — invisible to other users)* — dense admin dashboard at `?tab=admin` covering three sections: per-source quality (live count, new-per-week, hearts/hides, avg price, top brand, $ added/sold over 30d, 30-day engagement, scraper health, "earning its keep" chip), auction-house quality (live + upcoming sales, lots, sold rate, $ sold over 90d, median Hammer/Low ratio), and per-user limits (hearts / hides / lists / saved-searches counts, 30-day clicks/views/shares/list-adds, top saved brand, current cap, with an inline form to set a user's cap by email). Engagement signals come from a `listing_events` table seeded by anonymous + signed-in views/clicks/saves/hides/list-adds/shares; daily rollup at 09:15 UTC. Reachable via the user dropdown for users whose email is in `REACT_APP_ADMIN_EMAILS`.
 
 Plus:
@@ -50,8 +50,9 @@ Plus:
 - Implicit weekday-based date dividers (Today / Yesterday / weekday / Last week / Older) when sorted by date.
 - Dark/light mode following system preference, with manual override.
 - GBP→USD conversion for UK dealers, shown alongside the native price.
-- Mobile: configurable 1-3 col grid with a slide-up filter drawer, sticky search/sort row, and a 3-tab bottom-nav (Listings / Saved / Learn).
-- Desktop: full-width top bar with three main tab pills, an inline pill-style filter row, and configurable 3-7 col grid (or auto fluid).
+- **Screening Mode** — Tinder-style swipe interface for working through any list one card at a time. Three entry points: (1) shared lists from another user (`mode="list"` — Yes/Pass write reactions, Liked / Open / Disliked buckets visualise sentiment); (2) "N new listings since {date}" Home banner (`mode="feed"` — Yes hearts, Pass skips); (3) auction calendar Review buttons (`mode="auction"` — Yes adds to the auto-list, Heart adds to watchlist, Pass skips). Mobile = fullscreen overlay, Desktop = inline replacement of the drill-in body for shared-list mode. Haptics on Yes/Pass, full-bg colour wash following swipe direction, per-list bookmarked resume.
+- Mobile: configurable 1-3 col grid with a slide-up filter drawer, sticky search/sort row, and a 3-tab bottom-nav (Listings / Watchlists / Collecting).
+- Desktop: full-width top bar with three main tab pills + an avatar pill with the "Watchbox" label, an inline pill-style filter row, and configurable 3-7 col grid (or auto fluid).
 
 ---
 
