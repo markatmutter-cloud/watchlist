@@ -25,14 +25,35 @@ them via `var(--name)`.
 | `--text1` | `#1d1d1f` / `#f5f5f7` | Primary text |
 | `--text2` | `#6e6e73` / `#98989d` | Secondary text (most body copy, button labels) |
 | `--text3` | `#aeaeb2` / `#48484a` | Tertiary text (timestamps, helper labels) |
-| `--brand` | `#185FA5` | Action blue: heart fill, primary CTA, link color, hearted-pill, mobile-nav active dot |
+| `--brand` | `#185FA5` | Action blue: primary CTA, link color, hearted-pill, mobile-nav active dot |
 | `--danger` | `#c0392b` | Destructive: Delete button text, hard-cap banner border |
 | `--accent-positive` | `#1b8f3a` | Sold-green / price-drop ↓ indicator |
+| `--accent-warn` | `#c9a227` | Gold for status hints (over-budget, "earning its keep" admin chip) |
+| `--brand-tint-08/10/12` | `rgba(24,95,165,0.08/.10/.12)` | Brand-tinted surfaces — icon-disc fills, hover, chip backgrounds |
+| `--accent-warn-tint-10` | `rgba(201,162,39,0.10)` | Gold-tinted surface (ListRow draft tint) |
+| `--danger-tint-10` | `rgba(192,57,43,0.10)` | UserLimitBanner hard-cap background |
+| `--danger-text` | `#7d1f17` | UserLimitBanner hard-cap text (darker than `--danger` for contrast on the tinted bg) |
+| `--heart` | `#d92626` | Screener heart glyph + Hearted tally + ❤️ reaction emoji. **Intentionally NOT `--brand`** — heart reads as "action," not primary brand UI |
+| `--shadow-modal` | `0 2px 6px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.12)` | Modal / floating-surface shadow (ShareReceiver, ChallengeReceiver, ChallengeFlow) |
+| `--text-on-dark-1/2/3` | `rgba(255,255,255,0.78/.62/.40)` | Text hierarchy on inverted dark surfaces (HomeTab hero band). Mirrors `--text1/2/3` on light |
+| `--surface-on-dark` | `rgba(255,255,255,0.10)` | Subtle surface on inverted dark bg |
 
 **Adding a new color:** add to BOTH the dark and light blocks in
 App.js. Never inline a hex literal — even one-off shades drift over
 time (UserLimitBanner shipped with `#1f5a9f` instead of `#185FA5`
 because there was no token to anchor to).
+
+**fontSize scale (post-2026-05-15 snap, PR #305):** prefer **10,
+11, 12, 13, 14, 16, 18, 22** for body / labels / buttons; **28, 32**
+for hero + heading singletons. Outliers were snapped to nearest
+scale value (9 → 10, 15 → 14, 17 → 18, 20 → 18, 24 → 22, 26 → 22).
+If you find yourself needing 15px for a tighter fit, ask whether 14
+or 16 actually works first.
+
+**borderRadius scale (post-2026-05-15 snap, PR #305):** **0, 4, 6,
+8, 10, 12, 20, 999**. Outliers snapped (1/2 → 0, 3 → 4, 14 → 12,
+18 → 20). 8 is the dominant card / button radius; 10 is the
+secondary; 12 for larger surface cards; 999 for fully-rounded pills.
 
 ## 2. Style tokens — `src/styles.js`
 
@@ -93,3 +114,39 @@ variation. Don't promote one-off patterns. Tokens belong in
 `styles.js`; components belong in `src/components/`. After adding,
 update this doc and the relevant section of CLAUDE.md if the rule
 changes (e.g. new "always reach for X" entry).
+
+## Open promotion candidates (audit 2026-05-15)
+
+Flagged during the maintenance session's visual-coherence audit;
+landing as separate PRs when worth touching.
+
+- **Eyebrow heading.** The `fontSize: 10/11, fontWeight: 600,
+  letterSpacing: "0.04em-0.12em", textTransform: "uppercase"`
+  pattern is re-rolled at ~10 sites (group banners, sub-section
+  labels, section eyebrows). Past the 3+ threshold. Promote to a
+  `<Eyebrow>` component or `eyebrowText` style export.
+- **Button consolidation.** Roughly 184 hand-rolled `<button>`
+  elements skip `actionButton` / `pillBase` / `iconButton`. The
+  grep over-counts (some legitimately need custom styles — card
+  overlays, the SectionStrip pills), but the magnitude is real.
+  Audit modals / tab-headers / drill-in headers and route through
+  the existing primitives.
+- **Padding scale.** ~16 distinct padding pairs in use; `"8px 14px"`
+  (16 uses) vs `"8px 16px"` (12 uses) — same vertical, 2px
+  horizontal — is visible drift. Could snap like PR #305 did for
+  fontSize / borderRadius. Target scale: multiples of 4 for
+  vertical, multiples of 4 (or matched horizontal) for horizontal.
+
+## Missing surfaces
+
+Empty states absent on these surfaces — needs a component shape
+change, not just copy (separate work):
+
+- **Listings filter-no-match** — chips zero out the feed, blank
+  area renders.
+- **AuctionCalendar empty** — no upcoming + no past sales.
+- **HomeTab zero recently-added** — strips render nothing.
+- **Loading states** — only the initial fetch shows "Pulling the
+  latest listings…". Saved-search results, list drill-ins,
+  screener mount, etc. flicker through empty UI for a beat
+  instead of "loading."

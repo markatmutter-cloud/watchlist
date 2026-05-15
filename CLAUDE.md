@@ -1267,6 +1267,23 @@ again; it's permanently blocked at the platform layer.
 
 ## Things to never do
 
+- **Don't write bare `// eslint-disable-next-line` (no rule name) on
+  useEffect dep arrays.** CRA's eslint config doesn't include
+  `react-hooks/exhaustive-deps` — the disable is a no-op. Pure noise
+  that suggests a rule is being suppressed when nothing is firing.
+  If you're intentionally omitting a dep, leave a plain comment
+  explaining why. (PR #300 removed 8 of these accumulated from
+  previous sessions.)
+- **Don't add "kept in case a future surface wants it" comments**
+  when retiring code. Two components (SharedTab + ListManagePanel)
+  landed in that limbo state and accumulated as orphans for weeks
+  before PR #299 deleted both. Either ship the future use or delete
+  the file — no middle ground. If you genuinely don't know yet,
+  commit the deletion and recover from git history later.
+- **Don't propagate inline `#1f9d4f` for green** — the right token
+  is `var(--accent-positive)` (which is `#1b8f3a`). AdminTab still
+  has lingering `#1f9d4f` outliers from before the design-tokens
+  pass — convert when next touching the file.
 - **Don't use `useMemo` for snapshot semantics — use `useState` lazy
   init.** `ListReviewMode.initialQueue` freezes the to-review list at
   mount. Earlier draft used `useMemo([items, reactionsByItem])`; that
