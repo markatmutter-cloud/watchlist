@@ -403,10 +403,11 @@ export function MobileShell(props) {
           // tight without burning real estate in Safari.
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)",
         }}>
-          {/* 4-pill mobile bottom nav (2026-05-12): Listings / Watchlists
-              / Share / Learn. Share added as the home for shared-list
-              journeys (incoming + outgoing) and, in future iterations,
-              challenges + voting/polls. Admin is desktop-only. */}
+          {/* 3-pill mobile bottom nav: Listings / Watchlists / Collecting.
+              Home is reached via the wordmark; Watchbox via the avatar
+              dropdown; Admin is desktop-only. The Share tab briefly
+              lived here as a 4th pill 2026-05-11 → 2026-05-14, then
+              retired (see CLAUDE.md "Top-level Share tab — RETIRED"). */}
           {[["listings", "Listings"], ["watchlist", "Watchlists"], ["references", "Collecting"]].map(([key, label]) => (
             // Button padding 8/6 → 6/4: same density argument as the
             // container padding above.

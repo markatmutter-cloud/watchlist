@@ -792,24 +792,21 @@ discoverability was zero. Two surfaces now expose the undo:
   before wiping. Available to any participant with at least
   one reaction (owner or collaborator).
 
-**Top-level Share tab (2026-05-11, PR #248 + #251).** New `tab=share`
-in `TAB_VALUES`, 4th pill in both top nav (desktop) and bottom
-nav (mobile): Listings · Watchlists · Share · Learn. Renders
-`SharedTab.js` — two sections (Shared with you / Shared by you)
-plus a `+ Share a list` CTA that opens `ShareListPickerModal`
-for the send flow. Tapping a row in the picker fires
-`navigator.share` (or clipboard fallback) on the
-`?list=<id>&shared=1` URL; tapping "Open" navigates to the
-drill-in for the Manage path. The shared-list work surface
-(banner, To-review bucket, review mode) still lives in the Lists
-drill-in — Share is the *discovery + send* surface, the
-drill-in is the *work* surface.
-
-`SharedTab.openSharedList(listId)` does the URL push BEFORE
-flipping tab state so `CollectionsTab`'s `useState` initialiser
-reads `?col=` on first mount and lands on the drill-in directly.
-This dance matters; reversing the order makes the drill-in fail
-to open.
+**Top-level Share tab — RETIRED 2026-05-14.** Shipped 2026-05-11 as
+the 4th main-nav pill (Listings · Watchlists · Share · Learn) with
+`SharedTab.js` rendering two sections + a `+ Share a list` CTA. Both
+roles got absorbed within days: incoming shared-list discovery moved
+to the SHARED WITH ME group inside Watchlists > Lists; the send-a-
+list CTA became a per-list Share button on the Lists drill-in. The
+`SharedTab.js` component file was deleted in PR #299; `?tab=share`
+URLs now fall through to the default tab via TAB_VALUES's includes-
+check. The shared-list work surface (banner, To-review bucket,
+review mode) was always in the Lists drill-in — that part didn't
+move. If a future iteration wants a dedicated share-activity
+surface, the SharedTab pattern was: render two grouped sections
+(Shared with you / Shared by you) keyed by membership/ownership of
+shared lists, and use a `navigator.share` (clipboard fallback)
+send flow.
 
 **Home strips are horizontal sliders on both viewports
 (2026-05-12, PRs #255 / #256).** Was a 7-col grid on desktop +
