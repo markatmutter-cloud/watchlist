@@ -94,7 +94,7 @@ function LiveCounts({ counts }) {
   const fmt = (n) => (n || 0).toLocaleString("en-US");
   return (
     <div style={{
-      textAlign: "center", padding: "14px 16px 22px",
+      textAlign: "center", padding: "14px 16px 20px",
       fontSize: 11, fontWeight: 500, letterSpacing: "0.18em",
       textTransform: "uppercase", color: "var(--text3)",
     }}>
@@ -339,7 +339,7 @@ function SectionStrip({ heading, descriptor, items, onViewAll, onScreen, screenC
               style={{
                 cursor: "pointer", fontFamily: "inherit",
                 fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
-                padding: "7px 14px", borderRadius: 999,
+                padding: "8px 14px", borderRadius: 999,
                 border: "none",
                 background: "var(--brand)",
                 color: "#fff",
@@ -352,7 +352,7 @@ function SectionStrip({ heading, descriptor, items, onViewAll, onScreen, screenC
             style={{
               cursor: "pointer", fontFamily: "inherit",
               fontSize: 12, fontWeight: 600, letterSpacing: "0.04em",
-              padding: "7px 14px", borderRadius: 999,
+              padding: "8px 14px", borderRadius: 999,
               border: `0.5px solid ${inverted ? "var(--text-on-dark-3)" : "var(--text2)"}`,
               background: "transparent",
               color: viewAllColor,
@@ -532,7 +532,7 @@ function ManageCallout({ goToSavedLists, goToMyWatches, goToChallenges, isMobile
 // Marks the destination this band is anchored to.
 function calloutPrimaryCta() {
   return {
-    padding: "13px 28px", borderRadius: 999,
+    padding: "12px 24px", borderRadius: 999,
     border: "none", background: "var(--bg)",
     color: "var(--text1)", fontFamily: "inherit", fontSize: 14,
     fontWeight: 600, letterSpacing: "0.02em", cursor: "pointer",

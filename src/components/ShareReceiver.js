@@ -488,7 +488,7 @@ function OrientationAnchors({ signedIn, onClickAnchor, onSignIn, signInCopy }) {
     }}>
       {showSignIn && (
         <div style={{
-          padding: "18px 18px 16px",
+          padding: "20px 20px 16px",
           borderBottom: "0.5px solid var(--border)",
           background: "var(--surface)",
         }}>
@@ -512,7 +512,7 @@ function OrientationAnchors({ signedIn, onClickAnchor, onSignIn, signInCopy }) {
           </button>
         </div>
       )}
-      <div style={{ padding: "18px 18px 16px" }}>
+      <div style={{ padding: "20px 20px 16px" }}>
         <div style={{
           fontSize: 10, fontWeight: 600,
           textTransform: "uppercase", letterSpacing: "0.06em",
@@ -551,7 +551,7 @@ const primaryBtnStyle = {
   border: "none",
   background: "var(--brand)",
   color: "#fff",
-  padding: "10px 18px",
+  padding: "10px 20px",
   borderRadius: 8,
   fontFamily: "inherit",
   fontSize: 14,
@@ -563,7 +563,7 @@ const secondaryBtnStyle = {
   border: "0.5px solid var(--border)",
   background: "transparent",
   color: "var(--text2)",
-  padding: "10px 18px",
+  padding: "10px 20px",
   borderRadius: 8,
   fontFamily: "inherit",
   fontSize: 14,

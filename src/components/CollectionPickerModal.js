@@ -202,7 +202,7 @@ export function CollectionPickerModal({
         }}>
           <button onClick={close} disabled={busy} style={{
             border: "none", background: "var(--brand)", color: "#fff",
-            padding: "10px 22px", borderRadius: 10, cursor: "pointer",
+            padding: "10px 20px", borderRadius: 10, cursor: "pointer",
             fontFamily: "inherit", fontSize: 14, fontWeight: 500,
           }}>Done</button>
         </div>

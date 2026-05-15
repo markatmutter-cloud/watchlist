@@ -191,7 +191,7 @@ export function WatchDetailSheet({
   const fieldLine = (children, onClick) => (
     <button onClick={onClick} style={{
       display: "block", width: "100%", textAlign: "left",
-      padding: "7px 10px", borderRadius: 8,
+      padding: "8px 10px", borderRadius: 8,
       background: "var(--card-bg)",
       border: "0.5px solid var(--border)",
       fontFamily: "inherit", fontSize: 13, color: "var(--text1)",
@@ -239,7 +239,7 @@ export function WatchDetailSheet({
   // Body wrapper — restores the modalShell padding (22) that we
   // dropped from sheetStyle so the sticky header could span edge to
   // edge.
-  const bodyStyle = { padding: "12px 22px 22px" };
+  const bodyStyle = { padding: "12px 20px 20px" };
 
   // Portal to document.body so the sheet shares a stacking context
   // with other body-level overlays (Screening mode) and z-indexes
@@ -286,7 +286,7 @@ export function WatchDetailSheet({
               <div style={{
                 position: "absolute", bottom: 0, left: 0, right: 0,
                 background: "rgba(0,0,0,0.55)", color: "#fff",
-                padding: "3px 6px", fontSize: 10, textAlign: "center",
+                padding: "2px 6px", fontSize: 10, textAlign: "center",
                 fontWeight: 500, letterSpacing: "0.04em",
               }}>{photoBusy ? "Uploading…" : (item.img ? "Tap to replace" : "Tap to upload")}</div>
             )}

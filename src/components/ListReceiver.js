@@ -513,6 +513,6 @@ function headerStyle() {
 const secondaryBtnStyle = {
   border: "0.5px solid var(--border)", background: "transparent",
   color: "var(--text2)",
-  padding: "10px 18px", borderRadius: 10,
+  padding: "10px 20px", borderRadius: 10,
   cursor: "pointer", fontFamily: "inherit", fontSize: 14,
 };

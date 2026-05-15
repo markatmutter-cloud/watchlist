@@ -69,7 +69,7 @@ export function SubTabIntro({
         {actionLabel && onAction && (
           <button onClick={onAction} style={{
             fontSize: 13, fontWeight: 500,
-            padding: "7px 14px", borderRadius: 8,
+            padding: "8px 14px", borderRadius: 8,
             border: "0.5px solid var(--border)",
             background: "var(--surface)",
             color: "var(--text1)",

@@ -536,7 +536,7 @@ function MyCollectionView({
                     fontSize: 11, fontWeight: 500,
                     color: "var(--text3)",
                     background: active ? "var(--surface)" : "transparent",
-                    padding: "1px 6px", borderRadius: 999,
+                    padding: "2px 6px", borderRadius: 999,
                     minWidth: 18, textAlign: "center",
                   }}>{count}</span>
                 )}
@@ -1054,7 +1054,7 @@ function PickerChip({ active, label, onClick }) {
   return (
     <button onClick={onClick} style={{
       flexShrink: 0,
-      padding: "5px 11px", borderRadius: 999,
+      padding: "4px 12px", borderRadius: 999,
       border: "0.5px solid var(--border)",
       background: active ? "var(--text1)" : "transparent",
       color: active ? "var(--bg)" : "var(--text1)",
@@ -2654,7 +2654,7 @@ function ReactionAggregateChips({ reactions }) {
       {order.filter(k => counts[k] > 0).map(k => (
         <span key={k} style={{
           display: "inline-flex", alignItems: "center", gap: 4,
-          padding: "3px 8px", borderRadius: 999,
+          padding: "2px 8px", borderRadius: 999,
           border: "0.5px solid var(--border)",
           background: "var(--surface)",
           color: REACTION_COLOR[k],

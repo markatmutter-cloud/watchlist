@@ -830,7 +830,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
   };
 
   return (
-    <div style={{ padding: "16px 18px 60px" }}>
+    <div style={{ padding: "16px 20px 60px" }}>
       {/* Section nav (2026-05-09). Sticky-at-top anchor links so the
           dense admin page is navigable without scrolling. Anchor
           targets are the section ids on each h1 below. Click goes
@@ -839,7 +839,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
       <div style={{
         position: "sticky", top: 0, zIndex: 5,
         marginLeft: -18, marginRight: -18, marginTop: -16, marginBottom: 14,
-        padding: "10px 18px",
+        padding: "10px 20px",
         background: "var(--bg)",
         borderBottom: "0.5px solid var(--border)",
         display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center",
@@ -855,7 +855,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
           ["sec-limits",   "User limits"],
         ].map(([id, label]) => (
           <a key={id} href={`#${id}`} style={{
-            fontSize: 12, padding: "5px 10px", borderRadius: 12,
+            fontSize: 12, padding: "4px 10px", borderRadius: 12,
             border: "0.5px solid var(--border)",
             color: "var(--text2)", textDecoration: "none",
             background: "var(--surface)",
@@ -1106,7 +1106,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
           maxHeight: 80, overflowY: "auto",
         }}>
           <button onClick={() => setFastestBrand(null)} style={{
-            padding: "5px 10px", borderRadius: 12,
+            padding: "4px 10px", borderRadius: 12,
             border: "0.5px solid var(--border)",
             background: fastestBrand == null ? "var(--text1)" : "transparent",
             color: fastestBrand == null ? "var(--bg)" : "var(--text2)",
@@ -1117,7 +1117,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
             const active = fastestBrand === brand;
             return (
               <button key={brand} onClick={() => setFastestBrand(brand)} style={{
-                padding: "5px 10px", borderRadius: 12,
+                padding: "4px 10px", borderRadius: 12,
                 border: "0.5px solid var(--border)",
                 background: active ? "var(--text1)" : "transparent",
                 color: active ? "var(--bg)" : "var(--text2)",

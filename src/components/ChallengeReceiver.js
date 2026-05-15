@@ -209,7 +209,7 @@ export function ChallengeReceiver({
       <div style={landingPaneStyle()}>
         <FocusedHeader title="Challenge unavailable" />
         <div style={{
-          padding: "24px 22px",
+          padding: "24px 20px",
           border: "0.5px solid var(--border)",
           borderRadius: 12, background: "var(--card-bg)",
           boxShadow: "var(--shadow-modal)",
@@ -258,7 +258,7 @@ export function ChallengeReceiver({
         {/* Main card — constraints + picks (when complete) */}
         <div style={focusedCardStyle()}>
           <div style={{
-            padding: "16px 18px 14px",
+            padding: "16px 20px 14px",
             borderBottom: "0.5px solid var(--border)",
             display: "flex", alignItems: "baseline", justifyContent: "space-between",
             gap: 10, flexWrap: "wrap",
@@ -286,7 +286,7 @@ export function ChallengeReceiver({
 
           {/* Picks (complete mode only) */}
           {!isSpec && Array.isArray(completeData?.picks) && completeData.picks.length > 0 ? (
-            <div style={{ padding: "14px 18px" }}>
+            <div style={{ padding: "14px 20px" }}>
               {completeData.picks.map((p, i) => {
                 const url = p.snapshot?.url || "";
                 const lastPick = i >= completeData.picks.length - 1;
@@ -346,7 +346,7 @@ export function ChallengeReceiver({
               )}
             </div>
           ) : isSpec ? (
-            <div style={{ padding: "16px 18px", color: "var(--text2)", fontSize: 14, lineHeight: 1.55 }}>
+            <div style={{ padding: "16px 20px", color: "var(--text2)", fontSize: 14, lineHeight: 1.55 }}>
               The sender wants you to build your own answer under the same constraints —
               <strong style={{ color: "var(--text1)" }}> pick {targetCount} {targetCount === 1 ? "watch" : "watches"} for {fmtUSD(budget)}</strong>.
               You can still go over by 20% (soft cap).
@@ -359,7 +359,7 @@ export function ChallengeReceiver({
 
         {/* Right column — actions + onboarding */}
         <div style={focusedCardStyle()}>
-          <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
             <p style={{
               fontSize: 11, fontWeight: 600, color: "var(--text3)",
               textTransform: "uppercase", letterSpacing: "0.06em",
@@ -442,7 +442,7 @@ function OrientationAnchors({ signedIn, onClickAnchor, onSignIn, signInCopy }) {
     <div style={{ ...focusedCardStyle(), overflow: "hidden" }}>
       {showSignIn && (
         <div style={{
-          padding: "16px 18px 14px",
+          padding: "16px 20px 14px",
           borderBottom: "0.5px solid var(--border)",
           background: "var(--surface)",
         }}>
@@ -466,7 +466,7 @@ function OrientationAnchors({ signedIn, onClickAnchor, onSignIn, signInCopy }) {
           </button>
         </div>
       )}
-      <div style={{ padding: "16px 18px 14px" }}>
+      <div style={{ padding: "16px 20px 14px" }}>
         <p style={{
           fontSize: 11, fontWeight: 600, color: "var(--text3)",
           textTransform: "uppercase", letterSpacing: "0.06em",
@@ -523,7 +523,7 @@ const secondaryBtnStyle = {
   border: "0.5px solid var(--border)",
   background: "transparent",
   color: "var(--text2)",
-  padding: "10px 18px",
+  padding: "10px 20px",
   borderRadius: 8,
   fontFamily: "inherit",
   fontSize: 14,

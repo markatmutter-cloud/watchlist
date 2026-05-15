@@ -335,13 +335,13 @@ function AuctionRow({ a, archive, lotCount = 0, onReviewCatalog, onAddToList, bu
               {a.house}
             </span>
             {isLive && (
-              <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#c43", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>LIVE</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#c43", borderRadius: 8, padding: "2px 8px", letterSpacing: "0.06em" }}>LIVE</span>
             )}
             {isClosed && (
-              <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#666", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>CLOSED</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "#666", borderRadius: 8, padding: "2px 8px", letterSpacing: "0.06em" }}>CLOSED</span>
             )}
             {catalogJustOpened && (
-              <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "var(--brand)", borderRadius: 8, padding: "2px 7px", letterSpacing: "0.06em" }}>NEW CATALOG</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", background: "var(--brand)", borderRadius: 8, padding: "2px 8px", letterSpacing: "0.06em" }}>NEW CATALOG</span>
             )}
             {lotActionsAvailable && (
               <span style={{ fontSize: 10, color: "var(--text3)", fontVariantNumeric: "tabular-nums" }}>

@@ -222,7 +222,7 @@ function Chip({ active, label, onClick }) {
   return (
     <button onClick={onClick} style={{
       flexShrink: 0,
-      padding: "5px 11px", borderRadius: 999,
+      padding: "4px 12px", borderRadius: 999,
       border: "0.5px solid var(--border)",
       background: active ? "var(--text1)" : "transparent",
       color: active ? "var(--bg)" : "var(--text1)",
@@ -256,7 +256,7 @@ function Tile({ item, onTap }) {
             style={{ width: "50%", maxWidth: 36, opacity: 0.5 }} />
         )}
       </div>
-      <div style={{ padding: "5px 6px" }}>
+      <div style={{ padding: "4px 6px" }}>
         <p style={{
           fontSize: 11, fontWeight: 500, margin: "0 0 1px", color: "var(--text1)",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",

@@ -18,7 +18,7 @@ export function TrackNewItemModal({
         background: "var(--card-bg)",
         border: "0.5px solid var(--border)",
         borderRadius: 12,
-        padding: "20px 22px",
+        padding: "20px 20px",
         width: "100%", maxWidth: 520,
         color: "var(--text1)", fontFamily: "inherit",
       }}>

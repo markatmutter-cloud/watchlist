@@ -269,7 +269,7 @@ export function ChallengesView({
                 {isDraft && (
                   <span style={{
                     marginLeft: 8, fontSize: 10, fontWeight: 600,
-                    padding: "1px 6px", borderRadius: 4,
+                    padding: "2px 6px", borderRadius: 4,
                     background: "rgba(201,162,39,0.15)", color: "var(--accent-warn)",
                     textTransform: "uppercase", letterSpacing: "0.04em",
                   }}>Draft</span>
@@ -280,7 +280,7 @@ export function ChallengesView({
                 {c.senderName && (
                   <span style={{
                     marginLeft: 8, fontSize: 10, fontWeight: 500,
-                    padding: "1px 6px", borderRadius: 4,
+                    padding: "2px 6px", borderRadius: 4,
                     background: "var(--brand-tint-10)", color: "var(--brand)",
                   }}>from {c.senderName}</span>
                 )}
