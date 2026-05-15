@@ -280,7 +280,7 @@ export const Card = memo(function Card({
             }}>
               <img src="/favicon-192.png" alt="" aria-hidden="true"
                 style={{ width: "44%", maxWidth: 88, opacity: 0.55 }} />
-              <span style={{ fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text3)" }}>
+              <span style={{ fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text3)" }}>
                 Image not available
               </span>
             </div>
@@ -307,18 +307,18 @@ export const Card = memo(function Card({
               ? daysOnSale(item) : null;
             const durLabel = dur != null ? daysOnSaleLabel(dur) : null;
             return (
-              <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 9, padding: "2px 7px", borderRadius: 8, letterSpacing: "0.06em" }}
+              <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 10, padding: "2px 7px", borderRadius: 8, letterSpacing: "0.06em" }}
                 title={durLabel ? `On sale for ${durLabel} before going sold` : undefined}>
                 SOLD{durLabel ? ` · ${durLabel}` : ""}
               </div>
             );
           })() : isHidden ? (
-            <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 9, padding: "2px 7px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>
+            <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(120,120,120,0.85)", color: "#fff", fontSize: 10, padding: "2px 7px", borderRadius: 8, letterSpacing: "0.06em" }}>HIDDEN</div>
           ) : countdownLabel ? (
             <div style={{
               position: "absolute", top: 6, left: 6,
               background: countdownIsPast ? "rgba(0,0,0,0.55)" : "rgba(24,95,165,0.92)",
-              color: "#fff", fontSize: 9,
+              color: "#fff", fontSize: 10,
               padding: "2px 7px", borderRadius: 8,
               letterSpacing: "0.04em", fontWeight: 600,
               textTransform: "uppercase",
@@ -330,7 +330,7 @@ export const Card = memo(function Card({
             <div style={{
               position: "absolute", top: 6, left: 6,
               background: "rgba(24,95,165,0.92)", color: "#fff",
-              fontSize: 9, padding: "2px 7px", borderRadius: 8,
+              fontSize: 10, padding: "2px 7px", borderRadius: 8,
               letterSpacing: "0.06em", fontWeight: 600,
             }}>AUCTION</div>
           ) : null}
@@ -355,7 +355,7 @@ export const Card = memo(function Card({
               <div style={{ fontSize: compact ? 11 : 13, fontWeight: 500, color: item.sold ? "var(--text2)" : "var(--text1)" }}>{displayPrice}</div>
               {priceDropped && (
                 <span title={`Peak ${fmt(peakPrice, item.currency || "USD")} → ${fmt(item.price, item.currency || "USD")}`}
-                  style={{ fontSize: 9, color: "var(--accent-positive)", fontWeight: 600 }}>
+                  style={{ fontSize: 10, color: "var(--accent-positive)", fontWeight: 600 }}>
                   ↓ {fmt(cumulativeDrop, item.currency || "USD")}
                 </span>
               )}
@@ -369,7 +369,7 @@ export const Card = memo(function Card({
                    the USD-converted figure).
                 3. Auction estimate range (active auction-format lots).
                 4. Invisible spacer to keep row heights uniform. */}
-          <div style={{ fontSize: 9, color: "var(--text3)", minHeight: 12 }}>
+          <div style={{ fontSize: 10, color: "var(--text3)", minHeight: 12 }}>
             {(() => {
               if (item.sold) {
                 const soldDateStr = item.soldAt || item.lastSeen

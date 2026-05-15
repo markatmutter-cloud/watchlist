@@ -312,7 +312,7 @@ function LinkSection({ title, items, isOpen, onToggle }) {
           fontFamily: "inherit", textAlign: "left",
         }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-          <span style={{ fontSize: 15, fontWeight: 500, color: "var(--text1)" }}>{title}</span>
+          <span style={{ fontSize: 14, fontWeight: 500, color: "var(--text1)" }}>{title}</span>
           <span style={{ fontSize: 12, color: "var(--text3)" }}>{items.length}</span>
         </div>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)"

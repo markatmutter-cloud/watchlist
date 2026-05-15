@@ -75,7 +75,7 @@ export function ShareListPickerModal({
         }}>
         {/* Handle */}
         <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 4px" }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--border)" }} />
+          <div style={{ width: 36, height: 4, borderRadius: 0, background: "var(--border)" }} />
         </div>
         {/* Header */}
         <div style={{
@@ -96,7 +96,7 @@ export function ShareListPickerModal({
             style={{
               background: "none", border: "none", cursor: "pointer",
               color: "var(--text3)", fontFamily: "inherit",
-              fontSize: 20, padding: 0, lineHeight: 1, marginLeft: 12,
+              fontSize: 18, padding: 0, lineHeight: 1, marginLeft: 12,
             }}>×</button>
         </div>
 

@@ -214,7 +214,7 @@ export const modalBackdrop = {
 // About = 440, Track = 520, FavSearch = 380). `padding` differs slightly
 // between modals (Track uses 20/22, others 22) — override as needed.
 export const modalShell = {
-  background: "var(--bg)", borderRadius: 14,
+  background: "var(--bg)", borderRadius: 12,
   border: "0.5px solid var(--border)",
   padding: 22, width: "100%",
   boxShadow: "0 12px 40px rgba(0,0,0,0.25)",

@@ -127,7 +127,7 @@ export function MobileShell(props) {
             <button onClick={() => { setTab("home"); setPage(1); }}
               style={{ background: "none", border: "none", cursor: "pointer",
                       padding: 0, paddingLeft: "0.14em", fontFamily: "inherit",
-                      fontSize: 15, fontWeight: 300, letterSpacing: "0.14em",
+                      fontSize: 14, fontWeight: 300, letterSpacing: "0.14em",
                       textTransform: "uppercase",
                       color: "var(--text1)" }}>
               Watchlist
@@ -430,7 +430,7 @@ export function MobileShell(props) {
 
               {/* Drawer handle */}
               <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 4px" }}>
-                <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--border)" }} />
+                <div style={{ width: 36, height: 4, borderRadius: 0, background: "var(--border)" }} />
               </div>
 
               {/* Scrollable filter content */}
@@ -545,7 +545,7 @@ export function MobileShell(props) {
                       Reset
                     </button>
                   )}
-                  <button onClick={() => setDrawerOpen(false)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: "var(--text1)", color: "var(--bg)", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                  <button onClick={() => setDrawerOpen(false)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: "var(--text1)", color: "var(--bg)", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                     Show {displayedCount} watches
                   </button>
                 </div>

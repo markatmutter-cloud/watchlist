@@ -413,7 +413,7 @@ export function ChallengeReceiver({
 function FocusedHeader({ title }) {
   return (
     <h1 style={{
-      fontSize: 17, fontWeight: 600,
+      fontSize: 18, fontWeight: 600,
       color: "var(--text1)", margin: "0 0 14px", lineHeight: 1.3,
     }}>{title}</h1>
   );

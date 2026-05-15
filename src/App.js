@@ -2285,7 +2285,7 @@ export default function Watchlist() {
                     padding: "10px 12px", border: "0.5px solid var(--border)",
                     background: "var(--surface)",
                     color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 15, fontWeight: 600, borderRadius: 10 }}>
+                    fontSize: 14, fontWeight: 600, borderRadius: 10 }}>
             <span style={{
               width: 30, height: 30, borderRadius: "50%",
               background: "var(--text1)", color: "var(--bg)",
@@ -2325,7 +2325,7 @@ export default function Watchlist() {
                         color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
                         fontSize: 13, fontWeight: 500, borderRadius: 6 }}>
                 <span>Site stats</span>
-                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em",
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.18em",
                               textTransform: "uppercase", color: "var(--bg)",
                               background: "var(--text1)",
                               padding: "2px 6px", borderRadius: 4 }}>
