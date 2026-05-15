@@ -306,12 +306,13 @@ function SectionStrip({ heading, descriptor, items, onViewAll, onScreen, screenC
     <section style={wrapperStyle}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: inverted ? 0 : "0 16px", marginBottom: 12, gap: 12 }}>
         <div style={{ minWidth: 0 }}>
-          {/* Mark feedback 2026-05-15: 18px section headings expanded
-              from the type-scale snap (PR #305) read too large on
-              mobile — three giant blocks rather than an overview.
-              Bumped one stop down to 16 so the pills + cards below
-              keep visual hierarchy without dominating the page. */}
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: headingColor, letterSpacing: "-0.2px" }}>
+          {/* Mobile stays at 16 (Mark feedback 2026-05-15 — 18 read as
+              three giant blocks at phone widths). Desktop bumps to 22
+              (Mark 2026-05-15 desktop audit: "Home strip headings on
+              desktop can get bigger") — at 1280+ viewports the 16px
+              heading didn't carry against 210px-wide tiles, the eye
+              skipped past the section labels entirely. */}
+          <h2 style={{ margin: 0, fontSize: isMobile ? 16 : 22, fontWeight: 600, color: headingColor, letterSpacing: "-0.2px" }}>
             {heading}
           </h2>
           {descriptor && (
@@ -445,13 +446,16 @@ function SectionStrip({ heading, descriptor, items, onViewAll, onScreen, screenC
         ))}
       </div>
         {/* Right-edge fade — lives inside the position:relative wrapper
-            opened above the scroll div. 36px fade from transparent to
-            the section background so the cut card on the right reads
-            as "more to scroll" rather than as a clipped tile. */}
+            opened above the scroll div. Mark 2026-05-15 desktop audit:
+            "wanted the fade but didn't seem to come through" — bumped
+            from 36→72 on desktop (mobile stays 36, has less room) and
+            extended the gradient ramp (start fading at 30% in rather
+            than dead transparent) so the right-cut card reads as
+            clearly under a fade, not just as a thin lip. */}
         <div aria-hidden style={{
           position: "absolute", top: 0, right: 0, bottom: 0,
-          width: 36, pointerEvents: "none",
-          background: `linear-gradient(to right, transparent, ${inverted ? "var(--text1)" : "var(--bg)"})`,
+          width: isMobile ? 36 : 72, pointerEvents: "none",
+          background: `linear-gradient(to right, transparent 0%, ${inverted ? "var(--text1)" : "var(--bg)"} 75%)`,
         }} />
       </div>
     </section>
