@@ -93,7 +93,7 @@ export function DesktopShell(props) {
       // border-bottom on the panel. Extra 8px gives the rounded
       // corners breathing room. Top padding stays 8 — chips visually
       // anchor to the pill above without much space.
-      padding: "10px 20px 28px",
+      padding: "10px 20px 24px",
       borderBottom: "0.5px solid var(--border)",
       background: "var(--surface)",
       display: "flex", flexWrap: "wrap", gap: 8,
@@ -319,7 +319,7 @@ export function DesktopShell(props) {
             ))}
             {filterSources.length > 0 && (
               <button onClick={() => setFilterSources([])} style={{
-                marginLeft: "auto", fontSize: 12, padding: "5px 10px", borderRadius: 6,
+                marginLeft: "auto", fontSize: 12, padding: "4px 10px", borderRadius: 6,
                 border: "0.5px solid var(--border)", background: "transparent",
                 color: "var(--text2)", cursor: "pointer", fontFamily: "inherit",
               }}>Clear</button>
@@ -339,7 +339,7 @@ export function DesktopShell(props) {
         )}
         {filterBrands.length > 0 && (
           <button onClick={() => setFilterBrands([])} style={{
-            marginLeft: "auto", fontSize: 12, padding: "5px 10px", borderRadius: 6,
+            marginLeft: "auto", fontSize: 12, padding: "4px 10px", borderRadius: 6,
             border: "0.5px solid var(--border)", background: "transparent",
             color: "var(--text2)", cursor: "pointer", fontFamily: "inherit",
           }}>Clear</button>
@@ -402,7 +402,7 @@ export function DesktopShell(props) {
           <div style={{ flex: 1 }} />
         ) : (
         <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "7px 12px", width: "100%", maxWidth: 640 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "8px 12px", width: "100%", maxWidth: 640 }}>
             <SearchIcon />
             <input value={search} onChange={e => setSearch(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}
@@ -413,12 +413,14 @@ export function DesktopShell(props) {
                 disabled={currentIsSaved}
                 style={{ flexShrink: 0, background: "none", border: "none",
                         cursor: currentIsSaved ? "default" : "pointer",
-                        color: currentIsSaved ? "var(--brand)" : "var(--text3)",
-                        padding: 2, fontFamily: "inherit",
-                        display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        color: currentIsSaved ? "var(--brand)" : "var(--text2)",
+                        padding: "2px 4px", fontFamily: "inherit",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        gap: 5, fontSize: 12, fontWeight: 500 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill={currentIsSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </svg>
+                <span>{currentIsSaved ? "Saved" : "Save"}</span>
               </button>
             )}
             {search && (
