@@ -4,6 +4,7 @@ import { ListRow } from "./ListRow";
 import { fmtUSD } from "../utils";
 import { signInButton } from "../styles";
 import { EmptyState } from "./EmptyState";
+import { confirm } from "./ConfirmModal";
 
 // Challenges view — extracted from WatchlistTab.js on 2026-05-04
 // when Challenges moved from a Watchlist sub-tab to a resource under
@@ -320,7 +321,12 @@ export function ChallengesView({
             };
             const handleDeleteRow = async () => {
               if (!collectionsApi?.deleteCollection) return;
-              const ok = window.confirm(`Delete "${c.name}"? This can't be undone.`);
+              const ok = await confirm({
+                title: "Delete challenge?",
+                message: `"${c.name}" will be removed permanently. This can't be undone.`,
+                confirmLabel: "Delete",
+                tone: "danger",
+              });
               if (!ok) return;
               await collectionsApi.deleteCollection(c.id);
             };

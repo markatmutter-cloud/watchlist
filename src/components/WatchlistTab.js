@@ -4,6 +4,7 @@ import { ageBucketFromDate, fmtUSD } from "../utils";
 import { importLocalData } from "../supabase";
 import { actionButton, signInButton, inputBase } from "../styles";
 import { EmptyState } from "./EmptyState";
+import { confirm } from "./ConfirmModal";
 import { ListRow } from "./ListRow";
 
 
@@ -425,8 +426,13 @@ export function WatchlistTab(props) {
                       ariaLabel: `Delete ${s.label}`,
                       title: "Delete search",
                       icon: trashIcon,
-                      onClick: () => {
-                        if (window.confirm(`Delete "${s.label}"?`)) removeSearch(s.id);
+                      onClick: async () => {
+                        if (await confirm({
+                          title: "Delete saved search?",
+                          message: `"${s.label}" will be removed from your saved searches.`,
+                          confirmLabel: "Delete",
+                          tone: "danger",
+                        })) removeSearch(s.id);
                       },
                     },
                   ]}
