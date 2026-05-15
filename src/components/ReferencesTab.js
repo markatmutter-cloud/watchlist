@@ -118,7 +118,7 @@ export function ReferencesTab(props) {
                 <r.Icon />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 2 }}>{r.title}</div>
+                <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 2 }}>{r.title}</div>
                 <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.4 }}>
                   {r.desc}
                 </div>

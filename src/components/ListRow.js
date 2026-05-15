@@ -59,7 +59,7 @@ export function ListRow({ icon, accent = "var(--brand)", title, subtitle, onClic
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{
-            fontSize: 15, fontWeight: 500, marginBottom: 2,
+            fontSize: 14, fontWeight: 500, marginBottom: 2,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
             {title}

@@ -17,7 +17,7 @@ export function TrackNewItemModal({
       <div onClick={(e) => e.stopPropagation()} style={{
         background: "var(--card-bg)",
         border: "0.5px solid var(--border)",
-        borderRadius: 14,
+        borderRadius: 12,
         padding: "20px 22px",
         width: "100%", maxWidth: 520,
         color: "var(--text1)", fontFamily: "inherit",

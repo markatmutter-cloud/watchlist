@@ -855,7 +855,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
           ["sec-limits",   "User limits"],
         ].map(([id, label]) => (
           <a key={id} href={`#${id}`} style={{
-            fontSize: 12, padding: "5px 10px", borderRadius: 14,
+            fontSize: 12, padding: "5px 10px", borderRadius: 12,
             border: "0.5px solid var(--border)",
             color: "var(--text2)", textDecoration: "none",
             background: "var(--surface)",
@@ -969,7 +969,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
         <strong style={{ color: "var(--text2)" }}>Engagement</strong> (Views / CTR / ♥/100v / +List/100v / Sh/100v) is a 30-day rolling
         window from the listing_events_daily rollup. Today's events
         appear after the next nightly rollup; trigger one early via
-        <code style={{ marginLeft: 4, marginRight: 4, padding: "0 4px", background: "var(--surface)", borderRadius: 3 }}>select public.rollup_and_prune_listing_events();</code>
+        <code style={{ marginLeft: 4, marginRight: 4, padding: "0 4px", background: "var(--surface)", borderRadius: 4 }}>select public.rollup_and_prune_listing_events();</code>
         in the SQL editor.
       </div>
 
@@ -1067,7 +1067,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
             const active = fastestWindow === key;
             return (
               <button key={key} onClick={() => setFastestWindow(key)} style={{
-                padding: "6px 12px", borderRadius: 14,
+                padding: "6px 12px", borderRadius: 12,
                 border: "0.5px solid var(--border)",
                 background: active ? "var(--text1)" : "var(--surface)",
                 color: active ? "var(--bg)" : "var(--text2)",
@@ -1084,7 +1084,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
             const active = fastestLimit === n;
             return (
               <button key={n} onClick={() => setFastestLimit(n)} style={{
-                padding: "6px 12px", borderRadius: 14,
+                padding: "6px 12px", borderRadius: 12,
                 border: "0.5px solid var(--border)",
                 background: active ? "var(--text1)" : "var(--surface)",
                 color: active ? "var(--bg)" : "var(--text2)",
@@ -1106,7 +1106,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
           maxHeight: 80, overflowY: "auto",
         }}>
           <button onClick={() => setFastestBrand(null)} style={{
-            padding: "5px 10px", borderRadius: 14,
+            padding: "5px 10px", borderRadius: 12,
             border: "0.5px solid var(--border)",
             background: fastestBrand == null ? "var(--text1)" : "transparent",
             color: fastestBrand == null ? "var(--bg)" : "var(--text2)",
@@ -1117,7 +1117,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
             const active = fastestBrand === brand;
             return (
               <button key={brand} onClick={() => setFastestBrand(brand)} style={{
-                padding: "5px 10px", borderRadius: 14,
+                padding: "5px 10px", borderRadius: 12,
                 border: "0.5px solid var(--border)",
                 background: active ? "var(--text1)" : "transparent",
                 color: active ? "var(--bg)" : "var(--text2)",

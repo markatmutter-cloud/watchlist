@@ -487,7 +487,7 @@ export function ListReviewMode({
     minHeight: 520,
     background: "var(--bg)",
     border: "0.5px solid var(--border)",
-    borderRadius: 14,
+    borderRadius: 12,
     overflow: "hidden",
     fontFamily: SANS_STACK,
     position: "relative",
@@ -633,7 +633,7 @@ export function ListReviewMode({
                   position: "absolute",
                   top: 16, left: "4%", right: "4%",
                   aspectRatio: "1 / 1",
-                  borderRadius: 14,
+                  borderRadius: 12,
                   background: "var(--surface)",
                   border: "0.5px solid var(--border)",
                   boxShadow: "0 10px 22px rgba(0,0,0,0.10)",
@@ -670,7 +670,7 @@ export function ListReviewMode({
                   position: "relative",
                   width: "100%",
                   aspectRatio: "1 / 1",
-                  borderRadius: 14, overflow: "hidden",
+                  borderRadius: 12, overflow: "hidden",
                   background: "var(--surface)",
                   border: "0.5px solid var(--border)",
                   boxShadow: "0 18px 36px rgba(0,0,0,0.16), 0 2px 6px rgba(0,0,0,0.06)",
@@ -959,7 +959,7 @@ function EdgeWash({ side, color, label, opacity }) {
       <span style={{
         fontFamily: SANS_STACK,
         color: "#fff",
-        fontSize: 15, fontWeight: 600,
+        fontSize: 14, fontWeight: 600,
         letterSpacing: "0.24em", textTransform: "uppercase",
         textShadow: "0 1px 3px rgba(0,0,0,0.35)",
         opacity: Math.min(1, opacity * 3),
@@ -1048,7 +1048,7 @@ function OnboardingCard({ ownerName, total, onDismiss }) {
         </div>
         <div style={{
           fontFamily: SANS_STACK,
-          fontSize: 24, fontWeight: 600, color: "var(--text1)",
+          fontSize: 22, fontWeight: 600, color: "var(--text1)",
           lineHeight: 1.2, marginBottom: 12,
           letterSpacing: "-0.005em",
         }}>
@@ -1137,7 +1137,7 @@ function ResetConfirm({ onCancel, onConfirm }) {
         </div>
         <div style={{
           fontFamily: SANS_STACK,
-          fontSize: 20, fontWeight: 600, color: "var(--text1)",
+          fontSize: 18, fontWeight: 600, color: "var(--text1)",
           lineHeight: 1.25, marginBottom: 10,
           letterSpacing: "-0.005em",
         }}>
@@ -1222,7 +1222,7 @@ function RecapView({ tally, total, ownerName, listName, onClose, mode }) {
       </div>
       <div style={{
         fontFamily: SANS_STACK,
-        fontSize: 24, fontWeight: 600, color: "var(--text1)",
+        fontSize: 22, fontWeight: 600, color: "var(--text1)",
         lineHeight: 1.2, marginBottom: 26,
         letterSpacing: "-0.005em",
       }}>
@@ -1274,7 +1274,7 @@ function TallyCard({ label, value, color }) {
     }}>
       <div style={{
         fontFamily: SANS_STACK,
-        fontSize: 26, fontWeight: 600,
+        fontSize: 22, fontWeight: 600,
         color: value > 0 ? color : "var(--text3)",
         fontVariantNumeric: "tabular-nums lining-nums",
         lineHeight: 1,
@@ -1453,7 +1453,7 @@ function editorialPanel(maxWidth) {
   return {
     background: "var(--bg)",
     border: "0.5px solid var(--border)",
-    borderRadius: 14,
+    borderRadius: 12,
     padding: "32px 28px",
     maxWidth, width: "100%",
     fontFamily: SANS_STACK,

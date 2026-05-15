@@ -156,7 +156,7 @@ function PrintSheet({ refW, refH, cmpW, cmpH, refName, cmpName, refImage, cmpIma
                   width: "1.6in", height: "1.2in", margin: "0 auto",
                   border: "0.5px dashed #ccc",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 9, color: "#999",
+                  fontSize: 10, color: "#999",
                 }}>(no photo)</div>
               )}
               <div style={{ fontSize: 10, marginTop: 4, color: "#000", fontWeight: 500 }}>
@@ -348,7 +348,7 @@ export function SizeCompare({ onBack }) {
       ) : (
         <label style={{
           display: "inline-block",
-          padding: "6px 12px", borderRadius: 18,
+          padding: "6px 12px", borderRadius: 20,
           border: "0.5px solid var(--border)",
           background: "var(--card-bg)", color: "var(--text1)",
           fontSize: 12, fontFamily: "inherit", cursor: "pointer",
@@ -448,7 +448,7 @@ export function SizeCompare({ onBack }) {
       }}>
         <div style={stat}>
           <p style={{ fontSize: 13, color: "var(--text2)", margin: "0 0 4px" }}>Width difference</p>
-          <p style={{ fontSize: 20, fontWeight: 500, margin: 0, color: "var(--text1)" }}>
+          <p style={{ fontSize: 18, fontWeight: 500, margin: 0, color: "var(--text1)" }}>
             {dimDiffText(cmpWN, refWN)}
           </p>
           <p style={{ fontSize: 12, color: "var(--text3)", margin: "4px 0 0" }}>
@@ -457,7 +457,7 @@ export function SizeCompare({ onBack }) {
         </div>
         <div style={stat}>
           <p style={{ fontSize: 13, color: "var(--text2)", margin: "0 0 4px" }}>Length difference</p>
-          <p style={{ fontSize: 20, fontWeight: 500, margin: 0, color: "var(--text1)" }}>
+          <p style={{ fontSize: 18, fontWeight: 500, margin: 0, color: "var(--text1)" }}>
             {dimDiffText(cmpHN, refHN)}
           </p>
           <p style={{ fontSize: 12, color: "var(--text3)", margin: "4px 0 0" }}>
@@ -466,7 +466,7 @@ export function SizeCompare({ onBack }) {
         </div>
         <div style={stat}>
           <p style={{ fontSize: 13, color: "var(--text2)", margin: "0 0 4px" }}>Footprint</p>
-          <p style={{ fontSize: 20, fontWeight: 500, margin: 0, color: "var(--text1)" }}>
+          <p style={{ fontSize: 18, fontWeight: 500, margin: 0, color: "var(--text1)" }}>
             {areaSign}{Math.abs(areaPct).toFixed(1)}%
           </p>
           <p style={{ fontSize: 12, color: "var(--text3)", margin: "4px 0 0" }}>

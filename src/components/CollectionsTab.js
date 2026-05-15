@@ -1074,7 +1074,7 @@ function PoolCard({ item, busy, onAdd, primaryCurrency }) {
       </div>
       <div style={{ padding: "8px 10px 10px", flex: 1, width: "100%", textAlign: "left" }}>
         {item.source && (
-          <div style={{ fontSize: 9, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
+          <div style={{ fontSize: 10, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
             {item.source}
           </div>
         )}

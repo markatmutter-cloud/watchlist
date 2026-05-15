@@ -23,7 +23,7 @@ export function EmptyState({ icon, heading, blurb, action, size = "default" }) {
         <div style={{ fontSize: 32, marginBottom: 12 }}>{icon}</div>
       )}
       {heading && (
-        <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
+        <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 8, color: "var(--text1)" }}>
           {heading}
         </div>
       )}

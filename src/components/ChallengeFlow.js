@@ -782,7 +782,7 @@ function StatCard({ label, value, sub, progress, warn, hardWarn, warnLabel }) {
         <span style={{ fontSize: 22, fontWeight: 600, color: warn ? "var(--accent-warn)" : "var(--text1)" }}>{value}</span>
         <span style={{ fontSize: 12, color: "var(--text3)" }}>{sub}</span>
       </div>
-      <div style={{ height: 2, background: "var(--surface)", borderRadius: 1, overflow: "hidden" }}>
+      <div style={{ height: 2, background: "var(--surface)", borderRadius: 0, overflow: "hidden" }}>
         <div style={{
           height: "100%", width: `${progress}%`,
           background: hardWarn ? "var(--danger)" : warn ? "var(--accent-warn)" : "var(--text1)",

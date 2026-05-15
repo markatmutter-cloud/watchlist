@@ -306,7 +306,7 @@ function SectionStrip({ heading, descriptor, items, onViewAll, isMobile, watchli
     <section style={wrapperStyle}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: inverted ? 0 : "0 16px", marginBottom: 12, gap: 12 }}>
         <div style={{ minWidth: 0 }}>
-          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: headingColor, letterSpacing: "-0.3px" }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: headingColor, letterSpacing: "-0.3px" }}>
             {heading}
           </h2>
           {descriptor && (

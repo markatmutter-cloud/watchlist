@@ -183,7 +183,7 @@ export function ShareReceiver({
           already says the same thing and the chip ate vertical room
           on mobile. */}
       <h1 style={{
-        fontSize: 17, fontWeight: 600,
+        fontSize: 18, fontWeight: 600,
         color: "var(--text1)", margin: "0 0 14px", lineHeight: 1.3,
       }}>
         Someone sent you a watch on Watchlist.

@@ -153,7 +153,7 @@ export function LotMigrationBanner({
         fontFamily: "inherit",
         fontSize: 12,
         padding: "4px 10px",
-        borderRadius: 14,
+        borderRadius: 12,
       }}>Got it</button>
     </div>
   );
