@@ -306,7 +306,12 @@ function SectionStrip({ heading, descriptor, items, onViewAll, onScreen, screenC
     <section style={wrapperStyle}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: inverted ? 0 : "0 16px", marginBottom: 12, gap: 12 }}>
         <div style={{ minWidth: 0 }}>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: headingColor, letterSpacing: "-0.3px" }}>
+          {/* Mark feedback 2026-05-15: 18px section headings expanded
+              from the type-scale snap (PR #305) read too large on
+              mobile — three giant blocks rather than an overview.
+              Bumped one stop down to 16 so the pills + cards below
+              keep visual hierarchy without dominating the page. */}
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: headingColor, letterSpacing: "-0.2px" }}>
             {heading}
           </h2>
           {descriptor && (
@@ -361,7 +366,14 @@ function SectionStrip({ heading, descriptor, items, onViewAll, onScreen, screenC
           rendering everything in a 7-col grid. Tile widths differ by
           viewport — narrower flex-percentage tiles on mobile, fixed
           pixel-width tiles on desktop so the slider feels intentional
-          at large viewports. */}
+          at large viewports.
+
+          Right-edge fade overlay (Mark feedback 2026-05-15: "wanted
+          the fade but didn't seem to come through"). Without it, the
+          right-cut card is the only signal there's more to scroll;
+          the gradient makes the affordance explicit. pointerEvents
+          none so it doesn't swallow taps/swipes through the overlay. */}
+      <div style={{ position: "relative" }}>
       <div style={{
         display: "flex", gap: 1, overflowX: "auto", overflowY: "hidden",
         padding: inverted ? "0 0 4px" : "0 16px 4px",
@@ -431,6 +443,16 @@ function SectionStrip({ heading, descriptor, items, onViewAll, onScreen, screenC
             )}
           </div>
         ))}
+      </div>
+        {/* Right-edge fade — lives inside the position:relative wrapper
+            opened above the scroll div. 36px fade from transparent to
+            the section background so the cut card on the right reads
+            as "more to scroll" rather than as a clipped tile. */}
+        <div aria-hidden style={{
+          position: "absolute", top: 0, right: 0, bottom: 0,
+          width: 36, pointerEvents: "none",
+          background: `linear-gradient(to right, transparent, ${inverted ? "var(--text1)" : "var(--bg)"})`,
+        }} />
       </div>
     </section>
   );
