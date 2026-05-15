@@ -1263,6 +1263,67 @@ export default function Watchlist() {
     return lotsByAuctionUrl.get(auctionScreenerState.auction.url) || [];
   }, [auctionScreenerState, lotsByAuctionUrl]);
 
+  // Auction-calendar action handlers (Mark spec 2026-05-14).
+  // CRITICAL: these useCallbacks MUST live ABOVE the `loading` /
+  // `loadError` early returns later in the function. Earlier draft
+  // placed them next to the auctionCalendarJSX consts at line ~2496,
+  // past the early returns, which tripped React #310 "rendered more
+  // hooks than during the previous render" when loading flipped
+  // false. See CLAUDE.md Things-to-never-do: hooks BEFORE every
+  // early return, always.
+  //
+  // Open the screening overlay on an auction's catalog. Auto-creates
+  // the user's auction list first (so Yes-swipes have somewhere to
+  // land) and stores its id on the screener state.
+  const handleReviewCatalog = useCallback(async (auction) => {
+    if (!auction?.url) return;
+    if (!user) {
+      // Signed-out: prompt sign-in instead of trying to create a list.
+      setSignInPromptOpen(true);
+      return;
+    }
+    setAuctionActionBusyUrl(auction.url);
+    try {
+      const res = await collectionsApi.getOrCreateAuctionList(auction);
+      if (res.error) {
+        console.warn("getOrCreateAuctionList failed:", res.error);
+        // Still open the screener — Yes will fall back to heart if no target id.
+        setAuctionScreenerState({ auction, targetCollectionId: null });
+        return;
+      }
+      setAuctionScreenerState({ auction, targetCollectionId: res.id });
+    } finally {
+      setAuctionActionBusyUrl(null);
+    }
+  }, [user, collectionsApi]);
+
+  // Bulk-add every lot from the catalog into the auction's auto-list.
+  // Idempotent — the unique (collection_id, listing_id) index on
+  // collection_items eats duplicates, so re-tapping after picking a
+  // few extras via Review is safe.
+  const handleAddCatalogToList = useCallback(async (auction) => {
+    if (!auction?.url) return;
+    if (!user) {
+      setSignInPromptOpen(true);
+      return;
+    }
+    const lots = lotsByAuctionUrl.get(auction.url) || [];
+    if (lots.length === 0) return;
+    setAuctionActionBusyUrl(auction.url);
+    try {
+      const create = await collectionsApi.getOrCreateAuctionList(auction);
+      if (create.error) {
+        console.warn("getOrCreateAuctionList failed:", create.error);
+        return;
+      }
+      await collectionsApi.addItemsToCollection(create.id, lots, {
+        sourceOfEntry: "auction_bulk",
+      });
+    } finally {
+      setAuctionActionBusyUrl(null);
+    }
+  }, [user, collectionsApi, lotsByAuctionUrl]);
+
   // Feed-screening queue (Mark spec 2026-05-14): live, non-hidden
   // items added since the user's last visit, sorted newest first
   // and capped at 50. Auction lots included (they show up in the
@@ -2490,58 +2551,12 @@ export default function Watchlist() {
   // Watchlist > Calendar sub-tab used to render before the
   // 2026-05-04 unification; it now lives at Listings > Auction calendar
   // (its own sub-tab) after the listings sub-tabs restructure.
-  // Open the screening overlay on an auction's catalog. Auto-creates
-  // the user's auction list first (so Yes-swipes have somewhere to
-  // land) and stores its id on the screener state.
-  const handleReviewCatalog = useCallback(async (auction) => {
-    if (!auction?.url) return;
-    if (!user) {
-      // Signed-out: prompt sign-in instead of trying to create a list.
-      setSignInPromptOpen(true);
-      return;
-    }
-    setAuctionActionBusyUrl(auction.url);
-    try {
-      const res = await collectionsApi.getOrCreateAuctionList(auction);
-      if (res.error) {
-        console.warn("getOrCreateAuctionList failed:", res.error);
-        // Still open the screener — Yes will fall back to heart if no target id.
-        setAuctionScreenerState({ auction, targetCollectionId: null });
-        return;
-      }
-      setAuctionScreenerState({ auction, targetCollectionId: res.id });
-    } finally {
-      setAuctionActionBusyUrl(null);
-    }
-  }, [user, collectionsApi]);
-
-  // Bulk-add every lot from the catalog into the auction's auto-list.
-  // Idempotent — the unique (collection_id, listing_id) index on
-  // collection_items eats duplicates, so re-tapping after picking a
-  // few extras via Review is safe.
-  const handleAddCatalogToList = useCallback(async (auction) => {
-    if (!auction?.url) return;
-    if (!user) {
-      setSignInPromptOpen(true);
-      return;
-    }
-    const lots = lotsByAuctionUrl.get(auction.url) || [];
-    if (lots.length === 0) return;
-    setAuctionActionBusyUrl(auction.url);
-    try {
-      const create = await collectionsApi.getOrCreateAuctionList(auction);
-      if (create.error) {
-        console.warn("getOrCreateAuctionList failed:", create.error);
-        return;
-      }
-      await collectionsApi.addItemsToCollection(create.id, lots, {
-        sourceOfEntry: "auction_bulk",
-      });
-    } finally {
-      setAuctionActionBusyUrl(null);
-    }
-  }, [user, collectionsApi, lotsByAuctionUrl]);
-
+  // (handleReviewCatalog + handleAddCatalogToList moved BEFORE the
+  // `loading` / `loadError` early returns above on 2026-05-14 — they
+  // were sitting at line ~2496, past the returns, which crashed with
+  // React #310 "rendered more hooks than during the previous render"
+  // when loading flipped false. Hooks must be defined BEFORE every
+  // early return; see CLAUDE.md Things-to-never-do.)
   const auctionCalendarJSX = (
     <div style={{ paddingTop: 4 }}>
       <AuctionCalendar
