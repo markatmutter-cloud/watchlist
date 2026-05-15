@@ -8,6 +8,7 @@ import { ManualEntryForm } from "./ManualEntryForm";
 import { ListingPickerModal } from "./ListingPickerModal";
 import { MarkAsSoldModal } from "./MarkAsSoldModal";
 import { ManageListSheet } from "./ManageListSheet";
+import { confirm } from "./ConfirmModal";
 import { WatchDetailSheet } from "./WatchDetailSheet";
 import { ListReviewMode } from "./ListReviewMode";
 import { fmtUSD, matchesSearch } from "../utils";
@@ -1817,7 +1818,12 @@ function ListsView({
                 {myReactionsOnList.length > 0 && (
                   <button
                     onClick={async () => {
-                      if (!window.confirm(`Clear all ${myReactionsOnList.length} of your Yes / Pass ratings on this list? (Your hearts stay where they are.)`)) return;
+                      if (!(await confirm({
+                        title: "Clear your ratings?",
+                        message: `Reset all ${myReactionsOnList.length} of your Yes / Pass ratings on this list. Your hearts stay where they are.`,
+                        confirmLabel: "Clear ratings",
+                        tone: "danger",
+                      }))) return;
                       await Promise.all(myReactionsOnList.map(({ itemId, emoji }) =>
                         onToggleReaction(itemId, emoji)));
                     }}
@@ -2145,7 +2151,12 @@ function ListsView({
         title: "Delete list",
         icon: trashIcon,
         onClick: async () => {
-          if (!window.confirm(`Delete "${c.name}"? Items inside aren't deleted from your watchlist; they're just unbundled from this list.`)) return;
+          if (!(await confirm({
+            title: "Delete list?",
+            message: `"${c.name}" will be removed. Items inside aren't deleted from your watchlist — they're just unbundled from this list.`,
+            confirmLabel: "Delete",
+            tone: "danger",
+          }))) return;
           await deleteCollection(c.id);
         },
       });
@@ -2487,7 +2498,12 @@ function ManualItemCard({ item, onRemove, onMarkSold, onClickDetail }) {
             )}
             <button onClick={async () => {
               setMenuOpen(false);
-              if (window.confirm("Remove this watch from the list?")) await onRemove();
+              if (await confirm({
+                title: "Remove watch?",
+                message: "This watch will be removed from this list.",
+                confirmLabel: "Remove",
+                tone: "danger",
+              })) await onRemove();
             }} style={menuItemStyle("var(--danger)")}>Remove</button>
           </div>,
           document.body

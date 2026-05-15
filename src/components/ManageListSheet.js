@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase } from "../styles";
+import { confirm } from "./ConfirmModal";
 
 // List Sharing v2 / slice 2 — Manage list sheet.
 //
@@ -119,7 +120,12 @@ export function ManageListSheet({
   const onRevoke = useCallback(async (row) => {
     if (!collection?.id) return;
     const label = row.user_email || row.invited_email;
-    if (!window.confirm(`Remove ${label}? They'll lose access to this list.`)) return;
+    if (!(await confirm({
+      title: "Remove from list?",
+      message: `${label} will lose access to this list.`,
+      confirmLabel: "Remove",
+      tone: "danger",
+    }))) return;
     setBusy(true);
     setError("");
     const opts = row.user_id ? { userId: row.user_id } : { inviteId: row.invite_id };
