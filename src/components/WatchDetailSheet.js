@@ -174,41 +174,66 @@ export function WatchDetailSheet({
   const title = [item.brand || item.manualBrand, item.model || item.manualModel]
     .filter(Boolean).join(" ").trim() || "Untitled";
 
+  // Density pass (Mark feedback 2026-05-15 #9): tighter section
+  // labels + field padding so the form fits more in one viewport.
+  // Was marginTop 18 / padding 8x10 / lineHeight 1.5.
   const sectionLabel = {
     fontSize: 11, fontWeight: 600, color: "var(--text3)",
     textTransform: "uppercase", letterSpacing: "0.06em",
-    marginTop: 18, marginBottom: 6,
+    marginTop: 12, marginBottom: 5,
   };
   const fieldLine = (children, onClick) => (
     <button onClick={onClick} style={{
       display: "block", width: "100%", textAlign: "left",
-      padding: "8px 10px", borderRadius: 8,
+      padding: "7px 10px", borderRadius: 8,
       background: "var(--card-bg)",
       border: "0.5px solid var(--border)",
       fontFamily: "inherit", fontSize: 13, color: "var(--text1)",
-      cursor: onClick ? "pointer" : "default", lineHeight: 1.5,
+      cursor: onClick ? "pointer" : "default", lineHeight: 1.4,
     }}>{children}</button>
   );
 
   // Sheet sizing — mobile = full screen (no rounded corners on
   // bottom), desktop = right-side panel. modalBackdrop handles
   // overlay; modalShell is overridden inline.
-  // Mobile paddingTop carries the safe-area inset so the title
-  // doesn't sit under the status-bar / iOS notch — Mark report
-  // 2026-05-10: title was right at the top edge with no breathing
-  // room. The standard modalShell padding (22) gives the rest.
+  //
+  // Mark feedback 2026-05-15 (#9 / IMG_6520): "the card doesn't fit
+  // the screen" — long form (7 sections), no obvious dismiss
+  // affordance once you scroll past the top. Two changes:
+  //   1. Sticky header (title + close ×) anchored to the top so the
+  //      escape hatch is always reachable.
+  //   2. Density pass on photo block, section labels, field padding
+  //      so the form fits more in one viewport before scrolling.
+  // The safe-area-inset-top now lives on the sticky header (was on
+  // the shell) so the sticky surface sits below the iOS status bar.
   const sheetStyle = isMobile ? {
     ...modalShell,
     maxWidth: "100%", width: "100%",
     maxHeight: "100vh", height: "100vh",
     margin: 0, borderRadius: 0,
     overflowY: "auto",
-    paddingTop: "max(28px, env(safe-area-inset-top, 28px))",
+    padding: 0,
   } : {
     ...modalShell,
     maxWidth: 540, width: "92vw",
     maxHeight: "90vh", overflowY: "auto",
+    padding: 0,
   };
+  // Sticky header — wraps the title row + close button. Pulled flush
+  // to the shell edges so the bg band + bottom border read as a real
+  // header, not a contained pill.
+  const stickyHeaderStyle = {
+    position: "sticky", top: 0, zIndex: 2,
+    background: "var(--bg)",
+    borderBottom: "0.5px solid var(--border)",
+    padding: isMobile
+      ? "max(14px, calc(env(safe-area-inset-top, 0px) + 12px)) 22px 12px"
+      : "16px 22px 12px",
+  };
+  // Body wrapper — restores the modalShell padding (22) that we
+  // dropped from sheetStyle so the sticky header could span edge to
+  // edge.
+  const bodyStyle = { padding: "12px 22px 22px" };
 
   // Portal to document.body so the sheet shares a stacking context
   // with other body-level overlays (Screening mode) and z-indexes
@@ -219,18 +244,21 @@ export function WatchDetailSheet({
   return createPortal((
     <div onClick={onClose} style={modalBackdrop}>
       <div onClick={e => e.stopPropagation()} style={sheetStyle}>
-        <div style={modalTitleRow}>
-          <div style={modalTitle}>{title}</div>
-          <button onClick={onClose} aria-label="Close" style={modalCloseButton}>×</button>
+        <div style={stickyHeaderStyle}>
+          <div style={{ ...modalTitleRow, marginBottom: 0 }}>
+            <div style={modalTitle}>{title}</div>
+            <button onClick={onClose} aria-label="Close" style={modalCloseButton}>×</button>
+          </div>
         </div>
+        <div style={bodyStyle}>
 
         {/* Photo + identifying info. Manual entries get an upload
             affordance — tap the photo (or the empty placeholder) to
             replace it. Listing-backed rows skip the affordance: the
             image is owned by the dealer's CDN. */}
-        <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 8 }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 6 }}>
           <div style={{
-            width: 120, height: 120, borderRadius: 10,
+            width: 96, height: 96, borderRadius: 10,
             background: "var(--surface)", overflow: "hidden", flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
             position: "relative",
@@ -464,6 +492,7 @@ export function WatchDetailSheet({
             </button>
           </>
         )}
+        </div>
       </div>
     </div>
   ), document.body);
