@@ -151,9 +151,15 @@ def get_price_and_status(url):
             if all_prices:
                 price = int(all_prices[-1].replace(',', ''))
 
-        # Extract description
-        desc_match = re.search(r'(The [A-Z][^.]{20,}\..*?)(?:PRICE|\Z)', text, re.DOTALL)
-        desc = desc_match.group(1).strip()[:400] if desc_match else ""
+        # Extract description.
+        # Anchor on any sentence-starting capitalised word — earlier
+        # pattern required "The" specifically and silently dropped
+        # descriptions opening with "This", "Originally", "A", etc.
+        desc_match = re.search(
+            r'((?:The|This|That|These|Those|An?|Originally|First|Here|Featuring|Introduced)\s+[A-Za-z][^.]{20,}\..*?)(?:PRICE|\Z)',
+            text, re.DOTALL,
+        )
+        desc = desc_match.group(1).strip()[:2000] if desc_match else ""
 
         return price, sold, inquire, desc
 

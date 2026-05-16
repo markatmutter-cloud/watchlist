@@ -364,7 +364,7 @@ def load_csv(path, source_name, currency='USD'):
                 'img': r.get('img', ''),
                 'sold': parse_bool(r.get('sold', False)),
                 'priceOnRequest': price_on_request,
-                'desc': r.get('description', '')[:300],
+                'desc': r.get('description', '')[:1500],
             })
     return items
 

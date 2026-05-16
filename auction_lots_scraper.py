@@ -1427,6 +1427,8 @@ def _phillips_lot_to_record(lot, auction_title, auction_start, auction_end, sale
         "lot_number": lot_number,
         "title": title,
         "maker": maker or None,
+        "reference_no": (lot.get("referenceNo") or "").strip() or None,
+        "model_name": model or None,
         "description": (description or title)[:600],
         "currency": currency,
         "estimate_low": low,
