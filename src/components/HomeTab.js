@@ -385,11 +385,14 @@ function SectionStrip({ heading, descriptor, items, onViewAll, onScreen, screenC
       }}>
         {slice.map(item => (
           <div key={item.id} style={isMobile ? {
-            // Smaller mobile tiles — Mark feedback 2026-05-11: previous
-            // 60% / 240px tiles were too tall, the next section sat off-
-            // screen. Tighter slots let row 1 + the top of the next
-            // section show together so the page reads as scrollable.
-            flex: "0 0 44%", maxWidth: 180, scrollSnapAlign: "start", background: "var(--card-bg)",
+            // Smaller mobile tiles — Mark feedback 2026-05-15: prior
+            // 44% / 180px tiles fit only ~2.5 per row, hiding the
+            // next section below the fold. Tightened to 28% so 3
+            // full tiles + a half-peek of the 4th show per row,
+            // letting more sections breathe above the fold.
+            // (History: started at 60% / 240px, then 44% / 180px,
+            //  now 28% / 140px — each iteration on the same goal.)
+            flex: "0 0 28%", maxWidth: 140, scrollSnapAlign: "start", background: "var(--card-bg)",
             position: "relative",
           } : {
             // Desktop tiles — fixed pixel width so the strip reads as a
