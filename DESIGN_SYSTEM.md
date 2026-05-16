@@ -55,6 +55,19 @@ or 16 actually works first.
 18 → 20). 8 is the dominant card / button radius; 10 is the
 secondary; 12 for larger surface cards; 999 for fully-rounded pills.
 
+**padding scale (post-2026-05-15 snap):** **0, 4, 6, 8, 10, 12,
+14, 16, 20, 24, 32**. Plus three semantic constants kept off the
+scale because they encode physical-layout intent: **48** (large
+section breathing on desktop), **60** (bottom-clear for the mobile
+tab bar), **110** (bottom-clear when the screening overlay is
+active). Outliers snapped (5 → 4, 7 → 8, 9 → 10, 11 → 12, 13 → 12,
+18 → 20, 22 → 20, 28 → 32). Close-pair clusters at the same
+vertical (e.g. `8px 12px` vs `8px 14px` vs `8px 16px`) were left
+in place — those are deliberate density variants, not drift; the
+snap pass only consolidated odd values + the > 16 outliers. New
+padding should pick a stop on the scale; reach for 14 / 20 / 24
+before introducing a new outlier.
+
 ## 2. Style tokens — `src/styles.js`
 
 Each export is either a plain object (use directly:

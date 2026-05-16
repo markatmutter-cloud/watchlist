@@ -133,7 +133,7 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
           {/* Hero band — favicon + heading + tagline + intro. Always
               shown on every viewport. */}
           <div style={{
-            padding: "20px 22px 16px",
+            padding: "20px 20px 16px",
             borderBottom: "0.5px solid var(--border)",
             position: "relative",
           }}>
@@ -194,7 +194,7 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
               content on phones too. The features grid drops from
               2-col → 1-col at <560px via the @media rule above. */}
           <div className="welcome-extras">
-            <div className="welcome-extras-pad" style={{ padding: "16px 28px 22px" }}>
+            <div className="welcome-extras-pad" style={{ padding: "16px 24px 20px" }}>
               <div style={sectionLabel}>What you can do</div>
               <div className="watchlist-feature-grid" style={{
                 display: "grid",
@@ -286,7 +286,7 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
           <div style={{
             display: "flex", gap: 10, justifyContent: "space-between",
             alignItems: "center",
-            padding: "12px 22px 16px",
+            padding: "12px 20px 16px",
             borderTop: "0.5px solid var(--border)",
             flexWrap: "wrap",
           }}>

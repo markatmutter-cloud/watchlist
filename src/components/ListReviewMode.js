@@ -745,7 +745,7 @@ export function ListReviewMode({
                   display: "inline-block",
                   fontSize: 11, color: "var(--text2)",
                   letterSpacing: "0.06em",
-                  padding: "4px 9px",
+                  padding: "4px 10px",
                   border: "0.5px solid var(--border)",
                   borderRadius: 4,
                   marginBottom: isWide ? 16 : 6,
@@ -1278,7 +1278,7 @@ function TallyChip({ emoji, count }) {
       display: "inline-flex",
       alignItems: "center",
       gap: 5,
-      padding: "3px 9px",
+      padding: "2px 8px",
       borderRadius: 999,
       border: "0.5px solid var(--border)",
       background: "var(--surface)",
@@ -1323,7 +1323,7 @@ function reactionBtnStyle(kind, active) {
   // states stay subtle so the rated card doesn't shout.
   if (kind === "yes") {
     return {
-      padding: "14px 22px",
+      padding: "14px 20px",
       border: "1px solid var(--brand)",
       background: "var(--brand)",
       color: "#fff",
@@ -1341,7 +1341,7 @@ function reactionBtnStyle(kind, active) {
   }
   // Pass — substantial outlined ghost.
   return {
-    padding: "14px 22px",
+    padding: "14px 20px",
     border: active ? "1px solid var(--text1)" : "1px solid var(--border)",
     background: active ? "var(--text1)" : "var(--surface)",
     color: active ? "var(--bg)" : "var(--text1)",
@@ -1403,7 +1403,7 @@ function editorialPanel(maxWidth) {
     background: "var(--bg)",
     border: "0.5px solid var(--border)",
     borderRadius: 12,
-    padding: "32px 28px",
+    padding: "32px 24px",
     maxWidth, width: "100%",
     fontFamily: SANS_STACK,
     boxShadow: "0 24px 60px rgba(0,0,0,0.20)",
@@ -1426,7 +1426,7 @@ function ghostBtnStyle() {
 function primaryBtnStyle() {
   return {
     width: "100%",
-    padding: "13px 18px",
+    padding: "12px 20px",
     border: "none",
     background: "var(--brand)", color: "#fff",
     borderRadius: 8,

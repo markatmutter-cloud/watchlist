@@ -2200,7 +2200,7 @@ export default function Watchlist() {
     // OAuth fires.
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <button onClick={() => setAboutModalOpen(true)} style={{
-        fontSize: 12, padding: "5px 10px", borderRadius: 20,
+        fontSize: 12, padding: "4px 10px", borderRadius: 20,
         border: "none", background: "transparent",
         color: "var(--text2)", cursor: "pointer", fontFamily: "inherit",
         whiteSpace: "nowrap",
@@ -2208,7 +2208,7 @@ export default function Watchlist() {
         About
       </button>
       <button onClick={() => setSignInPromptOpen(true)} style={{
-        fontSize: 12, padding: "5px 12px", borderRadius: 20,
+        fontSize: 12, padding: "4px 12px", borderRadius: 20,
         border: "0.5px solid var(--border)", background: "var(--surface)",
         color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
         whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6,
@@ -2240,7 +2240,7 @@ export default function Watchlist() {
             // shout. Dropped to neutral (border + dark initial disc)
             // so it sits as a navigation affordance, not an alert.
             display: "flex", alignItems: "center", gap: 8,
-            height: 36, padding: "3px 14px 3px 3px",
+            height: 36, padding: "2px 14px 2px 4px",
             borderRadius: 999,
             border: "0.5px solid var(--border)",
             background: showUserMenu ? "var(--surface)" : "transparent",

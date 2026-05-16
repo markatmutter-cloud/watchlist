@@ -156,7 +156,7 @@ export function MobileShell(props) {
             persists. */}
         <div style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--bg)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 16px 4px", borderBottom: "0.5px solid var(--border)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "8px 12px", flex: 1, minWidth: 0 }}>
             <SearchIcon />
             <input value={search} onChange={e => setSearch(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}

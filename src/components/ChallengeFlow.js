@@ -468,7 +468,7 @@ function PickingStage({
             }}
             style={{
               width: "100%",
-              padding: "10px 18px", borderRadius: 8, border: "none",
+              padding: "10px 20px", borderRadius: 8, border: "none",
               background: "var(--brand)", color: "#fff",
               cursor: canComplete ? "pointer" : "not-allowed",
               fontFamily: "inherit", fontSize: 14, fontWeight: 500,
@@ -714,7 +714,7 @@ function SourceChip({ active, onClick, label }) {
   return (
     <button onClick={onClick} style={{
       flexShrink: 0,
-      padding: "5px 11px",
+      padding: "4px 12px",
       borderRadius: 999,
       border: "0.5px solid var(--border)",
       background: active ? "var(--text1)" : "transparent",
@@ -754,7 +754,7 @@ function SourceTile({ item, onTap, primaryCurrency }) {
           <span style={{ fontSize: 18, color: "var(--text3)" }}>⌚</span>
         )}
       </div>
-      <div style={{ padding: "5px 6px" }}>
+      <div style={{ padding: "4px 6px" }}>
         <p style={{
           fontSize: 11, fontWeight: 500, margin: "0 0 1px", color: "var(--text1)",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -850,7 +850,7 @@ function CompleteStage({ challenge, items, onShareSpec, onShareComplete, onBack,
         )}
         {onReopen && (
           <button onClick={onReopen} style={{
-            padding: "9px 14px", borderRadius: 8,
+            padding: "10px 14px", borderRadius: 8,
             border: "0.5px solid var(--border)", background: "transparent",
             color: "var(--text2)", cursor: "pointer",
             fontFamily: "inherit", fontSize: 13,
@@ -860,7 +860,7 @@ function CompleteStage({ challenge, items, onShareSpec, onShareComplete, onBack,
           <button onClick={() => handleShareClick(onShareSpec, "spec")}
             title="Send just the constraints — recipient builds their own answer"
             style={{
-              padding: "9px 14px", borderRadius: 8,
+              padding: "10px 14px", borderRadius: 8,
               border: "0.5px solid var(--border)", background: "transparent",
               color: "var(--text1)", cursor: "pointer",
               fontFamily: "inherit", fontSize: 13,
@@ -870,7 +870,7 @@ function CompleteStage({ challenge, items, onShareSpec, onShareComplete, onBack,
           <button onClick={() => handleShareClick(onShareComplete, "complete")}
             title="Send with your picks visible — recipient sees what you chose"
             style={{
-              padding: "9px 16px", borderRadius: 8, border: "none",
+              padding: "10px 16px", borderRadius: 8, border: "none",
               background: "var(--brand)", color: "#fff", cursor: "pointer",
               fontFamily: "inherit", fontSize: 14, fontWeight: 500,
             }}>Share my collection →</button>

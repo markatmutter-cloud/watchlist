@@ -88,7 +88,7 @@ export function WatchlistTab(props) {
   };
   const primaryActionButtonStyle = {
     fontSize: 13, fontWeight: 500,
-    padding: "7px 14px", borderRadius: 8,
+    padding: "8px 14px", borderRadius: 8,
     border: "0.5px solid var(--border)",
     background: "var(--surface)",
     color: "var(--text1)",
@@ -278,7 +278,7 @@ export function WatchlistTab(props) {
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={runImport} style={{
-          padding: "7px 14px", borderRadius: 8, border: "none",
+          padding: "8px 14px", borderRadius: 8, border: "none",
           background: "var(--brand)", color: "#fff", cursor: "pointer",
           fontFamily: "inherit", fontSize: 13, fontWeight: 500,
         }}>Import now</button>
@@ -291,7 +291,7 @@ export function WatchlistTab(props) {
           } catch {}
           setImportState("done");
         }} style={{
-          padding: "7px 14px", borderRadius: 8, border: "0.5px solid var(--border)",
+          padding: "8px 14px", borderRadius: 8, border: "0.5px solid var(--border)",
           background: "transparent", color: "var(--text2)", cursor: "pointer",
           fontFamily: "inherit", fontSize: 13,
         }}>No thanks</button>

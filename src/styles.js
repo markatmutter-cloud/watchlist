@@ -37,7 +37,7 @@ export const pillBase = (active, { compact = false, surface = false } = {}) => (
 // secondary hierarchy. Promoted 2026-05-08 from inline duplicates in
 // App.js + CollectionsTab.js.
 export const innerToggleButton = (active) => ({
-  padding: "5px 12px", borderRadius: 999,
+  padding: "4px 12px", borderRadius: 999,
   border: "0.5px solid var(--border)",
   background: active ? "var(--text1)" : "transparent",
   color:      active ? "var(--bg)"    : "var(--text2)",
@@ -117,7 +117,7 @@ export const producedPill = ({ tone = "brand" } = {}) => {
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    padding: "7px 14px",
+    padding: "8px 14px",
     borderRadius: 6,
     fontFamily: "inherit",
     fontSize: 11,
@@ -157,7 +157,7 @@ export const producedPill = ({ tone = "brand" } = {}) => {
 // text. Promoted 2026-05-08 from inline copies (10px 18px / radius 10
 // pattern repeated across ~5 files).
 export const signInButton = {
-  padding: "10px 18px", borderRadius: 10,
+  padding: "10px 20px", borderRadius: 10,
   border: "none", background: "var(--brand)", color: "#fff",
   cursor: "pointer", fontFamily: "inherit",
   fontSize: 14, fontWeight: 500,
