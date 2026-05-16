@@ -162,10 +162,13 @@ when something breaks.
 
 ### References as first-class entities
 
-**ACTIVE — agreed next big feature (2026-05-15).** Maintenance
-session wrapped (11 PRs landed); Mark's call to start here. The
-foundation work for what the roadmap names as "potentially the
-platform's most differentiated feature."
+**ACTIVE — kicking off 2026-05-16.** The desktop audit session
+landed (8 PRs) and the strategic read confirmed: nothing else on
+the site is unique — every dealer has live listings, every auction
+house has a catalog. The cross-source reference dataset is the
+only thing nobody else has. Mark spec for the next working session:
+**focus on reference mining on listings.** Start with the
+detection survey (see kick-off paragraph below).
 
 The data-layer prerequisite for jobs #4 (reference research) and #5
 (reference learning). Today every listing carries a `ref` field as a
@@ -237,16 +240,40 @@ addendum" for the full inventory.
 Still open from that session's audit:
 - **Button consolidation** — ~184 hand-rolled `<button>` elements
   skip `actionButton` / `pillBase` / `iconButton`. Half-day diff.
+  (CollectionEditModal got snapped in PR #318 from the desktop
+  audit — wider sweep still pending.)
 - **Eyebrow heading promotion** — 10-site re-roll of the same
   `fontSize: 10/11, fontWeight: 600, uppercase, letterSpacing`
   pattern. Promote to component or token.
-- **Padding scale snap** — ~16 distinct padding pairs; PR #305 did
-  fontSize + borderRadius, padding is the obvious follow-up.
+- **Padding scale snap** — Mostly done in PR #321 (23 → 11
+  distinct pairs). Remaining outliers if any can be caught next
+  audit pass.
 - **Missing empty states** — Listings filter-no-match, AuctionCalendar
   empty, Home zero-recently-added. Component shape change.
 - **Loading states** — only the initial fetch has one; saved-search
   results / list drill-ins / screener mount flicker through empty
   UI for a beat.
+
+**Added from desktop audit (2026-05-15 → 2026-05-16):**
+- **Brand voice sweep** — `BRAND.md` was committed in PR #316 as
+  the single-page brand-voice reference, but no surface has been
+  swept through it explicitly. Candidates: empty states (the ones
+  from PR #306 hit Plan view / Archive / Wishlist; Listings
+  no-match + AuctionCalendar empty + Home zero-state still
+  pending), tooltips, ConfirmModal copy (functional, not
+  voice-toned yet), toasts, onboarding card in screener, error
+  messages. One focused PR could re-tone every textual surface.
+  Mark feedback 2026-05-16: explicit roadmap item.
+- **`DrillInHeader` component promotion** — My Watches / Wishlist
+  / Lists / Saved-search / Auction list drill-ins all have
+  slightly different header shapes (back link · title · optional
+  metadata · right actions). Larger structural pass than the
+  audit batch could absorb.
+- **Auction calendar year-collapse for archive** — Mark answered
+  yes during the desktop audit; deferred from this session.
+  AuctionCalendar refactor needed.
+- **Mobile: remove Review button from Home** — Keep on desktop.
+  Small fix raised 2026-05-16 but not shipped.
 
 - **`listings.json` split by status.** Currently 3.5 MB; users
   fetch the whole file on every page load. Split into

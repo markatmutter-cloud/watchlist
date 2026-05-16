@@ -749,6 +749,14 @@ export default function Watchlist() {
       setTabResetTick((n) => n + 1);
       return;
     }
+    // Reset the destination tab's sub-tab to its first entry
+    // (Mark feedback 2026-05-16: "when you click on a tab it
+    // should load the first subtab"). Previously the sub-tab
+    // restored from localStorage, so a user who'd last visited
+    // Watchlists > Searches would land back on Searches when
+    // tapping Watchlists from another tab. Now lands on Lists.
+    if (newTab === "listings") setListingsSubTab("live");
+    else if (newTab === "watchlist") setWatchTopTab("lists");
     setTab(newTab);
   };
 

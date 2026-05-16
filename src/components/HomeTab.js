@@ -510,7 +510,7 @@ function ManageCallout({ goToSavedLists, goToMyWatches, goToChallenges, isMobile
         Your private space for everything you collect
       </h2>
       <p style={{ margin: "10px auto 0", maxWidth: 560, fontSize: 14, color: "var(--text-on-dark-2)", lineHeight: 1.5 }}>
-        Owned watches, what's sold, what's on the wishlist. Like an eBay account, but for vintage collectors.
+        Owned watches, what's sold, what's on the wishlist — filed where you can return to them.
       </p>
       <div style={{
         display: "flex", justifyContent: "center", alignItems: "center",

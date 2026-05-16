@@ -100,6 +100,7 @@ state, no behavior. Compose with overrides via spread:
 | `UserLimitBanner.js` | Top-of-app limit banner (global, mounted by both shells) |
 | `LotMigrationBanner.js` | One-shot tracked-lot migration prompt |
 | `Links.js` / `icons.js` | Internal/external link helpers, SVG icons |
+| `ConfirmModal.js` | Styled confirm dialog. Imperative API — `await confirm({ title, message, confirmLabel, cancelLabel, tone: "danger" \| "default" })` returns `Promise<boolean>`. One `<ConfirmHost/>` mounts at App level. Replaces every `window.confirm` site since PR #317 |
 
 ## Reach-for-this rules
 
@@ -108,6 +109,7 @@ state, no behavior. Compose with overrides via spread:
 - **New empty / signed-out / "nothing here yet" surface?** `<EmptyState />` from `./EmptyState`. Pick the size: `compact` for in-tab emptiness, `default` for general, `tall` for top-level signed-out gates.
 - **New color?** Add a CSS var to App.js's `c` block in BOTH light and dark modes. Never inline hex.
 - **Sub-section grouping inside a tab?** `<Section />` from `./Section`. Page-level tab headers (back-arrow + title + actions row) are intentionally a denser inline shape; don't try to consolidate them into Section.
+- **Need a confirm dialog?** `import { confirm } from "./ConfirmModal"`, then `await confirm({ title, message, confirmLabel, tone: "danger" })`. Never `window.confirm` — it breaks dark mode and reads as jarring against the rest of the UI.
 
 ## Intentional drift (don't "fix")
 
@@ -142,13 +144,21 @@ landing as separate PRs when worth touching.
   elements skip `actionButton` / `pillBase` / `iconButton`. The
   grep over-counts (some legitimately need custom styles — card
   overlays, the SectionStrip pills), but the magnitude is real.
-  Audit modals / tab-headers / drill-in headers and route through
-  the existing primitives.
-- **Padding scale.** ~16 distinct padding pairs in use; `"8px 14px"`
-  (16 uses) vs `"8px 16px"` (12 uses) — same vertical, 2px
-  horizontal — is visible drift. Could snap like PR #305 did for
-  fontSize / borderRadius. Target scale: multiples of 4 for
-  vertical, multiples of 4 (or matched horizontal) for horizontal.
+  CollectionEditModal got snapped in PR #318 from the desktop
+  audit. Wider sweep still pending. Audit modals / tab-headers
+  / drill-in headers and route through the existing primitives.
+- **Padding scale** — Snapped in PR #321 (23 → 11 distinct pairs).
+  Remaining outliers if any can be caught next audit pass.
+- **`DrillInHeader` component.** My Watches / Wishlist / Lists /
+  Saved-search / Auction list drill-ins all have slightly
+  different header shapes (back link · title · optional metadata
+  · right actions). Flagged in the 2026-05-15 desktop audit.
+- **Brand-voice sweep.** `BRAND.md` (committed in PR #316) is the
+  single-page voice reference but no surface has been swept
+  through it. Empty states (only Plan view / Archive / Wishlist
+  got swept in #306), tooltips, ConfirmModal copy, toasts,
+  onboarding card, error messages all still default-y. One
+  focused PR could re-tone every textual surface.
 
 ## Missing surfaces
 

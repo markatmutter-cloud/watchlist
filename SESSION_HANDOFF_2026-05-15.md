@@ -639,3 +639,199 @@ For the desktop audit thread to consider as it lands:
   during a `git checkout` shuffle while moving HomeTab.js between
   branches. Re-applied from in-context but a reminder: stash before
   branch checkouts that touch dirty working-tree files.
+
+---
+
+# Desktop audit session (2026-05-15 evening → 2026-05-16)
+
+Parallel desktop-screenshot audit. Mark provided 40 desktop captures
+covering Home / Watchlists (all sub-tabs) / Listings (Live, Auctions,
+Sold, Calendar) / Collecting / screener (list, feed, auction) /
+modals (Rename, Add-to-Active, manual entry, native confirms).
+
+## PRs shipped (desktop audit)
+
+| PR | Title | Status |
+|---|---|---|
+| #314 | Desktop home: bump section headings 16→22; punchier right-edge fade | merged |
+| #315 | Screener: portal-fullscreen on desktop for immersion | merged |
+| #317 | Styled confirm modal · replace window.confirm across the app | merged |
+| #318 | CollectionEditModal: snap Cancel / Save buttons to actionButton | merged |
+| #319 | Search bar: visible Save label next to heart icon (desktop) | merged |
+| #320 | Home: feature Watchbox as the dominant CTA in manage callout | merged |
+| #321 | Padding scale snap: outliers normalised (23 → 11 distinct) | merged (Mark) |
+| #322 | Home: shrink mobile tiles 44%→28% so 3-3.5 fit per row | merged (Mark) |
+
+Plus #316 (BRAND.md voice doc) — landed mid-session, the first
+single-page brand-voice reference.
+
+## Architectural notes from this session
+
+### Screener portal-fullscreen on desktop (PR #315)
+
+Mark feedback: desktop screener "feels like a tiny card in the
+middle of a huge screen. the mobile version works really well as
+it's more immersive." Previously `mode="list"` rendered inline on
+desktop (replaces drill-in body, keeps page chrome). Now ALL modes
+portal to `document.body` at any viewport.
+
+- `usePortalLayout` constant retired — always portal now.
+- Card maxWidth on desktop 420 → 520; detail block 380 → 440.
+- The dead inline `outerStyle` branch + conditional createPortal
+  path dropped.
+- Trade-off: nav context disappears; the screener header's Exit
+  button is the only return path. The header already had Exit so
+  no new affordance was needed.
+
+### Styled confirm modal (PR #317)
+
+New primitive `src/components/ConfirmModal.js` replaces every
+`window.confirm` site. Imperative promise-based API so call-site
+diffs stay tiny.
+
+- Module-level `pushRequest` setter; `<ConfirmHost/>` mounts once
+  at App level (next to ErrorBoundary).
+- `confirm({ title, message, confirmLabel, cancelLabel, tone })`
+  returns `Promise<boolean>`.
+- Uses modalBackdrop + modalShell + actionButton primitives —
+  picks up dark mode and brand/danger tokens automatically.
+- Esc cancels, Enter confirms, backdrop click cancels.
+- Falls back to `window.confirm` if the host hasn't mounted
+  (defensive for SSR / pre-hydration; shouldn't trigger).
+
+Call sites converted (10): WatchlistTab saved-search delete,
+ChallengesView challenge delete, ChallengeFlow over-budget +
+challenge delete, ManageListSheet collaborator revoke,
+CollectionsTab reset-ratings + list delete + remove-from-list,
+WatchDetailSheet delete journal + remove from collection.
+
+### Watchbox affordance reframe on Home (PR #320 → corrected)
+
+Mark feedback: "the watchbox element on the home page is hidden
+or not clear enough — could be better/clearer this is a separate
+engagement surface."
+
+- ManageCallout reworked: "Your Watchbox" eyebrow + editorial
+  head + a single dominant "Open Watchbox →" CTA, with Saved
+  lists / Challenges as secondary ghost pills underneath.
+- Initial copy referenced eBay analogy verbatim ("Like an eBay
+  account, but for vintage collectors") — Mark rejected, replaced
+  with on-brand "filed where you can return to them" line in the
+  same-day follow-up bundle.
+
+### Tab click resets sub-tab (2026-05-16 follow-up)
+
+Mark feedback: "when you click on a tab it should load the first
+subtab." Previously sub-tab restored from localStorage so a user
+who'd last visited Watchlists > Searches would land there again
+on tab switch. Now lands on the first sub-tab (Lists for
+Watchlists, Live for Listings). Same-tab re-tap still uses
+`tabResetTick` to pop drill-ins (unchanged from PR #96 pattern).
+
+## Durable rules graduated to CLAUDE.md
+
+- **Don't reach for `window.confirm` — use `confirm()` from
+  ConfirmModal.** The styled primitive is mounted at App level
+  via `<ConfirmHost/>`; the imperative `confirm()` returns
+  `Promise<boolean>` so the diff vs. native is tiny. Surfaces
+  pick up dark mode + brand/danger tokens automatically.
+- **Screener is always portal-fullscreen.** Previous "inline on
+  desktop for list mode" path is retired (PR #315); don't
+  reintroduce it. Trade is nav context for visual focus; the
+  screener header's Exit button is the return path.
+- **Tab click resets sub-tab to the default.** The
+  `setTabWithReceiveEscape` wrapper now resets `listingsSubTab`
+  and `watchTopTab` to their first values when crossing main
+  tabs. Same-tab re-tap still uses `tabResetTick`. Don't add
+  sub-tab restoration on tab-switch without explicit Mark
+  approval — he set this rule on 2026-05-16.
+
+## Mark's strategic feedback (2026-05-15 end-of-session)
+
+After the desktop audit landed, Mark asked for a "could it be
+better, not just consistent" read. Findings worth carrying
+forward:
+
+- **Home has no daily heartbeat.** Four uniform discovery strips,
+  no editorial lead. A daily curated pick (admin-only × overlay
+  already gives the curation surface; render one of those picks
+  publicly on Home) would give the site a beat.
+- **The collector funnel isn't visualised.** Discovery (Listings)
+  → interest (Saved) → planning (Wishlist + Lists) → ownership
+  (Watchbox) is a real funnel but never surfaced AS one. A "your
+  collection journey" view with the user's actual numbers would
+  click the whole product together.
+- **References (Epic 0/5) is the real differentiator.** Nothing
+  else on the site is unique; every dealer site has live listings
+  and every auction house has a catalog. The cross-source
+  reference dataset is the only thing nobody else has. Mark
+  agreed: next session focus = reference mining on listings.
+- **Brand voice (BRAND.md) is checked in but not applied.** No
+  surface has been swept through it explicitly. Worth one
+  focused PR to re-tone empty states / tooltips / confirm modal
+  copy / toasts / onboarding cards.
+- **Polish is no longer the limiting factor.** Most audit findings
+  this session were polish (heading sizes, fades, button
+  consistency, button colours). Those landed cleanly. The next
+  bigger lifts are flow-level, not pixel-level.
+
+## What's outstanding (post-session)
+
+### Queued from desktop audit
+- **B10** — Auction calendar **year-collapse for archive** (Mark
+  answered yes). Bigger AuctionCalendar refactor; deferred.
+- **B3** — Promote `DrillInHeader` component (My Watches /
+  Wishlist / Lists / Saved-search / Auction list drill-ins all
+  have slightly different header shapes). Larger structural pass.
+- **Mobile-only**: remove Review button from Home (Mark spec
+  2026-05-16: take off on mobile, keep on desktop). Small fix,
+  was raised but not shipped this session.
+
+### Mobile-audit queue (still open from earlier in 2026-05-15)
+- **#7** Loupe This live no-bid USD 0 — Card-layer display fix
+  for `price === 0 && status === live && no estimates`.
+- **#5** Chrome stack tightening on mobile Listings (~150px
+  before first card).
+- **#6** Mobile bottom-nav active dot too subtle.
+- **#8** Challenge row truncation cuts budget mid-string.
+- **#10** Add-to-collection picker info density (3 layers).
+- **#11** Auction catalog drill-in card peek too subtle.
+- **#12** Mobile safe-area / Safari toolbar overlap.
+
+### Design-system follow-ups (DESIGN_SYSTEM.md "Open promotion candidates")
+- **Button consolidation** — ~184 hand-rolled `<button>` elements
+  still bypass `actionButton` / `pillBase` / `iconButton`.
+  CollectionEditModal got snapped in #318; full sweep pending.
+- **Eyebrow heading promotion** — pattern at ~10 sites, not yet
+  promoted to a component or `eyebrowText` token.
+- **Missing empty states** — Listings filter-no-match,
+  AuctionCalendar empty, HomeTab zero-recently-added, loading
+  flicker on saved-search results / list drill-ins / screener
+  mount. Component shape change, not just copy.
+
+### Brand voice (new outstanding)
+- **Brand-voice sweep PR** — BRAND.md is checked in but unused
+  beyond Mark's commit. No surface has been re-toned through it.
+  One focused PR could sweep: empty states, tooltips, confirm
+  modal copy, toasts, onboarding card, error messages.
+
+## Next session — Epic 0 / reference mining
+
+Mark's spec for the next session: focus on reference mining on
+listings. Roadmap recommendation (already noted earlier in this
+handoff): **survey current `listings.json` first** to empirically
+measure what % of titles parse cleanly with a regex-first pass
+before committing to a detection architecture.
+
+Slicing reminder from the maintenance-session addendum (not yet
+shipped):
+1. Slice 1 — Epic 0 foundation: normalised `references` table
+   (brand, model, era, category) + detection in three layers
+   (per-source structured fields → regex on title+description →
+   LLM fallback).
+2. Slice 2 — Reference grouping UI: three saved 5548BAs collapse
+   into one card with "3 listings — expand."
+3. Slice 3 — Per-reference research page.
+4. Slice 4 — Reference encyclopedia.
+
+The detection-survey step is the kickoff. Start there.

@@ -1267,6 +1267,31 @@ again; it's permanently blocked at the platform layer.
 
 ## Things to never do
 
+- **Don't reach for `window.confirm` — use `confirm()` from
+  `./ConfirmModal`.** Native confirm dialogs break dark mode and
+  read as jarring against the rest of the UI (Mark feedback
+  2026-05-15 desktop audit). The replacement primitive is
+  promise-based, mounts once at App level via `<ConfirmHost/>`,
+  and uses modalBackdrop + modalShell + actionButton so it picks
+  up tokens automatically. API: `await confirm({ title, message,
+  confirmLabel, cancelLabel, tone: "danger" | "default" })`
+  returns `Promise<boolean>`. Falls back to window.confirm if
+  the host hasn't mounted (defensive only).
+- **Don't reintroduce the inline-on-desktop render path for
+  `ListReviewMode` list mode.** All screener modes (list / feed /
+  auction) portal to `document.body` at every viewport since
+  PR #315. Mark feedback: "feels like a tiny card in the middle
+  of a huge screen — mobile is more immersive." Trade is nav
+  context for visual focus; the screener header's Exit button is
+  the return path.
+- **Don't restore the sub-tab from localStorage on a cross-main-
+  tab navigation.** Tab click resets the destination tab's sub-
+  tab to the first value (Listings → "live", Watchlist →
+  "lists"). Mark spec 2026-05-16: "when you click on a tab it
+  should load the first subtab." Same-tab re-tap still bumps
+  `tabResetTick` to pop drill-ins (PR #96 pattern unchanged).
+  The reset lives in `setTabWithReceiveEscape` in App.js — keep
+  the dispatch there if you add new main tabs.
 - **Don't write bare `// eslint-disable-next-line` (no rule name) on
   useEffect dep arrays.** CRA's eslint config doesn't include
   `react-hooks/exhaustive-deps` — the disable is a no-op. Pure noise
