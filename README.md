@@ -51,7 +51,7 @@ Plus:
 - Implicit weekday-based date dividers (Today / Yesterday / weekday / Last week / Older) when sorted by date.
 - Dark/light mode following system preference, with manual override.
 - GBP→USD conversion for UK dealers, shown alongside the native price.
-- **Screening Mode** — Tinder-style swipe interface for working through any list one card at a time. Three entry points: (1) shared lists from another user (`mode="list"` — Yes/Pass write reactions, Liked / Open / Disliked buckets visualise sentiment); (2) "N new listings since {date}" Home banner (`mode="feed"` — Yes hearts, Pass skips); (3) auction calendar Review buttons (`mode="auction"` — Yes adds to the auto-list, Heart adds to watchlist, Pass skips). Mobile = fullscreen overlay, Desktop = inline replacement of the drill-in body for shared-list mode. Haptics on Yes/Pass, full-bg colour wash following swipe direction, per-list bookmarked resume.
+- **Screening Mode** — Tinder-style swipe interface for working through any list one card at a time. Three entry points: (1) shared lists from another user (`mode="list"` — Yes/Pass write reactions, Liked / Open / Disliked buckets visualise sentiment); (2) "N new listings since {date}" Home banner (`mode="feed"` — Yes hearts, Pass skips); (3) auction calendar Review buttons (auction lists are list-mode screened post-#310: bulk-add the catalog, Yes/Pass write reactions, Heart adds to watchlist). Fullscreen overlay on both mobile and desktop (since PR #315 — desktop used to render inline but felt under-immersive). Haptics on Yes/Pass, full-bg colour wash following swipe direction, per-list bookmarked resume.
 - Mobile: configurable 1-3 col grid with a slide-up filter drawer, sticky search/sort row, and a 3-tab bottom-nav (Listings / Watchlists / Collecting).
 - Desktop: full-width top bar with three main tab pills + an avatar pill with the "Watchbox" label, an inline pill-style filter row, and configurable 3-7 col grid (or auto fluid).
 
@@ -299,6 +299,7 @@ watchlist/
 │       ├─ UserLimitBanner.js      # top-of-app banner for watchlist-cap soft-warn / hard-cap
 │       ├─ LotMigrationBanner.js   # one-shot per-user tracked-lot → watchlist migration prompt
 │       ├─ ErrorBoundary.js        # wraps the App shell render — surfaces stack instead of white-screening
+│       ├─ ConfirmModal.js         # styled confirm dialog (replaces window.confirm) — `confirm()` returns Promise<boolean>
 │       ├─ icons.js                # shared SVG icon set
 │       └─ *.test.jsx              # render-without-crash smoke tests for App, shells, tab bodies, screener
 └─ package.json
