@@ -123,7 +123,7 @@ def parse_item(item):
         "price": price,
         "url": item.get("permalink", ""),
         "img": img,
-        "description": strip_html(item.get("short_description") or item.get("description") or "")[:500],
+        "description": strip_html(item.get("short_description") or item.get("description") or "")[:2000],
         "source": "Maunder Watches",
         "sold": not item.get("is_in_stock", True),
     }

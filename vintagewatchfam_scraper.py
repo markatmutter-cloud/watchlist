@@ -87,7 +87,7 @@ def get_all_products():
 def parse_product(p):
     title = p.get("title", "")
     vendor = p.get("vendor", "")
-    body = strip_html(p.get("body_html", ""))[:400]
+    body = strip_html(p.get("body_html", ""))[:3000]
     handle = p.get("handle", "")
     url = f"{BASE}/products/{handle}"
 
