@@ -79,6 +79,14 @@ A photo / vision-model layer augments (3)–(6) once the text layer is
 mature — most variants are visually identifiable (lume color, dial
 printing crispness, bezel fade pattern, hand finishing).
 
+**Mark's admin reading view** is a parallel consumer of layer 2, gated
+by `REACT_APP_ADMIN_EMAILS` (same pattern as the existing Site Stats
+admin surface). Per-reference reading list rendering the full
+captured corpus — dealer descriptions, in-listing Worth Reading,
+standalone guides, auction condition reports — verbatim with source
+attribution. Personal research surface; not the public encyclopedia
+(see Licensing section below).
+
 -----
 
 ## Five content types — confirmed sources
@@ -232,10 +240,20 @@ the main file stays lean):
 }
 ```
 
-`reference_guides.json` is consumed by (a) the future per-reference UI
-page (Slice 3 in roadmap Epic 0) and (b) the LLM synthesizer for the
-encyclopedia entries (Slice 4 / Epic 5). Not fetched on the main
-listings feed, so its size is unconstrained by the page-load budget.
+`reference_guides.json` is consumed by:
+
+- **Mark's admin reading view** (gated AdminTab surface) — renders the
+  full corpus per reference for personal research. Verbatim,
+  source-attributed.
+- **The future public per-reference UI page** (Slice 3 in roadmap
+  Epic 0) — renders synthesized output only, cited.
+- **The LLM synthesizer** for encyclopedia entries (Slice 4 / Epic 5).
+  Reads the full corpus; emits factual extraction.
+- **The variant-taxonomy + price-impact pipeline** (layers 3–5 of the
+  stack). Reads the full corpus internally.
+
+Not fetched on the main listings feed, so its size is unconstrained
+by the page-load budget.
 
 `source_type` is the discriminator the synthesizer reads to weight
 content: `in_listing_essay`, `standalone_guide`, `condition_grade`,
@@ -243,30 +261,58 @@ content: `in_listing_essay`, `standalone_guide`, `condition_grade`,
 
 -----
 
-## Licensing posture
+## Licensing posture — display layer, not storage layer
 
 Important enough to write down explicitly.
 
 All external sources have permissive `robots.txt` for crawling. **None
 grant derivative-work rights.** Copyright stays with each publisher.
 
-The right posture going forward:
+**The constraint applies at the display layer, not the storage layer.**
+The corpus is captured in full once. Two distinct consumers read from
+it under different rules.
 
-- **Treat the corpus as internal training input.** When the encyclopedia
-  synthesizer eventually ships public output, that output must be
-  factual extraction (production years, dial variants, calibers,
-  variant→price impact) — *not* near-verbatim paraphrases of source
-  prose.
-- **Cite sources per reference entry.** Every reference page that
+### Consumer 1 — Mark (admin), personal research
+
+Mark consumes the full corpus directly for his own knowledge-building.
+Full prose, full essays, full collector guides, verbatim,
+source-attributed, organised per reference. Same posture that lets a
+collector keep a Pocket library, an Instapaper queue, a folder of
+saved dealer pages.
+
+Surface: gated AdminTab reading view (already gated by
+`REACT_APP_ADMIN_EMAILS` — same pattern as the existing Site Stats
+admin surface). Per-reference reading list aggregating every source
+on a given ref: dealer description, in-listing Worth Reading,
+standalone guides (Wind Vintage, Hodinkee, gmtmaster1675.com),
+auction condition reports.
+
+### Consumer 2 — Public site users
+
+Synthesized output only — factual extraction (production years, dial
+variants, calibres, variant→price impact). **Never near-verbatim
+paraphrases.** Always source-cited.
+
+- Cite sources per reference entry. Every public reference page that
   displays synthesized content links to the sources it was distilled
   from.
-- **Honor robots.txt, rate-limit, real user-agent.** Hodinkee currently
+- Counsel review before public encyclopedia ship. Fair-use-adjacent
+  but legally non-trivial.
+
+### Crawling conduct (both consumers, both surfaces)
+
+- Honor robots.txt, rate-limit, real user-agent. Hodinkee currently
   blocks our scraper IP — production fetches need care.
-- **Internal use today is low-risk.** Variant taxonomy extraction +
-  recommender training are internal-only consumers and don't republish
-  the prose.
-- **Counsel review before public encyclopedia ship.** Fair-use-adjacent
-  but legally non-trivial; budget for a proper legal pass.
+- Storage capture is internal-only at rest; only the display surfaces
+  are externally visible.
+
+### Implication for Session A onward
+
+Scrape full-text aggressively into `public/reference_guides.json` and
+inline fields on listings/lots. **No truncation, no paraphrasing at
+storage time.** Display-layer transforms (synthesizer, summarizer,
+extractor) run on top of the full corpus when shipping to the public
+surface; admin reading view consumes the same raw data directly.
 
 -----
 
@@ -316,6 +362,14 @@ One coherent PR; all zero-new-HTTP or one-time-fetch.
 
 ## Open questions
 
+- **Admin reading view shape.** Once the corpus has accumulated a few
+  weeks of content, what's the right UI for Mark's personal
+  consumption? Options: per-reference reading list (chronological
+  newest-first within a ref), a "saved to read" queue (Pocket-style
+  bookmarking on top of the corpus), full-text search across all
+  prose, export-to-Markdown/ePub for offline reading on iPad. Probably
+  start with the simplest (per-reference list under AdminTab) and let
+  usage reveal what's missing.
 - **LLM budget.** Variant taxonomy extraction + per-listing tagging
   + condition narrative parsing all want an LLM. Cloud (cheap, fast,
   ongoing cost) vs Mac-mini Phase A (one-time hardware, free
@@ -333,8 +387,8 @@ One coherent PR; all zero-new-HTTP or one-time-fetch.
   content type — TBD.
 - **Variant taxonomy benchmark.** Eric Wind's 1675 guide is the
   gold-standard output. The LLM extraction is "good enough" when its
-  synthesized 1675 taxonomy reads recognisably like Charlie's guide
-  (or his — Eric's). Concrete benchmark, not a vibe check.
+  synthesized 1675 taxonomy reads recognisably like Eric's guide.
+  Concrete benchmark, not a vibe check.
 
 -----
 
