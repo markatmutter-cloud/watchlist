@@ -124,6 +124,60 @@ def collect_detail_urls():
     return urls
 
 
+SPEC_LABELS = {
+    "DIAL", "CASE", "DIAMETER", "MOVEMENT", "STRAP", "BRACELET",
+    "BEZEL", "CONDITION", "YEAR", "ORIGIN", "CALIBRE", "CALIBER",
+    "CROWN", "CRYSTAL",
+}
+
+
+def extract_description(html):
+    """Pull the prose paragraph + the labelled spec rows.
+
+    Shuck the Oyster's detail pages render specs in a Bootstrap grid:
+        <div class="col-sm-2">DIAL</div>
+        <div class="col-sm-10"><p>White tritium dial, steel tritium hands</p></div>
+    The prose paragraph that precedes them usually opens with "Overall,
+    the watch …"; some openers vary. Concatenate prose + a "LABEL: value"
+    join of the spec rows so the merged description carries everything
+    the reference + encyclopedia layers want.
+    """
+    flat = re.sub(r"<[^>]+>", " ", html)
+    flat = re.sub(r"\s+", " ", flat).strip()
+
+    # Prose: anchor on the conventional "Overall, the watch …" opener;
+    # fall back to any sentence-starting capitalised opener that runs to
+    # the first all-caps label token (DIAL/CASE/etc).
+    prose_match = re.search(
+        r"(Overall[,]?\s+the watch.{30,1500}?\.)\s+(?:DIAL|CASE|YEAR|DIAMETER|BEZEL|MOVEMENT|STRAP|BRACELET)\b",
+        flat, re.DOTALL,
+    )
+    if not prose_match:
+        prose_match = re.search(
+            r"((?:Overall|This watch|The watch|A rare|An exceptional|Originally|Featuring)\b[^.]{30,1500}?\.)\s+(?:DIAL|CASE|YEAR|DIAMETER|BEZEL|MOVEMENT|STRAP|BRACELET)\b",
+            flat, re.DOTALL,
+        )
+    prose = prose_match.group(1).strip() if prose_match else ""
+
+    # Spec rows from the Bootstrap col-sm-2/col-sm-10 grid pairs.
+    spec_rows = []
+    for m in re.finditer(
+        r'<div class="col-sm-2">\s*(\w+)\s*</div>\s*<div class="col-sm-10">\s*<p>([^<]+)</p>',
+        html, re.DOTALL,
+    ):
+        label = m.group(1).strip().upper()
+        value = m.group(2).strip()
+        if label in SPEC_LABELS and value:
+            spec_rows.append(f"{label}: {value}")
+
+    parts = []
+    if prose:
+        parts.append(prose)
+    if spec_rows:
+        parts.append(" · ".join(spec_rows))
+    return " ".join(parts)
+
+
 def parse_detail(html, url):
     # Title — prefer the h1 (cleanest), fall back to <title>.
     title = ""
@@ -167,7 +221,7 @@ def parse_detail(html, url):
         "price": price,
         "url": url,
         "img": img,
-        "description": "",
+        "description": extract_description(html)[:2000],
         "source": SOURCE_NAME,
         "sold": sold,
         "priceOnRequest": price_on_request,
