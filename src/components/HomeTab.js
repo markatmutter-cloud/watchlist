@@ -334,7 +334,12 @@ function SectionStrip({ heading, descriptor, items, onViewAll, onScreen, screenC
             this in-context affordance (Mark spec: "I want it to not
             have a grey bar at the top"). */}
         <div style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 8 }}>
-          {onScreen && screenCount > 0 && (
+          {onScreen && screenCount > 0 && !isMobile && (
+            // Desktop-only since 2026-05-17 (Mark spec): mobile Home
+            // dropped the Screen pill — was queued from the
+            // 2026-05-16 desktop-audit session as "remove Review
+            // button from Home on mobile, keep on desktop" but
+            // hadn't shipped.
             <button onClick={onScreen}
               style={{
                 cursor: "pointer", fontFamily: "inherit",

@@ -37,6 +37,7 @@ export function MobileShell(props) {
     setDrawerOpen,
     setFilterHearted,
     setMaxPriceText, setMinPriceText,
+    setListingsSubTab,
     setPage, setSearch, setSignInPromptOpen, setSort,
     setSourcePickerOpen, setSourcesExpanded,
     setTab,
@@ -159,7 +160,23 @@ export function MobileShell(props) {
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 10, padding: "8px 12px", flex: 1, minWidth: 0 }}>
             <SearchIcon />
             <input value={search} onChange={e => setSearch(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}
+              onKeyDown={e => {
+                if (e.key !== "Enter") return;
+                e.target.blur();
+                // On Home, the typed query has nowhere to land visually
+                // (Home is editorial strips, not a filtered grid), so
+                // Enter takes the user to Listings with the query
+                // applied. Mirrors what HomeSearchBar's submit does on
+                // desktop. Mark report 2026-05-17: "Search on home
+                // landing page on mobile doesn't filter results. Can
+                // type but can't press enter and no options for
+                // surface to search."
+                if (tab === "home" && search.trim() && setListingsSubTab) {
+                  setTab("listings");
+                  setListingsSubTab("live");
+                  setPage(1);
+                }
+              }}
               placeholder="Search reference or brand..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 14, color: "var(--text1)", outline: "none", fontFamily: "inherit", minWidth: 0 }} />
             {search && user && (
               <button onClick={openFavPrompt} aria-label={currentIsSaved ? "Already saved" : "Save search as favorite"}
@@ -191,6 +208,35 @@ export function MobileShell(props) {
           )}
           {authJSX}
         </div>
+        {/* Home + search-with-content: render an inline tappable CTA
+            that submits the query to Listings. Without it, typing into
+            the mobile sticky search bar on Home produces no visible
+            reaction (Home is editorial strips, not a filtered grid),
+            and the input feels broken. Mirror of HomeSearchBar's
+            submit on desktop. Mark report 2026-05-17. */}
+        {tab === "home" && search.trim() && setListingsSubTab && (
+          <button
+            onClick={() => { setTab("listings"); setListingsSubTab("live"); setPage(1); }}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              gap: 8, width: "100%", padding: "10px 16px",
+              borderBottom: "0.5px solid var(--border)",
+              background: "var(--surface)", border: "none",
+              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+              color: "var(--text1)", textAlign: "left",
+            }}
+            aria-label={`Search listings for ${search.trim()}`}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              <SearchIcon />
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                Search listings for{" "}
+                <strong style={{ color: "var(--text1)" }}>“{search.trim()}”</strong>
+              </span>
+            </span>
+            <span style={{ color: "var(--brand)", flexShrink: 0, fontWeight: 500 }}>→</span>
+          </button>
+        )}
         {/* Sort/filter row — only when the current sub-tab has a
             filterable list. Hidden during share-receive landing so
             the recipient sees the focused card without browse chrome
