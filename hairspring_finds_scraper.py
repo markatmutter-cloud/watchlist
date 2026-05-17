@@ -63,6 +63,64 @@ from pathlib import Path
 
 import requests
 
+# Canonical brand resolution + reference-index match — same modules
+# the auction-lot pipeline uses, so Hairspring Finds records carry
+# identical brand/model/sub_model/reference_id shape as auction lots.
+# This is what lets App.js project Finds into Listings > All sold
+# alongside auction lots without per-source branching.
+try:
+    from auction_lot_parsers import infer_brand, canonical_brand
+except ImportError:
+    infer_brand = lambda _t: ""  # noqa: E731
+    canonical_brand = lambda _b: ""  # noqa: E731
+
+try:
+    from reference_index_match import (
+        parse_index as _parse_index,
+        build_ref_index as _build_ref_index,
+        match_against_index as _match_against_index,
+    )
+    _INDEX_PATH = Path(__file__).parent / "docs" / "watch_references.md"
+    _REF_INDEX_CACHE = None
+
+    def _ref_index():
+        global _REF_INDEX_CACHE
+        if _REF_INDEX_CACHE is None and _INDEX_PATH.exists():
+            _REF_INDEX_CACHE = _build_ref_index(_parse_index(_INDEX_PATH.read_text()))
+        return _REF_INDEX_CACHE
+except ImportError:
+    _match_against_index = None
+    def _ref_index():
+        return None
+
+
+def _resolve_brand_and_ref(title: str) -> dict:
+    """Run brand inference + index matcher on a title. Returns a dict
+    of {brand, reference_no, model, sub_model, model_line} with empty
+    strings / None where nothing matched."""
+    out = {
+        "brand": "",
+        "reference_no": None,
+        "model": None,
+        "sub_model": None,
+        "model_line": None,
+    }
+    title = title or ""
+    if not title:
+        return out
+    out["brand"] = infer_brand(title) or ""
+    ref_idx = _ref_index()
+    if _match_against_index and ref_idx is not None:
+        hit = _match_against_index(title, ref_idx)
+        if hit:
+            if not out["brand"]:
+                out["brand"] = hit.get("brand", "") or ""
+            out["reference_no"] = hit.get("raw_ref")
+            out["model"] = hit.get("model")
+            out["sub_model"] = hit.get("sub_model")
+            out["model_line"] = hit.get("model_line")
+    return out
+
 BASE = "https://hairspring.com"
 BLOG_PATH = "/blogs/finds"
 OUTPUT_JSON = "public/hairspring_finds.json"
@@ -262,6 +320,11 @@ def parse_article(html: str, url: str) -> dict | None:
         if m_mm:
             case_size = f"{m_mm.group(1)}mm"
 
+    # Resolve brand + reference-index match from the title — sets
+    # brand / reference_no / model / sub_model / model_line for the
+    # downstream sold-archive projection in App.js.
+    resolved = _resolve_brand_and_ref(title)
+
     return {
         "url": url,
         "slug": url.rsplit("/", 1)[-1],
@@ -274,13 +337,17 @@ def parse_article(html: str, url: str) -> dict | None:
         "word_count": len(text.split()),
         # Sold-archive surface (Mark spec 2026-05-17: "if there is a
         # way to bring these hairspring finds into sold archive I
-        # would love that. Not just the prose."). Price + size feed
-        # into a sold-feed projection; brand + ref get resolved at
-        # consumption time by running reference_index_match against
-        # the title.
+        # would love that. Not just the prose."). Price + size +
+        # brand + ref-match enable App.js to project these records
+        # into Listings > All sold alongside auction lots.
         "sold_price_usd": sold_price,
         "currency": "USD",
         "case_size": case_size,
+        "brand": resolved["brand"],
+        "reference_no": resolved["reference_no"],
+        "model": resolved["model"],
+        "sub_model": resolved["sub_model"],
+        "model_line": resolved["model_line"],
         "source": "hairspring_finds",
         "source_type": "editorial_finds",
         "scraped_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
