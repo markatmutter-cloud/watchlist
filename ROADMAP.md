@@ -170,6 +170,14 @@ only thing nobody else has. Mark spec for the next working session:
 **focus on reference mining on listings.** Start with the
 detection survey (see kick-off paragraph below).
 
+**Strategy doc:** [docs/REFERENCE_INTELLIGENCE.md](docs/REFERENCE_INTELLIGENCE.md)
+captures the connoisseur-knowledge layer that sits on top of the
+reference index — variant taxonomy, condition signals, price-impact
+modelling, recommender. The reference index is *scaffolding*; the
+content attached to each reference is the product. Read that doc
+before deepening Epic 0 work; the six PRs #324–#329 implement the
+data-layer foundation under it.
+
 The data-layer prerequisite for jobs #4 (reference research) and #5
 (reference learning). Today every listing carries a `ref` field as a
 free-text title; nothing stitches multiple listings of the same
