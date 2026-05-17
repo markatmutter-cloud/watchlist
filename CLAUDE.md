@@ -1111,6 +1111,99 @@ When adding new computed-display fields, follow the same shape:
 emit at merge time, prefer the field on the frontend, keep an
 inline-derive fallback for older snapshots.
 
+## Reference index + matcher (Epic 0)
+
+`docs/watch_references.md` is the canonical curated index of brand
+→ model line → reference numbers, delivered iteratively via research-
+chat patches. The session arc + strategy lives in
+[docs/REFERENCE_INTELLIGENCE.md](docs/REFERENCE_INTELLIGENCE.md) —
+read that first if you're touching Epic 0 work.
+
+**Files involved:**
+- `docs/watch_references.md` — canonical index. 26 brands · 312
+  model lines · 1,666 refs · 854 nicknames as of 2026-05-17.
+- `docs/watch_references_gaps.md` — auto-generated miss report,
+  regenerated each time `reference_index_match.py` runs. Concrete
+  input for the next research-chat patch.
+- `docs/watch_references_patch_NN.md` — sequenced patch files
+  (provenance kept after merge into canonical).
+- `reference_index_match.py` — parses the index + matches against
+  every corpus + writes the gap report. Returns a dict
+  `{brand, model_line, model, sub_model, raw_ref}` per hit.
+- `reference_survey.py` — pre-index regex-extraction baseline
+  (53% on titles + descriptions). Kept as a re-runnable script.
+
+**Patch-merge workflow.** Mark drops research-chat patches via
+GitHub mobile to `docs/<any-filename>.md`. The merge process:
+1. Pull main. Inspect the patch.
+2. Rename to `docs/watch_references_patch_NN.md` (next number in
+   the sequence) — preserves provenance under a consistent name.
+3. Determine shape: additions-to-existing-brand-blocks (patch 01,
+   patch 04) vs new-brand-blocks (patch 02, patch 03).
+4. Run a per-shape merge script (see `/tmp/merge_patch_*.py`
+   references in commit messages — same shape each time, easy to
+   reproduce).
+5. Re-run `python3 reference_index_match.py` — regenerates the
+   gap report.
+6. Commit: rename + canonical update + regenerated gap report.
+   Open PR.
+
+**Sources bullet is structural (Mark spec 2026-05-17 — credit +
+linkback).** Every future research-chat patch MUST include a
+`- **Sources**: [Name](url) · [Name](url) · …` bullet per
+`### Model line:` entry. At least 2–3 sources per entry. The
+eventual public per-reference page will render these as outbound
+linkbacks.
+
+**Reference corpus is dual-consumer:**
+- **Admin reading view (gated by `REACT_APP_ADMIN_EMAILS`):** full
+  prose verbatim, source-attributed, for Mark's personal research.
+- **Public encyclopedia surface (future):** factual extraction
+  only (production years, calibers, variant taxonomy), cited
+  sources, never near-verbatim paraphrases. Counsel review
+  before public ship.
+
+Storage today is in JSON files at `public/*_finds.json` /
+`public/*_guides.json` (Hairspring + Wind Vintage). Future
+unified corpus at `public/reference_guides.json` keyed by
+`reference_id` is queued (Phase C in the post-2026-05-17 plan).
+
+**Index growth priority order — known preferences:**
+- **Skip Piaget + Movado** per Mark spec 2026-05-17.
+- "Additions to existing big brands" patches outperform "new brand"
+  patches for headline % movement (existing brands carry most
+  listings). Prioritise Rolex / Omega / Cartier / Patek / AP /
+  Heuer / Breitling ref additions in the next round.
+- Watchfid's *Speedmaster Only* + *Seamaster Only* books are the
+  benchmark for variant-taxonomy quality (NOT Wind Vintage's 1675
+  guide — that's good but not gold-standard per Mark).
+
+## Editorial corpus scrapers
+
+Two editorial sources scraped this session. Same pattern; both feed
+the future reference-corpus + the AdminTab reading view.
+
+- **`hairspring_finds_scraper.py`** — scrapes hairspring.com/blogs/finds.
+  1,613 articles, $142M cumulative coverage. Output:
+  `public/hairspring_finds.json` keyed by URL. Per-record:
+  title, author, body_text (Erik Gustafson's prose), sold_price_usd
+  (from chrome above the article body — CRITICAL: scoped to
+  `<div class="article-author_social">` to avoid 17+ sidebar
+  thumbnails), case_size, brand + reference-index match.
+  Incremental: re-runs only fetch articles older than 30 days
+  since last-scrape. `HAIRSPRING_FULL_REFRESH=1` to force.
+
+- **`windvintage_guides_scraper.py`** — scrapes windvintage.com/blog.
+  325 posts, 527K words, by Charlie Dunne + Eric Wind. Squarespace
+  `?format=json` endpoint. Per-record: same shape as Hairspring +
+  `post_type` heuristic classifier (collector_guide / whats_selling
+  / photo_report / event / auction_recap / post). 15 formal
+  collector's guides; 185 "What's Selling Here" listicles.
+
+Both scrapers import `auction_lot_parsers.infer_brand` + the
+`reference_index_match` module at scrape time so every record
+carries `brand` + `reference_no` + `model` + `sub_model` + `model_line`.
+
 ## Tests
 
 Two suites, both run on every push to main and every PR via
