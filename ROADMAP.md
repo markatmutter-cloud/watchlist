@@ -162,63 +162,173 @@ when something breaks.
 
 ### References as first-class entities
 
-**ACTIVE — kicking off 2026-05-16.** The desktop audit session
-landed (8 PRs) and the strategic read confirmed: nothing else on
-the site is unique — every dealer has live listings, every auction
-house has a catalog. The cross-source reference dataset is the
-only thing nobody else has. Mark spec for the next working session:
-**focus on reference mining on listings.** Start with the
-detection survey (see kick-off paragraph below).
+**ACTIVE — substantial progress 2026-05-16 → 2026-05-17.** The
+2026-05-16 desktop audit session confirmed the strategic read:
+nothing else on the site is unique except the cross-source reference
+dataset. The 2026-05-17 working session attacked Epic 0 in earnest
+and shipped most of the data-layer foundation.
 
 **Strategy doc:** [docs/REFERENCE_INTELLIGENCE.md](docs/REFERENCE_INTELLIGENCE.md)
 captures the connoisseur-knowledge layer that sits on top of the
 reference index — variant taxonomy, condition signals, price-impact
 modelling, recommender. The reference index is *scaffolding*; the
-content attached to each reference is the product. Read that doc
-before deepening Epic 0 work; the six PRs #324–#329 implement the
-data-layer foundation under it.
+content attached to each reference is the product. **Read that doc
+before deepening Epic 0 work.**
 
-The data-layer prerequisite for jobs #4 (reference research) and #5
-(reference learning). Today every listing carries a `ref` field as a
-free-text title; nothing stitches multiple listings of the same
-reference into one entity. Without that stitching, "show me every
-Seamaster 165.024 currently in market" needs string-matching gymnastics.
+#### Shipped (2026-05-16 → 2026-05-17)
 
-Build: a normalised `references` table in Supabase (or wherever it
-ends up — could be a JSON file at the static layer if Supabase row
-limits get tight). Each reference has brand, model, era/years,
-category. Listings, auction lots, and curated content all link to a
-reference. Detection runs in three layers: per-source structured
-fields where the dealer surfaces them, regex on title + description
-where the format is predictable, and LLM fallback for the long tail.
-Manual curation for the unparseable.
+**Data layer — stop throwing data away (PRs #324–#329):**
+- Phillips Turbo-Stream now emits `reference_no` + `model_name` per
+  lot (73% / 76% coverage — was 0% before).
+- Sotheby's / Christie's / Antiquorum auction-lot scraper now parses
+  structured fields (reference, model, year, case_no, movement_no,
+  dial, calibre, case_material) out of free-text descriptions where
+  available (`auction_lot_parsers.py`).
+- merge.py description truncation lifted 300 → 1500 chars; per-source
+  caps on Bulang / Craft & Tailored / Falco / Somlo / Huntington /
+  Wind Vintage / Analog Shift / Maunder / Oliver & Clarke /
+  Vintage Watch Fam raised to capture full body_html (1,500–4,000
+  chars typical).
+- Shuck the Oyster: zero-HTTP description extraction from existing
+  detail-page fetch (was emitting 0-char desc).
+- Canonical brand resolution on auction lots (was always empty;
+  now ~82% populated). Per-dealer structured-field parsers extract
+  reference / model / year / material / case_size from spec blocks
+  (`dealer_parsers.py`).
 
-This is the substrate Epic 5 (research + learning) sits on. Until
-this lands, those epics can't ship cleanly.
+**Reference index + matcher (PRs #327, #332, #333, #334, #335):**
+- Curated reference index at `docs/watch_references.md`.
+- Re-runnable matcher + gap report (`reference_index_match.py` +
+  `docs/watch_references_gaps.md`).
+- Three patch merges grew the index from 13 brands → **26 brands**
+  with **295 model lines · 1,646 distinct refs · 781 nicknames**.
+- Matcher polish: derived `model` + `sub_model` on every match;
+  JLC + Universal Genève canonicalization fixes; progressive
+  ref-normalization (5120G-001 → 5120).
+- `listings.json` hit rate: 30% (initial index) → 43% (current).
+  Per-brand: Rolex 76% · Heuer 72% · Tudor 56% · TAG Heuer 43% ·
+  Universal Genève 54% · Omega 50% · Patek 40%.
 
-**Proposed slicing (2026-05-15, none built yet):**
+**Editorial corpus (PRs #336, #337, #338):**
+- Hairspring "Finds" scraper + 1,613-article corpus (Erik Gustafson's
+  per-watch prose). 93% carry sold_price, 100% case_size; $142M
+  cumulative coverage; median $31K, top $2.5M.
+- App.js projects Hairspring Finds into Listings > All sold as
+  "Hairspring (Finds)" — each card carries Erik's prose as desc.
+- Wind Vintage blog scraper + 325-post corpus (Charlie Dunne +
+  Eric Wind editorial). **527,208 words** total — 15 formal
+  collector's guides, 185 "What's Selling Here" weekly listicles,
+  105 general posts. Per-record brand + ref-index resolved.
+  App.js wiring pending (different shape from sold listings —
+  belongs in the future AdminTab reading view).
 
-1. **Slice 1 — Epic 0 foundation.** Normalised `references` table
-   + detection pipeline (3 layers above). Listings + auction lots +
-   curated content FK to the reference. Invisible infrastructure.
-   ~1–2 sessions depending on detection aggressiveness.
-2. **Slice 2 — Reference grouping UI.** First user-visible payoff:
-   N saved 5548BAs collapse into one card with "N listings —
-   expand." Saved searches sharpen too. ~1 session.
-3. **Slice 3 — Per-reference research page** (Epic 5 sub-area).
-   "Click into 5548BA → every active listing across dealers +
-   every recent auction result (hammer prices, dates, photos) +
-   variation gallery." Several sessions.
-4. **Slice 4 — Reference encyclopedia** (Epic 5 sub-area). LLM-
-   synthesized guide + curated outbound links + live inventory
-   ribbon. Needs Mac mini Phase A (local LLM) or cloud LLM budget.
+#### Near-term queue (post-2026-05-17 session)
 
-**Recommended kick-off:** survey current `listings.json` to
-empirically measure what % of titles parse cleanly with a
-regex-first pass before committing to detection architecture. The
-top-5 brands (Rolex / Omega / Tudor / Patek / AP) probably catch
-60–70% of listings with simple regex; the long tail is where the
-LLM fallback decision matters.
+In priority order. Each is contained and ships independently.
+
+1. **B — Attach `reference_id` to every listing at merge time.**
+   The matcher exists as a survey tool; integrate it into
+   `merge.py` and the auction-lot post-processing so every entry
+   in `listings.json` / `auction_lots.json` / `hairspring_finds.json`
+   carries `reference_id` + `model` + `sub_model` + `model_line`.
+   **Keystone**: unblocks per-reference grouping, the AdminTab
+   reading view, the Hairspring Finds → per-reference linkage.
+   Invisible-on-the-surface but the prereq for everything visible
+   downstream.
+2. **C — `public/reference_guides.json` corpus storage.** Per the
+   strategy doc, the corpus file keyed by `reference_id` with
+   `source_type` tags. Version 1 is FREE — parse
+   `docs/watch_references.md`'s Notes paragraphs into structured
+   per-reference entries, then layer in the Hairspring Finds +
+   Wind Vintage corpus we already have. No new scraping. Output:
+   one JSON file with brand/model/refs/notes/nicknames/sources
+   per reference, ready for the reading view to render.
+3. **D — AdminTab reading view.** Personal-research surface per
+   the strategy doc's dual-consumer split. Gated by
+   `REACT_APP_ADMIN_EMAILS` (same pattern as Site Stats). Renders
+   `reference_guides.json` as per-reference cards: full prose,
+   source-attributed, marked-as-read state. **Depends on B + C**
+   but is the visible payoff for both.
+4. **F — Matcher tokenizer expansion.** Close the false-zero
+   gap on the new brands from patch 3 (5% combined): Doxa SKU
+   format (`804.10.241.10`), Enicar dashed/slashed refs
+   (`144-35-02`, `072/002`), Blancpain modern alphanumerics
+   (`5015A-1130-52A`), Breitling full-format variants
+   (`AB202016/C961/443A`). Plus honour the tokenizer-implementation-
+   notes section from patch 1: exclude bracelet refs (`1171`,
+   `78350`), depth ratings (`300M`, `600M`), caliber refs (`8541`,
+   `8531`), strap codes from ref matching. Add partial-prefix maps
+   for Omega `311.30` / Zenith `3100.3600`. ~80 lines in
+   `reference_index_match.py`.
+
+#### Pending — auction essays + per-source description gaps
+
+- **Sotheby's `catalogueNote` / `provenance` / `literature`** pull —
+  these fields are already in the LotV2 object we fetch but get
+  discarded. Adding them to `auction_lots_scraper.py` is a small
+  edit, captures the long-form essay content per lot. Type E in the
+  strategy doc.
+- **Christie's long essays** — investigate the auction-page payload
+  for an essay field; failing that, add bounded per-lot detail
+  fetches.
+- **Antiquorum descriptions** — currently empty in our output.
+  Per-lot detail fetches where the link exists.
+- **Phillips full essays** — parked. WAF blocks our IP after ~7
+  detail-page fetches. Unblocks when the Mac-mini Playwright path
+  lands (Mac mini Phase A in this Epic).
+
+#### Pending — UI surfaces
+
+- **Slice 2 — Reference grouping UI.** N saved 5548BAs collapse
+  into one card with "N listings — expand." Saved searches sharpen.
+  Depends on B.
+- **Slice 3 — Per-reference research page.** "Click into 5548BA →
+  every active listing across dealers + every recent auction result
+  (hammer prices, dates, photos) + variation gallery." Depends on
+  B + C.
+- **Slice 4 — Reference encyclopedia (LLM-synthesized).** From the
+  accumulated corpus per reference. Needs Mac mini Phase A or
+  cloud LLM budget.
+
+#### Pending — the connoisseur layer (Slices 5–6 of strategy doc)
+
+- **Variant taxonomy extraction** — per-reference structured
+  taxonomy of which features matter, what variants exist, what
+  collectors call them. LLM step. Benchmark output against Wind
+  Vintage's 1675 guide (our gold-standard reference).
+- **Per-listing variant tagging** — tag each listing with its
+  variant signals (`{dial: "MK1 frog foot", bezel: "fuchsia
+  faded", case: "unpolished", ...}`).
+- **Per-reference price-impact model** — fit feature-impact from
+  variant tags + sold prices.
+- **Recommender** — variant tags × user reactions × price-impact
+  → ranked listings with explanations. The endgame.
+
+#### Index growth — next research-chat rounds
+
+The patch workflow is established: research chat produces patches,
+Mark drops them via GitHub mobile to `docs/<patch-name>.md`, I
+merge into canonical and regenerate the gap report. Three patches
+shipped so far. Next rounds:
+
+- **Round 4 (queued, prompt drafted 2026-05-17):** Tudor niche refs
+  (76100 / 76214 / 94510 / 91514 / 75090 + the `/0` suffix vintage
+  variants) · Vacheron vintage refs (4073 / 4217 / 47052 / 4500V
+  full-format with dial codes) · Breitling vintage additions
+  (Top Time 810 · Pilot's Chronograph 817 · Early Chronograph 777 ·
+  full-format AB-prefix variants).
+- **Future rounds:** the remaining out-of-index brands listed in
+  `docs/watch_references_gaps.md`. **Skipping** Piaget / Movado
+  per Mark spec 2026-05-17.
+
+#### Index research — structured sources field
+
+Per Mark's credit-and-linkback principle (2026-05-17), every future
+patch should include a `- **Sources**: [Name](url) · [Name](url)`
+bullet per `### Model line:` entry so the eventual public
+per-reference page can render outbound linkbacks. Current patches
+have varying levels of source attribution; the next prompt locks
+this in as a structural requirement.
 
 ### Verification + scrape health
 
