@@ -199,6 +199,97 @@ def parse_antiquorum_title(title: str) -> dict:
     return out
 
 
+# ── Brand resolution ──────────────────────────────────────────────────
+
+# Canonical brand names — match the vocabulary listings.json uses so
+# auction-lot brand values are consistent across the data layer.
+# Longer / more specific names first so "Patek Philippe" beats "Patek".
+CANONICAL_BRANDS = [
+    "Patek Philippe", "Audemars Piguet", "Vacheron Constantin",
+    "Jaeger-LeCoultre", "A. Lange & Söhne", "Universal Genève",
+    "Richard Mille", "F.P. Journe", "Grand Seiko", "TAG Heuer",
+    "Girard-Perregaux", "H. Moser & Cie", "Daniel Roth", "Gerald Genta",
+    "Franck Muller", "Charles Frodsham", "Greubel Forsey", "MB&F",
+    "Rolex", "Omega", "Heuer", "Cartier", "Tudor", "Piaget", "IWC",
+    "Breitling", "Longines", "Movado", "Zenith", "Breguet", "Seiko",
+    "Panerai", "Blancpain", "Bulgari", "Chopard", "Hermès", "Hublot",
+    "Tissot", "Ebel", "Doxa", "Tag Heuer",  # alias of TAG Heuer
+]
+
+BRAND_ALIASES = {
+    "Tag Heuer": "TAG Heuer",
+    "Jaeger LeCoultre": "Jaeger-LeCoultre",
+    "Jlc": "Jaeger-LeCoultre",
+    "JLC": "Jaeger-LeCoultre",
+    "A. Lange & Sohne": "A. Lange & Söhne",
+    "Lange & Söhne": "A. Lange & Söhne",
+    "Universal Geneve": "Universal Genève",
+    "F.P.Journe": "F.P. Journe",
+    "FP Journe": "F.P. Journe",
+}
+
+_BRAND_TOKEN_RES = [
+    (b, re.compile(rf"\b{re.escape(b)}\b", re.IGNORECASE))
+    for b in CANONICAL_BRANDS
+]
+
+
+def canonical_brand(raw: str) -> str:
+    """Canonicalize a maker / brand string.
+
+    Handles trailing ", <city>" suffixes (Sotheby's stores
+    "Cartier, Paris"; we want "Cartier") and known aliases. Returns
+    empty string if no canonical match.
+    """
+    if not raw:
+        return ""
+    s = raw.strip()
+    # Strip trailing ", <Place>" — Sotheby's stores "Cartier, Paris",
+    # "Patek Philippe, Geneva" etc.
+    s = re.sub(r",\s*[A-Z][a-zA-Z]+\s*$", "", s)
+    s = s.strip()
+    # Direct alias hit
+    if s in BRAND_ALIASES:
+        return BRAND_ALIASES[s]
+    # Exact canonical hit (case-sensitive first for speed)
+    if s in CANONICAL_BRANDS:
+        return s
+    # Case-insensitive scan against canonical list
+    sl = s.lower()
+    for b in CANONICAL_BRANDS:
+        if b.lower() == sl:
+            return BRAND_ALIASES.get(b, b)
+    return ""
+
+
+def infer_brand(title: str) -> str:
+    """Find the first canonical brand mentioned in a title string."""
+    if not title:
+        return ""
+    for b, regex in _BRAND_TOKEN_RES:
+        if regex.search(title):
+            return BRAND_ALIASES.get(b, b)
+    return ""
+
+
+def resolve_brand(rec: dict) -> str:
+    """Decide a record's canonical brand, in priority order:
+       1. existing rec['brand']
+       2. canonical(rec['maker'])
+       3. infer from title
+
+    Returns empty string if nothing matches — caller decides whether
+    to default to "Other" or leave unset.
+    """
+    existing = (rec.get("brand") or "").strip()
+    if existing:
+        return existing
+    from_maker = canonical_brand(rec.get("maker") or "")
+    if from_maker:
+        return from_maker
+    return infer_brand(rec.get("title") or "")
+
+
 # ── Public entry point ────────────────────────────────────────────────
 
 def extract_lot_structured_fields(house: str, title: str, description: str) -> dict:
