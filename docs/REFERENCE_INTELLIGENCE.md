@@ -409,6 +409,25 @@ One coherent PR; all zero-new-HTTP or one-time-fetch.
 
 -----
 
+## Status snapshot — 2026-05-17
+
+Where each layer of the stack stands after the 2026-05-16 → -17
+session push. See `SESSION_HANDOFF_2026-05-17.md` for the full arc.
+
+| Layer | Status |
+|---|---|
+| **1. Scaffolding (reference index)** | ✅ **Shipped.** 26 brands · 312 model lines · 1,666 refs · 854 nicknames. Iterative growth via research-chat patches (4 patches merged so far, sequenced `watch_references_patch_01..04`). |
+| **2. Knowledge base (descriptions + corpus)** | ⚠️ **Partial.** Dealer descriptions captured at full length. Hairspring Finds (1,613 articles, $142M coverage) + Wind Vintage blog (325 posts, 527K words) scraped end-to-end. Auction-house long-form essays (Sotheby's `catalogueNote` / Christie's / Antiquorum / Phillips) still pending. Unified `public/reference_guides.json` not yet built. |
+| **3. Per-reference variant taxonomy (LLM)** | ❌ Not started. Gated on corpus depth + LLM budget. |
+| **4. Per-listing variant tagging** | ❌ Not started. Gated on layer 3. |
+| **5. Price-impact model** | ❌ Not started. Gated on layer 4. |
+| **6. Recommender** | ❌ Not started. Endgame. |
+| **Admin reading view (parallel to 2)** | ⚠️ Component not yet built. Corpus exists; needs the gated AdminTab surface + `reference_guides.json` to render against. Queued as roadmap item D. |
+
+**`listings.json` match rate**: 47.9% after patch 04 (was 30% pre-session).
+**Realistic ceiling with the four levers in the queue (index growth +
+matcher tokenizer + hybrid match + model-name fallback): 65–70%.**
+
 ## Provenance of this document
 
 Written 2026-05-16 / 2026-05-17 across one extended chat session
@@ -418,14 +437,22 @@ covering:
    regex-extraction hit rate at 53%.
 2. Per-dealer + per-auction-house audit agents — identified the leaks
    and confirmed content types.
-3. Six PRs landing the Phase 1A–1F data-layer fixes (PRs #324–#329).
+3. Sixteen PRs (#324–#340) implementing the Phase 1A–1F data-layer
+   fixes, the reference index + matcher, four patch merges, the
+   Hairspring Finds + Wind Vintage editorial corpora, and a mobile
+   search bug fix interrupting along the way.
 4. The Bulang vs. Antiquorum 165.024 example crystallising the value
    gap.
-5. Mark's pointers to Eric Wind's 1675 guide, Hairspring's "Worth
+5. Mark's pointers to Wind Vintage's 1675 guide, Hairspring's "Worth
    Reading" sections, A Collected Man's editorial template,
-   gmtmaster1675.com, Hodinkee Reference Points, Millenary Watches.
+   gmtmaster1675.com, Hodinkee Reference Points, Millenary Watches,
+   Watchfid's *Speedmaster Only* book (the gold-standard benchmark).
 6. Six follow-up audit agents confirming the scrape paths for the
    reference-guide corpus.
+
+The patch-merge workflow established here (research-chat patches via
+GitHub mobile → I rename + merge + regenerate gap report) is now the
+established cadence for Epic 0 growth. Documented in CLAUDE.md.
 
 Agent reports are not committed (transient artifacts) but the
 findings they produced are baked into the source catalog above.
