@@ -58,6 +58,12 @@ from auctionlots_scraper import (
     HEADERS as LOT_HEADERS,
 )
 
+# Per-house structured-field parsers (reference_no, model_name,
+# case_no, movement_no, year_circa, dial, calibre, case_material, etc.)
+# Applied post-construction so each per-house enumerator stays focused
+# on its own enumeration concerns.
+from auction_lot_parsers import extract_lot_structured_fields
+
 
 # Politeness delay between detail-page fetches inside one sale, to
 # avoid hammering Phillips with 50 concurrent reqs from CI.
@@ -1643,6 +1649,31 @@ def main():
         persisted += 1
     if persisted:
         print(f"Persisted {persisted} historical sold lot(s) not in the current scrape")
+
+    # Attach structured-field extractions (reference_no, model_name,
+    # case_no, movement_no, year_circa, dial, calibre, case_material,
+    # case_size, signed, accessories) from the per-house parsers.
+    # Done post-construction so the per-house enumerator blocks stay
+    # focused on their own concerns, AND so Phillips' inline emission
+    # (already in _phillips_lot_to_record) isn't double-handled — the
+    # parser is a no-op for Phillips and only fills empties otherwise.
+    enriched = 0
+    for url, rec in out.items():
+        if not isinstance(rec, dict):
+            continue
+        fields = extract_lot_structured_fields(
+            rec.get("house"), rec.get("title", ""), rec.get("description", "")
+        )
+        if not fields:
+            continue
+        added = False
+        for k, v in fields.items():
+            if not rec.get(k):
+                rec[k] = v
+                added = True
+        if added:
+            enriched += 1
+    print(f"Enriched {enriched} lots with parsed structured fields")
 
     print(f"\nTotal lots: {len(out)}")
     with open(OUTPUT_JSON, "w") as f:
