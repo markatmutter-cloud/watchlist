@@ -30,6 +30,11 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from collections import Counter
 
+# Per-dealer structured-field parsers — extracts reference_no, model_name,
+# year, material, case_size, dial, movement, etc. from each source's
+# spec block. Same shape as auction_lot_parsers attaches to auction lots.
+from dealer_parsers import parse_dealer_description
+
 BRANDS = [
     'Rolex', 'Omega', 'Patek Philippe', 'Tudor', 'Breitling', 'IWC', 'Cartier',
     'Jaeger-LeCoultre', 'Panerai', 'Audemars Piguet', 'Vacheron Constantin',
@@ -352,7 +357,9 @@ def load_csv(path, source_name, currency='USD'):
             # the scraper code itself doesn't need per-source patches.
             if brand in EXCLUDED_BRANDS:
                 continue
-            items.append({
+            desc_full = r.get('description', '') or ''
+            structured = parse_dealer_description(source_name, desc_full)
+            item = {
                 'id': stable_id(url, fallback_key=f"{source_name}|{title}"),
                 'brand': brand,
                 'ref': title,
@@ -364,8 +371,17 @@ def load_csv(path, source_name, currency='USD'):
                 'img': r.get('img', ''),
                 'sold': parse_bool(r.get('sold', False)),
                 'priceOnRequest': price_on_request,
-                'desc': r.get('description', '')[:1500],
-            })
+                'desc': desc_full[:1500],
+            }
+            # Spread structured fields (reference_no, model_name, year,
+            # material, case_size, dial, movement, etc.) only when the
+            # per-dealer parser found them. Same key vocabulary as the
+            # auction_lot_parsers output so the frontend / reference
+            # matcher sees one shape across surfaces.
+            for k, v in structured.items():
+                if v:
+                    item[k] = v
+            items.append(item)
     return items
 
 
