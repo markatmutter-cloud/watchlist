@@ -71,6 +71,15 @@ const MANUAL_ARCHIVE_LOTS_URL = "/manual_archive_lots.json";
 // read-from-auctions.json loop and writes its own file. Loaded into a
 // separate state below and folded into the same projection.
 const LOUPETHIS_LOTS_URL = "/loupethis_lots.json";
+// Hairspring "Finds" editorial corpus — Erik Gustafson's per-watch
+// long-form prose, scraped from hairspring.com/blogs/finds. Each
+// article documents a watch Hairspring sold (~1,600 articles to
+// date, 93% carry a sold_price_usd). Projected into Listings >
+// All sold alongside auction lots, with Erik's prose attached as
+// the description. Mark spec 2026-05-17 — "less for the watch and
+// more for the commentary and watch background" + "bring these
+// into sold archive ... not just the prose."
+const HAIRSPRING_FINDS_URL = "/hairspring_finds.json";
 // Manually-curated historical sold listings (2026-05-09). Sits next
 // to manual_archive_lots.json conceptually but is shaped like a flat
 // listings.json entry rather than auction-lot data. Each item is a
@@ -207,6 +216,13 @@ export default function Watchlist() {
   // its own file. Same shape as auction_lots.json so it folds into the
   // same projection.
   const [loupethisLotsState, setLoupethisLotsState] = useState({});
+  // Hairspring Finds editorial corpus — URL-keyed dict of articles.
+  // Different shape from auction lots: each record carries
+  // body_text + sold_price_usd + brand (already canonicalised at
+  // scrape time) + reference_no. Projected separately from auction
+  // lots so the "Hairspring (Finds)" source label and the
+  // article-style click-through stay distinct.
+  const [hairspringFindsState, setHairspringFindsState] = useState({});
   // Sub-tab inside Watchlist > Auction lots: upcoming vs past.
   // Sub-tab on the Watchlist tab. Three values: "listings" (dealer
   // items you've hearted) or "searches" (saved searches editor). The
@@ -1021,6 +1037,17 @@ export default function Watchlist() {
       .then(r => r.ok ? r.json() : {})
       .then(d => setLoupethisLotsState(d && typeof d === "object" ? d : {}))
       .catch(() => {});
+
+    // Hairspring Finds — editorial corpus with sold-archive metadata.
+    // URL-keyed dict, scraped by hairspring_finds_scraper.py. Loaded
+    // here so App.js can project the records into Listings > All sold.
+    // Failing silently on first deployment matches the auction lots
+    // pattern above — the feed simply won't show Finds entries until
+    // the next cron run produces the file.
+    fetch(HAIRSPRING_FINDS_URL, fetchOpts)
+      .then(r => r.ok ? r.json() : {})
+      .then(d => setHairspringFindsState(d && typeof d === "object" ? d : {}))
+      .catch(() => {});
   }, []);
 
   const c = dark ? {
@@ -1271,15 +1298,65 @@ export default function Watchlist() {
   // works as global curation, not just a per-user dismissal.
   // Per-user `hidden_listings` keeps working alongside this; both
   // tables are read independently.
+  // Hairspring Finds → listing-shaped projection. Every record in
+  // hairspring_finds.json was a watch Hairspring sold, so sold:true
+  // is unconditional; soldAt comes from the article's published_at
+  // (best proxy for sale date — the article lands within days of
+  // the watch leaving inventory). Source = "Hairspring (Finds)"
+  // so it pools as its own filter chip distinct from any future
+  // hairspring dealer-listing source we might add. The body_text
+  // (Erik Gustafson's prose) goes into the desc field so it shows
+  // on the card and feeds the reference corpus downstream.
+  const hairspringFindsItems = useMemo(() => {
+    const arr = [];
+    const records = hairspringFindsState || {};
+    for (const url of Object.keys(records)) {
+      const data = records[url];
+      if (!data) continue;
+      const price = Number(data.sold_price_usd) || 0;
+      arr.push({
+        id: shortHash(url),
+        brand: (data.brand || "").trim() || "Other",
+        ref: data.title || "—",
+        price,
+        currency: data.currency || "USD",
+        priceUSD: price,
+        savedPrice: price,
+        savedCurrency: data.currency || "USD",
+        savedPriceUSD: price,
+        source: "Hairspring (Finds)",
+        url,
+        img: data.image || "",
+        sold: true,
+        _isSold: true,
+        // Reference-index match results (resolved at scrape time).
+        // Surfaces here so downstream consumers — per-reference page,
+        // matcher hit-rate counters — see the structured shape.
+        reference_no: data.reference_no || null,
+        model: data.model || null,
+        sub_model: data.sub_model || null,
+        model_line: data.model_line || null,
+        // soldAt from published_at — the article lands within days
+        // of the sale so it's a tight proxy. Used by the date sort
+        // and the date-divider headers in Listings > All sold.
+        soldAt: data.published_at || data.updated_at || "",
+        firstSeen: data.published_at || data.updated_at || "",
+        // Erik's prose. Truncated to 1,500 (matching the merge.py
+        // dealer cap) so the Card render doesn't bleed; the full
+        // text stays in hairspring_finds.json for the future
+        // reference-page reader.
+        desc: (data.body_text || "").slice(0, 1500),
+      });
+    }
+    return arr;
+  }, [hairspringFindsState]);
+
   const mainFeedItems = useMemo(() => {
     const hasAdminHide = adminHidden && adminHidden.size > 0;
     const filterAdminHidden = (it) => !adminHidden.has(it.id);
-    if (auctionLotItems.length === 0) {
-      return hasAdminHide ? items.filter(filterAdminHidden) : items;
-    }
-    const merged = [...items, ...auctionLotItems];
+    const merged = [...items, ...auctionLotItems, ...hairspringFindsItems];
     return hasAdminHide ? merged.filter(filterAdminHidden) : merged;
-  }, [items, auctionLotItems, adminHidden]);
+  }, [items, auctionLotItems, hairspringFindsItems, adminHidden]);
 
   // Auction-catalog screener queue (Mark spec 2026-05-14): live,
   // non-hidden lots whose parent auction_url matches the selected
