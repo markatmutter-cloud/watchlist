@@ -70,13 +70,19 @@ BRANDS = [
 # brand line. Modern collectors (and Mark) treat all of these as the
 # same maison for filter purposes.
 BRAND_ALIASES = {
-    # JLC variants → canonical hyphenated form
+    # JLC variants → canonical hyphenated form. JLC appears in titles
+    # as "Jaeger LeCoultre" (no hyphen), "Jaeger-LeCoultre" (canonical),
+    # "Jaeger  LeCoultre" (double space), "LeCoultre" alone (historic),
+    # "JLC" (collector shorthand). Mark 2026-05-17: noticed JLC titles
+    # leaking into the "Other" bucket — alias map below + detect_brand
+    # checking aliases (added 2026-05-17) catches every spelling.
     'jaeger lecoultre':   'Jaeger-LeCoultre',
     'jaeger-lecoultre':   'Jaeger-LeCoultre',
     'jaeger le coultre':  'Jaeger-LeCoultre',
     'jaegerlecoultre':    'Jaeger-LeCoultre',
     'lecoultre':          'Jaeger-LeCoultre',
     'le coultre':         'Jaeger-LeCoultre',
+    'jlc':                'Jaeger-LeCoultre',
 
     # A. Lange variants — full Maison name as canonical. detect_brand
     # returns 'A. Lange' (substring match against the BRANDS list); the
@@ -239,9 +245,27 @@ TODAY = datetime.now(ZoneInfo("America/Los_Angeles")).date().isoformat()
 
 
 def detect_brand(name):
+    """Find a canonical brand by substring-matching the title.
+
+    Walks BRANDS in order first (priority preserved — Grand Seiko
+    before Seiko, Tag Heuer before Heuer), then falls back to
+    BRAND_ALIASES keys. The alias-key pass catches accent / hyphen /
+    spacing variants the canonical BRANDS list doesn't lexically
+    include — "Jaeger LeCoultre" (no hyphen), "Universal Genève"
+    (grave when BRANDS has "Universal Geneve"), "JLC" shorthand, etc.
+
+    Normalises whitespace + case before matching so quirks like
+    double-spaces ("Jaeger  LeCoultre") match cleanly. Mark report
+    2026-05-17 found JLC + UG titles leaking into the "Other"
+    bucket because of these spelling mismatches.
+    """
+    n = re.sub(r'\s+', ' ', name).strip().lower()
     for b in BRANDS:
-        if b.lower() in name.lower():
+        if b.lower() in n:
             return b
+    for alias_key, canonical in BRAND_ALIASES.items():
+        if alias_key in n:
+            return canonical
     return 'Other'
 
 

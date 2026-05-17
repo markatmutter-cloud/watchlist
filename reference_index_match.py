@@ -91,6 +91,144 @@ def parse_index(text: str) -> dict:
     return brands
 
 
+# ── Model / sub-model derivation ─────────────────────────────────────
+
+# Per-brand non-lexical sub-line parents. The index stores some sub-
+# models as their own `### Model line:` entries — e.g. "Planet Ocean"
+# is structurally a Seamaster sub-line but you'd never know from the
+# string. Add an entry here when a sub-model's parent isn't lexically
+# present in the model_line string. Lexical cases (e.g. "Speedmaster
+# Reduced" → model=Speedmaster, sub_model=Reduced) are handled by the
+# split logic below; this override only catches the disconnected ones.
+SUB_LINE_PARENTS = {
+    "Omega": {
+        "Planet Ocean": "Seamaster",
+        "Ploprof": "Seamaster",
+        "Flightmaster": "Speedmaster",  # debatable; Mark may want it standalone
+    },
+    # Tudor entries added when Tudor lands in the index.
+    # Patek: Aquanaut + Calatrava are sibling lines, not Nautilus subs.
+    # AP: Royal Oak variants all lexically start with "Royal Oak".
+}
+
+# Multi-word model names that should be treated as a single token by
+# the model/sub_model split. Without this list, "Royal Oak Selfwinding"
+# gets split as model="Royal" / sub_model="Oak Selfwinding" — wrong.
+# Order matters: longer/more-specific first so "Royal Oak Offshore"
+# wins over "Royal Oak" when both match a prefix.
+KNOWN_MULTIWORD_MODELS = {
+    "Audemars Piguet": [
+        "Royal Oak Offshore", "Royal Oak Concept", "Royal Oak",
+        "Jules Audemars", "Edward Piguet", "Code 11.59", "AP Square",
+    ],
+    "Patek Philippe": [
+        "Annual Calendar", "World Time", "Perpetual Calendar",
+        "Grand Complications", "Golden Ellipse", "Twenty~4",
+    ],
+    "Rolex": ["Oyster Perpetual"],
+    "Heuer": ["Triple Calendar"],
+    "Jaeger-LeCoultre": ["Master Control", "Reverso Tribute", "Reverso Squadra"],
+    "Vacheron Constantin": ["Métiers d'Art", "Les Cabinotiers"],  # for when VC lands
+    "A. Lange & Söhne": ["Grand Lange 1", "Lange 1"],
+    "Universal Genève": ["Tri-Compax", "Uni-Compax"],
+}
+
+# Parenthetical annotations that are metadata, not a sub-model.
+# "Carrera (vintage)" → model=Carrera, sub_model=None (era stripped).
+_ERA_ANNOTATIONS = re.compile(
+    r"^(vintage|modern|early|additions?|additional|"
+    r"additions?\s+(?:and|—)\s+.+|"
+    r"addition\s+—.+|"
+    r"two[\s-]?tone\s+additions?|"
+    r"new\s+model\s+line|"
+    r"separate\s+sub[\s-]?line|"
+    r"clarification.*|"
+    r"historical\s+addition.*|"
+    r"e[\d]+\s+executions?|"
+    r"ref\s+\d+.*|"
+    r".*\bdial\s+variants?\b.*|"
+    r".*\bsub[\s-]?references?\b.*)$",
+    re.IGNORECASE,
+)
+
+
+def derive_model_sub_model(brand: str, model_line: str) -> tuple[str | None, str | None]:
+    """Return (model, sub_model) derived from a brand + model_line.
+
+    Heuristic, not perfect — designed to give the recommender + the
+    eventual per-reference UI a structured handle on the hierarchy
+    without forcing a full index restructure. Iterate the overrides
+    table when new brands surface counter-examples.
+
+    Examples:
+      ("Omega",  "Speedmaster")                       → ("Speedmaster", None)
+      ("Omega",  "Speedmaster Reduced")               → ("Speedmaster", "Reduced")
+      ("Omega",  "Planet Ocean")                      → ("Seamaster",  "Planet Ocean")
+      ("Omega",  "Seamaster Aqua Terra")              → ("Seamaster", "Aqua Terra")
+      ("Omega",  "Seamaster 300 / SMP Diver 300M")    → ("Seamaster", "300 / SMP Diver 300M")
+      ("Heuer",  "Carrera (vintage)")                 → ("Carrera",   None)
+      ("Rolex",  "Daytona / Cosmograph")              → ("Daytona",   "Cosmograph")
+      ("Rolex",  "Datejust (Two-tone additions)")     → ("Datejust",  None)
+    """
+    if not model_line:
+        return None, None
+
+    # Strip parenthetical annotation — usually era / "additions" metadata.
+    m = re.match(r"^(.+?)\s*\((.+)\)\s*$", model_line)
+    if m:
+        bare = m.group(1).strip()
+        annotation = m.group(2).strip()
+        if _ERA_ANNOTATIONS.match(annotation):
+            # Pure metadata — strip and continue with the bare name.
+            model_line = bare
+        else:
+            # Real annotation that names refs / variants — keep but
+            # parse the bare for model/sub_model.
+            model_line = bare
+
+    # Brand-specific non-lexical sub-line parents take precedence
+    # (e.g. Planet Ocean → Seamaster).
+    overrides = SUB_LINE_PARENTS.get(brand, {})
+    if model_line in overrides:
+        return overrides[model_line], model_line
+
+    # Multi-word model names ("Royal Oak", "Annual Calendar", "Oyster
+    # Perpetual" etc.) — match the longest known multi-word model that
+    # prefixes the model_line and split there. KNOWN_MULTIWORD_MODELS
+    # is already ordered longest-first per brand.
+    for known in KNOWN_MULTIWORD_MODELS.get(brand, []):
+        if model_line == known:
+            return known, None
+        if model_line.startswith(known + " ") or model_line.startswith(known + "/"):
+            tail = model_line[len(known):].strip(" /") or None
+            return known, tail
+
+    # Compound "X / Y" — first segment is the model, rest becomes sub_model
+    # when it actually adds information (Daytona / Cosmograph names two
+    # aliases for the same watch — sub_model="Cosmograph" works fine as
+    # a label). Drop trivial " / Y" cases where Y is the same word with
+    # a number suffix ("GMT-Master / GMT-Master II" → just take primary
+    # since the II is itself a sub_model handled at the listing level).
+    if "/" in model_line:
+        primary, *rest = [p.strip() for p in model_line.split("/")]
+        sub = " / ".join(rest) if rest else None
+        # If sub starts with the same word as primary, drop it (it's the
+        # versioned variant — let listing-level matching identify which
+        # generation; the model_line stays at "GMT-Master").
+        if sub and primary and sub.split()[0].lower() == primary.split()[0].lower():
+            return primary, None
+        return primary, sub
+
+    # Single-word model_line.
+    words = model_line.split()
+    if len(words) == 1:
+        return model_line, None
+
+    # Multi-word, no slash, no brand override → first word is model,
+    # the rest is sub_model.
+    return words[0], " ".join(words[1:])
+
+
 # ── Index ────────────────────────────────────────────────────────────
 
 def normalize_ref(ref: str) -> str:
@@ -221,8 +359,16 @@ def progressive_normalizations(ref: str):
             yield candidate
 
 
-def match_against_index(text: str, ref_index: dict) -> tuple[str, str, str] | None:
-    """Try each candidate token; return first index hit as (brand, model_line, raw_ref).
+def match_against_index(text: str, ref_index: dict):
+    """Try each candidate token; return first index hit as a dict:
+        {brand, model_line, model, sub_model, raw_ref}
+    or None on no match.
+
+    `model_line` is the literal label from the index (e.g.
+    "Seamaster 300 / SMP Diver 300M" or "Planet Ocean").
+    `model` + `sub_model` are derived via derive_model_sub_model so
+    consumers can facet at the cleaner Brand > Model > Sub-model
+    hierarchy without forcing the index to be restructured.
 
     For each token, tries progressive normalizations (full → variant
     → base) and stops at the first match.
@@ -230,7 +376,15 @@ def match_against_index(text: str, ref_index: dict) -> tuple[str, str, str] | No
     for tok in candidate_tokens(text):
         for norm in progressive_normalizations(tok):
             if norm in ref_index:
-                return ref_index[norm][0]
+                brand, model_line, raw_ref = ref_index[norm][0]
+                model, sub_model = derive_model_sub_model(brand, model_line)
+                return {
+                    "brand": brand,
+                    "model_line": model_line,
+                    "model": model,
+                    "sub_model": sub_model,
+                    "raw_ref": raw_ref,
+                }
     return None
 
 
@@ -321,12 +475,14 @@ def survey_source(items, label: str, ref_index: dict, brands_in_index: set):
         for t in titles[:5]:
             print(f"    {t[:120]}")
 
-    # Sample hits sanity-check
+    # Sample hits sanity-check — now shows the derived model + sub_model.
     print("\nSample hits (10 random):")
     import random
     random.seed(0)
-    for brand, title, (b2, model_line, raw_ref) in random.sample(hits, min(10, len(hits))):
-        print(f"  [{brand:<18}] → {b2} / {model_line} via {raw_ref!r}")
+    for brand, title, hit in random.sample(hits, min(10, len(hits))):
+        sub = f" [{hit['sub_model']}]" if hit.get("sub_model") else ""
+        print(f"  [{brand:<18}] → {hit['brand']} / {hit['model']}{sub} "
+              f"via {hit['raw_ref']!r}  (model_line: {hit['model_line']})")
 
 
 def write_gap_report(brands: dict, ref_index: dict, out_path: Path):
