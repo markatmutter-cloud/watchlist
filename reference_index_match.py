@@ -229,6 +229,80 @@ def derive_model_sub_model(brand: str, model_line: str) -> tuple[str | None, str
     return words[0], " ".join(words[1:])
 
 
+# ── Tokenizer expansion (Lever 2, 2026-05-17) ─────────────────────────
+
+# Tokens that LOOK like ref numbers but ARE NOT (bracelet refs, depth
+# ratings, caliber refs, strap codes). From patch 01's "Tokenizer
+# Implementation Notes" section + Mark's 2026-05-17 spec. Stored
+# normalized; the match path skips any candidate token whose
+# normalized form lands in this set.
+#
+# Without this set, e.g. `1171` (an Omega folded-link bracelet ref)
+# matched against any in-index ref happening to normalize to `1171`,
+# producing a false-positive watch match on bracelet-only listings.
+EXCLUDED_TOKENS: set[str] = {
+    # Bracelet refs
+    "1171",   # Omega folded-link
+    "78350",  # Rolex solid-link Oyster
+    "78360",  # Rolex Oyster
+    # Caliber refs commonly in titles + descriptions
+    "8531",   # IWC Ingenieur
+    "8541",   # IWC Ingenieur / Aquatimer
+    "146hp",  # Zenith El Primero variant caliber
+    # Strap codes
+    "1001",   # Zenith
+    # Depth ratings (always written as "Nm" or "NM"; these stay in)
+    "100m", "120m", "150m", "200m", "300m", "600m", "1000m",
+}
+
+# Partial-prefix maps for Omega + Zenith. When a listing has a long
+# modern ref like `Omega Speedmaster 311.30.42.30.01.005`, the index
+# typically has either the full ref OR just the model-line entry —
+# neither lexically matches the listing's token. These maps
+# additionally register the 2-segment prefix (e.g. `311.30`) so the
+# match lands on the model line. Built from patch 01's Tokenizer
+# Implementation Notes section.
+OMEGA_PREFIX_MAP: dict[str, tuple[str, str]] = {
+    "311.30": ("Omega", "Speedmaster"),
+    "311.32": ("Omega", "Speedmaster"),
+    "310.30": ("Omega", "Speedmaster"),
+    "310.32": ("Omega", "Speedmaster"),
+    "310.60": ("Omega", "Speedmaster"),
+    "311.10": ("Omega", "Speedmaster"),
+    "311.12": ("Omega", "Speedmaster"),
+    "311.92": ("Omega", "Speedmaster"),
+    "233.32": ("Omega", "Seamaster 300 / SMP Diver 300M"),
+    "234.30": ("Omega", "Seamaster 300 / SMP Diver 300M"),
+    "212.30": ("Omega", "Seamaster 300 / SMP Diver 300M"),
+    "232.30": ("Omega", "Seamaster 300 / SMP Diver 300M"),
+    "210.30": ("Omega", "Seamaster 300 / SMP Diver 300M"),
+    "210.32": ("Omega", "Seamaster 300 / SMP Diver 300M"),
+    "215.30": ("Omega", "Planet Ocean"),
+    "215.33": ("Omega", "Planet Ocean"),
+    "215.92": ("Omega", "Planet Ocean"),
+    "220.10": ("Omega", "Seamaster Aqua Terra"),
+    "220.12": ("Omega", "Seamaster Aqua Terra"),
+    "231.10": ("Omega", "Seamaster Aqua Terra"),
+    "231.12": ("Omega", "Seamaster Aqua Terra"),
+}
+
+ZENITH_PREFIX_MAP: dict[str, tuple[str, str]] = {
+    "3100.3600": ("Zenith", "Chronomaster"),
+    "3201.3600": ("Zenith", "Chronomaster"),
+    "3114.3600": ("Zenith", "Chronomaster"),
+    "3119.3600": ("Zenith", "Chronomaster"),
+    "3200.3600": ("Zenith", "Chronomaster"),
+    "3200.3800": ("Zenith", "Chronomaster"),
+    "9300.3630": ("Zenith", "Defy"),
+    "9301.3620": ("Zenith", "Defy"),
+    "9100.9020": ("Zenith", "Defy"),
+    "4000.3652": ("Zenith", "Pilot"),
+    "400.57":    ("Zenith", "El Primero"),
+    "400.69":    ("Zenith", "El Primero"),
+    "400.70":    ("Zenith", "El Primero"),
+}
+
+
 # ── Index ────────────────────────────────────────────────────────────
 
 def normalize_ref(ref: str) -> str:
@@ -246,14 +320,28 @@ def normalize_ref(ref: str) -> str:
 
 
 def build_ref_index(brands: dict) -> dict[str, list[tuple[str, str, str]]]:
-    """{normalized_ref → [(brand, model_line, raw_ref)]}"""
+    """{normalized_ref → [(brand, model_line, raw_ref)]}
+
+    Also registers Omega + Zenith partial-prefix entries so long
+    modern refs (e.g. Omega 311.30.42.30.01.005) match by their
+    2-segment prefix when the full ref isn't in the index.
+    """
     idx: dict[str, list] = defaultdict(list)
     for brand, models in brands.items():
         for m in models:
             for raw in m["refs"]:
                 norm = normalize_ref(raw)
-                if len(norm) >= 3:
+                if len(norm) >= 3 and norm not in EXCLUDED_TOKENS:
                     idx[norm].append((brand, m["model_line"], raw))
+
+    # Inject partial-prefix entries. These only register if there's no
+    # exact-ref entry already at that normalized key (so curated index
+    # entries always win).
+    for prefix, (brand, model_line) in {**OMEGA_PREFIX_MAP,
+                                         **ZENITH_PREFIX_MAP}.items():
+        norm = normalize_ref(prefix)
+        if norm and norm not in idx:
+            idx[norm].append((brand, model_line, prefix))
     return idx
 
 
@@ -332,7 +420,19 @@ def progressive_normalizations(ref: str):
     if not n:
         return
     seen = {n}
-    yield n
+    if n not in EXCLUDED_TOKENS:
+        yield n
+
+    # Dash- and slash-segmented refs (Enicar 144-35-02 → 144,
+    # Blancpain 5015A-1130-52A → 5015A → 5015). Try the first segment
+    # of the raw input BEFORE normalization, so we don't lose the
+    # dash boundaries that normalize_ref strips.
+    if any(sep in ref for sep in ("-", "/")):
+        first_segment = re.split(r"[\-/]", ref, maxsplit=1)[0]
+        first_norm = normalize_ref(first_segment)
+        if first_norm and first_norm not in seen and first_norm not in EXCLUDED_TOKENS:
+            seen.add(first_norm)
+            yield first_norm
 
     # Strip a trailing "letter + N-digit dial code" (5120g001 -> 5120,
     # 5905p024 -> 5905, 14813bc014 -> 14813bc which then falls through
@@ -340,14 +440,15 @@ def progressive_normalizations(ref: str):
     m = re.match(r"^(\d+[a-z]?[a-z]?)([a-z]\d{2,4})$", n)
     if m:
         v = m.group(1)
-        if v not in seen and len(v) >= 3:
+        if v not in seen and len(v) >= 3 and v not in EXCLUDED_TOKENS:
             seen.add(v)
             yield v
 
     # Strip all trailing letters (1533g -> 1533, 116710blro -> 116710).
     # This handles Rolex suffix codes and Heuer letter variants.
     stripped = re.sub(r"[a-z]+$", "", n)
-    if stripped != n and stripped not in seen and len(stripped) >= 3:
+    if (stripped != n and stripped not in seen and len(stripped) >= 3
+            and stripped not in EXCLUDED_TOKENS):
         seen.add(stripped)
         yield stripped
 
@@ -355,7 +456,8 @@ def progressive_normalizations(ref: str):
     # after normalize is 14502269 -> 145022).
     if len(n) >= 6:
         candidate = n[:-2]
-        if candidate not in seen and len(candidate) >= 4:
+        if (candidate not in seen and len(candidate) >= 4
+                and candidate not in EXCLUDED_TOKENS):
             yield candidate
 
 
@@ -388,6 +490,74 @@ def match_against_index(text: str, ref_index: dict):
     return None
 
 
+# ── Hybrid match (Lever 3, 2026-05-17) ────────────────────────────────
+
+def match_or_extract(
+    text: str,
+    ref_index: dict,
+    brand: str | None = None,
+    brands_in_index: set | None = None,
+):
+    """Hybrid match: full index lookup first, bare-ref extraction
+    fallback when brand is in-index but no full ref-match landed.
+
+    Returns a dict with `reference_id` set to the canonical raw_ref
+    when a full match lands (matched listing → indexed entity), or
+    `reference_id=None` with `reference_no` populated when only the
+    bare ref token could be extracted (matched brand, unindexed ref).
+
+    The "matched brand, unindexed ref" case is what the strategy doc
+    calls the hybrid layer — gives the per-reference page a hook to
+    group "Rolex (other refs)" rather than dropping the listing
+    entirely. Same partial signal the original regex baseline gave
+    pre-index.
+
+    Shape:
+      Full match     → {brand, reference_id, reference_no, model, sub_model, model_line, source: "index"}
+      Hybrid match   → {brand, reference_id: None, reference_no: <bare>, model: None, sub_model: None, model_line: None, source: "regex"}
+      No match       → None
+    """
+    # Layer 1: full index match.
+    hit = match_against_index(text, ref_index)
+    if hit:
+        return {
+            "brand": hit["brand"],
+            "reference_id": hit["raw_ref"],     # canonical id from index
+            "reference_no": hit["raw_ref"],     # same — full match
+            "model": hit["model"],
+            "sub_model": hit["sub_model"],
+            "model_line": hit["model_line"],
+            "source": "index",
+        }
+    # Layer 2: brand-known fallback — extract bare ref via the same
+    # candidate-token machinery, return partial info. Only fires when
+    # the listing's brand is in-index (otherwise we'd produce
+    # uncontextualised ref numbers).
+    if brand and brands_in_index and brand in brands_in_index:
+        for tok in candidate_tokens(text):
+            # Skip excluded tokens (bracelet refs / depth ratings /
+            # caliber refs) just like full match does.
+            norm = normalize_ref(tok)
+            if not norm or norm in EXCLUDED_TOKENS:
+                continue
+            # Filter pure-year tokens — same defensive rule as the
+            # original regex survey. 1900-2099 are years, not refs.
+            if tok.isdigit() and 1900 <= int(tok) <= 2099:
+                continue
+            if len(norm) < 3:
+                continue
+            return {
+                "brand": brand,
+                "reference_id": None,           # not in index
+                "reference_no": tok,            # bare extracted token
+                "model": None,
+                "sub_model": None,
+                "model_line": None,
+                "source": "regex",
+            }
+    return None
+
+
 # ── Runner ──────────────────────────────────────────────────────────
 
 def title_of(item: dict) -> str:
@@ -414,6 +584,11 @@ def survey_source(items, label: str, ref_index: dict, brands_in_index: set):
     misses_by_brand = defaultdict(list)
     hits = []
     text_used = Counter()
+    # Lever 3 — hybrid match counter. Tracks listings where the brand
+    # is in-index but no full ref-match landed; we extracted a bare
+    # ref token via regex. Partial info, gives the per-reference page
+    # a "Rolex (other refs)" grouping hook.
+    hybrid_hits = Counter()
 
     for it in items:
         title = title_of(it)
@@ -435,6 +610,19 @@ def survey_source(items, label: str, ref_index: dict, brands_in_index: set):
             clean = re.sub(r"<[^>]+>", " ", desc)
             hit = match_against_index(clean[:2000], ref_index)
             used = "desc" if hit else "—"
+        if not hit and is_in_index:
+            # Lever 3 fallback — bare-ref regex extraction when brand
+            # is known. Doesn't count toward `brand_hit` (which tracks
+            # full index matches), but does count toward partial info.
+            hybrid = match_or_extract(title, ref_index, brand=brand,
+                                       brands_in_index=brands_in_index)
+            if not hybrid:
+                clean = re.sub(r"<[^>]+>", " ", desc)
+                hybrid = match_or_extract(clean[:2000], ref_index,
+                                           brand=brand,
+                                           brands_in_index=brands_in_index)
+            if hybrid and hybrid.get("source") == "regex":
+                hybrid_hits[brand] += 1
 
         if hit:
             brand_hit[brand] += 1
@@ -450,9 +638,14 @@ def survey_source(items, label: str, ref_index: dict, brands_in_index: set):
     total_hit = sum(brand_hit.values())
     in_index_t = sum(in_index_total.values())
     in_index_h = sum(in_index_hit.values())
-    print(f"\nOverall: {total_hit}/{n} = {total_hit/n:.1%}")
+    total_hybrid = sum(hybrid_hits.values())
+    combined = total_hit + total_hybrid
+    print(f"\nFull index match:   {total_hit}/{n} = {total_hit/n:.1%}")
     if in_index_t:
-        print(f"In-index brands only: {in_index_h}/{in_index_t} = {in_index_h/in_index_t:.1%}")
+        print(f"In-index brands:    {in_index_h}/{in_index_t} = {in_index_h/in_index_t:.1%}")
+    print(f"Hybrid (brand+ref): {total_hybrid}/{n} = {total_hybrid/n:.1%}  "
+          f"(brand known, ref not in index — bare token extracted)")
+    print(f"Combined positive:  {combined}/{n} = {combined/n:.1%}")
     print(f"  via title: {text_used['title']}  via desc: {text_used['desc']}")
     print()
 
