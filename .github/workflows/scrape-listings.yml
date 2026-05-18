@@ -76,6 +76,20 @@ jobs:
         continue-on-error: true
         run: python hairspring_scraper.py
 
+      - name: Run Hairspring Finds editorial scraper
+        # Editorial corpus (Erik Gustafson's per-watch prose from
+        # hairspring.com/blogs/finds). Writes directly to
+        # public/hairspring_finds.json — no CSV move, no merge.py
+        # step needed (App.js loads the JSON directly into the All
+        # sold projection). Incremental by default: re-fetches only
+        # articles >30 days old since their last scrape, plus
+        # discovers any new URLs in the blog index. ~1-2 new
+        # articles/week, so running 3×/day is wasteful in absolute
+        # terms but cheap on incremental + keeps the corpus fresh
+        # without a separate workflow to maintain.
+        continue-on-error: true
+        run: python hairspring_finds_scraper.py
+
       - name: Run Somlo scraper
         continue-on-error: true
         run: python somlo_scraper.py
@@ -147,6 +161,12 @@ jobs:
         # JSON blob embedded in /shop HTML, multi-brand. EUR-priced.
         continue-on-error: true
         run: python vintagewatchcollective_scraper.py
+
+      - name: Run Vision Vintage Watches scraper (Wix, productsWithMetaData)
+        # Same Wix pattern as Vintage Watch Collective. UK dealer at
+        # /vintage-watches, GBP-priced, multi-brand (Omega-heavy).
+        continue-on-error: true
+        run: python visionvintagewatches_scraper.py
 
       - name: Run Watchurbia scraper (WooCommerce Store API, in-stock filter)
         # Watchurbia is a small German vintage dealer. WooCommerce site;
@@ -261,6 +281,7 @@ jobs:
           [ -f centralwatch_listings.csv ]        && mv centralwatch_listings.csv        data/centralwatch.csv        || echo "centralwatch missing"
           [ -f europeanwatch_listings.csv ]       && mv europeanwatch_listings.csv       data/europeanwatch.csv       || echo "europeanwatch missing"
           [ -f vintagewatchcollective_listings.csv ] && mv vintagewatchcollective_listings.csv data/vintagewatchcollective.csv || echo "vintagewatchcollective missing"
+          [ -f visionvintagewatches_listings.csv ] && mv visionvintagewatches_listings.csv data/visionvintagewatches.csv || echo "visionvintagewatches missing"
           [ -f watchurbia_listings.csv ]          && mv watchurbia_listings.csv          data/watchurbia.csv          || echo "watchurbia missing"
           [ -f maunderwatches_listings.csv ]      && mv maunderwatches_listings.csv      data/maunderwatches.csv      || echo "maunderwatches missing"
           [ -f watchclub_listings.csv ]           && mv watchclub_listings.csv           data/watchclub.csv           || echo "watchclub missing"
