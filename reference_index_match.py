@@ -131,7 +131,33 @@ KNOWN_MULTIWORD_MODELS = {
     "Vacheron Constantin": ["Métiers d'Art", "Les Cabinotiers"],  # for when VC lands
     "A. Lange & Söhne": ["Grand Lange 1", "Lange 1"],
     "Universal Genève": ["Tri-Compax", "Uni-Compax"],
+    "Blancpain": ["Fifty Fathoms"],
+    "Cartier": ["Tank Louis", "Tank Américaine", "Tank Française", "Tank MC",
+                "Tank Asymétrique", "Santos Dumont", "Ballon Bleu"],
+    "F.P. Journe": ["Chronomètre Souverain", "Chronomètre Bleu",
+                     "Centigraphe Souverain", "Octa Lune"],
+    "Tudor": ["Black Bay Fifty-Eight", "Black Bay Pro", "Black Bay GMT",
+              "Black Bay Chronograph", "Black Bay Bronze", "Black Bay",
+              "Heritage Advisor", "Heritage Black Bay",
+              "Prince Oysterdate", "Glamour Double Date"],
 }
+
+
+# Accessory keywords — when a title contains any of these, Lever 4
+# model-name matching is suppressed. A "Rolex Jubilee end-links
+# bracelet" shouldn't model-match as Datejust just because the
+# bracelet is for that model line. Same for straps, buckles,
+# crystals, etc.
+_ACCESSORY_KEYWORDS_RE = re.compile(
+    r"\b("
+    r"bracelet|end[\s-]?links?|strap|buckle|clasp|crystal|"
+    r"crown(?!\s+guards?)|case[\s-]?back|bezel(?!\s+insert)|"
+    r"hands?[\s-]?set|movement\s+only|dial\s+only|"
+    r"box(?:\s*(?:and|\&|n)\s*papers?)|exhibition\s+tray|"
+    r"watch[\s-]?roll|service\s+receipt"
+    r")\b",
+    re.IGNORECASE,
+)
 
 # Parenthetical annotations that are metadata, not a sub-model.
 # "Carrera (vintage)" → model=Carrera, sub_model=None (era stripped).
@@ -490,6 +516,141 @@ def match_against_index(text: str, ref_index: dict):
     return None
 
 
+# ── Model-name fallback (Lever 4, 2026-05-17) ─────────────────────────
+
+# Last-resort matching for ref-less watches — Tudor Pelagos, Patek
+# Aquanaut, Tudor Black Bay, F.P. Journe Chronomètre Souverain, etc.
+# These listings carry a model name in the title but no structured
+# reference number, so ref-based matching (Levers 1-3) finds nothing.
+# Lever 4 catches them by searching the title for known model_line
+# names registered in this auto-derived index.
+
+# Stopwords that shouldn't be registered as model names — meta-entries
+# like "References 6508 / 6526 / 6319" or "Appendix: Tudor calibers"
+# would otherwise leak in.
+_MODEL_NAME_STOPWORDS_RE = re.compile(
+    r"^("
+    r"reference|references|refs?|model|appendix|note|notes?|"
+    r"caliber|calibre|misc|miscellaneous|"
+    r"additions?|additional|new|other|"
+    r"vintage|modern|early|late|"
+    r"family|series|generation|sub.line|overview"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _clean_model_name(model_line: str) -> str | None:
+    """Extract a clean model-name token from an index model_line for
+    fallback matching. Returns None if the entry isn't suitable
+    (ref-list entry, generic-word entry, too short).
+    """
+    if not model_line:
+        return None
+    # Strip parenthetical annotation: "Heritage Black Bay (41 mm
+    # original)" → "Heritage Black Bay".
+    bare = re.sub(r"\s*\([^)]*\)\s*", " ", model_line).strip()
+    # Slash-separated aliases: take the primary segment.
+    bare = bare.split("/")[0].strip()
+    if not bare:
+        return None
+    # Stopword prefix — entry is meta, not a model name.
+    if _MODEL_NAME_STOPWORDS_RE.match(bare):
+        return None
+    # Pure digits + separators — ref-list entry.
+    if re.match(r"^[\d\s/.\-]+$", bare):
+        return None
+    # Length filter: single-word entries need ≥5 chars to avoid
+    # noise (Date / Air / Mini etc.); multi-word always OK.
+    words = bare.split()
+    if len(words) == 1 and len(bare) < 5:
+        return None
+    return bare
+
+
+def build_model_name_index(brands: dict) -> dict[str, list[tuple[str, str]]]:
+    """{normalized_lowercase_name: [(brand, model_line)]}.
+
+    Auto-derived from the curated index. Multiple brands can share
+    a name (Submariner exists for both Rolex and Tudor; both are
+    kept here and disambiguated at match time via brand context).
+    """
+    idx: dict[str, list[tuple[str, str]]] = defaultdict(list)
+    for brand, models in brands.items():
+        for m in models:
+            clean = _clean_model_name(m["model_line"])
+            if not clean:
+                continue
+            idx[clean.lower().strip()].append((brand, m["model_line"]))
+    return idx
+
+
+def match_by_model_name(
+    text: str,
+    model_name_index: dict,
+    brand: str | None = None,
+) -> dict | None:
+    """Last-resort match — find a registered model name as a
+    word-bounded substring in the text. Prefer same-brand matches
+    when a brand hint is provided.
+
+    Returns a dict shape consistent with match_against_index but
+    with reference_no / reference_id = None and source="model_name".
+    Avoids cross-brand confusion: without a brand hint, only
+    single-brand entries are returned. Suppressed entirely when
+    the text describes an accessory (bracelet, strap, buckle,
+    etc.) — those listings mention a watch's model name as
+    context for the bracelet, not as the listed item.
+    """
+    if not text or not model_name_index:
+        return None
+    if _ACCESSORY_KEYWORDS_RE.search(text):
+        return None
+    t = text.lower()
+    # Longest candidate first so "Black Bay Fifty-Eight" wins over
+    # "Black Bay" when the title contains the more specific one.
+    keys = sorted(model_name_index.keys(), key=lambda k: (-len(k), k))
+    brand_lc = (brand or "").strip()
+    for key in keys:
+        # Skip if key isn't word-bounded-present in the text.
+        if not re.search(rf"\b{re.escape(key)}\b", t):
+            continue
+        candidates = model_name_index[key]
+        # Prefer same-brand match when a brand hint is present.
+        if brand_lc:
+            same = [c for c in candidates if c[0] == brand_lc]
+            if same:
+                bc, ml = same[0]
+                m, sm = derive_model_sub_model(bc, ml)
+                return {
+                    "brand": bc,
+                    "reference_id": None,
+                    "reference_no": None,
+                    "model": m,
+                    "sub_model": sm,
+                    "model_line": ml,
+                    "source": "model_name",
+                }
+            # Brand mismatch (e.g. Tudor listing matched "Submariner"
+            # but only Rolex Submariner registered) — skip rather
+            # than return cross-brand wrong answer.
+            continue
+        # No brand hint — only accept unambiguous single-brand entries.
+        if len(candidates) == 1:
+            bc, ml = candidates[0]
+            m, sm = derive_model_sub_model(bc, ml)
+            return {
+                "brand": bc,
+                "reference_id": None,
+                "reference_no": None,
+                "model": m,
+                "sub_model": sm,
+                "model_line": ml,
+                "source": "model_name",
+            }
+    return None
+
+
 # ── Hybrid match (Lever 3, 2026-05-17) ────────────────────────────────
 
 def match_or_extract(
@@ -497,64 +658,69 @@ def match_or_extract(
     ref_index: dict,
     brand: str | None = None,
     brands_in_index: set | None = None,
+    model_name_index: dict | None = None,
 ):
-    """Hybrid match: full index lookup first, bare-ref extraction
-    fallback when brand is in-index but no full ref-match landed.
+    """Full match → hybrid (bare-ref regex) → model-name fallback.
 
-    Returns a dict with `reference_id` set to the canonical raw_ref
-    when a full match lands (matched listing → indexed entity), or
-    `reference_id=None` with `reference_no` populated when only the
-    bare ref token could be extracted (matched brand, unindexed ref).
+    Three-layer cascade:
 
-    The "matched brand, unindexed ref" case is what the strategy doc
-    calls the hybrid layer — gives the per-reference page a hook to
-    group "Rolex (other refs)" rather than dropping the listing
-    entirely. Same partial signal the original regex baseline gave
-    pre-index.
+      Layer 1 (Lever 1)   — full index match on ref token →
+                            {source: "index", reference_id, reference_no, model, sub_model, model_line, brand}
+      Layer 2 (Lever 3)   — bare-ref regex extraction when brand is
+                            in-index and no full match landed →
+                            {source: "regex", reference_id: None, reference_no: <bare>, model: None, ...}
+      Layer 3 (Lever 4)   — model-name fallback for ref-less watches
+                            (Pelagos, Aquanaut, Black Bay 58, Chronomètre
+                            Souverain etc.) → {source: "model_name",
+                            reference_id: None, reference_no: None,
+                            model + sub_model + model_line populated}
 
-    Shape:
-      Full match     → {brand, reference_id, reference_no, model, sub_model, model_line, source: "index"}
-      Hybrid match   → {brand, reference_id: None, reference_no: <bare>, model: None, sub_model: None, model_line: None, source: "regex"}
-      No match       → None
+      No match            → None
+
+    Each layer's `reference_id` set to the canonical raw_ref on a
+    full match; null on hybrid + model_name layers. Lets the
+    per-reference page eventually group both "Rolex 1675" (full
+    match), "Rolex other-refs" (hybrid), and "Tudor Pelagos"
+    (model-name, no ref) under their respective reference entities
+    while keeping the signal-quality distinction explicit via
+    `source`.
     """
-    # Layer 1: full index match.
+    # Layer 1 — full index match.
     hit = match_against_index(text, ref_index)
     if hit:
         return {
             "brand": hit["brand"],
-            "reference_id": hit["raw_ref"],     # canonical id from index
-            "reference_no": hit["raw_ref"],     # same — full match
+            "reference_id": hit["raw_ref"],
+            "reference_no": hit["raw_ref"],
             "model": hit["model"],
             "sub_model": hit["sub_model"],
             "model_line": hit["model_line"],
             "source": "index",
         }
-    # Layer 2: brand-known fallback — extract bare ref via the same
-    # candidate-token machinery, return partial info. Only fires when
-    # the listing's brand is in-index (otherwise we'd produce
-    # uncontextualised ref numbers).
+    # Layer 2 — hybrid (bare-ref regex with brand context).
     if brand and brands_in_index and brand in brands_in_index:
         for tok in candidate_tokens(text):
-            # Skip excluded tokens (bracelet refs / depth ratings /
-            # caliber refs) just like full match does.
             norm = normalize_ref(tok)
             if not norm or norm in EXCLUDED_TOKENS:
                 continue
-            # Filter pure-year tokens — same defensive rule as the
-            # original regex survey. 1900-2099 are years, not refs.
             if tok.isdigit() and 1900 <= int(tok) <= 2099:
                 continue
             if len(norm) < 3:
                 continue
             return {
                 "brand": brand,
-                "reference_id": None,           # not in index
-                "reference_no": tok,            # bare extracted token
+                "reference_id": None,
+                "reference_no": tok,
                 "model": None,
                 "sub_model": None,
                 "model_line": None,
                 "source": "regex",
             }
+    # Layer 3 — model-name fallback for ref-less watches.
+    if model_name_index:
+        mn = match_by_model_name(text, model_name_index, brand=brand)
+        if mn:
+            return mn
     return None
 
 
@@ -564,7 +730,8 @@ def title_of(item: dict) -> str:
     return item.get("title") or item.get("ref") or ""
 
 
-def survey_source(items, label: str, ref_index: dict, brands_in_index: set):
+def survey_source(items, label: str, ref_index: dict, brands_in_index: set,
+                  model_name_index: dict | None = None):
     if isinstance(items, dict):
         items = list(items.values())
     n = len(items)
@@ -584,11 +751,11 @@ def survey_source(items, label: str, ref_index: dict, brands_in_index: set):
     misses_by_brand = defaultdict(list)
     hits = []
     text_used = Counter()
-    # Lever 3 — hybrid match counter. Tracks listings where the brand
-    # is in-index but no full ref-match landed; we extracted a bare
-    # ref token via regex. Partial info, gives the per-reference page
-    # a "Rolex (other refs)" grouping hook.
+    # Lever 3 — hybrid match: bare-ref regex extraction when brand
+    # is in-index but no full ref-match landed.
     hybrid_hits = Counter()
+    # Lever 4 — model-name fallback for ref-less watches.
+    model_name_hits = Counter()
 
     for it in items:
         title = title_of(it)
@@ -611,18 +778,26 @@ def survey_source(items, label: str, ref_index: dict, brands_in_index: set):
             hit = match_against_index(clean[:2000], ref_index)
             used = "desc" if hit else "—"
         if not hit and is_in_index:
-            # Lever 3 fallback — bare-ref regex extraction when brand
-            # is known. Doesn't count toward `brand_hit` (which tracks
-            # full index matches), but does count toward partial info.
-            hybrid = match_or_extract(title, ref_index, brand=brand,
-                                       brands_in_index=brands_in_index)
-            if not hybrid:
+            # Lever 3 + 4 — try hybrid (bare-ref regex), then
+            # model-name fallback. match_or_extract cascades through
+            # both layers and returns whichever lands first.
+            extra = match_or_extract(
+                title, ref_index, brand=brand,
+                brands_in_index=brands_in_index,
+                model_name_index=model_name_index,
+            )
+            if not extra:
                 clean = re.sub(r"<[^>]+>", " ", desc)
-                hybrid = match_or_extract(clean[:2000], ref_index,
-                                           brand=brand,
-                                           brands_in_index=brands_in_index)
-            if hybrid and hybrid.get("source") == "regex":
-                hybrid_hits[brand] += 1
+                extra = match_or_extract(
+                    clean[:2000], ref_index, brand=brand,
+                    brands_in_index=brands_in_index,
+                    model_name_index=model_name_index,
+                )
+            if extra:
+                if extra.get("source") == "regex":
+                    hybrid_hits[brand] += 1
+                elif extra.get("source") == "model_name":
+                    model_name_hits[brand] += 1
 
         if hit:
             brand_hit[brand] += 1
@@ -639,13 +814,16 @@ def survey_source(items, label: str, ref_index: dict, brands_in_index: set):
     in_index_t = sum(in_index_total.values())
     in_index_h = sum(in_index_hit.values())
     total_hybrid = sum(hybrid_hits.values())
-    combined = total_hit + total_hybrid
-    print(f"\nFull index match:   {total_hit}/{n} = {total_hit/n:.1%}")
+    total_model_name = sum(model_name_hits.values())
+    combined = total_hit + total_hybrid + total_model_name
+    print(f"\nFull index match:    {total_hit}/{n} = {total_hit/n:.1%}")
     if in_index_t:
-        print(f"In-index brands:    {in_index_h}/{in_index_t} = {in_index_h/in_index_t:.1%}")
-    print(f"Hybrid (brand+ref): {total_hybrid}/{n} = {total_hybrid/n:.1%}  "
+        print(f"In-index brands:     {in_index_h}/{in_index_t} = {in_index_h/in_index_t:.1%}")
+    print(f"Hybrid (brand+ref):  {total_hybrid}/{n} = {total_hybrid/n:.1%}  "
           f"(brand known, ref not in index — bare token extracted)")
-    print(f"Combined positive:  {combined}/{n} = {combined/n:.1%}")
+    print(f"Model-name fallback: {total_model_name}/{n} = {total_model_name/n:.1%}  "
+          f"(ref-less watches — model identified)")
+    print(f"Combined positive:   {combined}/{n} = {combined/n:.1%}")
     print(f"  via title: {text_used['title']}  via desc: {text_used['desc']}")
     print()
 
@@ -760,6 +938,8 @@ def main():
     print(f"  Ref entries:     {total_ref_entries}")
     nick_index = build_nickname_index(brands)
     print(f"  Nicknames:       {len(nick_index)}")
+    model_name_index = build_model_name_index(brands)
+    print(f"  Model names:     {len(model_name_index)} (Lever-4 fallback)")
     print()
     print(f"Brands covered: {', '.join(sorted(brands.keys()))}")
 
@@ -776,7 +956,8 @@ def main():
             continue
         with open(p) as f:
             data = json.load(f)
-        survey_source(data, str(p), ref_index, brands_in_index)
+        survey_source(data, str(p), ref_index, brands_in_index,
+                      model_name_index=model_name_index)
 
     # Side effect: regenerate the gap report so the index author has
     # a concrete list of refs to grow toward.
