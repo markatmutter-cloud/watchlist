@@ -660,6 +660,7 @@ def process_listings():
         ('data/centralwatch.csv',         'Central Watch',         'USD'),
         ('data/europeanwatch.csv',        'European Watch',        'USD'),
         ('data/vintagewatchcollective.csv','Vintage Watch Collective','EUR'),
+        ('data/visionvintagewatches.csv', 'Vision Vintage Watches', 'GBP'),
         ('data/watchurbia.csv',           'Watchurbia',            'EUR'),
         ('data/maunderwatches.csv',       'Maunder Watches',       'GBP'),
         ('data/watchclub.csv',            'Watch Club',            'GBP'),
