@@ -221,3 +221,6 @@ __marimo__/
 * 2.*
 * 2/
 .DS_Store
+
+# Transient car-ride digest — generated on demand, not for the repo
+docs/reading_corpus_digest.md
