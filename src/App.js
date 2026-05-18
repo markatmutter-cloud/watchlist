@@ -1506,8 +1506,10 @@ export default function Watchlist() {
   // the union (used everywhere a flat list is convenient — e.g. the
   // mobile drawer's overflow chip).
   const DEALER_SOURCES = useMemo(
-    () => [...new Set(items.map(i => i.source).filter(Boolean))].sort(),
-    [items]
+    () => [...new Set(
+      [...items, ...hairspringFindsItems].map(i => i.source).filter(Boolean)
+    )].sort(),
+    [items, hairspringFindsItems]
   );
   const AUCTION_SOURCES = useMemo(
     () => [...new Set(auctionLotItems.map(i => i.source).filter(s => s && s !== "—"))].sort(),
