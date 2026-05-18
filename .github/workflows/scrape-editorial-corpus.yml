@@ -1,0 +1,80 @@
+name: Scrape editorial corpus
+
+# Low-frequency cron for editorial-corpus scrapers. These sources
+# publish 1-2 articles/week at most; daily scraping would just burn
+# requests against unchanged content. Weekly is the right cadence
+# for new-article discovery + the rolling 30-day re-fetch pass that
+# catches author edits to existing articles.
+#
+# Cadence: Sunday morning Pacific Time (16:00 UTC). The main
+# listings cron runs at 14/20/02 UTC; this slot avoids overlap.
+#
+# Scope (2026-05-18):
+# - bring_a_loupe_scraper.py → public/bring_a_loupe.json
+#   (Hodinkee column, ~251 articles, sitemap-based URL discovery)
+#
+# Hairspring Finds intentionally NOT included here — it runs in the
+# main listings workflow (scrape-listings.yml) because its records
+# also project into the Sold archive view, so daily refresh matches
+# the rest of the dealer/lot pipeline. Editorial-only sources (no
+# transactional surface) belong here.
+#
+# Future additions queued: rolexmagazine.com (Blogger), WatchFID
+# Journal (WordPress), Wind Vintage journal, Hairspring non-Finds
+# blog. Each as its own scraper file emitting one JSON; add a step
+# below per source.
+
+on:
+  schedule:
+    - cron: '0 16 * * 0'   # 8am PST / 9am PDT Sunday
+  workflow_dispatch:
+
+concurrency:
+  group: scrape-editorial-corpus
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Hodinkee Bring a Loupe scraper
+        # Sitemap-based URL discovery, ~251 articles. Incremental
+        # by default: re-fetches only entries missing or >30 days
+        # since last scrape. First full run takes ~3-4 min;
+        # subsequent runs are sub-minute (typically 0-2 new
+        # articles + the rolling refresh window).
+        continue-on-error: true
+        run: python bring_a_loupe_scraper.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/bring_a_loupe.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Editorial corpus refresh $(date -u '+%Y-%m-%d %H:%M UTC')"
+          for i in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected, rebasing and retrying ($i/3)..."
+            if ! git pull --rebase --strategy-option=theirs; then
+              echo "Rebase failed, aborting and retrying push"
+              git rebase --abort 2>/dev/null || true
+            fi
+          done
+          echo "Push still failing after 3 retries"
+          exit 1
