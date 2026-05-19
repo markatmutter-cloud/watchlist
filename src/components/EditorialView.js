@@ -216,10 +216,17 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
   }
 
   const expanded = activeFilterPop !== null;
+  // Tinted background reads as "this filter strip is a different
+  // surface than Listings" — Mark spec 2026-05-18: a coloured block
+  // marks Editorial as a theme inside Collecting, not a listings feed.
+  // 10% brand tint on the strip + search row; 8% on the expansion
+  // panels (softer step-down so the panel reads as nested chrome,
+  // not a third equal-weight surface).
+  const filterBandBg = "var(--brand-tint-10)";
   const expansionPanelStyle = {
     padding: "10px 20px 24px",
     borderBottom: "0.5px solid var(--border)",
-    background: "var(--surface)",
+    background: "var(--brand-tint-08)",
     display: "flex", flexWrap: "wrap", gap: 8,
     alignItems: "flex-start",
     lineHeight: 1.5,
@@ -239,7 +246,10 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
       {/* Search row — own input. Listings uses the global top-bar
           search; Editorial needs its own field for body-text matching
           distinct from listing search. */}
-      <div style={{ padding: isMobile ? "8px 14px 0" : "8px 20px 0" }}>
+      <div style={{
+        padding: isMobile ? "10px 14px 0" : "10px 20px 0",
+        background: filterBandBg,
+      }}>
         <input
           type="search"
           placeholder="Search title, author, or body text…"
@@ -255,6 +265,7 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
       <div style={{
         display: "flex", alignItems: "center", gap: 8,
         padding: stripPadding,
+        background: filterBandBg,
         borderBottom: expanded ? "none" : "0.5px solid var(--border)",
         flexShrink: 0, flexWrap: "wrap",
       }}>
