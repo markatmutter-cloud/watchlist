@@ -74,7 +74,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/bring_a_loupe.json public/rolex_magazine.json
+          git add public/bring_a_loupe.json public/bring_a_loupe_bodies.json \
+                  public/rolex_magazine.json public/rolex_magazine_bodies.json
           if git diff --staged --quiet; then
             echo "No changes to commit"
             exit 0

@@ -121,9 +121,12 @@ def _resolve_brand_and_ref(title: str) -> dict:
             out["model_line"] = hit.get("model_line")
     return out
 
+from editorial_corpus_io import load_existing as _load_split, write_split, derive_bodies_path
+
 BASE = "https://hairspring.com"
 BLOG_PATH = "/blogs/finds"
 OUTPUT_JSON = "public/hairspring_finds.json"
+OUTPUT_BODIES = derive_bodies_path(OUTPUT_JSON)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -354,15 +357,11 @@ def parse_article(html: str, url: str) -> dict | None:
     }
 
 
-def load_existing(path: str) -> dict:
-    p = Path(path)
-    if not p.exists():
-        return {}
-    try:
-        return json.loads(p.read_text())
-    except json.JSONDecodeError:
-        print(f"  existing {path} is not valid JSON; starting fresh")
-        return {}
+def load_existing(_path: str) -> dict:
+    """Read the split (meta + bodies) corpus files and stitch body
+    text back onto each record. Legacy single-file fallback handled
+    inside editorial_corpus_io.load_existing."""
+    return _load_split(OUTPUT_JSON, OUTPUT_BODIES)
 
 
 def should_refresh(existing_entry: dict | None, full: bool) -> bool:
@@ -416,13 +415,11 @@ def main():
     # default — we only PRESERVE for now, matching auction_lots.json
     # "sold lots persist forever" pattern.)
 
-    Path(OUTPUT_JSON).parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_JSON, "w") as f:
-        json.dump(out, f, indent=2, ensure_ascii=False, sort_keys=True)
+    write_split(out, OUTPUT_JSON, OUTPUT_BODIES)
 
     print(f"\nFetched: {fetched}  Skipped (fresh): {skipped}  Failed: {failed}")
     print(f"Total entries on disk: {len(out)}")
-    print(f"Wrote {OUTPUT_JSON}")
+    print(f"Wrote {OUTPUT_JSON} + {OUTPUT_BODIES}")
 
 
 if __name__ == "__main__":

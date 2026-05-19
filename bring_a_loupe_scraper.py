@@ -107,10 +107,13 @@ def _resolve_brand_and_ref(title: str) -> dict:
     return out
 
 
+from editorial_corpus_io import load_existing as _load_split, write_split, derive_bodies_path
+
 BASE = "https://www.hodinkee.com"
 SITEMAP_URL = f"{BASE}/sitemap.xml"
 ARTICLE_PATH_PREFIX = "/articles/bring-a-loupe"
 OUTPUT_JSON = "public/bring_a_loupe.json"
+OUTPUT_BODIES = derive_bodies_path(OUTPUT_JSON)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -256,15 +259,12 @@ def parse_article(html: str, url: str) -> dict | None:
     }
 
 
-def load_existing(path: str) -> dict:
-    p = Path(path)
-    if not p.exists():
-        return {}
-    try:
-        return json.loads(p.read_text())
-    except json.JSONDecodeError:
-        print(f"  existing {path} is not valid JSON; starting fresh")
-        return {}
+def load_existing(_path: str) -> dict:
+    """Read the split (meta + bodies) corpus files and stitch into
+    the records shape the rest of this scraper code expects (body
+    baked back onto each record). Legacy single-file load is handled
+    inside editorial_corpus_io.load_existing."""
+    return _load_split(OUTPUT_JSON, OUTPUT_BODIES)
 
 
 def should_refresh(existing_entry: dict | None, full: bool) -> bool:
@@ -307,13 +307,11 @@ def main():
         print(f"  [{i}/{len(urls)}] {record['title'][:70]}  ({record['word_count']} words)")
         time.sleep(DETAIL_SLEEP)
 
-    Path(OUTPUT_JSON).parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_JSON, "w") as f:
-        json.dump(out, f, indent=2, ensure_ascii=False, sort_keys=True)
+    write_split(out, OUTPUT_JSON, OUTPUT_BODIES)
 
     print(f"\nFetched: {fetched}  Skipped (fresh): {skipped}  Failed: {failed}")
     print(f"Total entries on disk: {len(out)}")
-    print(f"Wrote {OUTPUT_JSON}")
+    print(f"Wrote {OUTPUT_JSON} + {OUTPUT_BODIES}")
 
 
 if __name__ == "__main__":
