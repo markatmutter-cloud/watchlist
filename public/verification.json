@@ -1,21 +1,29 @@
 {
   "date": "2026-05-19",
-  "alerts": [],
+  "alerts": [
+    {
+      "source": "Watch Club",
+      "level": "WARN",
+      "today": 15,
+      "median": 53,
+      "note": "count is 28% of recent median (15 vs ~53)"
+    }
+  ],
   "counts": {
-    "Wind Vintage": 104,
+    "Wind Vintage": 111,
     "Tropical Watch": 91,
-    "Menta Watches": 45,
-    "Collectors Corner NY": 55,
-    "Falco Watches": 104,
+    "Menta Watches": 43,
+    "Collectors Corner NY": 53,
+    "Falco Watches": 103,
     "Grey & Patina": 49,
     "Oliver & Clarke": 90,
-    "Craft & Tailored": 77,
-    "Watch Brothers London": 20,
-    "MVV Watches": 46,
+    "Craft & Tailored": 78,
+    "Watch Brothers London": 19,
+    "MVV Watches": 43,
     "DB1983": 21,
     "Hairspring": 31,
     "Somlo": 206,
-    "Analog Shift": 620,
+    "Analog Shift": 627,
     "Watches of Knightsbridge": 70,
     "Belmont Watches": 36,
     "Bob's Watches": 49,
@@ -32,8 +40,8 @@
     "Vintage Watch Collective": 37,
     "Vision Vintage Watches": 24,
     "Watchurbia": 8,
-    "Maunder Watches": 93,
-    "Watch Club": 16,
+    "Maunder Watches": 92,
+    "Watch Club": 15,
     "Vintage Watch Shop": 20,
     "Watches of Lancashire": 62,
     "Heuertime": 23,
@@ -41,8 +49,8 @@
     "Luna Royster": 30,
     "S.Song Watches": 22,
     "Swiss Hours": 73,
-    "eBay": 22
+    "eBay": 48
   },
-  "total_listings": 3297,
+  "total_listings": 3327,
   "sources_tracked": 40
 }
