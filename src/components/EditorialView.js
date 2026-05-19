@@ -73,14 +73,12 @@ const SOURCES = [
     url: "/bulang_watch_talks.json",
     bodies_url: "/bulang_watch_talks_bodies.json",
   },
-  {
-    key: "hodinkee_shop",
-    label: "Hodinkee Shop",
-    publication: "Hodinkee",
-    column: "Shop archive",
-    url: "/hodinkee_shop.json",
-    bodies_url: "/hodinkee_shop_bodies.json",
-  },
+  // Hodinkee Shop deliberately NOT surfaced as an Editorial source
+  // (Mark spec 2026-05-19: watch-listings don't belong in the
+  // editorial section). The corpus JSON still ships — App.js's
+  // hodinkeeShopItems memo projects records into Listings > Sold
+  // archive as a dealer source, and the scraped body_text remains
+  // available for the future editorial_index.py recommender pass.
   {
     key: "hodinkee_reference_points",
     label: "Reference Points",

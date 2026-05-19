@@ -1452,9 +1452,15 @@ export default function Watchlist() {
         model_line: data.model_line || null,
         // No truthful sold-date — Hodinkee never published one and
         // Shopify's updated_at is regenerated on cache writes.
-        // published_at is the cleanest sale-window anchor available
-        // (matches the Hairspring Finds compromise).
-        soldAt: data.published_at || data.updated_at || "",
+        // `published_at` reflects when the listing went LIVE on the
+        // shop, not when it sold (could be months → years later).
+        // Mark spec 2026-05-19: rather than misleadingly bucket
+        // records into Today/Yesterday/Last week dividers off a
+        // fake date, leave soldAt empty so they fall into the
+        // "Other sold" undated bucket. firstSeen still gets the
+        // published_at so the records have *some* temporal anchor
+        // for sort tiebreakers.
+        soldAt: "",
         firstSeen: data.published_at || data.updated_at || "",
         desc: (data.excerpt || "").slice(0, 1500),
       });
@@ -2743,7 +2749,13 @@ export default function Watchlist() {
   // auction_end for sold lots that lack an explicit soldAt.
   const soldBucketLabel = (i) => {
     const d = i.soldAt || i.auction_end || "";
-    if (!d) return "Older sold";
+    // Mark spec 2026-05-19: items without a real sold-date bucket
+    // into "Other" rather than "Older sold" — keeps the
+    // date-known-but-old vs date-unknown distinction honest. Hits
+    // Hodinkee Shop records (no truthful sold-date), some auction
+    // lots that pre-date the soldAt back-fill, and any future
+    // sold-archive source that ships without a date.
+    if (!d) return "Other sold";
     const label = ageBucketFromDate(d);
     // Repurpose the existing weekday buckets — append "sold" to make
     // the meaning unambiguous when the user sees "Tuesday sold" vs

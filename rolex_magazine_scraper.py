@@ -184,6 +184,30 @@ def _resolve_brand_and_ref(title: str) -> dict:
     return out
 
 
+_WATCHES_AND_WONDERS_RE = re.compile(
+    r"watches?\s*(?:&|and)\s*wonders?",
+    re.IGNORECASE,
+)
+
+
+def _is_watches_and_wonders(title: str, labels: list[str]) -> bool:
+    """Detect Watches & Wonders trade-show posts. Mark spec 2026-05-19:
+    these are time-bound new-product-announcement news, not the kind
+    of evergreen reference content the recommender wants. Drop them
+    at parse time so subsequent cron runs don't re-import.
+
+    Detection looks at both title and the Blogger labels — labels
+    catch posts whose title doesn't say "Watches & Wonders" but are
+    tagged with the show (e.g. "Rolex New Releases Scheduled for
+    April 7" tagged `Watches and Wonders 2021`)."""
+    if title and _WATCHES_AND_WONDERS_RE.search(title):
+        return True
+    for label in labels or []:
+        if _WATCHES_AND_WONDERS_RE.search(label or ""):
+            return True
+    return False
+
+
 def parse_entry(entry: dict) -> dict | None:
     """Build the editorial-record shape from a Blogger feed entry."""
     title = (entry.get("title", {}) or {}).get("$t", "").strip()
@@ -191,6 +215,16 @@ def parse_entry(entry: dict) -> dict | None:
         return None
     url = _canonical_url(entry)
     if not url:
+        return None
+    # Pre-extract labels so the Watches & Wonders filter can read
+    # them (the filter needs labels but the main labels variable
+    # is built lower in this function).
+    early_labels = [
+        (c.get("term") or "").strip()
+        for c in (entry.get("category", []) or [])
+        if (c.get("term") or "").strip()
+    ]
+    if _is_watches_and_wonders(title, early_labels):
         return None
     content_html = (entry.get("content", {}) or {}).get("$t", "") or ""
     body_text = _strip_to_text(content_html)
@@ -208,11 +242,7 @@ def parse_entry(entry: dict) -> dict | None:
     updated_at   = (entry.get("updated",   {}) or {}).get("$t", "")[:10] or published_at
     thumb = ((entry.get("media$thumbnail", {}) or {}).get("url") or "").strip() or None
     image = _first_content_image(content_html, thumb)
-    labels = [
-        (c.get("term") or "").strip()
-        for c in (entry.get("category", []) or [])
-        if (c.get("term") or "").strip()
-    ]
+    labels = early_labels
     resolved = _resolve_brand_and_ref(title)
 
     return {
