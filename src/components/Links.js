@@ -100,6 +100,14 @@ const TOPIC_SECTIONS = [
         url: "https://www.heuerpriceguide.com/vintage-heuer-rarity",
         name: "Vintage Heuer — production & rarity",
       },
+      {
+        url: "https://www.heuerpriceguide.com/about-the-price-guide",
+        name: "About the Heuer Price Guide — methodology + condition tiers",
+      },
+      {
+        url: "https://www.heuerpriceguide.com/heuer-price-guide-update-december-2024",
+        name: "Heuer Price Guide — latest update (Dec 2024)",
+      },
     ],
   },
   {
@@ -187,59 +195,193 @@ const REFERENCE_SECTIONS = [
       "https://www.swisswatchexpo.com/thewatchclub/2018/07/12/daytona-and-carrera-more-alike-than-you-know/",
       "https://heuerville.wordpress.com/%E2%96%BA-the-history-of-heuer/",
       "https://www.heuerpriceguide.com/heuer-collector-books",
+      // Heuer Price Guide — model-info galleries (distinct from the
+      // price-table pages in the Price Guides topic section).
       {
-        url: "https://www.heuerchrono.com",
-        name: "Heuerchrono — vintage yachting chronograph reference",
+        url: "https://www.heuerpriceguide.com/model-information",
+        name: "Heuer Price Guide — model information (hub)",
       },
       {
-        url: "https://www.heuerchrono.com/heuer-skipper/heuer-skipper-grid/",
-        name: "Heuerchrono — Skipper grid (refs 7754, 7764, 73464, 1564/15640)",
+        url: "https://www.heuerpriceguide.com/carrera-1960s",
+        name: "Heuer Price Guide — Carrera 1960s screw-back case (2447/2448) gallery",
       },
       {
-        url: "https://www.heuerchrono.com/heuer-skipper/the-story-of-the-heuer-skipper/",
-        name: "Heuerchrono — story of the Heuer Skipper",
+        url: "https://www.heuerpriceguide.com/carrera-1970/80s---barrel-case-/-quartz",
+        name: "Heuer Price Guide — Carrera 1970s/80s barrel-case + quartz gallery",
       },
       {
-        url: "https://www.heuerchrono.com/heuer-skipper/wrong-vs-right-about-genuine-parts/",
-        name: "Heuerchrono — Skipper authenticity guide",
+        url: "https://www.heuerpriceguide.com/autavia-screw-back-case",
+        name: "Heuer Price Guide — Autavia screw-back case 1962–68 gallery",
       },
       {
-        url: "https://www.heuercamaro.com",
-        name: "Heuer Camaro — reference site",
+        url: "https://www.heuerpriceguide.com/autavia-cushion-case6099a6cb",
+        name: "Heuer Price Guide — Autavia cushion case 1969–85 (GMT, Siffert, Orange Boy)",
       },
       {
-        url: "https://www.heuercamaro.com/models",
-        name: "Heuer Camaro — models (refs 7220, 7228, 9220, 7743, 7843, 73x43/45)",
+        url: "https://www.heuerpriceguide.com/monaco-case6288295e",
+        name: "Heuer Price Guide — Monaco case references 1969–78",
+      },
+      {
+        url: "https://www.heuerpriceguide.com/vintage-heuer-authentication",
+        name: "Heuer Price Guide — authentication & valuation service",
+      },
+      {
+        url: "https://www.heuerpriceguide.com/condition-condition-condition",
+        name: "Heuer Price Guide — why condition drives vintage Heuer value",
+      },
+      {
+        url: "https://www.heuerpriceguide.com/famous-heuer-ambassadors",
+        name: "Heuer Price Guide — famous Heuer ambassadors (McQueen, Jagger, Lauda, Andretti)",
+      },
+      {
+        url: "https://www.heuerpriceguide.com/heuer-parts-for-sale",
+        name: "Heuer Price Guide — vintage Heuer parts catalog",
       },
     ],
   },
   {
-    title: "Enicar",
+    // Heuer Camaro reference site — full set of reference index pages.
+    // 40+ per-dial-variant deep dives exist one click deeper from
+    // each reference index page; not linked individually here to keep
+    // this section scannable.
+    title: "Heuer Camaro",
     links: [
-      {
-        url: "https://enicar101.com",
-        name: "Enicar 101 — home",
-      },
-      {
-        url: "https://enicar101.com/serial-reference/",
-        name: "Enicar 101 — serial reference database",
-      },
-      {
-        url: "https://enicar101.com/sherpa-graph/",
-        name: "Enicar 101 — Sherpa Graph (MK Ia–IV)",
-      },
-      {
-        url: "https://enicar101.com/aqua-graph/",
-        name: "Enicar 101 — Aqua Graph (MK Ia–IV)",
-      },
-      {
-        url: "https://enicar101.com/jet-graph/",
-        name: "Enicar 101 — Jet Graph (MK Ia–IV)",
-      },
-      {
-        url: "https://enicar101.com/sherpa-ultradive/",
-        name: "Enicar 101 — Sherpa Ultradive & OPS",
-      },
+      { url: "https://www.heuercamaro.com",          name: "Heuer Camaro — reference site" },
+      { url: "https://www.heuercamaro.com/history",  name: "Heuer Camaro — history essay" },
+      { url: "https://www.heuercamaro.com/features", name: "Heuer Camaro — case, dial, hands, movements, bracelet" },
+      { url: "https://www.heuercamaro.com/models",   name: "Heuer Camaro — models (refs 7220, 7228, 9220, 7743, 7843, 73x43/45)" },
+      { url: "https://www.heuercamaro.com/models/7220",                    name: "Camaro Ref. 7220 — steel (Valjoux 7730/7733)" },
+      { url: "https://www.heuercamaro.com/models/7228-18k-gold",           name: "Camaro Ref. 7228 — 18k gold" },
+      { url: "https://www.heuercamaro.com/models/9220",                    name: "Camaro Ref. 9220 — gold-filled" },
+      { url: "https://www.heuercamaro.com/models/7743",                    name: "Camaro Ref. 7743 — Valjoux 7740" },
+      { url: "https://www.heuercamaro.com/models/7843-dato",               name: "Camaro Ref. 7843 Dato" },
+      { url: "https://www.heuercamaro.com/models/73643",                   name: "Camaro Ref. 73643" },
+      { url: "https://www.heuercamaro.com/models/73343",                   name: "Camaro Ref. 73343" },
+      { url: "https://www.heuercamaro.com/models/73345-gold-plated",       name: "Camaro Ref. 73345 — gold-plated" },
+      { url: "https://www.heuercamaro.com/models/73443-dato",              name: "Camaro Ref. 73443 Dato" },
+      { url: "https://www.heuercamaro.com/models/73445-dato-gold-plated",  name: "Camaro Ref. 73445 Dato — gold-plated" },
+      { url: "https://www.heuercamaro.com/otherco-brands",                 name: "Camaro — other-brand reissues + co-brands + distributor variants" },
+    ],
+  },
+  {
+    // Heuerchrono — yachting-chronograph reference (Skipper / Mareographe
+    // / Seafarer / Solunar / Carrera Yachting / Regatta). Curated from
+    // the site's ~80 reference pages to the highest-leverage entries;
+    // the rest are reachable one click deeper from each cluster hub.
+    title: "Heuer Yachting & Skipper",
+    links: [
+      { url: "https://www.heuerchrono.com",                                                              name: "Heuerchrono — vintage yachting chronograph reference" },
+      // Skipper essentials
+      { url: "https://www.heuerchrono.com/heuer-skipper/heuer-skipper-grid/",                            name: "Skipper grid (refs 7754, 7764, 73464, 1564/15640)" },
+      { url: "https://www.heuerchrono.com/heuer-skipper/all-about-heuer-skipper/",                       name: "All about the Heuer Skipper" },
+      { url: "https://www.heuerchrono.com/heuer-skipper/the-story-of-the-heuer-skipper/",                name: "The story of the Heuer Skipper" },
+      { url: "https://www.heuerchrono.com/heuer-skipper/skipper-gallery/",                               name: "Skipper visual gallery (all dial variants)" },
+      { url: "https://www.heuerchrono.com/heuerchrono-com/the-most-rare-skipper-how-many-skipper-we-know-in-total/", name: "Skipper census — how many do we know?" },
+      { url: "https://www.heuerchrono.com/heuer-skipper-movements/",                                     name: "Skipper movements reference (Valjoux 7733, 7734, 7740…)" },
+      { url: "https://www.heuerchrono.com/heuer-skipper/heuer-skipper-bracelets-and-straps/",            name: "Skipper bracelets & straps (period-correct)" },
+      { url: "https://www.heuerchrono.com/how-to-buy-a-vintage-heuer-skipper/",                          name: "How to buy a vintage Heuer Skipper" },
+      { url: "https://www.heuerchrono.com/heuer-skipper/wrong-vs-right-about-genuine-parts/",            name: "Skipper authenticity — wrong vs right parts" },
+      // Skipper deep dives (selected)
+      { url: "https://www.heuerchrono.com/heuer-skipper/new-type-of-skipper-73464/",                     name: "Skipper 73464 — newly-identified variant" },
+      { url: "https://www.heuerchrono.com/heuer-skipper/mareographe-2443-reference-mystery-solved-its-a-2447-confirmed/", name: "Mareographe 2443 vs 2447 — reference mystery solved" },
+      // Other Heuer yachting model lines
+      { url: "https://www.heuerchrono.com/heuer-solunar-heuer-mareographe-abercrombie-fitch-seafarer/",  name: "Mareographe / Seafarer / Solunar (hub)" },
+      { url: "https://www.heuerchrono.com/heuer-carrera-yachting/",                                      name: "Heuer Carrera Yachting (hub)" },
+      { url: "https://www.heuerchrono.com/heuer-5-dots/",                                                name: "Heuer Regatta '5-dots' (hub)" },
+      { url: "https://www.heuerchrono.com/heuer-yacht-timers/",                                          name: "Heuer Yacht Timer stopwatches" },
+      // Other-brand yachting hub
+      { url: "https://www.heuerchrono.com/vintage-yachting-watches/colored-segment-subdials-for-using-as-regatta-yachting-watches/", name: "Other vintage yachting brands — segment-subdial overview" },
+    ],
+  },
+  // Enicar 101 — split into six clusters because the site is deep
+  // enough that one flat section would be a wall. Each cluster maps
+  // to one of the Enicar model lines + the reference / provenance
+  // research hub.
+  {
+    title: "Enicar — Reference & Provenance",
+    links: [
+      { url: "https://enicar101.com",                                                                                    name: "Enicar 101 — home" },
+      { url: "https://enicar101.com/information/",                                                                       name: "Enicar 101 — information hub" },
+      { url: "https://enicar101.com/serial-reference/",                                                                  name: "Enicar 101 — serial reference database" },
+      { url: "https://enicar101.com/enicar-production-dates/",                                                           name: "Enicar 101 — production dates" },
+      { url: "https://enicar101.com/racing-heritage-2/",                                                                 name: "Enicar 101 — racing heritage" },
+      { url: "https://enicar101.com/brochures-ads/",                                                                     name: "Enicar 101 — brochures & manuals archive" },
+      { url: "https://enicar101.com/enicar-book/",                                                                       name: "Enicar 101 — Enicar Book" },
+      { url: "https://enicar101.com/blog/",                                                                              name: "Enicar 101 — blog index" },
+      // Top provenance pieces (long-form research)
+      { url: "https://enicar101.com/2021/11/19/the-correct-reference-of-jim-clarks-sherpa-graph/",                       name: "Provenance: Jim Clark's Sherpa Graph reference" },
+      { url: "https://enicar101.com/2020/07/29/stirling-moss-and-his-stirling-moss/",                                    name: "Provenance: Stirling Moss's Sherpa Graph" },
+      { url: "https://enicar101.com/2022/05/15/brigitte-bardot-romy-schneider-and-maurice-ronets-aqua-graph/",           name: "Provenance: Bardot / Schneider / Ronet Aqua Graph" },
+      { url: "https://enicar101.com/2021/02/04/alain-delons-ultra-dive/",                                                name: "Provenance: Alain Delon's Ultra Dive" },
+      { url: "https://enicar101.com/2024/01/14/hans-hass-expedition-xarifa-ii-and-the-enicar-sherpa-dive/",              name: "Provenance: Hans Hass Xarifa II expedition Sherpa Dive" },
+      { url: "https://enicar101.com/2021/12/08/1960s-formula-1-drivers-and-the-enicar-sherpa-graph/",                    name: "Provenance: 1960s F1 drivers and the Sherpa Graph" },
+      { url: "https://enicar101.com/2025/03/04/the-polish-navy-super-dives/",                                            name: "Provenance: Polish Navy Super Dives" },
+      { url: "https://enicar101.com/2023/01/01/east-german-enicar-sherpa-ultradive-in-cuba/",                            name: "Provenance: East German Sherpa Ultradive in Cuba" },
+      { url: "https://enicar101.com/2021/01/20/enicar-chronometers-at-the-cold-edge-of-the-world/",                      name: "Provenance: Enicar chronometers on polar expeditions" },
+    ],
+  },
+  {
+    title: "Enicar Sherpa Graph",
+    links: [
+      { url: "https://enicar101.com/sherpa-graph/",                                                                      name: "Sherpa Graph — model overview" },
+      { url: "https://enicar101.com/sherpa-graph-mkia/",                                                                 name: "Sherpa Graph MK Ia" },
+      { url: "https://enicar101.com/sherpa-graph-mk-1a-roll-call/",                                                      name: "Sherpa Graph MK Ia — Roll Call (serial DB)" },
+      { url: "https://enicar101.com/sherpa-graph-mkib/",                                                                 name: "Sherpa Graph MK Ib" },
+      { url: "https://enicar101.com/sherpa-graph-ic/",                                                                   name: "Sherpa Graph MK Ic" },
+      { url: "https://enicar101.com/serhpa-graph-mk-id/",                                                                name: "Sherpa Graph MK Id (coming soon)" },
+      { url: "https://enicar101.com/sherpa-graph-mkii/",                                                                 name: "Sherpa Graph MK IIa" },
+      { url: "https://enicar101.com/sherpa-graph-mk-iib/",                                                               name: "Sherpa Graph MK IIb" },
+      { url: "https://enicar101.com/sherpa-graph-mkiii/",                                                                name: "Sherpa Graph MK III" },
+      { url: "https://enicar101.com/sherpa-graph-iv/",                                                                   name: "Sherpa Graph MK IV" },
+      { url: "https://enicar101.com/sherpa-graph-cousins/",                                                              name: "Sherpa Graph Cousins" },
+      { url: "https://enicar101.com/2021/04/03/how-to-spot-one-of-500-sherpa-graph-mk1a/",                               name: "How to spot one of 500 Sherpa Graph MK Ia" },
+    ],
+  },
+  {
+    title: "Enicar Aqua Graph",
+    links: [
+      { url: "https://enicar101.com/aqua-graph/",      name: "Aqua Graph — model overview" },
+      { url: "https://enicar101.com/aqua-graph-mki/",  name: "Aqua Graph MK Ia" },
+      { url: "https://enicar101.com/aqua-graph-mk-ib-2/", name: "Aqua Graph MK Ib" },
+      { url: "https://enicar101.com/aqua-graph-mkii/", name: "Aqua Graph MK II" },
+      { url: "https://enicar101.com/aqua-graph-mkiii/", name: "Aqua Graph MK III" },
+      { url: "https://enicar101.com/aqua-graph-mk-iv/", name: "Aqua Graph MK IV" },
+      { url: "https://enicar101.com/2018/06/03/early-aqua-graph-bezel-mystery/", name: "Early Aqua Graph bezel mystery" },
+    ],
+  },
+  {
+    title: "Enicar Jet Graph",
+    links: [
+      { url: "https://enicar101.com/jet-graph/",       name: "Jet Graph — model overview" },
+      { url: "https://enicar101.com/jet-graph-mk-i/",  name: "Jet Graph MK Ia" },
+      { url: "https://enicar101.com/jet-graph-mk-ib/", name: "Jet Graph MK Ib (coming soon)" },
+      { url: "https://enicar101.com/jet-graph-mkii/",  name: "Jet Graph MK II" },
+      { url: "https://enicar101.com/jet-graph-mkiii/", name: "Jet Graph MK III" },
+      { url: "https://enicar101.com/jet-graph-mkiv/",  name: "Jet Graph MK IV" },
+      { url: "https://enicar101.com/2021/06/16/jet-graph-served-its-tour-of-duty/", name: "Jet Graph military service" },
+    ],
+  },
+  {
+    title: "Enicar Super Graph",
+    links: [
+      { url: "https://enicar101.com/super-graph/",            name: "Super Graph — overview" },
+      { url: "https://enicar101.com/super-graph-coming-soon/", name: "Super Graph MK I" },
+      { url: "https://enicar101.com/super-graph-simonet/",    name: "Super Graph 'Simonet'" },
+      { url: "https://enicar101.com/super-graph-mk-ii/",      name: "Super Graph MK II" },
+      { url: "https://enicar101.com/super-graph-mk-iii/",     name: "Super Graph MK III" },
+      { url: "https://enicar101.com/2020/12/18/enicar-super-graph-simonet/", name: "Super Graph Simonet research" },
+    ],
+  },
+  {
+    title: "Enicar Dive Watches",
+    links: [
+      { url: "https://enicar101.com/dive-watches/",                                                                      name: "Enicar Dive Watches — overview" },
+      { url: "https://enicar101.com/sherpa-ultradive/",                                                                  name: "Sherpa Ultradive & OPS" },
+      { url: "https://enicar101.com/sherpa-ops/",                                                                        name: "Sherpa OPS" },
+      { url: "https://enicar101.com/super-dive-polish-navy/",                                                            name: "Super Dive 'Polish Navy'" },
+      { url: "https://enicar101.com/2021/12/30/enicar-sherpa-ultradive-and-ops-sn-research/",                            name: "Sherpa Ultradive & OPS serial research" },
+      { url: "https://enicar101.com/2023/08/09/is-the-sherpa-ultradive-older-then-we-thought/",                          name: "Sherpa Ultradive dating research" },
+      { url: "https://enicar101.com/2021/03/08/sherpa-dive-review-from-1961/",                                           name: "1961 Sherpa Dive review" },
     ],
   },
 ];
