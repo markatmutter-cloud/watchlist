@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { SubTabIntro } from "./SubTabIntro";
-import { pillBase, innerToggleButton, inputBase } from "../styles";
+import { pillBase, inputBase } from "../styles";
+import { Chip } from "./Chip";
 
 // Editorial sub-tab — v0 (2026-05-18). Surfaces the saved editorial
 // corpus (Hairspring Finds + Hodinkee Bring a Loupe today; more sources
@@ -8,9 +8,14 @@ import { pillBase, innerToggleButton, inputBase } from "../styles";
 // the original article — we never re-host content, only surface our
 // own metadata + an excerpt to drive discovery to the publisher.
 //
-// Filter / sort surface is intentionally close to the Listings tab
-// pattern (filter chips + sort dropdown + date dividers) so the
-// mental model carries over.
+// Filter row deliberately mirrors the Listings / Watchlists shape
+// (Mark spec 2026-05-18): single horizontal pill strip with Date sort
+// toggle + Source pill + Brand pill, inline-expansion panels below the
+// strip for the chip cluster, article count right-aligned, "× Clear
+// all" link when any filter fires. Search lives above the strip as
+// its own input (Listings uses the global top-bar search; Editorial
+// needs its own field for body-text matching that's distinct from
+// listing search).
 //
 // Phase 2 will add `tags` / `audience` / `references_mentioned` /
 // `dates_referenced` to each record via the editorial_index.py
@@ -39,38 +44,35 @@ const SOURCES = [
   },
 ];
 
-const SORT_OPTIONS = [
-  { key: "date_desc", label: "Date ↓" },
-  { key: "date_asc",  label: "Date ↑" },
-  { key: "source",    label: "Source A→Z" },
-];
-
-const BRAND_TOP_N = 12;       // Show top N brands as chips; rest under "More"
-const RESULTS_PAGE_SIZE = 24; // Lazy-render in chunks so a 1,860-article
-                              // filter doesn't construct 1,860 DOM nodes upfront
+const BRAND_TOP_N = 24;       // Show top N brands in expansion panel; "+more" expander reveals the rest
+const RESULTS_PAGE_SIZE = 24; // Lazy-render in chunks so a 1,860-article filter doesn't build all DOM upfront
 
 export function EditorialView({ isMobile, cols, compact, gridStyle }) {
   // cols / compact / gridStyle come from App.js's useViewSettings — the
   // same grid sizing the Listings tab uses. ArticleCard adapts its
   // typography + excerpt density to `compact` so a 7-col packed grid
-  // still reads cleanly. `gridStyle` carries the user's column choice
-  // verbatim, so settings → cols=7 applies here without per-component
-  // logic.
+  // still reads cleanly.
   const effectiveCols = cols || (isMobile ? 1 : 3);
   const articleGridStyle = gridStyle || {
     display: "grid",
     gridTemplateColumns: `repeat(${effectiveCols}, minmax(0, 1fr))`,
     gap: 12,
   };
+
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [articles, setArticles] = useState([]);
 
   const [search, setSearch] = useState("");
   const [activeSources, setActiveSources] = useState([]); // [] = all
-  const [activeBrand, setActiveBrand] = useState("");      // "" = all
+  const [activeBrands, setActiveBrands] = useState([]);    // [] = all
+  // Date sort cycles desc → asc → desc on tap (matches Listings).
   const [sort, setSort] = useState("date_desc");
-  const [showMoreBrands, setShowMoreBrands] = useState(false);
+  // Inline-expansion popover state — same shape as Listings filter row.
+  // null | "source" | "brand". Tapping the active pill closes it; tapping
+  // a different pill switches.
+  const [activeFilterPop, setActiveFilterPop] = useState(null);
+  const [brandsExpanded, setBrandsExpanded] = useState(false);
   const [collapsedYears, setCollapsedYears] = useState({});
   const [pageSize, setPageSize] = useState(RESULTS_PAGE_SIZE);
 
@@ -107,7 +109,14 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
     return () => { alive = false; };
   }, []);
 
-  // Build brand chip list from the corpus, ordered by frequency.
+  // Source counts (for the expansion-panel chip count badges).
+  const sourceCounts = useMemo(() => {
+    const out = {};
+    articles.forEach(a => { out[a._source.key] = (out[a._source.key] || 0) + 1; });
+    return out;
+  }, [articles]);
+
+  // Brand list from the corpus, ordered by frequency.
   const brandOptions = useMemo(() => {
     const counts = {};
     articles.forEach(a => {
@@ -126,9 +135,10 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const sourceSet = activeSources.length ? new Set(activeSources) : null;
+    const brandSet  = activeBrands.length  ? new Set(activeBrands)  : null;
     let out = articles.filter(a => {
       if (sourceSet && !sourceSet.has(a._source.key)) return false;
-      if (activeBrand && (a.brand || "").trim() !== activeBrand) return false;
+      if (brandSet && !brandSet.has((a.brand || "").trim())) return false;
       if (q) {
         const hay =
           ((a.title || "") + " " + (a.body_text || "") + " " + (a.author || "")).toLowerCase();
@@ -140,33 +150,19 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
       out.sort((a, b) => (b.published_at || "").localeCompare(a.published_at || ""));
     } else if (sort === "date_asc") {
       out.sort((a, b) => (a.published_at || "").localeCompare(b.published_at || ""));
-    } else if (sort === "source") {
-      out.sort((a, b) =>
-        a._source.label.localeCompare(b._source.label) ||
-        (b.published_at || "").localeCompare(a.published_at || ""));
     }
     return out;
-  }, [articles, search, activeSources, activeBrand, sort]);
+  }, [articles, search, activeSources, activeBrands, sort]);
 
-  // Lazy page-size reset whenever filters or sort change (otherwise a
-  // previously-scrolled page would re-render mid-list across filter taps).
+  // Lazy page-size reset whenever filters or sort change.
   useEffect(() => {
     setPageSize(RESULTS_PAGE_SIZE);
-  }, [search, activeSources, activeBrand, sort]);
+  }, [search, activeSources, activeBrands, sort]);
 
   const visible = useMemo(() => filtered.slice(0, pageSize), [filtered, pageSize]);
 
-  // Group visible items by year when sorting by date. Source sort
-  // returns a single flat block grouped by source label instead.
+  // Group visible items by year.
   const groups = useMemo(() => {
-    if (sort === "source") {
-      const buckets = {};
-      visible.forEach(a => {
-        const k = a._source.label;
-        (buckets[k] = buckets[k] || []).push(a);
-      });
-      return Object.entries(buckets).map(([label, items]) => ({ label, items }));
-    }
     const buckets = {};
     visible.forEach(a => {
       const y = (a.published_at || "").slice(0, 4) || "Undated";
@@ -181,9 +177,29 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
     setActiveSources(prev =>
       prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   };
+  const toggleBrand = (brand) => {
+    setActiveBrands(prev =>
+      prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]);
+  };
   const toggleYearCollapse = (label) => {
     setCollapsedYears(prev => ({ ...prev, [label]: !prev[label] }));
   };
+
+  const hasFilters =
+    !!search.trim() || activeSources.length > 0 || activeBrands.length > 0;
+  const clearAll = () => {
+    setSearch("");
+    setActiveSources([]);
+    setActiveBrands([]);
+    setActiveFilterPop(null);
+  };
+
+  const cycleDate = () => {
+    setSort(s => s === "date_desc" ? "date_asc" : "date_desc");
+  };
+  const dateLabel = sort === "date_desc" ? "Date ↓"
+                  : sort === "date_asc" ? "Date ↑"
+                  : "Date";
 
   // ─────────────────────────────────────────────────────────────────
   // Render
@@ -199,24 +215,41 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
     );
   }
 
+  const expanded = activeFilterPop !== null;
+  // Tinted background reads as "this filter strip is a different
+  // surface than Listings" — Mark spec 2026-05-18: a coloured block
+  // marks Editorial as a theme inside Collecting, not a listings feed.
+  // 10% brand tint on the strip + search row; 8% on the expansion
+  // panels (softer step-down so the panel reads as nested chrome,
+  // not a third equal-weight surface).
+  const filterBandBg = "var(--brand-tint-10)";
+  const expansionPanelStyle = {
+    padding: "10px 20px 24px",
+    borderBottom: "0.5px solid var(--border)",
+    background: "var(--brand-tint-08)",
+    display: "flex", flexWrap: "wrap", gap: 8,
+    alignItems: "flex-start",
+    lineHeight: 1.5,
+  };
+  const chipClearLinkStyle = {
+    fontSize: 12, padding: "4px 10px", borderRadius: 20,
+    fontFamily: "inherit", whiteSpace: "nowrap",
+    border: "none", outline: "none", cursor: "pointer",
+    background: "transparent", color: "var(--brand)",
+    boxShadow: "inset 0 0 0 0.5px var(--brand)",
+    marginLeft: 4,
+  };
+  const stripPadding = isMobile ? "8px 14px" : "8px 20px";
+
   return (
     <div style={{ paddingTop: 4 }}>
-      <SubTabIntro
-        title="Editorial"
-        blurb={<>
-          Long-form writing from independent watch publications, indexed and
-          searchable. Tap a card to read the original article on the
-          publisher's site. Today: Hairspring Finds + Hodinkee Bring a Loupe;
-          more sources land here as their scrapers ship.
-        </>}
-      />
-
-      {/* Filter row — search + source chips + brand chips + sort */}
+      {/* Search row — own input. Listings uses the global top-bar
+          search; Editorial needs its own field for body-text matching
+          distinct from listing search. */}
       <div style={{
-        padding: "8px 16px 0",
-        display: "flex", flexDirection: "column", gap: 10,
+        padding: isMobile ? "10px 14px 0" : "10px 20px 0",
+        background: filterBandBg,
       }}>
-        {/* Search */}
         <input
           type="search"
           placeholder="Search title, author, or body text…"
@@ -224,86 +257,115 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
           onChange={e => setSearch(e.target.value)}
           style={{ ...inputBase, width: "100%" }}
         />
+      </div>
 
-        {/* Source chips + sort dropdown — same row on desktop, stacked on mobile */}
-        <div style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          gap: 8,
-          alignItems: isMobile ? "stretch" : "center",
-          flexWrap: "wrap",
+      {/* Filter strip — mirrors Listings filterRowJSX shape. Single
+          horizontal row, pill toggles, inline-expansion panels below
+          for source / brand chip clusters. */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 8,
+        padding: stripPadding,
+        background: filterBandBg,
+        borderBottom: expanded ? "none" : "0.5px solid var(--border)",
+        flexShrink: 0, flexWrap: "wrap",
+      }}>
+        {/* Date sort — single pill that flips on tap. */}
+        <button
+          onClick={cycleDate}
+          style={{
+            ...pillBase(true, { compact: true, surface: true }),
+            fontWeight: 600,
+          }}>{dateLabel}</button>
+
+        {/* Source inline-expand pill */}
+        <button
+          onClick={() => setActiveFilterPop(p => p === "source" ? null : "source")}
+          style={pillBase(activeSources.length > 0 || activeFilterPop === "source", { compact: true })}>
+          Source{activeSources.length > 0 ? ` · ${activeSources.length}` : ""}
+        </button>
+
+        {/* Brand inline-expand pill */}
+        <button
+          onClick={() => setActiveFilterPop(p => p === "brand" ? null : "brand")}
+          style={pillBase(activeBrands.length > 0 || activeFilterPop === "brand", { compact: true })}>
+          Brand{activeBrands.length > 0 ? ` · ${activeBrands.length}` : ""}
+        </button>
+
+        {/* Article count — right-aligned via marginLeft auto. */}
+        <span style={{
+          marginLeft: "auto", flexShrink: 0,
+          fontSize: 12, color: "var(--text3)", fontFamily: "inherit",
+          whiteSpace: "nowrap", padding: "0 6px",
         }}>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", flex: 1 }}>
-            {SOURCES.map(s => {
-              const active = activeSources.includes(s.key);
-              const count = articles.filter(a => a._source.key === s.key).length;
-              return (
-                <button key={s.key}
-                  onClick={() => toggleSource(s.key)}
-                  style={pillBase(active, { compact: true })}>
-                  {s.label} {count > 0 && <span style={{ opacity: 0.7 }}>· {count.toLocaleString()}</span>}
-                </button>
-              );
-            })}
-          </div>
-          <select
-            value={sort}
-            onChange={e => setSort(e.target.value)}
-            style={{
-              ...inputBase,
-              padding: "8px 10px",
-              minWidth: 130,
-              maxWidth: isMobile ? "100%" : 160,
-            }}>
-            {SORT_OPTIONS.map(o => (
-              <option key={o.key} value={o.key}>{o.label}</option>
-            ))}
-          </select>
-        </div>
+          {loading
+            ? "Loading…"
+            : `${filtered.length.toLocaleString()} ${filtered.length === 1 ? "article" : "articles"}`}
+        </span>
 
-        {/* Brand chips — top N by frequency, with "More" expander */}
-        {brandOptions.length > 0 && (
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            <button
-              onClick={() => setActiveBrand("")}
-              style={pillBase(!activeBrand, { compact: true })}>
-              All brands
-            </button>
-            {(showMoreBrands ? brandOptions : brandOptions.slice(0, BRAND_TOP_N)).map(b => (
-              <button key={b.brand}
-                onClick={() => setActiveBrand(b.brand === activeBrand ? "" : b.brand)}
-                style={pillBase(activeBrand === b.brand, { compact: true })}>
-                {b.brand} <span style={{ opacity: 0.7 }}>· {b.count}</span>
-              </button>
-            ))}
-            {brandOptions.length > BRAND_TOP_N && (
-              <button
-                onClick={() => setShowMoreBrands(s => !s)}
-                style={innerToggleButton(false)}>
-                {showMoreBrands ? "Less" : `+${brandOptions.length - BRAND_TOP_N} more`}
-              </button>
-            )}
-          </div>
+        {/* × Clear all — same shape as Listings. */}
+        {hasFilters && (
+          <button onClick={clearAll} style={{
+            fontSize: 13, padding: "6px 12px", borderRadius: 20, cursor: "pointer",
+            fontFamily: "inherit", whiteSpace: "nowrap",
+            border: "none", outline: "none",
+            background: "transparent", color: "var(--brand)",
+            boxShadow: "inset 0 0 0 0.5px var(--brand)",
+          }}>× Clear all</button>
         )}
       </div>
 
-      {/* Result count */}
-      <div style={{
-        padding: "12px 16px 6px",
-        fontSize: 12,
-        color: "var(--text3)",
-      }}>
-        {loading
-          ? "Loading editorial corpus…"
-          : `${filtered.length.toLocaleString()} ${filtered.length === 1 ? "article" : "articles"}`}
-      </div>
+      {/* Source expansion panel */}
+      {activeFilterPop === "source" && (
+        <div style={expansionPanelStyle}>
+          {SOURCES.map(s => (
+            <Chip key={s.key}
+              label={s.label}
+              count={sourceCounts[s.key] || 0}
+              active={activeSources.includes(s.key)}
+              onClick={() => toggleSource(s.key)} />
+          ))}
+          {activeSources.length > 0 && (
+            <button onClick={() => setActiveSources([])} style={chipClearLinkStyle}>× Clear</button>
+          )}
+        </div>
+      )}
 
-      {/* Card grid grouped by year (or source) */}
-      <div style={{ padding: "0 16px 110px" }}>
+      {/* Brand expansion panel */}
+      {activeFilterPop === "brand" && (
+        <div style={expansionPanelStyle}>
+          {brandOptions.length === 0 ? (
+            <span style={{ fontSize: 12, color: "var(--text3)" }}>No brands yet.</span>
+          ) : (
+            <>
+              {(brandsExpanded ? brandOptions : brandOptions.slice(0, BRAND_TOP_N)).map(b => (
+                <Chip key={b.brand}
+                  label={b.brand}
+                  count={b.count}
+                  active={activeBrands.includes(b.brand)}
+                  onClick={() => toggleBrand(b.brand)} />
+              ))}
+              {brandOptions.length > BRAND_TOP_N && (
+                <Chip
+                  label={brandsExpanded ? "Less ↑" : `+${brandOptions.length - BRAND_TOP_N} more`}
+                  active={false}
+                  blue
+                  onClick={() => setBrandsExpanded(v => !v)} />
+              )}
+              {activeBrands.length > 0 && (
+                <button onClick={() => setActiveBrands([])} style={chipClearLinkStyle}>× Clear</button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Card grid grouped by year */}
+      <div style={{ padding: isMobile ? "0 14px 110px" : "0 20px 110px" }}>
         {!loading && filtered.length === 0 && (
           <div style={{
             padding: 32, color: "var(--text2)", textAlign: "center",
             border: "0.5px dashed var(--border)", borderRadius: 8,
+            marginTop: 16,
           }}>
             No articles match your filters.
           </div>
@@ -318,7 +380,7 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
                   background: "transparent", border: "none",
-                  padding: "10px 0 8px", margin: 0,
+                  padding: "12px 0 8px", margin: 0,
                   fontSize: 13, fontWeight: 600, color: "var(--text2)",
                   cursor: "pointer", fontFamily: "inherit",
                   borderBottom: "0.5px solid var(--border)",
