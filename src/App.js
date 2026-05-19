@@ -251,7 +251,7 @@ export default function Watchlist() {
   // picks WatchlistTab for the watchlist-style subs and CollectionsTab
   // for the collections-style subs.
   const SUB_VALUES_WATCHLIST = ["listings", "auctions", "sold", "searches"];
-  const SUB_VALUES_COLLECTIONS = ["my-collection", "wishlist", "lists", "challenges"];
+  const SUB_VALUES_COLLECTIONS = ["my-collection", "wishlist", "lists", "challenges", "editorial"];
   const SUB_VALUES = [...SUB_VALUES_WATCHLIST, ...SUB_VALUES_COLLECTIONS];
   // Bundle 2A.2b (2026-05-08) — the three hearted sub-tabs
   // (listings/auctions/sold) collapse under a single "Saved" pill in
@@ -3241,6 +3241,7 @@ export default function Watchlist() {
         ["lists",      "Lists"],
         ["searches",   "Searches"],
         ["challenges", "Challenges"],
+        ["editorial",  "Editorial"],
       ].map(([key, label]) => {
         const active = watchTopTab === key;
         return (
