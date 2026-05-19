@@ -42,6 +42,13 @@ const SOURCES = [
     column: "Bring a Loupe",
     url: "/bring_a_loupe.json",
   },
+  {
+    key: "rolex_magazine",
+    label: "Rolex Magazine",
+    publication: "Rolex Magazine",
+    column: null,
+    url: "/rolex_magazine.json",
+  },
 ];
 
 const BRAND_TOP_N = 24;       // Show top N brands in expansion panel; "+more" expander reveals the rest
