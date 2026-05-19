@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { SubTabIntro } from "./SubTabIntro";
 import { pillBase, innerToggleButton, inputBase } from "../styles";
 
 // Editorial sub-tab — v0 (2026-05-18). Surfaces the saved editorial
@@ -201,16 +200,6 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
 
   return (
     <div style={{ paddingTop: 4 }}>
-      <SubTabIntro
-        title="Editorial"
-        blurb={<>
-          Long-form writing from independent watch publications, indexed and
-          searchable. Tap a card to read the original article on the
-          publisher's site. Today: Hairspring Finds + Hodinkee Bring a Loupe;
-          more sources land here as their scrapers ship.
-        </>}
-      />
-
       {/* Filter row — search + source chips + brand chips + sort */}
       <div style={{
         padding: "8px 16px 0",
