@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { SubTabIntro } from "./SubTabIntro";
 
 // Cool Stuff > Links — curated outbound destinations beyond the feed
 // itself. Two kinds of section:
@@ -330,17 +329,6 @@ export function Links({ allListings = [], onBack }) {
           }}>← Learn</button>
         </div>
       )}
-
-      <SubTabIntro
-        title="Links"
-        blurb={<>
-          A link directory for getting deeper. Every dealer in the feed
-          (with a count of how many of their listings are live right now),
-          plus curated reference research clusters — places to read about
-          a 5513 or a Speedmaster pre-Moon — and topical lists for art,
-          straps, and editorial. Tap a section to expand.
-        </>}
-      />
 
       {/* Sections render in order: Dealers (auto-derived), then the
           curated References list, then thematic Topic sections. Each
