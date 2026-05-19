@@ -10,8 +10,11 @@ name: Scrape editorial corpus
 # listings cron runs at 14/20/02 UTC; this slot avoids overlap.
 #
 # Scope (2026-05-18):
-# - bring_a_loupe_scraper.py → public/bring_a_loupe.json
+# - bring_a_loupe_scraper.py    → public/bring_a_loupe.json
 #   (Hodinkee column, ~251 articles, sitemap-based URL discovery)
+# - rolex_magazine_scraper.py   → public/rolex_magazine.json
+#   (Jake's Rolex World, ~3,840 posts, Blogger JSON feeds API,
+#   incremental on every cron — stops at most-recently-scraped URL)
 #
 # Hairspring Finds intentionally NOT included here — it runs in the
 # main listings workflow (scrape-listings.yml) because its records
@@ -19,10 +22,9 @@ name: Scrape editorial corpus
 # the rest of the dealer/lot pipeline. Editorial-only sources (no
 # transactional surface) belong here.
 #
-# Future additions queued: rolexmagazine.com (Blogger), WatchFID
-# Journal (WordPress), Wind Vintage journal, Hairspring non-Finds
-# blog. Each as its own scraper file emitting one JSON; add a step
-# below per source.
+# Future additions queued: WatchFID Journal (WordPress), Wind
+# Vintage journal, Hairspring non-Finds blog. Each as its own
+# scraper file emitting one JSON; add a step below per source.
 
 on:
   schedule:
@@ -58,11 +60,21 @@ jobs:
         continue-on-error: true
         run: python bring_a_loupe_scraper.py
 
+      - name: Run Rolex Magazine scraper
+        # Blogger JSON feeds API, ~3,840 posts in corpus. Incremental
+        # on every cron — walks the feed head until it hits the
+        # most-recently-scraped URL. Typical weekly run fetches
+        # 5-15 new posts in <1 second. ROLEX_MAGAZINE_FULL_REFRESH=1
+        # forces a full re-walk (~30 sec) if records need to be
+        # rebuilt.
+        continue-on-error: true
+        run: python rolex_magazine_scraper.py
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/bring_a_loupe.json
+          git add public/bring_a_loupe.json public/rolex_magazine.json
           if git diff --staged --quiet; then
             echo "No changes to commit"
             exit 0
