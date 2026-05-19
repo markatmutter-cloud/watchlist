@@ -1,6 +1,6 @@
 # Watchlist Roadmap
 
-Last updated: 2026-05-15
+Last updated: 2026-05-19
 Living document. Updated as priorities shift.
 
 For project context and architecture, see [README.md](README.md). For
@@ -1226,6 +1226,71 @@ recommender-adjacent surface — editorial scrapers, the editorial
 index pipeline, reference-page coverage, or the "explore paths"
 listing-card annotation.
 
+### Editorial corpus — layer 1 (built, 2026-05-18 → 2026-05-19)
+
+The corpus is the data substrate for the recommender. **Eight
+sources, ~8,556 articles, ~4.3M words live at handoff.** Body-split
+persistence pattern (`editorial_corpus_io.py`): per-source JSON
+holds metadata + ~240-char excerpts (loaded eagerly), per-source
+`*_bodies.json` holds the prose (lazy-loaded on first search
+keystroke).
+
+| Source | Articles |
+|---|---|
+| Hairspring Finds | 1,613 |
+| Hodinkee Bring a Loupe | 251 |
+| Rolex Magazine | 3,810 |
+| On The Dash (Jeff Stein) | 205 |
+| Bulang & Sons Watch Talks | 161 |
+| Hodinkee Shop archive | 2,346 |
+| Hodinkee Reference Points | 10 |
+| A Collected Man Journal | 160 |
+
+Editorial sub-tab lives under Collecting (internal `tab="references"`,
+inside ReferencesTab.js) with a Listings-pattern filter row + tinted
+band + view-settings-aware ArticleCard. See CLAUDE.md "Editorial
+corpus scrapers" for the per-source body-wrapper details and
+the dual-track scraper pattern (Hairspring Finds + Hodinkee Shop
+also project into Listings > All sold via `App.js` memos).
+
+### Editorial corpus — layer 2 (NEXT BUILD)
+
+`editorial_index.py` — enrichment script that reads every corpus
+JSON and writes back four fields per article:
+
+- `references_mentioned: [{brand, model, ref, count}]` — reference
+  matcher over body sentences. Inverse-indexed at consumption time
+  ("articles that mention Omega Railmaster" = filter on this field).
+- `tags: [...]` — closed-vocab keyword classifier
+  (military / diving / celebrities / space / brand_story / books /
+  anti_magnetic / racing).
+- `audience: [...]` — collector archetype tagging via weighted
+  keyword profiles (vintage_purist / military_collector /
+  tool_watch / dress_watch / independent / movement_nerd /
+  bargain_hunter / brand_specialist_<X> / auction_watcher /
+  flipper_investor).
+- `dates_referenced: [years + decade language]` — historical-period
+  anchors distinct from publication date.
+
+Decoupled from scrapers — new tag / archetype = re-run enrichment
+over existing JSONs in ~1 min. No re-scraping. Cron step lives in
+`scrape-editorial-corpus.yml` after each scraper. Outputs feed
+Reference-page Editorial coverage + listing-card Explore paths.
+
+### Editorial corpus — layer 3 (after the indexer)
+
+**Reference-page "Editorial coverage" section.** One-line filter on
+`references_mentioned` — "show every article mentioning Omega
+Railmaster across all 8 sources". Surfaces on existing per-reference
+pages.
+
+**Listing-card "Explore paths" annotation.** Composite of editorial
+coverage + curated family clusters (`anti_magnetic_50s`,
+`military_issued_divers`, `racing_chronos_60s`, etc.) on
+`docs/watch_references.md`. "This Railmaster belongs to the 1950s
+anti-magnetic arc — read these 4 pieces, then look at Milgauss /
+Geophysic / Ingenieur."
+
 ### Multi-signal taste capture
 
 Beyond binary heart/no-heart, capture calibrated taste signals along
@@ -1569,6 +1634,31 @@ becomes confusion.
 > Epic 0/1/2/5 numbering unchanged. Entries below dated before
 > 2026-05-05 evening reference the pre-restructure scheme.
 
+- 2026-05-19: **Editorial corpus stand-up — Epic 7 layer 1 shipped.**
+  Nineteen PRs (#346–#364). Eight editorial sources scraped end-to-end
+  (Hairspring Finds 1,613, Hodinkee Bring a Loupe 251, Rolex Magazine
+  3,810, On The Dash 205, Bulang Watch Talks 161, Hodinkee Shop
+  2,346, Hodinkee Reference Points 10, A Collected Man Journal 160 —
+  ~4.3M words total). Body-split persistence (`editorial_corpus_io.py`,
+  PR #353) — meta + ~240-char excerpts load eagerly when the
+  Editorial sub-tab opens; bodies lazy-load on first search
+  keystroke. New Editorial sub-tab under Collecting with
+  Listings-pattern filter row + tinted band (PRs #349/#350/#351/#358).
+  View-settings-aware ArticleCard respects cols 3-7 + auto. Dual-
+  track scrapers (Hairspring Finds + Hodinkee Shop) project into
+  Listings > Sold archive via App.js memos — Hodinkee Shop adds
+  ~2,345 records to the sold view with Fine-Print fields (Maker /
+  Reference / Year / Caliber / Material) parsed onto meta records.
+  Plus a Vision Vintage dealer add (#346), an eBay search for
+  Omega 145.016 (#355), the RECOMMENDER_STRATEGY.md doc wired into
+  the doc index (#348), 200+ deep Links promotions across Enicar /
+  TudorSub / Heuer Camaro / Heuer Yachting & Skipper / OnTheDash /
+  Heuer Price Guide / gmtmaster1675 / omegaseamaster300 / omegaploprof
+  / explorer1016 (PRs #354/#356/#361/#363). Two known followups
+  carried to next session: A Collected Man 161-article parser gap
+  (third body template unidentified) and the editorial_index.py
+  build (Epic 7 layer 2). See SESSION_HANDOFF_2026-05-19 for the
+  full PR list + architectural notes.
 - 2026-05-10: **Watch-management user-test cycle + usernames +
   reactions + privacy + image cache + GitHub-URL hide.** 18 PRs
   merged (#168–#185), 4 SQL migrations applied via MCP plus an
