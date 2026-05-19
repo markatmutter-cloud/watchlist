@@ -9,12 +9,16 @@ name: Scrape editorial corpus
 # Cadence: Sunday morning Pacific Time (16:00 UTC). The main
 # listings cron runs at 14/20/02 UTC; this slot avoids overlap.
 #
-# Scope (2026-05-18):
+# Scope (2026-05-19):
 # - bring_a_loupe_scraper.py    → public/bring_a_loupe.json
 #   (Hodinkee column, ~251 articles, sitemap-based URL discovery)
 # - rolex_magazine_scraper.py   → public/rolex_magazine.json
 #   (Jake's Rolex World, ~3,840 posts, Blogger JSON feeds API,
 #   incremental on every cron — stops at most-recently-scraped URL)
+# - onthedash_scraper.py        → public/onthedash.json
+#   (Jeff Stein / On The Dash, ~206 article posts, WordPress REST
+#   API, incremental — stops at most-recently-scraped URL.
+#   Catalogue-shaped /chronograph/ pages explicitly excluded.)
 #
 # Hairspring Finds intentionally NOT included here — it runs in the
 # main listings workflow (scrape-listings.yml) because its records
@@ -70,12 +74,24 @@ jobs:
         continue-on-error: true
         run: python rolex_magazine_scraper.py
 
+      - name: Run On The Dash scraper
+        # WordPress REST API, ~206 article posts (catalogue-shaped
+        # /chronograph/ pages excluded — those don't fit body_text +
+        # word_count). New posts ship ~1×/month so this is wasteful
+        # on a weekly cron in absolute terms, but cheap on incremental
+        # mode (stops at the first known URL — typically a single
+        # request when nothing new has shipped). ONTHEDASH_FULL_REFRESH=1
+        # forces a full walk.
+        continue-on-error: true
+        run: python onthedash_scraper.py
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add public/bring_a_loupe.json public/bring_a_loupe_bodies.json \
-                  public/rolex_magazine.json public/rolex_magazine_bodies.json
+                  public/rolex_magazine.json public/rolex_magazine_bodies.json \
+                  public/onthedash.json public/onthedash_bodies.json
           if git diff --staged --quiet; then
             echo "No changes to commit"
             exit 0
