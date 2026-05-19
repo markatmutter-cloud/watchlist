@@ -33,6 +33,11 @@ name: Scrape editorial corpus
 #   (Hodinkee's flagship per-reference series — ~10 deep-dive
 #   articles totaling ~50K words. Sitemap-based discovery, same
 #   Hodinkee parser as Bring a Loupe.)
+# - acollectedman_journal_scraper.py → public/acollectedman_journal.json
+#   (A Collected Man / London independent + vintage dealer Journal,
+#   ~321 articles. Sitemap-based discovery because Shopify pagination
+#   caps at ~28 on this site. Collector's guides + design-technical
+#   essays + maker interviews.)
 #
 # Hairspring Finds intentionally NOT included here — it runs in the
 # main listings workflow (scrape-listings.yml) because its records
@@ -127,6 +132,17 @@ jobs:
         continue-on-error: true
         run: python hodinkee_reference_points_scraper.py
 
+      - name: Run A Collected Man Journal scraper
+        # Sitemap-based discovery (Shopify blog pagination caps at
+        # ~28 articles even though the full corpus is ~321; switched
+        # to sitemap_blogs_1.xml — same approach as bring_a_loupe).
+        # London-based independent / unusual / vintage dealer; the
+        # Journal carries collector's guides, design-technical essays,
+        # and interviews with makers + collectors. Incremental with
+        # 30-day rolling refresh; full walk ~3 min.
+        continue-on-error: true
+        run: python acollectedman_journal_scraper.py
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
@@ -136,7 +152,8 @@ jobs:
                   public/onthedash.json public/onthedash_bodies.json \
                   public/bulang_watch_talks.json public/bulang_watch_talks_bodies.json \
                   public/hodinkee_shop.json public/hodinkee_shop_bodies.json \
-                  public/hodinkee_reference_points.json public/hodinkee_reference_points_bodies.json
+                  public/hodinkee_reference_points.json public/hodinkee_reference_points_bodies.json \
+                  public/acollectedman_journal.json public/acollectedman_journal_bodies.json
           if git diff --staged --quiet; then
             echo "No changes to commit"
             exit 0
