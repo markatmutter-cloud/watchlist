@@ -89,6 +89,14 @@ const SOURCES = [
     url: "/hodinkee_reference_points.json",
     bodies_url: "/hodinkee_reference_points_bodies.json",
   },
+  {
+    key: "acollectedman_journal",
+    label: "A Collected Man",
+    publication: "A Collected Man",
+    column: "Journal",
+    url: "/acollectedman_journal.json",
+    bodies_url: "/acollectedman_journal_bodies.json",
+  },
 ];
 
 const BRAND_TOP_N = 24;       // Show top N brands in expansion panel; "+more" expander reveals the rest
