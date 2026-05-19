@@ -65,6 +65,14 @@ const SOURCES = [
     url: "/onthedash.json",
     bodies_url: "/onthedash_bodies.json",
   },
+  {
+    key: "bulang_watch_talks",
+    label: "Bulang & Sons Watch Talks",
+    publication: "Bulang & Sons",
+    column: "Watch Talks",
+    url: "/bulang_watch_talks.json",
+    bodies_url: "/bulang_watch_talks_bodies.json",
+  },
 ];
 
 const BRAND_TOP_N = 24;       // Show top N brands in expansion panel; "+more" expander reveals the rest
