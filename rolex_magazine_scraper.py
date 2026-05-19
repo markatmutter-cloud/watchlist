@@ -72,9 +72,12 @@ except ImportError:
         return None
 
 
+from editorial_corpus_io import load_existing as _load_split, write_split, derive_bodies_path
+
 BASE = "https://www.rolexmagazine.com"
 FEED_URL = f"{BASE}/feeds/posts/default?alt=json"
 OUTPUT_JSON = "public/rolex_magazine.json"
+OUTPUT_BODIES = derive_bodies_path(OUTPUT_JSON)
 SOURCE = "rolex_magazine"
 SOURCE_TYPE = "editorial_blog"
 
@@ -236,15 +239,11 @@ def parse_entry(entry: dict) -> dict | None:
     }
 
 
-def load_existing(path: str) -> dict:
-    p = Path(path)
-    if not p.exists():
-        return {}
-    try:
-        return json.loads(p.read_text())
-    except json.JSONDecodeError:
-        print(f"  existing {path} is not valid JSON; starting fresh")
-        return {}
+def load_existing(_path: str) -> dict:
+    """Read the split (meta + bodies) corpus files and stitch body
+    text back onto each record. Legacy single-file fallback handled
+    inside editorial_corpus_io.load_existing."""
+    return _load_split(OUTPUT_JSON, OUTPUT_BODIES)
 
 
 def walk_feed(stop_on_known_url: str | None = None, hard_limit: int | None = None):
@@ -315,12 +314,10 @@ def main():
             print(f"  ... {fetched} fetched ({time.time() - t0:.1f}s)")
     elapsed = time.time() - t0
 
-    Path(OUTPUT_JSON).parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_JSON, "w") as f:
-        json.dump(out, f, indent=2, ensure_ascii=False, sort_keys=True)
+    write_split(out, OUTPUT_JSON, OUTPUT_BODIES)
 
     print(f"\nFetched: {fetched}  Total on disk: {len(out)}  Elapsed: {elapsed:.1f}s")
-    print(f"Wrote {OUTPUT_JSON}")
+    print(f"Wrote {OUTPUT_JSON} + {OUTPUT_BODIES}")
 
 
 if __name__ == "__main__":

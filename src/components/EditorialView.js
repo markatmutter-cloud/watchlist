@@ -27,6 +27,11 @@ import { Chip } from "./Chip";
 // New sources plug in via a one-line addition to the SOURCES array
 // once their JSON lands in public/.
 
+// Per-source manifest. `url` is the metadata file (title / author /
+// date / image / brand / etc.) — loaded eagerly on sub-tab open.
+// `bodies_url` is the {url: body_text} map — loaded lazily on the
+// first search keystroke so the initial render isn't blocked by
+// ~14 MB of prose the user may never search.
 const SOURCES = [
   {
     key: "hairspring_finds",
@@ -34,6 +39,7 @@ const SOURCES = [
     publication: "Hairspring",
     column: "Finds",
     url: "/hairspring_finds.json",
+    bodies_url: "/hairspring_finds_bodies.json",
   },
   {
     key: "hodinkee_bring_a_loupe",
@@ -41,6 +47,7 @@ const SOURCES = [
     publication: "Hodinkee",
     column: "Bring a Loupe",
     url: "/bring_a_loupe.json",
+    bodies_url: "/bring_a_loupe_bodies.json",
   },
   {
     key: "rolex_magazine",
@@ -48,6 +55,7 @@ const SOURCES = [
     publication: "Rolex Magazine",
     column: null,
     url: "/rolex_magazine.json",
+    bodies_url: "/rolex_magazine_bodies.json",
   },
 ];
 
@@ -70,6 +78,13 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
   const [loadError, setLoadError] = useState(false);
   const [articles, setArticles] = useState([]);
 
+  // Bodies map (url → body_text). Loaded LAZILY — first user
+  // keystroke in the search box triggers the fetch. Until then the
+  // search box still works on title + author; body match kicks in
+  // once the bodies arrive.
+  const [bodies, setBodies] = useState(null); // null = not requested yet
+  const [bodiesLoading, setBodiesLoading] = useState(false);
+
   const [search, setSearch] = useState("");
   const [activeSources, setActiveSources] = useState([]); // [] = all
   const [activeBrands, setActiveBrands] = useState([]);    // [] = all
@@ -83,10 +98,9 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
   const [collapsedYears, setCollapsedYears] = useState({});
   const [pageSize, setPageSize] = useState(RESULTS_PAGE_SIZE);
 
-  // Load both corpuses on first mount. ~5 MB total but only loads
-  // when the user opens the Editorial sub-tab. fetchOpts mirrors the
-  // listings pipeline's no-cache pattern so PWA + GitHub raw caching
-  // doesn't serve stale data after a fresh scrape.
+  // Eager fetch of metadata only on first mount — small (~5 MB total
+  // across all sources) so this lands well inside a second on broadband.
+  // The bigger bodies files defer until the user actually searches.
   useEffect(() => {
     let alive = true;
     const fetchOpts = { cache: "no-cache" };
@@ -116,6 +130,38 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
     return () => { alive = false; };
   }, []);
 
+  // Lazy bodies fetch — kicks off on the first search keystroke and
+  // runs once per session. Title + author search works before bodies
+  // arrive; body match enables silently as soon as the fetch lands.
+  useEffect(() => {
+    if (!search.trim()) return;
+    if (bodies !== null || bodiesLoading) return;
+    setBodiesLoading(true);
+    const fetchOpts = { cache: "no-cache" };
+    let alive = true;
+    Promise.all(SOURCES.map(s =>
+      fetch(s.bodies_url, fetchOpts)
+        .then(r => r.ok ? r.json() : {})
+        .catch(() => ({}))
+    )).then(results => {
+      if (!alive) return;
+      const merged = {};
+      results.forEach(data => {
+        Object.entries(data || {}).forEach(([url, body]) => {
+          if (body) merged[url] = body;
+        });
+      });
+      setBodies(merged);
+      setBodiesLoading(false);
+    }).catch(() => {
+      if (alive) {
+        setBodies({});
+        setBodiesLoading(false);
+      }
+    });
+    return () => { alive = false; };
+  }, [search, bodies, bodiesLoading]);
+
   // Source counts (for the expansion-panel chip count badges).
   const sourceCounts = useMemo(() => {
     const out = {};
@@ -135,10 +181,11 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
       .map(([brand, count]) => ({ brand, count }));
   }, [articles]);
 
-  // Apply filters + sort. Free-text search hits title + body_text +
-  // author so body-derived brand/model mentions are reachable today
-  // without the Phase 2 enrichment (typing "Railmaster" finds every
-  // article whose prose names it).
+  // Apply filters + sort. Free-text search hits title + author always;
+  // body match enables silently once the lazy bodies fetch lands. Until
+  // then a search like "Railmaster" matches whichever articles name the
+  // term in their title — once bodies arrive the same query expands to
+  // include every article whose prose mentions it, no re-type needed.
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const sourceSet = activeSources.length ? new Set(activeSources) : null;
@@ -147,8 +194,9 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
       if (sourceSet && !sourceSet.has(a._source.key)) return false;
       if (brandSet && !brandSet.has((a.brand || "").trim())) return false;
       if (q) {
+        const body = bodies ? (bodies[a.url] || "") : "";
         const hay =
-          ((a.title || "") + " " + (a.body_text || "") + " " + (a.author || "")).toLowerCase();
+          ((a.title || "") + " " + body + " " + (a.author || "")).toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -159,7 +207,7 @@ export function EditorialView({ isMobile, cols, compact, gridStyle }) {
       out.sort((a, b) => (a.published_at || "").localeCompare(b.published_at || ""));
     }
     return out;
-  }, [articles, search, activeSources, activeBrands, sort]);
+  }, [articles, bodies, search, activeSources, activeBrands, sort]);
 
   // Lazy page-size reset whenever filters or sort change.
   useEffect(() => {
@@ -460,8 +508,12 @@ function ArticleCard({ article, isMobile, compact, cols }) {
   const veryDense = cols && cols >= 6;
   const excerptLineClamp = veryDense ? 0 : (dense ? 2 : 3);
   const excerptChars = veryDense ? 0 : (dense ? 140 : 220);
+  // `excerpt` lives on the meta record (computed at scrape time by
+  // editorial_corpus_io.write_split). Truncate to the density-aware
+  // char target; the field is already short (~240 chars) so this is
+  // a no-op for the default card and a clean clip on dense layouts.
   const excerpt = excerptChars > 0
-    ? (article.body_text || "").slice(0, excerptChars).trim()
+    ? (article.excerpt || "").slice(0, excerptChars).trim()
     : "";
   const titleFontSize = veryDense ? 12 : (dense ? 13 : 15);
   const metaFontSize = veryDense ? 9 : (dense ? 10 : 11);
