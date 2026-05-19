@@ -1381,11 +1381,12 @@ export default function Watchlist() {
         // and the date-divider headers in Listings > All sold.
         soldAt: data.published_at || data.updated_at || "",
         firstSeen: data.published_at || data.updated_at || "",
-        // Erik's prose. Truncated to 1,500 (matching the merge.py
-        // dealer cap) so the Card render doesn't bleed; the full
-        // text stays in hairspring_finds.json for the future
-        // reference-page reader.
-        desc: (data.body_text || "").slice(0, 1500),
+        // Erik's prose. PR #353 split body_text out into the
+        // lazy-loaded bodies file; the meta record carries `excerpt`
+        // (~240-char teaser computed at scrape time) which is what
+        // the Card render reads. Falls back to body_text for any
+        // legacy single-file records that haven't been migrated.
+        desc: (data.excerpt || data.body_text || "").slice(0, 1500),
       });
     }
     return arr;
