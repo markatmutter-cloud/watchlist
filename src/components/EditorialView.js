@@ -49,7 +49,19 @@ const BRAND_TOP_N = 12;       // Show top N brands as chips; rest under "More"
 const RESULTS_PAGE_SIZE = 24; // Lazy-render in chunks so a 1,860-article
                               // filter doesn't construct 1,860 DOM nodes upfront
 
-export function EditorialView({ isMobile }) {
+export function EditorialView({ isMobile, cols, compact, gridStyle }) {
+  // cols / compact / gridStyle come from App.js's useViewSettings — the
+  // same grid sizing the Listings tab uses. ArticleCard adapts its
+  // typography + excerpt density to `compact` so a 7-col packed grid
+  // still reads cleanly. `gridStyle` carries the user's column choice
+  // verbatim, so settings → cols=7 applies here without per-component
+  // logic.
+  const effectiveCols = cols || (isMobile ? 1 : 3);
+  const articleGridStyle = gridStyle || {
+    display: "grid",
+    gridTemplateColumns: `repeat(${effectiveCols}, minmax(0, 1fr))`,
+    gap: 12,
+  };
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [articles, setArticles] = useState([]);
@@ -320,17 +332,18 @@ export function EditorialView({ isMobile }) {
                 {group.label} <span style={{ fontWeight: 400, color: "var(--text3)" }}>· {group.items.length}</span>
               </button>
               {!collapsed && (
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: isMobile
-                    ? "1fr"
-                    : "repeat(auto-fill, minmax(280px, 1fr))",
-                  gap: 12,
-                  paddingTop: 10,
-                }}>
-                  {group.items.map(a => (
-                    <ArticleCard key={a.url} article={a} isMobile={isMobile} />
-                  ))}
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ ...articleGridStyle, borderRadius: 8, overflow: "hidden" }}>
+                    {group.items.map(a => (
+                      <ArticleCard
+                        key={a.url}
+                        article={a}
+                        isMobile={isMobile}
+                        compact={!!compact}
+                        cols={effectiveCols}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -367,10 +380,23 @@ export function EditorialView({ isMobile }) {
 // excerpt + click-out behaviour.
 // ─────────────────────────────────────────────────────────────────
 
-function ArticleCard({ article, isMobile }) {
+function ArticleCard({ article, isMobile, compact, cols }) {
   const dateStr = formatDate(article.published_at);
   const sourceLabel = article._source.label;
-  const excerpt = (article.body_text || "").slice(0, 220).trim();
+  // Density scaling — at high col counts (5-7), shrink typography and
+  // drop the excerpt entirely so the card stays readable inside a
+  // narrow tile. The `compact` flag from useViewSettings fires
+  // automatically at cols >= 4.
+  const dense = compact || (cols && cols >= 5);
+  const veryDense = cols && cols >= 6;
+  const excerptLineClamp = veryDense ? 0 : (dense ? 2 : 3);
+  const excerptChars = veryDense ? 0 : (dense ? 140 : 220);
+  const excerpt = excerptChars > 0
+    ? (article.body_text || "").slice(0, excerptChars).trim()
+    : "";
+  const titleFontSize = veryDense ? 12 : (dense ? 13 : 15);
+  const metaFontSize = veryDense ? 9 : (dense ? 10 : 11);
+  const padding = dense ? "8px 10px 10px" : "12px 14px 14px";
 
   return (
     <a
@@ -384,7 +410,7 @@ function ArticleCard({ article, isMobile }) {
         color: "inherit",
         background: "var(--surface)",
         border: "0.5px solid var(--border)",
-        borderRadius: 8,
+        borderRadius: dense ? 6 : 8,
         overflow: "hidden",
         cursor: "pointer",
         height: "100%",
@@ -392,7 +418,7 @@ function ArticleCard({ article, isMobile }) {
       {article.image && (
         <div style={{
           width: "100%",
-          aspectRatio: "16 / 10",
+          aspectRatio: veryDense ? "1 / 1" : "16 / 10",
           background: "var(--bg)",
           overflow: "hidden",
         }}>
@@ -408,38 +434,46 @@ function ArticleCard({ article, isMobile }) {
         </div>
       )}
       <div style={{
-        padding: "12px 14px 14px",
-        display: "flex", flexDirection: "column", gap: 6, flex: 1,
+        padding,
+        display: "flex", flexDirection: "column", gap: dense ? 4 : 6, flex: 1,
       }}>
         <div style={{
           display: "flex", justifyContent: "space-between", gap: 8,
-          fontSize: 11, color: "var(--text3)",
+          fontSize: metaFontSize, color: "var(--text3)",
           textTransform: "uppercase", letterSpacing: 0.4,
         }}>
-          <span>{sourceLabel}</span>
-          <span>{dateStr}</span>
+          <span style={{
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>{sourceLabel}</span>
+          <span style={{ flexShrink: 0 }}>{dateStr}</span>
         </div>
         <div style={{
-          fontSize: 15, fontWeight: 600, lineHeight: 1.3,
+          fontSize: titleFontSize, fontWeight: 600, lineHeight: 1.3,
           color: "var(--text1)",
+          display: "-webkit-box",
+          WebkitLineClamp: veryDense ? 3 : (dense ? 3 : 4),
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
         }}>{article.title}</div>
-        {article.author && (
-          <div style={{ fontSize: 12, color: "var(--text2)" }}>
+        {article.author && !veryDense && (
+          <div style={{ fontSize: dense ? 11 : 12, color: "var(--text2)" }}>
             {article.author}
           </div>
         )}
-        {excerpt && (
+        {excerpt && excerptLineClamp > 0 && (
           <div style={{
-            fontSize: 12, color: "var(--text2)", lineHeight: 1.45,
+            fontSize: dense ? 11 : 12, color: "var(--text2)", lineHeight: 1.45,
             display: "-webkit-box",
-            WebkitLineClamp: 3,
+            WebkitLineClamp: excerptLineClamp,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
           }}>{excerpt}…</div>
         )}
-        {article.brand && (
+        {article.brand && !veryDense && (
           <div style={{
-            marginTop: 4, fontSize: 11, color: "var(--text3)",
+            marginTop: dense ? 2 : 4,
+            fontSize: dense ? 10 : 11,
+            color: "var(--text3)",
           }}>
             {article.brand}
           </div>
