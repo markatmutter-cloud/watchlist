@@ -11,6 +11,7 @@ import { ManageListSheet } from "./ManageListSheet";
 import { confirm } from "./ConfirmModal";
 import { WatchDetailSheet } from "./WatchDetailSheet";
 import { ListReviewMode } from "./ListReviewMode";
+import { EditorialView } from "./EditorialView";
 import { fmtUSD, matchesSearch } from "../utils";
 import { actionButton, signInButton } from "../styles";
 import { EmptyState } from "./EmptyState";
@@ -332,6 +333,8 @@ export function CollectionsTab({
         clearPendingChallengeDrill={clearPendingChallengeDrill}
       />
     );
+  } else if (subTab === "editorial") {
+    body = <EditorialView isMobile={compact} />;
   }
 
   return (

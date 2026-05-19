@@ -122,6 +122,22 @@ describe("CollectionsTab render-without-crash", () => {
     }).not.toThrow();
   });
 
+  test("Editorial sub-tab renders without throwing", () => {
+    // EditorialView fetches `/hairspring_finds.json` + `/bring_a_loupe.json`
+    // on mount; jsdom's fetch implementation rejects, the component lands
+    // in the loadError or empty state without throwing. That's the path
+    // we want to keep regression-tested.
+    const origFetch = global.fetch;
+    global.fetch = () => Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
+    try {
+      expect(() => {
+        render(<CollectionsTab {...buildProps({ collectionsSubTab: "editorial" })} />);
+      }).not.toThrow();
+    } finally {
+      global.fetch = origFetch;
+    }
+  });
+
   test("Lists sub-tab drill-in (selected list) renders without throwing", () => {
     // Mark's report 2026-05-07: ListsView crashed with "user is not
     // defined" when navigating into a list. This is the regression
