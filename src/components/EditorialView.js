@@ -73,6 +73,22 @@ const SOURCES = [
     url: "/bulang_watch_talks.json",
     bodies_url: "/bulang_watch_talks_bodies.json",
   },
+  {
+    key: "hodinkee_shop",
+    label: "Hodinkee Shop",
+    publication: "Hodinkee",
+    column: "Shop archive",
+    url: "/hodinkee_shop.json",
+    bodies_url: "/hodinkee_shop_bodies.json",
+  },
+  {
+    key: "hodinkee_reference_points",
+    label: "Reference Points",
+    publication: "Hodinkee",
+    column: "Reference Points",
+    url: "/hodinkee_reference_points.json",
+    bodies_url: "/hodinkee_reference_points_bodies.json",
+  },
 ];
 
 const BRAND_TOP_N = 24;       // Show top N brands in expansion panel; "+more" expander reveals the rest

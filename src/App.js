@@ -80,6 +80,14 @@ const LOUPETHIS_LOTS_URL = "/loupethis_lots.json";
 // more for the commentary and watch background" + "bring these
 // into sold archive ... not just the prose."
 const HAIRSPRING_FINDS_URL = "/hairspring_finds.json";
+// Hodinkee Shop archive — frozen since Feb 2023 (Hodinkee shut the
+// vintage-watch shop). 2,346 products, 99.96% sold. Per-product
+// editorial writeup + structured Fine Print (Maker/Model/Reference/
+// Year/Caliber/Material/Dimensions) in body_html. Dual-track source
+// just like hairspring_finds.json: feeds the editorial corpus AND
+// gets projected into the Sold-archive view via `hodinkeeShopItems`
+// below.
+const HODINKEE_SHOP_URL = "/hodinkee_shop.json";
 // Manually-curated historical sold listings (2026-05-09). Sits next
 // to manual_archive_lots.json conceptually but is shaped like a flat
 // listings.json entry rather than auction-lot data. Each item is a
@@ -223,6 +231,11 @@ export default function Watchlist() {
   // lots so the "Hairspring (Finds)" source label and the
   // article-style click-through stay distinct.
   const [hairspringFindsState, setHairspringFindsState] = useState({});
+  // Hodinkee Shop dealer archive — same dual-track pattern as
+  // hairspringFindsState: feeds the editorial corpus (via Editorial
+  // sub-tab's lazy fetch) AND projects into the Sold-archive view
+  // (via `hodinkeeShopItems` memo below).
+  const [hodinkeeShopState, setHodinkeeShopState] = useState({});
   // Sub-tab inside Watchlist > Auction lots: upcoming vs past.
   // Sub-tab on the Watchlist tab. Three values: "listings" (dealer
   // items you've hearted) or "searches" (saved searches editor). The
@@ -1088,6 +1101,16 @@ export default function Watchlist() {
       .then(r => r.ok ? r.json() : {})
       .then(d => setHairspringFindsState(d && typeof d === "object" ? d : {}))
       .catch(() => {});
+
+    // Hodinkee Shop archive (frozen Feb 2023, ~2,346 sold products).
+    // Same dual-track pattern as Hairspring Finds — the editorial
+    // sub-tab also loads this file lazily on its own, but loading
+    // here lets the Sold-archive projection below see the records
+    // without waiting for the Editorial tab to be opened.
+    fetch(HODINKEE_SHOP_URL, fetchOpts)
+      .then(r => r.ok ? r.json() : {})
+      .then(d => setHodinkeeShopState(d && typeof d === "object" ? d : {}))
+      .catch(() => {});
   }, []);
 
   const c = dark ? {
@@ -1392,12 +1415,59 @@ export default function Watchlist() {
     return arr;
   }, [hairspringFindsState]);
 
+  // Hodinkee Shop archive → listing-shaped projection. Same pattern
+  // as hairspringFindsItems above. The shop closed Feb 2023, so every
+  // record is sold=true. Brand / reference / model / etc. come from
+  // the structured Fine Print fields the scraper parses out of
+  // body_html. Source = "Hodinkee Shop" so it pools as its own
+  // filter chip distinct from Hodinkee editorial (BAL / Reference
+  // Points), which carry source_type=editorial_column and don't
+  // project into the sold archive.
+  const hodinkeeShopItems = useMemo(() => {
+    const arr = [];
+    const records = hodinkeeShopState || {};
+    for (const url of Object.keys(records)) {
+      const data = records[url];
+      if (!data) continue;
+      const price = Number(data.sold_price_usd) || 0;
+      const isSold = data.is_sold !== false;  // default to sold (99.96% are)
+      arr.push({
+        id: shortHash(url),
+        brand: (data.brand || "").trim() || "Other",
+        ref: data.title || "—",
+        price,
+        currency: data.currency || "USD",
+        priceUSD: price,
+        savedPrice: price,
+        savedCurrency: data.currency || "USD",
+        savedPriceUSD: price,
+        source: "Hodinkee Shop",
+        url,
+        img: data.image || "",
+        sold: isSold,
+        _isSold: isSold,
+        reference_no: data.reference_no || null,
+        model: data.model || null,
+        sub_model: data.sub_model || null,
+        model_line: data.model_line || null,
+        // No truthful sold-date — Hodinkee never published one and
+        // Shopify's updated_at is regenerated on cache writes.
+        // published_at is the cleanest sale-window anchor available
+        // (matches the Hairspring Finds compromise).
+        soldAt: data.published_at || data.updated_at || "",
+        firstSeen: data.published_at || data.updated_at || "",
+        desc: (data.excerpt || "").slice(0, 1500),
+      });
+    }
+    return arr;
+  }, [hodinkeeShopState]);
+
   const mainFeedItems = useMemo(() => {
     const hasAdminHide = adminHidden && adminHidden.size > 0;
     const filterAdminHidden = (it) => !adminHidden.has(it.id);
-    const merged = [...items, ...auctionLotItems, ...hairspringFindsItems];
+    const merged = [...items, ...auctionLotItems, ...hairspringFindsItems, ...hodinkeeShopItems];
     return hasAdminHide ? merged.filter(filterAdminHidden) : merged;
-  }, [items, auctionLotItems, hairspringFindsItems, adminHidden]);
+  }, [items, auctionLotItems, hairspringFindsItems, hodinkeeShopItems, adminHidden]);
 
   // Auction-catalog screener queue (Mark spec 2026-05-14): live,
   // non-hidden lots whose parent auction_url matches the selected
@@ -1548,9 +1618,9 @@ export default function Watchlist() {
   // mobile drawer's overflow chip).
   const DEALER_SOURCES = useMemo(
     () => [...new Set(
-      [...items, ...hairspringFindsItems].map(i => i.source).filter(Boolean)
+      [...items, ...hairspringFindsItems, ...hodinkeeShopItems].map(i => i.source).filter(Boolean)
     )].sort(),
-    [items, hairspringFindsItems]
+    [items, hairspringFindsItems, hodinkeeShopItems]
   );
   const AUCTION_SOURCES = useMemo(
     () => [...new Set(auctionLotItems.map(i => i.source).filter(s => s && s !== "—"))].sort(),
