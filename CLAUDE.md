@@ -23,7 +23,7 @@ how to behave for the rest of it.
   reference-page editorial coverage, or any recommender-adjacent
   surface.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
-  The current one is [SESSION_HANDOFF_2026-05-15.md](SESSION_HANDOFF_2026-05-15.md);
+  The current one is [SESSION_HANDOFF_2026-05-19.md](SESSION_HANDOFF_2026-05-19.md);
   older ones live in `archive/`.
 
 If a gotcha or convention is durable (still true next session), graduate
@@ -1191,29 +1191,149 @@ unified corpus at `public/reference_guides.json` keyed by
 
 ## Editorial corpus scrapers
 
-Two editorial sources scraped this session. Same pattern; both feed
-the future reference-corpus + the AdminTab reading view.
+**Eight sources, ~8,556 articles, ~4.3M words at 2026-05-19.**
+Mining the corpus to power Editorial sub-tab browse + per-Reference
+"Editorial coverage" + listing-card "Explore paths" annotations +
+the recommender. See [docs/RECOMMENDER_STRATEGY.md](docs/RECOMMENDER_STRATEGY.md)
+for the strategic shape.
 
-- **`hairspring_finds_scraper.py`** — scrapes hairspring.com/blogs/finds.
-  1,613 articles, $142M cumulative coverage. Output:
-  `public/hairspring_finds.json` keyed by URL. Per-record:
-  title, author, body_text (Erik Gustafson's prose), sold_price_usd
-  (from chrome above the article body — CRITICAL: scoped to
-  `<div class="article-author_social">` to avoid 17+ sidebar
-  thumbnails), case_size, brand + reference-index match.
-  Incremental: re-runs only fetch articles older than 30 days
-  since last-scrape. `HAIRSPRING_FULL_REFRESH=1` to force.
+### Sources
 
-- **`windvintage_guides_scraper.py`** — scrapes windvintage.com/blog.
-  325 posts, 527K words, by Charlie Dunne + Eric Wind. Squarespace
-  `?format=json` endpoint. Per-record: same shape as Hairspring +
-  `post_type` heuristic classifier (collector_guide / whats_selling
-  / photo_report / event / auction_recap / post). 15 formal
-  collector's guides; 185 "What's Selling Here" listicles.
+Surfaces under Collecting > Editorial; some also project into
+Listings > Sold archive (dual-track — see below).
 
-Both scrapers import `auction_lot_parsers.infer_brand` + the
-`reference_index_match` module at scrape time so every record
-carries `brand` + `reference_no` + `model` + `sub_model` + `model_line`.
+| Source | File prefix | Cron | Articles |
+|---|---|---|---|
+| Hairspring Finds | `hairspring_finds` | listings (3×/day, dual-track) | 1,613 |
+| Hodinkee Bring a Loupe | `bring_a_loupe` | editorial (Sun) | 251 |
+| Rolex Magazine | `rolex_magazine` | editorial (Sun) | 3,810 |
+| On The Dash | `onthedash` | editorial (Sun) | 205 |
+| Bulang & Sons Watch Talks | `bulang_watch_talks` | editorial (Sun) | 161 |
+| Hodinkee Shop | `hodinkee_shop` | editorial (Sun, dual-track) | 2,346 |
+| Hodinkee Reference Points | `hodinkee_reference_points` | editorial (Sun) | 10 |
+| A Collected Man Journal | `acollectedman_journal` | editorial (Sun) | 160 |
+
+### Body-split persistence — `editorial_corpus_io.py`
+
+Each source emits TWO files: `public/<source>.json` (meta record +
+~240-char `excerpt`) and `public/<source>_bodies.json` (URL →
+body_text map). Meta loads eagerly when the Editorial sub-tab opens;
+bodies load **lazily** on the first search keystroke. Cut initial
+Editorial-tab page weight 18.7 MB → 6.2 MB at the point of the
+split (PR #353).
+
+**Every new editorial scraper MUST**:
+- `from editorial_corpus_io import load_existing as _load_split, write_split, derive_bodies_path`
+- Read existing data via `_load_split(OUTPUT_JSON, OUTPUT_BODIES)`
+  (it stitches `body_text` back onto records for in-memory work)
+- Write via `write_split(records, OUTPUT_JSON, OUTPUT_BODIES)` —
+  it computes the excerpt + diverts body_text into the bodies file
+- Never reach for `json.load` / `json.dump` on corpus files directly
+
+### Per-record schema
+
+Common shape across all eight sources:
+
+```
+{ url, slug, title, author, published_at, updated_at, image,
+  body_text, word_count, brand, reference_no, model, sub_model,
+  model_line, source, source_type, scraped_at }
+```
+
+Plus source-specific extras: `labels[]` (Rolex Magazine — Blogger
+categories), `sold_price_usd` / `case_size` (Hairspring Finds),
+`is_sold` + Fine-Print fields (`year`, `caliber`, `material`, etc.)
+on Hodinkee Shop. The `excerpt` field is added by `write_split` at
+save time and lives on the meta record only.
+
+### Dual-track scrapers (corpus + Sold archive)
+
+Hairspring Finds and Hodinkee Shop feed **both** the editorial
+corpus AND project into App.js's Sold-archive view. Pattern:
+
+1. Scraper emits the standard editorial-corpus JSON shape (with
+   `sold_price_usd` / `is_sold` populated on records).
+2. App.js declares a `useState` for the source's JSON, eager-fetches
+   it alongside listings.json.
+3. App.js declares a `useMemo` (`hairspringFindsItems`,
+   `hodinkeeShopItems`) that projects records to listings-shape
+   (id from `shortHash(url)`, `sold: true`, brand / ref from the
+   record, `desc` from `excerpt`).
+4. That memo joins `mainFeedItems` alongside `items` +
+   `auctionLotItems`.
+5. `DEALER_SOURCES` includes the projection so the source-chip rail
+   picks it up automatically.
+
+The hodinkeeShopItems projection is the reference shape — mirror it
+for any future editorial source that has per-article price data.
+
+Pure-editorial sources (Bring a Loupe, Rolex Magazine, On The Dash,
+Bulang Watch Talks, Reference Points, ACM) deliberately don't
+project — they have no usable price metadata, and adding them as
+"sold:false" rows would distort the Sold-archive view.
+
+### Per-source body wrappers
+
+Different sites use different body wrappers. Document this when
+adding a new source:
+
+- **Hodinkee** (BAL + Reference Points): `<div class="body-copy ...">`,
+  multiple regions per article, concatenate in source order.
+- **Hairspring**: Shopify blog. Finds = `<div class="rte article_content-html">`;
+  the queued Hairspring Journal = `<div class="rte">` plain (1-line selector change).
+- **Bulang Watch Talks**: Shopify blog, but Bulang's theme has no
+  `rte` class — wrapper is `<div class="article__wrapper container--sm">`.
+- **Rolex Magazine**: Blogger feeds API, `content.$t` directly. No
+  HTML wrapper.
+- **On The Dash**: WordPress REST API, `content.rendered` directly.
+  WP install 500s on `?page>1` at `per_page>=50` — use **offset-based
+  pagination** with `per_page=20`. Also skip-on-500 fallback for a
+  single bad post around offset=100 that breaks JSON serialization.
+- **Hodinkee Shop**: Shopify products.json, `body_html` directly.
+  Fine-Print fields (`Maker: Omega`) regex-parsed onto meta record
+  before tag-stripping.
+- **A Collected Man**: TWO templates mixed — `text-block__content body-1`
+  (older) + `text-block-v2__content` (newer). And likely a third
+  template not yet identified (~50% of articles still fail body
+  extraction — see SESSION_HANDOFF for the open work).
+
+### Discovery: sitemap > pagination when both exist
+
+For the sites where pagination undercounts:
+- **Hodinkee BAL** — `/columns/bring-a-loupe` returns 404; use
+  `sitemap.xml` filtered to `/articles/bring-a-loupe-*`.
+- **Hodinkee Reference Points** — same Hodinkee site, two URL
+  patterns (`/articles/reference-points-*` + legacy
+  `/articles/rolex-*-reference-points`) merged into one filter.
+- **A Collected Man** — `/blogs/journal?page=N` only exposes ~28
+  most-recent articles even though full corpus is ~321 articles.
+  Use `sitemap_blogs_1.xml`.
+
+For the sites where pagination works:
+- Hairspring Finds + Bulang Watch Talks (Shopify `?page=N`)
+- Rolex Magazine (Blogger feed pagination, advance by actual entries
+  returned — `max-results` is silently capped)
+- On The Dash (WP REST `offset`)
+- Hodinkee Shop (Shopify products.json `?page=N`)
+
+### Workflow
+
+`.github/workflows/scrape-editorial-corpus.yml` — Sunday 16:00 UTC
+weekly cron, one step per source (except Hairspring Finds which
+runs in the daily listings cron because it dual-tracks the Sold
+archive and needs daily refresh).
+
+Each scraper is `continue-on-error: true` so one breakage doesn't
+kill the batch. The final commit step `git add`s every
+`public/*.json` and `public/*_bodies.json` belonging to this
+workflow's scrapers.
+
+Adding a new source: write the scraper (~150 lines, copy-paste the
+closest existing template), add a workflow step, add a line to the
+`git add` list in the commit step, add a one-line entry to
+`SOURCES` in `src/components/EditorialView.js`. No other surface
+wiring required — the filter strip picks up new sources by their
+manifest entry.
 
 ## Tests
 
