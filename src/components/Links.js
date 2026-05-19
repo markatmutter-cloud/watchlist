@@ -133,8 +133,40 @@ const REFERENCE_SECTIONS = [
     title: "Rolex GMT 1675",
     links: [
       "https://millenarywatches.com/gmt-master-1675/",
-      "https://gmtmaster1675.com/",
       "https://www.hodinkee.com/articles/rolex-gmt-master-reference-points",
+      // gmtmaster1675.com — promoted from home bookmark to deep
+      // per-dial-mark + per-component cluster. WordPress reference
+      // site by t_swiss_t, no dates / authors — Links-only treatment.
+      { url: "https://gmtmaster1675.com/",                    name: "gmtmaster1675 — home" },
+      { url: "https://gmtmaster1675.com/gmthistory/",         name: "gmtmaster1675 — GMT history" },
+      { url: "https://gmtmaster1675.com/dial-catalogue/",     name: "gmtmaster1675 — dial catalogue (index)" },
+      // Dial marks (the core taxonomy)
+      { url: "https://gmtmaster1675.com/mark-0/",             name: "gmtmaster1675 — Mark 0" },
+      { url: "https://gmtmaster1675.com/mark-1/",             name: "gmtmaster1675 — Mark 1" },
+      { url: "https://gmtmaster1675.com/mark-1-5/",           name: "gmtmaster1675 — Mark 1.5" },
+      { url: "https://gmtmaster1675.com/mark-2/",             name: "gmtmaster1675 — Mark 2" },
+      { url: "https://gmtmaster1675.com/mark-2-5/",           name: "gmtmaster1675 — Mark 2.5" },
+      { url: "https://gmtmaster1675.com/mark-3/",             name: "gmtmaster1675 — Mark 3" },
+      { url: "https://gmtmaster1675.com/mark-4/",             name: "gmtmaster1675 — Mark 4" },
+      { url: "https://gmtmaster1675.com/mark-5/",             name: "gmtmaster1675 — Mark 5" },
+      { url: "https://gmtmaster1675.com/mark-6/",             name: "gmtmaster1675 — Mark 6" },
+      // Dial categories
+      { url: "https://gmtmaster1675.com/gilt-dials/",         name: "gmtmaster1675 — gilt dials" },
+      { url: "https://gmtmaster1675.com/matte-dials/",        name: "gmtmaster1675 — matte dials" },
+      { url: "https://gmtmaster1675.com/chapter-ring/",       name: "gmtmaster1675 — chapter-ring dials" },
+      { url: "https://gmtmaster1675.com/non-chapter-ring/",   name: "gmtmaster1675 — non-chapter-ring dials" },
+      { url: "https://gmtmaster1675.com/brown-dials/",        name: "gmtmaster1675 — brown dials (two-tone / gold)" },
+      // Bezel insert types
+      { url: "https://gmtmaster1675.com/type-a/",             name: "gmtmaster1675 — bezel type A" },
+      { url: "https://gmtmaster1675.com/type-b/",             name: "gmtmaster1675 — bezel type B" },
+      { url: "https://gmtmaster1675.com/type-c/",             name: "gmtmaster1675 — bezel type C" },
+      // Components
+      { url: "https://gmtmaster1675.com/the-bezel/",          name: "gmtmaster1675 — bezel" },
+      { url: "https://gmtmaster1675.com/the-case/",           name: "gmtmaster1675 — case" },
+      { url: "https://gmtmaster1675.com/the-bracelet/",       name: "gmtmaster1675 — bracelet" },
+      { url: "https://gmtmaster1675.com/the-movement/",       name: "gmtmaster1675 — movement" },
+      { url: "https://gmtmaster1675.com/the-hands/",          name: "gmtmaster1675 — hands" },
+      { url: "https://gmtmaster1675.com/the-date-wheel/",     name: "gmtmaster1675 — date wheel" },
     ],
   },
   {
@@ -167,17 +199,87 @@ const REFERENCE_SECTIONS = [
   {
     title: "Omega Seamaster 300",
     links: [
-      "https://www.omegaploprof.com/",
-      "https://www.omegaseamaster300.com/",
       "https://www.watchgecko.com/blogs/magazine/is-this-watch-fake-the-story-of-the-watchco-omega-seamaster",
       "https://omegaforums.net/threads/opinions-on-seamaster-165-024-please.157000/",
       "https://www.fratellowatches.com/vintage-omega-seamaster-300-reference-165-024/",
+      // omegaseamaster300.com — promoted from home bookmark to deep
+      // anchor cluster. Single-author scholarly guide by Stuart
+      // Solomons (Omega Passion). One WordPress page with 16 anchor
+      // sections — no dates / authors on the sections, Links-only
+      // treatment. 2,748 words across the body, 89 reference images.
+      { url: "https://www.omegaseamaster300.com/",            name: "omegaseamaster300 — home (Stuart Solomons' guide)" },
+      { url: "https://www.omegaseamaster300.com/#history",    name: "omegaseamaster300 — history" },
+      { url: "https://www.omegaseamaster300.com/#comex",      name: "omegaseamaster300 — COMEX variants" },
+      { url: "https://www.omegaseamaster300.com/#bezels",     name: "omegaseamaster300 — bezel reference" },
+      { url: "https://www.omegaseamaster300.com/#bracelets",  name: "omegaseamaster300 — bracelets & end links" },
+      { url: "https://www.omegaseamaster300.com/#crown",      name: "omegaseamaster300 — crown / Naiad" },
+      { url: "https://www.omegaseamaster300.com/#case",       name: "omegaseamaster300 — case & case backs (incl. fake detection)" },
+      { url: "https://www.omegaseamaster300.com/#dials",      name: "omegaseamaster300 — dials (incl. fake dial guide)" },
+      { url: "https://www.omegaseamaster300.com/#hands",      name: "omegaseamaster300 — hands" },
+      { url: "https://www.omegaseamaster300.com/#movement",   name: "omegaseamaster300 — movement evolution (CK 14755 → 166.034)" },
+      { url: "https://www.omegaseamaster300.com/#price",      name: "omegaseamaster300 — price & value tiers" },
+      { url: "https://www.omegaseamaster300.com/#catalogues", name: "omegaseamaster300 — catalogues archive" },
     ],
   },
   {
+    // Omega Seamaster 600 'Ploprof' (ref. 166.077) — separate watch
+    // from the Seamaster 300; warrants its own reference section.
+    // Single-author monograph by Stuart Solomons (Omega Passion).
+    // 3,600 words across the body across 17 deep-linkable anchor
+    // sections + one standalone /new-record/ post.
+    title: "Omega Seamaster 600 'Ploprof'",
+    links: [
+      { url: "https://www.omegaploprof.com/",            name: "omegaploprof — home (Stuart Solomons' monograph)" },
+      { url: "https://www.omegaploprof.com/#history",    name: "omegaploprof — history & chronology" },
+      { url: "https://www.omegaploprof.com/#prototypes", name: "omegaploprof — prototypes" },
+      { url: "https://www.omegaploprof.com/#bezels",     name: "omegaploprof — bezels" },
+      { url: "https://www.omegaploprof.com/#case",       name: "omegaploprof — case" },
+      { url: "https://www.omegaploprof.com/#crown",      name: "omegaploprof — crown (deepest section, 1,100w)" },
+      { url: "https://www.omegaploprof.com/#comex",      name: "omegaploprof — COMEX history & invalid assumptions" },
+      { url: "https://www.omegaploprof.com/#dials",      name: "omegaploprof — dials" },
+      { url: "https://www.omegaploprof.com/#hands",      name: "omegaploprof — hands" },
+      { url: "https://www.omegaploprof.com/#movement",   name: "omegaploprof — Cal. 1002 movement" },
+      { url: "https://www.omegaploprof.com/#catalogues", name: "omegaploprof — period catalogues" },
+      { url: "https://www.omegaploprof.com/#production", name: "omegaploprof — production years" },
+      { url: "https://www.omegaploprof.com/#value",      name: "omegaploprof — value guide" },
+      { url: "https://www.omegaploprof.com/new-record/", name: "omegaploprof — 2020 record auction note" },
+    ],
+  },
+  {
+    // explorer1016.com — promoted from home bookmark to deep
+    // per-dial-mark + per-component cluster. WordPress.com reference
+    // site, no dates / authors — Links-only treatment.
     title: "Rolex Explorer 1016",
     links: [
-      "https://explorer1016.com/",
+      { url: "https://explorer1016.com/",                          name: "explorer1016 — home" },
+      { url: "https://explorer1016.com/history/",                  name: "explorer1016 — history" },
+      { url: "https://explorer1016.com/dial-catalogue/",           name: "explorer1016 — dial catalogue (index)" },
+      // Matte dials (7)
+      { url: "https://explorer1016.com/matte/",                    name: "explorer1016 — matte dials hub" },
+      { url: "https://explorer1016.com/matte/mark-0/",             name: "explorer1016 — matte Mark 0" },
+      { url: "https://explorer1016.com/matte/mark-1/",             name: "explorer1016 — matte Mark 1" },
+      { url: "https://explorer1016.com/matte/mark-2/",             name: "explorer1016 — matte Mark 2" },
+      { url: "https://explorer1016.com/matte/mark-3/",             name: "explorer1016 — matte Mark 3" },
+      { url: "https://explorer1016.com/matte/mark-4/",             name: "explorer1016 — matte Mark 4" },
+      { url: "https://explorer1016.com/mark-5/",                   name: "explorer1016 — matte Mark 5" },
+      { url: "https://explorer1016.com/matte/special-dials/",      name: "explorer1016 — matte special dials" },
+      { url: "https://explorer1016.com/matte/service-dials/",      name: "explorer1016 — matte service dials" },
+      // Gilt dials (8)
+      { url: "https://explorer1016.com/gilt/",                     name: "explorer1016 — gilt dials hub" },
+      { url: "https://explorer1016.com/gilt/chapter-ring/",        name: "explorer1016 — gilt chapter-ring" },
+      { url: "https://explorer1016.com/gilt/chapter-ring/mark-0-occ/", name: "explorer1016 — gilt CR Mark 0 (OCC)" },
+      { url: "https://explorer1016.com/gilt/chapter-ring/mark-1/", name: "explorer1016 — gilt CR Mark 1" },
+      { url: "https://explorer1016.com/gilt/chapter-ring/mark-2/", name: "explorer1016 — gilt CR Mark 2" },
+      { url: "https://explorer1016.com/gilt/chapter-ring/mark-3/", name: "explorer1016 — gilt CR Mark 3" },
+      { url: "https://explorer1016.com/gilt/non-chapter-ring/",    name: "explorer1016 — gilt non-chapter-ring" },
+      { url: "https://explorer1016.com/gilt/non-chapter-ring/mark-4/", name: "explorer1016 — gilt non-CR Mark 4" },
+      { url: "https://explorer1016.com/gilt/non-chapter-ring/mark-5/", name: "explorer1016 — gilt non-CR Mark 5" },
+      { url: "https://explorer1016.com/gilt/non-chapter-ring/mark-6/", name: "explorer1016 — gilt non-CR Mark 6" },
+      // Components
+      { url: "https://explorer1016.com/components/case/",          name: "explorer1016 — case reference" },
+      { url: "https://explorer1016.com/components/movement/",      name: "explorer1016 — movement reference" },
+      { url: "https://explorer1016.com/components/hands/",         name: "explorer1016 — hands reference" },
+      { url: "https://explorer1016.com/bracelet/",                 name: "explorer1016 — bracelet reference" },
     ],
   },
   {
