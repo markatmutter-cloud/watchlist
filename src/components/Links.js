@@ -53,6 +53,53 @@ const TOPIC_SECTIONS = [
       "https://www.screwdowncrown.com/",
       "https://www.thefourthwheel.co.uk/",
       "https://monochrome-watches.com/",
+      {
+        url: "https://www.heuerpriceguide.com/heuervintage-blog",
+        name: "Heuer Price Guide — Vintage Heuer blog",
+      },
+    ],
+  },
+  {
+    // Price Guides — distinct genre from editorial. Curated tables
+    // covering specific Heuer model families with private/retail
+    // pricing across condition tiers. The full corpus of HEUER
+    // editorial blog posts lives in the Editorial corpus (Collecting >
+    // Editorial sub-tab); the tables here are flat-page reference
+    // material and live as bookmarks.
+    title: "Price Guides",
+    links: [
+      {
+        url: "https://www.heuerpriceguide.com/price-guide",
+        name: "Vintage Heuer Price Guide — index",
+      },
+      {
+        url: "https://www.heuerpriceguide.com/carrera-1960s-price-guide",
+        name: "Heuer Carrera 1963–85 — refs 2447S/N/SF/SD/ST, 3647, 3147, 2547, 7753, 1153, 1158, 73353, 73653",
+      },
+      {
+        url: "https://www.heuerpriceguide.com/carrera-1970s---cushion-case",
+        name: "Heuer Carrera 1970s cushion case — refs 1153, 1158, 73653",
+      },
+      {
+        url: "https://www.heuerpriceguide.com/autavia-1960s-price-guide",
+        name: "Heuer Autavia 1960s — refs 2446, 3646, 2446c, 7763c, 7863c (+ Skipper, Seafarer, Mareographe)",
+      },
+      {
+        url: "https://www.heuerpriceguide.com/autavia-70-80s-price-guide",
+        name: "Heuer Autavia 70s/80s — refs 1163, 1563, 11063, 11630, 73363, 73463, 73663, 1564/15640",
+      },
+      {
+        url: "https://www.heuerpriceguide.com/autavia-compressor-case",
+        name: "Heuer Autavia compressor case — refs 2446c, 7763c, 7863c",
+      },
+      {
+        url: "https://www.heuerpriceguide.com/heuer-monaco-price-guide",
+        name: "Heuer Monaco — refs 1133B/G, 1533B/G, 73633B/G, 740303",
+      },
+      {
+        url: "https://www.heuerpriceguide.com/vintage-heuer-rarity",
+        name: "Vintage Heuer — production & rarity",
+      },
     ],
   },
   {
@@ -140,6 +187,59 @@ const REFERENCE_SECTIONS = [
       "https://www.swisswatchexpo.com/thewatchclub/2018/07/12/daytona-and-carrera-more-alike-than-you-know/",
       "https://heuerville.wordpress.com/%E2%96%BA-the-history-of-heuer/",
       "https://www.heuerpriceguide.com/heuer-collector-books",
+      {
+        url: "https://www.heuerchrono.com",
+        name: "Heuerchrono — vintage yachting chronograph reference",
+      },
+      {
+        url: "https://www.heuerchrono.com/heuer-skipper/heuer-skipper-grid/",
+        name: "Heuerchrono — Skipper grid (refs 7754, 7764, 73464, 1564/15640)",
+      },
+      {
+        url: "https://www.heuerchrono.com/heuer-skipper/the-story-of-the-heuer-skipper/",
+        name: "Heuerchrono — story of the Heuer Skipper",
+      },
+      {
+        url: "https://www.heuerchrono.com/heuer-skipper/wrong-vs-right-about-genuine-parts/",
+        name: "Heuerchrono — Skipper authenticity guide",
+      },
+      {
+        url: "https://www.heuercamaro.com",
+        name: "Heuer Camaro — reference site",
+      },
+      {
+        url: "https://www.heuercamaro.com/models",
+        name: "Heuer Camaro — models (refs 7220, 7228, 9220, 7743, 7843, 73x43/45)",
+      },
+    ],
+  },
+  {
+    title: "Enicar",
+    links: [
+      {
+        url: "https://enicar101.com",
+        name: "Enicar 101 — home",
+      },
+      {
+        url: "https://enicar101.com/serial-reference/",
+        name: "Enicar 101 — serial reference database",
+      },
+      {
+        url: "https://enicar101.com/sherpa-graph/",
+        name: "Enicar 101 — Sherpa Graph (MK Ia–IV)",
+      },
+      {
+        url: "https://enicar101.com/aqua-graph/",
+        name: "Enicar 101 — Aqua Graph (MK Ia–IV)",
+      },
+      {
+        url: "https://enicar101.com/jet-graph/",
+        name: "Enicar 101 — Jet Graph (MK Ia–IV)",
+      },
+      {
+        url: "https://enicar101.com/sherpa-ultradive/",
+        name: "Enicar 101 — Sherpa Ultradive & OPS",
+      },
     ],
   },
 ];
