@@ -57,6 +57,14 @@ const SOURCES = [
     url: "/rolex_magazine.json",
     bodies_url: "/rolex_magazine_bodies.json",
   },
+  {
+    key: "onthedash",
+    label: "On The Dash",
+    publication: "On The Dash",
+    column: null,
+    url: "/onthedash.json",
+    bodies_url: "/onthedash_bodies.json",
+  },
 ];
 
 const BRAND_TOP_N = 24;       // Show top N brands in expansion panel; "+more" expander reveals the rest
