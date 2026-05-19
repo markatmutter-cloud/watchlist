@@ -1202,6 +1202,8 @@ or Mac mini local LLM (Epic 0).
 
 ## Epic 7: Discovery & recommender
 
+**Strategy doc:** [docs/RECOMMENDER_STRATEGY.md](docs/RECOMMENDER_STRATEGY.md)
+
 Serves **job-#7 (discovery / recommender)**. Expand the user's
 awareness beyond what they already know. Obscurity is relative to
 the user's browsing pattern, not absolute — what's obscure for a
@@ -1211,6 +1213,18 @@ This epic is enabled by — and only meaningful after — Epics 3
 (watchlist data), 6 (taste-rich watchbox data), and 8 (engagement
 data). Depth-first ordering: don't ship a recommender until the
 inputs are rich.
+
+The strategy doc reframes the recommender around three layers:
+**reference knowledge** (the factual + relational base), **collector
+mentality** (the missing middle — why someone is paying attention),
+and **recommendation** (where attention should go next). It introduces
+seven recommendation modes (safe / adjacent / bridge / deep cut /
+surprise / counterpoint / restraint), probabilistic collector-arc
+inference (vs static personas), and the editorial corpus as a
+first-class recommender input. Read the doc when working on any
+recommender-adjacent surface — editorial scrapers, the editorial
+index pipeline, reference-page coverage, or the "explore paths"
+listing-card annotation.
 
 ### Multi-signal taste capture
 

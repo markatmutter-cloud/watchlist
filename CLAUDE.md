@@ -11,6 +11,17 @@ how to behave for the rest of it.
 - [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) — color tokens, style tokens
   (`src/styles.js`), reusable components (`src/components/`), and
   reach-for-this-first rules. Read this when doing UI work.
+- [docs/REFERENCE_INTELLIGENCE.md](docs/REFERENCE_INTELLIGENCE.md) —
+  Epic 0 (references as first-class entities) + Epic 5 (encyclopedia)
+  strategy. Read when working on the reference index, dealer-description
+  enrichment, or per-reference research surfaces.
+- [docs/RECOMMENDER_STRATEGY.md](docs/RECOMMENDER_STRATEGY.md) —
+  Epic 7 strategy. Three-layer model (reference knowledge / collector
+  mentality / recommendation), seven recommendation modes, probabilistic
+  collector arcs, editorial corpus as recommender input. Read when
+  working on editorial scrapers, the editorial index pipeline,
+  reference-page editorial coverage, or any recommender-adjacent
+  surface.
 - `SESSION_HANDOFF_*.md` — in-flight snapshot per session. **Not durable.**
   The current one is [SESSION_HANDOFF_2026-05-15.md](SESSION_HANDOFF_2026-05-15.md);
   older ones live in `archive/`.
