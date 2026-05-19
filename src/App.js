@@ -251,7 +251,7 @@ export default function Watchlist() {
   // picks WatchlistTab for the watchlist-style subs and CollectionsTab
   // for the collections-style subs.
   const SUB_VALUES_WATCHLIST = ["listings", "auctions", "sold", "searches"];
-  const SUB_VALUES_COLLECTIONS = ["my-collection", "wishlist", "lists", "challenges", "editorial"];
+  const SUB_VALUES_COLLECTIONS = ["my-collection", "wishlist", "lists", "challenges"];
   const SUB_VALUES = [...SUB_VALUES_WATCHLIST, ...SUB_VALUES_COLLECTIONS];
   // Bundle 2A.2b (2026-05-08) — the three hearted sub-tabs
   // (listings/auctions/sold) collapse under a single "Saved" pill in
@@ -372,6 +372,41 @@ export default function Watchlist() {
   const COLLECTIONS_SUB_VALUES = SUB_VALUES_COLLECTIONS;
   const collectionsSubTab = watchTopTab;
   const setCollectionsSubTab = setWatchTopTab;
+  // Collecting (internal `references`) tab sub-tabs (2026-05-18).
+  // Restructured from a resource-button list landing into a proper
+  // sub-tab strip mirroring the Listings tab shape. Mark spec
+  // 2026-05-18: the editorial corpus belongs alongside the other
+  // collecting resources (Size comparison, Links) — not under
+  // Watchlists. Sub-tab values:
+  //   editorial — Hairspring Finds + Bring a Loupe + more editorial
+  //               sources, card grid with filter/sort/search.
+  //   size      — Watch size comparison (Calibrated 1:1 ruler).
+  //   links     — Outbound link clusters per dealer + reference.
+  // URL key: `?tab=learn&sub=<value>`. localStorage:
+  // `dial_references_sub_tab`. Default = "editorial" (new headline
+  // surface).
+  const REFERENCES_SUB_VALUES = ["editorial", "size", "links"];
+  const [referencesSubTab, setReferencesSubTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tParam = params.get("tab");
+      const sub = params.get("sub");
+      if ((tParam === "learn" || tParam === "references") &&
+          REFERENCES_SUB_VALUES.includes(sub)) {
+        return sub;
+      }
+    }
+    try {
+      const v = localStorage.getItem("dial_references_sub_tab");
+      return REFERENCES_SUB_VALUES.includes(v) ? v : "editorial";
+    } catch { return "editorial"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("dial_references_sub_tab", referencesSubTab); } catch {}
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" });
+    const desktopMain = document.querySelector("[data-desktop-main]");
+    if (desktopMain) desktopMain.scrollTop = 0;
+  }, [referencesSubTab]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   // Main tab. Same URL-first init as watchTopTab — refresh on
@@ -502,6 +537,8 @@ export default function Watchlist() {
       params.set("sub", listingsSubTab);
     } else if (tab === "watchlist" && watchTopTab !== "lists") {
       params.set("sub", watchTopTab);
+    } else if (tab === "references" && referencesSubTab !== "editorial") {
+      params.set("sub", referencesSubTab);
     } else {
       params.delete("sub");
     }
@@ -569,6 +606,8 @@ export default function Watchlist() {
         const norm = (v) => (v === "calendar") ? "listings" : v;
         const w = norm(sub);
         setWatchTopTab(SUB_VALUES.includes(w) ? w : "lists");
+      } else if (nextTab === "references") {
+        setReferencesSubTab(REFERENCES_SUB_VALUES.includes(sub) ? sub : "editorial");
       }
       // Lists drill-in (`?col=…`) is owned by CollectionsTab —
       // it has its own popstate handler / URL-derived effect.
@@ -773,6 +812,7 @@ export default function Watchlist() {
     // tapping Watchlists from another tab. Now lands on Lists.
     if (newTab === "listings") setListingsSubTab("live");
     else if (newTab === "watchlist") setWatchTopTab("lists");
+    else if (newTab === "references") setReferencesSubTab("editorial");
     setTab(newTab);
   };
 
@@ -3073,6 +3113,12 @@ export default function Watchlist() {
       signInWithGoogle={triggerSignInPrompt}
       allListings={items}
       tabResetTick={tab === "references" ? tabResetTick : 0}
+      subTab={referencesSubTab}
+      setSubTab={setReferencesSubTab}
+      cols={cols}
+      compact={compact}
+      gridStyle={gridStyle}
+      isMobile={isMobile}
     />
   );
 
@@ -3241,7 +3287,6 @@ export default function Watchlist() {
         ["lists",      "Lists"],
         ["searches",   "Searches"],
         ["challenges", "Challenges"],
-        ["editorial",  "Editorial"],
       ].map(([key, label]) => {
         const active = watchTopTab === key;
         return (
