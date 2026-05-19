@@ -8,6 +8,10 @@
     "query": "heuer autavia gmt"
   },
   {
+    "label": "Omega 145.016",
+    "query": "Omega 145.016"
+  },
+  {
     "_note": "Seller-only example (filtered out at runtime). Add real sellers like { 'label': 'Wind Vintage on eBay', 'seller': 'windvintage' } — when seller is set without a query, the scraper pulls that seller's full Wristwatches inventory. Combine seller + query to filter that seller's listings by keyword. country still applies.",
     "label": "Example seller — REPLACE OR REMOVE",
     "seller": "<ebay_username>",
