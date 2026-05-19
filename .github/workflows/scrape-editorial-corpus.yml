@@ -19,6 +19,11 @@ name: Scrape editorial corpus
 #   (Jeff Stein / On The Dash, ~206 article posts, WordPress REST
 #   API, incremental — stops at most-recently-scraped URL.
 #   Catalogue-shaped /chronograph/ pages explicitly excluded.)
+# - bulangandsons_watch_talks_scraper.py → public/bulang_watch_talks.json
+#   (Bulang & Sons editorial blog, ~166 articles, Shopify blog
+#   pagination. Editorial-only: feeds the corpus, NOT the Sold-
+#   archive view — the Bulang dealer inventory has its own scraper
+#   in the listings cron.)
 #
 # Hairspring Finds intentionally NOT included here — it runs in the
 # main listings workflow (scrape-listings.yml) because its records
@@ -85,13 +90,23 @@ jobs:
         continue-on-error: true
         run: python onthedash_scraper.py
 
+      - name: Run Bulang & Sons Watch Talks scraper
+        # Shopify blog, ~166 articles (the dealer's editorial blog,
+        # not the inventory). Incremental — re-fetches missing
+        # entries + the rolling 30-day refresh window. Full walk
+        # takes ~2 min; typical weekly run is sub-minute (no new
+        # posts most weeks).
+        continue-on-error: true
+        run: python bulangandsons_watch_talks_scraper.py
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add public/bring_a_loupe.json public/bring_a_loupe_bodies.json \
                   public/rolex_magazine.json public/rolex_magazine_bodies.json \
-                  public/onthedash.json public/onthedash_bodies.json
+                  public/onthedash.json public/onthedash_bodies.json \
+                  public/bulang_watch_talks.json public/bulang_watch_talks_bodies.json
           if git diff --staged --quiet; then
             echo "No changes to commit"
             exit 0
