@@ -142,12 +142,26 @@ const REFERENCE_SECTIONS = [
     links: [
       "https://bazamu.com/tudor-submariner-ref-7021-0-2/",
       "https://www.tudorwatch.com/en/inside-tudor/history/tudor-history-submariners-1969-to-1999",
-      "https://www.tudorsub.com/",
       "https://tudorcollector.com/the-collection/",
       "https://www.rescapement.com/blog/tudor-submariner-a-brief-history",
       "https://revolutionwatch.com/the-tudor-milsub-part-i-2/",
       "https://revolutionwatch.com/the-tudor-milsub-part-ii-2/",
       "https://bulangandsons.com/blogs/watch-talks/tudor-and-the-french-navy-a-quarter-of-a-century-of-collaboration",
+      // TudorSub — promoted from the home-page bookmark to a full
+      // per-reference cluster. The site is the canonical Tudor
+      // Submariner reference on the open web; agent enumerated 10
+      // deep pages with prose (~1k-2k words each on the main refs).
+      { url: "https://www.tudorsub.com/tudorsubmariner7922/23/24",  name: "TudorSub — refs 7922 / 7923 / 7924" },
+      { url: "https://www.tudorsub.com/tudorsubmariner7928",         name: "TudorSub — ref 7928" },
+      { url: "https://www.tudorsub.com/tudorsubmariner7016/7021",    name: "TudorSub — refs 7016/0 + 7021/0" },
+      { url: "https://www.tudorsub.com/tudorsubmariner94010/94110",  name: "TudorSub — 94 series (94010 / 94110)" },
+      { url: "https://www.tudorsub.com/tudorsubmariner76100",        name: "TudorSub — ref 76100" },
+      { url: "https://www.tudorsub.com/tudorsubmariner79090",        name: "TudorSub — ref 79090" },
+      { url: "https://www.tudorsub.com/tudorsubmarinermilitary",     name: "TudorSub — military issue overview" },
+      { url: "https://www.tudorsub.com/the-rcn",                     name: "TudorSub — Tudor & the Royal Canadian Navy" },
+      { url: "https://www.tudorsub.com/movement",                    name: "TudorSub — movements reference" },
+      { url: "https://www.tudorsub.com/bracelet",                    name: "TudorSub — bracelets reference" },
+      { url: "https://www.tudorsub.com/tudorsubserialguide",         name: "TudorSub — serial number guide" },
     ],
   },
   {
@@ -236,6 +250,26 @@ const REFERENCE_SECTIONS = [
         url: "https://www.heuerpriceguide.com/heuer-parts-for-sale",
         name: "Heuer Price Guide — vintage Heuer parts catalog",
       },
+      // On The Dash (Jeff Stein) — THE canonical Heuer reference on
+      // the open web, online since 2003. Master Reference is the
+      // single most-cited Heuer index page. Per-family hubs link to
+      // the per-reference catalogue pages.
+      {
+        url: "https://www.onthedash.com/master-reference/",
+        name: "On The Dash — Heuer Master Reference (the canonical index)",
+      },
+      {
+        url: "https://www.onthedash.com/watches/carrera/",
+        name: "On The Dash — Carrera hub",
+      },
+      {
+        url: "https://www.onthedash.com/watches/autavia/",
+        name: "On The Dash — Autavia hub",
+      },
+      {
+        url: "https://www.onthedash.com/watches/monaco/",
+        name: "On The Dash — Monaco hub",
+      },
     ],
   },
   {
@@ -260,6 +294,7 @@ const REFERENCE_SECTIONS = [
       { url: "https://www.heuercamaro.com/models/73443-dato",              name: "Camaro Ref. 73443 Dato" },
       { url: "https://www.heuercamaro.com/models/73445-dato-gold-plated",  name: "Camaro Ref. 73445 Dato — gold-plated" },
       { url: "https://www.heuercamaro.com/otherco-brands",                 name: "Camaro — other-brand reissues + co-brands + distributor variants" },
+      { url: "https://www.onthedash.com/watches/camaro/",                  name: "On The Dash — Camaro hub" },
     ],
   },
   {
@@ -290,6 +325,7 @@ const REFERENCE_SECTIONS = [
       { url: "https://www.heuerchrono.com/heuer-yacht-timers/",                                          name: "Heuer Yacht Timer stopwatches" },
       // Other-brand yachting hub
       { url: "https://www.heuerchrono.com/vintage-yachting-watches/colored-segment-subdials-for-using-as-regatta-yachting-watches/", name: "Other vintage yachting brands — segment-subdial overview" },
+      { url: "https://www.onthedash.com/watches/skipper/",                                                name: "On The Dash — Skipper hub" },
     ],
   },
   // Enicar 101 — split into six clusters because the site is deep
