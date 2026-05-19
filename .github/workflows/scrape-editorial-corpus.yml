@@ -24,6 +24,15 @@ name: Scrape editorial corpus
 #   pagination. Editorial-only: feeds the corpus, NOT the Sold-
 #   archive view — the Bulang dealer inventory has its own scraper
 #   in the listings cron.)
+# - hodinkee_shop_scraper.py    → public/hodinkee_shop.json
+#   (Hodinkee Shop vintage archive, ~2,346 sold products, Shopify
+#   products.json API. Frozen since Feb 2023. Dual-track: feeds
+#   editorial corpus AND projects into App.js's Sold-archive view
+#   via `hodinkeeShopItems` — same pattern as Hairspring Finds.)
+# - hodinkee_reference_points_scraper.py → public/hodinkee_reference_points.json
+#   (Hodinkee's flagship per-reference series — ~10 deep-dive
+#   articles totaling ~50K words. Sitemap-based discovery, same
+#   Hodinkee parser as Bring a Loupe.)
 #
 # Hairspring Finds intentionally NOT included here — it runs in the
 # main listings workflow (scrape-listings.yml) because its records
@@ -99,6 +108,25 @@ jobs:
         continue-on-error: true
         run: python bulangandsons_watch_talks_scraper.py
 
+      - name: Run Hodinkee Shop archive scraper
+        # Shopify products.json API, ~2,346 products. Collection
+        # frozen since Feb 2023 (Hodinkee shut the vintage shop),
+        # so weekly runs are no-ops except for the rare data
+        # correction. Full walk ~15s; incremental skips records
+        # already on disk. Dual-track: feeds editorial corpus AND
+        # the Sold-archive projection in App.js.
+        continue-on-error: true
+        run: python hodinkee_shop_scraper.py
+
+      - name: Run Hodinkee Reference Points scraper
+        # Sitemap-based discovery, ~10 articles. Encyclopedia-grade
+        # per-reference deep dives (Pulvirent Submariner 10k words,
+        # Clymer Carrera 8k, Bues GMT-Master 9k, etc.). New entries
+        # land ~1×/year so weekly is wasteful in absolute terms but
+        # cheap on incremental.
+        continue-on-error: true
+        run: python hodinkee_reference_points_scraper.py
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
@@ -106,7 +134,9 @@ jobs:
           git add public/bring_a_loupe.json public/bring_a_loupe_bodies.json \
                   public/rolex_magazine.json public/rolex_magazine_bodies.json \
                   public/onthedash.json public/onthedash_bodies.json \
-                  public/bulang_watch_talks.json public/bulang_watch_talks_bodies.json
+                  public/bulang_watch_talks.json public/bulang_watch_talks_bodies.json \
+                  public/hodinkee_shop.json public/hodinkee_shop_bodies.json \
+                  public/hodinkee_reference_points.json public/hodinkee_reference_points_bodies.json
           if git diff --staged --quiet; then
             echo "No changes to commit"
             exit 0
