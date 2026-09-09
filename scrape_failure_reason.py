@@ -58,8 +58,21 @@ def _message(line: str) -> str:
     return TIMESTAMP.sub("", (parts[-1] if len(parts) >= 3 else parts[0]).strip())
 
 
-def failing_step(lines: list[str]) -> str:
-    """Name the step whose log this is, for the alert's first bullet."""
+def failing_step(lines: list[str], anchor: int | None = None) -> str:
+    """Name the step to open, for the alert's first bullet.
+
+    `--log-failed` can carry SEVERAL failed steps: the health report fails
+    health.py AND the freshness gate, and naming the first one sends the
+    reader to a step that is not the one being described. When a rule
+    knows which line it read the cause from, the step that owns THAT line
+    is the honest answer.
+    """
+    if anchor is not None:
+        for line in reversed(lines[:anchor + 1]):
+            found = _step_of(line)
+            if found:
+                job, step = found
+                return f"{job} / {step}" if job != step else step
     for line in lines:
         found = _step_of(line)
         if found:
@@ -142,6 +155,40 @@ def _is_error(line: str, needle: str) -> bool:
 # and `- name — missed N consecutive run(s)` when it pages. Only the second
 # ever appears in a failing run, but both are cheap to accept.
 SOURCE_NAME = re.compile(r"^([A-Za-z0-9_.-]+)\s*(?::|—|--)")
+
+
+def _our_gate(lines: list[str]) -> tuple[str, list[str]] | None:
+    """Any of our own health checks, named by its own error line.
+
+    Written after missing TWICE by adding one rule per gate: the
+    scrape-health gate, then the freshness gate ("Freshness gate: 3
+    source(s) stale") which reported to Mark as an unrecognised failure.
+    There are six of these checks and more will be added, so matching
+    them one at a time is a standing bug.
+
+    Our gates all annotate with `::error::<Name>: <what and how many>`,
+    which is a better sentence than anything a matcher could compose —
+    so quote it rather than paraphrase. Runs after the specific rules,
+    which add wording this cannot know.
+    """
+    for i, line in enumerate(lines):
+        if not any(m in line for m in ERROR_MARKERS):
+            continue
+        msg = line.split("##[error]")[-1].split("::error::")[-1].strip()
+        # The runner's own step-failed annotation says nothing.
+        if not msg or msg.startswith("Process completed with exit code"):
+            continue
+        detail = []
+        for nxt in lines[i + 1:]:
+            if not nxt.startswith("- "):
+                break
+            detail.append(nxt.lstrip("- ").strip())
+        head = (f"One of our own health checks stopped the run: “{msg}”. "
+                "These read the committed data rather than the scrape's "
+                "exit code, so the run itself may well have worked — the "
+                "check is reporting rot it found afterwards.")
+        return head, detail[:4], i
+    return None
 
 
 def _health_gate(lines: list[str]) -> tuple[str, list[str]] | None:
@@ -269,6 +316,7 @@ RULES = (
     _health_gate,     # our own gates name their cause outright — trust them first
     _canary,
     _push_race,       # a rejected push often sits alongside unrelated 403 noise
+    _our_gate,        # any other gate of ours, quoted from its own annotation
     _credentials,
     _runner_limits,
     _job_cancelled,
@@ -309,11 +357,14 @@ def explain(log_text: str) -> str:
     lines = [_message(l) for l in raw]
     lines = _drop_command_echo([l for l in lines if l])
 
-    headline, details = "", []
+    headline, details, anchor = "", [], None
     for rule in RULES:
         found = rule(lines)
         if found:
-            headline, details = found
+            # A rule may add the line index it read the cause from, so the
+            # bullet can name the step that actually owns it.
+            headline, details = found[0], found[1]
+            anchor = found[2] if len(found) > 2 else None
             break
 
     out = []
@@ -325,7 +376,7 @@ def explain(log_text: str) -> str:
                    "turns out to be a recurring one, add it to "
                    "`scrape_failure_reason.py`.")
 
-    step = failing_step(raw)
+    step = failing_step(raw, anchor)
     bullets = ([f"Failing step: `{step}`"] if step else []) + [d for d in details if d]
     if bullets:
         out.append("")

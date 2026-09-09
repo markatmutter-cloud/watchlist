@@ -181,3 +181,49 @@ def test_check_exit_codes(tmp_path, monkeypatch):
 def test_report_renders_without_a_ledger(tmp_path, monkeypatch):
     monkeypatch.setattr(sf, "LEDGER", tmp_path / "nope.json")
     assert "No freshness ledger yet" in sf.report(sf.LEDGER)
+
+
+# ── snooze awareness (2026-09-09) ────────────────────────────────────────
+# B-80's snooze muted watchcenter in the scrape-health gate, but this gate
+# never read the same file, so a source we had deliberately muted paged
+# every day through a second door. One mute has to hold everywhere, or
+# the snooze buys nothing and the channel gets tuned out.
+
+def test_a_snoozed_source_is_not_reported_stale(tmp_path, monkeypatch):
+    import source_freshness as sf
+
+    ledger = tmp_path / "freshness.json"
+    ledger.write_text(json.dumps({
+        "Watch Center": {"lastSeen": "2026-09-09", "lastChanged": "2026-08-17",
+                         "rows": 429, "fingerprint": "x"},
+        "Chronoholic": {"lastSeen": "2026-09-09", "lastChanged": "2026-08-17",
+                        "rows": 119, "fingerprint": "y"},
+    }))
+    monkeypatch.setattr(sf, "snoozed_names",
+                        lambda today=None: {"Watch Center": "B-80 dealer outage"})
+
+    keys = [r["key"] for r in sf.stale(ledger, today="2026-09-09")]
+    assert "Chronoholic" in keys, "a genuinely stale source must still page"
+    assert "Watch Center" not in keys, "a snoozed source must not page here too"
+
+
+def test_an_expired_snooze_pages_again_by_itself(tmp_path):
+    """The snooze buys time; it never closes the question."""
+    import source_freshness as sf
+
+    snooze = tmp_path / "snooze.json"
+    snooze.write_text(json.dumps(
+        {"watchcenter": {"until": "2026-09-01", "reason": "B-80"}}))
+
+    import scrape_health_gate as gate
+    from datetime import date
+    entry = json.loads(snooze.read_text())["watchcenter"]
+    assert gate._snooze_state(entry, date(2026, 9, 9)) == "expired"
+
+
+def test_an_undated_snooze_mutes_nothing():
+    """A malformed entry must never buy silence."""
+    import scrape_health_gate as gate
+    from datetime import date
+    assert gate._snooze_state({"reason": "no date"}, date(2026, 9, 9)) == "invalid"
+    assert gate._snooze_state("just a string", date(2026, 9, 9)) == "invalid"

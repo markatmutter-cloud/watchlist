@@ -122,6 +122,51 @@ def test_a_snoozed_source_is_not_named_as_the_cause():
     assert "watchcenter" not in out.split("<details>")[0]
 
 
+# The real Health report failure of 2026-09-09, which reported to Mark as
+# an unrecognised shape. Two failed steps in one log, and the one that
+# names the cause is the SECOND.
+R = "report\tRun python3 health.py\t"
+F = "report\tRun python3 source_freshness.py --check\t"
+FRESHNESS_LOG = f"""{R}2026-09-09T18:19:21.7Z   1 issue(s) flagged — see sections above
+{R}2026-09-09T18:19:21.7Z ##[error]Process completed with exit code 1.
+{F}2026-09-09T18:19:21.7Z ##[error]Freshness gate: 3 source(s) stale
+{F}2026-09-09T18:19:21.7Z   - Chronoholic [dealer]: content unchanged for 23d (budget 21d)
+{F}2026-09-09T18:19:21.7Z   - ClassicHeuer [dealer]: content unchanged for 22d (budget 21d)
+{F}2026-09-09T18:19:21.7Z ##[error]Process completed with exit code 1.
+"""
+
+
+def test_any_gate_of_ours_is_recognised_not_just_the_ones_with_a_rule():
+    """Adding one rule per gate was itself the bug.
+
+    Six of these checks exist and more will be added; the freshness gate
+    had no rule and so reached Mark as "not a failure shape this alert
+    recognises yet". Our gates state their own cause better than a
+    matcher could, so the generic rule quotes them.
+    """
+    out = explain(FRESHNESS_LOG)
+    assert "Freshness gate: 3 source(s) stale" in out
+    assert "Not a failure shape" not in out
+    assert "Chronoholic" in out
+
+
+def test_the_step_named_is_the_one_that_owns_the_cause():
+    """Two steps failed; naming the first sends the reader to the wrong log."""
+    out = explain(FRESHNESS_LOG)
+    assert "Failing step: `report / Run python3 source_freshness.py --check`" in out
+
+
+def test_the_runners_own_step_annotation_is_not_treated_as_a_cause():
+    """`##[error]Process completed with exit code 1.` says nothing.
+
+    It is present in every failing log, so matching it would make the
+    generic rule fire on everything and explain nothing.
+    """
+    bare = f"{R}2026-09-09T18:19:21.7Z ##[error]Process completed with exit code 1.\n"
+    out = explain(bare)
+    assert "Not a failure shape this alert recognises yet" in out
+
+
 def test_canary_blames_the_page_shape():
     out = explain(CANARY_LOG)
     assert "zero sales" in out
