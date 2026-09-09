@@ -122,6 +122,27 @@ MERGED = {
 BUDGET_SEEN = {"dealer": 3, "calendar": 4, "editorial": 14, "merged": 2}
 BUDGET_CHANGED = {"dealer": 21, "calendar": 30, "editorial": 30, "merged": 3}
 
+# Per-source overrides for the CONTENT-unchanged budget only.
+#
+# The 21-day dealer default assumes a retailer turning stock over. Some
+# sources are not that, and their stillness is character rather than rot
+# (Mark, 2026-09-09):
+#   - ClassicHeuer is a specialist old-timer, well respected in the watch
+#     world, but not really a classic retailer.
+#   - Chronoholic is a collector using the site to rotate their own
+#     collection — the stock is exceptional and well respected, it just
+#     does not move on a retailer's clock.
+# Both are valid sources that legitimately sit unchanged for weeks, so the
+# default budget paged daily on healthy behaviour.
+#
+# This does NOT touch BUDGET_SEEN: they still scrape 3x/day, so "no data
+# at all" stays a 3-day signal. Only "nothing changed" gets the long
+# leash — and it stays finite, so a source frozen forever still surfaces.
+BUDGET_CHANGED_BY_SOURCE = {
+    "ClassicHeuer": 90,
+    "Chronoholic": 90,
+}
+
 
 def surface_of(key: str) -> str:
     if key.startswith("calendar:"):
@@ -300,9 +321,11 @@ def stale(ledger: Path = LEDGER, today: str | None = None) -> list[dict]:
         if seen_age > BUDGET_SEEN[surface]:
             reasons.append(f"no data for {seen_age}d "
                            f"(budget {BUDGET_SEEN[surface]}d)")
-        if changed_age > BUDGET_CHANGED[surface]:
+        changed_budget = BUDGET_CHANGED_BY_SOURCE.get(key,
+                                                      BUDGET_CHANGED[surface])
+        if changed_age > changed_budget:
             reasons.append(f"content unchanged for {changed_age}d "
-                           f"(budget {BUDGET_CHANGED[surface]}d)")
+                           f"(budget {changed_budget}d)")
         if reasons:
             out.append({"key": key, "surface": surface, "seen_age": seen_age,
                         "changed_age": changed_age, "reasons": reasons})

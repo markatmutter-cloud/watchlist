@@ -196,14 +196,17 @@ def test_a_snoozed_source_is_not_reported_stale(tmp_path, monkeypatch):
     ledger.write_text(json.dumps({
         "Watch Center": {"lastSeen": "2026-09-09", "lastChanged": "2026-08-17",
                          "rows": 429, "fingerprint": "x"},
-        "Chronoholic": {"lastSeen": "2026-09-09", "lastChanged": "2026-08-17",
-                        "rows": 119, "fingerprint": "y"},
+        # An ORDINARY retailer as the control: Chronoholic carries a
+        # slow-rotation override now, so it would not page here anyway
+        # and would prove nothing about the snooze.
+        "Somlo": {"lastSeen": "2026-09-09", "lastChanged": "2026-08-17",
+                  "rows": 181, "fingerprint": "y"},
     }))
     monkeypatch.setattr(sf, "snoozed_names",
                         lambda today=None: {"Watch Center": "B-80 dealer outage"})
 
     keys = [r["key"] for r in sf.stale(ledger, today="2026-09-09")]
-    assert "Chronoholic" in keys, "a genuinely stale source must still page"
+    assert "Somlo" in keys, "a genuinely stale source must still page"
     assert "Watch Center" not in keys, "a snoozed source must not page here too"
 
 
@@ -227,3 +230,55 @@ def test_an_undated_snooze_mutes_nothing():
     from datetime import date
     assert gate._snooze_state({"reason": "no date"}, date(2026, 9, 9)) == "invalid"
     assert gate._snooze_state("just a string", date(2026, 9, 9)) == "invalid"
+
+
+def test_a_slow_rotating_source_gets_its_own_changed_budget(tmp_path):
+    """Some dealers are not retailers, and stillness is not rot.
+
+    ClassicHeuer (specialist old-timer) and Chronoholic (a collector
+    rotating their own collection) legitimately sit unchanged for weeks,
+    so the 21-day retailer default paged daily on healthy behaviour.
+    """
+    import source_freshness as sf
+
+    ledger = tmp_path / "freshness.json"
+    ledger.write_text(json.dumps({
+        "Chronoholic": {"lastSeen": "2026-09-09", "lastChanged": "2026-08-17",
+                        "rows": 119, "fingerprint": "a"},
+        "Somlo": {"lastSeen": "2026-09-09", "lastChanged": "2026-08-17",
+                  "rows": 181, "fingerprint": "b"},
+    }))
+    keys = [r["key"] for r in sf.stale(ledger, today="2026-09-09")]
+    assert "Chronoholic" not in keys, "23d is well inside its 90d budget"
+    assert "Somlo" in keys, "an ordinary retailer still pages at 21d"
+
+
+def test_the_long_leash_is_still_finite(tmp_path):
+    """A source frozen forever must still surface eventually."""
+    import source_freshness as sf
+
+    ledger = tmp_path / "freshness.json"
+    ledger.write_text(json.dumps({
+        "Chronoholic": {"lastSeen": "2026-09-09", "lastChanged": "2026-01-01",
+                        "rows": 119, "fingerprint": "a"},
+    }))
+    keys = [r["key"] for r in sf.stale(ledger, today="2026-09-09")]
+    assert "Chronoholic" in keys
+
+
+def test_a_slow_source_that_stops_scraping_still_pages_fast(tmp_path):
+    """The long leash is for CONTENT only.
+
+    These sources still scrape three times a day, so "no data at all"
+    remains a 3-day signal — otherwise the override would hide a real
+    outage behind a 90-day window.
+    """
+    import source_freshness as sf
+
+    ledger = tmp_path / "freshness.json"
+    ledger.write_text(json.dumps({
+        "Chronoholic": {"lastSeen": "2026-09-01", "lastChanged": "2026-09-01",
+                        "rows": 119, "fingerprint": "a"},
+    }))
+    bad = sf.stale(ledger, today="2026-09-09")
+    assert any("no data for" in r for row in bad for r in row["reasons"])
