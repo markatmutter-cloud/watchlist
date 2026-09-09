@@ -122,6 +122,27 @@ MERGED = {
 BUDGET_SEEN = {"dealer": 3, "calendar": 4, "editorial": 14, "merged": 2}
 BUDGET_CHANGED = {"dealer": 21, "calendar": 30, "editorial": 30, "merged": 3}
 
+# Per-source overrides for the CONTENT-unchanged budget only.
+#
+# The 21-day dealer default assumes a retailer turning stock over. Some
+# sources are not that, and their stillness is character rather than rot
+# (Mark, 2026-09-09):
+#   - ClassicHeuer is a specialist old-timer, well respected in the watch
+#     world, but not really a classic retailer.
+#   - Chronoholic is a collector using the site to rotate their own
+#     collection — the stock is exceptional and well respected, it just
+#     does not move on a retailer's clock.
+# Both are valid sources that legitimately sit unchanged for weeks, so the
+# default budget paged daily on healthy behaviour.
+#
+# This does NOT touch BUDGET_SEEN: they still scrape 3x/day, so "no data
+# at all" stays a 3-day signal. Only "nothing changed" gets the long
+# leash — and it stays finite, so a source frozen forever still surfaces.
+BUDGET_CHANGED_BY_SOURCE = {
+    "ClassicHeuer": 90,
+    "Chronoholic": 90,
+}
+
 
 def surface_of(key: str) -> str:
     if key.startswith("calendar:"):
@@ -242,12 +263,57 @@ def _age(iso: str | None, today: str) -> int:
         return 9999
 
 
+def snoozed_names(today: str | None = None) -> dict[str, str]:
+    """Ledger keys currently muted, -> the reason, via ONE snooze file.
+
+    B-80's snooze lives in data/scrape_health_snooze.json and mutes the
+    scrape-health gate. This gate never read it, so watchcenter — muted
+    there on purpose, its fix not ours — paged here every single day
+    through a second door, which is precisely how an alert channel gets
+    tuned out. One mute, honoured everywhere.
+
+    The snooze file is keyed by CSV stem (`watchcenter`) and this ledger
+    by display name (`Watch Center`), so merge.LISTING_SOURCES does the
+    translation — the same registry this module already imports rather
+    than hand-copying. Date semantics are scrape_health_gate's, imported
+    rather than reimplemented: an undated or malformed entry mutes
+    nothing, and an expired one pages again by itself.
+    """
+    try:
+        import scrape_health_gate as gate
+        from datetime import date as _date
+        snoozes = gate.load_snoozes()
+        when = _date.fromisoformat(today or _today())
+    except Exception:
+        return {}
+    stem_to_name = {}
+    try:
+        import merge
+        for path, name, _cur in merge.LISTING_SOURCES:
+            stem_to_name[Path(path).stem] = name
+    except Exception:
+        pass
+    out = {}
+    for stem, entry in snoozes.items():
+        try:
+            if gate._snooze_state(entry, when) != "active":
+                continue
+        except Exception:
+            continue
+        name = stem_to_name.get(stem, stem)
+        out[name] = (entry or {}).get("reason", "") if isinstance(entry, dict) else ""
+    return out
+
+
 def stale(ledger: Path = LEDGER, today: str | None = None) -> list[dict]:
-    """Sources past their budget, worst first."""
+    """Sources past their budget, worst first. Snoozed ones are excluded."""
     today = today or _today()
     led = load_ledger(ledger)
+    muted = snoozed_names(today)
     out = []
     for key, d in led.items():
+        if key in muted:
+            continue
         surface = surface_of(key)
         seen_age = _age(d.get("lastSeen"), today)
         changed_age = _age(d.get("lastChanged"), today)
@@ -255,9 +321,11 @@ def stale(ledger: Path = LEDGER, today: str | None = None) -> list[dict]:
         if seen_age > BUDGET_SEEN[surface]:
             reasons.append(f"no data for {seen_age}d "
                            f"(budget {BUDGET_SEEN[surface]}d)")
-        if changed_age > BUDGET_CHANGED[surface]:
+        changed_budget = BUDGET_CHANGED_BY_SOURCE.get(key,
+                                                      BUDGET_CHANGED[surface])
+        if changed_age > changed_budget:
             reasons.append(f"content unchanged for {changed_age}d "
-                           f"(budget {BUDGET_CHANGED[surface]}d)")
+                           f"(budget {changed_budget}d)")
         if reasons:
             out.append({"key": key, "surface": surface, "seen_age": seen_age,
                         "changed_age": changed_age, "reasons": reasons})
@@ -294,6 +362,13 @@ def main(argv: list[str]) -> int:
     if mode == "--report":
         print(report(LEDGER))
         return 0
+
+    # Muted, not invisible: the same contract the scrape-health gate
+    # keeps. A snoozed source still prints every run, so nobody forgets
+    # it exists, and it re-pages by itself on the expiry date.
+    for name, reason in sorted(snoozed_names().items()):
+        print(f"::notice::Freshness (snoozed, not paging): {name}"
+              + (f" — {reason}" if reason else ""))
 
     bad = stale(LEDGER)
     if not bad:

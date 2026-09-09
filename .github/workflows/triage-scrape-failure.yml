@@ -1,0 +1,100 @@
+name: Triage a scrape failure
+
+# The second half of an alert. notify-scrape-failure.yml opens the issue
+# and names WHAT broke; this probes the implicated dealers from a runner
+# and answers the question that always comes next: is this ours?
+#
+# It fires on the issue, not on the workflow_run, on purpose. The
+# notifier is the thing that decides a failure is worth an issue (it
+# debounces, it dedupes onto an open one); triggering off its output
+# means this can never race it or comment into the void.
+#
+# SCOPE, deliberately: read-only. It writes one comment. It does not
+# change code, edit data/scrape_health_snooze.json, or close anything.
+# Every fix it suggests costs something a human should weigh — a snooze
+# mutes a real alert, a residential move adds a machine that has to stay
+# up — and a diagnostician that can silence its own alerts has the wrong
+# incentives. Tier 2 (a fixer that opens a PR, never merges) is a
+# separate build and a separate decision.
+#
+# Unlike the notifier this job DOES check out the repo, because it reads
+# the workflow's move step and the scrapers' own URL constants to know
+# what to probe. That is one action download (see the B-23 note in
+# notify-scrape-failure.yml) — acceptable here only because the alert
+# has already fired by this point. A CDN blip costs the diagnosis, never
+# the alarm.
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: "Issue number to (re-)triage"
+        required: true
+        type: string
+
+permissions:
+  issues: write
+  contents: read
+  actions: read   # gh run view --log-failed
+
+jobs:
+  triage:
+    # Only our own auto-opened failure issues. A human issue that happens
+    # to mention a scrape gets left alone.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.issue.labels.*.name, 'scrape-failure')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Probe the implicated sources and comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.issue.number || inputs.issue }}
+        run: |
+          set -uo pipefail
+
+          body=$(gh issue view "$ISSUE" --repo "$GH_REPO" --json body --jq .body)
+
+          # The notifier puts the run id in the body; that is the only
+          # link back to the logs this triage needs.
+          run_id=$(printf '%s' "$body" | grep -oE 'Run ID: [0-9]+' | head -1 | grep -oE '[0-9]+')
+          if [ -z "${run_id:-}" ]; then
+            echo "No run id in issue #$ISSUE — nothing to triage."
+            exit 0
+          fi
+          echo "Triaging run $run_id from issue #$ISSUE"
+
+          if ! gh run view "$run_id" --repo "$GH_REPO" --log-failed > failed.log 2>/dev/null \
+             || [ ! -s failed.log ]; then
+            # Logs expire. Fall back to the excerpt the notifier already
+            # quoted into the issue, which carries the gate's source list.
+            printf '%s' "$body" > failed.log
+            echo "Run logs unavailable — falling back to the issue body."
+          fi
+
+          python3 triage_scrape_failure.py failed.log > triage.md || {
+            echo "Triage itself failed; not commenting." >&2
+            exit 0
+          }
+
+          if [ -s triage.md ]; then
+            gh issue comment "$ISSUE" --repo "$GH_REPO" --body-file triage.md
+            echo "Commented on #$ISSUE"
+          fi
+
+          cat triage.md >> "$GITHUB_STEP_SUMMARY"
