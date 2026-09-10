@@ -288,10 +288,10 @@
     "rows": 9
   },
   "calendar:sothebys": {
-    "fingerprint": "dae84b0873993a93",
-    "lastChanged": "2026-09-05",
+    "fingerprint": "cffc1435d900e186",
+    "lastChanged": "2026-09-10",
     "lastSeen": "2026-09-10",
-    "rows": 10
+    "rows": 8
   },
   "calendar:watchesofknightsbridge": {
     "fingerprint": "eb28c4d9a128c4ea",
@@ -300,10 +300,10 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "24cc4e449e2d12d8",
-    "lastChanged": "2026-09-09",
+    "fingerprint": "bbdd9e88081cc23b",
+    "lastChanged": "2026-09-10",
     "lastSeen": "2026-09-10",
-    "rows": 33
+    "rows": 32
   },
   "editorial:acollectedman_journal": {
     "fingerprint": "8b74e1f8b927b57a",
@@ -402,14 +402,14 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "c9aa7db3b2d90aff",
-    "lastChanged": "2026-09-09",
+    "fingerprint": "e810753c01c0466d",
+    "lastChanged": "2026-09-10",
     "lastSeen": "2026-09-10",
-    "rows": 3959
+    "rows": 3961
   },
   "merged:auctions": {
-    "fingerprint": "1d3d45288ca81cdd",
-    "lastChanged": "2026-09-09",
+    "fingerprint": "1a8be5232e86bc6a",
+    "lastChanged": "2026-09-10",
     "lastSeen": "2026-09-10",
     "rows": 96
   },
