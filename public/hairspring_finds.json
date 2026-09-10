@@ -9376,20 +9376,16 @@
     "model_line": "Overseas (precursor — ref 222)",
     "published_at": "2026-07-11",
     "reference_no": "46003",
-    "scraped_at": "2026-08-11T15:04:40Z",
+    "scraped_at": "2026-09-10T17:39:48Z",
     "slug": "46003-vacheron-constantin-222",
     "sold_price_usd": 70000,
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
-    "themes": [
-      "reference_profile",
-      "design"
-    ],
     "title": "46003 Vacheron Constantin 222",
     "updated_at": "2026-07-12",
     "url": "https://hairspring.com/blogs/finds/46003-vacheron-constantin-222",
-    "word_count": 458
+    "word_count": 462
   },
   "https://hairspring.com/blogs/finds/46003-vacheron-constantin-222-in-yellow-gold": {
     "author": "Erik Gustafson",
