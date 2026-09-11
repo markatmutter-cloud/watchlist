@@ -1,18 +1,6 @@
 {
-  "lunaroyster": {
-    "misses": 1,
-    "reason": "no CSV produced this run"
-  },
-  "maunderwatches": {
-    "misses": 3,
-    "reason": "no CSV produced this run"
-  },
   "watchcenter": {
-    "misses": 75,
-    "reason": "no CSV produced this run"
-  },
-  "wok": {
-    "misses": 3,
+    "misses": 76,
     "reason": "no CSV produced this run"
   }
 }
