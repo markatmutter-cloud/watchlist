@@ -24884,21 +24884,16 @@
     "model_line": null,
     "published_at": "2026-08-11",
     "reference_no": null,
-    "scraped_at": "2026-08-12T15:04:04Z",
+    "scraped_at": "2026-09-11T17:40:30Z",
     "slug": "haldimann-h1-flying-central-tourbillon-1",
     "sold_price_usd": 675000,
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
-    "themes": [
-      "reference_profile",
-      "complications",
-      "design"
-    ],
     "title": "Haldimann H1 Flying Central Tourbillon",
     "updated_at": "2026-08-12",
     "url": "https://hairspring.com/blogs/finds/haldimann-h1-flying-central-tourbillon-1",
-    "word_count": 397
+    "word_count": 392
   },
   "https://hairspring.com/blogs/finds/haldimann-h1-flying-central-tourbillon-2": {
     "author": "Erik Gustafson",
