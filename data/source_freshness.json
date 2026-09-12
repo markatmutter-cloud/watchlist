@@ -12,10 +12,10 @@
     "rows": 18
   },
   "Bob's Watches": {
-    "fingerprint": "32e492ba4c8d91f4",
+    "fingerprint": "85a55668e8a390f8",
     "lastChanged": "2026-09-12",
     "lastSeen": "2026-09-12",
-    "rows": 94
+    "rows": 93
   },
   "Bulang & Sons": {
     "fingerprint": "9de275f5efb83b64",
@@ -84,16 +84,16 @@
     "rows": 39
   },
   "Heuertime": {
-    "fingerprint": "a9917cca91c35b70",
+    "fingerprint": "743ffa656bd725d4",
     "lastChanged": "2026-09-12",
     "lastSeen": "2026-09-12",
-    "rows": 31
+    "rows": 33
   },
   "Huntington Company": {
-    "fingerprint": "118769c684e49986",
+    "fingerprint": "12e34477b5bfb27c",
     "lastChanged": "2026-09-12",
     "lastSeen": "2026-09-12",
-    "rows": 97
+    "rows": 96
   },
   "Luna Royster": {
     "fingerprint": "83f4586869a385d9",
@@ -120,10 +120,10 @@
     "rows": 20
   },
   "Oliver & Clarke": {
-    "fingerprint": "78b6ad72a2c72506",
-    "lastChanged": "2026-09-11",
+    "fingerprint": "8d225a6622e679e7",
+    "lastChanged": "2026-09-12",
     "lastSeen": "2026-09-12",
-    "rows": 121
+    "rows": 119
   },
   "Pascal Karp": {
     "fingerprint": "3b12a80c89063248",
@@ -180,10 +180,10 @@
     "rows": 32
   },
   "Tropical Watch": {
-    "fingerprint": "2c3ef1593f750254",
+    "fingerprint": "5699f77660da3cab",
     "lastChanged": "2026-09-12",
     "lastSeen": "2026-09-12",
-    "rows": 119
+    "rows": 116
   },
   "Vintage Watch Collective": {
     "fingerprint": "b49c3d2aaecef5be",
@@ -252,10 +252,10 @@
     "rows": 4
   },
   "Wind Vintage": {
-    "fingerprint": "b3e4e5a2a35f8d06",
+    "fingerprint": "a1e49c30f29aa65b",
     "lastChanged": "2026-09-12",
     "lastSeen": "2026-09-12",
-    "rows": 226
+    "rows": 227
   },
   "calendar:antiquorum": {
     "fingerprint": "c5d0ff73d32d020a",
@@ -414,9 +414,9 @@
     "rows": 97
   },
   "merged:listings": {
-    "fingerprint": "02f04dfccccd6cd3",
+    "fingerprint": "c15c9dd9c1c2e1c2",
     "lastChanged": "2026-09-12",
     "lastSeen": "2026-09-12",
-    "rows": 10395
+    "rows": 10396
   }
 }
