@@ -4523,6 +4523,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "community_ethics"
+    ],
     "title": "ROMAN TOUMINET",
     "updated_at": "2026-09-09",
     "url": "https://www.watchfid.com/roman-touminet/",
@@ -5902,7 +5906,9 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
-    "themes": [],
+    "themes": [
+      "news"
+    ],
     "title": "WATCHFID COLLECTIBLES",
     "updated_at": "2026-07-28",
     "url": "https://www.watchfid.com/watchfid-collectibles/",

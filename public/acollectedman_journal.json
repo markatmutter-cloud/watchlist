@@ -1612,7 +1612,9 @@
     "source": "acollectedman_journal",
     "source_type": "editorial_blog",
     "sub_model": null,
-    "themes": [],
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "The philosophies of Guy Salter",
     "updated_at": "2026-02-04",
     "url": "https://www.acollectedman.com/blogs/journal/interview-guy-salter",

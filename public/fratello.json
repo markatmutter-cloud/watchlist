@@ -6129,6 +6129,11 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "complications",
+      "news"
+    ],
     "title": "The Chronograph That Rules Them All Is Back: Bow To The A. Lange & Söhne Triple Split In Platinum",
     "updated_at": "2026-09-11",
     "url": "https://www.fratellowatches.com/bow-to-the-a-lange-sohne-triple-split-in-platinum/",
@@ -13458,6 +13463,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "review",
+      "design"
+    ],
     "title": "Chic Deep Down: Hands-On With Two Bicolor Favre Leuba Deep Raider Day Date Models",
     "updated_at": "2026-09-07",
     "url": "https://www.fratellowatches.com/favre-leuba-deep-raider-day-date-two-tone/",
@@ -18367,6 +18376,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "vintage_care"
+    ],
     "title": "Fratello Talks: The Vintage Watches We’d Buy Under €5,000",
     "updated_at": "2026-09-09",
     "url": "https://www.fratellowatches.com/fratello-talks-the-vintage-watches-wed-buy-under-e5000/",
@@ -50205,6 +50218,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "auction_results"
+    ],
     "title": "Rolex Unveils Four Unique Cosmograph Daytona Watches For Charity Auction",
     "updated_at": "2026-09-07",
     "url": "https://www.fratellowatches.com/rolex-unveils-four-unique-cosmograph-daytona-watches-for-charity-auction/",
@@ -72195,6 +72212,11 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "design",
+      "collecting_philosophy"
+    ],
     "title": "The Curious Case Of The Boring Rolex Submariner Ref. 14060",
     "updated_at": "2026-09-09",
     "url": "https://www.fratellowatches.com/the-curious-case-of-the-boring-rolex-submariner-ref-14060/",
@@ -72446,6 +72468,11 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "review",
+      "design",
+      "racing"
+    ],
     "title": "A Lap Around The Track With The Facelifted And Downsized TAG Heuer Carrera Chronograph Sport",
     "updated_at": "2026-09-10",
     "url": "https://www.fratellowatches.com/the-facelifted-and-downsized-tag-heuer-carrera-chronograph-sport/",

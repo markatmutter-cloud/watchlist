@@ -9382,6 +9382,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "design",
+      "brand_history"
+    ],
     "title": "46003 Vacheron Constantin 222",
     "updated_at": "2026-07-12",
     "url": "https://hairspring.com/blogs/finds/46003-vacheron-constantin-222",
@@ -15758,6 +15763,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "market_commentary"
+    ],
     "title": "Black Dial Audemars Piguet Royal Oak Dual Time 25730BA",
     "updated_at": "2026-06-26",
     "url": "https://hairspring.com/blogs/finds/black-dial-audemars-piguet-royal-oak-dual-time-25730ba",
@@ -19094,6 +19103,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "news",
+      "complications"
+    ],
     "title": "DAAG01 Daniel Roth Tourbillon",
     "updated_at": "2026-09-08",
     "url": "https://hairspring.com/blogs/finds/daag01-daniel-roth-tourbillon",
@@ -22936,6 +22950,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "design"
+    ],
     "title": "FP Journe Vagabondage II Platinum",
     "updated_at": "2026-07-16",
     "url": "https://hairspring.com/blogs/finds/fp-journe-vagabondage-ii-platinum-1",
@@ -24886,6 +24904,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "design",
+      "complications"
+    ],
     "title": "Haldimann H1 Flying Central Tourbillon",
     "updated_at": "2026-08-12",
     "url": "https://hairspring.com/blogs/finds/haldimann-h1-flying-central-tourbillon-1",
@@ -29773,6 +29796,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "design"
+    ],
     "title": "'Nacre' FP Journe Chronomètre Souverain",
     "updated_at": "2026-06-09",
     "url": "https://hairspring.com/blogs/finds/nacre-fp-journe-chronometre-souverain",
@@ -40786,6 +40813,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "Urban Jürgensen Reference 8",
     "updated_at": "2026-07-26",
     "url": "https://hairspring.com/blogs/finds/urban-jurgensen-reference-8",
