@@ -30,7 +30,7 @@
     "rows": 186
   },
   "Chronoholic": {
-    "fingerprint": "1c6e3d99bee4147b",
+    "fingerprint": "70815c800817af24",
     "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
     "rows": 119
@@ -60,10 +60,10 @@
     "rows": 20
   },
   "European Watch": {
-    "fingerprint": "52af71490a9e9352",
+    "fingerprint": "79d8873d090cf74d",
     "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
-    "rows": 21
+    "rows": 22
   },
   "Falco Watches": {
     "fingerprint": "05413142abbeae09",
@@ -126,10 +126,10 @@
     "rows": 116
   },
   "Pascal Karp": {
-    "fingerprint": "3b12a80c89063248",
-    "lastChanged": "2026-09-12",
+    "fingerprint": "8cb753345dacea62",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
-    "rows": 91
+    "rows": 90
   },
   "Romain R\u00e9a": {
     "fingerprint": "8c9f7c8f367fc956",
@@ -198,14 +198,14 @@
     "rows": 536
   },
   "Vintage Watch Shop": {
-    "fingerprint": "231616906d8b667e",
-    "lastChanged": "2026-09-10",
+    "fingerprint": "33b514a671257496",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
-    "rows": 27
+    "rows": 28
   },
   "Vision Vintage Watches": {
-    "fingerprint": "0a4a381851743664",
-    "lastChanged": "2026-09-12",
+    "fingerprint": "3adf2369fc199790",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
     "rows": 89
   },
@@ -252,7 +252,7 @@
     "rows": 4
   },
   "Wind Vintage": {
-    "fingerprint": "3bc6530983964ef1",
+    "fingerprint": "c36038c2d150f042",
     "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
     "rows": 227
@@ -414,9 +414,9 @@
     "rows": 97
   },
   "merged:listings": {
-    "fingerprint": "f48d739fc4e54b24",
+    "fingerprint": "2f0e0afa008cfe37",
     "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
-    "rows": 10401
+    "rows": 10402
   }
 }
