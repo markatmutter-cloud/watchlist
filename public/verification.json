@@ -1,10 +1,10 @@
 {
   "date": "2026-09-13",
-  "updated_at": "2026-09-13T07:37:19+00:00",
+  "updated_at": "2026-09-13T17:46:44+00:00",
   "alerts": [],
   "counts": {
-    "Wind Vintage": 115,
-    "Tropical Watch": 116,
+    "Wind Vintage": 113,
+    "Tropical Watch": 115,
     "Menta Watches": 51,
     "Collectors Corner NY": 88,
     "Falco Watches": 25,
@@ -17,13 +17,13 @@
     "Watch Brothers London": 7,
     "Sierra Time Co": 20,
     "DB1983": 20,
-    "Hairspring": 27,
+    "Hairspring": 28,
     "Somlo": 175,
     "Analog Shift": 749,
-    "Watches of Knightsbridge": 61,
+    "Watches of Knightsbridge": 58,
     "Belmont Watches": 18,
     "Bob's Watches": 93,
-    "Watchfid": 69,
+    "Watchfid": 70,
     "Bulang & Sons": 155,
     "Moonphase": 20,
     "Huntington Company": 96,
@@ -37,7 +37,8 @@
     "Vision Vintage Watches": 73,
     "Watchurbia": 4,
     "Maunder Watches": 70,
-    "Watch Club": 71,
+    "Watch Club": 69,
+    "Vintage Watch Shop": 27,
     "Watches of Lancashire": 53,
     "Heuertime": 32,
     "ClassicHeuer": 41,
@@ -45,9 +46,8 @@
     "S.Song Watches": 19,
     "Swiss Hours": 71,
     "Watch Center": 261,
-    "eBay": 33,
-    "Vintage Watch Shop": 27
+    "eBay": 33
   },
-  "total_listings": 4195,
+  "total_listings": 4189,
   "sources_tracked": 44
 }

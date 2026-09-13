@@ -30,8 +30,8 @@
     "rows": 186
   },
   "Chronoholic": {
-    "fingerprint": "7a602d65c8e1c195",
-    "lastChanged": "2026-08-17",
+    "fingerprint": "1c6e3d99bee4147b",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
     "rows": 119
   },
@@ -42,8 +42,8 @@
     "rows": 119
   },
   "Collectors Corner NY": {
-    "fingerprint": "167456910f52fd0f",
-    "lastChanged": "2026-09-11",
+    "fingerprint": "2d10d31a9a807500",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
     "rows": 96
   },
@@ -60,8 +60,8 @@
     "rows": 20
   },
   "European Watch": {
-    "fingerprint": "e04cccd6c03b2ee7",
-    "lastChanged": "2026-09-12",
+    "fingerprint": "52af71490a9e9352",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
     "rows": 21
   },
@@ -78,10 +78,10 @@
     "rows": 57
   },
   "Hairspring": {
-    "fingerprint": "b7db9edc704a472a",
-    "lastChanged": "2026-09-12",
+    "fingerprint": "17eccf80243feafd",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
-    "rows": 39
+    "rows": 40
   },
   "Heuertime": {
     "fingerprint": "743ffa656bd725d4",
@@ -90,10 +90,10 @@
     "rows": 33
   },
   "Huntington Company": {
-    "fingerprint": "8efb8252dd4bcd93",
+    "fingerprint": "ca2ebef237505f0a",
     "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
-    "rows": 97
+    "rows": 96
   },
   "Luna Royster": {
     "fingerprint": "83f4586869a385d9",
@@ -120,10 +120,10 @@
     "rows": 20
   },
   "Oliver & Clarke": {
-    "fingerprint": "8d225a6622e679e7",
-    "lastChanged": "2026-09-12",
+    "fingerprint": "43570b4aa284ff2a",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
-    "rows": 119
+    "rows": 116
   },
   "Pascal Karp": {
     "fingerprint": "3b12a80c89063248",
@@ -240,10 +240,10 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "c609c90caf4047e1",
+    "fingerprint": "29d701748b82153e",
     "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
-    "rows": 69
+    "rows": 70
   },
   "Watchurbia": {
     "fingerprint": "a54ef1f5404cfe37",
@@ -252,8 +252,8 @@
     "rows": 4
   },
   "Wind Vintage": {
-    "fingerprint": "a1e49c30f29aa65b",
-    "lastChanged": "2026-09-12",
+    "fingerprint": "3bc6530983964ef1",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
     "rows": 227
   },
@@ -414,9 +414,9 @@
     "rows": 97
   },
   "merged:listings": {
-    "fingerprint": "323fdd1b12ee4e9e",
+    "fingerprint": "f48d739fc4e54b24",
     "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
-    "rows": 10399
+    "rows": 10401
   }
 }
