@@ -48,8 +48,8 @@
     "rows": 96
   },
   "Craft & Tailored": {
-    "fingerprint": "fd7b5efc21503f2c",
-    "lastChanged": "2026-09-12",
+    "fingerprint": "b4cfe56be9f02ff6",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
     "rows": 108
   },
@@ -90,10 +90,10 @@
     "rows": 33
   },
   "Huntington Company": {
-    "fingerprint": "12e34477b5bfb27c",
-    "lastChanged": "2026-09-12",
+    "fingerprint": "8efb8252dd4bcd93",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
-    "rows": 96
+    "rows": 97
   },
   "Luna Royster": {
     "fingerprint": "83f4586869a385d9",
@@ -180,10 +180,10 @@
     "rows": 32
   },
   "Tropical Watch": {
-    "fingerprint": "5699f77660da3cab",
-    "lastChanged": "2026-09-12",
+    "fingerprint": "6a3ac5a9ab093c6c",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
-    "rows": 116
+    "rows": 115
   },
   "Vintage Watch Collective": {
     "fingerprint": "b49c3d2aaecef5be",
@@ -222,16 +222,16 @@
     "rows": 429
   },
   "Watch Club": {
-    "fingerprint": "8ac4223cba1c3a22",
-    "lastChanged": "2026-09-11",
+    "fingerprint": "9b2f59a02df2f38a",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
     "rows": 69
   },
   "Watches of Knightsbridge": {
-    "fingerprint": "76787da234fe3335",
-    "lastChanged": "2026-09-08",
+    "fingerprint": "d631a414143e2b95",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
-    "rows": 79
+    "rows": 76
   },
   "Watches of Lancashire": {
     "fingerprint": "d014028683c527f9",
@@ -240,8 +240,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "7ef3d55bfa7a0eaf",
-    "lastChanged": "2026-09-12",
+    "fingerprint": "c609c90caf4047e1",
+    "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
     "rows": 69
   },
@@ -300,10 +300,10 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "953552775eb738fd",
-    "lastChanged": "2026-09-13",
+    "fingerprint": "5f822acada1a3e1f",
+    "lastChanged": "2026-09-12",
     "lastSeen": "2026-09-13",
-    "rows": 32
+    "rows": 33
   },
   "editorial:acollectedman_journal": {
     "fingerprint": "8b74e1f8b927b57a",
@@ -414,9 +414,9 @@
     "rows": 97
   },
   "merged:listings": {
-    "fingerprint": "588dbae278d031ae",
+    "fingerprint": "77a5326aa40963de",
     "lastChanged": "2026-09-13",
     "lastSeen": "2026-09-13",
-    "rows": 10396
+    "rows": 10399
   }
 }

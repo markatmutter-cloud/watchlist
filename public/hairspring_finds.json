@@ -22930,20 +22930,16 @@
     "model_line": null,
     "published_at": "2026-06-13",
     "reference_no": null,
-    "scraped_at": "2026-08-14T04:05:58Z",
+    "scraped_at": "2026-09-13T07:08:51Z",
     "slug": "fp-journe-vagabondage-ii-platinum-1",
     "sold_price_usd": 800000,
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
-    "themes": [
-      "reference_profile",
-      "design"
-    ],
     "title": "FP Journe Vagabondage II Platinum",
     "updated_at": "2026-07-16",
     "url": "https://hairspring.com/blogs/finds/fp-journe-vagabondage-ii-platinum-1",
-    "word_count": 444
+    "word_count": 438
   },
   "https://hairspring.com/blogs/finds/fp-journe-vagabondage-iii-in-pink-gold": {
     "author": "Erik Gustafson",

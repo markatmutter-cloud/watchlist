@@ -1,10 +1,10 @@
 {
-  "date": "2026-09-12",
-  "updated_at": "2026-09-12T22:31:54+00:00",
+  "date": "2026-09-13",
+  "updated_at": "2026-09-13T07:37:19+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 115,
-    "Tropical Watch": 119,
+    "Tropical Watch": 116,
     "Menta Watches": 51,
     "Collectors Corner NY": 88,
     "Falco Watches": 25,
@@ -12,7 +12,7 @@
     "Tokant": 31,
     "Romain R\u00e9a": 238,
     "Grey & Patina": 57,
-    "Oliver & Clarke": 107,
+    "Oliver & Clarke": 105,
     "Craft & Tailored": 80,
     "Watch Brothers London": 7,
     "Sierra Time Co": 20,
@@ -22,11 +22,11 @@
     "Analog Shift": 749,
     "Watches of Knightsbridge": 61,
     "Belmont Watches": 18,
-    "Bob's Watches": 94,
+    "Bob's Watches": 93,
     "Watchfid": 69,
     "Bulang & Sons": 155,
     "Moonphase": 20,
-    "Huntington Company": 95,
+    "Huntington Company": 96,
     "The Vintage Watch": 22,
     "Chronoholic": 4,
     "Vintage Watch Fam": 526,
@@ -37,8 +37,7 @@
     "Vision Vintage Watches": 73,
     "Watchurbia": 4,
     "Maunder Watches": 70,
-    "Watch Club": 69,
-    "Vintage Watch Shop": 27,
+    "Watch Club": 71,
     "Watches of Lancashire": 53,
     "Heuertime": 32,
     "ClassicHeuer": 41,
@@ -46,8 +45,9 @@
     "S.Song Watches": 19,
     "Swiss Hours": 71,
     "Watch Center": 261,
-    "eBay": 33
+    "eBay": 33,
+    "Vintage Watch Shop": 27
   },
-  "total_listings": 4198,
+  "total_listings": 4195,
   "sources_tracked": 44
 }
