@@ -1,6 +1,6 @@
 {
-  "date": "2026-09-13",
-  "updated_at": "2026-09-13T22:30:04+00:00",
+  "date": "2026-09-14",
+  "updated_at": "2026-09-14T08:03:37+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 113,
@@ -8,7 +8,7 @@
     "Menta Watches": 51,
     "Collectors Corner NY": 88,
     "Falco Watches": 25,
-    "Pascal Karp": 91,
+    "Pascal Karp": 90,
     "Tokant": 31,
     "Romain R\u00e9a": 238,
     "Grey & Patina": 57,
@@ -34,7 +34,7 @@
     "Central Watch": 180,
     "European Watch": 22,
     "Vintage Watch Collective": 28,
-    "Vision Vintage Watches": 72,
+    "Vision Vintage Watches": 71,
     "Watchurbia": 4,
     "Maunder Watches": 70,
     "Watch Club": 69,
@@ -43,11 +43,11 @@
     "Heuertime": 32,
     "ClassicHeuer": 41,
     "Luna Royster": 27,
-    "S.Song Watches": 19,
+    "S.Song Watches": 20,
     "Swiss Hours": 71,
     "Watch Center": 261,
     "eBay": 32
   },
-  "total_listings": 4185,
+  "total_listings": 4184,
   "sources_tracked": 44
 }
