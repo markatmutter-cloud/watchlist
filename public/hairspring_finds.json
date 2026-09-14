@@ -5875,21 +5875,16 @@
     "model_line": null,
     "published_at": "2026-07-15",
     "reference_no": null,
-    "scraped_at": "2026-08-15T20:19:05Z",
+    "scraped_at": "2026-09-14T23:06:07Z",
     "slug": "25829ba-audemars-piguet-royal-oak-qp-skeleton",
     "sold_price_usd": 225000,
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
-    "themes": [
-      "reference_profile",
-      "complications",
-      "brand_history"
-    ],
     "title": "25829BA Audemars Piguet Royal Oak QP Skeleton",
     "updated_at": "2026-06-14",
     "url": "https://hairspring.com/blogs/finds/25829ba-audemars-piguet-royal-oak-qp-skeleton",
-    "word_count": 408
+    "word_count": 406
   },
   "https://hairspring.com/blogs/finds/25829or-audemars-piguet-royal-oak-perpetual-calendar-skeleton": {
     "author": "Erik Gustafson",
