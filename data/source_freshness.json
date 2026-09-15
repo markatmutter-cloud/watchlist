@@ -12,16 +12,16 @@
     "rows": 18
   },
   "Bob's Watches": {
-    "fingerprint": "a2dc866895f17573",
-    "lastChanged": "2026-09-14",
+    "fingerprint": "bff68d74dd3a109c",
+    "lastChanged": "2026-09-15",
     "lastSeen": "2026-09-15",
     "rows": 94
   },
   "Bulang & Sons": {
-    "fingerprint": "7ead7fed012851e8",
-    "lastChanged": "2026-09-14",
+    "fingerprint": "e8652b85e3a7d62f",
+    "lastChanged": "2026-09-15",
     "lastSeen": "2026-09-15",
-    "rows": 155
+    "rows": 154
   },
   "Central Watch": {
     "fingerprint": "da2afc71db9b8d94",
@@ -48,10 +48,10 @@
     "rows": 95
   },
   "Craft & Tailored": {
-    "fingerprint": "b4cfe56be9f02ff6",
-    "lastChanged": "2026-09-13",
+    "fingerprint": "1f47b54b0bace517",
+    "lastChanged": "2026-09-15",
     "lastSeen": "2026-09-15",
-    "rows": 108
+    "rows": 109
   },
   "DB1983": {
     "fingerprint": "ca2c6f80b0372cd9",
@@ -78,8 +78,8 @@
     "rows": 53
   },
   "Hairspring": {
-    "fingerprint": "17eccf80243feafd",
-    "lastChanged": "2026-09-13",
+    "fingerprint": "1a846edea10b5436",
+    "lastChanged": "2026-09-15",
     "lastSeen": "2026-09-15",
     "rows": 40
   },
@@ -114,10 +114,10 @@
     "rows": 52
   },
   "Moonphase": {
-    "fingerprint": "d9ff32f487308302",
-    "lastChanged": "2026-09-05",
+    "fingerprint": "5a9400b04d5a8c23",
+    "lastChanged": "2026-09-15",
     "lastSeen": "2026-09-15",
-    "rows": 20
+    "rows": 19
   },
   "Oliver & Clarke": {
     "fingerprint": "43570b4aa284ff2a",
@@ -144,8 +144,8 @@
     "rows": 20
   },
   "Shuck the Oyster": {
-    "fingerprint": "e1f0cf66f0d6c968",
-    "lastChanged": "2026-09-11",
+    "fingerprint": "5b2c11d23431cc65",
+    "lastChanged": "2026-09-15",
     "lastSeen": "2026-09-15",
     "rows": 131
   },
@@ -180,10 +180,10 @@
     "rows": 30
   },
   "Tropical Watch": {
-    "fingerprint": "99cad6e64af0cd4b",
-    "lastChanged": "2026-09-14",
+    "fingerprint": "6dc3810ba02d3001",
+    "lastChanged": "2026-09-15",
     "lastSeen": "2026-09-15",
-    "rows": 114
+    "rows": 112
   },
   "Vintage Watch Collective": {
     "fingerprint": "c9542916d6817bee",
@@ -204,10 +204,10 @@
     "rows": 27
   },
   "Vision Vintage Watches": {
-    "fingerprint": "a782c5ac3b41429c",
-    "lastChanged": "2026-09-14",
+    "fingerprint": "6509a78904ad5630",
+    "lastChanged": "2026-09-15",
     "lastSeen": "2026-09-15",
-    "rows": 54
+    "rows": 90
   },
   "Watch Brothers London": {
     "fingerprint": "bacdf5c21b1311ba",
@@ -240,8 +240,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "f6dad9734a05e649",
-    "lastChanged": "2026-09-14",
+    "fingerprint": "eae0abf93508e18f",
+    "lastChanged": "2026-09-15",
     "lastSeen": "2026-09-15",
     "rows": 70
   },
@@ -300,8 +300,8 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "e7f0af73be0b6893",
-    "lastChanged": "2026-09-15",
+    "fingerprint": "aa51cbe4d6573967",
+    "lastChanged": "2026-09-14",
     "lastSeen": "2026-09-15",
     "rows": 33
   },
@@ -414,9 +414,9 @@
     "rows": 98
   },
   "merged:listings": {
-    "fingerprint": "ef4c56c41da7d690",
+    "fingerprint": "b0a6705f381708e4",
     "lastChanged": "2026-09-15",
     "lastSeen": "2026-09-15",
-    "rows": 10446
+    "rows": 10448
   }
 }
