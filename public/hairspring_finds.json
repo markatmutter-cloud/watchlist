@@ -4110,21 +4110,16 @@
     "model_line": "Calatrava (vintage additions)",
     "published_at": "2026-08-16",
     "reference_no": "2488",
-    "scraped_at": "2026-08-17T14:31:06Z",
+    "scraped_at": "2026-09-16T18:07:13Z",
     "slug": "2488-cartier-tank-asymetrique",
     "sold_price_usd": 100000,
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
-    "themes": [
-      "reference_profile",
-      "design",
-      "brand_history"
-    ],
     "title": "2488 Cartier Tank Asymétrique",
     "updated_at": "2026-08-17",
     "url": "https://hairspring.com/blogs/finds/2488-cartier-tank-asymetrique",
-    "word_count": 391
+    "word_count": 388
   },
   "https://hairspring.com/blogs/finds/25-years-service-coca-cola-6565-rolex-oyster-perpetual": {
     "author": "Erik Gustafson",
