@@ -27015,20 +27015,16 @@
     "model_line": "World Time",
     "published_at": "2026-05-18",
     "reference_no": "2523",
-    "scraped_at": "2026-08-18T14:38:55Z",
+    "scraped_at": "2026-09-17T18:11:44Z",
     "slug": "prototype-2523-patek-philippe-world-time",
     "sold_price_usd": null,
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
-    "themes": [
-      "reference_profile",
-      "brand_history"
-    ],
     "title": "Prototype 2523 Patek Philippe World Time",
     "updated_at": "2026-05-19",
     "url": "https://hairspring.com/blogs/finds/prototype-2523-patek-philippe-world-time",
-    "word_count": 371
+    "word_count": 374
   },
   "https://hairspring.com/blogs/finds/prototype-dial-22410-universal-geneve-compax": {
     "author": "Erik Gustafson",
@@ -30394,20 +30390,16 @@
     "model_line": null,
     "published_at": "2026-06-17",
     "reference_no": null,
-    "scraped_at": "2026-08-18T14:38:53Z",
+    "scraped_at": "2026-09-17T18:11:42Z",
     "slug": "stealth-111-025-a-lange-sohne-little-lange-1",
     "sold_price_usd": 75000,
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
-    "themes": [
-      "reference_profile",
-      "brand_history"
-    ],
     "title": "'Stealth' 111.025 A. Lange & Söhne Little Lange 1",
     "updated_at": "2026-07-17",
     "url": "https://hairspring.com/blogs/finds/stealth-111-025-a-lange-sohne-little-lange-1",
-    "word_count": 392
+    "word_count": 388
   },
   "https://hairspring.com/blogs/finds/steel-565-patek-philippe-calatrava": {
     "author": "Erik Gustafson",
