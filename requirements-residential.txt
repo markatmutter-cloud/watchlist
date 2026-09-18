@@ -1,0 +1,14 @@
+# Dependencies for the residential laptop agent
+# (scripts/bonhams_residential_scrape.sh). Composes the auction pins so
+# `requests` and `curl-cffi` stay defined in exactly one place.
+#
+# Playwright is here and NOT in the CI requirements on purpose: it exists
+# to satisfy Cloudflare MANAGED challenges (B-99), which demand JavaScript
+# from every client. A CI runner solving one would only earn clearance for
+# a datacenter IP that Cloudflare is minded to challenge again anyway, and
+# it would drag a ~400MB browser into every scrape job.
+#
+# After installing, fetch the browser binary once:
+#     python3 -m playwright install chromium
+-r requirements-auctions.txt
+playwright==1.63.0
