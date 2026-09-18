@@ -1108,6 +1108,38 @@ def emit_auction_status(date_start, date_end, hint, today=TODAY):
     return status
 
 
+def superseded_auction_ids(state):
+    """Registry ids of sales that were RESCHEDULED: a newer entry from the
+    same house, city and sale title replaced it on the house calendar.
+
+    The registry keys on (house, dateStart, title), so a date change mints a
+    new entry and the old one lingers forever. Antiquorum moved its New York
+    sale Jul 18 -> Sep 15 -> Oct 18 and its Hong Kong sale Nov 29 -> Nov 28,
+    leaving two "past" sales that never happened and a duplicate upcoming one.
+
+    Deliberately narrow: the old entry must have left the calendar BEFORE its
+    own sale date, never had a catalog, and a same-house/city/title entry must
+    have appeared once it left and still be listed after. A sale that simply
+    ran and dropped off keeps being emitted (the Archive needs it).
+    """
+    out = set()
+    for aid, e in state.items():
+        last = e.get('lastSeen') or ''
+        start = e.get('dateStart') or ''
+        if not (last and start and last < start) or e.get('catalogLiveAt'):
+            continue
+        key = (e.get('house'), e.get('title'), (e.get('location') or '').lower())
+        for oid, o in state.items():
+            if oid == aid:
+                continue
+            if (o.get('house'), o.get('title'), (o.get('location') or '').lower()) != key:
+                continue
+            if (o.get('firstSeen') or '') >= last and (o.get('lastSeen') or '') > last:
+                out.add(aid)
+                break
+    return out
+
+
 def process_auctions():
     """Build public/auctions.json from public/auctions_state.json (the
     registry of every auction we've ever seen) — NOT just from the
@@ -1208,7 +1240,12 @@ def process_auctions():
 
     # --- Pass 2: emit auctions.json from the FULL registry ----------------
     auctions = []
+    rescheduled = superseded_auction_ids(state)
+    if rescheduled:
+        print(f"  auctions: hiding {len(rescheduled)} rescheduled sale(s)")
     for aid, entry in state.items():
+        if aid in rescheduled:
+            continue
         house = entry.get('house') or ''
         title = entry.get('title') or entry.get('lastTitle') or ''
         if not house or not title:
