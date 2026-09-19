@@ -7451,21 +7451,16 @@
     "model_line": null,
     "published_at": "2026-07-20",
     "reference_no": null,
-    "scraped_at": "2026-08-20T20:33:39Z",
+    "scraped_at": "2026-09-19T22:04:29Z",
     "slug": "43031-vacheron-constantin-perpetual-calendar-1",
     "sold_price_usd": 37500,
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
-    "themes": [
-      "reference_profile",
-      "complications",
-      "brand_history"
-    ],
     "title": "43031 Vacheron Constantin Perpetual Calendar",
     "updated_at": "2026-07-21",
     "url": "https://hairspring.com/blogs/finds/43031-vacheron-constantin-perpetual-calendar-1",
-    "word_count": 369
+    "word_count": 374
   },
   "https://hairspring.com/blogs/finds/43031-vacheron-constantin-perpetual-calendar-platinum": {
     "author": "Erik Gustafson",
