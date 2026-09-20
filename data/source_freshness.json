@@ -1,9 +1,9 @@
 {
   "Analog Shift": {
-    "fingerprint": "8e3454104f9ffa10",
+    "fingerprint": "e8ddd46385736328",
     "lastChanged": "2026-09-20",
     "lastSeen": "2026-09-20",
-    "rows": 755
+    "rows": 756
   },
   "Belmont Watches": {
     "fingerprint": "b7d6fe77933e8cbf",
@@ -12,10 +12,10 @@
     "rows": 20
   },
   "Bob's Watches": {
-    "fingerprint": "6513e47578fb68c5",
+    "fingerprint": "eba6a03e0c5f5a9a",
     "lastChanged": "2026-09-20",
     "lastSeen": "2026-09-20",
-    "rows": 89
+    "rows": 86
   },
   "Bulang & Sons": {
     "fingerprint": "d9b8266fa5d479d2",
@@ -42,8 +42,8 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "e50e6949801822bd",
-    "lastChanged": "2026-09-19",
+    "fingerprint": "c94c231fb7efc144",
+    "lastChanged": "2026-09-20",
     "lastSeen": "2026-09-20",
     "rows": 87
   },
@@ -60,10 +60,10 @@
     "rows": 18
   },
   "European Watch": {
-    "fingerprint": "475a964da1fc630e",
+    "fingerprint": "9bf5e8b84981d97c",
     "lastChanged": "2026-09-20",
     "lastSeen": "2026-09-20",
-    "rows": 13
+    "rows": 12
   },
   "Falco Watches": {
     "fingerprint": "3880ab642b21cf4a",
@@ -78,7 +78,7 @@
     "rows": 52
   },
   "Hairspring": {
-    "fingerprint": "9119f54fc1c451f6",
+    "fingerprint": "315cd138f77fd81d",
     "lastChanged": "2026-09-20",
     "lastSeen": "2026-09-20",
     "rows": 39
@@ -210,10 +210,10 @@
     "rows": 98
   },
   "Watch Brothers London": {
-    "fingerprint": "bb0bc9f45d0bb716",
-    "lastChanged": "2026-09-15",
+    "fingerprint": "ee1a32eefccd5fb4",
+    "lastChanged": "2026-09-20",
     "lastSeen": "2026-09-20",
-    "rows": 6
+    "rows": 7
   },
   "Watch Center": {
     "fingerprint": "3707b75fa5d6d83d",
@@ -414,9 +414,9 @@
     "rows": 99
   },
   "merged:listings": {
-    "fingerprint": "f73203f3c391bc9b",
+    "fingerprint": "7c7afff0006ccac4",
     "lastChanged": "2026-09-20",
     "lastSeen": "2026-09-20",
-    "rows": 10649
+    "rows": 10652
   }
 }
