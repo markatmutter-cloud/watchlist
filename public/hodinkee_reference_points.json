@@ -13,6 +13,10 @@
     "source": "hodinkee_reference_points",
     "source_type": "editorial_reference_points",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "Reference Points: Magazine Extra: The Audemars Piguet Royal Oak",
     "updated_at": "2022-07-01",
     "url": "https://www.hodinkee.com/articles/reference-points-audemars-piguet-royal-oak",
@@ -32,6 +36,11 @@
     "source": "hodinkee_reference_points",
     "source_type": "editorial_reference_points",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history",
+      "design"
+    ],
     "title": "Reference Points: The Cartier Tank Louis",
     "updated_at": "2025-04-22",
     "url": "https://www.hodinkee.com/articles/reference-points-cartier-tank-louis",
@@ -51,6 +60,11 @@
     "source": "hodinkee_reference_points",
     "source_type": "editorial_reference_points",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "complications",
+      "brand_history"
+    ],
     "title": "Reference Points: The Complete History Of The F.P. Journe Tourbillon, As Told By Francois-Paul Journe Himself",
     "updated_at": "2021-06-23",
     "url": "https://www.hodinkee.com/articles/reference-points-fp-journe-tourbillon",
@@ -70,6 +84,10 @@
     "source": "hodinkee_reference_points",
     "source_type": "editorial_reference_points",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "complications"
+    ],
     "title": "Reference Points: The Patek Philippe Split-Seconds Wristwatch",
     "updated_at": "2026-07-27",
     "url": "https://www.hodinkee.com/articles/reference-points-patek-philippe-split-seconds-wristwatch",
@@ -89,6 +107,10 @@
     "source": "hodinkee_reference_points",
     "source_type": "editorial_reference_points",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "diving"
+    ],
     "title": "Reference Points: Understanding The Rolex Sea-Dweller",
     "updated_at": "2021-09-28",
     "url": "https://www.hodinkee.com/articles/reference-points-rolex-sea-dweller",
@@ -108,6 +130,10 @@
     "source": "hodinkee_reference_points",
     "source_type": "editorial_reference_points",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "Reference Points: The Heuer Carrera",
     "updated_at": "2023-03-14",
     "url": "https://www.hodinkee.com/articles/reference-points-tag-heuer-carrera",
@@ -127,6 +153,11 @@
     "source": "hodinkee_reference_points",
     "source_type": "editorial_reference_points",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "diving",
+      "brand_history"
+    ],
     "title": "Reference Points: The Omega Seamaster 300",
     "updated_at": "2023-11-09",
     "url": "https://www.hodinkee.com/articles/reference-points-the-omega-seamaster-300",
@@ -146,6 +177,10 @@
     "source": "hodinkee_reference_points",
     "source_type": "editorial_reference_points",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "celebrity"
+    ],
     "title": "Reference Points: Understanding The Rolex Paul Newman Daytona",
     "updated_at": "2021-06-23",
     "url": "https://www.hodinkee.com/articles/reference-points-the-paul-newman-daytona",
@@ -165,6 +200,10 @@
     "source": "hodinkee_reference_points",
     "source_type": "editorial_reference_points",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "vintage_care"
+    ],
     "title": "Reference Points: A Comprehensive Collector's Guide To The Rolex Explorer I",
     "updated_at": "2023-06-01",
     "url": "https://www.hodinkee.com/articles/rolex-explorer-reference-points",
@@ -184,6 +223,10 @@
     "source": "hodinkee_reference_points",
     "source_type": "editorial_reference_points",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "aviation"
+    ],
     "title": "Reference Points: Understanding The Rolex GMT-Master",
     "updated_at": "2024-09-20",
     "url": "https://www.hodinkee.com/articles/rolex-gmt-master-reference-points",
@@ -203,6 +246,11 @@
     "source": "hodinkee_reference_points",
     "source_type": "editorial_reference_points",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history",
+      "diving"
+    ],
     "title": "Reference Points: Understanding The Rolex Submariner",
     "updated_at": "2021-09-28",
     "url": "https://www.hodinkee.com/articles/rolex-submariner-reference-points",

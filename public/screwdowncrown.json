@@ -14,6 +14,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "My 8 Best Techniques for Evaluating Character",
     "updated_at": "2024-03-14",
     "url": "https://www.honest-broker.com/cp/142614041",
@@ -34,6 +35,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history",
+      "community_ethics"
+    ],
     "title": "There Is No Fair",
     "updated_at": "2026-07-15",
     "url": "https://www.screwdowncrown.com/p/1776-atelier-hand-finishing-american-watchmaking",
@@ -54,6 +59,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "4 ways to quiet imposter syndrome and start believing in yourself",
     "updated_at": "2019-05-27",
     "url": "https://www.screwdowncrown.com/p/4-ways-to-quiet-imposter-syndrome-and-start-believing-in-yourself",
@@ -74,6 +80,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "50 Guiding Principles",
     "updated_at": "2024-03-18",
     "url": "https://www.screwdowncrown.com/p/50-principles",
@@ -94,6 +104,11 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "space",
+      "news",
+      "brand_history"
+    ],
     "title": "50 Years Ago, the Omega Calibre 321 Landed on the Moon",
     "updated_at": "2019-01-09",
     "url": "https://www.screwdowncrown.com/p/50-years-ago-the-omega-calibre-321-landed-on-the-moon",
@@ -135,6 +150,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history",
+      "design"
+    ],
     "title": "A Brief History: The Rolex Day-Date",
     "updated_at": "2019-01-04",
     "url": "https://www.screwdowncrown.com/p/a-brief-history-the-rolex-day-date",
@@ -155,6 +174,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "A brief note on paywalled posts",
     "updated_at": "2023-05-25",
     "url": "https://www.screwdowncrown.com/p/a-brief-note-on-paywalled-posts",
@@ -175,6 +195,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "life_lessons"
+    ],
     "title": "A few things to know before stealing my Patek Philippe 5004P",
     "updated_at": "2024-06-25",
     "url": "https://www.screwdowncrown.com/p/a-few-things-to-know-5004p",
@@ -195,6 +219,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "A new era of marketing in the watch world",
     "updated_at": "2021-11-03",
     "url": "https://www.screwdowncrown.com/p/a-new-era-of-marketing-in-the-watch",
@@ -215,6 +240,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "A new way of pricing hyped watches",
     "updated_at": "2022-01-07",
     "url": "https://www.screwdowncrown.com/p/a-new-way-of-pricing-hyped-watches",
@@ -235,6 +263,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons"
+    ],
     "title": "A Personal Update",
     "updated_at": "2025-06-25",
     "url": "https://www.screwdowncrown.com/p/a-personal-update",
@@ -255,6 +286,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "A short story about amassing wealth",
     "updated_at": "2022-02-25",
     "url": "https://www.screwdowncrown.com/p/a-short-story-about-amassing-wealth",
@@ -275,6 +307,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "community_ethics"
+    ],
     "title": "Adverse Selection & Watch Collecting",
     "updated_at": "2024-09-27",
     "url": "https://www.screwdowncrown.com/p/adverse-selection-information-asymmetry",
@@ -295,6 +331,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "Agency for watch collectors",
     "updated_at": "2024-01-28",
     "url": "https://www.screwdowncrown.com/p/agency-for-watch-collectors",
@@ -315,6 +355,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "community_ethics"
+    ],
     "title": "Aggregation of ideologies",
     "updated_at": "2022-03-17",
     "url": "https://www.screwdowncrown.com/p/aggregation-of-ideologies",
@@ -335,6 +379,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "AI and watch collecting",
     "updated_at": "2023-04-21",
     "url": "https://www.screwdowncrown.com/p/ai-and-watch-collecting",
@@ -355,6 +402,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "life_lessons"
+    ],
     "title": "Watchmakers' Ghosts",
     "updated_at": "2025-04-25",
     "url": "https://www.screwdowncrown.com/p/ai-watchmakers-future-of-watches-and-horology",
@@ -375,6 +426,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "community_ethics"
+    ],
     "title": "Watch Collecting in the Anti-Social Century",
     "updated_at": "2026-05-22",
     "url": "https://www.screwdowncrown.com/p/anti-social-century-watch-collectors-remedy",
@@ -395,6 +450,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "market_commentary"
+    ],
     "title": "What you pay for when you buy a watch",
     "updated_at": "2026-06-25",
     "url": "https://www.screwdowncrown.com/p/are-luxury-watches-worth-it-value-price",
@@ -415,6 +474,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "The Art Basel and UBS Global Art Market Report 2024: Key Insights and Trends",
     "updated_at": "2024-06-20",
     "url": "https://www.screwdowncrown.com/p/art-market-watch-market-insights",
@@ -435,6 +497,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "The Art of Spending Money - Book Summary",
     "updated_at": "2026-03-19",
     "url": "https://www.screwdowncrown.com/p/art-of-spending-money-morgan-housel",
@@ -455,6 +521,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "Asinine Things",
     "updated_at": "2024-08-03",
     "url": "https://www.screwdowncrown.com/p/asinine-things",
@@ -475,6 +545,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "collecting_philosophy"
+    ],
     "title": "The Attention Economy and Experiential Luxury",
     "updated_at": "2025-10-24",
     "url": "https://www.screwdowncrown.com/p/attention-economy-watch-collecting-experiential-luxury",
@@ -495,6 +569,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Attitude for gratitude",
     "updated_at": "2021-05-27",
     "url": "https://www.screwdowncrown.com/p/attitude-for-gratitude-3-blessings-exercise",
@@ -515,6 +590,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "brand_history"
+    ],
     "title": "Audemars Piguet's KAWS Collaboration",
     "updated_at": "2024-11-21",
     "url": "https://www.screwdowncrown.com/p/audemars-piguet-kaws-collaboration",
@@ -535,6 +614,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "market_commentary"
+    ],
     "title": "Royal Pop, Two Possibilities",
     "updated_at": "2026-05-14",
     "url": "https://www.screwdowncrown.com/p/audemars-piguet-swatch-royal-pop-strategy-analysis",
@@ -555,6 +638,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Good for whom? What Makes a Watch Worth the Money.",
     "updated_at": "2026-08-05",
     "url": "https://www.screwdowncrown.com/p/barrelhand-monolith-sellita-watch-value",
@@ -575,6 +661,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Be Like Amazon",
     "updated_at": "2019-01-02",
     "url": "https://www.screwdowncrown.com/p/be-like-amazon",
@@ -595,6 +682,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "Behavioural Economics and Watch Collecting",
     "updated_at": "2024-01-07",
     "url": "https://www.screwdowncrown.com/p/behavioural-economics-and-watch-collecting",
@@ -615,6 +706,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics"
+    ],
     "title": "Ben Clymer, Hodinkee, and The Chairman Who Wasn't There",
     "updated_at": "2025-01-17",
     "url": "https://www.screwdowncrown.com/p/ben-clymer-podcast-hodinkee-analysis",
@@ -635,6 +729,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Blind men and an elephant",
     "updated_at": "2021-04-06",
     "url": "https://www.screwdowncrown.com/p/blind-men-and-an-elephant",
@@ -655,6 +750,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Bloomberg's Take on Watches in Music",
     "updated_at": "2025-08-15",
     "url": "https://www.screwdowncrown.com/p/bloomberg-luxury-watches-hip-hop-correlation-causation-debate",
@@ -675,6 +773,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history"
+    ],
     "title": "Brand power",
     "updated_at": "2023-08-05",
     "url": "https://www.screwdowncrown.com/p/brand-power",
@@ -695,6 +796,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "complications"
+    ],
     "title": "Breguet Expérimentale 1 Explained",
     "updated_at": "2025-12-03",
     "url": "https://www.screwdowncrown.com/p/breguet-experimentale-1-magnetic-escapement",
@@ -715,6 +820,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "design"
+    ],
     "title": "Brevity",
     "updated_at": "2023-05-05",
     "url": "https://www.screwdowncrown.com/p/brevity",
@@ -759,6 +868,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "design",
+      "vintage_care"
+    ],
     "title": "Can You Tell The Difference Between Cheap And Expensive Watches?",
     "updated_at": "2019-01-26",
     "url": "https://www.screwdowncrown.com/p/can-you-tell-the-difference-between-cheap-and-expensive-watches",
@@ -779,6 +892,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "market_commentary"
+    ],
     "title": "Chanel takes a 25% ownership stake in MB&F",
     "updated_at": "2024-08-22",
     "url": "https://www.screwdowncrown.com/p/chanel-mbandf-partnership-investment",
@@ -799,6 +916,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "Why we behave the way we do",
     "updated_at": "2023-11-28",
     "url": "https://www.screwdowncrown.com/p/charlie-munger",
@@ -819,6 +940,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics"
+    ],
     "title": "The Cherry Creek Caper: Hyde Park Jewellers' Worst Nightmare",
     "updated_at": "2024-07-29",
     "url": "https://www.screwdowncrown.com/p/cherry-creek-hyde-park-jewellers-1916-company",
@@ -839,6 +963,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics",
+      "market_commentary"
+    ],
     "title": "Chrono24 Has a Timing Problem",
     "updated_at": "2026-08-14",
     "url": "https://www.screwdowncrown.com/p/chrono24-vs-dealer-websites-watch-prices",
@@ -859,6 +987,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Chutzpah in Watchmaking",
     "updated_at": "2021-03-09",
     "url": "https://www.screwdowncrown.com/p/chutzpah-in-watchmaking",
@@ -879,6 +1010,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "complications",
+      "reference_profile"
+    ],
     "title": "Cleguer's Innate Escapement Explained",
     "updated_at": "2026-04-10",
     "url": "https://www.screwdowncrown.com/p/cleguer-inspiration-one-innate-escapement-rolex-dynapulse",
@@ -899,6 +1034,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons",
+      "collecting_philosophy"
+    ],
     "title": "The College Graduate & The Garbage Collector",
     "updated_at": "2023-12-08",
     "url": "https://www.screwdowncrown.com/p/college-graduate-garbage-collector",
@@ -919,6 +1058,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "community_ethics"
+    ],
     "title": "Confessions of a watch modder",
     "updated_at": "2025-11-28",
     "url": "https://www.screwdowncrown.com/p/confessions-of-a-watch-modder-watch-collecting-modification-authenticity-ethics",
@@ -939,6 +1082,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Consumerism and respect",
     "updated_at": "2022-08-06",
     "url": "https://www.screwdowncrown.com/p/consumerism-and-respect",
@@ -959,6 +1103,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics"
+    ],
     "title": "The Cost of Truth in Watch Media",
     "updated_at": "2026-01-16",
     "url": "https://www.screwdowncrown.com/p/cost-of-truth-in-watch-media-economics",
@@ -979,6 +1126,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Costs vs benefits",
     "updated_at": "2021-03-29",
     "url": "https://www.screwdowncrown.com/p/costs-vs-benefits",
@@ -999,6 +1149,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons"
+    ],
     "title": "Could your thoughts make you age faster?",
     "updated_at": "2019-01-07",
     "url": "https://www.screwdowncrown.com/p/could-your-thoughts-make-you-age-faster",
@@ -1019,6 +1172,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "collecting_philosophy"
+    ],
     "title": "Musings on creativity, and the future of the market for independent watchmakers",
     "updated_at": "2021-03-08",
     "url": "https://www.screwdowncrown.com/p/creativity-and-independent-watchmakers",
@@ -1039,6 +1196,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "Cynicism and watch collecting",
     "updated_at": "2022-02-28",
     "url": "https://www.screwdowncrown.com/p/cynicism-and-watch-collecting",
@@ -1059,6 +1220,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "community_ethics"
+    ],
     "title": "Trophies You Didn’t Earn",
     "updated_at": "2026-06-19",
     "url": "https://www.screwdowncrown.com/p/david-concannon-trophies-you-didnt-earn",
@@ -1079,6 +1244,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics",
+      "collecting_philosophy"
+    ],
     "title": "Dear Diary",
     "updated_at": "2023-06-07",
     "url": "https://www.screwdowncrown.com/p/dear-diary",
@@ -1099,6 +1268,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "The Deloitte Swiss Watch Industry Study 2025",
     "updated_at": "2025-10-08",
     "url": "https://www.screwdowncrown.com/p/deloitte-swiss-watch-industry-study-2025-analysis",
@@ -1119,6 +1291,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics",
+      "collector_mindset"
+    ],
     "title": "Do you have the right to sell your watches?",
     "updated_at": "2021-11-30",
     "url": "https://www.screwdowncrown.com/p/do-you-have-the-right-to-sell-your",
@@ -1139,6 +1315,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset"
+    ],
     "title": "Do you like it?",
     "updated_at": "2023-06-05",
     "url": "https://www.screwdowncrown.com/p/do-you-like-it",
@@ -1159,6 +1338,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset"
+    ],
     "title": "Do you like the idea more than the reality?",
     "updated_at": "2022-01-27",
     "url": "https://www.screwdowncrown.com/p/do-you-like-the-idea-more-than-the",
@@ -1179,6 +1361,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "market_commentary"
+    ],
     "title": "Do you miss depreciation?",
     "updated_at": "2021-11-22",
     "url": "https://www.screwdowncrown.com/p/do-you-miss-depreciation",
@@ -1199,6 +1385,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Do you really know what you know?",
     "updated_at": "2024-02-05",
     "url": "https://www.screwdowncrown.com/p/do-you-really-know-what-you-know",
@@ -1219,6 +1406,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "life_lessons"
+    ],
     "title": "The Utility of Money: Navigating Wealth, Watches, and Wise Decisions",
     "updated_at": "2024-05-16",
     "url": "https://www.screwdowncrown.com/p/do-you-want-100m",
@@ -1239,6 +1430,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Doing the work required to have an opinion",
     "updated_at": "2026-08-01",
     "url": "https://www.screwdowncrown.com/p/doing-the-work-to-have-an-opinion",
@@ -1259,6 +1453,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "life_lessons"
+    ],
     "title": "Dopamine and watch collecting",
     "updated_at": "2021-11-29",
     "url": "https://www.screwdowncrown.com/p/dopamine-and-watch-collecting",
@@ -1279,6 +1477,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons"
+    ],
     "title": "The Invisible Prison",
     "updated_at": "2025-08-29",
     "url": "https://www.screwdowncrown.com/p/dostoevsky-prison-metaphor-watch-collector-enthusiast",
@@ -1299,6 +1500,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons",
+      "collecting_philosophy"
+    ],
     "title": "The Emotional Bonds Between Watch Collectors and Their Timepieces",
     "updated_at": "2024-05-31",
     "url": "https://www.screwdowncrown.com/p/emotional-bonds-watch-collectors",
@@ -1319,6 +1524,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons",
+      "collecting_philosophy"
+    ],
     "title": "Enough is a Choice",
     "updated_at": "2026-01-01",
     "url": "https://www.screwdowncrown.com/p/enough-tolerance-bottle-new-year-reflection-2026",
@@ -1339,6 +1548,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "collector_mindset"
+    ],
     "title": "The Enrichment Economy",
     "updated_at": "2024-12-24",
     "url": "https://www.screwdowncrown.com/p/enrichment-economy-luxury-watch-collecting",
@@ -1359,6 +1572,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons",
+      "collecting_philosophy"
+    ],
     "title": "Entropy, Time, and the Art of Watchmaking",
     "updated_at": "2024-08-10",
     "url": "https://www.screwdowncrown.com/p/entropy-and-watch-collecting",
@@ -1379,6 +1596,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics",
+      "collector_mindset"
+    ],
     "title": "Watch Collecting Etiquette: Part 1",
     "updated_at": "2025-12-13",
     "url": "https://www.screwdowncrown.com/p/etiquette-unwritten-rules-watch-collecting-part-1",
@@ -1399,6 +1620,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics"
+    ],
     "title": "Watch Collecting Etiquette: Part 2",
     "updated_at": "2025-12-28",
     "url": "https://www.screwdowncrown.com/p/etiquette-unwritten-rules-watch-collecting-part-2",
@@ -1419,6 +1643,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "life_lessons"
+    ],
     "title": "Father Time",
     "updated_at": "2019-01-05",
     "url": "https://www.screwdowncrown.com/p/father-time",
@@ -1439,6 +1667,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "collector_mindset"
+    ],
     "title": "The fear and hubris cycle",
     "updated_at": "2023-11-23",
     "url": "https://www.screwdowncrown.com/p/fear-and-hubris",
@@ -1459,6 +1691,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "collecting_philosophy"
+    ],
     "title": "Fear and Loathing in the Watch World (1)",
     "updated_at": "2025-02-14",
     "url": "https://www.screwdowncrown.com/p/fear-and-loathing-watches-part-1",
@@ -1479,6 +1715,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "market_commentary"
+    ],
     "title": "Fear and Loathing in the Watch World (2)",
     "updated_at": "2025-02-21",
     "url": "https://www.screwdowncrown.com/p/fear-and-loathing-watches-part-2",
@@ -1499,6 +1739,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news"
+    ],
     "title": "F.P. Journe increases prices",
     "updated_at": "2021-12-18",
     "url": "https://www.screwdowncrown.com/p/fp-journe-increases-prices",
@@ -1519,6 +1762,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset"
+    ],
     "title": "Framing a purchase decision",
     "updated_at": "2023-02-01",
     "url": "https://www.screwdowncrown.com/p/framing-a-purchase-decision",
@@ -1539,6 +1785,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history"
+    ],
     "title": "Inside Frédérique Constant",
     "updated_at": "2025-11-26",
     "url": "https://www.screwdowncrown.com/p/frederique-constant-ceo-economics-eggerding-interview",
@@ -1559,6 +1808,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "auction_results",
+      "market_commentary"
+    ],
     "title": "20 Lots from the Geneva Auctions, Spring 2026",
     "updated_at": "2026-05-08",
     "url": "https://www.screwdowncrown.com/p/geneva-spring-watch-auctions-2026-preview",
@@ -1579,6 +1832,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "community_ethics"
+    ],
     "title": "Swiss Made or Swiss Charade?",
     "updated_at": "2024-11-13",
     "url": "https://www.screwdowncrown.com/p/gerald-charles-overpriced-scam-watch-critique",
@@ -1599,6 +1856,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "What Is Good Taste in Watches?",
     "updated_at": "2025-09-26",
     "url": "https://www.screwdowncrown.com/p/good-taste-in-watches-bourdieu-philosophy-cultural-capital",
@@ -1619,6 +1879,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "What 26 Years of GPHG Data Can Tell Us About the Watch Industry",
     "updated_at": "2026-08-10",
     "url": "https://www.screwdowncrown.com/p/gphg-data-analysis-watch-industry-trends",
@@ -1639,6 +1902,11 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "vintage_care",
+      "community_ethics",
+      "market_commentary"
+    ],
     "title": "The Guilloché Deception",
     "updated_at": "2024-09-21",
     "url": "https://www.screwdowncrown.com/p/guilloche-deception-atelier-wen-revolution",
@@ -1659,6 +1927,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "vintage_care",
+      "community_ethics"
+    ],
     "title": "The Hand-Finishing Fairy Tale",
     "updated_at": "2025-10-18",
     "url": "https://www.screwdowncrown.com/p/hand-finishing-fairy-tale-cnc-sharp-inner-angles-watch-hand-polishing",
@@ -1679,6 +1951,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "Happiness revisited",
     "updated_at": "2023-07-04",
     "url": "https://www.screwdowncrown.com/p/happiness-revisited",
@@ -1699,6 +1975,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "life_lessons"
+    ],
     "title": "Happiness versus Relief",
     "updated_at": "2022-02-08",
     "url": "https://www.screwdowncrown.com/p/happiness-versus-relief",
@@ -1719,6 +1999,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history"
+    ],
     "title": "The Hermès Empire: A 187-Year Journey from Harness Shop to Luxury Icon",
     "updated_at": "2024-06-28",
     "url": "https://www.screwdowncrown.com/p/hermes-luxury-brand-history-birkin-kelly",
@@ -1739,6 +2022,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history"
+    ],
     "title": "Timeless Treasures: Exploring the Rich History of Horology Pt. 1",
     "updated_at": "2024-08-07",
     "url": "https://www.screwdowncrown.com/p/history-horology-sundials-clocks-britten-pt1",
@@ -1759,6 +2045,11 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "market_commentary",
+      "community_ethics"
+    ],
     "title": "The Hodinkee Saga",
     "updated_at": "2024-10-05",
     "url": "https://www.screwdowncrown.com/p/hodinkee-acquisition-watches-of-switzerland-analysis",
@@ -1779,6 +2070,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "Homo economicus in the watch collecting world",
     "updated_at": "2021-03-17",
     "url": "https://www.screwdowncrown.com/p/homo-economicus-watch-collecting",
@@ -1799,6 +2094,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "The Horological Identity Crisis: What Makes a Watch Collector Tick?",
     "updated_at": "2024-07-27",
     "url": "https://www.screwdowncrown.com/p/horological-identity-crisis",
@@ -1819,6 +2118,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "life_lessons"
+    ],
     "title": "A Watch Collector’s Guide to Living Well",
     "updated_at": "2024-12-13",
     "url": "https://www.screwdowncrown.com/p/horological-journey-watch-collecting-life-lessons",
@@ -1839,6 +2142,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "community_ethics"
+    ],
     "title": "A Horological Trip Through Switzerland",
     "updated_at": "2024-06-07",
     "url": "https://www.screwdowncrown.com/p/horological-trip-switzerland",
@@ -1859,6 +2166,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "Horology and Human Nature",
     "updated_at": "2024-04-18",
     "url": "https://www.screwdowncrown.com/p/horology-and-human-nature",
@@ -1879,6 +2190,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "The Future of Watches in a Virtual Reality World",
     "updated_at": "2024-06-14",
     "url": "https://www.screwdowncrown.com/p/horology-meets-virtual-reality",
@@ -1899,6 +2213,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "How and why do you collect watches?",
     "updated_at": "2021-06-06",
     "url": "https://www.screwdowncrown.com/p/how-and-why-do-you-collect-watches",
@@ -1943,6 +2260,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "celebrity"
+    ],
     "title": "How Pleasure Works",
     "updated_at": "2024-07-13",
     "url": "https://www.screwdowncrown.com/p/how-pleasure-works-horology-essentialism",
@@ -1963,6 +2284,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "market_commentary"
+    ],
     "title": "How Scarcity Creates Desire",
     "updated_at": "2026-02-25",
     "url": "https://www.screwdowncrown.com/p/how-scarcity-creates-desire-psychology-watches",
@@ -1983,6 +2308,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "How To Stop Being Angry",
     "updated_at": "2019-05-20",
     "url": "https://www.screwdowncrown.com/p/how-to-stop-being-angry",
@@ -2003,6 +2329,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons"
+    ],
     "title": "How to think",
     "updated_at": "2022-04-30",
     "url": "https://www.screwdowncrown.com/p/how-to-think",
@@ -2044,6 +2373,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "How do you decide what watch to buy?",
     "updated_at": "2023-05-22",
     "url": "https://www.screwdowncrown.com/p/how-you-decide-what-watch-to-buy",
@@ -2088,6 +2421,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Illusions",
     "updated_at": "2023-11-04",
     "url": "https://www.screwdowncrown.com/p/illusions",
@@ -2108,6 +2444,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "In Defence of Shitters",
     "updated_at": "2025-09-12",
     "url": "https://www.screwdowncrown.com/p/in-defence-of-shitters-why-watch-collectors-need-cheap-watches",
@@ -2128,6 +2468,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history",
+      "collecting_philosophy"
+    ],
     "title": "The Spectrum of Independence in Watchmaking",
     "updated_at": "2024-08-29",
     "url": "https://www.screwdowncrown.com/p/independent-watchmaking-autonomy-creativity",
@@ -2148,6 +2492,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "brand_history"
+    ],
     "title": "Innovation and watchmaking",
     "updated_at": "2023-06-30",
     "url": "https://www.screwdowncrown.com/p/innovation-and-watchmaking",
@@ -2168,6 +2516,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Intelligence, Moral Worth, and the Value of Luxury Watches",
     "updated_at": "2024-06-22",
     "url": "https://www.screwdowncrown.com/p/intelligence-moral-worth-luxury-watches",
@@ -2188,6 +2539,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics"
+    ],
     "title": "Intro to ScrewDownCrown",
     "updated_at": "2026-06-30",
     "url": "https://www.screwdowncrown.com/p/intro-to-screwdowncrown",
@@ -2208,6 +2562,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Is it worth having children?",
     "updated_at": "2021-03-24",
     "url": "https://www.screwdowncrown.com/p/is-it-worth-having-children",
@@ -2228,6 +2583,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "community_ethics"
+    ],
     "title": "Is watch collecting a fictional activity?",
     "updated_at": "2021-06-27",
     "url": "https://www.screwdowncrown.com/p/is-watch-collecting-a-fictional-activity",
@@ -2272,6 +2631,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history"
+    ],
     "title": "John Harrison: The Carpenter Who Solved the Longitude Problem",
     "updated_at": "2024-05-10",
     "url": "https://www.screwdowncrown.com/p/john-harrison-longitude-problem",
@@ -2292,6 +2654,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "community_ethics"
+    ],
     "title": "You Can Now Bet on Whether Rolex Will Release a Coke GMT",
     "updated_at": "2026-03-04",
     "url": "https://www.screwdowncrown.com/p/kalshi-bezel-watch-futures-prediction-market",
@@ -2312,6 +2678,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics",
+      "collecting_philosophy"
+    ],
     "title": "Kindness, evolution and paying it forward",
     "updated_at": "2021-05-08",
     "url": "https://www.screwdowncrown.com/p/kindness-paying-it-forward",
@@ -2332,6 +2702,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history"
+    ],
     "title": "Behind the Scenes at La Fabrique du Temps",
     "updated_at": "2025-09-06",
     "url": "https://www.screwdowncrown.com/p/la-fabrique-du-temps-jacquemart-watchmaking-louis-vuitton-michel-navas-enrico-barbasini",
@@ -2352,6 +2725,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "brand_history"
+    ],
     "title": "A. Lange & Söhne does not care about buying pre owned watches",
     "updated_at": "2023-09-15",
     "url": "https://www.screwdowncrown.com/p/lange-and-sohne-cpo",
@@ -2372,6 +2749,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "community_ethics"
+    ],
     "title": "Let's talk about envy",
     "updated_at": "2024-03-27",
     "url": "https://www.screwdowncrown.com/p/lets-talk-about-envy",
@@ -2392,6 +2773,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history",
+      "vintage_care"
+    ],
     "title": "Louis Vuitton’s New Watch and A Story You Have Never Heard",
     "updated_at": "2025-12-06",
     "url": "https://www.screwdowncrown.com/p/louis-vuitton-monterey-secret-story-monvis",
@@ -2412,6 +2797,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Luck vs. Risk",
     "updated_at": "2023-03-08",
     "url": "https://www.screwdowncrown.com/p/luck-vs-risk",
@@ -2432,6 +2820,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "collecting_philosophy"
+    ],
     "title": "Luxoplasmosis",
     "updated_at": "2025-11-07",
     "url": "https://www.screwdowncrown.com/p/luxoplasmosis-luxury-watch-marketing-brand-equity",
@@ -2452,6 +2844,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "collecting_philosophy"
+    ],
     "title": "Nobody buys watches to tell time anymore...",
     "updated_at": "2025-12-18",
     "url": "https://www.screwdowncrown.com/p/luxury-asset-watch-correction-experience-economy-2025-2026",
@@ -2472,6 +2868,11 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "community_ethics",
+      "collector_mindset"
+    ],
     "title": "Loot Boxes, Long Degeneracy, and the Watch World's Gambling Problem",
     "updated_at": "2026-03-06",
     "url": "https://www.screwdowncrown.com/p/luxury-bazaar-courtyard-long-degeneracy-loot-box",
@@ -2492,6 +2893,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history"
+    ],
     "title": "The Wolf in Cashmere: How Bernard Arnault Built LVMH into the World's Largest Luxury Empire",
     "updated_at": "2024-05-03",
     "url": "https://www.screwdowncrown.com/p/lvmh-wolf-in-cashmere",
@@ -2512,6 +2916,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Made up rules",
     "updated_at": "2026-02-11",
     "url": "https://www.screwdowncrown.com/p/made-up-rules-watch-collecting",
@@ -2532,6 +2937,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "community_ethics"
+    ],
     "title": "Luxury Watch Smuggling Ring Uncovered at Malpensa",
     "updated_at": "2024-10-02",
     "url": "https://www.screwdowncrown.com/p/malpensa-watch-smuggling-ring-grey-market-exposed",
@@ -2552,6 +2961,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "review",
+      "design"
+    ],
     "title": "Unpacking MB&F’s HM12",
     "updated_at": "2026-06-16",
     "url": "https://www.screwdowncrown.com/p/mbf-hm12-guardian-succession",
@@ -2572,6 +2985,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics"
+    ],
     "title": "MB&F Responds",
     "updated_at": "2025-05-23",
     "url": "https://www.screwdowncrown.com/p/mbf-sp-one-brand-response-analysis",
@@ -2592,6 +3008,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "MB&F's Identity Crisis",
     "updated_at": "2025-05-22",
     "url": "https://www.screwdowncrown.com/p/mbf-sp-one-review-identity-crisis",
@@ -2612,6 +3029,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons",
+      "collecting_philosophy"
+    ],
     "title": "Merry Christmas, or whatever...",
     "updated_at": "2023-12-22",
     "url": "https://www.screwdowncrown.com/p/merry-christmas",
@@ -2632,6 +3053,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Methods of the Monopoly Man",
     "updated_at": "2026-07-09",
     "url": "https://www.screwdowncrown.com/p/methods-of-the-monopoly-man-duveen",
@@ -2652,6 +3074,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history",
+      "design"
+    ],
     "title": "Ming's Radical Watchmaking Playbook",
     "updated_at": "2026-01-20",
     "url": "https://www.screwdowncrown.com/p/ming-thein-interview-watchmaking-polymesh-starfield",
@@ -2672,6 +3098,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "news"
+    ],
     "title": "MoonSwatch: Please Explain",
     "updated_at": "2022-03-26",
     "url": "https://www.screwdowncrown.com/p/moonswatch-please-explain",
@@ -2692,6 +3122,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "community_ethics"
+    ],
     "title": "Moral Superiority Complex in Watch Collecting",
     "updated_at": "2025-10-04",
     "url": "https://www.screwdowncrown.com/p/moral-superiority-complex-communal-narcissism-watch-collecting",
@@ -2712,6 +3146,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Morgan Stanley/LuxeConsult - Ninth Annual Swiss Watcher 2025/2026",
     "updated_at": "2026-02-24",
     "url": "https://www.screwdowncrown.com/p/morgan-stanley-luxeconsult-2025-2026-ninth-swiss-watcher-reissue",
@@ -2732,6 +3169,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Morgan Stanley's Q1 2024 Swiss Watch Market Report",
     "updated_at": "2024-04-11",
     "url": "https://www.screwdowncrown.com/p/morgan-stanley-q1-2024",
@@ -2752,6 +3192,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Morgan Stanley's Q1 2025 Swiss Watch Market Report",
     "updated_at": "2025-04-19",
     "url": "https://www.screwdowncrown.com/p/morgan-stanley-q1-2025",
@@ -2772,6 +3215,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Morgan Stanley's Q2 2024 Swiss Watch Market Report",
     "updated_at": "2024-07-15",
     "url": "https://www.screwdowncrown.com/p/morgan-stanley-q2-2024",
@@ -2792,6 +3238,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Morgan Stanley's Q2 2025 Swiss Watch Market Report",
     "updated_at": "2025-07-10",
     "url": "https://www.screwdowncrown.com/p/morgan-stanley-q2-2025",
@@ -2812,6 +3261,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Morgan Stanley's Q2 2026 Swiss Watch Market Report",
     "updated_at": "2026-07-17",
     "url": "https://www.screwdowncrown.com/p/morgan-stanley-q2-2026",
@@ -2832,6 +3284,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Morgan Stanley's Q3 2024 Swiss Watch Market Report",
     "updated_at": "2024-10-12",
     "url": "https://www.screwdowncrown.com/p/morgan-stanley-q3-2024",
@@ -2852,6 +3307,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Morgan Stanley's Q3 2025 Swiss Watch Market Report",
     "updated_at": "2025-10-10",
     "url": "https://www.screwdowncrown.com/p/morgan-stanley-q3-2025",
@@ -2872,6 +3330,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Morgan Stanley's Q4 2024 Swiss Watch Market Report",
     "updated_at": "2025-01-15",
     "url": "https://www.screwdowncrown.com/p/morgan-stanley-q4-2024",
@@ -2892,6 +3353,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Morgan Stanley's Q4 2025 Swiss Watch Market Report",
     "updated_at": "2026-01-23",
     "url": "https://www.screwdowncrown.com/p/morgan-stanley-q4-2025",
@@ -2912,6 +3376,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Swiss watch industry’s top 50 brands for 2023",
     "updated_at": "2024-02-29",
     "url": "https://www.screwdowncrown.com/p/morganstanley2024",
@@ -2932,6 +3399,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "life_lessons"
+    ],
     "title": "Motivated reasoning",
     "updated_at": "2022-06-19",
     "url": "https://www.screwdowncrown.com/p/motivated-reasoning",
@@ -2952,6 +3423,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "market_commentary"
+    ],
     "title": "The Neuroscience Behind \"Swiss Made\"",
     "updated_at": "2025-08-08",
     "url": "https://www.screwdowncrown.com/p/neuroscience-swiss-watches-marketing-placebo-effect-brain-science",
@@ -2972,6 +3447,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "market_commentary"
+    ],
     "title": "The Luxury Paradox",
     "updated_at": "2024-09-06",
     "url": "https://www.screwdowncrown.com/p/new-luxury-watch-market-trends",
@@ -2992,6 +3471,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "NFTs and watches",
     "updated_at": "2022-01-24",
     "url": "https://www.screwdowncrown.com/p/nfts-and-watches",
@@ -3012,6 +3494,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons",
+      "collector_mindset"
+    ],
     "title": "No regrets",
     "updated_at": "2024-03-22",
     "url": "https://www.screwdowncrown.com/p/no-regrets",
@@ -3032,6 +3518,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "vintage_care",
+      "market_commentary"
+    ],
     "title": "Nobody Fakes a Mark XVIII",
     "updated_at": "2026-07-29",
     "url": "https://www.screwdowncrown.com/p/nobody-fakes-a-mark-xviii",
@@ -3052,6 +3542,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Noise - A Flaw in Human Judgement",
     "updated_at": "2023-11-28",
     "url": "https://www.screwdowncrown.com/p/noise-a-flaw-in-human-judgement",
@@ -3072,6 +3563,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Nudge - Improving decisions",
     "updated_at": "2023-11-09",
     "url": "https://www.screwdowncrown.com/p/nudge-improving-decisions",
@@ -3092,6 +3584,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "On Unpolished's 47 Rules for Watch Collecting",
     "updated_at": "2025-09-25",
     "url": "https://www.screwdowncrown.com/p/on-unpolisheds-47-rules-for-watch",
@@ -3112,6 +3608,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "life_lessons"
+    ],
     "title": "Our Present vs Future Being",
     "updated_at": "2022-06-12",
     "url": "https://www.screwdowncrown.com/p/our-present-vs-future-being",
@@ -3132,6 +3632,11 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "brand_history",
+      "collector_mindset"
+    ],
     "title": "Is Thierry Stern Driving Patek Philippe Into Irrelevance?",
     "updated_at": "2024-10-22",
     "url": "https://www.screwdowncrown.com/p/patek-philippe-cubitus-criticism-stern-response",
@@ -3152,6 +3657,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics",
+      "collector_mindset"
+    ],
     "title": "Philippe Dufour Watch Sells for $1bn!",
     "updated_at": "2023-07-16",
     "url": "https://www.screwdowncrown.com/p/philippe-dufour-watch-sells-for-1bn",
@@ -3172,6 +3681,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "market_commentary"
+    ],
     "title": "Philosophy of Burning Money",
     "updated_at": "2026-01-09",
     "url": "https://www.screwdowncrown.com/p/philosophy-of-burning-money-luxury-transgression-theory",
@@ -3192,6 +3705,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Physics explains why time passes faster as you age",
     "updated_at": "2019-01-11",
     "url": "https://www.screwdowncrown.com/p/physics-explains-why-time-passes-faster-as-you-age",
@@ -3212,6 +3726,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Pierre Bourdieu on Taste",
     "updated_at": "2024-03-07",
     "url": "https://www.screwdowncrown.com/p/pierre-bourdieu-on-taste",
@@ -3232,6 +3749,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "life_lessons"
+    ],
     "title": "Pleasure vs. Happiness",
     "updated_at": "2022-10-06",
     "url": "https://www.screwdowncrown.com/p/pleasure-vs-happiness",
@@ -3252,6 +3773,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "The Porsche Legacy: Engineering Dreams Since 1931",
     "updated_at": "2024-10-31",
     "url": "https://www.screwdowncrown.com/p/porsche-history-engineering-excellence-automotive-dynasty",
@@ -3272,6 +3794,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "life_lessons"
+    ],
     "title": "Positive psychology & watches",
     "updated_at": "2022-10-17",
     "url": "https://www.screwdowncrown.com/p/positive-psychology-and-watches",
@@ -3292,6 +3818,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Deloitte Spotlight: Pre-Owned Watch Market",
     "updated_at": "2025-01-24",
     "url": "https://www.screwdowncrown.com/p/pre-owned-watch-market-2025-deloitte-report",
@@ -3312,6 +3841,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "Predictably Irrational (#1/3): A Watch Collector's Guide to Decision-Making",
     "updated_at": "2025-01-01",
     "url": "https://www.screwdowncrown.com/p/predictably-irrational-watch-collectors-guide-part-1",
@@ -3332,6 +3865,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "Predictably Irrational (#2/3): A Watch Collector's Guide to Decision-Making",
     "updated_at": "2025-01-04",
     "url": "https://www.screwdowncrown.com/p/predictably-irrational-watch-collectors-guide-part-2",
@@ -3352,6 +3889,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "Predictably Irrational (#3/3): A Watch Collector's Guide to Decision-Making",
     "updated_at": "2025-01-08",
     "url": "https://www.screwdowncrown.com/p/predictably-irrational-watch-collectors-guide-part-3",
@@ -3372,6 +3913,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "A discussion about the pricing of luxury watches",
     "updated_at": "2021-09-30",
     "url": "https://www.screwdowncrown.com/p/pricing-of-luxury-watches",
@@ -3392,6 +3936,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Beyond Binary Thinking",
     "updated_at": "2025-09-19",
     "url": "https://www.screwdowncrown.com/p/probabilistic-watch-collecting-beyond-binary-thinking",
@@ -3412,6 +3959,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "Psychology of money - Book summary",
     "updated_at": "2023-06-12",
     "url": "https://www.screwdowncrown.com/p/psychology-of-money",
@@ -3432,6 +3983,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset"
+    ],
     "title": "Two Simple Tricks That Will Make You A Better Watch Collector",
     "updated_at": "2026-01-30",
     "url": "https://www.screwdowncrown.com/p/psychology-watch-collector-choice-bracketing-coin-flip",
@@ -3452,6 +4006,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "Understanding Collector Personalities",
     "updated_at": "2024-09-14",
     "url": "https://www.screwdowncrown.com/p/psychology-watch-collectors-personality",
@@ -3472,6 +4030,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Quote of the day...",
     "updated_at": "2019-05-24",
     "url": "https://www.screwdowncrown.com/p/quote-of-the-day",
@@ -3492,6 +4051,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "A Radical Honesty Experiment in the Watch World",
     "updated_at": "2024-10-18",
     "url": "https://www.screwdowncrown.com/p/radical-honesty-watch-experiment-truth",
@@ -3512,6 +4072,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics",
+      "collector_mindset"
+    ],
     "title": "Reciprocation bias and watch collecting",
     "updated_at": "2022-01-12",
     "url": "https://www.screwdowncrown.com/p/reciprocation-bias-and-watch-collecting",
@@ -3532,6 +4096,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "brand_history"
+    ],
     "title": "Richemont is Cartier, Cartier is Richemont. Everything Else Is a Hobby.",
     "updated_at": "2026-07-03",
     "url": "https://www.screwdowncrown.com/p/richemont-morgan-stanley-2026",
@@ -3552,6 +4120,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "review",
+      "collecting_philosophy"
+    ],
     "title": "The Review I Said I'd Never Write",
     "updated_at": "2026-03-25",
     "url": "https://www.screwdowncrown.com/p/rolex-226627-titanium-rlx-yacht-master-review",
@@ -3572,6 +4144,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "The Anti-Rolex, Rolex",
     "updated_at": "2025-05-01",
     "url": "https://www.screwdowncrown.com/p/rolex-226627-titanium-yacht-master-owner-review",
@@ -3592,6 +4168,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "complications"
+    ],
     "title": "Rolex's New Calendar Patent",
     "updated_at": "2025-10-16",
     "url": "https://www.screwdowncrown.com/p/rolex-calendar-patent-2025-annual-perpetual-ep4632499a1",
@@ -3612,6 +4192,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history",
+      "design"
+    ],
     "title": "Oystersteel, Cerachrom, Everose… why Grand Feu?",
     "updated_at": "2026-04-16",
     "url": "https://www.screwdowncrown.com/p/rolex-daytona-126502-grand-feu-naming",
@@ -3632,6 +4216,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "collecting_philosophy"
+    ],
     "title": "Rolex Daytona - Why does it defy logic?",
     "updated_at": "2021-12-28",
     "url": "https://www.screwdowncrown.com/p/rolex-daytona-why-does-it-defy-logic",
@@ -3652,6 +4240,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history"
+    ],
     "title": "The Incredible Story of Hans Wilsdorf, the Visionary Founder of Rolex",
     "updated_at": "2024-06-16",
     "url": "https://www.screwdowncrown.com/p/rolex-founder-hans-wilsdorf",
@@ -3672,6 +4263,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Prediction season",
     "updated_at": "2026-04-08",
     "url": "https://www.screwdowncrown.com/p/rolex-predictions-watches-wonders-2026",
@@ -3692,6 +4286,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "market_commentary"
+    ],
     "title": "Rolex takes on the grey market?",
     "updated_at": "2022-12-08",
     "url": "https://www.screwdowncrown.com/p/rolex-takes-on-the-grey-market",
@@ -3712,6 +4310,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "review",
+      "collector_mindset"
+    ],
     "title": "Romain Gauthier’s C6",
     "updated_at": "2025-04-12",
     "url": "https://www.screwdowncrown.com/p/romain-gauthier-c6-independent-watchmaking",
@@ -3732,6 +4334,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "design"
+    ],
     "title": "AP's Royal Oak in the Age of Mechanical Reproduction",
     "updated_at": "2026-05-07",
     "url": "https://www.screwdowncrown.com/p/royal-pop-audemars-piguet-swatch-collaboration-mechanical-reproduction",
@@ -3752,6 +4358,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "Going Beyond \"If You Know You Know\"",
     "updated_at": "2025-01-31",
     "url": "https://www.screwdowncrown.com/p/rumsfeld-matrix-watch-collecting",
@@ -3772,6 +4382,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "collector_mindset"
+    ],
     "title": "Saturation Problems",
     "updated_at": "2026-04-15",
     "url": "https://www.screwdowncrown.com/p/saturation-problem-watch-launches",
@@ -3792,6 +4406,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "Self deception and Survival Instincts",
     "updated_at": "2026-04-22",
     "url": "https://www.screwdowncrown.com/p/self-deception-watch-collecting-robert-trivers",
@@ -3812,6 +4430,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset"
+    ],
     "title": "Sell more, buy less",
     "updated_at": "2021-11-30",
     "url": "https://www.screwdowncrown.com/p/sell-more-buy-less",
@@ -3832,6 +4453,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "community_ethics"
+    ],
     "title": "Wrist Laundromats",
     "updated_at": "2026-05-01",
     "url": "https://www.screwdowncrown.com/p/shadow-economy-luxury-watches-money-laundering",
@@ -3852,6 +4477,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "market_commentary"
+    ],
     "title": "Shorter product cycles and the ‘Enjoyment Gap’ for watch collectors",
     "updated_at": "2021-12-14",
     "url": "https://www.screwdowncrown.com/p/shorter-product-cycles-and-the-enjoyment",
@@ -3872,6 +4501,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "market_commentary"
+    ],
     "title": "Simon Brette Raises Chronomètre Artisans Price Days Before Launch",
     "updated_at": "2025-12-17",
     "url": "https://www.screwdowncrown.com/p/simon-brette-chronometre-artisans-price-increase",
@@ -3892,6 +4525,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "community_ethics"
+    ],
     "title": "Analogue Intelligence Meets the Sinners and the Commons",
     "updated_at": "2026-03-14",
     "url": "https://www.screwdowncrown.com/p/sinners-commons-analogue-intelligence",
@@ -3912,6 +4549,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Social comparison",
     "updated_at": "2023-09-22",
     "url": "https://www.screwdowncrown.com/p/social-comparison-pt1",
@@ -3932,6 +4572,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset"
+    ],
     "title": "Social comparison Part 2",
     "updated_at": "2023-10-01",
     "url": "https://www.screwdowncrown.com/p/social-comparison-pt2",
@@ -3952,6 +4595,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset"
+    ],
     "title": "Social comparison Part 3",
     "updated_at": "2023-10-13",
     "url": "https://www.screwdowncrown.com/p/social-comparison-pt3",
@@ -3972,6 +4618,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Social Psychology and Watches",
     "updated_at": "2021-05-10",
     "url": "https://www.screwdowncrown.com/p/social-psychology-and-watches",
@@ -3992,6 +4641,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Social psychology and watches - Pt 2",
     "updated_at": "2021-05-12",
     "url": "https://www.screwdowncrown.com/p/social-psychology-and-watches-pt-2",
@@ -4012,6 +4664,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "Social Status & Watch Collecting - Part 1",
     "updated_at": "2025-03-14",
     "url": "https://www.screwdowncrown.com/p/social-status-and-watch-collecting-1",
@@ -4032,6 +4688,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "community_ethics"
+    ],
     "title": "Social Status & Watch Collecting - Part 2",
     "updated_at": "2025-04-02",
     "url": "https://www.screwdowncrown.com/p/social-status-and-watch-collecting-2",
@@ -4052,6 +4712,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "market_commentary"
+    ],
     "title": "Start watch collecting in 2022",
     "updated_at": "2022-10-26",
     "url": "https://www.screwdowncrown.com/p/start-watch-collecting-in-2022",
@@ -4072,6 +4736,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Start with what you know",
     "updated_at": "2024-01-11",
     "url": "https://www.screwdowncrown.com/p/start-with-what-you-know",
@@ -4092,6 +4759,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history",
+      "community_ethics"
+    ],
     "title": "The Art of Divergence - Greubel and Forsey Split",
     "updated_at": "2026-02-03",
     "url": "https://www.screwdowncrown.com/p/stephen-forsey-leaves-greubel-forsey",
@@ -4112,6 +4783,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Subtract negatives",
     "updated_at": "2023-05-14",
     "url": "https://www.screwdowncrown.com/p/subtract-negatives",
@@ -4132,6 +4806,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Invisible Forces Shaping the Watch Market",
     "updated_at": "2026-05-28",
     "url": "https://www.screwdowncrown.com/p/swiss-watch-industry-geopolitics-tariffs-gold-china-2026",
@@ -4152,6 +4829,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics"
+    ],
     "title": "Sylvain Supposedly Snapped",
     "updated_at": "2024-09-02",
     "url": "https://www.screwdowncrown.com/p/sylvain-supposedly-snapped",
@@ -4172,6 +4852,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Take Note",
     "updated_at": "2023-04-12",
     "url": "https://www.screwdowncrown.com/p/take-note",
@@ -4192,6 +4873,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "market_commentary"
+    ],
     "title": "The Ambiguity Effect",
     "updated_at": "2023-05-17",
     "url": "https://www.screwdowncrown.com/p/the-ambiguity-effect",
@@ -4212,6 +4897,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics",
+      "vintage_care"
+    ],
     "title": "The Artisans of Deceit",
     "updated_at": "2024-04-05",
     "url": "https://www.screwdowncrown.com/p/the-artisans-of-deceit",
@@ -4232,6 +4921,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "The Biggest Wastes Of Time We Regret When We Get Older",
     "updated_at": "2019-02-05",
     "url": "https://www.screwdowncrown.com/p/the-biggest-wastes-of-time-we-regret-when-we-get-older",
@@ -4252,6 +4942,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "The Brain - Part 1",
     "updated_at": "2023-05-31",
     "url": "https://www.screwdowncrown.com/p/the-brain-part-1",
@@ -4272,6 +4965,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "The Brain - Part 2",
     "updated_at": "2023-06-09",
     "url": "https://www.screwdowncrown.com/p/the-brain-part-2",
@@ -4292,6 +4986,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "community_ethics"
+    ],
     "title": "The BS asymmetry principle",
     "updated_at": "2021-03-30",
     "url": "https://www.screwdowncrown.com/p/the-bs-asymmetry-principle",
@@ -4312,6 +5010,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "The curse of firm beliefs",
     "updated_at": "2023-09-03",
     "url": "https://www.screwdowncrown.com/p/the-curse-of-firm-beliefs",
@@ -4332,6 +5034,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "The Cusp of Collecting",
     "updated_at": "2024-08-15",
     "url": "https://www.screwdowncrown.com/p/the-cusp-of-collecting-optimal-watch-collection-size",
@@ -4352,6 +5058,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "review",
+      "design"
+    ],
     "title": "The Daily Wind",
     "updated_at": "2025-07-18",
     "url": "https://www.screwdowncrown.com/p/the-daily-watch-wind",
@@ -4372,6 +5082,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "The Dilution Effect",
     "updated_at": "2021-04-19",
     "url": "https://www.screwdowncrown.com/p/the-dilution-effect",
@@ -4392,6 +5103,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics",
+      "collector_mindset"
+    ],
     "title": "Watch Enthusiasts Deserve Better",
     "updated_at": "2025-07-25",
     "url": "https://www.screwdowncrown.com/p/the-escapement-watch-collector-consumer-event",
@@ -4412,6 +5127,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "The freedom to have enough",
     "updated_at": "2023-07-11",
     "url": "https://www.screwdowncrown.com/p/the-freedom-to-have-enough",
@@ -4432,6 +5151,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history",
+      "design"
+    ],
     "title": "The French Revolutionary Calendar",
     "updated_at": "2024-04-25",
     "url": "https://www.screwdowncrown.com/p/the-french-revolutionary-calendar",
@@ -4452,6 +5175,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "community_ethics"
+    ],
     "title": "The future of buying and selling watches",
     "updated_at": "2022-01-04",
     "url": "https://www.screwdowncrown.com/p/the-future-of-buying-and-selling",
@@ -4472,6 +5199,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "market_commentary"
+    ],
     "title": "The Genius of Furlan Marri",
     "updated_at": "2021-09-09",
     "url": "https://www.screwdowncrown.com/p/the-genius-of-furlan-marri",
@@ -4492,6 +5223,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "life_lessons"
+    ],
     "title": "The hunt",
     "updated_at": "2022-07-29",
     "url": "https://www.screwdowncrown.com/p/the-hunt",
@@ -4512,6 +5247,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history",
+      "market_commentary"
+    ],
     "title": "The Decay of Luxury Watchmaking",
     "updated_at": "2024-07-20",
     "url": "https://www.screwdowncrown.com/p/the-perfection-paradox-in-luxury-watchmaking",
@@ -4532,6 +5271,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Book Summary: The Playmaker’s Advantage",
     "updated_at": "2019-01-01",
     "url": "https://www.screwdowncrown.com/p/the-playmakers-advantage",
@@ -4552,6 +5292,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons",
+      "collector_mindset"
+    ],
     "title": "The power of regret",
     "updated_at": "2022-02-12",
     "url": "https://www.screwdowncrown.com/p/the-power-of-regret",
@@ -4572,6 +5316,11 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "celebrity",
+      "reference_profile",
+      "auction_results"
+    ],
     "title": "Unveiling Deception: The Rolex Albino Daytona",
     "updated_at": "2024-02-20",
     "url": "https://www.screwdowncrown.com/p/the-rolex-albino-daytona",
@@ -4592,6 +5341,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history"
+    ],
     "title": "The Rolex Story as told by Acquired",
     "updated_at": "2025-06-13",
     "url": "https://www.screwdowncrown.com/p/the-rolex-story-hans-wilsdorf-history",
@@ -4612,6 +5364,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history",
+      "market_commentary"
+    ],
     "title": "The Swatch Group's Remarkable Transformation",
     "updated_at": "2024-05-24",
     "url": "https://www.screwdowncrown.com/p/the-swatch-group",
@@ -4632,6 +5388,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons"
+    ],
     "title": "The Tolerance Bottle",
     "updated_at": "2025-11-01",
     "url": "https://www.screwdowncrown.com/p/the-tolerance-bottle-emotional-regulation",
@@ -4652,6 +5411,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset"
+    ],
     "title": "The Watch Collector's Matrix",
     "updated_at": "2021-04-26",
     "url": "https://www.screwdowncrown.com/p/the-watch-collectors-matrix",
@@ -4672,6 +5434,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "The Work of Art in the Age of Mechanical Reproduction",
     "updated_at": "2023-07-07",
     "url": "https://www.screwdowncrown.com/p/the-work-of-art-in-the-age-of-mechanical",
@@ -4692,6 +5457,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history",
+      "collector_mindset"
+    ],
     "title": "What’s the deal with Vacheron Constantin?",
     "updated_at": "2021-09-23",
     "url": "https://www.screwdowncrown.com/p/thenewvacheron",
@@ -4712,6 +5481,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news"
+    ],
     "title": "To Hell With It, We’re Making the Cubitus Even Bigger",
     "updated_at": "2024-11-27",
     "url": "https://www.screwdowncrown.com/p/thierry-stern-cubitus-patek-philippe",
@@ -4732,6 +5504,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Thinking, Fast and Slow",
     "updated_at": "2023-10-28",
     "url": "https://www.screwdowncrown.com/p/thinking-fast-and-slow",
@@ -4752,6 +5525,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset"
+    ],
     "title": "Thinking, Fast and Slow... Again.",
     "updated_at": "2026-06-05",
     "url": "https://www.screwdowncrown.com/p/thinking-fast-and-slow-daniel-kahneman-updated",
@@ -4772,6 +5548,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Tim Cook Tweets Story of User's Apple Watch Detecting Atrial Fibrillation",
     "updated_at": "2019-01-20",
     "url": "https://www.screwdowncrown.com/p/tim-cook-tweets-story-of-users-apple-watch-detecting-atrial-fibrillation",
@@ -4792,6 +5569,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons",
+      "collecting_philosophy"
+    ],
     "title": "The Illusion of Time",
     "updated_at": "2025-05-16",
     "url": "https://www.screwdowncrown.com/p/time-einstein-relativity-watch-collecting",
@@ -4812,6 +5593,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Trump's Tariffs",
     "updated_at": "2025-04-05",
     "url": "https://www.screwdowncrown.com/p/trump-tariff-swiss-watch-industry",
@@ -4832,6 +5616,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "Try it – you might actually like it!",
     "updated_at": "2021-10-06",
     "url": "https://www.screwdowncrown.com/p/try-it-you-might-actually-like-it",
@@ -4852,6 +5640,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "collecting_philosophy"
+    ],
     "title": "UBS Global Wealth Report - Luxury Watch Edition",
     "updated_at": "2026-01-14",
     "url": "https://www.screwdowncrown.com/p/ubs-global-wealth-report-2025-luxury-watch-market",
@@ -4872,6 +5664,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "UBS Global Wealth Report 2026",
     "updated_at": "2026-07-21",
     "url": "https://www.screwdowncrown.com/p/ubs-global-wealth-report-2026-luxury-watch-market",
@@ -4892,6 +5685,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news"
+    ],
     "title": "Vacheron Constantin's New Clock",
     "updated_at": "2025-09-18",
     "url": "https://www.screwdowncrown.com/p/vacheron-constantin-la-quete-du-temps-astronomical-clock-270th-anniversary-automaton-clock-louvre",
@@ -4912,6 +5708,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Value Capture",
     "updated_at": "2024-03-08",
     "url": "https://www.screwdowncrown.com/p/value-capture",
@@ -4932,6 +5729,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Value in a story",
     "updated_at": "2023-01-23",
     "url": "https://www.screwdowncrown.com/p/value-in-a-story",
@@ -4952,6 +5752,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "market_commentary"
+    ],
     "title": "Are you a victim of marketing?",
     "updated_at": "2021-09-02",
     "url": "https://www.screwdowncrown.com/p/victim-of-marketing",
@@ -4972,6 +5776,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "life_lessons"
+    ],
     "title": "Visiting Rexhep Rexhepi",
     "updated_at": "2022-09-07",
     "url": "https://www.screwdowncrown.com/p/visiting-rexhep-rexhepi",
@@ -4992,6 +5800,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "auction_results",
+      "market_commentary"
+    ],
     "title": "Sold before the gavel",
     "updated_at": "2026-07-24",
     "url": "https://www.screwdowncrown.com/p/watch-auction-guarantees-price-discovery",
@@ -5012,6 +5824,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "life_lessons"
+    ],
     "title": "Watch collecting and happiness",
     "updated_at": "2023-06-07",
     "url": "https://www.screwdowncrown.com/p/watch-collecting-and-happiness",
@@ -5032,6 +5848,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "market_commentary"
+    ],
     "title": "Watch collecting and the winner's curse",
     "updated_at": "2022-01-19",
     "url": "https://www.screwdowncrown.com/p/watch-collecting-and-the-winners",
@@ -5052,6 +5872,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "Random watch collecting thoughts...",
     "updated_at": "2025-02-07",
     "url": "https://www.screwdowncrown.com/p/watch-collecting-fundamentals-lessons",
@@ -5072,6 +5896,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "Finding \"Enough\"",
     "updated_at": "2025-05-09",
     "url": "https://www.screwdowncrown.com/p/watch-collecting-philosophy-finding-enough",
@@ -5092,6 +5920,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "Inside a Collector's Mind - The Psychology of Watch Collecting",
     "updated_at": "2024-11-16",
     "url": "https://www.screwdowncrown.com/p/watch-collecting-psychology-cognitive-biases",
@@ -5112,6 +5944,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "community_ethics"
+    ],
     "title": "Why We Ignore Good Advice and Buy the Watch Anyway",
     "updated_at": "2024-10-26",
     "url": "https://www.screwdowncrown.com/p/watch-collecting-why-we-ignore-advice",
@@ -5132,6 +5968,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "12 Delusions",
     "updated_at": "2025-06-07",
     "url": "https://www.screwdowncrown.com/p/watch-collector-wishful-thinking-psychology-bias",
@@ -5152,6 +5992,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "Watch collectors: Don't buy what you like!",
     "updated_at": "2021-03-31",
     "url": "https://www.screwdowncrown.com/p/watch-collectors-dont-buy-what-you-like",
@@ -5172,6 +6016,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "community_ethics"
+    ],
     "title": "25 Argument Starters For the Holidays",
     "updated_at": "2024-12-23",
     "url": "https://www.screwdowncrown.com/p/watch-collectors-holiday-arguments",
@@ -5192,6 +6040,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset"
+    ],
     "title": "The Watch Collector's Matrix 2.0",
     "updated_at": "2024-12-27",
     "url": "https://www.screwdowncrown.com/p/watch-collectors-matrix-2",
@@ -5212,6 +6063,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "Married to the Hobby",
     "updated_at": "2025-08-22",
     "url": "https://www.screwdowncrown.com/p/watch-collectors-wife-perspective",
@@ -5232,6 +6087,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "A Watch Collector's Ramblings",
     "updated_at": "2024-07-05",
     "url": "https://www.screwdowncrown.com/p/watch-hobby-truths",
@@ -5252,6 +6111,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "collector_mindset"
+    ],
     "title": "Watches as an \"asset class\"",
     "updated_at": "2021-03-11",
     "url": "https://www.screwdowncrown.com/p/watches-as-an-asset-class",
@@ -5272,6 +6135,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "life_lessons"
+    ],
     "title": "The Map is Not The Territory",
     "updated_at": "2025-03-07",
     "url": "https://www.screwdowncrown.com/p/watches-meaning-psychology-map-territory",
@@ -5292,6 +6159,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "market_commentary"
+    ],
     "title": "WoSG Results Reveal Hodinkee's £11m Price Tag",
     "updated_at": "2024-12-05",
     "url": "https://www.screwdowncrown.com/p/watches-of-switzerland-hodinkee-acquisition-price",
@@ -5312,6 +6183,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "The Garden of Horology",
     "updated_at": "2024-08-24",
     "url": "https://www.screwdowncrown.com/p/watchmakers-garden-horological-journey",
@@ -5332,6 +6204,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "community_ethics"
+    ],
     "title": "WatchPro on Conglomerates and Indies",
     "updated_at": "2026-03-31",
     "url": "https://www.screwdowncrown.com/p/watchpro-independents-conglomerates-veblen",
@@ -5352,6 +6228,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "collecting_philosophy"
+    ],
     "title": "The Great Pivot",
     "updated_at": "2025-02-28",
     "url": "https://www.screwdowncrown.com/p/wealth-concentration-transforming-luxury-watch-industry",
@@ -5372,6 +6252,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Wealth, money, jobs, hard work",
     "updated_at": "2023-07-24",
     "url": "https://www.screwdowncrown.com/p/wealth-money-jobs-hard-work",
@@ -5392,6 +6275,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "What is collecting?",
     "updated_at": "2024-01-19",
     "url": "https://www.screwdowncrown.com/p/what-is-collecting",
@@ -5412,6 +6298,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset"
+    ],
     "title": "What is happening?",
     "updated_at": "2021-12-22",
     "url": "https://www.screwdowncrown.com/p/what-is-happening",
@@ -5432,6 +6321,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "What is time?",
     "updated_at": "2021-04-28",
     "url": "https://www.screwdowncrown.com/p/what-is-time-2",
@@ -5452,6 +6342,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "Why most of your watches are technically jewellery",
     "updated_at": "2026-05-24",
     "url": "https://www.screwdowncrown.com/p/what-makes-a-watch-a-watch",
@@ -5472,6 +6365,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "community_ethics"
+    ],
     "title": "What Your Watch Is Actually Worth",
     "updated_at": "2026-02-13",
     "url": "https://www.screwdowncrown.com/p/what-your-watch-is-actually-worth",
@@ -5492,6 +6389,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "community_ethics"
+    ],
     "title": "What Your WhatsApp Group is Doing to Your Opinions",
     "updated_at": "2026-04-03",
     "url": "https://www.screwdowncrown.com/p/whatsapp-group-polarisation-watch-collecting",
@@ -5512,6 +6413,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons",
+      "collecting_philosophy"
+    ],
     "title": "Where did the time go?",
     "updated_at": "2026-06-12",
     "url": "https://www.screwdowncrown.com/p/where-did-the-time-go-watch-collecting-memory-time-perception",
@@ -5532,6 +6437,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "community_ethics"
+    ],
     "title": "Schrödinger’s Status Razor",
     "updated_at": "2026-09-18",
     "url": "https://www.screwdowncrown.com/p/who-are-you-buying-the-watch-for-status-signalling",
@@ -5552,6 +6461,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "life_lessons"
+    ],
     "title": "Who enjoys the best of us?",
     "updated_at": "2022-03-06",
     "url": "https://www.screwdowncrown.com/p/who-enjoys-the-best-of-us",
@@ -5572,6 +6484,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "community_ethics"
+    ],
     "title": "Why every budding watch collector needs a mentor",
     "updated_at": "2022-02-03",
     "url": "https://www.screwdowncrown.com/p/why-every-budding-watch-collector",
@@ -5616,6 +6532,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics",
+      "collector_mindset"
+    ],
     "title": "Why Watch Collectors Talk Past Each Other",
     "updated_at": "2026-02-06",
     "url": "https://www.screwdowncrown.com/p/why-watch-collectors-disagree-tinbergen",
@@ -5660,6 +6580,7 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [],
     "title": "Why we owe it to ourselves to spend quiet time alone every day",
     "updated_at": "2019-01-13",
     "url": "https://www.screwdowncrown.com/p/why-we-owe-it-to-ourselves-to-spend-quiet-time-alone-every-day",
@@ -5680,6 +6601,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "Will the Apple Watch kill the luxury watch industry?",
     "updated_at": "2021-10-14",
     "url": "https://www.screwdowncrown.com/p/will-the-apple-watch-kill-the-luxury",
@@ -5700,6 +6624,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics",
+      "collector_mindset"
+    ],
     "title": "Perfect Replicas & Status Games",
     "updated_at": "2025-11-17",
     "url": "https://www.screwdowncrown.com/p/wine-fraud-rudy-kurniawan-watch-collecting-psychology",
@@ -5720,6 +6648,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "community_ethics"
+    ],
     "title": "Wristwatches and religions",
     "updated_at": "2023-10-17",
     "url": "https://www.screwdowncrown.com/p/wristwatches-and-religions",
@@ -5740,6 +6672,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "community_ethics"
+    ],
     "title": "Your Brain Is a Defence Lawyer",
     "updated_at": "2026-03-11",
     "url": "https://www.screwdowncrown.com/p/your-brain-is-a-defence-lawyer-watch-forum-psychology",
@@ -5760,6 +6696,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "collecting_philosophy"
+    ],
     "title": "Your gut feeling",
     "updated_at": "2022-07-10",
     "url": "https://www.screwdowncrown.com/p/your-gut-feeling",

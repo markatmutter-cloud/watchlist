@@ -2544,6 +2544,9 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "EMMANUELLE HAUGUEL",
     "updated_at": "2026-09-15",
     "url": "https://www.watchfid.com/emmanuelle-hauguel/",
