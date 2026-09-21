@@ -402,10 +402,10 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "3b8e54eecca52054",
-    "lastChanged": "2026-09-20",
+    "fingerprint": "1685e14574f508b0",
+    "lastChanged": "2026-09-21",
     "lastSeen": "2026-09-21",
-    "rows": 4328
+    "rows": 4326
   },
   "merged:auctions": {
     "fingerprint": "cf1b8070907dc9b2",
