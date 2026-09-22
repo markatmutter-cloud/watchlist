@@ -300,8 +300,8 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "1bbd33da3d888c16",
-    "lastChanged": "2026-09-21",
+    "fingerprint": "c1c32fe21222ab1c",
+    "lastChanged": "2026-09-22",
     "lastSeen": "2026-09-22",
     "rows": 36
   },
@@ -414,7 +414,7 @@
     "rows": 99
   },
   "merged:listings": {
-    "fingerprint": "4e53bd96dc0abc88",
+    "fingerprint": "468ee04f045db2ef",
     "lastChanged": "2026-09-22",
     "lastSeen": "2026-09-22",
     "rows": 10701
