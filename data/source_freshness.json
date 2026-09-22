@@ -42,10 +42,10 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "9f211bd1ba530ccf",
+    "fingerprint": "22eb14293e686010",
     "lastChanged": "2026-09-22",
     "lastSeen": "2026-09-22",
-    "rows": 93
+    "rows": 91
   },
   "Craft & Tailored": {
     "fingerprint": "f79d8e12c5643cd6",
@@ -60,10 +60,10 @@
     "rows": 18
   },
   "European Watch": {
-    "fingerprint": "154421875c831fd4",
+    "fingerprint": "6a9c0e76a1a52ab3",
     "lastChanged": "2026-09-22",
     "lastSeen": "2026-09-22",
-    "rows": 13
+    "rows": 14
   },
   "Falco Watches": {
     "fingerprint": "6a7f29fd16293dc0",
@@ -72,10 +72,10 @@
     "rows": 8
   },
   "Grey & Patina": {
-    "fingerprint": "99146e9478537ed7",
+    "fingerprint": "2f0808b35d8265ff",
     "lastChanged": "2026-09-22",
     "lastSeen": "2026-09-22",
-    "rows": 48
+    "rows": 51
   },
   "Hairspring": {
     "fingerprint": "e7f636b87d5ff1cd",
@@ -126,10 +126,10 @@
     "rows": 111
   },
   "Pascal Karp": {
-    "fingerprint": "0c3f346029b1d787",
+    "fingerprint": "927c658f8f1ee72e",
     "lastChanged": "2026-09-22",
     "lastSeen": "2026-09-22",
-    "rows": 86
+    "rows": 85
   },
   "Romain R\u00e9a": {
     "fingerprint": "beae10b67bacbd2b",
@@ -180,10 +180,10 @@
     "rows": 29
   },
   "Tropical Watch": {
-    "fingerprint": "2c7edd5231efb186",
+    "fingerprint": "0ba7739a016702be",
     "lastChanged": "2026-09-22",
     "lastSeen": "2026-09-22",
-    "rows": 116
+    "rows": 114
   },
   "Vintage Watch Collective": {
     "fingerprint": "ef9368c727e836e1",
@@ -192,10 +192,10 @@
     "rows": 39
   },
   "Vintage Watch Fam": {
-    "fingerprint": "984d6b3e445051bd",
+    "fingerprint": "6519313652a19af6",
     "lastChanged": "2026-09-22",
     "lastSeen": "2026-09-22",
-    "rows": 572
+    "rows": 584
   },
   "Vintage Watch Shop": {
     "fingerprint": "fe5540eb12e81898",
@@ -252,7 +252,7 @@
     "rows": 5
   },
   "Wind Vintage": {
-    "fingerprint": "eeb55901f995f1bf",
+    "fingerprint": "8552b4a93a705580",
     "lastChanged": "2026-09-22",
     "lastSeen": "2026-09-22",
     "rows": 229
@@ -414,9 +414,9 @@
     "rows": 99
   },
   "merged:listings": {
-    "fingerprint": "e6c55944c3872637",
+    "fingerprint": "aec3d1f393edc308",
     "lastChanged": "2026-09-22",
     "lastSeen": "2026-09-22",
-    "rows": 10727
+    "rows": 10746
   }
 }
