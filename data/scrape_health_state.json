@@ -1,14 +1,6 @@
 {
-  "maunderwatches": {
-    "misses": 3,
-    "reason": "no CSV produced this run"
-  },
   "watchcenter": {
-    "misses": 109,
-    "reason": "no CSV produced this run"
-  },
-  "wok": {
-    "misses": 5,
+    "misses": 110,
     "reason": "no CSV produced this run"
   }
 }
