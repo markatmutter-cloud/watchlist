@@ -15214,16 +15214,12 @@
     "model_line": "Perpetual Calendar",
     "published_at": "2026-05-25",
     "reference_no": "3940",
-    "scraped_at": "2026-08-25T14:52:42Z",
+    "scraped_at": "2026-09-24T18:20:11Z",
     "slug": "beyer-dial-3940j-patek-philippe-perpetual-calendar",
     "sold_price_usd": 600000,
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
-    "themes": [
-      "reference_profile",
-      "auction_results"
-    ],
     "title": "Beyer Dial 3940J Patek Philippe Perpetual Calendar",
     "updated_at": "2026-05-26",
     "url": "https://hairspring.com/blogs/finds/beyer-dial-3940j-patek-philippe-perpetual-calendar",
@@ -19871,21 +19867,16 @@
     "model_line": null,
     "published_at": "2026-08-24",
     "reference_no": null,
-    "scraped_at": "2026-08-25T14:52:41Z",
+    "scraped_at": "2026-09-24T18:20:10Z",
     "slug": "dubail-110-049-a-lange-sohne-lange-1",
     "sold_price_usd": 400000,
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
-    "themes": [
-      "reference_profile",
-      "auction_results",
-      "brand_history"
-    ],
     "title": "Dubail 110.049 A. Lange & Söhne Lange 1",
     "updated_at": "2026-08-25",
     "url": "https://hairspring.com/blogs/finds/dubail-110-049-a-lange-sohne-lange-1",
-    "word_count": 413
+    "word_count": 411
   },
   "https://hairspring.com/blogs/finds/dufourgraph-403-031-a-lange-sohne-datograph": {
     "author": "Erik Gustafson",
