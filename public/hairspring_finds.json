@@ -41120,20 +41120,16 @@
     "model_line": null,
     "published_at": "2026-07-25",
     "reference_no": null,
-    "scraped_at": "2026-08-25T20:32:00Z",
+    "scraped_at": "2026-09-24T23:04:48Z",
     "slug": "vacheron-constantin-cornes-de-vache-for-hodinkee",
     "sold_price_usd": 68500,
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
-    "themes": [
-      "reference_profile",
-      "design"
-    ],
     "title": "Vacheron Constantin Cornes de Vache for Hodinkee",
     "updated_at": "2026-08-08",
     "url": "https://hairspring.com/blogs/finds/vacheron-constantin-cornes-de-vache-for-hodinkee",
-    "word_count": 364
+    "word_count": 367
   },
   "https://hairspring.com/blogs/finds/vacheron-constantin-les-historiques-222": {
     "author": "Erik Gustafson",
