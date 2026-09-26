@@ -1,6 +1,6 @@
 {
   "date": "2026-09-26",
-  "updated_at": "2026-09-26T18:06:48+00:00",
+  "updated_at": "2026-09-26T22:53:38+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 119,
@@ -9,7 +9,7 @@
     "Collectors Corner NY": 88,
     "Falco Watches": 7,
     "Pascal Karp": 90,
-    "Tokant": 33,
+    "Tokant": 31,
     "Romain R\u00e9a": 239,
     "Grey & Patina": 46,
     "Oliver & Clarke": 105,
@@ -18,8 +18,8 @@
     "Sierra Time Co": 19,
     "DB1983": 18,
     "Hairspring": 27,
-    "Somlo": 177,
-    "Analog Shift": 744,
+    "Somlo": 176,
+    "Analog Shift": 743,
     "Watches of Knightsbridge": 52,
     "Belmont Watches": 19,
     "Bob's Watches": 94,
@@ -48,6 +48,6 @@
     "Watch Center": 261,
     "eBay": 36
   },
-  "total_listings": 4229,
+  "total_listings": 4225,
   "sources_tracked": 44
 }

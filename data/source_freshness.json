@@ -1,9 +1,9 @@
 {
   "Analog Shift": {
-    "fingerprint": "a0960f2a78e77ba4",
+    "fingerprint": "f10532debb001ed5",
     "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
-    "rows": 762
+    "rows": 761
   },
   "Belmont Watches": {
     "fingerprint": "53dd9d4d11ea0984",
@@ -42,7 +42,7 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "c69e88e66e5127e8",
+    "fingerprint": "5bca93211d562b98",
     "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
     "rows": 97
@@ -90,10 +90,10 @@
     "rows": 33
   },
   "Huntington Company": {
-    "fingerprint": "5d25517b1822dae7",
+    "fingerprint": "333be3e33f815dcc",
     "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
-    "rows": 111
+    "rows": 105
   },
   "Luna Royster": {
     "fingerprint": "1244fddd9fbbfcb1",
@@ -120,10 +120,10 @@
     "rows": 21
   },
   "Oliver & Clarke": {
-    "fingerprint": "6d880486b3e60ea7",
-    "lastChanged": "2026-09-24",
+    "fingerprint": "88e08b6c9c7c512d",
+    "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
-    "rows": 119
+    "rows": 117
   },
   "Pascal Karp": {
     "fingerprint": "64b7121b49a463bf",
@@ -414,7 +414,7 @@
     "rows": 99
   },
   "merged:listings": {
-    "fingerprint": "7446e024eec58766",
+    "fingerprint": "5ba6436e2348b306",
     "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
     "rows": 10910
