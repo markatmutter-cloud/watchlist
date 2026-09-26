@@ -1,9 +1,9 @@
 {
   "Analog Shift": {
-    "fingerprint": "b9ffee4323dcdae4",
+    "fingerprint": "a0960f2a78e77ba4",
     "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
-    "rows": 763
+    "rows": 762
   },
   "Belmont Watches": {
     "fingerprint": "53dd9d4d11ea0984",
@@ -42,10 +42,10 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "1cdd9b40a3eed274",
-    "lastChanged": "2026-09-24",
+    "fingerprint": "c69e88e66e5127e8",
+    "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
-    "rows": 94
+    "rows": 97
   },
   "Craft & Tailored": {
     "fingerprint": "4b5681269c451c7a",
@@ -78,10 +78,10 @@
     "rows": 46
   },
   "Hairspring": {
-    "fingerprint": "14f475a005093a5f",
+    "fingerprint": "37c33bead8e641c0",
     "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
-    "rows": 38
+    "rows": 39
   },
   "Heuertime": {
     "fingerprint": "743ffa656bd725d4",
@@ -114,10 +114,10 @@
     "rows": 55
   },
   "Moonphase": {
-    "fingerprint": "f81e33309ca52264",
-    "lastChanged": "2026-09-21",
+    "fingerprint": "5c32f2e5c0bbb16a",
+    "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
-    "rows": 18
+    "rows": 21
   },
   "Oliver & Clarke": {
     "fingerprint": "6d880486b3e60ea7",
@@ -126,16 +126,16 @@
     "rows": 119
   },
   "Pascal Karp": {
-    "fingerprint": "5d0efbeca4c0be48",
-    "lastChanged": "2026-09-25",
+    "fingerprint": "64b7121b49a463bf",
+    "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
-    "rows": 89
+    "rows": 90
   },
   "Romain R\u00e9a": {
-    "fingerprint": "30ae79a3c8e4ed76",
-    "lastChanged": "2026-09-25",
+    "fingerprint": "7cb57f501c1b2af3",
+    "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
-    "rows": 231
+    "rows": 239
   },
   "S.Song Watches": {
     "fingerprint": "2f78cead1c612df7",
@@ -156,10 +156,10 @@
     "rows": 19
   },
   "Somlo": {
-    "fingerprint": "14252f320b944aa5",
-    "lastChanged": "2026-09-25",
+    "fingerprint": "4d106f2ecb4413f0",
+    "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
-    "rows": 177
+    "rows": 176
   },
   "Swiss Hours": {
     "fingerprint": "56d6fe18c53009af",
@@ -174,10 +174,10 @@
     "rows": 29
   },
   "Tokant": {
-    "fingerprint": "ead889689a32c2e5",
-    "lastChanged": "2026-09-25",
+    "fingerprint": "d6ef181e84d92cc1",
+    "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
-    "rows": 34
+    "rows": 32
   },
   "Tropical Watch": {
     "fingerprint": "4aa868edc547ff66",
@@ -252,8 +252,8 @@
     "rows": 5
   },
   "Wind Vintage": {
-    "fingerprint": "2a6f9b9e4d8a9cbb",
-    "lastChanged": "2026-09-25",
+    "fingerprint": "62346182ca37d215",
+    "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
     "rows": 232
   },
@@ -414,9 +414,9 @@
     "rows": 99
   },
   "merged:listings": {
-    "fingerprint": "7c948fc50b92cd61",
+    "fingerprint": "7446e024eec58766",
     "lastChanged": "2026-09-26",
     "lastSeen": "2026-09-26",
-    "rows": 10894
+    "rows": 10910
   }
 }
