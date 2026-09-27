@@ -1,9 +1,9 @@
 {
   "Analog Shift": {
-    "fingerprint": "f1bdaa5599bbbf89",
+    "fingerprint": "f4895b10b489626a",
     "lastChanged": "2026-09-27",
     "lastSeen": "2026-09-27",
-    "rows": 768
+    "rows": 767
   },
   "Belmont Watches": {
     "fingerprint": "53dd9d4d11ea0984",
@@ -42,7 +42,7 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "922b30c04abe1e14",
+    "fingerprint": "bc940abfa9e28274",
     "lastChanged": "2026-09-27",
     "lastSeen": "2026-09-27",
     "rows": 99
@@ -90,8 +90,8 @@
     "rows": 33
   },
   "Huntington Company": {
-    "fingerprint": "333be3e33f815dcc",
-    "lastChanged": "2026-09-26",
+    "fingerprint": "d71479c60dd16765",
+    "lastChanged": "2026-09-27",
     "lastSeen": "2026-09-27",
     "rows": 105
   },
@@ -240,10 +240,10 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "ea7e505d4928fdc7",
+    "fingerprint": "be9defd12fd6761c",
     "lastChanged": "2026-09-27",
     "lastSeen": "2026-09-27",
-    "rows": 73
+    "rows": 74
   },
   "Watchurbia": {
     "fingerprint": "0accbd7398f13ab7",
@@ -252,7 +252,7 @@
     "rows": 5
   },
   "Wind Vintage": {
-    "fingerprint": "f193a4972c401362",
+    "fingerprint": "86882e864081ae51",
     "lastChanged": "2026-09-27",
     "lastSeen": "2026-09-27",
     "rows": 200
@@ -414,9 +414,9 @@
     "rows": 99
   },
   "merged:listings": {
-    "fingerprint": "fe8b79cc0f2f28ff",
+    "fingerprint": "820beeba567d2b9b",
     "lastChanged": "2026-09-27",
     "lastSeen": "2026-09-27",
-    "rows": 10922
+    "rows": 10923
   }
 }
