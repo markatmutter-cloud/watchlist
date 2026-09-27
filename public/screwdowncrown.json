@@ -844,6 +844,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "brand_history"
+    ],
     "title": "Nobody sins at a discount",
     "updated_at": "2026-08-21",
     "url": "https://www.screwdowncrown.com/p/can-cheap-watch-brands-move-upmarket",
@@ -959,6 +963,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary"
+    ],
     "title": "China's Offshore Wealth Crackdown Meets Luxury Watches",
     "updated_at": "2026-09-25",
     "url": "https://www.screwdowncrown.com/p/china-offshore-wealth-tax-luxury-watch-market",
@@ -2623,6 +2630,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "brand_history"
+    ],
     "title": "Japanese Watchmaking's Best Business is... Lathes?",
     "updated_at": "2026-08-24",
     "url": "https://www.screwdowncrown.com/p/japanese-watch-brands-2026-results-citizen-lathes",

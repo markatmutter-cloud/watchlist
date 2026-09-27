@@ -1655,6 +1655,11 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "aviation",
+      "brand_history"
+    ],
     "title": "A COMPREHENSIVE GUIDE TO THE OMEGA FLIGHTMASTER IN SOLID GOLD",
     "updated_at": "2026-09-25",
     "url": "https://www.watchfid.com/a-comprehensive-guide-to-the-omega-flightmaster-in-solid-gold/",
@@ -1969,6 +1974,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "community_ethics"
+    ],
     "title": "BHASKAR ESWARAN",
     "updated_at": "2026-09-25",
     "url": "https://www.watchfid.com/bhaskar-eswaran/",
@@ -2833,6 +2842,9 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "FRANCOISE-MARIE SANTUCCI",
     "updated_at": "2026-09-22",
     "url": "https://www.watchfid.com/francoise-marie-santucci/",

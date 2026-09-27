@@ -2494,6 +2494,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history",
+      "design"
+    ],
     "title": "1530 Rolex Oyster Perpetual Date",
     "updated_at": "2026-05-23",
     "url": "https://hairspring.com/blogs/finds/1530-rolex-oyster-perpetual-date-1",
@@ -6782,6 +6787,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "news",
+      "reference_profile"
+    ],
     "title": "320.050 A. Lange & Söhne Lange 1 Daymatic Honeygold",
     "updated_at": "2026-09-25",
     "url": "https://hairspring.com/blogs/finds/320-050-a-lange-sohne-lange-1-daymatic-honeygold",
@@ -15242,6 +15251,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "auction_results",
+      "design"
+    ],
     "title": "Beyer Dial 3940J Patek Philippe Perpetual Calendar",
     "updated_at": "2026-05-26",
     "url": "https://hairspring.com/blogs/finds/beyer-dial-3940j-patek-philippe-perpetual-calendar",
@@ -19895,6 +19909,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "auction_results"
+    ],
     "title": "Dubail 110.049 A. Lange & Söhne Lange 1",
     "updated_at": "2026-08-25",
     "url": "https://hairspring.com/blogs/finds/dubail-110-049-a-lange-sohne-lange-1",
@@ -22875,6 +22893,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "complications"
+    ],
     "title": "FP Journe TN Tourbillon Souverain",
     "updated_at": "2026-08-28",
     "url": "https://hairspring.com/blogs/finds/fp-journe-tn-tourbillon-souverain",
@@ -41144,6 +41166,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "design"
+    ],
     "title": "Vacheron Constantin Cornes de Vache for Hodinkee",
     "updated_at": "2026-08-08",
     "url": "https://hairspring.com/blogs/finds/vacheron-constantin-cornes-de-vache-for-hodinkee",
