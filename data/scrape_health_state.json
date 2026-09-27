@@ -1,14 +1,14 @@
 {
   "lunaroyster": {
-    "misses": 8,
+    "misses": 9,
     "reason": "no CSV produced this run"
   },
   "maunderwatches": {
-    "misses": 2,
+    "misses": 3,
     "reason": "no CSV produced this run"
   },
   "watchcenter": {
-    "misses": 121,
+    "misses": 122,
     "reason": "no CSV produced this run"
   }
 }
