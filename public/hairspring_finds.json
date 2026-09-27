@@ -22869,20 +22869,16 @@
     "model_line": null,
     "published_at": "2026-08-27",
     "reference_no": null,
-    "scraped_at": "2026-08-28T13:41:47Z",
+    "scraped_at": "2026-09-27T18:12:00Z",
     "slug": "fp-journe-tn-tourbillon-souverain",
     "sold_price_usd": 650000,
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
-    "themes": [
-      "reference_profile",
-      "complications"
-    ],
     "title": "FP Journe TN Tourbillon Souverain",
     "updated_at": "2026-08-28",
     "url": "https://hairspring.com/blogs/finds/fp-journe-tn-tourbillon-souverain",
-    "word_count": 429
+    "word_count": 427
   },
   "https://hairspring.com/blogs/finds/fp-journe-tourbillon-souverain-regence-circulaire": {
     "author": "Erik Gustafson",
