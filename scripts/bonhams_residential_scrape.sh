@@ -7,7 +7,15 @@
 #
 #   1. Bonhams lots     → public/bonhams_lots.json   (B-25)
 #   2. Bonhams calendar → data/bonhams_auctions.csv  (B-72)
-#   3. Watches of Lancashire → data/watchesoflancashire.csv (B-81)
+#   3. Watches of Lancashire → data/watchesoflancashire.csv (B-81, B-99)
+#
+# SETUP NOTE (B-99, 2026-09-18): Lancashire now needs a browser, because its
+# Cloudflare challenge is the "managed" kind that only JavaScript satisfies.
+# One-time, in this clone:
+#     pip3 install -r requirements-residential.txt
+#     python3 -m playwright install chromium
+# Without it the Lancashire leg fails loudly (and records the failure) while
+# the Bonhams legs carry on untouched.
 #
 # The filename still says "bonhams" because the installed LaunchAgent plist
 # points at this path; renaming both is a tidy-up for when someone is next
@@ -62,18 +70,29 @@ cd "$REPO" || exit 1
     rm -f bonhams_auctions_listings.csv
   fi
 
-  # Watches of Lancashire (B-81, 2026-08-30). The whole domain 403s CI —
-  # homepage included, so there is no page to warm a clearance cookie from and
-  # curl_cffi impersonation alone no longer suffices from a datacenter IP. From
-  # here it is an ordinary WooCommerce Store API walk. Non-fatal exactly like
-  # the calendar above: a transient block leaves the prior
-  # data/watchesoflancashire.csv untouched and merge.py keeps emitting it.
+  # Watches of Lancashire (B-81 moved it here 2026-08-30; B-99 found it had
+  # never once produced data from here either).
+  #
+  # The block is a Cloudflare MANAGED challenge: it demands JavaScript from
+  # every client on every path, so it is defeated by neither curl_cffi nor
+  # being on a residential IP. Moving the source here could not have worked,
+  # and nothing checked that it had — the branch below kept the stale CSV and
+  # said "transient block?" every hour for 23 days. The scraper now escalates
+  # to a real browser (cf_clearance.BrowserSession) when it sees the
+  # interstitial.
+  #
+  # So this records the outcome instead of shrugging at it. The status file is
+  # committed with the data and is the only thing that can tell a gate a
+  # residential source has died — the CI scrape-health gate cannot see these
+  # sources at all.
   if "$PY" watchesoflancashire_scraper.py && [ -f watchesoflancashire_listings.csv ]; then
     mv -f watchesoflancashire_listings.csv data/watchesoflancashire.csv
     echo "Watches of Lancashire CSV refreshed"
+    "$PY" -c "import cf_clearance; cf_clearance.write_status('watchesoflancashire', True)"
   else
-    echo "Watches of Lancashire scrape produced no CSV (transient block?) — keeping prior"
+    echo "Watches of Lancashire scrape FAILED — keeping prior CSV, recording the failure"
     rm -f watchesoflancashire_listings.csv
+    "$PY" -c "import cf_clearance; cf_clearance.write_status('watchesoflancashire', False, 'scraper exited non-zero or wrote no CSV')"
   fi
 
   # Scrape lots (throttled). Non-zero = transient block / guard tripped.
@@ -91,7 +110,8 @@ cd "$REPO" || exit 1
   fi
 
   # Commit whichever of the two refreshed (lots and/or calendar).
-  "$GIT" add public/bonhams_lots.json data/bonhams_auctions.csv data/watchesoflancashire.csv
+  "$GIT" add public/bonhams_lots.json data/bonhams_auctions.csv \
+    data/watchesoflancashire.csv data/residential_status.json
   if "$GIT" diff --cached --quiet; then
     echo "no change to bonhams lots/calendar or Lancashire"
     exit "$lots_status"
