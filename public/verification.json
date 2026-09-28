@@ -1,9 +1,9 @@
 {
-  "date": "2026-09-27",
-  "updated_at": "2026-09-27T23:23:32+00:00",
+  "date": "2026-09-28",
+  "updated_at": "2026-09-28T08:33:18+00:00",
   "alerts": [],
   "counts": {
-    "Wind Vintage": 115,
+    "Wind Vintage": 120,
     "Tropical Watch": 113,
     "Menta Watches": 54,
     "Collectors Corner NY": 90,
@@ -19,7 +19,7 @@
     "DB1983": 19,
     "Hairspring": 27,
     "Somlo": 176,
-    "Analog Shift": 749,
+    "Analog Shift": 748,
     "Watches of Knightsbridge": 52,
     "Belmont Watches": 19,
     "Bob's Watches": 92,
@@ -48,6 +48,6 @@
     "Watch Center": 261,
     "eBay": 31
   },
-  "total_listings": 4209,
+  "total_listings": 4213,
   "sources_tracked": 44
 }
