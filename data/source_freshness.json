@@ -1,9 +1,9 @@
 {
   "Analog Shift": {
-    "fingerprint": "5602150f057e90cc",
+    "fingerprint": "258968efa2429904",
     "lastChanged": "2026-09-29",
     "lastSeen": "2026-09-29",
-    "rows": 763
+    "rows": 768
   },
   "Belmont Watches": {
     "fingerprint": "d3e38317d54397b6",
@@ -48,8 +48,8 @@
     "rows": 99
   },
   "Craft & Tailored": {
-    "fingerprint": "d5ac838644ddb5e1",
-    "lastChanged": "2026-09-28",
+    "fingerprint": "a5e73ccb32b093cc",
+    "lastChanged": "2026-09-29",
     "lastSeen": "2026-09-29",
     "rows": 104
   },
@@ -78,8 +78,8 @@
     "rows": 46
   },
   "Hairspring": {
-    "fingerprint": "20a44770a1edd12a",
-    "lastChanged": "2026-09-28",
+    "fingerprint": "f3acf4574a2f5f80",
+    "lastChanged": "2026-09-29",
     "lastSeen": "2026-09-29",
     "rows": 40
   },
@@ -180,16 +180,16 @@
     "rows": 33
   },
   "Tropical Watch": {
-    "fingerprint": "f648a20544272ac3",
+    "fingerprint": "936a6e06ebd9660f",
     "lastChanged": "2026-09-29",
     "lastSeen": "2026-09-29",
     "rows": 113
   },
   "Vintage Watch Collective": {
-    "fingerprint": "71450e53779dca6d",
+    "fingerprint": "08e5cbdc63dd2fa7",
     "lastChanged": "2026-09-29",
     "lastSeen": "2026-09-29",
-    "rows": 38
+    "rows": 37
   },
   "Vintage Watch Fam": {
     "fingerprint": "e050156a0be398d9",
@@ -300,10 +300,10 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "6557b9e3ee93444d",
-    "lastChanged": "2026-09-28",
+    "fingerprint": "45b6b6655eaab040",
+    "lastChanged": "2026-09-29",
     "lastSeen": "2026-09-29",
-    "rows": 38
+    "rows": 34
   },
   "editorial:acollectedman_journal": {
     "fingerprint": "c7832d555f1261f6",
@@ -402,8 +402,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "011b05f9c99bfb9c",
-    "lastChanged": "2026-09-28",
+    "fingerprint": "2ec408df1ffca2a0",
+    "lastChanged": "2026-09-29",
     "lastSeen": "2026-09-29",
     "rows": 4677
   },
@@ -414,9 +414,9 @@
     "rows": 99
   },
   "merged:listings": {
-    "fingerprint": "02e768108e9fb732",
+    "fingerprint": "84496984087af5e5",
     "lastChanged": "2026-09-29",
     "lastSeen": "2026-09-29",
-    "rows": 10961
+    "rows": 10972
   }
 }
