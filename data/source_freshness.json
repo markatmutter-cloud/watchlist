@@ -300,10 +300,10 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "6557b9e3ee93444d",
-    "lastChanged": "2026-09-28",
+    "fingerprint": "45b6b6655eaab040",
+    "lastChanged": "2026-09-29",
     "lastSeen": "2026-09-29",
-    "rows": 38
+    "rows": 34
   },
   "editorial:acollectedman_journal": {
     "fingerprint": "c7832d555f1261f6",
@@ -414,9 +414,9 @@
     "rows": 99
   },
   "merged:listings": {
-    "fingerprint": "6a1ad0916ddb4c2d",
-    "lastChanged": "2026-09-28",
+    "fingerprint": "62cd1b796b77bd06",
+    "lastChanged": "2026-09-29",
     "lastSeen": "2026-09-29",
-    "rows": 10943
+    "rows": 10946
   }
 }
