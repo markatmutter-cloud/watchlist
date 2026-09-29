@@ -1,26 +1,14 @@
 {
-  "europeanwatch": {
-    "misses": 1,
-    "reason": "no CSV produced this run"
-  },
-  "lunaroyster": {
-    "misses": 1,
-    "reason": "no CSV produced this run"
-  },
   "maunderwatches": {
-    "misses": 10,
-    "reason": "no CSV produced this run"
-  },
-  "vintagewatchcollective": {
-    "misses": 1,
+    "misses": 11,
     "reason": "no CSV produced this run"
   },
   "watchcenter": {
-    "misses": 129,
+    "misses": 130,
     "reason": "no CSV produced this run"
   },
   "wok": {
-    "misses": 2,
+    "misses": 3,
     "reason": "no CSV produced this run"
   }
 }
