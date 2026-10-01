@@ -5799,21 +5799,16 @@
     "model_line": null,
     "published_at": "2026-08-01",
     "reference_no": null,
-    "scraped_at": "2026-09-01T17:45:26Z",
+    "scraped_at": "2026-10-01T19:25:29Z",
     "slug": "25810or-audemars-piguet-royal-oak-perpetual-calendar-120th-anniversary-1",
     "sold_price_usd": 340000,
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
-    "themes": [
-      "reference_profile",
-      "brand_history",
-      "complications"
-    ],
     "title": "25810OR Audemars Piguet Royal Oak Perpetual Calendar 120th Anniversary",
     "updated_at": "2026-08-02",
     "url": "https://hairspring.com/blogs/finds/25810or-audemars-piguet-royal-oak-perpetual-calendar-120th-anniversary-1",
-    "word_count": 474
+    "word_count": 476
   },
   "https://hairspring.com/blogs/finds/25820sp-audemars-piguet-royal-oak-perpetual-calendar": {
     "author": "Erik Gustafson",
