@@ -72,6 +72,25 @@ def _make_excerpt(body: str) -> str:
     return cut.rstrip(".,;:!? ")
 
 
+# Fields written onto the meta file by a later enrichment pass, not by the
+# scraper. Keep in lockstep with what corpus_topic_indexer.py writes.
+CARRY_FORWARD_FIELDS = ("themes",)
+
+
+def _carry_forward(meta_rec: dict, prior: dict | None) -> None:
+    """Copy enrichment fields from the prior on-disk record when the new
+    record lacks them. A new non-empty value always wins. An empty list
+    on disk is kept too: the indexer writes [] for "no theme applies",
+    and that is a paid-for answer, not a missing one."""
+    if not isinstance(prior, dict):
+        return
+    for field in CARRY_FORWARD_FIELDS:
+        if meta_rec.get(field):
+            continue
+        if prior.get(field) is not None:
+            meta_rec[field] = prior[field]
+
+
 def write_split(records: dict, meta_path: str | Path, bodies_path: str | Path) -> None:
     """Write the in-memory records dict back to disk as the two
     split files.
@@ -88,19 +107,32 @@ def write_split(records: dict, meta_path: str | Path, bodies_path: str | Path) -
 
     word_count stays on the meta record (already derived, useful for
     display + sort without the body itself).
+
+    Enrichment carry-forward: scrapers rebuild each re-fetched record
+    from scratch, which used to drop the LLM `themes` tag and make the
+    weekly indexer pay to re-tag thousands of unchanged articles. Any
+    CARRY_FORWARD_FIELDS value missing/empty on the record being written
+    is copied from the on-disk record with the same URL.
     """
+    meta_p = Path(meta_path)
+    bodies_p = Path(bodies_path)
+    try:
+        on_disk = json.loads(meta_p.read_text()) if meta_p.exists() else {}
+    except json.JSONDecodeError:
+        on_disk = {}
+
     meta_out: dict = {}
     bodies_out: dict = {}
     for url, rec in records.items():
         body = rec.get("body_text") or ""
         meta_rec = {k: v for k, v in rec.items() if k != "body_text"}
         meta_rec["excerpt"] = _make_excerpt(body)
+        _carry_forward(meta_rec, on_disk.get(url))
         meta_out[url] = meta_rec
         if body:
             bodies_out[url] = body
 
-    meta_p = Path(meta_path)
-    bodies_p = Path(bodies_path)
+
     meta_p.parent.mkdir(parents=True, exist_ok=True)
     bodies_p.parent.mkdir(parents=True, exist_ok=True)
     meta_p.write_text(

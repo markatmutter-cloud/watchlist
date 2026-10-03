@@ -6,16 +6,21 @@ Reads every editorial-corpus meta JSON (8 sources, ~8,556 articles as of
 body to Claude Haiku 4.5, and writes back a `themes` field with 1-3 tags
 from the curated theme taxonomy.
 
-Idempotent: articles that already have a non-empty `themes` field are
-skipped, so re-running on cron only spends tokens on newly-scraped
-articles.
+Idempotent: articles that already carry a `themes` field (even an empty
+list, meaning "no theme applies") are skipped, so re-running on cron only
+spends tokens on newly-scraped articles. Scrapers keep existing tags when
+they rewrite a record (editorial_corpus_io.write_split carry-forward).
 
-Prompt-cached: the system prompt + theme taxonomy are wrapped in
-`cache_control: {type: "ephemeral"}` so subsequent articles within the
-5-minute cache window pay ~$0.10/1M for the cached prefix instead of
-~$1/1M. With ~830 input + 50 output tokens per article and prompt
-caching warm, total cost is ~$5-9 for the full 8,556-article corpus.
-Incremental cron runs (only new articles since last index) cost pennies.
+Not prompt-cached: the ~700-token system prompt is below Anthropic's
+minimum cacheable prefix, so cache_control would be a silent no-op. Cost is
+~830 input + ~50 output tokens per article, roughly $0.001 each at Haiku
+rates. Incremental cron runs (only new articles since last index) cost pennies.
+
+Cost guard: a default run (no --retag, no --limit) that finds more than
+MAX_UNTAGGED_DEFAULT untagged articles exits non-zero BEFORE calling the
+API. That many means tags are being stripped again (the bug that re-tagged
+~72k articles May-Sep 2026), so it should be a red run, not a bill. For a
+deliberate large backfill, pass --limit N.
 
 Setup:
     pip install anthropic
@@ -42,11 +47,9 @@ import sys
 import time
 from pathlib import Path
 
-try:
-    import anthropic
-except ImportError:
-    print("ERROR: install the Anthropic SDK first: pip install anthropic", file=sys.stderr)
-    sys.exit(1)
+
+# Above this many untagged articles, a default run refuses to spend.
+MAX_UNTAGGED_DEFAULT = 300
 
 
 # ── Theme taxonomy ─────────────────────────────────────────────────
@@ -180,17 +183,54 @@ def load_bodies(meta_path: str) -> dict:
         return json.load(f)
 
 
-def tag_article(client: anthropic.Anthropic, article: dict) -> list[str]:
-    """Single API call. System prompt is prompt-cached so warm-cache
-    calls within the 5-minute window cost ~10% of cold-cache."""
+def needs_tagging(rec, retag: bool = False) -> bool:
+    """True when the indexer should (re)tag this record. A present
+    `themes` key, even [], is a paid-for answer and is skipped."""
+    if not isinstance(rec, dict):
+        return False
+    return retag or rec.get("themes") is None
+
+
+def count_untagged(meta_paths, source: str = "", retag: bool = False) -> int:
+    """How many records a run would send to the API (ignoring --limit)."""
+    n = 0
+    for meta_path in meta_paths:
+        if source and source not in meta_path:
+            continue
+        path = Path(meta_path)
+        if not path.exists():
+            continue
+        with open(path) as f:
+            meta = json.load(f)
+        n += sum(1 for rec in meta.values() if needs_tagging(rec, retag))
+    return n
+
+
+def cost_guard_message(untagged: int, retag: bool, limit: int,
+                       threshold: int = MAX_UNTAGGED_DEFAULT) -> str | None:
+    """Error text when a default run would tag suspiciously many articles,
+    else None. --retag and an explicit --limit are deliberate spends and
+    bypass the guard."""
+    if retag or limit:
+        return None
+    if untagged <= threshold:
+        return None
+    return (
+        f"COST GUARD: {untagged} untagged articles (threshold {threshold}). "
+        "A normal week tags tens of new articles, so this almost certainly "
+        "means a scraper is stripping existing `themes` again (see "
+        "editorial_corpus_io.CARRY_FORWARD_FIELDS). Stopped before calling "
+        "the API. For a deliberate backfill, run manually with --limit N."
+    )
+
+
+def tag_article(client, article: dict) -> list[str]:
+    """Single API call. No cache_control: the system prompt is below the
+    minimum cacheable size, so caching would never engage."""
     msg = client.messages.create(
         model="claude-haiku-4-5",
         max_tokens=120,
-        system=[{
-            "type": "text",
-            "text": SYSTEM_PROMPT,
-            "cache_control": {"type": "ephemeral"},
-        }],
+        system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": build_user_prompt(article)}],
     )
     text = next((b.text for b in msg.content if b.type == "text"), "")
@@ -210,6 +250,22 @@ def main():
     parser.add_argument("--sleep", type=float, default=0.0,
                         help="Sleep N seconds between articles (rate-limit safety).")
     args = parser.parse_args()
+
+    untagged = count_untagged(SOURCE_META_PATHS, args.source, args.retag)
+    print(f"{untagged} articles to tag.")
+    guard = cost_guard_message(untagged, args.retag, args.limit)
+    if guard:
+        print(f"ERROR: {guard}", file=sys.stderr)
+        sys.exit(2)
+    if untagged == 0:
+        print("Nothing to tag.")
+        return
+
+    try:
+        import anthropic
+    except ImportError:
+        print("ERROR: install the Anthropic SDK first: pip install anthropic", file=sys.stderr)
+        sys.exit(1)
 
     if not os.environ.get("ANTHROPIC_API_KEY"):
         print("ERROR: set ANTHROPIC_API_KEY in your environment first.", file=sys.stderr)
@@ -236,9 +292,7 @@ def main():
 
         for url in urls:
             rec = meta[url]
-            if not isinstance(rec, dict):
-                continue
-            if not args.retag and rec.get("themes"):
+            if not needs_tagging(rec, args.retag):
                 continue
             article = {
                 "title":     rec.get("title", ""),
