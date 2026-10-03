@@ -1,12 +1,19 @@
 {
-  "date": "2026-10-02",
-  "updated_at": "2026-10-02T11:38:04+00:00",
-  "alerts": [],
+  "date": "2026-10-03",
+  "updated_at": "2026-10-03T10:54:57+00:00",
+  "alerts": [
+    {
+      "house": "Phillips",
+      "level": "ERROR",
+      "today": 0,
+      "previous": 291,
+      "note": "house absent from today's lot scrape (was present yesterday)"
+    }
+  ],
   "counts": {
     "Christie's": 285,
-    "Phillips": 291,
-    "Sotheby's": 531
+    "Sotheby's": 530
   },
-  "total_live_lots": 1107,
-  "houses_tracked": 3
+  "total_live_lots": 815,
+  "houses_tracked": 2
 }
