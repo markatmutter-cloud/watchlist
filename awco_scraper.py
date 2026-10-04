@@ -11,7 +11,8 @@ needs no auth, but two quirks on their install shape this file:
     vintage-watches (~330), newwatches and special-editions (~12 each).
     New pieces are kept on purpose: any vintage-only cutoff year would be
     arbitrary, and over-including beats a wrong filter (Mark, 2026-10-04).
-    Straps and gifts live in other categories and never get walked.
+    special-editions also holds AWCo-branded gifts (silk pocket squares),
+    so anything filed under gifts or straps is dropped.
   * Their `stock_status` filter is broken: `stock_status=instock` reports
     MORE items than the unfiltered total and returns each product twice
     (a bad JOIN somewhere upstream). So we never use it — stock is
@@ -39,6 +40,7 @@ from scraper_lib import fetch_json_with_retry
 BASE = "https://awco.nl"
 API = f"{BASE}/wp-json/wc/store/v1/products"
 CATEGORIES = ["vintage-watches", "newwatches", "special-editions"]
+EXCLUDED_CATEGORIES = {"gifts", "straps"}
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -175,6 +177,10 @@ def main():
             skipped["duplicate"] += 1
             continue
         seen.add(pid)
+        cats = {c.get("slug") for c in item.get("categories") or []}
+        if cats & EXCLUDED_CATEGORIES:
+            skipped["gift/strap"] += 1
+            continue
         parsed = parse_item(item)
         if parsed["sold"]:
             skipped["sold"] += 1
