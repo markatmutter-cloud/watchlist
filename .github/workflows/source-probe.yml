@@ -31,4 +31,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - run: pip install requests && python scratch_probe/probe.py
+      - run: pip install requests && bash scratch_probe/run.sh
