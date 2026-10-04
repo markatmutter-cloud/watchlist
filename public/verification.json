@@ -1,6 +1,6 @@
 {
   "date": "2026-10-04",
-  "updated_at": "2026-10-04T23:47:37+00:00",
+  "updated_at": "2026-10-04T23:49:35+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 115,
@@ -47,8 +47,9 @@
     "Swiss Hours": 62,
     "Watch Center": 261,
     "Amsterdam Watch Company": 275,
+    "Amsterdam Vintage Watches": 74,
     "eBay": 39
   },
-  "total_listings": 4569,
-  "sources_tracked": 45
+  "total_listings": 4643,
+  "sources_tracked": 46
 }
