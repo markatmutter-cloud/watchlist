@@ -569,7 +569,9 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
-    "themes": [],
+    "themes": [
+      "life_lessons"
+    ],
     "title": "Attitude for gratitude",
     "updated_at": "2021-05-27",
     "url": "https://www.screwdowncrown.com/p/attitude-for-gratitude-3-blessings-exercise",
@@ -2420,6 +2422,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "collector_mindset"
+    ],
     "title": "How Your Brain Learns to Love a Watch",
     "updated_at": "2026-08-29",
     "url": "https://www.screwdowncrown.com/p/how-your-brain-learns-to-love-a-watch",
@@ -4282,6 +4288,11 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "auction_results",
+      "celebrity",
+      "market_commentary"
+    ],
     "title": "Who Were the Four Seasons of Rolex For?",
     "updated_at": "2026-10-02",
     "url": "https://www.screwdowncrown.com/p/rolex-four-seasons-daytona-auction-phillips",
@@ -6595,6 +6606,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "collector_mindset"
+    ],
     "title": "Why Watchmakers Can't Stop Flippers",
     "updated_at": "2026-09-01",
     "url": "https://www.screwdowncrown.com/p/why-watchmakers-cant-stop-flippers",

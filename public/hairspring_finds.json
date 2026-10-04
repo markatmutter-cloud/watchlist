@@ -5596,6 +5596,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "complications",
+      "brand_history"
+    ],
     "title": "25668BA Audemars Piguet Perpetual Calendar Skeleton",
     "updated_at": "2026-07-17",
     "url": "https://hairspring.com/blogs/finds/25668ba-audemars-piguet-perpetual-calendar",
@@ -5805,6 +5810,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history",
+      "complications"
+    ],
     "title": "25810OR Audemars Piguet Royal Oak Perpetual Calendar 120th Anniversary",
     "updated_at": "2026-08-02",
     "url": "https://hairspring.com/blogs/finds/25810or-audemars-piguet-royal-oak-perpetual-calendar-120th-anniversary-1",
@@ -8284,6 +8294,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "complications"
+    ],
     "title": "3939HP Patek Philippe Minute Repeater Tourbillon",
     "updated_at": "2026-07-19",
     "url": "https://hairspring.com/blogs/finds/3939hp-patek-philippe-minute-repeater-tourbillon",
@@ -15713,6 +15727,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "market_commentary"
+    ],
     "title": "Black Dial 5004R Patek Philippe Perpetual Calendar Split Seconds Chronograph",
     "updated_at": "2026-06-29",
     "url": "https://hairspring.com/blogs/finds/black-dial-5004r-patek-philippe-perpetual-calendar-split-seconds-chronograph",
@@ -16713,6 +16731,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "auction_results",
+      "complications"
+    ],
     "title": "Breguet Salmon Dial 3970EP Patek Phillipe Perpetual Calendar Chronograph",
     "updated_at": "2026-06-03",
     "url": "https://hairspring.com/blogs/finds/breguet-salmon-dial-3970ep-patek-phillipe-perpetual-calendar-chronograph",
@@ -19173,6 +19196,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history",
+      "design"
+    ],
     "title": "'Darth' 101.035 A. Lange & Söhne Lange 1",
     "updated_at": "2026-05-31",
     "url": "https://hairspring.com/blogs/finds/darth-101-035-a-lange-sohne-lange-1",
@@ -24759,6 +24787,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history",
+      "design"
+    ],
     "title": "H40 Roger Dubuis Hommage, White Gold",
     "updated_at": "2026-10-02",
     "url": "https://hairspring.com/blogs/finds/h40-roger-dubuis-hommage",
@@ -33219,6 +33252,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history",
+      "design"
+    ],
     "title": "Roger Dubuis Hommage H37 Monopusher",
     "updated_at": "2026-07-29",
     "url": "https://hairspring.com/blogs/finds/roger-dubuis-hommage-h37-monopusher",

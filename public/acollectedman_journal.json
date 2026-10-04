@@ -1968,7 +1968,9 @@
     "source": "acollectedman_journal",
     "source_type": "editorial_blog",
     "sub_model": null,
-    "themes": [],
+    "themes": [
+      "design"
+    ],
     "title": "The philosophies of Ross Lovegrove",
     "updated_at": "2026-02-04",
     "url": "https://www.acollectedman.com/blogs/journal/interview-ross-lovegrove",
