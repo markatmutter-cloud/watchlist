@@ -7,13 +7,17 @@ special editions). The public Store API at /wp-json/wc/store/v1/products
 needs no auth, but two quirks on their install shape this file:
 
   * The unfiltered catalog is ~2,700 products, nearly all of it the sold
-    archive. We scope to the `vintage-watches` category (~330), which is
-    the live vintage stock behind awco.nl/watches/.
+    archive. We walk the three categories behind awco.nl/watches/ instead:
+    vintage-watches (~330), newwatches and special-editions (~12 each).
+    New pieces are kept on purpose: any vintage-only cutoff year would be
+    arbitrary, and over-including beats a wrong filter (Mark, 2026-10-04).
+    special-editions also holds AWCo-branded gifts (silk pocket squares),
+    so anything filed under gifts or straps is dropped.
   * Their `stock_status` filter is broken: `stock_status=instock` reports
     MORE items than the unfiltered total and returns each product twice
     (a bad JOIN somewhere upstream). So we never use it — stock is
     checked client-side via `is_in_stock`, and rows are de-duplicated by
-    product id in case the category walk ever repeats them too.
+    product id (a product can also sit in more than one category).
 
 Brand comes from the structured `pa_brand` attribute when present (AWCo
 fills it consistently), falling back to a title match.
@@ -35,7 +39,8 @@ from scraper_lib import fetch_json_with_retry
 
 BASE = "https://awco.nl"
 API = f"{BASE}/wp-json/wc/store/v1/products"
-CATEGORY = "vintage-watches"
+CATEGORIES = ["vintage-watches", "newwatches", "special-editions"]
+EXCLUDED_CATEGORIES = {"gifts", "straps"}
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -91,17 +96,17 @@ def strip_html(text):
     return re.sub(r"\s+", " ", html.unescape(text)).strip()
 
 
-def get_all_listings():
+def get_category(category):
     items = []
     page = 1
     per_page = 100
     while True:
-        print(f"Fetching page {page}...")
+        print(f"Fetching {category} page {page}...")
         try:
             batch = fetch_json_with_retry(API, params={
                 "per_page": per_page,
                 "page": page,
-                "category": CATEGORY,
+                "category": category,
             }, headers=HEADERS, timeout=30)
         except requests.RequestException as e:
             # A dropped page is a truncation, not a failure: keep what we
@@ -116,6 +121,13 @@ def get_all_listings():
             break
         page += 1
         time.sleep(0.5)
+    return items
+
+
+def get_all_listings():
+    items = []
+    for category in CATEGORIES:
+        items.extend(get_category(category))
     return items
 
 
@@ -152,7 +164,7 @@ def prior_count():
 
 
 def main():
-    print(f"Fetching {SOURCE} inventory (WooCommerce Store API, category={CATEGORY})...")
+    print(f"Fetching {SOURCE} inventory (WooCommerce Store API, categories={', '.join(CATEGORIES)})...")
     raw = get_all_listings()
     print(f"\nTotal raw items: {len(raw)}")
 
@@ -165,6 +177,10 @@ def main():
             skipped["duplicate"] += 1
             continue
         seen.add(pid)
+        cats = {c.get("slug") for c in item.get("categories") or []}
+        if cats & EXCLUDED_CATEGORIES:
+            skipped["gift/strap"] += 1
+            continue
         parsed = parse_item(item)
         if parsed["sold"]:
             skipped["sold"] += 1

@@ -275,7 +275,7 @@ jobs:
         run: python swisshours_scraper.py
 
       - name: Run Amsterdam Watch Company scraper (WooCommerce Store API, EUR)
-        # awco.nl. Scoped to the vintage-watches category; their
+        # awco.nl. Walks the vintage, new and special-editions categories; their
         # stock_status filter double-counts, so stock is checked in code.
         continue-on-error: true
         run: python awco_scraper.py
