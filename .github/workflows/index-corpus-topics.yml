@@ -9,18 +9,20 @@
 #   - First full corpus run: ~$9 (Haiku rates, 8,556 articles)
 #   - Weekly incremental: pennies (typically 5-50 new articles)
 #
-# Schedule fires Sunday 17:00 UTC — one hour after the Sunday editorial-
-# corpus scrape (16:00 UTC) so the data layer is fresh by the time we tag.
+# Schedule fires Sunday 17:00 UTC. It used to sit one hour after a Sunday
+# 16:00 editorial scrape; that scrape is daily now, so this is simply the
+# weekly sweep that tags whatever the week brought in.
 #
-# DELIBERATE CADENCE MISMATCH (2026-06-02): the editorial-corpus scrape now
-# also runs WEDNESDAY (scrape-editorial-corpus.yml: '0 16 * * 0,3'), but this
-# topic indexer stays Sunday-only. So articles scraped on Wednesday don't get
-# their LLM `themes` tags until the following Sunday's run (up to ~4-day lag).
-# That's accepted: `themes` aren't surfaced in the UI yet (recommender
-# substrate only — see RECOMMENDER_STRATEGY.md), the articles appear in
-# Editorial immediately regardless, and the indexer is idempotent so Sunday
-# sweeps up every still-untagged article. If themes become time-critical,
-# bump this cron to '0 17 * * 0,3' to match the scrape.
+# DELIBERATE CADENCE MISMATCH (updated 2026-09-09): the editorial-corpus scrape
+# now runs DAILY (scrape-editorial-corpus.yml: '0 8 * * *'), while this topic
+# indexer stays Sunday-only — so a freshly-scraped article can wait up to a
+# week for its LLM `themes` tags, where it used to wait up to four days.
+# Still accepted, for the same reason: `themes` aren't surfaced in the UI at
+# all (recommender substrate only — see RECOMMENDER_STRATEGY.md), the articles
+# appear in Editorial immediately regardless, and the indexer is idempotent so
+# Sunday sweeps up every still-untagged article. Cost is unchanged either way
+# (the same new articles, tagged once). If themes ever DO become user-visible,
+# bump this cron to '0 9 * * *' — an hour after the daily scrape.
 #
 # Manual `workflow_dispatch` trigger exposes limit / source / retag inputs for
 # ad-hoc runs (e.g. to tag Wednesday's batch early).
@@ -30,7 +32,7 @@ name: Index editorial corpus topics
 
 on:
   schedule:
-    - cron: '0 17 * * 0'   # 9am PST / 10am PDT Sunday — 1h after editorial scrape
+    - cron: '0 17 * * 0'   # Sunday only — sweeps up the week's untagged articles (see header)
   workflow_dispatch:
     inputs:
       limit:

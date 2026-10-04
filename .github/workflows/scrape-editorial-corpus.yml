@@ -1,19 +1,32 @@
 name: Scrape editorial corpus
 
-# Low-frequency cron for editorial-corpus scrapers. These sources
-# publish 1-2 articles/week at most; daily scraping would just burn
-# requests against unchanged content. Twice-weekly is the cadence
-# for new-article discovery + the rolling 30-day re-fetch pass that
-# catches author edits to existing articles — it surfaces newly
-# published pieces sooner (fresher article rotation on the site)
-# without scraping unchanged content daily.
+# Daily cron for editorial-corpus scrapers (Mark, 2026-09-09). These
+# sources publish 1-2 articles/week each, so most runs will find nothing
+# new — that is the accepted cost. With the new interface the site wants
+# fresh reading material every morning, and a twice-weekly cadence meant
+# a piece published on Thursday sat undiscovered until Sunday.
 #
-# Cadence: Sunday + Wednesday morning Pacific Time (16:00 UTC). The
-# main listings cron runs at 14/20/02 UTC; this slot avoids overlap.
+# Each run is ~25 min and the scrapers are incremental (they stop at the
+# most-recently-scraped URL), so daily is cheap: it re-walks the same
+# sitemaps, it does not re-fetch known articles.
 #
-# NB the LLM topic-tagger (index-corpus-topics.yml) runs SUNDAY-ONLY, so
-# Wednesday's freshly-scraped articles don't get their `themes` tags until the
-# following Sunday (deliberate, accepted lag — see that file's header).
+# WHY 08:00 UTC and not a time that reads like "morning".
+# Mark wants this landed before he wakes (Pacific). 08:00 UTC is 1am PDT
+# / midnight PST, which looks absurdly early until you account for the
+# scheduler: GitHub has been starting this repo's crons 2-3 HOURS late
+# all week (this workflow, scheduled 16:00, has started at 17:51, 18:54
+# and 19:03 on recent runs; the listings cron once slipped 3h18m). So the
+# cron time is a floor, not a promise. 08:00 + a 3h slip + 25 min still
+# finishes around 4am PDT; even a 5h slip lands before 7am. Aiming at
+# 6am would have missed most mornings.
+#
+# The main listings cron runs at 14/20/02 UTC, so this slot avoids overlap.
+#
+# NB the LLM topic-tagger (index-corpus-topics.yml) stays SUNDAY-ONLY, so a
+# freshly-scraped article now waits up to a week for its `themes` tags. Still
+# deliberate: themes are recommender substrate and are not surfaced in the UI,
+# and articles appear in Editorial immediately regardless — see that file's
+# header before changing it.
 #
 # Scope (2026-05-19):
 # - bring_a_loupe_scraper.py    → public/bring_a_loupe.json
@@ -57,7 +70,7 @@ name: Scrape editorial corpus
 
 on:
   schedule:
-    - cron: '0 16 * * 0,3'   # 8am PST / 9am PDT Sunday + Wednesday
+    - cron: '0 8 * * *'   # 08:00 UTC daily — lands before a Pacific morning even with GitHub's 2-3h cron slip
   workflow_dispatch:
 
 concurrency:

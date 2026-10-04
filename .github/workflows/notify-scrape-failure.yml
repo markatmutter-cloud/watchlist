@@ -65,8 +65,13 @@ jobs:
     # alerts this workflow exists for.
     if: github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
+    outputs:
+      # Handed to the triage job below. Empty on a recovery/no-op run,
+      # which is how triage knows to skip.
+      issue: ${{ steps.alert.outputs.issue }}
     steps:
       - name: Open / update / close the failure issue via gh CLI
+        id: alert
         # All workflow_run fields are passed through env (never inlined
         # into the script) to avoid shell-injection from run metadata.
         env:
@@ -122,10 +127,12 @@ jobs:
             if [ -n "$existing" ]; then
               gh issue comment "$existing" --repo "$GH_REPO" --body "$body"
               echo "Commented on existing issue #$existing"
+              echo "issue=$existing" >> "$GITHUB_OUTPUT"
             else
-              gh issue create --repo "$GH_REPO" --title "$prefix — $sha" \
-                --body "$body" --label scrape-failure
-              echo "Opened new issue for $WF_NAME"
+              url=$(gh issue create --repo "$GH_REPO" --title "$prefix — $sha" \
+                --body "$body" --label scrape-failure)
+              echo "Opened new issue for $WF_NAME: $url"
+              echo "issue=${url##*/}" >> "$GITHUB_OUTPUT"
             fi
           elif [ "$CONCLUSION" = "success" ] && [ -n "$existing" ]; then
             gh issue comment "$existing" --repo "$GH_REPO" \
@@ -135,3 +142,71 @@ jobs:
           else
             echo "No action for conclusion=${CONCLUSION} (no existing open issue)"
           fi
+
+  # ── Triage ────────────────────────────────────────────────────────────
+  # Probes the implicated dealers and answers "is this ours?" on the issue
+  # the job above just opened.
+  #
+  # WHY THIS LIVES HERE AND NOT IN ITS OWN WORKFLOW. It was its own
+  # workflow, triggered by `issues: [opened]`, and it NEVER RAN ONCE in
+  # the week after it shipped — zero runs, while seven alerts went out
+  # unanswered. GitHub deliberately does not start a workflow from an
+  # event created with GITHUB_TOKEN, and the job above opens that issue
+  # with exactly that token. The trigger could never have fired, and no
+  # amount of unit testing would have shown it: the bug was in the
+  # wiring, and the only test that catches it is a real firing.
+  #
+  # A `needs:` edge is not an event, so the restriction does not apply.
+  # It also cannot race the alert or comment into the void.
+  #
+  # Separate JOB rather than a step so the alert path keeps its B-23
+  # property of downloading no actions: this job checks out the repo (it
+  # reads the move step and the scrapers' URL constants), and if that
+  # download blips, the alert has already been posted by the job above.
+  triage:
+    needs: notify
+    if: needs.notify.outputs.issue != ''
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Probe the implicated sources and comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE: ${{ needs.notify.outputs.issue }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -uo pipefail
+
+          if ! gh run view "$RUN_ID" --repo "$GH_REPO" --log-failed > failed.log 2>/dev/null \
+             || [ ! -s failed.log ]; then
+            # Logs expire, and a job that died at setup has none. The
+            # issue body carries the gate's source list either way.
+            gh issue view "$ISSUE" --repo "$GH_REPO" --json body --jq .body > failed.log 2>/dev/null || true
+            echo "Run logs unavailable — falling back to the issue body."
+          fi
+          [ -s failed.log ] || { echo "Nothing to triage."; exit 0; }
+
+          python3 triage_scrape_failure.py failed.log > triage.md || {
+            echo "Triage itself failed; not commenting." >&2
+            exit 0
+          }
+
+          if [ -s triage.md ]; then
+            gh issue comment "$ISSUE" --repo "$GH_REPO" --body-file triage.md
+            echo "Triaged #$ISSUE"
+          fi
+          cat triage.md >> "$GITHUB_STEP_SUMMARY"

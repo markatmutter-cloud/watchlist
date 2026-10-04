@@ -1,6 +1,6 @@
 {
   "watchcenter": {
-    "reason": "B-80 - dealer-side outage. watchcenter.ch returns HTTP 503 to CI (source-probe, 16KB error page, no anti-bot markers) and does not load in a browser either, so it is their site that is down, not our access to it. Mark contacted the dealer 2026-08-30. Nothing in this repo can fix it, so the page is muted until this date, when it re-pages by itself.",
-    "until": "2026-09-13"
+    "reason": "B-80 - dealer-side outage, still down. watchcenter.ch returns HTTP 503 to CI (source-probe, 16KB error page, no anti-bot markers) and does not load in a browser either, so it is their site that is down, not our access to it. Mark contacted the dealer 2026-08-30; no recovery by 2026-09-16 (90 consecutive missed runs). Re-snoozed to mid-October at Mark's call. Nothing in this repo can fix it, so it stays muted until this date, when it re-pages by itself.",
+    "until": "2026-10-15"
   }
 }

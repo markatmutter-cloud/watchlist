@@ -9,3 +9,11 @@ requests==2.32.5
 # assert every scheduled workflow is watched by notify-scrape-failure.
 # Pinned like every other dep in this repo (see requirements.txt header).
 PyYAML==6.0.3
+
+# Same reason as `requests` above: watchesoflancashire_scraper.py imports
+# curl_cffi at module load, so a test that imports it to exercise the
+# write-guard cannot even collect without this. Pinned to match
+# requirements-auctions.txt. NOT playwright — cf_clearance imports that
+# lazily inside BrowserSession.__enter__ precisely so the test suite never
+# needs a 400MB browser.
+curl-cffi==0.13.0
