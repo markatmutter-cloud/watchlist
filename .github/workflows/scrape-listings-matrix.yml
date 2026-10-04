@@ -71,6 +71,8 @@ jobs:
           - { scraper: lunaroyster }
           - { scraper: ssongwatches }
           - { scraper: swisshours }
+          - { scraper: awco }
+          - { scraper: amsterdamvintagewatches }
 
     steps:
       - uses: actions/checkout@v5

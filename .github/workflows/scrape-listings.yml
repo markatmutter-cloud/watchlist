@@ -274,6 +274,18 @@ jobs:
         continue-on-error: true
         run: python swisshours_scraper.py
 
+      - name: Run Amsterdam Watch Company scraper (WooCommerce Store API, EUR)
+        # awco.nl. Walks the vintage, new and special-editions categories; their
+        # stock_status filter double-counts, so stock is checked in code.
+        continue-on-error: true
+        run: python awco_scraper.py
+
+      - name: Run Amsterdam Vintage Watches scraper (WooCommerce Store API, EUR)
+        # stock_status=instock; drops the not-for-sale Museum category
+        # and price-on-request rows.
+        continue-on-error: true
+        run: python amsterdamvintagewatches_scraper.py
+
       # eBay runs in its own workflow (.github/workflows/scrape-ebay.yml)
       # so a slow Browse API response or token blip doesn't slow the
       # dealer-listings cron. eBay can iterate on its own cadence and
@@ -330,6 +342,8 @@ jobs:
           [ -f lunaroyster_listings.csv ]         && mv lunaroyster_listings.csv         data/lunaroyster.csv         || echo "lunaroyster missing"
           [ -f ssongwatches_listings.csv ]        && mv ssongwatches_listings.csv        data/ssongwatches.csv        || echo "ssongwatches missing"
           [ -f swisshours_listings.csv ]          && mv swisshours_listings.csv          data/swisshours.csv          || echo "swisshours missing"
+          [ -f awco_listings.csv ]                && mv awco_listings.csv                data/awco.csv                || echo "awco missing"
+          [ -f amsterdamvintagewatches_listings.csv ] && mv amsterdamvintagewatches_listings.csv data/amsterdamvintagewatches.csv || echo "amsterdamvintagewatches missing"
           } | tee scrape_move.log
 
       - name: Merge into listings.json
