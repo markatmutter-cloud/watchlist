@@ -1,9 +1,9 @@
 {
   "date": "2026-10-04",
-  "updated_at": "2026-10-04T08:10:07+00:00",
+  "updated_at": "2026-10-04T18:36:35+00:00",
   "alerts": [],
   "counts": {
-    "Wind Vintage": 116,
+    "Wind Vintage": 115,
     "Tropical Watch": 113,
     "Menta Watches": 58,
     "Collectors Corner NY": 86,
@@ -15,14 +15,14 @@
     "Oliver & Clarke": 98,
     "Craft & Tailored": 77,
     "Watch Brothers London": 9,
-    "Sierra Time Co": 17,
+    "Sierra Time Co": 16,
     "DB1983": 27,
     "Hairspring": 29,
     "Somlo": 181,
     "Analog Shift": 739,
     "Watches of Knightsbridge": 68,
-    "Belmont Watches": 21,
-    "Bob's Watches": 95,
+    "Belmont Watches": 20,
+    "Bob's Watches": 93,
     "Watchfid": 73,
     "Bulang & Sons": 160,
     "Moonphase": 22,
@@ -48,6 +48,6 @@
     "Watch Center": 261,
     "eBay": 40
   },
-  "total_listings": 4309,
+  "total_listings": 4304,
   "sources_tracked": 44
 }
