@@ -72,6 +72,15 @@ specifically; it is not a licence to import faces elsewhere. Everything else
 in that page's stylesheet is namespaced `mag-` and takes colour from the
 app's own `:root` tokens, so dark mode needs no second palette.
 
+**The exception is the landing page, not the chrome (2026-09-08).** When a
+second surface put the same chrome on the Watches tab, Mark's call on seeing it
+live was the app's own type, not the magazine's: `MagazineWatches` overrides the
+three faces back to `FONT_SANS` (scoped `.mag.magw`, two classes so it wins
+whatever order the stylesheets inject) and keeps only the colour and layout. Its
+wordmark takes the app's uppercase, letterspaced treatment in olive. So a
+surface wearing `MagazineChrome` inherits its *colour*, and has to opt in to the
+faces — the serif/sans axis above still governs everywhere but Home.
+
 **The faces (tokens in `styles.js` — never inline a font string).**
 `FONT_SANS` is the interface (also the `public/index.html` body default,
 which 75% of UI inherits via `fontFamily: "inherit"`). `FONT_SERIF` /

@@ -748,6 +748,21 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-09-08 — Watches tab in the magazine's chrome, behind `?view=watches` (#978).** A parallel
+  page (`MagazineWatches`) that restyles the chrome only: the grid, cards, hearts, filters and the
+  calendar modal arrive as the shells' own `listingsTabContentJSX`. Still flagged — not promoted.
+- **2026-09-08 — Watches page takes the app's type, keeps the magazine's colour (#979).** Mark on the
+  live page: the three magazine faces came off, the system stack came back, and the wordmark changed
+  to the app's uppercase treatment in olive. Scoped `.mag.magw`, so the landing page keeps Bodoni.
+- **2026-09-08 — One account control on mobile Home (#978).** `MobileShell` still rendered its brand
+  row under `MagazineChrome`'s masthead, so Home showed two hamburgers; signed-out now reads
+  "Sign in" and opens the same menu the signed-in initial opens, on both viewports.
+- **2026-09-08 — Masthead and dealer-rail polish (#978/#979).** The dealer label moved above its
+  scrolling pills (inline, it ate ~160px of a row already scrolling — one pill visible at 390px);
+  the saved heart dropped its count badge and matched the account disc's size.
+- **2026-09-08 — App.test.jsx was passing vacuously (#978).** Its fetch mock matched `listings.json`
+  while the app fetches `listings_live.json`, so every App test rendered the load-error screen — and
+  the `/Listings/i` sanity matcher was satisfied by "Couldn't pull the listings". Now a real render.
 - **2026-09-07 — Magazine landing page, and HomeTab retired (#955–#977).** A magazine-format Home
   built behind `?view=magazine`, used daily for a week, then promoted to the default; the old
   HomeTab (1,048 lines) deleted and its footer extracted to `SiteFooter.js`.
