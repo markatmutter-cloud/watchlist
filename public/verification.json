@@ -1,10 +1,10 @@
 {
   "date": "2026-10-04",
-  "updated_at": "2026-10-04T23:13:30+00:00",
+  "updated_at": "2026-10-04T23:47:37+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 115,
-    "Tropical Watch": 112,
+    "Tropical Watch": 111,
     "Menta Watches": 57,
     "Collectors Corner NY": 86,
     "Falco Watches": 7,
@@ -46,8 +46,9 @@
     "S.Song Watches": 19,
     "Swiss Hours": 62,
     "Watch Center": 261,
-    "eBay": 40
+    "Amsterdam Watch Company": 275,
+    "eBay": 39
   },
-  "total_listings": 4296,
-  "sources_tracked": 44
+  "total_listings": 4569,
+  "sources_tracked": 45
 }
