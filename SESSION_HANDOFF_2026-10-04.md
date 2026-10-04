@@ -77,3 +77,31 @@ the iOS 44pt minimum) were listed as open threads on the 09-07 handoff and are
 still open in BUGS.md, which is their home. Reference guides still have no
 presence on the landing page — the content Watchlist owns outright and the one
 thing a competitor can't get by scraping the same dealers.
+
+---
+
+## Addendum — later on 2026-10-04: two Amsterdam dealers (#988)
+
+**Shipped and live.** Amsterdam Watch Company (awco.nl) and Amsterdam Vintage
+Watches, both WooCommerce Store API in EUR. Merged and refreshed via
+`scrape-single.yml`; the-watch-list.app was serving 275 + 74 listings when checked
+from a runner. Both are in the 3×/day cron and the matrix workflow.
+
+Decisions made:
+- **AWCo includes new watches and special editions** (Mark: over-including beats
+  an arbitrary vintage cutoff). Special-editions also holds AWCo silk pocket
+  squares, so anything filed under gifts/straps is dropped.
+- **AVW drops its Museum category** (not for sale) and price-on-request rows.
+
+Worth knowing:
+- AWCo's `stock_status` filter is broken upstream (in-stock count exceeds the
+  unfiltered total and every product comes back twice), so stock is checked in
+  code and rows deduped by id. Explained at the top of `awco_scraper.py`.
+- The feed shows fewer than the scrapers write (281 → 275, 76 → 74). That gap is
+  the existing site-wide Corum and Royal Oak Offshore exclusions, not a bug.
+- 24 AVW listings have no image upstream ("The Loop" stocklist) and show the
+  favicon placeholder.
+
+**Loose end:** remote branch `claude/tmp-probe-amsterdam` (CI probe scaffolding,
+never merge) still needs deleting by hand; the session's git access can't
+delete branches.

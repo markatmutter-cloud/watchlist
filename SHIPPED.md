@@ -251,6 +251,9 @@ within each section roughly last.
 - **2026-08-30 — Knightsbridge + Lancashire: curl_cffi Chrome impersonation (#922).**
   Both began 403ing CI on a TLS/JA3 check. Knightsbridge holds; **Lancashire relapsed
   within two weeks and is not fixed — see B-81.**
+- **2026-10-04 — Two Amsterdam dealers: Amsterdam Watch Company + Amsterdam Vintage Watches (#988).**
+  Both WooCommerce Store API, EUR (~275 + ~74 live). AWCo walks vintage, new and special-editions
+  categories (gifts dropped) and checks stock in code because its `stock_status` filter double-counts.
 
 ## Epic 2 — Auction houses
 

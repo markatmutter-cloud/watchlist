@@ -162,6 +162,10 @@ diagram, data model, and folder layout.
   first. A Cloudflare JS challenge (`cf-mitigated: challenge`, `_cf_chl_opt`,
   "Just a moment") 403s *every* client, so relocating only hides it somewhere
   quieter; curl_cffi fixes TLS fingerprints, never JavaScript (B-81).
+  The dev container's proxy blocks most dealer hosts; probe and dry-run a new
+  scraper *from CI* (`source-probe.yml`, dispatched on a throwaway branch whose
+  copy runs the draft script) rather than guessing. Ask Mark to delete that
+  branch after — the session can't.
 - **A scrape that parsed nothing must exit non-zero.** Exiting 0 on an empty
   result reports success and rots silently (Monaco Legend + Phillips, 6 weeks).
   Steps stay `continue-on-error`, so the batch survives and a gate decides.
