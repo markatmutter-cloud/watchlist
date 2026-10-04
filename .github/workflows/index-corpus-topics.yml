@@ -6,8 +6,13 @@
 # cron runs only spend tokens on newly-scraped articles.
 #
 # COST EXPECTATIONS
-#   - First full corpus run: ~$9 (Haiku rates, 8,556 articles)
-#   - Weekly incremental: pennies (typically 5-50 new articles)
+#   - ~$0.001 per article (Haiku, no prompt caching: prompt is too short)
+#   - Weekly incremental: pennies (typically tens of new articles)
+#
+# COST GUARD: the scheduled run exits non-zero (red run + scrape-failure
+# issue) BEFORE calling the API if more than 300 articles are untagged.
+# That means scrapers are stripping `themes` again (May-Sep 2026: ~72k
+# paid re-tags). For a deliberate backfill, dispatch manually with a limit.
 #
 # Schedule fires Sunday 17:00 UTC. It used to sit one hour after a Sunday
 # 16:00 editorial scrape; that scrape is daily now, so this is simply the
@@ -36,7 +41,7 @@ on:
   workflow_dispatch:
     inputs:
       limit:
-        description: 'Max articles to tag (0 = no limit, full corpus)'
+        description: 'Max articles to tag (0 = no limit; a no-limit run stops if >300 are untagged, so set a limit for a backfill)'
         required: false
         default: '0'
         type: string

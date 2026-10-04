@@ -276,13 +276,13 @@ def load_existing(_path: str) -> dict:
     return _load_split(OUTPUT_JSON, OUTPUT_BODIES)
 
 
-def walk_feed(stop_on_known_url: str | None = None, hard_limit: int | None = None):
+def walk_feed(known_urls: set | None = None, hard_limit: int | None = None):
     """Generator: yields parsed entries across the entire feed.
 
     Pagination — Blogger caps `max-results` silently, so we advance
     by the actual entry count returned, not by a fixed stride.
     Terminates when an empty feed page comes back OR when we hit
-    `stop_on_known_url` (incremental mode, used by the daily cron).
+    the first URL in `known_urls` (incremental mode, used by the cron).
     `hard_limit` caps total entries fetched (test / debug knob).
     """
     start_index = 1
@@ -297,7 +297,7 @@ def walk_feed(stop_on_known_url: str | None = None, hard_limit: int | None = Non
         for raw in entries:
             rec = parse_entry(raw)
             if rec:
-                if stop_on_known_url and rec["url"] == stop_on_known_url:
+                if known_urls and rec["url"] in known_urls:
                     return
                 yield rec
                 seen += 1
@@ -317,27 +317,19 @@ def main():
     existing = load_existing(OUTPUT_JSON)
     print(f"  existing entries on disk: {len(existing)}")
 
-    # Incremental mode: stop when we hit a known URL on page 1. Saves
-    # the full 3,840-post walk on weekly cron runs once we've seeded.
+    # Incremental mode: the feed is newest-first, so stop at the FIRST
+    # post we already hold. (It used to stop at the max-`scraped_at`
+    # record, which after a full walk is the last post walked, i.e. the
+    # oldest, so every run re-walked and rewrote the whole feed.)
     # Skipped when full_refresh=1 or when there's no existing data.
-    stop_url = None
-    if not full_refresh and existing:
-        # Find the most-recently-scraped URL — that's where the feed
-        # head will land first when there's nothing new.
-        try:
-            most_recent_url = max(
-                existing.values(),
-                key=lambda v: v.get("scraped_at", "")
-            )["url"]
-            stop_url = most_recent_url
-            print(f"  incremental mode: stopping when feed hits {stop_url}")
-        except (KeyError, ValueError):
-            pass
+    known_urls = set(existing) if (not full_refresh and existing) else None
+    if known_urls:
+        print(f"  incremental mode: stopping at the first of {len(known_urls)} held posts")
 
     out = dict(existing)
     fetched = 0
     t0 = time.time()
-    for rec in walk_feed(stop_on_known_url=stop_url, hard_limit=hard_limit):
+    for rec in walk_feed(known_urls=known_urls, hard_limit=hard_limit):
         out[rec["url"]] = rec
         fetched += 1
         if fetched % 200 == 0:

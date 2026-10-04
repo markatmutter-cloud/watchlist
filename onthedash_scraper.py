@@ -266,7 +266,7 @@ def parse_post(post: dict) -> dict | None:
     }
 
 
-def walk_posts(stop_on_known_url: str | None = None, hard_limit: int | None = None):
+def walk_posts(known_urls: set | None = None, hard_limit: int | None = None):
     """Generator yielding parsed post records across the entire REST
     posts collection. Pagination via `offset` (not `page`) because
     onthedash.com's WordPress install 500s on page>1 at any per_page
@@ -311,7 +311,7 @@ def walk_posts(stop_on_known_url: str | None = None, hard_limit: int | None = No
                     # the next offset.
                     rec = parse_post(probe_data[0])
                     if rec:
-                        if stop_on_known_url and rec["url"] == stop_on_known_url:
+                        if known_urls and rec["url"] in known_urls:
                             return
                         yield rec
                         seen += 1
@@ -338,7 +338,7 @@ def walk_posts(stop_on_known_url: str | None = None, hard_limit: int | None = No
         for raw in data:
             rec = parse_post(raw)
             if rec:
-                if stop_on_known_url and rec["url"] == stop_on_known_url:
+                if known_urls and rec["url"] in known_urls:
                     return
                 yield rec
                 seen += 1
@@ -357,23 +357,19 @@ def main():
     existing = _load_split(OUTPUT_JSON, OUTPUT_BODIES)
     print(f"  existing entries on disk: {len(existing)}")
 
-    # Incremental: stop when we hit the most-recently-scraped URL.
-    stop_url = None
-    if not full_refresh and existing:
-        try:
-            most_recent_url = max(
-                existing.values(),
-                key=lambda v: v.get("scraped_at", "")
-            )["url"]
-            stop_url = most_recent_url
-            print(f"  incremental mode: stopping when feed hits {stop_url}")
-        except (KeyError, ValueError):
-            pass
+    # Incremental mode: the feed is newest-first, so stop at the FIRST
+    # post we already hold. (It used to stop at the max-`scraped_at`
+    # record, which after a full walk is the last post walked, i.e. the
+    # oldest, so every run re-walked and rewrote the whole feed.)
+    # Skipped when full_refresh=1 or when there's no existing data.
+    known_urls = set(existing) if (not full_refresh and existing) else None
+    if known_urls:
+        print(f"  incremental mode: stopping at the first of {len(known_urls)} held posts")
 
     out = dict(existing)
     fetched = 0
     t0 = time.time()
-    for rec in walk_posts(stop_on_known_url=stop_url, hard_limit=hard_limit):
+    for rec in walk_posts(known_urls=known_urls, hard_limit=hard_limit):
         out[rec["url"]] = rec
         fetched += 1
         if fetched % 50 == 0:
