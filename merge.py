@@ -916,6 +916,9 @@ LISTING_SOURCES = [
     ('data/ssongwatches.csv',         'S.Song Watches',        'USD'),
     ('data/swisshours.csv',           'Swiss Hours',           'HKD'),
     ('data/watchcenter.csv',          'Watch Center',          'CHF'),
+    # Both Amsterdam dealers: Store API currency_code is EUR on every row.
+    ('data/awco.csv',                 'Amsterdam Watch Company', 'EUR'),
+    ('data/amsterdamvintagewatches.csv', 'Amsterdam Vintage Watches', 'EUR'),
     # eBay is multi-currency by design — the source-default 'USD'
     # is just a fallback for rows where the per-row `currency`
     # column is missing or unrecognized. Each Browse API result
