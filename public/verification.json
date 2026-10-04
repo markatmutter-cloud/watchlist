@@ -1,10 +1,10 @@
 {
-  "date": "2026-10-03",
-  "updated_at": "2026-10-03T23:18:16+00:00",
+  "date": "2026-10-04",
+  "updated_at": "2026-10-04T08:10:07+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 116,
-    "Tropical Watch": 115,
+    "Tropical Watch": 113,
     "Menta Watches": 58,
     "Collectors Corner NY": 86,
     "Falco Watches": 7,
@@ -14,7 +14,7 @@
     "Grey & Patina": 37,
     "Oliver & Clarke": 98,
     "Craft & Tailored": 77,
-    "Watch Brothers London": 8,
+    "Watch Brothers London": 9,
     "Sierra Time Co": 17,
     "DB1983": 27,
     "Hairspring": 29,
@@ -48,6 +48,6 @@
     "Watch Center": 261,
     "eBay": 40
   },
-  "total_listings": 4310,
+  "total_listings": 4309,
   "sources_tracked": 44
 }
