@@ -84,6 +84,13 @@ the branch you'll create — branch before editing, never edit `main`.
   **Never reuse a branch name that has already been merged** — the new PR
   conflicts against the squash and CI never attaches (three dead PRs in one
   session). Always cut from a freshly fetched `origin/main`.
+- **Merge your own green PRs — don't park them.** Standing permission from
+  Mark; no second ask. Green means CI passing on the PR's **current head
+  SHA** and mergeable — confirm that, then squash-merge. Waiting is not
+  free: one finished, mergeable PR sat three weeks while the alert it
+  silenced piled 62 comments onto a single issue. Still ask first for the
+  irreversible (destructive migrations, anything outward-facing beyond the
+  repo) and for a PR Mark says he is reviewing.
 - **Parallel sessions share one checkout.** If another session is active
   here, do code work from a git worktree (`git worktree add
   .claude/worktrees/<name> -b <branch> origin/main`) and never switch the
