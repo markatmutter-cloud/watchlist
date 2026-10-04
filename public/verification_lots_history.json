@@ -1,14 +1,6 @@
 {
   "history": [
     {
-      "date": "2026-09-20",
-      "counts": {
-        "Christie's": 78,
-        "Phillips": 154,
-        "Sotheby's": 823
-      }
-    },
-    {
       "date": "2026-09-21",
       "counts": {
         "Christie's": 78,
@@ -106,6 +98,13 @@
     },
     {
       "date": "2026-10-03",
+      "counts": {
+        "Christie's": 285,
+        "Sotheby's": 530
+      }
+    },
+    {
+      "date": "2026-10-04",
       "counts": {
         "Christie's": 285,
         "Sotheby's": 530
