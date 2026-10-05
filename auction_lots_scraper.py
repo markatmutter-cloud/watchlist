@@ -1725,34 +1725,69 @@ def _extract_christies_essay(html):
     return _strip_html(inner.group(1))
 
 
-def _phillips_fetch(sale_url):
-    """Fetch a Phillips auction page, Chrome-TLS impersonation first.
+# Phillips serves the same hydration payload on two sibling paths:
+# `/overview` (the page our calendar links) and `/browse` (the lot-list page
+# their app shares; ~1.5 MB vs ~285 KB of page chrome, byte-identical lot
+# data — verified 2026-10-05 on a live and an ended sale). Since the 403 is a
+# path-level WAF rule, try both paths before giving up.
+_PHILLIPS_PATHS = ("browse", "overview")
 
-    Returns a response, or None after logging why both transports failed.
-    The log names the transport and status so a CI run says whether the
-    impersonation helped without anyone re-deriving it.
+
+def _phillips_page_candidates(sale_url):
+    """A Phillips sale URL -> the URLs worth trying, in order.
+
+    `/browse` first: it is the path their app links, so it is the less
+    likely of the two to carry a scraper rule. Anything that isn't a
+    recognisable sale URL is tried unchanged.
     """
-    attempts = []
-    if _curl_cffi_requests is not None:
-        attempts.append(("curl-cffi", lambda: _curl_cffi_requests.get(
-            sale_url, impersonate=_BONHAMS_IMPERSONATE,
-            headers={"Accept": HEADERS["Accept"],
-                     "Accept-Language": "en-US,en;q=0.9"},
-            timeout=30,
-        )))
-    attempts.append(("requests", lambda: requests.get(
-        sale_url, headers=HEADERS, timeout=30)))
+    m = re.search(r"(https://www\.phillips\.com/auction/[^/?#]+)", sale_url)
+    if not m:
+        return [sale_url]
+    base = m.group(1)
+    urls = [f"{base}/{p}" for p in _PHILLIPS_PATHS]
+    # Keep the caller's own URL in the list (last) so a future path shape
+    # still gets its turn.
+    if sale_url not in urls:
+        urls.append(sale_url)
+    return urls
 
-    for label, call in attempts:
-        try:
-            r = call()
-            r.raise_for_status()
-            print(f"  [Phillips] auction page via {label}")
+
+def _phillips_fetch(sale_url):
+    """Fetch a Phillips auction page: each candidate path, Chrome-TLS
+    impersonation before plain requests.
+
+    Returns the first response carrying lot data, or None after logging
+    every failure. The log names the path, transport and status so a CI run
+    says what got through without anyone re-deriving it.
+    """
+    def transports(url):
+        if _curl_cffi_requests is not None:
+            yield "curl-cffi", lambda: _curl_cffi_requests.get(
+                url, impersonate=_BONHAMS_IMPERSONATE,
+                headers={"Accept": HEADERS["Accept"],
+                         "Accept-Language": "en-US,en;q=0.9"},
+                timeout=30,
+            )
+        yield "requests", lambda: requests.get(url, headers=HEADERS, timeout=30)
+
+    for url in _phillips_page_candidates(sale_url):
+        path = url.rsplit("/", 1)[-1]
+        for label, call in transports(url):
+            try:
+                r = call()
+                r.raise_for_status()
+            except Exception as e:
+                status = getattr(getattr(e, "response", None), "status_code", None)
+                print(f"  [Phillips] /{path} fetch failed via {label}: "
+                      f"{status or e}")
+                continue
+            # A 200 that carries no payload is as useless as a 403, and
+            # means the WAF served a decoy or the page shape moved.
+            if not _phillips_extract_lots(r.text):
+                print(f"  [Phillips] /{path} via {label}: 200 but no lot payload")
+                continue
+            print(f"  [Phillips] /{path} via {label}: ok")
             return r
-        except Exception as e:
-            status = getattr(getattr(e, "response", None), "status_code", None)
-            print(f"  [Phillips] auction page fetch failed via {label}: "
-                  f"{status or e}")
     return None
 
 
@@ -1795,11 +1830,9 @@ def enumerate_phillips(sale_url, sale=None):
     """
     r = _phillips_fetch(sale_url)
     if r is None:
+        print("  [Phillips] no auction page returned lots")
         return []
     lots = _phillips_extract_lots(r.text)
-    if not lots:
-        print("  [Phillips] no lots found in auction-page payload")
-        return []
     print(f"  [Phillips] auction-page payload: {len(lots)} lots")
 
     auction_obj = _phillips_extract_auction_meta(r.text) or {}
