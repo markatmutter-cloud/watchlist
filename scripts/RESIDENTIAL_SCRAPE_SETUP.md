@@ -52,7 +52,8 @@ bash ~/watchlist-bonhams/scripts/install_residential_host.sh
 
 `install_residential_host.sh` is **idempotent and portable** (uses `$HOME`/your
 uid, so it works for any user on any Mac): it sets up the dedicated clone,
-installs `curl-cffi`, generates the launchd plist with this machine's paths,
+installs `curl-cffi` **and Playwright + Chromium** (Lancashire needs a real
+browser — see B-99), generates the launchd plist with this machine's paths,
 loads the agent, and does one smoke-test run (approve the one-time git keychain
 prompt when it appears). Re-run it anytime to update or reload. Remove with
 `bash ~/watchlist-bonhams/scripts/uninstall_residential_host.sh`.
