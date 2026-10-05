@@ -1725,6 +1725,37 @@ def _extract_christies_essay(html):
     return _strip_html(inner.group(1))
 
 
+def _phillips_fetch(sale_url):
+    """Fetch a Phillips auction page, Chrome-TLS impersonation first.
+
+    Returns a response, or None after logging why both transports failed.
+    The log names the transport and status so a CI run says whether the
+    impersonation helped without anyone re-deriving it.
+    """
+    attempts = []
+    if _curl_cffi_requests is not None:
+        attempts.append(("curl-cffi", lambda: _curl_cffi_requests.get(
+            sale_url, impersonate=_BONHAMS_IMPERSONATE,
+            headers={"Accept": HEADERS["Accept"],
+                     "Accept-Language": "en-US,en;q=0.9"},
+            timeout=30,
+        )))
+    attempts.append(("requests", lambda: requests.get(
+        sale_url, headers=HEADERS, timeout=30)))
+
+    for label, call in attempts:
+        try:
+            r = call()
+            r.raise_for_status()
+            print(f"  [Phillips] auction page via {label}")
+            return r
+        except Exception as e:
+            status = getattr(getattr(e, "response", None), "status_code", None)
+            print(f"  [Phillips] auction page fetch failed via {label}: "
+                  f"{status or e}")
+    return None
+
+
 def enumerate_phillips(sale_url, sale=None):
     """Return a list of (url, lot dict) tuples for a Phillips sale.
 
@@ -1749,12 +1780,21 @@ def enumerate_phillips(sale_url, sale=None):
 
     No per-lot fetches → no WAF triggers → full coverage from the
     single auction-page fetch.
+
+    2026-10-03: the WAF widened and started 403ing the AUCTION page too
+    from CI, which took every Phillips sale to zero lots (the calendar
+    page, www.phillips.com/watches, still answers CI fine — it is a
+    path-level rule). Both transports return 200 with an identical
+    payload from a residential IP, so the block is on the CI IP or its
+    TLS fingerprint, not on the page. `_phillips_fetch` therefore tries
+    Chrome TLS impersonation first (the playbook's first step, same
+    mechanism that cleared Bonhams and Christie's online-only) and
+    falls back to plain requests. curl-cffi cannot clear a JavaScript
+    challenge (B-81) — if CI still logs 403 with `via curl-cffi`, the
+    next step is the residential agent, not another header tweak.
     """
-    try:
-        r = requests.get(sale_url, headers=HEADERS, timeout=30)
-        r.raise_for_status()
-    except Exception as e:
-        print(f"  [Phillips] auction page fetch failed: {e}")
+    r = _phillips_fetch(sale_url)
+    if r is None:
         return []
     lots = _phillips_extract_lots(r.text)
     if not lots:
