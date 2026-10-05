@@ -151,6 +151,19 @@ within each section roughly last.
   across 69 sources on all four surfaces, building its registry by importing
   `merge.LISTING_SOURCES` rather than copying it. `health-report.yml` runs it daily
   alongside `health.py`, which had existed for months with no cron.
+- **2026-09-05 — Failure alerts say why (#953).** `scrape_failure_reason.py` reads
+  the failed steps' log and names the cause in plain English (dealer block, push
+  race, quiet source, rotted test, crash); the notifier also watches `Tests` on
+  `main`, and a date-rotted fixture that had reddened every push since 09-02 is fixed.
+- **2026-09-09 — Triage agent, tier 1 (#961).** On a failure it probes each
+  implicated dealer from a runner and answers "is this ours?" on the issue —
+  read-only by design. One snooze file now mutes both the scrape-health and
+  freshness gates, and slow-rotating dealers get their own content budget.
+- **2026-10-04 — Triage made to actually run + browser-based Lancashire (#981).**
+  The agent had never fired once: GitHub won't start a workflow from a
+  GITHUB_TOKEN-created issue, so it is now a `needs:`-gated job inside the
+  notifier. Lancashire escalates to headless Chromium for its Cloudflare managed
+  challenge, and the residential agent records per-source outcomes.
 
 - **2026-10-04 — Topic tagger stops re-paying for tagged articles (#986).** Scrapers dropped
   `themes` on every rewrite and Rolex Magazine / On The Dash re-walked their whole feed, so the

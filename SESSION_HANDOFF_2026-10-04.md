@@ -142,3 +142,58 @@ Worth knowing:
 - Jest could not run on this Mac (no Node installed); CI ran it on the PR.
 
 **Still open, not this session's:** PR #985 (Antiquorum online sales).
+
+## Addendum — 2026-10-04/05: alert quality, the triage agent, and B-99
+
+**Shipped (#981, merged, CI green on main).** Four things that had been parked:
+Watch Center re-snoozed to 2026-10-15, the triage agent rewired so it can
+actually fire, the editorial corpus moved to a daily 08:00 UTC cron, and Watches
+of Lancashire escalating to a real browser.
+
+**The headline lesson is not any of the bugs — it is that #981 sat finished,
+green and mergeable for three weeks.** In that time the Watch Center alert it
+silences piled 62 comments onto issue #983. Mark's response was standing
+permission: merge green PRs without asking (now a rule in CLAUDE.md).
+
+### Two of my own fixes shipped broken, both the same way
+
+1. **The triage agent never ran — zero runs in a week**, while seven alerts went
+   unanswered. GitHub does not start a workflow from an event created with
+   GITHUB_TOKEN, and the notifier opens its issue with exactly that token, so
+   `on: issues: [opened]` was structurally incapable of firing. Now a second job
+   in the notifier, joined by `needs:` (an edge, not an event).
+2. **The failure classifier missed two real failures** — it matched `::error::`,
+   the form a script *emits*, but the runner rewrites that to `##[error]` on the
+   way into the log, which is the only form the classifier ever reads.
+
+Both passed their unit tests. Both were caught only by looking at a real log or a
+real run. The standing habit worth keeping: **fixtures I wrote prove nothing
+about wiring.**
+
+### B-99 — Watches of Lancashire (OPEN, and the one thing needing Mark)
+
+Frozen at 54 rows since 2026-08-24; Mark confirms the dealer is live with 61.
+B-81 "fixed" it by moving to the laptop, but the block is a Cloudflare **managed
+challenge** (`cType: 'managed'` on the API, homepage and sitemap alike) which
+demands JavaScript from every client — so relocating could never have worked.
+CLAUDE.md already carried that rule, written by B-81 itself.
+
+**Mark's one action:** run `scripts/install_residential_host.sh` (PR #989 teaches
+it Playwright + Chromium), or by hand:
+`pip3 install -r requirements-residential.txt && python3 -m playwright install chromium`.
+**B-99 stays open until a laptop run produces ~61 rows** — the browser leg cannot
+be tested from CI or a cloud container, neither of which can reach the dealer.
+
+### Still open
+
+- **#989** — residential installer installs Playwright (raised at close, since a
+  fresh host built from the installer would silently lack it).
+- **#987** — Scrape auctions red since 10-01: a Sotheby's 10-14 sale is in the
+  scraped calendar but never reaches `auctions.json`, so its lots never enumerate.
+  Untouched.
+- **Residential blind spot, half-built.** The agent now writes
+  `data/residential_status.json`, but **nothing reads it yet**. A CI source that
+  dies pages in 3 runs; a residential one still hides behind the 21-day freshness
+  budget. The gate that fails on a stale residential source is the next piece.
+- **Tier 2** (an agent that opens fix PRs but never merges) discussed and
+  deliberately deferred — tier 1 had not fired once at the time.
