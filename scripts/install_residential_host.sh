@@ -40,13 +40,31 @@ fi
 git -C "$CLONE_DIR" config user.name  "watchlist residential scraper"
 git -C "$CLONE_DIR" config user.email "scraper@the-watch-list.app"
 
-# 2. Dependency: curl-cffi (Bonhams' Chrome-TLS fetch). User site-packages,
-#    shared across clones — usually already present.
-echo "▶ ensuring curl-cffi"
-"$PY" -m pip install --user -q -r "$CLONE_DIR/requirements-auctions.txt" \
-  || echo "  (pip returned nonzero — continuing; verifying import)"
+# 2. Dependencies. User site-packages, no venv (launchd runs system python).
+#
+#   - curl-cffi   Bonhams' Chrome-TLS fetch.
+#   - playwright  Watches of Lancashire. Its Cloudflare block is a MANAGED
+#                 challenge, which demands JavaScript from every client on
+#                 every path — so no TLS impersonation and no change of IP
+#                 defeats it, and the only client that passes is a real
+#                 browser (B-99). Lancashire sat frozen for 41 days because
+#                 the move to this host was made without one.
+#
+# requirements-residential.txt composes the auction pins, so curl-cffi still
+# comes from exactly one place.
+echo "▶ ensuring curl-cffi + playwright"
+"$PY" -m pip install --user -q -r "$CLONE_DIR/requirements-residential.txt" \
+  || echo "  (pip returned nonzero — continuing; verifying imports)"
 "$PY" -c "import curl_cffi" 2>/dev/null \
-  || { echo "✗ curl_cffi missing — run: $PY -m pip install --user -r $CLONE_DIR/requirements-auctions.txt"; exit 1; }
+  || { echo "✗ curl_cffi missing — run: $PY -m pip install --user -r $CLONE_DIR/requirements-residential.txt"; exit 1; }
+"$PY" -c "import playwright" 2>/dev/null \
+  || { echo "✗ playwright missing — run: $PY -m pip install --user -r $CLONE_DIR/requirements-residential.txt"; exit 1; }
+
+# The browser binary is a separate download from the pip package, and without
+# it every Lancashire tick fails at launch. Idempotent: a no-op once present.
+echo "▶ ensuring the Chromium binary playwright drives"
+"$PY" -m playwright install chromium \
+  || { echo "✗ could not install Chromium — run: $PY -m playwright install chromium"; exit 1; }
 
 # 3. Generate the live plist from the repo template, rewriting the template's
 #    /Users/markmutter paths to THIS machine's $HOME (portable across machines).
