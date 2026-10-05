@@ -194,10 +194,52 @@ EXCLUDE_PATTERNS = [
 ]
 
 
+# Jewellery lots (2026-10-05). Mixed "Jewellery & Watches" sales now reach
+# us whole (see is_mixed_jewellery_watch_sale), so the non-watch lots have to
+# be dropped one by one: necklaces, earrings, brooches, rings and the like.
+#
+# Two deliberate carve-outs, both measured against the 6,074-lot corpus we
+# already hold (it drops 14, all genuinely jewellery):
+#  - "pendant" is NOT a jewellery word here. Pendant watches are common in
+#    these catalogues and are often titled without the word "watch"
+#    ("THE SHIELD PENDANT, GOLD AND ENAMEL").
+#  - "ring" is a dial and bezel feature as often as it is jewellery, so it
+#    only counts when it isn't "gilt chapter ring dial", "inner bezel ring",
+#    "ring-lock system" and friends.
+# A watch word anywhere in the title wins outright, which is what keeps
+# "CITRINE RING WATCH" and "PENDANT WATCH & BROOCH" in.
+_LOT_WATCH_RE = re.compile(
+    r"\b(?:watch|watches|wristwatch|wristwatches|timepiece|timepieces"
+    r"|chronograph|chronometer|montre|armbanduhr|horolog)",
+    re.IGNORECASE,
+)
+_LOT_JEWEL_RE = re.compile(
+    r"\b(?:necklaces?|earrings?|brooch(?:es)?|bangles?|tiara|sautoir"
+    r"|choker|signet)\b",
+    re.IGNORECASE,
+)
+_LOT_RING_RE = re.compile(
+    r"(?<!chapter\s)(?<!minute\s)(?<!seconds\s)(?<!inner\s)(?<!outer\s)"
+    r"(?<!bezel\s)\brings?\b(?!\s*(?:dial|lock|system|track))",
+    re.IGNORECASE,
+)
+
+
+def is_jewellery_lot_title(title):
+    """True iff the lot title reads as jewellery rather than a watch."""
+    t = title or ""
+    if not t or _LOT_WATCH_RE.search(t):
+        return False
+    return bool(_LOT_JEWEL_RE.search(t) or _LOT_RING_RE.search(t))
+
+
 def is_excluded_title(title):
-    """True iff the lot title indicates pocket watch / clock / loose dial."""
+    """True iff the lot title indicates pocket watch / clock / loose dial,
+    or a jewellery lot from a mixed jewellery-and-watches sale."""
     if not title:
         return False
+    if is_jewellery_lot_title(title):
+        return True
     # The bare \bclock\b regex below would otherwise match "o'clock" /
     # "o’clock" (curly apostrophe) — a positional reference inside
     # watch titles ("date aperture at 6 o'clock", "register at 3 o'clock"),
@@ -234,10 +276,50 @@ EXCLUDE_CATALOG_TITLES = [
 # can't catch it, so also block by URL slug. (LOCKSTEP with merge.py.)
 EXCLUDE_CATALOG_URL_SLUGS = ["fine-jewelry", "jewels", "jewellery", "jewelry"]
 
+# A sale whose title names BOTH jewellery and watches is a genuinely mixed
+# sale, not a jewels sale: Sotheby's "Fine Jewelry & Watches" (Milan, MIOL66)
+# and Monaco Legend's recurring "Exclusive Timepieces & Jewels" both list
+# real watch lots and both were being dropped whole. Mark 2026-10-05: carry
+# these sales and exclude the non-watch lots per lot instead.
+#
+# The watch word must appear in the TITLE for this to apply. That is what
+# keeps the Sotheby's L26050 case blocked: that jewels sale is cross-listed
+# under the generic title "Fine Watches" with a `…/fine-jewelry-l26050` URL,
+# so title-plus-slug still catches it, while a title that says both words
+# out loud gets through.
+_MIXED_SALE_WATCH_RE = re.compile(
+    r"\b(?:watch|watches|wristwatch|wristwatches|timepiece|timepieces|horolog)",
+    re.IGNORECASE,
+)
+_MIXED_SALE_JEWEL_RE = re.compile(
+    r"\b(?:jewel|jewels|jewelry|jewellery|jewellers?|jewelers?)\b",
+    re.IGNORECASE,
+)
+
+
+def is_mixed_jewellery_watch_sale(title):
+    """True iff the sale title names jewellery AND watches, so the sale
+    carries watch lots worth keeping (per-lot filtering handles the rest)."""
+    t = title or ""
+    return bool(_MIXED_SALE_WATCH_RE.search(t) and _MIXED_SALE_JEWEL_RE.search(t))
+
+
 
 def is_excluded_catalog(title, url=""):
-    """True iff the SALE/catalog is a blocklisted non-watch sale —
-    by title OR by URL slug (the calendar title can be misleading)."""
+    """True iff the SALE/catalog is a blocklisted non-watch sale, by title
+    OR by URL slug (the calendar title can be misleading).
+
+    A title naming both jewellery and watches is exempt: that sale is mixed,
+    not jewels-only, and its non-watch lots are filtered per lot.
+    """
+    if is_mixed_jewellery_watch_sale(title):
+        return False
+    # Any other jewellery-named sale is out, whatever its URL. Before the
+    # mixed-sale exemption existed this had to be a narrow list of exact
+    # names ("Fine Jewelry"), because a broad rule would have eaten the
+    # jewellery-and-watches sales wholesale.
+    if _MIXED_SALE_JEWEL_RE.search(title or ""):
+        return True
     t = (title or "").lower()
     if any(x.lower() in t for x in EXCLUDE_CATALOG_TITLES):
         return True

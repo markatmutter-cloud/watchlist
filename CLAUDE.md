@@ -197,9 +197,11 @@ diagram, data model, and folder layout.
   Direct-serve exceptions (skip wsrv): Bonhams + Christie's (both block wsrv's
   datacenter fetcher — direct fetch is 200, wsrv times out) + Tropical Watch
   `d29…cloudfront` (240px source — resize only adds grain). Sotheby's brightspot
-  is hash-signed — don't retry URL rewrites.- **`is_excluded_title`** filters only pocket watches / clocks / loose dials;
-  keep all other accessories. Strip `o'clock` before the `\bclock\b` regex
-  (it dropped real lots). Apply the same predicate in any new auction scraper.
+  is hash-signed — don't retry URL rewrites.- **`is_excluded_title`** filters pocket watches / clocks / loose dials + jewellery
+  lots (mixed "Jewellery & Watches" sales are carried whole, filtered per lot);
+  keep all other accessories. A watch word in the title always wins; `ring` is a
+  dial/bezel feature and `pendant` usually a pendant watch, so both are guarded.
+  Strip `o'clock` before `\bclock\b`. Use the same predicate in any new scraper.
 - **Phillips: never fetch lot detail from CI** (WAF 403s after ~7 requests).
   Parse the auction-page Turbo-Stream payload via `_phillips_extract_lots`
   (keep the bounds-check on the `{_K: V}` resolver — `-N` sentinels). `sold_price`
