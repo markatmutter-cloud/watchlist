@@ -1,8 +1,10 @@
 """Per-lot category filters in auction_lots_scraper.
 
-Mixed "Jewellery & Watches" sales reach us whole as of 2026-10-05, so the
-non-watch lots have to be dropped one at a time. These pin the two carve-outs
-that the 6,074-lot corpus we already hold forced:
+Mixed "Jewellery & Watches" sales reach us whole as of 2026-10-05, so THEIR
+non-watch lots are dropped one at a time. The filter is scoped to those sales
+only (Mark 2026-10-05): a watch sale's own occasional jewellery lot stays.
+These pin that scoping, plus the two carve-outs that the 6,074-lot corpus we
+already hold forced:
 
   - "ring" is a dial/bezel feature at least as often as it is jewellery
     ("gilt chapter ring dial", "ring-lock system"),
@@ -16,6 +18,34 @@ import auction_lots_scraper as a
 
 # --- jewellery lots that must be dropped ----------------------------------
 
+MIXED = "Fine Jewelry & Watches"
+WATCH_SALE = "Important Watches"
+
+
+def _lots(*titles):
+    return [(f"http://x/{i}", {"title": t}) for i, t in enumerate(titles)]
+
+
+def test_jewellery_lots_drop_only_in_a_mixed_sale():
+    lots = _lots("Diamond Necklace", "Rolex Submariner wristwatch, ref. 5513")
+    kept, dropped = a.drop_jewellery_lots(lots, MIXED)
+    assert dropped == 1
+    assert [d["title"] for _, d in kept] == ["Rolex Submariner wristwatch, ref. 5513"]
+
+
+def test_watch_sale_keeps_its_own_jewellery_lot():
+    # A gold Rolex necklace inside Important Watches belongs to the watch
+    # world; only mixed sales get filtered.
+    lots = _lots("A rare yellow gold and diamond-set Rolex necklace, Circa 1980")
+    kept, dropped = a.drop_jewellery_lots(lots, WATCH_SALE)
+    assert (len(kept), dropped) == (1, 0)
+
+
+def test_missing_sale_title_filters_nothing():
+    lots = _lots("Diamond Necklace")
+    assert a.drop_jewellery_lots(lots, None) == (lots, 0)
+
+
 def test_drops_plain_jewellery():
     for title in (
         "Diamond Necklace",
@@ -26,7 +56,8 @@ def test_drops_plain_jewellery():
         "AUDEMARS PIGUET, ROYAL OAK PLAGE RING",
     ):
         assert a.is_jewellery_lot_title(title) is True, title
-        assert a.is_excluded_title(title) is True, title
+        # ...but only via the mixed-sale filter, never the global one.
+        assert a.is_excluded_title(title) is False, title
 
 
 # --- watch lots that must survive -----------------------------------------

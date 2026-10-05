@@ -194,9 +194,10 @@ EXCLUDE_PATTERNS = [
 ]
 
 
-# Jewellery lots (2026-10-05). Mixed "Jewellery & Watches" sales now reach
-# us whole (see is_mixed_jewellery_watch_sale), so the non-watch lots have to
-# be dropped one by one: necklaces, earrings, brooches, rings and the like.
+# Jewellery lots (2026-10-05). Mixed "Jewellery & Watches" sales now reach us
+# whole (see is_mixed_jewellery_watch_sale), so THEIR non-watch lots are
+# dropped one by one: necklaces, earrings, brooches, rings and the like. This
+# filter is scoped to those sales only — it is not part of is_excluded_title.
 #
 # Two deliberate carve-outs, both measured against the 6,074-lot corpus we
 # already hold (it drops 14, all genuinely jewellery):
@@ -226,20 +227,44 @@ _LOT_RING_RE = re.compile(
 
 
 def is_jewellery_lot_title(title):
-    """True iff the lot title reads as jewellery rather than a watch."""
+    """True iff the lot title reads as jewellery rather than a watch.
+
+    Applied ONLY to lots from a mixed jewellery-and-watches sale, via
+    `drop_jewellery_lots` (Mark 2026-10-05). A watch sale's own odd
+    jewellery lot — a gold Rolex necklace in Important Watches — stays:
+    it belongs to the watch world even though it isn't a watch, and
+    guessing per-lot across every sale is not worth the false positives.
+    """
     t = title or ""
     if not t or _LOT_WATCH_RE.search(t):
         return False
     return bool(_LOT_JEWEL_RE.search(t) or _LOT_RING_RE.search(t))
 
 
+def drop_jewellery_lots(lots, sale_title):
+    """Filter (url, data) pairs for one sale: on a mixed jewellery-and-
+    watches sale, drop the jewellery lots; on any other sale, pass
+    everything through untouched.
+
+    Applied at the single point where a sale's enumerated lots are
+    collected, so it covers every house without threading sale context
+    through a dozen per-house filters.
+    """
+    if not is_mixed_jewellery_watch_sale(sale_title):
+        return list(lots), 0
+    kept, dropped = [], 0
+    for url, data in lots:
+        if is_jewellery_lot_title((data or {}).get("title")):
+            dropped += 1
+            continue
+        kept.append((url, data))
+    return kept, dropped
+
+
 def is_excluded_title(title):
-    """True iff the lot title indicates pocket watch / clock / loose dial,
-    or a jewellery lot from a mixed jewellery-and-watches sale."""
+    """True iff the lot title indicates pocket watch / clock / loose dial."""
     if not title:
         return False
-    if is_jewellery_lot_title(title):
-        return True
     # The bare \bclock\b regex below would otherwise match "o'clock" /
     # "o’clock" (curly apostrophe) — a positional reference inside
     # watch titles ("date aperture at 6 o'clock", "register at 3 o'clock"),
@@ -2756,6 +2781,11 @@ def main():
         except Exception as e:
             print(f"  enumeration error: {e}")
             continue
+        # Mixed jewellery-and-watches sales reach us whole; their
+        # non-watch lots are dropped here, where the sale title is in hand.
+        lots, n_jewellery = drop_jewellery_lots(lots, sale.get("title"))
+        if n_jewellery:
+            print(f"  {n_jewellery} jewellery lot(s) dropped (mixed sale)")
         n_kept = 0
         for url, data in lots:
             # If the same URL appears across multiple sales (rare; can
