@@ -105,3 +105,40 @@ Worth knowing:
 **Loose end:** remote branch `claude/tmp-probe-amsterdam` (CI probe scaffolding,
 never merge) still needs deleting by hand; the session's git access can't
 delete branches.
+
+---
+
+## Addendum — 2026-10-04 (evening): the topic tagger stops re-paying (#986)
+
+**Merged 2026-10-04 23:59 UTC. Not yet proven in production** — the proof is
+the next two scheduled runs.
+
+The weekly Haiku tagger had made ~72,000 calls since May for a ~13,300-article
+corpus, because editorial scrapers rebuilt re-fetched records without `themes`,
+and Rolex Magazine / On The Dash rewrote their whole feed every run. Fixed at
+the shared write (`editorial_corpus_io.write_split` carries `themes` forward by
+URL), at the two scrapers (incremental mode stops at the first post already
+held), and with a cost guard in `corpus_topic_indexer.py` (a default run with
+more than 300 untagged articles exits non-zero before calling the API).
+
+**Check next session (30 seconds each):**
+- **Wed 2026-10-07** "Editorial corpus refresh" commit must NOT remove `themes`
+  lines from `public/rolex_magazine.json`.
+- **Sun 2026-10-11** "Index editorial corpus topics" commit should touch a few
+  dozen records, not thousands. A red run saying `COST GUARD` means stripping
+  has regressed; it spends nothing.
+
+Worth knowing:
+- The PR was opened green on 09-28 and sat unmerged for six days, so the old
+  code ran one more Wed/Sun cycle and re-tagged ~4,200 articles (about $5).
+  Tags were whole at merge time; no backfill is needed.
+- `themes: []` now means "tagged, nothing applies" and is skipped. Previously
+  ~30 of those were re-paid weekly.
+- Any future enrichment pass that writes a new field onto corpus meta files
+  must add it to `CARRY_FORWARD_FIELDS` in `editorial_corpus_io.py`, or the
+  scrapers will strip it the same way.
+- A deliberate large backfill (new source, new theme) needs a manual dispatch
+  with a limit, or `--retag`; the no-limit default will refuse above 300.
+- Jest could not run on this Mac (no Node installed); CI ran it on the PR.
+
+**Still open, not this session's:** PR #985 (Antiquorum online sales).

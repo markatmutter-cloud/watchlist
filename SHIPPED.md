@@ -152,6 +152,11 @@ within each section roughly last.
   `merge.LISTING_SOURCES` rather than copying it. `health-report.yml` runs it daily
   alongside `health.py`, which had existed for months with no cron.
 
+- **2026-10-04 — Topic tagger stops re-paying for tagged articles (#986).** Scrapers dropped
+  `themes` on every rewrite and Rolex Magazine / On The Dash re-walked their whole feed, so the
+  weekly Haiku run made ~72k calls for a ~13k corpus. `write_split` now carries `themes` forward,
+  both scrapers stop at the first held post, and the indexer refuses to spend above 300 untagged.
+
 ## Epic 1 — Sources
 
 - **2026-06-09 — Watch Club liveness fix (#860, B-59).** Keyed "sold" on the
