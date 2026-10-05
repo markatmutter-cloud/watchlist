@@ -1,6 +1,6 @@
 {
   "marteauandco": {
-    "misses": 3,
+    "misses": 4,
     "reason": "CSV written but empty (0 sales parsed)"
   }
 }
