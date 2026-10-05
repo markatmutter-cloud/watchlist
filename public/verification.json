@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-04",
-  "updated_at": "2026-10-04T23:49:35+00:00",
+  "date": "2026-10-05",
+  "updated_at": "2026-10-05T08:31:58+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 115,
@@ -37,11 +37,11 @@
     "Vision Vintage Watches": 87,
     "Watchurbia": 4,
     "Maunder Watches": 73,
-    "Watch Club": 61,
+    "Watch Club": 65,
     "Vintage Watch Shop": 30,
     "Watches of Lancashire": 53,
     "Heuertime": 32,
-    "ClassicHeuer": 42,
+    "ClassicHeuer": 41,
     "Luna Royster": 33,
     "S.Song Watches": 19,
     "Swiss Hours": 62,
@@ -50,6 +50,6 @@
     "Amsterdam Vintage Watches": 74,
     "eBay": 39
   },
-  "total_listings": 4643,
+  "total_listings": 4646,
   "sources_tracked": 46
 }

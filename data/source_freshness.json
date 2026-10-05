@@ -1,272 +1,284 @@
 {
+  "Amsterdam Vintage Watches": {
+    "fingerprint": "a005a68fc0702770",
+    "lastChanged": "2026-10-05",
+    "lastSeen": "2026-10-05",
+    "rows": 76
+  },
+  "Amsterdam Watch Company": {
+    "fingerprint": "0423d8127005e819",
+    "lastChanged": "2026-10-05",
+    "lastSeen": "2026-10-05",
+    "rows": 281
+  },
   "Analog Shift": {
     "fingerprint": "3e9c7e7a2cba0be6",
     "lastChanged": "2026-10-03",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 757
   },
   "Belmont Watches": {
     "fingerprint": "b87d5aab193392b1",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 20
   },
   "Bob's Watches": {
-    "fingerprint": "7888a1d824aeaeb4",
-    "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
-    "rows": 92
+    "fingerprint": "caf67a452e83eb99",
+    "lastChanged": "2026-10-05",
+    "lastSeen": "2026-10-05",
+    "rows": 91
   },
   "Bulang & Sons": {
     "fingerprint": "8e7b9b927949ae2d",
     "lastChanged": "2026-10-02",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 160
   },
   "Central Watch": {
     "fingerprint": "b98582a5a11bda6d",
     "lastChanged": "2026-10-03",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 192
   },
   "Chronoholic": {
     "fingerprint": "1e046eb43f7384b8",
     "lastChanged": "2026-09-29",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 119
   },
   "ClassicHeuer": {
-    "fingerprint": "2c6f3c8f5a54e0fb",
-    "lastChanged": "2026-09-16",
-    "lastSeen": "2026-10-04",
+    "fingerprint": "6a07624845221fa1",
+    "lastChanged": "2026-10-05",
+    "lastSeen": "2026-10-05",
     "rows": 120
   },
   "Collectors Corner NY": {
     "fingerprint": "ac74d217843ca49b",
     "lastChanged": "2026-10-03",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 95
   },
   "Craft & Tailored": {
     "fingerprint": "2a004e9f72c1539a",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 103
   },
   "DB1983": {
     "fingerprint": "6de3671b27d60b6c",
     "lastChanged": "2026-09-30",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 27
   },
   "European Watch": {
     "fingerprint": "2a5ada4c0652891c",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 16
   },
   "Falco Watches": {
     "fingerprint": "c00347151ab826c5",
     "lastChanged": "2026-09-30",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 8
   },
   "Grey & Patina": {
-    "fingerprint": "8c5914166105bd82",
-    "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
-    "rows": 36
+    "fingerprint": "8b5a901f279ae66f",
+    "lastChanged": "2026-10-05",
+    "lastSeen": "2026-10-05",
+    "rows": 35
   },
   "Hairspring": {
     "fingerprint": "3dcea08833de375e",
     "lastChanged": "2026-10-03",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 41
   },
   "Heuertime": {
     "fingerprint": "743ffa656bd725d4",
     "lastChanged": "2026-09-12",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 33
   },
   "Huntington Company": {
-    "fingerprint": "aa2cb37b2ad8033f",
-    "lastChanged": "2026-10-02",
-    "lastSeen": "2026-10-04",
+    "fingerprint": "a2c274e07f30de7c",
+    "lastChanged": "2026-10-05",
+    "lastSeen": "2026-10-05",
     "rows": 114
   },
   "Luna Royster": {
     "fingerprint": "ea4f8192fdb3d096",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 33
   },
   "Maunder Watches": {
     "fingerprint": "1b40d0d8891c8323",
     "lastChanged": "2026-09-26",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 73
   },
   "Menta Watches": {
     "fingerprint": "fc30aa33a66dbdc0",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 58
   },
   "Moonphase": {
     "fingerprint": "be88f51616a52cad",
     "lastChanged": "2026-10-02",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 22
   },
   "Oliver & Clarke": {
     "fingerprint": "919da33b6b36c8aa",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 110
   },
   "Pascal Karp": {
     "fingerprint": "5b418ec1b615c107",
     "lastChanged": "2026-10-03",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 91
   },
   "Romain R\u00e9a": {
     "fingerprint": "af73e1e0f1d335be",
     "lastChanged": "2026-10-01",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 237
   },
   "S.Song Watches": {
     "fingerprint": "a031432401386091",
     "lastChanged": "2026-10-02",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 19
   },
   "Shuck the Oyster": {
     "fingerprint": "0cd42cab9403ab3b",
     "lastChanged": "2026-10-03",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 135
   },
   "Sierra Time Co": {
     "fingerprint": "ad788177626cd48d",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 16
   },
   "Somlo": {
     "fingerprint": "8104bd173b45b7ba",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 181
   },
   "Swiss Hours": {
     "fingerprint": "077d91c23761a957",
     "lastChanged": "2026-10-03",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 65
   },
   "The Vintage Watch": {
     "fingerprint": "a3c3ecb39e49e67e",
     "lastChanged": "2026-09-27",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 28
   },
   "Tokant": {
     "fingerprint": "9b647d82c4925ca5",
     "lastChanged": "2026-10-03",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 34
   },
   "Tropical Watch": {
-    "fingerprint": "e0132429576717d4",
-    "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "fingerprint": "deb2548fc5a2e266",
+    "lastChanged": "2026-10-05",
+    "lastSeen": "2026-10-05",
     "rows": 112
   },
   "Vintage Watch Collective": {
     "fingerprint": "47f84d50d23a6982",
     "lastChanged": "2026-10-03",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 34
   },
   "Vintage Watch Fam": {
-    "fingerprint": "ef386951660dca29",
-    "lastChanged": "2026-10-03",
-    "lastSeen": "2026-10-04",
-    "rows": 629
+    "fingerprint": "e69ef9b2ce13a9a2",
+    "lastChanged": "2026-10-05",
+    "lastSeen": "2026-10-05",
+    "rows": 628
   },
   "Vintage Watch Shop": {
     "fingerprint": "b5de8f31dbdc814d",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 30
   },
   "Vision Vintage Watches": {
     "fingerprint": "c6e599dad593e895",
     "lastChanged": "2026-10-03",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 105
   },
   "Watch Brothers London": {
     "fingerprint": "1932a59624e019aa",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 10
   },
   "Watch Center": {
     "fingerprint": "3707b75fa5d6d83d",
     "lastChanged": "2026-08-17",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 429
   },
   "Watch Club": {
-    "fingerprint": "c526ab63931df77c",
-    "lastChanged": "2026-10-01",
-    "lastSeen": "2026-10-04",
+    "fingerprint": "f8fcdba6b1cbeaf4",
+    "lastChanged": "2026-10-05",
+    "lastSeen": "2026-10-05",
     "rows": 61
   },
   "Watches of Knightsbridge": {
     "fingerprint": "ec530089e9ba53c2",
     "lastChanged": "2026-10-02",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 86
   },
   "Watches of Lancashire": {
     "fingerprint": "d014028683c527f9",
     "lastChanged": "2026-08-24",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "d94ce5c2de179edd",
-    "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "fingerprint": "d97e2e351c1b9f6b",
+    "lastChanged": "2026-10-05",
+    "lastSeen": "2026-10-05",
     "rows": 73
   },
   "Watchurbia": {
     "fingerprint": "0accbd7398f13ab7",
     "lastChanged": "2026-09-18",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 5
   },
   "Wind Vintage": {
     "fingerprint": "4118fcf3bea6644d",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 202
   },
   "calendar:antiquorum": {
     "fingerprint": "95524d0212d0e6e2",
     "lastChanged": "2026-09-14",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 3
   },
   "calendar:christies": {
     "fingerprint": "73e2b323d1c44ae6",
     "lastChanged": "2026-10-02",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 7
   },
   "calendar:marteauandco": {
@@ -278,145 +290,145 @@
   "calendar:monacolegend": {
     "fingerprint": "1c926f3f5744655f",
     "lastChanged": "2026-09-01",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 20
   },
   "calendar:phillips": {
     "fingerprint": "d6597b4cfddac146",
     "lastChanged": "2026-10-01",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 7
   },
   "calendar:sothebys": {
     "fingerprint": "8498965fe2ece20b",
     "lastChanged": "2026-10-02",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 9
   },
   "calendar:watchesofknightsbridge": {
     "fingerprint": "eb28c4d9a128c4ea",
     "lastChanged": "2026-08-18",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 2
   },
   "eBay": {
     "fingerprint": "241c79f4a8585d1b",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 41
   },
   "editorial:acollectedman_journal": {
     "fingerprint": "616b2b4887239cfc",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 162
   },
   "editorial:bring_a_loupe": {
     "fingerprint": "6ab16a3103cc29de",
     "lastChanged": "2026-09-23",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 256
   },
   "editorial:bulang_watch_talks": {
     "fingerprint": "bb61c338367eb0a4",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 161
   },
   "editorial:christies_stories": {
     "fingerprint": "ca85657ae19233cb",
     "lastChanged": "2026-09-23",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 25
   },
   "editorial:fratello": {
     "fingerprint": "cef12b5d7f3f20bd",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 3817
   },
   "editorial:hodinkee_picks": {
     "fingerprint": "e1acd47f3b417704",
     "lastChanged": "2026-09-16",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 1
   },
   "editorial:hodinkee_reference_points": {
     "fingerprint": "0150fbf0da916865",
     "lastChanged": "2026-09-23",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 11
   },
   "editorial:hodinkee_shop": {
     "fingerprint": "97ba4ef4dc868cf3",
     "lastChanged": "2026-08-17",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 2346
   },
   "editorial:le_monde_edmond": {
     "fingerprint": "f369806214008486",
     "lastChanged": "2026-09-16",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 278
   },
   "editorial:onthedash": {
     "fingerprint": "cc4599f0d7ffbf8b",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 206
   },
   "editorial:rolex_magazine": {
     "fingerprint": "36dcfd55696f7def",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 3756
   },
   "editorial:romainrea_editorial": {
     "fingerprint": "a02a1878371504bc",
     "lastChanged": "2026-09-16",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 16
   },
   "editorial:screwdowncrown": {
     "fingerprint": "dc4c4d2d10087830",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 289
   },
   "editorial:strictlyvintagewatches": {
     "fingerprint": "c22bc1fe251ffd96",
     "lastChanged": "2026-09-16",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 55
   },
   "editorial:watchfid_editorial": {
     "fingerprint": "a67b5b31f80193cb",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 291
   },
   "editorial:woe_dispatch": {
     "fingerprint": "5b481e0118173071",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 299
   },
   "merged:auction_lots": {
     "fingerprint": "778a9f5bfd4ee74e",
     "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 4588
   },
   "merged:auctions": {
     "fingerprint": "d1e6179a606c2f80",
     "lastChanged": "2026-10-03",
-    "lastSeen": "2026-10-04",
+    "lastSeen": "2026-10-05",
     "rows": 107
   },
   "merged:listings": {
-    "fingerprint": "140d9f0b03d9f4db",
-    "lastChanged": "2026-10-04",
-    "lastSeen": "2026-10-04",
-    "rows": 11267
+    "fingerprint": "c6c053fbed98eabf",
+    "lastChanged": "2026-10-05",
+    "lastSeen": "2026-10-05",
+    "rows": 11620
   }
 }
