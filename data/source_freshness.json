@@ -12,10 +12,10 @@
     "rows": 281
   },
   "Analog Shift": {
-    "fingerprint": "f7349d02e219acbb",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "e0f3c7cf809e2117",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 753
+    "rows": 752
   },
   "Belmont Watches": {
     "fingerprint": "b87d5aab193392b1",
@@ -24,10 +24,10 @@
     "rows": 20
   },
   "Bob's Watches": {
-    "fingerprint": "402565cbf6fc99ea",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "1cbb99cd59737f64",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 90
+    "rows": 89
   },
   "Bulang & Sons": {
     "fingerprint": "0f68b2e1919b621b",
@@ -54,16 +54,16 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "8d21914e72af81a9",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "37584cc46c6447e4",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 97
+    "rows": 95
   },
   "Craft & Tailored": {
-    "fingerprint": "2a004e9f72c1539a",
-    "lastChanged": "2026-10-04",
+    "fingerprint": "2fe014b1f718ef78",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 103
+    "rows": 104
   },
   "DB1983": {
     "fingerprint": "f8264f815085afaa",
@@ -84,10 +84,10 @@
     "rows": 8
   },
   "Grey & Patina": {
-    "fingerprint": "8b5a901f279ae66f",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "880ce5e20cea6535",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 35
+    "rows": 34
   },
   "Hairspring": {
     "fingerprint": "3dcea08833de375e",
@@ -102,8 +102,8 @@
     "rows": 33
   },
   "Huntington Company": {
-    "fingerprint": "1d0c841b311f2fa1",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "0288581435e0fff3",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
     "rows": 114
   },
@@ -132,10 +132,10 @@
     "rows": 21
   },
   "Oliver & Clarke": {
-    "fingerprint": "83a8a966b4afc02c",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "b63bcacbd595100b",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 110
+    "rows": 108
   },
   "Pascal Karp": {
     "fingerprint": "3c838521bd991ffd",
@@ -192,14 +192,14 @@
     "rows": 37
   },
   "Tropical Watch": {
-    "fingerprint": "a0685e08af9572be",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "881bea32ff7ff872",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 114
+    "rows": 113
   },
   "Vintage Watch Collective": {
-    "fingerprint": "d1e920e66938b6f4",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "47f84d50d23a6982",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
     "rows": 34
   },
@@ -252,8 +252,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "d97e2e351c1b9f6b",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "b0d2111f679a4ed9",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
     "rows": 73
   },
@@ -312,8 +312,8 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "31e5049c2cd25fe6",
-    "lastChanged": "2026-10-06",
+    "fingerprint": "74d19f7f5f3c6457",
+    "lastChanged": "2026-10-05",
     "lastSeen": "2026-10-06",
     "rows": 35
   },
@@ -414,8 +414,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "6731cf2b7911f611",
-    "lastChanged": "2026-10-06",
+    "fingerprint": "f9933b16217bc4a1",
+    "lastChanged": "2026-10-05",
     "lastSeen": "2026-10-06",
     "rows": 4587
   },
@@ -426,9 +426,9 @@
     "rows": 109
   },
   "merged:listings": {
-    "fingerprint": "baf6e1ed4a5e8d19",
+    "fingerprint": "2b3adc154667eb3c",
     "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 11650
+    "rows": 11652
   }
 }
