@@ -30,10 +30,10 @@
     "rows": 89
   },
   "Bulang & Sons": {
-    "fingerprint": "0f68b2e1919b621b",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "c1901e682e3bc8b0",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 157
+    "rows": 155
   },
   "Central Watch": {
     "fingerprint": "1e5b49f39e823c36",
@@ -60,16 +60,16 @@
     "rows": 95
   },
   "Craft & Tailored": {
-    "fingerprint": "2fe014b1f718ef78",
+    "fingerprint": "05184f001744cfef",
     "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 104
+    "rows": 105
   },
   "DB1983": {
-    "fingerprint": "f8264f815085afaa",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "558bbd1cc7ed276a",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 27
+    "rows": 26
   },
   "European Watch": {
     "fingerprint": "1f0df25da1b792e8",
@@ -132,7 +132,7 @@
     "rows": 21
   },
   "Oliver & Clarke": {
-    "fingerprint": "b63bcacbd595100b",
+    "fingerprint": "6085a3007e62afab",
     "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
     "rows": 108
@@ -156,10 +156,10 @@
     "rows": 19
   },
   "Shuck the Oyster": {
-    "fingerprint": "6a39acc18d4b315e",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "765974bec66d922f",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 134
+    "rows": 132
   },
   "Sierra Time Co": {
     "fingerprint": "ad788177626cd48d",
@@ -174,10 +174,10 @@
     "rows": 179
   },
   "Swiss Hours": {
-    "fingerprint": "f79494da7c2d9ec5",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "7b66c37179a0d1f5",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 66
+    "rows": 65
   },
   "The Vintage Watch": {
     "fingerprint": "a3c3ecb39e49e67e",
@@ -198,7 +198,7 @@
     "rows": 113
   },
   "Vintage Watch Collective": {
-    "fingerprint": "47f84d50d23a6982",
+    "fingerprint": "d1e920e66938b6f4",
     "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
     "rows": 34
@@ -264,8 +264,8 @@
     "rows": 7
   },
   "Wind Vintage": {
-    "fingerprint": "eafd37c5b70cd5ca",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "61a3d67d166a5194",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
     "rows": 202
   },
@@ -312,8 +312,8 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "74d19f7f5f3c6457",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "31e5049c2cd25fe6",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
     "rows": 35
   },
@@ -414,8 +414,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "f9933b16217bc4a1",
-    "lastChanged": "2026-10-05",
+    "fingerprint": "6731cf2b7911f611",
+    "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
     "rows": 4587
   },
@@ -426,9 +426,9 @@
     "rows": 109
   },
   "merged:listings": {
-    "fingerprint": "2b3adc154667eb3c",
+    "fingerprint": "1d06c1f7f945b9a2",
     "lastChanged": "2026-10-06",
     "lastSeen": "2026-10-06",
-    "rows": 11652
+    "rows": 11654
   }
 }
