@@ -1,11 +1,12 @@
 {
-  "date": "2026-10-06",
-  "updated_at": "2026-10-06T12:29:07+00:00",
+  "date": "2026-10-07",
+  "updated_at": "2026-10-07T12:20:09+00:00",
   "alerts": [],
   "counts": {
     "Christie's": 285,
-    "Sotheby's": 529
+    "Monaco Legend": 226,
+    "Sotheby's": 512
   },
-  "total_live_lots": 814,
-  "houses_tracked": 2
+  "total_live_lots": 1023,
+  "houses_tracked": 3
 }
