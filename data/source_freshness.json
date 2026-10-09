@@ -54,10 +54,10 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "7109d94d33315ed5",
+    "fingerprint": "9ab9e45030130acd",
     "lastChanged": "2026-10-09",
     "lastSeen": "2026-10-09",
-    "rows": 103
+    "rows": 104
   },
   "Craft & Tailored": {
     "fingerprint": "10167e48c304335f",
@@ -102,10 +102,10 @@
     "rows": 33
   },
   "Huntington Company": {
-    "fingerprint": "bec88c4bc6c5b658",
-    "lastChanged": "2026-10-07",
+    "fingerprint": "a230914873702e06",
+    "lastChanged": "2026-10-09",
     "lastSeen": "2026-10-09",
-    "rows": 112
+    "rows": 135
   },
   "Luna Royster": {
     "fingerprint": "a2ece826a7b28206",
@@ -132,7 +132,7 @@
     "rows": 23
   },
   "Oliver & Clarke": {
-    "fingerprint": "2bb2972cc8b148f4",
+    "fingerprint": "e6e6ae1cf1c771a6",
     "lastChanged": "2026-10-09",
     "lastSeen": "2026-10-09",
     "rows": 114
@@ -192,7 +192,7 @@
     "rows": 39
   },
   "Tropical Watch": {
-    "fingerprint": "924eb190b6cc211f",
+    "fingerprint": "b22c33270ea2475b",
     "lastChanged": "2026-10-09",
     "lastSeen": "2026-10-09",
     "rows": 114
@@ -264,7 +264,7 @@
     "rows": 5
   },
   "Wind Vintage": {
-    "fingerprint": "268b4900ea1be9fb",
+    "fingerprint": "0f32f587d0866cf8",
     "lastChanged": "2026-10-09",
     "lastSeen": "2026-10-09",
     "rows": 215
@@ -312,8 +312,8 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "775ee1cfde10a6c1",
-    "lastChanged": "2026-10-08",
+    "fingerprint": "f19619a83f16cdfd",
+    "lastChanged": "2026-10-09",
     "lastSeen": "2026-10-09",
     "rows": 40
   },
@@ -414,8 +414,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "333d06bfa7afcf9b",
-    "lastChanged": "2026-10-08",
+    "fingerprint": "8189368c98dea841",
+    "lastChanged": "2026-10-09",
     "lastSeen": "2026-10-09",
     "rows": 5082
   },
@@ -426,9 +426,9 @@
     "rows": 111
   },
   "merged:listings": {
-    "fingerprint": "4793e340d3055de4",
+    "fingerprint": "e9deda31ad24233c",
     "lastChanged": "2026-10-09",
     "lastSeen": "2026-10-09",
-    "rows": 11806
+    "rows": 11837
   }
 }
