@@ -1,18 +1,10 @@
 {
-  "European Watch": {
-    "misses": 1,
-    "reason": "verify_sources ERROR: source absent from today's listings (was present yesterday)"
-  },
   "maunderwatches": {
-    "misses": 39,
+    "misses": 40,
     "reason": "no CSV produced this run"
   },
   "watchcenter": {
-    "misses": 158,
-    "reason": "no CSV produced this run"
-  },
-  "wok": {
-    "misses": 1,
+    "misses": 159,
     "reason": "no CSV produced this run"
   }
 }
