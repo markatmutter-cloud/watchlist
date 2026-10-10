@@ -294,10 +294,10 @@
     "rows": 20
   },
   "calendar:phillips": {
-    "fingerprint": "d6597b4cfddac146",
-    "lastChanged": "2026-10-01",
+    "fingerprint": "a57f44577650ea0e",
+    "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
-    "rows": 7
+    "rows": 6
   },
   "calendar:sothebys": {
     "fingerprint": "9fc1ac97c9100dfc",
@@ -414,14 +414,14 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "eacea27a6a416579",
+    "fingerprint": "45df4164560cb412",
     "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
     "rows": 5169
   },
   "merged:auctions": {
-    "fingerprint": "0fb26caa690dbbdb",
-    "lastChanged": "2026-10-09",
+    "fingerprint": "eaa88ea48eb76b23",
+    "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
     "rows": 112
   },
