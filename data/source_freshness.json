@@ -24,10 +24,10 @@
     "rows": 27
   },
   "Bob's Watches": {
-    "fingerprint": "cc928236ad25efff",
+    "fingerprint": "c22fb6b64bc9c732",
     "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
-    "rows": 96
+    "rows": 95
   },
   "Bulang & Sons": {
     "fingerprint": "d555976ab48003c7",
@@ -84,14 +84,14 @@
     "rows": 7
   },
   "Grey & Patina": {
-    "fingerprint": "8aec8ded93898ffa",
+    "fingerprint": "7e0666dfa8bca30f",
     "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
-    "rows": 32
+    "rows": 34
   },
   "Hairspring": {
-    "fingerprint": "5552cba3e4e208a7",
-    "lastChanged": "2026-10-08",
+    "fingerprint": "98737d884eca23d8",
+    "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
     "rows": 41
   },
@@ -264,10 +264,10 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "d0115db178716d9e",
+    "fingerprint": "e757b31ecfd4af1e",
     "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
-    "rows": 218
+    "rows": 219
   },
   "calendar:antiquorum": {
     "fingerprint": "95524d0212d0e6e2",
@@ -426,9 +426,9 @@
     "rows": 112
   },
   "merged:listings": {
-    "fingerprint": "2aecf183f84f5b3e",
+    "fingerprint": "e949a9a368e49bdb",
     "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
-    "rows": 11907
+    "rows": 11909
   }
 }
