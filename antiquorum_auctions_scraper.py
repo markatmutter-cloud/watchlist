@@ -31,7 +31,7 @@ import csv
 import json
 import re
 
-from scraper_lib import parse_auction_date_range
+from scraper_lib import MONTH_NAMES, parse_auction_date_range
 import sys
 from datetime import datetime, date
 
@@ -167,95 +167,204 @@ def find_live_url_for_sale(live_index, location, date_start):
     return None
 
 
-def scrape():
-    print(f"Fetching {URL} ...")
-    r = requests.get(URL, headers=HEADERS, timeout=30)
-    r.raise_for_status()
-    html = r.text
+# Sale titles Antiquorum prints on its calendar. The flagship sale is
+# "Important Modern & Vintage Timepieces"; since 2026-09 it also runs timed
+# "Only Online Auction" sales, listed with a month but no day ("Hong Kong
+# September 2026 Only Online Auction"). Missing the second title didn't just
+# drop the online sale: the regex then read "Auction New York" as the NEXT
+# sale's location.
+CALENDAR_TITLES = (
+    r'Important Modern\s*&\s*Vintage Timepieces',
+    r'Only Online Auction',
+)
 
-    # Flatten HTML to text so we can pattern-match across tag boundaries.
+CALENDAR_PATTERN = re.compile(
+    r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\s+'
+    # Day is optional: online sales are listed by month only.
+    r'([A-Z][a-z]+(?:\s+\d+(?:st|nd|rd|th)?(?:\s*-\s*\d+(?:st|nd|rd|th)?)?)?,?\s*\d{4})\s+'
+    r'(' + '|'.join(CALENDAR_TITLES) + r')'
+)
+
+
+def flatten_html(html):
+    """Page HTML -> one line of plain text, entities decoded enough to
+    pattern-match across tag boundaries."""
     text = strip_tags(html)
     text = re.sub(r'&amp;', '&', text)
     text = re.sub(r'&#[0-9]+;', '', text)
     text = re.sub(r'&nbsp;', ' ', text)
-    text = re.sub(r'\s+', ' ', text)
+    return re.sub(r'\s+', ' ', text)
 
-    # Match "<Location> <Date> Important Modern & Vintage Timepieces". Location
-    # is 1–3 Titlecase words (handles "New York", "Hong Kong"). Title is
-    # currently always "Important Modern & Vintage Timepieces" for watches.
-    pattern = re.compile(
-        r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\s+'
-        r'([A-Z][a-z]+\s+\d+(?:st|nd|rd|th)?(?:\s*-\s*\d+(?:st|nd|rd|th)?)?,?\s*\d{4})\s+'
-        r'(Important Modern\s*&\s*Vintage Timepieces)'
-    )
 
-    # Live-host index — used as a fallback when the catalog URL guess
-    # HEADs non-200. Fetched ONCE per scrape run; matched per-sale by
-    # (date_start, location-in-title).
-    live_index = fetch_live_upcoming_index()
-    print(f"  live-host index: {len(live_index)} upcoming sale(s)")
-
-    results = []
+def parse_calendar_text(text):
+    """Flattened calendar text -> [(location, date_label, title)], deduped,
+    in page order. Pure: no network."""
+    out = []
     seen = set()
-    for m in pattern.finditer(text):
-        location = m.group(1).strip()
-        date_str = m.group(2).strip()
-        title = m.group(3).strip()
-        start, end = parse_date_range(date_str)
-        if not start:
-            print(f"  ? skipped (unparseable date): {date_str!r}")
+    for m in CALENDAR_PATTERN.finditer(text):
+        row = (m.group(1).strip(), m.group(2).strip(), re.sub(r'\s+', ' ', m.group(3).strip()))
+        if row not in seen:
+            seen.add(row)
+            out.append(row)
+    return out
+
+
+def parse_month_only(date_label):
+    """'September 2026' -> '2026-09', else None. Online sales are listed
+    this way; the real dates come from the live-host index."""
+    m = re.fullmatch(r'([A-Za-z]+),?\s+(\d{4})', date_label.strip())
+    if not m:
+        return None
+    mo = MONTH_NAMES.get(m.group(1).lower())
+    return f"{m.group(2)}-{mo:02d}" if mo else None
+
+
+def _ordinal(n):
+    if 11 <= n % 100 <= 13:
+        return f"{n}th"
+    return f"{n}{ {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th') }"
+
+
+def format_date_label(start, end):
+    """ISO dates -> Antiquorum-style label: 'September 14th - 28th, 2026'."""
+    s = date.fromisoformat(start)
+    e = date.fromisoformat(end or start)
+    month = s.strftime('%B')
+    if s == e:
+        return f"{month} {_ordinal(s.day)}, {s.year}"
+    if (s.year, s.month) == (e.year, e.month):
+        return f"{month} {_ordinal(s.day)} - {_ordinal(e.day)}, {s.year}"
+    return f"{month} {_ordinal(s.day)} - {e.strftime('%B')} {_ordinal(e.day)}, {e.year}"
+
+
+def split_live_title(live_title):
+    """'Only Online Auction - Hong Kong' -> ('Only Online Auction', 'Hong Kong').
+    Older live titles end '... - Antiquorum Hong Kong'. Returns
+    (title, location); location may be '' when the title names none."""
+    parts = [p.strip() for p in live_title.split(' - ') if p.strip()]
+    if len(parts) < 2:
+        return live_title.strip(), ''
+    loc = re.sub(r'^Antiquorum\s+', '', parts[-1])
+    return parts[0], loc
+
+
+def fetch_live_sale_end(detail_url):
+    """A live sale's closing time as 'YYYY-MM-DD', or ''. Timed online sales
+    run for weeks; the index only carries the opening time."""
+    try:
+        r = requests.get(detail_url, headers=HEADERS, timeout=30)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"  [Antiquorum] live sale fetch failed: {e}")
+        return ''
+    m = re.search(r'"effective_end_time"\s*:\s*"(\d{4}-\d{2}-\d{2})', r.text)
+    return m.group(1) if m else ''
+
+
+def _row(title, location, start, end, label, url, has_catalog):
+    return {
+        'house':       'Antiquorum',
+        'title':       title,
+        'location':    location,
+        'date_start':  start,
+        'date_end':    end or start,
+        'date_label':  label,
+        'url':         url,
+        'has_catalog': 'True' if has_catalog else 'False',
+        'source':      'Antiquorum',
+    }
+
+
+def resolve_catalog_url(location, date_label):
+    """HEAD-probe the constructed catalog URL; returns it on 200, else None."""
+    candidate = build_catalog_url(location, date_label)
+    try:
+        hr = requests.head(candidate, headers=HEADERS, timeout=15, allow_redirects=True)
+        # Some catalogs return 200 with a redirect to /lots; both are fine.
+        if hr.status_code == 200:
+            return candidate
+        print(f"    catalog check {hr.status_code} for {candidate}")
+    except Exception as e:
+        print(f"    catalog check failed: {e}")
+    return None
+
+
+def build_rows(calendar, live_index, catalog_for=resolve_catalog_url, sale_end_for=fetch_live_sale_end):
+    """Calendar rows + live-host index -> CSV rows.
+
+    Every sale on the live host ends up in the output: calendar rows claim
+    their live entry, and any live entry left unclaimed is added on its own
+    (the calendar page has lagged the live host before). Network calls are
+    injected so this is testable offline.
+    """
+    results = []
+    used_live = set()
+
+    for location, date_label, title in calendar:
+        month = parse_month_only(date_label)
+        if month:
+            # Month-only listing: take the real dates from the live entry
+            # for this city in that month. None yet -> nothing to show.
+            match = next((e for e in live_index
+                          if e['detail_url'] not in used_live
+                          and e.get('time_start', '').startswith(month)
+                          and location.lower() in e.get('title', '').lower()), None)
+            if not match:
+                print(f"  ? {location} {date_label} {title}: no live sale yet, skipped")
+                continue
+            used_live.add(match['detail_url'])
+            start = match['time_start'][:10]
+            end = sale_end_for(match['detail_url']) or start
+            results.append(_row(title, location, start, end, format_date_label(start, end),
+                                match['detail_url'], True))
             continue
 
-        key = (location, start, title)
-        if key in seen:
+        start, end = parse_date_range(date_label)
+        if not start:
+            print(f"  ? skipped (unparseable date): {date_label!r}")
             continue
-        seen.add(key)
 
         # Catalog URL guess via the URL-template. Catalog pages stay up
         # for years post-sale, so a 200 here is good both pre- and
         # post-sale. Non-200 typically means the catalog hasn't been
-        # published yet — Antiquorum tends to publish catalogs 3–5 days
+        # published yet: Antiquorum tends to publish catalogs 3-5 days
         # before the sale, but the live surface goes up much earlier.
-        candidate = build_catalog_url(location, date_str)
-        has_catalog = False
-        url = UPCOMING_PAGE
-        try:
-            hr = requests.head(candidate, headers=HEADERS, timeout=15, allow_redirects=True)
-            # Some catalogs return 200 with a redirect to /lots; both are fine.
-            if hr.status_code == 200:
-                url = candidate
-                has_catalog = True
-            else:
-                print(f"    catalog check {hr.status_code} for {candidate}")
-        except Exception as e:
-            print(f"    catalog check failed: {e}")
+        url = catalog_for(location, date_label)
+        has_catalog = bool(url)
+        # Fallback: the live-host URL is enumerable by the same
+        # `enumerate_antiquorum` path in auction_lots_scraper, so it
+        # counts as a catalog for the comprehensive lot scrape.
+        live_url = find_live_url_for_sale(live_index, location, start)
+        if live_url:
+            used_live.add(live_url)
+        if not has_catalog and live_url:
+            url, has_catalog = live_url, True
+            print(f"    live-host fallback: {live_url}")
+        results.append(_row(title, location, start, end, date_label,
+                            url or UPCOMING_PAGE, has_catalog))
 
-        # Fallback: when catalog URL didn't resolve, look the sale up in
-        # the live-host upcoming index. The live URL is enumerable by
-        # the same `enumerate_antiquorum` path (it already accepts
-        # live.antiquorum.swiss/auctions/ — see auction_lots_scraper
-        # ENUMERATORS), so we can promote has_catalog=True and let the
-        # comprehensive scrape walk lots on the next cron run.
-        if not has_catalog:
-            live_url = find_live_url_for_sale(live_index, location, start)
-            if live_url:
-                url = live_url
-                has_catalog = True
-                print(f"    live-host fallback: {live_url}")
-
-        results.append({
-            'house':       'Antiquorum',
-            'title':       title,
-            'location':    location,
-            'date_start':  start,
-            'date_end':    end,
-            'date_label':  date_str,
-            'url':         url,
-            'has_catalog': 'True' if has_catalog else 'False',
-            'source':      'Antiquorum',
-        })
-
+    for e in live_index:
+        if e['detail_url'] in used_live or not e.get('time_start'):
+            continue
+        title, location = split_live_title(e.get('title', ''))
+        start = e['time_start'][:10]
+        end = sale_end_for(e['detail_url']) or start
+        print(f"    live-only sale (not on calendar page): {e.get('title')}")
+        results.append(_row(title, location, start, end, format_date_label(start, end),
+                            e['detail_url'], True))
     return results
+
+
+def scrape():
+    print(f"Fetching {URL} ...")
+    r = requests.get(URL, headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    calendar = parse_calendar_text(flatten_html(r.text))
+
+    # Live-host index: fetched ONCE per run, matched per sale.
+    live_index = fetch_live_upcoming_index()
+    print(f"  live-host index: {len(live_index)} upcoming sale(s)")
+    return build_rows(calendar, live_index)
 
 
 def main():
