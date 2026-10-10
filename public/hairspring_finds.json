@@ -6032,6 +6032,28 @@
     "url": "https://hairspring.com/blogs/finds/25865bc-ap-royal-oak-grande-complication",
     "word_count": 449
   },
+  "https://hairspring.com/blogs/finds/25910bc-audemars-piguet-edward-piguet-triple-calendar": {
+    "author": "Erik Gustafson",
+    "brand": "Audemars Piguet",
+    "case_size": "39mm",
+    "currency": "USD",
+    "excerpt": "Audemars Piguet turned 125 in 2000, and its Japanese market received a small group of watches made for the occasion. Alongside the simpler Edward Piguet ref. 15015 and Jules Audemars ref. 15056 came reference 25910BC, an Edward Piguet full",
+    "image": "https://hairspring.com/cdn/shop/articles/Edward-Piguet-Audemars-25910BC-1.jpg",
+    "model": null,
+    "model_line": null,
+    "published_at": "2026-10-09",
+    "reference_no": null,
+    "scraped_at": "2026-10-10T18:21:30Z",
+    "slug": "25910bc-audemars-piguet-edward-piguet-triple-calendar",
+    "sold_price_usd": 30000,
+    "source": "hairspring_finds",
+    "source_type": "editorial_finds",
+    "sub_model": null,
+    "title": "Japan Edition 25910BC Audemars Piguet Edward Piguet Triple Calendar",
+    "updated_at": "2025-10-10",
+    "url": "https://hairspring.com/blogs/finds/25910bc-audemars-piguet-edward-piguet-triple-calendar",
+    "word_count": 431
+  },
   "https://hairspring.com/blogs/finds/2597-patek-philippe-calatrava-travel-time": {
     "author": "Erik Gustafson",
     "brand": "Patek Philippe",
@@ -9422,7 +9444,7 @@
     "model_line": "Overseas (precursor — ref 222)",
     "published_at": "2026-07-11",
     "reference_no": "46003",
-    "scraped_at": "2026-09-10T17:39:48Z",
+    "scraped_at": "2026-10-10T18:21:29Z",
     "slug": "46003-vacheron-constantin-222",
     "sold_price_usd": 70000,
     "source": "hairspring_finds",
@@ -9436,7 +9458,7 @@
     "title": "46003 Vacheron Constantin 222",
     "updated_at": "2026-07-12",
     "url": "https://hairspring.com/blogs/finds/46003-vacheron-constantin-222",
-    "word_count": 462
+    "word_count": 456
   },
   "https://hairspring.com/blogs/finds/46003-vacheron-constantin-222-in-yellow-gold": {
     "author": "Erik Gustafson",
