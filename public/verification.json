@@ -1,10 +1,10 @@
 {
   "date": "2026-10-10",
-  "updated_at": "2026-10-10T00:26:40+00:00",
+  "updated_at": "2026-10-10T08:29:37+00:00",
   "alerts": [],
   "counts": {
-    "Wind Vintage": 124,
-    "Tropical Watch": 114,
+    "Wind Vintage": 120,
+    "Tropical Watch": 112,
     "Menta Watches": 60,
     "Collectors Corner NY": 95,
     "Falco Watches": 6,
@@ -12,11 +12,11 @@
     "Tokant": 38,
     "Romain R\u00e9a": 236,
     "Grey & Patina": 33,
-    "Oliver & Clarke": 99,
+    "Oliver & Clarke": 98,
     "Craft & Tailored": 70,
     "Watch Brothers London": 8,
     "Sierra Time Co": 31,
-    "DB1983": 26,
+    "DB1983": 25,
     "Hairspring": 29,
     "Somlo": 177,
     "Analog Shift": 731,
@@ -45,10 +45,10 @@
     "S.Song Watches": 17,
     "Swiss Hours": 63,
     "Watch Center": 261,
-    "Amsterdam Watch Company": 278,
+    "Amsterdam Watch Company": 280,
     "Amsterdam Vintage Watches": 73,
-    "eBay": 40
+    "eBay": 35
   },
-  "total_listings": 4655,
+  "total_listings": 4644,
   "sources_tracked": 45
 }

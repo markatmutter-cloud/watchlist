@@ -6,10 +6,10 @@
     "rows": 75
   },
   "Amsterdam Watch Company": {
-    "fingerprint": "ffc11ee0a0320269",
-    "lastChanged": "2026-10-09",
+    "fingerprint": "991e758aff29cc5a",
+    "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
-    "rows": 284
+    "rows": 286
   },
   "Analog Shift": {
     "fingerprint": "f988a2a6a44fe568",
@@ -24,10 +24,10 @@
     "rows": 27
   },
   "Bob's Watches": {
-    "fingerprint": "80f18a315b77365a",
+    "fingerprint": "cc928236ad25efff",
     "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
-    "rows": 98
+    "rows": 96
   },
   "Bulang & Sons": {
     "fingerprint": "d555976ab48003c7",
@@ -84,10 +84,10 @@
     "rows": 7
   },
   "Grey & Patina": {
-    "fingerprint": "ea7f32523f40ff73",
-    "lastChanged": "2026-10-09",
+    "fingerprint": "8aec8ded93898ffa",
+    "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
-    "rows": 33
+    "rows": 32
   },
   "Hairspring": {
     "fingerprint": "5552cba3e4e208a7",
@@ -192,7 +192,7 @@
     "rows": 39
   },
   "Tropical Watch": {
-    "fingerprint": "e1fccb05a365b1d2",
+    "fingerprint": "371701608b5ce316",
     "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
     "rows": 113
@@ -252,7 +252,7 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "cd3fe9ab89946c4e",
+    "fingerprint": "785d21dc91210c06",
     "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
     "rows": 71
@@ -264,7 +264,7 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "1942a2647102a97a",
+    "fingerprint": "c69f4963396b662b",
     "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
     "rows": 218
@@ -312,8 +312,8 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "bdf0f68eebee004b",
-    "lastChanged": "2026-10-09",
+    "fingerprint": "5feaa74fd8d66f83",
+    "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
     "rows": 36
   },
@@ -414,10 +414,10 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "53bd0340b12921ca",
-    "lastChanged": "2026-10-09",
+    "fingerprint": "eacea27a6a416579",
+    "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
-    "rows": 5083
+    "rows": 5169
   },
   "merged:auctions": {
     "fingerprint": "0fb26caa690dbbdb",
@@ -426,9 +426,9 @@
     "rows": 112
   },
   "merged:listings": {
-    "fingerprint": "67f2986dd992b902",
+    "fingerprint": "e272c69fad54dced",
     "lastChanged": "2026-10-10",
     "lastSeen": "2026-10-10",
-    "rows": 11877
+    "rows": 11879
   }
 }
