@@ -1,9 +1,9 @@
 {
-  "date": "2026-10-10",
-  "updated_at": "2026-10-10T23:46:17+00:00",
+  "date": "2026-10-11",
+  "updated_at": "2026-10-11T08:41:14+00:00",
   "alerts": [],
   "counts": {
-    "Wind Vintage": 117,
+    "Wind Vintage": 116,
     "Tropical Watch": 112,
     "Menta Watches": 60,
     "Collectors Corner NY": 95,
@@ -22,7 +22,7 @@
     "Analog Shift": 729,
     "Watches of Knightsbridge": 67,
     "Belmont Watches": 27,
-    "Bob's Watches": 96,
+    "Bob's Watches": 95,
     "Watchfid": 71,
     "Bulang & Sons": 165,
     "Moonphase": 25,
@@ -47,8 +47,8 @@
     "Watch Center": 261,
     "Amsterdam Watch Company": 297,
     "Amsterdam Vintage Watches": 73,
-    "eBay": 35
+    "eBay": 36
   },
-  "total_listings": 4657,
+  "total_listings": 4656,
   "sources_tracked": 45
 }
