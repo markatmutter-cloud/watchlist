@@ -6049,6 +6049,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "Japan Edition 25910BC Audemars Piguet Edward Piguet Triple Calendar",
     "updated_at": "2025-10-10",
     "url": "https://hairspring.com/blogs/finds/25910bc-audemars-piguet-edward-piguet-triple-calendar",
@@ -43209,6 +43213,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "design"
+    ],
     "title": "Yosuke Sekiguchi Piece Unique Primevère, Steel",
     "updated_at": "2026-10-06",
     "url": "https://hairspring.com/blogs/finds/yosuke-sekiguchi-piece-unique-primevere-steel",

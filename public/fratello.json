@@ -10403,6 +10403,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "celebrity"
+    ],
     "title": "Choosing Between Good And Evil: The Omega Seamaster Diver 300M James Bond And Spectre Collection",
     "updated_at": "2026-10-05",
     "url": "https://www.fratellowatches.com/choosing-between-good-and-evil-the-omega-seamaster-diver-300m-james-bond-and-spectre-collection/",
@@ -14303,6 +14307,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "collecting_philosophy"
+    ],
     "title": "Five Rolex Watches For Those Thinking Outside The Box",
     "updated_at": "2026-10-06",
     "url": "https://www.fratellowatches.com/five-rolex-watches-for-those-thinking-outside-the-box/",
@@ -60125,6 +60133,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "celebrity",
+      "review"
+    ],
     "title": "Sunday Morning Showdown: Omega Seamaster Diver 300M James Bond Vs. Spectre Edition",
     "updated_at": "2026-10-10",
     "url": "https://www.fratellowatches.com/sunday-morning-showdown-omega-seamaster-diver-300m-james-bond-vs-spectre-edition/",
@@ -81858,6 +81870,11 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "military",
+      "brand_history",
+      "diving"
+    ],
     "title": "Diving Into A Lesser-Known Chapter Of Tudor’s History At The Navy SEAL Museum In San Diego",
     "updated_at": "2026-10-08",
     "url": "https://www.fratellowatches.com/visiting-the-navy-seal-museum-with-tudor/",

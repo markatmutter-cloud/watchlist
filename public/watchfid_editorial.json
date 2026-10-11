@@ -4013,6 +4013,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "celebrity",
+      "design"
+    ],
     "title": "NATACHA TOUTAIN",
     "updated_at": "2026-10-07",
     "url": "https://www.watchfid.com/natacha-toutain/",
@@ -6007,6 +6011,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "WATCHFID COLLECTIBLES: NEUE BUCHREIHE FUR UHRENIKONEN by LUXURY INSIGHT",
     "updated_at": "2026-10-08",
     "url": "https://www.watchfid.com/watchfid-collectibles-neue-buchreihe-fur-uhrenikonen-by-luxury-insight/",
@@ -6555,6 +6563,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "WATCHFID RACONTE L’HISTOIRE DES MONTRES by LE FIGARO MAGAZINE",
     "updated_at": "2026-10-05",
     "url": "https://www.watchfid.com/watchfid-raconte-lhistoire-des-montres-by-le-figaro-magazine/",
