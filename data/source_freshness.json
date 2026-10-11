@@ -342,7 +342,7 @@
     "rows": 25
   },
   "editorial:fratello": {
-    "fingerprint": "be18eb929b2cccd9",
+    "fingerprint": "d90d11b1cc613973",
     "lastChanged": "2026-10-11",
     "lastSeen": "2026-10-11",
     "rows": 3821
@@ -390,8 +390,8 @@
     "rows": 16
   },
   "editorial:screwdowncrown": {
-    "fingerprint": "b245a890b6dbdc41",
-    "lastChanged": "2026-10-10",
+    "fingerprint": "7512776bcd27f423",
+    "lastChanged": "2026-10-11",
     "lastSeen": "2026-10-11",
     "rows": 290
   },
@@ -402,8 +402,8 @@
     "rows": 55
   },
   "editorial:watchfid_editorial": {
-    "fingerprint": "bbe907f066013188",
-    "lastChanged": "2026-10-10",
+    "fingerprint": "1559496efa818be8",
+    "lastChanged": "2026-10-11",
     "lastSeen": "2026-10-11",
     "rows": 294
   },
@@ -414,7 +414,7 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "994ce52261967ff3",
+    "fingerprint": "21b781db188be660",
     "lastChanged": "2026-10-11",
     "lastSeen": "2026-10-11",
     "rows": 5114
