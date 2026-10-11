@@ -1,6 +1,6 @@
 {
   "date": "2026-10-11",
-  "updated_at": "2026-10-11T08:41:14+00:00",
+  "updated_at": "2026-10-11T19:16:50+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 116,
@@ -17,16 +17,16 @@
     "Watch Brothers London": 8,
     "Sierra Time Co": 31,
     "DB1983": 25,
-    "Hairspring": 29,
+    "Hairspring": 30,
     "Somlo": 176,
-    "Analog Shift": 729,
+    "Analog Shift": 727,
     "Watches of Knightsbridge": 67,
     "Belmont Watches": 27,
     "Bob's Watches": 95,
     "Watchfid": 71,
     "Bulang & Sons": 165,
     "Moonphase": 25,
-    "Huntington Company": 135,
+    "Huntington Company": 134,
     "The Vintage Watch": 27,
     "Chronoholic": 4,
     "Vintage Watch Fam": 604,
@@ -41,14 +41,14 @@
     "Watches of Lancashire": 53,
     "Heuertime": 32,
     "ClassicHeuer": 39,
-    "Luna Royster": 29,
+    "Luna Royster": 30,
     "S.Song Watches": 17,
     "Swiss Hours": 64,
     "Watch Center": 261,
     "Amsterdam Watch Company": 297,
     "Amsterdam Vintage Watches": 73,
-    "eBay": 36
+    "eBay": 35
   },
-  "total_listings": 4656,
+  "total_listings": 4654,
   "sources_tracked": 45
 }

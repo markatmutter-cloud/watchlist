@@ -1,9 +1,9 @@
 {
   "Amsterdam Vintage Watches": {
-    "fingerprint": "955755e62d9562d5",
-    "lastChanged": "2026-10-09",
+    "fingerprint": "7f8e4e2cd7547ebf",
+    "lastChanged": "2026-10-11",
     "lastSeen": "2026-10-11",
-    "rows": 75
+    "rows": 74
   },
   "Amsterdam Watch Company": {
     "fingerprint": "d26ab80a43af0913",
@@ -12,10 +12,10 @@
     "rows": 303
   },
   "Analog Shift": {
-    "fingerprint": "ce0a61fb09627596",
+    "fingerprint": "e67b4f9266168b50",
     "lastChanged": "2026-10-11",
     "lastSeen": "2026-10-11",
-    "rows": 745
+    "rows": 744
   },
   "Belmont Watches": {
     "fingerprint": "09ebb2c1c6a28b0c",
@@ -90,10 +90,10 @@
     "rows": 34
   },
   "Hairspring": {
-    "fingerprint": "98737d884eca23d8",
-    "lastChanged": "2026-10-10",
+    "fingerprint": "0b6c50236d2e1172",
+    "lastChanged": "2026-10-11",
     "lastSeen": "2026-10-11",
-    "rows": 41
+    "rows": 42
   },
   "Heuertime": {
     "fingerprint": "743ffa656bd725d4",
@@ -108,10 +108,10 @@
     "rows": 134
   },
   "Luna Royster": {
-    "fingerprint": "a2ece826a7b28206",
-    "lastChanged": "2026-10-09",
+    "fingerprint": "8c88161fd44ada4c",
+    "lastChanged": "2026-10-11",
     "lastSeen": "2026-10-11",
-    "rows": 29
+    "rows": 30
   },
   "Maunder Watches": {
     "fingerprint": "1b40d0d8891c8323",
@@ -138,10 +138,10 @@
     "rows": 112
   },
   "Pascal Karp": {
-    "fingerprint": "0bcc67070f01eb9b",
-    "lastChanged": "2026-10-10",
+    "fingerprint": "c4707ab0ee6c7326",
+    "lastChanged": "2026-10-11",
     "lastSeen": "2026-10-11",
-    "rows": 94
+    "rows": 93
   },
   "Romain R\u00e9a": {
     "fingerprint": "6398363955ef0145",
@@ -252,10 +252,10 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "321ca11fd2b8579e",
+    "fingerprint": "b0a33f9f6cee14d4",
     "lastChanged": "2026-10-11",
     "lastSeen": "2026-10-11",
-    "rows": 71
+    "rows": 68
   },
   "Watchurbia": {
     "fingerprint": "fb34fdc11c685e48",
@@ -264,7 +264,7 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "aae272c1bd08bae9",
+    "fingerprint": "6f1dbb5cc2bd423c",
     "lastChanged": "2026-10-11",
     "lastSeen": "2026-10-11",
     "rows": 219
@@ -426,9 +426,9 @@
     "rows": 112
   },
   "merged:listings": {
-    "fingerprint": "16bd655a46caf08f",
+    "fingerprint": "6b7b113d1ffea645",
     "lastChanged": "2026-10-11",
     "lastSeen": "2026-10-11",
-    "rows": 11910
+    "rows": 11912
   }
 }
