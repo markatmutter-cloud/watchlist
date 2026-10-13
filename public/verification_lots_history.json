@@ -1,14 +1,6 @@
 {
   "history": [
     {
-      "date": "2026-09-29",
-      "counts": {
-        "Christie's": 285,
-        "Phillips": 88,
-        "Sotheby's": 531
-      }
-    },
-    {
       "date": "2026-09-30",
       "counts": {
         "Christie's": 285,
@@ -102,6 +94,14 @@
     },
     {
       "date": "2026-10-12",
+      "counts": {
+        "Christie's": 285,
+        "Monaco Legend": 226,
+        "Sotheby's": 637
+      }
+    },
+    {
+      "date": "2026-10-13",
       "counts": {
         "Christie's": 285,
         "Monaco Legend": 226,
