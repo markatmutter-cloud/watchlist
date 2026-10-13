@@ -12,10 +12,10 @@
     "rows": 303
   },
   "Analog Shift": {
-    "fingerprint": "f6ec533813b2c452",
-    "lastChanged": "2026-10-12",
+    "fingerprint": "88a79405747303fb",
+    "lastChanged": "2026-10-13",
     "lastSeen": "2026-10-13",
-    "rows": 754
+    "rows": 753
   },
   "Belmont Watches": {
     "fingerprint": "09ebb2c1c6a28b0c",
@@ -84,16 +84,16 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "975acf85329b024c",
-    "lastChanged": "2026-10-12",
+    "fingerprint": "cb977c283fb354c9",
+    "lastChanged": "2026-10-13",
     "lastSeen": "2026-10-13",
-    "rows": 30
+    "rows": 29
   },
   "Hairspring": {
-    "fingerprint": "b4886be66f4f3db5",
-    "lastChanged": "2026-10-12",
+    "fingerprint": "bb02db2f1c62fc53",
+    "lastChanged": "2026-10-13",
     "lastSeen": "2026-10-13",
-    "rows": 42
+    "rows": 41
   },
   "Heuertime": {
     "fingerprint": "743ffa656bd725d4",
@@ -192,10 +192,10 @@
     "rows": 40
   },
   "Tropical Watch": {
-    "fingerprint": "a3a95b42c7897932",
-    "lastChanged": "2026-10-12",
+    "fingerprint": "20fa6d2b1f9b36b7",
+    "lastChanged": "2026-10-13",
     "lastSeen": "2026-10-13",
-    "rows": 114
+    "rows": 117
   },
   "Vintage Watch Collective": {
     "fingerprint": "f0185bdf83d3a757",
@@ -216,10 +216,10 @@
     "rows": 30
   },
   "Vision Vintage Watches": {
-    "fingerprint": "9441556496e99664",
-    "lastChanged": "2026-10-12",
+    "fingerprint": "dc7d7e2bc907bae5",
+    "lastChanged": "2026-10-13",
     "lastSeen": "2026-10-13",
-    "rows": 36
+    "rows": 103
   },
   "Watch Brothers London": {
     "fingerprint": "d8bae04cb2316c5a",
@@ -234,10 +234,10 @@
     "rows": 429
   },
   "Watch Club": {
-    "fingerprint": "29f85aee4bb4163f",
-    "lastChanged": "2026-10-09",
+    "fingerprint": "ab3955032630f7d4",
+    "lastChanged": "2026-10-13",
     "lastSeen": "2026-10-13",
-    "rows": 58
+    "rows": 60
   },
   "Watches of Knightsbridge": {
     "fingerprint": "30f3df0e2614bdae",
@@ -252,8 +252,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "c9e614344f2d7cc2",
-    "lastChanged": "2026-10-12",
+    "fingerprint": "a21f4cb7a4adab03",
+    "lastChanged": "2026-10-13",
     "lastSeen": "2026-10-13",
     "rows": 66
   },
@@ -264,8 +264,8 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "4089bc1b96841d16",
-    "lastChanged": "2026-10-12",
+    "fingerprint": "b6e9b505cf194258",
+    "lastChanged": "2026-10-13",
     "lastSeen": "2026-10-13",
     "rows": 218
   },
@@ -312,8 +312,8 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "d0e70e772aef415e",
-    "lastChanged": "2026-10-13",
+    "fingerprint": "390aee9ba4212173",
+    "lastChanged": "2026-10-12",
     "lastSeen": "2026-10-13",
     "rows": 35
   },
@@ -414,8 +414,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "3e73441674740a0d",
-    "lastChanged": "2026-10-13",
+    "fingerprint": "a890b37aac0afdca",
+    "lastChanged": "2026-10-12",
     "lastSeen": "2026-10-13",
     "rows": 5114
   },
@@ -426,9 +426,9 @@
     "rows": 112
   },
   "merged:listings": {
-    "fingerprint": "63b8b914139c7633",
+    "fingerprint": "96f698b61df60c40",
     "lastChanged": "2026-10-13",
     "lastSeen": "2026-10-13",
-    "rows": 11948
+    "rows": 11966
   }
 }
