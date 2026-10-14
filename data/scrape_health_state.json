@@ -1,14 +1,18 @@
 {
+  "Bob's Watches": {
+    "misses": 1,
+    "reason": "verify_sources ERROR: source absent from today's listings (was present yesterday)"
+  },
   "falco": {
-    "misses": 4,
+    "misses": 5,
     "reason": "no CSV produced this run"
   },
   "maunderwatches": {
-    "misses": 52,
+    "misses": 53,
     "reason": "no CSV produced this run"
   },
   "watchcenter": {
-    "misses": 171,
+    "misses": 172,
     "reason": "no CSV produced this run"
   }
 }
