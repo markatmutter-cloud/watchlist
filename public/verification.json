@@ -1,15 +1,7 @@
 {
   "date": "2026-10-14",
-  "updated_at": "2026-10-14T00:01:38+00:00",
-  "alerts": [
-    {
-      "source": "Bob's Watches",
-      "level": "ERROR",
-      "today": 0,
-      "previous": 92,
-      "note": "source absent from today's listings (was present yesterday)"
-    }
-  ],
+  "updated_at": "2026-10-14T07:37:59+00:00",
+  "alerts": [],
   "counts": {
     "Wind Vintage": 108,
     "Tropical Watch": 119,
@@ -21,9 +13,9 @@
     "Romain R\u00e9a": 239,
     "Grey & Patina": 30,
     "Oliver & Clarke": 98,
-    "Craft & Tailored": 69,
+    "Craft & Tailored": 71,
     "Watch Brothers London": 7,
-    "Sierra Time Co": 33,
+    "Sierra Time Co": 32,
     "DB1983": 24,
     "Hairspring": 29,
     "Somlo": 172,
@@ -36,11 +28,11 @@
     "Huntington Company": 134,
     "The Vintage Watch": 27,
     "Chronoholic": 4,
-    "Vintage Watch Fam": 589,
+    "Vintage Watch Fam": 587,
     "Shuck the Oyster": 115,
     "Central Watch": 182,
     "Vintage Watch Collective": 30,
-    "Vision Vintage Watches": 82,
+    "Vision Vintage Watches": 83,
     "Watchurbia": 6,
     "Maunder Watches": 73,
     "Watch Club": 56,
