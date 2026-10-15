@@ -276,10 +276,10 @@
     "rows": 3
   },
   "calendar:christies": {
-    "fingerprint": "9b6947503e3b98f6",
-    "lastChanged": "2026-10-09",
+    "fingerprint": "522da619edd4154b",
+    "lastChanged": "2026-10-15",
     "lastSeen": "2026-10-15",
-    "rows": 7
+    "rows": 8
   },
   "calendar:marteauandco": {
     "fingerprint": "088201a5614b3ce8",
@@ -300,8 +300,8 @@
     "rows": 7
   },
   "calendar:sothebys": {
-    "fingerprint": "b1ea4aa18ab99f9c",
-    "lastChanged": "2026-10-14",
+    "fingerprint": "7f9e0b8d4be31738",
+    "lastChanged": "2026-10-15",
     "lastSeen": "2026-10-15",
     "rows": 10
   },
@@ -414,16 +414,16 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "5e657937852b289c",
-    "lastChanged": "2026-10-14",
+    "fingerprint": "d7998eebf1ea8620",
+    "lastChanged": "2026-10-15",
     "lastSeen": "2026-10-15",
-    "rows": 5114
+    "rows": 5361
   },
   "merged:auctions": {
-    "fingerprint": "eaaec4ff28d56e3e",
-    "lastChanged": "2026-10-14",
+    "fingerprint": "7bbdbe0ef8b05e74",
+    "lastChanged": "2026-10-15",
     "lastSeen": "2026-10-15",
-    "rows": 113
+    "rows": 114
   },
   "merged:listings": {
     "fingerprint": "9f7cea484241b52d",
