@@ -622,7 +622,15 @@ inline as pills instead, the one behaviour the shells have and it does not.
 **The other tabs followed the same day:** Articles, Saved and Reference Guides
 wear the magazine's bar by default (`MagazineShellBar`, one compact row — the
 shells' top region is pinned, so a two-tier masthead can't live there); `?look=old`
-is the way back. The second layer shipped too: pills and counts take the Watches page's
+is the way back. **Queued from Mark's 2026-10-16 review (design thread, Epic 9):** Saved articles / saved
+guides as a **♡ SAVED filter pill** in the filter row (as Watches has), replacing the
+segmented `All | ♡ Saved` row on Articles and Reference Guides. That removes a whole row
+from both headers (compactness) and keeps "saved" scoped to the thing being browsed.
+Mark floated routing it through the header heart instead; the recommendation (given in
+session) is the pill, because that heart already means "my saved watches". Awaiting his
+go. Also queued as defects: B-100 (Watches inset) and B-101 (search size).
+
+The second layer shipped too: pills and counts take the Watches page's
 tracked-caps label voice, with the segmented sub-tab pill KEPT (it replaced an
 underline strip after the June usability audit, U-01). Still open: the
 Bodoni-vs-system chrome verdict (`?chrome=display` to compare) and page titles
