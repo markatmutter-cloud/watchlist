@@ -645,3 +645,47 @@ def test_emit_auction_status_derives_from_dates_without_hint():
                                      today="2026-06-18") == "upcoming"
     assert merge.emit_auction_status("2026-05-01", "2026-05-05", "",
                                      today="2026-06-18") == "past"
+
+
+# ── Rescheduled auctions (superseded registry entries) ─────────────────────
+
+
+def _sale(start, first, last, location="New York", catalog=None, title="Important Modern & Vintage Timepieces"):
+    return {"house": "Antiquorum", "title": title, "location": location,
+            "dateStart": start, "firstSeen": first, "lastSeen": last,
+            "catalogLiveAt": catalog}
+
+
+def test_rescheduled_sale_is_superseded_by_its_new_date():
+    state = {
+        "jul": _sale("2026-07-18", "2026-04-24", "2026-06-09"),
+        "sep": _sale("2026-09-15", "2026-06-10", "2026-08-16"),
+        "oct": _sale("2026-10-18", "2026-08-17", "2026-09-18"),
+    }
+    assert merge.superseded_auction_ids(state) == {"jul", "sep"}
+
+
+def test_sale_that_ran_is_kept_after_dropping_off_calendar():
+    # Last seen after its own start date: it happened, the Archive keeps it.
+    state = {
+        "may": _sale("2026-05-31", "2026-04-24", "2026-07-01", location="Hong Kong"),
+        "nov": _sale("2026-11-28", "2026-09-14", "2026-09-18", location="Hong Kong"),
+    }
+    assert merge.superseded_auction_ids(state) == set()
+
+
+def test_sale_with_a_catalog_is_never_hidden():
+    state = {
+        "old": _sale("2026-11-29", "2026-04-24", "2026-09-13", location="Hong Kong", catalog="2026-09-01"),
+        "new": _sale("2026-11-28", "2026-09-14", "2026-09-18", location="Hong Kong"),
+    }
+    assert merge.superseded_auction_ids(state) == set()
+
+
+def test_different_city_or_title_does_not_supersede():
+    state = {
+        "ny":  _sale("2026-09-15", "2026-06-10", "2026-08-16"),
+        "gva": _sale("2026-10-18", "2026-08-17", "2026-09-18", location="Geneva"),
+        "online": _sale("2026-10-20", "2026-08-17", "2026-09-18", title="Only Online Auction"),
+    }
+    assert merge.superseded_auction_ids(state) == set()
