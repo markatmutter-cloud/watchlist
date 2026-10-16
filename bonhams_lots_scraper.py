@@ -37,6 +37,7 @@ from datetime import date, datetime, timezone
 from auction_lots_scraper import (
     enumerate_bonhams,
     in_active_window,
+    drop_jewellery_lots,
     is_excluded_catalog,
     is_excluded_title,
 )
@@ -162,6 +163,11 @@ def main():
             # the others or the persisted sold history below.
             print(f"  enumeration error: {e}")
             continue
+        # Mixed jewellery-and-watches sales (Bonhams runs them at
+        # Knightsbridge) are carried whole; their non-watch lots go here.
+        lots, n_jewellery = drop_jewellery_lots(lots, sale.get("title"))
+        if n_jewellery:
+            print(f"  {n_jewellery} jewellery lot(s) dropped (mixed sale)")
         kept = 0
         for url, data in lots:
             if is_excluded_title(data.get("title")):
