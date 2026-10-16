@@ -229,7 +229,7 @@ describe("App render-without-crash", () => {
     window.history.replaceState({}, "", "/");
   });
 
-  test("the browser tint follows the page: paper on the Watches page, olive on ?view=classic", async () => {
+  test("the browser tint follows the page: paper on the Watches page, olive only over the olive bar", async () => {
     // Mark, 2026-10-16: an olive toolbar over a light Watches page "looks
     // weird". The tint used to be olive on every tab but Home.
     const tint = () => document.querySelector('meta[name="theme-color"]:not([media])').getAttribute("content");
@@ -242,13 +242,23 @@ describe("App render-without-crash", () => {
     });
     expect(tint()).toBe("#ffffff");
     first.unmount();
+    // The shell's own Watches chrome, on the new bar (the look default): paper.
     window.history.replaceState({}, "", "/?tab=listings&view=classic");
+    const second = render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    expect(tint()).toBe("#ffffff");
+    second.unmount();
+    // ...and the olive bar only when the way back to it is taken as well.
+    window.history.replaceState({}, "", "/?tab=listings&view=classic&look=old");
     render(<App />);
     await waitFor(() => {
       expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
     });
     expect(tint()).toBe("#3b4a36");
     document.head.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
+    window.localStorage.removeItem("dial_look"); // ?look=old is sticky
     window.history.replaceState({}, "", "/");
   });
 

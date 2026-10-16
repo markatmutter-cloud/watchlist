@@ -6,34 +6,34 @@ beforeEach(() => { window.localStorage.clear(); at(""); });
 afterAll(() => { window.localStorage.clear(); at(""); });
 
 describe("readLook", () => {
-  it("defaults to the old look, so the live site is unchanged until opted in", () => {
-    expect(readLook()).toBe("old");
-  });
-
-  it("?look=new turns it on and remembers it past the query string", () => {
-    at("?look=new");
-    expect(readLook()).toBe("new");
-    at(""); // an iOS PWA launch drops the query
+  it("defaults to the new look (the default since 2026-10-16)", () => {
     expect(readLook()).toBe("new");
   });
 
-  it("?look=old turns it back off and remembers that too", () => {
-    at("?look=new"); readLook();
+  it("?look=old is the way back and remembers it past the query string", () => {
     at("?look=old");
     expect(readLook()).toBe("old");
-    at("");
+    at(""); // an iOS PWA launch drops the query
     expect(readLook()).toBe("old");
+  });
+
+  it("?look=new turns it back on and remembers that too", () => {
+    at("?look=old"); readLook();
+    at("?look=new");
+    expect(readLook()).toBe("new");
+    at("");
+    expect(readLook()).toBe("new");
   });
 
   it("ignores values it doesn't know", () => {
     at("?look=banana");
-    expect(readLook()).toBe("old");
+    expect(readLook()).toBe("new");
     expect(window.localStorage.getItem("dial_look")).toBeNull();
   });
 
   it("falls back cleanly when storage throws", () => {
     const spy = jest.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("blocked"); });
-    expect(readLook()).toBe("old");
+    expect(readLook()).toBe("new");
     spy.mockRestore();
   });
 });
