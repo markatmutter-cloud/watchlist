@@ -769,6 +769,9 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-16 — Magazine Watches page promoted to the default.** Mark, after living with
+  `?view=watches`: "i now think it's better." The Watches tab now loads it with no flag; `?view=classic`
+  is the way back to the shells' own chrome, kept for a trial window and then deleted.
 - **2026-09-08 — Watches tab in the magazine's chrome, behind `?view=watches` (#978).** A parallel
   page (`MagazineWatches`) that restyles the chrome only: the grid, cards, hearts, filters and the
   calendar modal arrive as the shells' own `listingsTabContentJSX`. Still flagged — not promoted.

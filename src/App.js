@@ -604,10 +604,9 @@ export default function Watchlist() {
       // ?tab=collections (legacy) all map to internal values.
       if (URL_TAB_TO_INTERNAL[t]) return URL_TAB_TO_INTERNAL[t];
       if (TAB_VALUES.includes(t)) return t;
-      // `?view=watches` is the parallel magazine-styled Watches page
-      // (2026-09-08). It only renders on the Watches tab, so the flag on its
-      // own lands there — otherwise the link opens Home and the page Mark
-      // asked to test is a tab-tap away.
+      // `?view=watches` predates the promotion of the magazine Watches page
+      // (2026-10-16), when it was a parallel page. Kept so existing links and
+      // bookmarks still land on the Watches tab rather than Home.
       if (params.get("view") === "watches") return "listings";
     }
     // Default cold landing: home (2026-05-11). Was "listings" before
@@ -5061,13 +5060,14 @@ export default function Watchlist() {
     : (tab === "watchlist" ? watchItems.length : allFiltered.length);
 
   // ---------------------------------------------------------------------
-  // Watches in the magazine's clothes — a PARALLEL page at `?view=watches`
-  // (Mark, 2026-09-08). The live Watches tab is untouched; this is the same
-  // pattern the magazine landing page went through (`?view=magazine` for a
-  // week of daily use before it was promoted).
+  // Watches in the magazine's clothes. Built 2026-09-08 as a parallel page at
+  // `?view=watches`, PROMOTED to the default 2026-10-16 (Mark, after living
+  // with it: "i now think it's better"). The old shell chrome is still one
+  // param away at `?view=classic` — the way back, kept for a trial window and
+  // then deleted along with the shells' Watches-only branches.
   //
   // `view` is not one of the params the nav-sync effect rewrites, and that
-  // effect preserves params it doesn't own, so the flag survives tab and
+  // effect preserves params it doesn't own, so the opt-out survives tab and
   // sub-tab navigation without any extra plumbing.
   //
   // Read at render rather than through a useState initialiser: App.js has
@@ -5075,9 +5075,9 @@ export default function Watchlist() {
   // trap CLAUDE.md warns about.
   const magWatchesFlagged = (() => {
     try {
-      return typeof window !== "undefined"
-        && new URLSearchParams(window.location.search).get("view") === "watches";
-    } catch { return false; }
+      return typeof window === "undefined"
+        || new URLSearchParams(window.location.search).get("view") !== "classic";
+    } catch { return true; }
   })();
   // Only the Watches tab itself is restyled. Every takeover surface (share
   // receivers, cross-tab search, the auction-catalog full page) keeps the
@@ -5290,10 +5290,10 @@ export default function Watchlist() {
 
   return (
     <ErrorBoundary>
-      {/* `?view=watches` swaps the shell for the magazine-styled Watches page.
-          The swap is at the shell boundary, not inside it, so the live tab's
-          chrome is untouched by this work — and ChatBubbleHost / ConfirmHost
-          below still mount either way. */}
+      {/* The Watches tab swaps the shell for the magazine-styled page unless
+          `?view=classic` is set. The swap is at the shell boundary, not
+          inside it, so the shells' chrome is untouched — and ChatBubbleHost /
+          ConfirmHost below still mount either way. */}
       {magWatchesActive
         ? magWatchesJSX
         : isMobile
