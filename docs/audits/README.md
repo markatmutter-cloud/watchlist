@@ -8,6 +8,7 @@ what each audit found happens in [BUGS.md](../../BUGS.md).
 
 | Date | Audit | Grade | Scope | Read |
 |---|---|:--:|---|---|
+| 2026-10-16 | Auction pipeline audit | **C** | Site → calendar → CSV → auctions.json → lots → committed JSON, all 8 houses: live scraper diffs against each house's own site, every health gate, CI run logs read per sale | [Report](2026-10-16-auction-pipeline/AUDIT_REPORT.md) |
 | 2026-06-06 | First-time-user usability audit | **C+** | Live site, signed-out, mobile+desktop: 9-task first-visit battery (triggered by a real user test); Playwright walkthrough + screenshot evidence, repeatable via `walk.py` | [Plain-English](2026-06-06-usability/AUDIT_PLAIN_ENGLISH.md) · [Report](2026-06-06-usability/AUDIT_REPORT.md) · [evidence](2026-06-06-usability/screens/) |
 | 2026-05-24 | Vibe-code cold audit | **B−** | Full-repo: architecture, correctness/tests, security, data/pipeline, frontend/perf, maintainability | [Plain-English](2026-05-24-vibe-code/AUDIT_PLAIN_ENGLISH.md) · [Report](2026-05-24-vibe-code/AUDIT_REPORT.md) · [findings](2026-05-24-vibe-code/) |
 

@@ -203,7 +203,11 @@ diagram, data model, and folder layout.
 - **Phillips: never fetch lot detail from CI** (WAF 403s after ~7 requests).
   Parse the auction-page Turbo-Stream payload via `_phillips_extract_lots`
   (keep the bounds-check on the `{_K: V}` resolver — `-N` sentinels). `sold_price`
-  comes from the rendered "Sold For" panel, not JSON-LD (that's the low estimate).- **Comprehensive auction houses (5):** Antiquorum (use `live.antiquorum.swiss`
+  comes from the rendered "Sold For" panel, not JSON-LD (that's the low estimate).
+  2026-10: the WAF took the **auction page** too, so `_phillips_fetch` walks
+  `/browse` (the path their app links) then `/overview`, curl_cffi before
+  requests. Bidding is app-only now — no live bids in the payload, estimates
+  and realised prices still arrive.- **Comprehensive auction houses (5):** Antiquorum (use `live.antiquorum.swiss`
   + live-URL fallback when the catalog lags), Christie's, Monaco Legend
   (server-rendered Livewire), Sotheby's (GraphQL `lotCardsConnection` at
   `clientapi.prod.sothelabs.com`, paginated — B-69; the old SSR

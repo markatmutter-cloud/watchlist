@@ -172,6 +172,25 @@ within each section roughly last.
 
 ## Epic 1 — Sources
 
+- **2026-10-16 — Antiquorum's timed online sales reach the calendar (#985).** Their
+  "Only Online Auction" rows are listed month-only, so the day-requiring regex
+  dropped them (and read the next row's city as "Auction New York"); month-only
+  sales now take real dates from the live host, and a reschedule no longer
+  leaves a ghost sale behind (`superseded_auction_ids`).
+- **2026-10-16 — Marteau & Co calendar un-rotted (#990, audit:2026-10-16).** Their
+  Bootstrap cards were rebuilt in September and three regexes died at once, so
+  the house was missing for five weeks; a zero-row parse now exits non-zero
+  instead of writing a header-only CSV and reporting success.
+- **2026-10-16 — Phillips lots fetched over Chrome TLS impersonation (#991).** Their
+  WAF widened to the auction page on 10-03 and every sale went to zero lots;
+  the fetch now walks `/browse` (the path their app links) then `/overview`,
+  impersonation before plain requests, and logs which combination answered.
+- **2026-10-16 — Mixed jewellery-and-watches sales are carried, filtered per lot (#992).** A
+  title naming both is exempt from the catalog blocklist (Sotheby's Milan sale,
+  Monaco Legend's recurring "Timepieces & Jewels"); `drop_jewellery_lots` drops
+  the non-watch lots in those sales only, with "ring" (a dial feature) and
+  "pendant" (usually a pendant watch) deliberately guarded.
+
 - **2026-06-09 — Watch Club liveness fix (#860, B-59).** Keyed "sold" on the
   TaffyDB `status==30` signal (not `status=="1"`), which the catalog reshuffles
   between rebuilds; recovered ~48 live listings and unfroze the source (was stuck
