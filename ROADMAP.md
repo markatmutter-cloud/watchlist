@@ -622,10 +622,11 @@ inline as pills instead, the one behaviour the shells have and it does not.
 **The other tabs followed the same day:** Articles, Saved and Reference Guides
 wear the magazine's bar by default (`MagazineShellBar`, one compact row — the
 shells' top region is pinned, so a two-tier masthead can't live there); `?look=old`
-is the way back. Not yet done: the second layer (filter pills, count, search, page
-titles in the Watches page's type) with the segmented sub-tab pill KEPT — it
-replaced an underline strip after the June usability audit (U-01) — and the
-Bodoni-vs-system chrome verdict (`?chrome=display` to compare).
+is the way back. The second layer shipped too: pills and counts take the Watches page's
+tracked-caps label voice, with the segmented sub-tab pill KEPT (it replaced an
+underline strip after the June usability audit, U-01). Still open: the
+Bodoni-vs-system chrome verdict (`?chrome=display` to compare) and page titles
+(`PageHeader`'s bold sans) — left alone on purpose.
 
 **Home editorial pass (2026-08-30, Mark) — ✅ ALL SIX STEPS SHIPPED 2026-08-31
 (#944 · #945 · #946/#947 · #948 · #949 · #950/#951).** Sequence and rationale

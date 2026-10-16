@@ -1,6 +1,6 @@
 import React from "react";
 import { SearchIcon } from "./icons";
-import { CHROME } from "../styles";
+import { CHROME, LOOK, magLabel } from "../styles";
 import { useWidth } from "../hooks";
 
 // StandardFilterBar — THE one filter-bar layout for named, finite surfaces
@@ -32,8 +32,10 @@ export function StandardFilterBar({ pills, search, right, count, isMobile, backg
   const narrow = !isMobile && vw < 1250;
   const countSlot = (
     <span style={{
-      minWidth: 86, textAlign: "right", flexShrink: 0,
+      minWidth: LOOK.magazine ? CHROME.MAG_COUNT_MIN_W : 86, textAlign: "right", flexShrink: 0,
       fontSize: 12, color: "var(--text3)", whiteSpace: "nowrap",
+      // The magazine look: the Watches page's tracked-caps count.
+      ...(LOOK.magazine ? { ...magLabel(), fontVariantNumeric: "tabular-nums" } : {}),
     }}>{count || ""}</span>
   );
   const borderBottom = expanded ? "none" : "0.5px solid var(--border)";

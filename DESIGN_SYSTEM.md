@@ -81,6 +81,14 @@ wordmark takes the app's uppercase, letterspaced treatment in olive. So a
 surface wearing `MagazineChrome` inherits its *colour*, and has to opt in to the
 faces — the serif/sans axis above still governs everywhere but Home.
 
+**The label voice (2026-10-16).** Under the magazine look (`?look=old` opts out), filter
+pills and item counts are small tracked caps — `magLabel()` / `CHROME.MAG_*` in
+`styles.js`, switched by the `LOOK` flag App sets at the top of its render. TYPE and
+padding only: the olive-tint selected state stays (it is deliberately quieter than the
+segmented sub-tab's solid olive — the June audit's U-01 hierarchy) and the pill pad is
+sized so no tap target shrinks. Sub-tabs stay the segmented control; don't swap in the
+Watches page's underline version without re-reading that audit.
+
 **The browser tint follows the page's top edge (2026-10-16).** `theme-color` (Safari's
 toolbar + bookmarks bar, the iOS PWA status strip, Android's address bar) and the
 `<html>` background are set by `<ChromeTint />` from one rule, `chromeIsLight()` in

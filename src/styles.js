@@ -93,7 +93,34 @@ export const CHROME = {
   // Bar→first-content gap.
   GAP_BAR_CONTENT_DESKTOP: 18,
   GAP_BAR_CONTENT_MOBILE: 14,
+  // The magazine look's label voice (Mark, 2026-10-16) — small tracked caps,
+  // the front page's and the Watches page's treatment of pills and counts.
+  // Pads are set so a pill is no SHORTER than it was at 13px sentence case
+  // (28px desktop / 34px touch): the smaller type must not shrink a target.
+  MAG_LABEL_FONT: 11,
+  MAG_LABEL_TRACKING: "0.1em",
+  MAG_PILL_PAD: "8px 13px",
+  MAG_PILL_PAD_TOUCH: "11px 14px",
+  MAG_COUNT_MIN_W: 112,
 };
+
+// ── THE MAGAZINE LOOK (2026-10-16) ───────────────────────────────────
+// The look the site is moving to (src/lookFlag.js: `?look=new`, the default;
+// `?look=old` is the way back). Chrome tokens here are plain functions called
+// during render, with no React context to read, so the look is a module flag
+// that App sets once at the top of its render, before any child renders. It
+// changes TYPE only — the shapes, the olive tint on a selected pill, the
+// segmented sub-tab and every size that governs a tap target stay as they
+// were. Tests default to the old look; App flips it.
+export const LOOK = { magazine: false };
+export const setMagazineLook = (on) => { LOOK.magazine = !!on; };
+
+// Small tracked caps for labels (pills, counts). Spread; never inline.
+export const magLabel = () => ({
+  fontSize: CHROME.MAG_LABEL_FONT,
+  letterSpacing: CHROME.MAG_LABEL_TRACKING,
+  textTransform: "uppercase",
+});
 
 // ── PILLS ─────────────────────────────────────────────────────────────
 
@@ -132,6 +159,10 @@ export const pillBase = (active, { compact = false, surface = false } = {}) => (
   fontFamily: "inherit", whiteSpace: "nowrap", border: "none", outline: "none",
   fontWeight: active ? 600 : 500,
   ...(active ? SELECTED_FILL : UNSELECTED(surface)),
+  // The magazine look: the Watches page's pill voice. Type + padding only.
+  ...(LOOK.magazine
+    ? { ...magLabel(), padding: compact ? CHROME.MAG_PILL_PAD : CHROME.MAG_PILL_PAD_TOUCH }
+    : {}),
 });
 
 // Inner-toggle pill. Smaller, denser variant used for nested sub-toggles

@@ -769,6 +769,12 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-16 — Second layer: pills and counts in the magazine's label voice.** Filter pills and item counts on
+  every tab take small tracked caps (the Watches page's treatment), via `pillBase` / `StandardFilterBar` /
+  `PageHeader` and a `LOOK` flag in `styles.js`. Type and padding only; the olive-tint selected state and the
+  segmented sub-tab pill (June audit U-01) are untouched.
+- **2026-10-16 — Untracked a `node_modules` symlink that #995 committed (#999).** `.gitignore`'s `node_modules/`
+  matched directories only; now `node_modules`, and `repo-hygiene.test.js` fails on any tracked symlink.
 - **2026-10-16 — The new look is the default on Articles, Saved and Guides.** Mark, after trying `?look=new`
   live: yes, make it the default. `?look=old` is the way back (sticky, so a home-screen relaunch keeps it).
 - **2026-10-16 — The browser tint follows the page (`src/chromeTint.js`).** Mark: an olive address bar /
