@@ -616,9 +616,10 @@ faces and back onto the app's type, keeping the colour and a changed wordmark
 **PROMOTED 2026-10-16** — Mark, after living with it: "i now think it's
 better." It is the default Watches tab; `?view=classic` is the way back to the
 shells' chrome, kept for a trial window (delete the flag + the shells'
-Watches-only branches once it has had a couple of weeks). **Still open:** the
-mobile **filter drawer** did not come across — the page puts those controls
-inline as pills instead, the one behaviour the shells have and it does not.
+Watches-only branches once it has had a couple of weeks). The mobile
+**filter drawer** came across 2026-10-16 (Mark): on a phone the page has one
+Filter pill that opens the shells' own sheet (`FilterDrawer`, extracted from
+`MobileShell` so the two share it); desktop keeps its inline pills.
 **The other tabs followed the same day:** Articles, Saved and Reference Guides
 wear the magazine's bar by default (`MagazineShellBar`, one compact row — the
 shells' top region is pinned, so a two-tier masthead can't live there); `?look=old`

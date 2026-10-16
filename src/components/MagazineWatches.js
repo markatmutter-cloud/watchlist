@@ -26,12 +26,15 @@ import React from "react";
 import MagazineChrome, { MAG_CSS } from "./MagazineChrome";
 import { AboutModal } from "./AboutModal";
 import { SignInPromptModal } from "./SignInPromptModal";
+import { FilterDrawer } from "./FilterDrawer";
+import { FilterIcon } from "./icons";
 
-function Pill({ active, onClick, children, title, ariaPressed }) {
+function Pill({ active, onClick, children, title, ariaPressed, icon, ariaLabel }) {
   return (
     <button type="button" onClick={onClick} title={title}
-            aria-pressed={ariaPressed}
+            aria-pressed={ariaPressed} aria-label={ariaLabel}
             className={`magw-pill${active ? " on" : ""}`}>
+      {icon || null}
       {children}
     </button>
   );
@@ -54,7 +57,7 @@ export default function MagazineWatches(props) {
   const {
     isMobile, baseStyle, tabs, authJSX, user, onHome, goToSaved,
     // sub-tabs
-    listingsSubTab, setListingsSubTab, setPage, setDrawerOpen,
+    listingsSubTab, setListingsSubTab, setPage, drawerOpen, setDrawerOpen, sectionHeadingStyle,
     // search
     search, setSearch, searchPlaceholder, openFavPrompt, currentIsSaved,
     // sort + price
@@ -90,6 +93,12 @@ export default function MagazineWatches(props) {
   const visDealers = (visibleSources || []).filter((s) => (DEALER_SOURCES || []).includes(s));
   const visAuctions = (visibleSources || []).filter((s) => (AUCTION_SOURCES || []).includes(s));
   const hasAnySource = visDealers.length > 0 || visAuctions.length > 0;
+
+  // Mobile folds Source / Brand / Model / Price into the shells' filter drawer
+  // (the one behaviour this page lacked until 2026-10-16), so the controls row
+  // carries ONE Filter pill; the number says how much is already applied.
+  const activeFilterCount = (filterSources?.length || 0) + (filterBrands?.length || 0)
+    + (filterModels?.length || 0) + ((minPriceText || maxPriceText) ? 1 : 0);
 
   const isDateSort = sort === "date" || sort === "date-asc";
   const isPriceSort = sort === "price-asc" || sort === "price-desc";
@@ -192,20 +201,29 @@ export default function MagazineWatches(props) {
                 Auction calendar
               </Pill>
             ) : null}
-            <Pill active={filterSources.length > 0 || expandedSource}
-                  onClick={() => setActiveFilterPop((p) => (p === "source" ? null : "source"))}>
-              Source{filterSources.length > 0 ? ` · ${filterSources.length}` : ""}
-            </Pill>
-            <Pill active={filterBrands.length > 0 || expandedBrand}
-                  onClick={() => setActiveFilterPop((p) => (p === "brand" ? null : "brand"))}>
-              Brand{filterBrands.length > 0 ? ` · ${filterBrands.length}` : ""}
-            </Pill>
-            {(MODELS?.length || 0) > 0 ? (
-              <Pill active={(filterModels?.length || 0) > 0 || expandedModel}
-                    onClick={() => setActiveFilterPop((p) => (p === "model" ? null : "model"))}>
-                Model{(filterModels?.length || 0) > 0 ? ` · ${filterModels.length}` : ""}
+            {isMobile ? (
+              <Pill active={activeFilterCount > 0} ariaLabel="Filters" icon={<FilterIcon />}
+                    onClick={() => setDrawerOpen(true)}>
+                Filter{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ""}
               </Pill>
-            ) : null}
+            ) : (
+              <>
+              <Pill active={filterSources.length > 0 || expandedSource}
+                    onClick={() => setActiveFilterPop((p) => (p === "source" ? null : "source"))}>
+                Source{filterSources.length > 0 ? ` · ${filterSources.length}` : ""}
+              </Pill>
+              <Pill active={filterBrands.length > 0 || expandedBrand}
+                    onClick={() => setActiveFilterPop((p) => (p === "brand" ? null : "brand"))}>
+                Brand{filterBrands.length > 0 ? ` · ${filterBrands.length}` : ""}
+              </Pill>
+              {(MODELS?.length || 0) > 0 ? (
+                <Pill active={(filterModels?.length || 0) > 0 || expandedModel}
+                      onClick={() => setActiveFilterPop((p) => (p === "model" ? null : "model"))}>
+                  Model{(filterModels?.length || 0) > 0 ? ` · ${filterModels.length}` : ""}
+                </Pill>
+              ) : null}
+              </>
+            )}
             {/* Saved-only is a filter, not a sort, so it sits with the nouns
                 (P-1). Hidden on the Saved slice, where it could only be a
                 no-op, and signed-out, where there's nothing saved to filter. */}
@@ -219,6 +237,7 @@ export default function MagazineWatches(props) {
 
             <span className="magw-sp" />
 
+            {!isMobile ? (
             <div className="magw-price">
               <span>$</span>
               <input value={minPriceText} onChange={(e) => setMinPriceText(e.target.value)}
@@ -231,6 +250,7 @@ export default function MagazineWatches(props) {
                         onClick={() => { setMinPriceText(""); setMaxPriceText(""); }}>&times;</button>
               ) : null}
             </div>
+            ) : null}
 
             {/* Sort pills keep the shells' toggle cycle exactly: tap Date to
                 sort newest-first, tap again for oldest-first; same for price. */}
@@ -247,7 +267,7 @@ export default function MagazineWatches(props) {
             ) : null}
           </div>
 
-          {expandedSource ? (
+          {!isMobile && expandedSource ? (
             <ChipRow>
               {!hasAnySource ? (
                 <span className="magw-empty">
@@ -273,7 +293,7 @@ export default function MagazineWatches(props) {
             </ChipRow>
           ) : null}
 
-          {expandedBrand ? (
+          {!isMobile && expandedBrand ? (
             <ChipRow>
               {(visibleBrands || []).map((b) => (
                 <MagChip key={b} label={b} active={filterBrands.includes(b)} onClick={() => toggleBrand(b)} />
@@ -286,7 +306,7 @@ export default function MagazineWatches(props) {
             </ChipRow>
           ) : null}
 
-          {expandedModel ? (
+          {!isMobile && expandedModel ? (
             <ChipRow>
               {(visibleModels || []).map((m) => (
                 <MagChip key={m} label={m} active={(filterModels || []).includes(m)}
@@ -306,6 +326,26 @@ export default function MagazineWatches(props) {
       </div>
 
       {overlaysJSX}
+      {/* The shells' filter sheet, unchanged (extracted to FilterDrawer). */}
+      {isMobile ? (
+        <FilterDrawer
+          drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen} sectionHeadingStyle={sectionHeadingStyle}
+          showDealerSources={showDealerSources} showAuctionSources={showAuctionSources}
+          DEALER_SOURCES={DEALER_SOURCES} AUCTION_SOURCES={AUCTION_SOURCES}
+          visibleSources={visibleSources} filterSources={filterSources} toggleSource={toggleSource}
+          effectiveSourcesCount={effectiveSourcesCount} SOURCES_SHOW={SOURCES_SHOW}
+          sourcesExpanded={sourcesExpanded} setSourcesExpanded={setSourcesExpanded}
+          visibleBrands={visibleBrands} filterBrands={filterBrands} toggleBrand={toggleBrand}
+          effectiveBrandsCount={effectiveBrandsCount} BRANDS_SHOW={BRANDS_SHOW}
+          brandsExpanded={brandsExpanded} setBrandsExpanded={setBrandsExpanded}
+          MODELS={MODELS} visibleModels={visibleModels} filterModels={filterModels} toggleModel={toggleModel}
+          effectiveModelsCount={effectiveModelsCount} MODELS_SHOW={MODELS_SHOW}
+          modelsExpanded={modelsExpanded} setModelsExpanded={setModelsExpanded}
+          minPriceText={minPriceText} setMinPriceText={setMinPriceText}
+          maxPriceText={maxPriceText} setMaxPriceText={setMaxPriceText}
+          hasFilters={hasFilters} resetFilters={resetFilters} displayedCount={displayedCount}
+        />
+      ) : null}
       <AboutModal open={!!aboutModalOpen} onClose={() => setAboutModalOpen(false)}
                   primaryCurrency={primaryCurrency} />
       <SignInPromptModal open={!!signInPromptOpen}
@@ -381,7 +421,8 @@ export const MAGW_CSS = `
 
 .magw-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; padding-top: 9px; }
 .magw-sp { flex: 1 1 auto; }
-.magw-pill { font-family: var(--mag-data); font-size: 11px; letter-spacing: .1em;
+.magw-pill { display: inline-flex; align-items: center; gap: 6px;
+             font-family: var(--mag-data); font-size: 11px; letter-spacing: .1em;
              text-transform: uppercase; background: var(--card-bg); color: var(--text2);
              border: .5px solid var(--border); border-radius: 999px; padding: 7px 13px;
              cursor: pointer; white-space: nowrap; }
