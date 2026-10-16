@@ -197,19 +197,51 @@ describe("App render-without-crash", () => {
     expect(screen.getAllByText("Watchlist").length).toBeGreaterThan(0);
   });
 
-  test("?view=watches mounts the parallel magazine Watches page", async () => {
-    // The flag swaps the shell for MagazineWatches at the App boundary
-    // (2026-09-08). Asserted here as well as in MagazineWatches.test.jsx
-    // because the wiring — not the component — is what a refactor breaks:
-    // this is the only test that proves the flag still reaches the page.
+  test("the Watches tab mounts the magazine page by default", async () => {
+    // Promoted to the default 2026-10-16. Asserted here as well as in
+    // MagazineWatches.test.jsx because the wiring — not the component — is
+    // what a refactor breaks: this is the only test that proves App still
+    // swaps the shell for the page. `?view=watches` (the old parallel-page
+    // URL) must keep landing on the same thing.
     window.history.replaceState({}, "", "/?view=watches");
     const { default: App } = require("./App");
     render(<App />);
     await waitFor(() => {
       expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
     });
-    expect(screen.getByRole("tab", { name: "For sale" })).toBeInTheDocument();
+    // Keyed on the page's own wrapper: the shell's sub-tabs are ALSO
+    // role=tab "For sale", so a role query can't tell the two apart.
+    expect(document.querySelector(".magw-page")).not.toBeNull();
     // The home affordance Mark asked to keep.
+    expect(screen.getByRole("button", { name: "Home" })).toBeInTheDocument();
+    window.history.replaceState({}, "", "/");
+  });
+
+  test("?tab=listings with no view param is the magazine page too", async () => {
+    // The promotion itself: no flag needed any more.
+    window.history.replaceState({}, "", "/?tab=listings");
+    const { default: App } = require("./App");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    expect(document.querySelector(".magw-page")).not.toBeNull();
+    window.history.replaceState({}, "", "/");
+  });
+
+  test("?view=classic keeps the shell's own Watches chrome (the way back)", async () => {
+    // The rollback path Mark asked for: one param returns the old tab, built
+    // from the same shells that never stopped existing.
+    window.history.replaceState({}, "", "/?tab=listings&view=classic");
+    const { default: App } = require("./App");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    expect(document.querySelector(".magw-page")).toBeNull();
+    // The shell still renders its own sub-tabs.
+    expect(screen.getByRole("tab", { name: "For sale" })).toBeInTheDocument();
+    // The shell's own top bar still carries the home affordance.
     expect(screen.getByRole("button", { name: "Home" })).toBeInTheDocument();
     window.history.replaceState({}, "", "/");
   });

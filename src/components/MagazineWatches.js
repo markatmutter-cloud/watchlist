@@ -1,9 +1,10 @@
 // MagazineWatches — the Watches tab wearing the magazine's chrome.
 //
-// A PARALLEL surface, opened with `?view=watches` (Mark, 2026-09-08: "create
+// Built as a PARALLEL surface at `?view=watches` (Mark, 2026-09-08: "create
 // a new page using the new design style but keeping structure and features …
-// as a separate page while testing"). The live Watches tab in the shells is
-// untouched; nothing switches over until Mark says so.
+// as a separate page while testing"), and PROMOTED to the default Watches tab
+// 2026-10-16. The shells' own Watches chrome is still reachable at
+// `?view=classic` for a trial window, then goes.
 //
 // The rule this file is built to (SESSION_HANDOFF 2026-09-07): RESTYLE, DO
 // NOT REBUILD. The grid, the cards, the hearts, the ⋯ menus, the date

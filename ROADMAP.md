@@ -613,13 +613,15 @@ filters, sort and the calendar modal arrive as the shells' own
 faces and back onto the app's type, keeping the colour and a changed wordmark
 (the landing page is untouched, scoped `.mag.magw`).
 
-**The open decision: promote it, or drop it.** The magazine landing page sat
-behind `?view=magazine` for a week before promotion; this page has sat behind
-its flag since 2026-09-08 with no verdict recorded. Two things to settle when
-it is picked up: whether the chrome swap is right, and whether the mobile
-**filter drawer** should come back — the parallel page puts those controls
-inline as pills instead, which is the one behaviour the shells have and it
-does not. A third surface wearing `MagazineChrome` should wait on that call.
+**PROMOTED 2026-10-16** — Mark, after living with it: "i now think it's
+better." It is the default Watches tab; `?view=classic` is the way back to the
+shells' chrome, kept for a trial window (delete the flag + the shells'
+Watches-only branches once it has had a couple of weeks). **Still open:** the
+mobile **filter drawer** did not come across — the page puts those controls
+inline as pills instead, the one behaviour the shells have and it does not.
+Next: the same chrome on Articles, Saved and Reference Guides, so the whole
+site reads as one thing (restyle, do not rebuild; the shells' own sub-tabs,
+filter rows and content stay).
 
 **Home editorial pass (2026-08-30, Mark) — ✅ ALL SIX STEPS SHIPPED 2026-08-31
 (#944 · #945 · #946/#947 · #948 · #949 · #950/#951).** Sequence and rationale
