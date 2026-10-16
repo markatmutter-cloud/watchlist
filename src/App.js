@@ -79,7 +79,8 @@ const SearchResultsView = React.lazy(() =>
 import DateDivider from "./components/DateDivider";
 import SubTabBar from "./components/SubTabBar";
 import { TOP_TABS, isTopTabActive } from "./topTabs";
-import { readLook, readChromeFaces } from "./lookFlag";
+import { readLook, readChromeFaces, isMagWatchesOn } from "./lookFlag";
+import { ChromeTint, chromeIsLight } from "./chromeTint";
 import { innerToggleButton, actionButton } from "./styles";
 
 // Same-origin paths — Vercel serves everything in /public at the
@@ -1613,45 +1614,12 @@ export default function Watchlist() {
     for (const [k, v] of Object.entries(c)) root.style.setProperty(k, v);
   }, [c]);
 
-  // Dynamic PWA theme-color + html background — Mark spec 2026-05-22.
-  // Olive identifies the chrome zone on non-Home tabs (matches PR_β).
-  // Two surfaces driven from one effect:
-  //   1. <meta name="theme-color"> drives the iOS PWA status-bar
-  //      strip + Android Chrome address bar. Three meta tags (default
-  //      / light / dark) updated by media attr.
-  //   2. <html> background — iOS Safari over-scroll bounce reveals
-  //      this element's bg (NOT body's). Mark report: bounce at top
-  //      shows white sliver between olive chrome and content. Setting
-  //      html bg = olive on non-Home makes bounce-reveal continuous
-  //      with the chrome.
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    // Treat receive surfaces + Search-all the same as a non-Home tab
-    // for chrome / PWA strip purposes — they have olive chrome above
-    // them regardless of underlying tab value. Fix 2026-05-22.
-    const onHome = tab === "home" && !shareActive && !challengeShareActive
-                   && !listShareActive && !catalogShareActive && !searchAllActive;
-    // Per-theme olive (PR 2026-05-22 darker-green-in-dark-mode):
-    // light mode keeps the favicon-matched #3b4a36; dark mode tones
-    // it to #2a3527 so the chrome zone reads as a subtle brand
-    // thread against the black page bg instead of competing with
-    // the content.
-    const oliveLight = "#3b4a36";
-    const oliveDark  = "#2a3527";
-    const lightHome = "#ffffff";
-    const darkHome = "#1c1c1e"; // matches dark theme --surface
-    const lightColor = onHome ? lightHome : oliveLight;
-    const darkColor  = onHome ? darkHome  : oliveDark;
-    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
-      const media = (m.getAttribute("media") || "").toLowerCase();
-      if (!media) m.setAttribute("content", lightColor); // default tag
-      else if (media.includes("light")) m.setAttribute("content", lightColor);
-      else if (media.includes("dark"))  m.setAttribute("content", darkColor);
-    });
-    document.documentElement.style.background = onHome
-      ? (dark ? darkHome : lightHome)
-      : (dark ? oliveDark : oliveLight);
-  }, [tab, dark, shareActive, challengeShareActive, listShareActive, catalogShareActive, searchAllActive]);
+  // The browser tint (theme-color + <html> background) is rendered by
+  // <ChromeTint /> in the returns below — see src/chromeTint.js. It used to be
+  // an effect HERE keyed on `tab`, which had to know nothing about the
+  // surfaces that decide the page's top colour (the magazine Watches page,
+  // `?look=new`, the catalog takeover) because those are derived after the
+  // early returns. A child component mounted unconditionally can read them.
 
   // Measure the sticky chrome height + set `--sticky-top` CSS variable
   // so DateDivider can lock just below the chrome instead of hiding
@@ -3620,8 +3588,16 @@ export default function Watchlist() {
   }, [items, auctionLotItems, hidden, adminHidden, homeHidden]);
 
   // ⚠️ DO NOT add hooks (useState/useMemo/useEffect/useCallback) below this line. Hooks after an early return → React #310 ("rendered more hooks than previous render"); white-screened prod 3×. New hooks go ABOVE all early returns, or in a child component mounted unconditionally. Also: a useEffect deps array must not reference state declared later (TDZ).
-  if (loading) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Pulling the latest listings…</div>;
-  if (loadError) return <div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Couldn't pull the listings. Refresh to try again.</div>;
+  // Tint for the load / error screens: same rule as the ready render below,
+  // minus the catalog takeover (not known until the data is in).
+  const anyTakeoverNow = shareActive || challengeShareActive || listShareActive || catalogShareActive || searchAllActive;
+  const preloadTint = (
+    <ChromeTint dark={dark}
+      light={chromeIsLight({ tab, anyTakeover: anyTakeoverNow, magWatchesOn: isMagWatchesOn(),
+                             lookNew: readLook() === "new", catalogFullPage: false })} />
+  );
+  if (loading) return <><div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Pulling the latest listings…</div>{preloadTint}</>;
+  if (loadError) return <><div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Couldn't pull the listings. Refresh to try again.</div>{preloadTint}</>;
 
   // ── SHARED STYLE TOKEN ───────────────────────────────────────────────────
   // sectionHeadingStyle still consumed by MobileShell for the filter
@@ -5074,12 +5050,7 @@ export default function Watchlist() {
   // Read at render rather than through a useState initialiser: App.js has
   // early returns below, and a new hook here would be exactly the React #310
   // trap CLAUDE.md warns about.
-  const magWatchesFlagged = (() => {
-    try {
-      return typeof window === "undefined"
-        || new URLSearchParams(window.location.search).get("view") !== "classic";
-    } catch { return true; }
-  })();
+  const magWatchesFlagged = isMagWatchesOn();
   // Only the Watches tab itself is restyled. Every takeover surface (share
   // receivers, cross-tab search, the auction-catalog full page) keeps the
   // shell, so nothing that isn't built yet can be reached through this page.
@@ -5305,6 +5276,10 @@ export default function Watchlist() {
         ? <MobileShell {...shellProps} />
         : <DesktopShell {...shellProps} />}
       <ConfirmHost />
+      {/* The browser's tint follows whichever surface is at the top. */}
+      <ChromeTint dark={dark}
+        light={chromeIsLight({ tab, anyTakeover: anyTakeoverNow, magWatchesOn: magWatchesFlagged,
+                               lookNew: shellProps.lookNew, catalogFullPage })} />
       <ChatBubbleHost
         seedItem={lumeSeedItem}
         liveItems={items}

@@ -229,6 +229,29 @@ describe("App render-without-crash", () => {
     window.history.replaceState({}, "", "/");
   });
 
+  test("the browser tint follows the page: paper on the Watches page, olive on ?view=classic", async () => {
+    // Mark, 2026-10-16: an olive toolbar over a light Watches page "looks
+    // weird". The tint used to be olive on every tab but Home.
+    const tint = () => document.querySelector('meta[name="theme-color"]:not([media])').getAttribute("content");
+    document.head.insertAdjacentHTML("beforeend", '<meta name="theme-color" content="#3b4a36" />');
+    window.history.replaceState({}, "", "/?tab=listings");
+    const { default: App } = require("./App");
+    const first = render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    expect(tint()).toBe("#ffffff");
+    first.unmount();
+    window.history.replaceState({}, "", "/?tab=listings&view=classic");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    expect(tint()).toBe("#3b4a36");
+    document.head.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
+    window.history.replaceState({}, "", "/");
+  });
+
   test("?view=classic keeps the shell's own Watches chrome (the way back)", async () => {
     // The rollback path Mark asked for: one param returns the old tab, built
     // from the same shells that never stopped existing.
