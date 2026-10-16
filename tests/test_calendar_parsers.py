@@ -8,6 +8,7 @@ redesign fails here instead of in production.
 Network is never touched — the fixtures below are trimmed from the live
 pages as of 2026-08-17.
 """
+import marteauandco_auctions_scraper as ma
 import monacolegend_auctions_scraper as ml
 import phillips_auctions_scraper as ph
 
@@ -188,3 +189,60 @@ def test_non_eventseries_ld_is_ignored():
             '{"@context":"https://schema.org","@type":"LocalBusiness",'
             '"name":"Antiquorum"}</script>')
     assert ml._sale_events(page) == []
+
+
+# --- Marteau & Co calendar cards -------------------------------------------
+# Marteau runs on Bootstrap and the card markup churns. In 2026-10 three
+# things moved at once (card class gained `position-relative`, the title
+# moved inside a `stretched-link` anchor, the CTA went from `btn btn-link`
+# to `btn btn-outline-secondary`) and the calendar emitted nothing for five
+# weeks. Both shapes are pinned here.
+
+_MARTEAU_CARD_2026_10 = (
+    '<section class="hover-list">\n'
+    '<div class="auction-card position-relative">\n'
+    '  <div class="auction-card-image">\n'
+    '    <img src="https://t4p7b9.tandemauctions.com/sales/oct-2026/6af44eac.webp">\n'
+    '  </div>\n'
+    '  <div class="auction-card-detail">\n'
+    '    <div class="auction-card-body">\n'
+    '      <h2 class="card-title"><a class="stretched-link text-reset text-decoration-none"'
+    ' href="/Oct-2026">The Encore</a></h2>\n'
+    '        <h3 class="card-subtitle"><span>8 -</span> <span>15 October 2026</span></h3>\n'
+    '    </div>\n'
+    '    <div class="position-relative z-1">\n'
+    '        <a class="btn btn-outline-secondary" href="/Oct-2026">View Auction</a>\n'
+    '    </div>\n'
+    '  </div>\n'
+    '</div></section>'
+)
+
+_MARTEAU_CARD_LEGACY = (
+    '<div class="auction-card">\n'
+    '  <h2 class="card-title">Marteau : The Heat Wave</h2>\n'
+    '  <h3 class="card-subtitle"><span>10 -</span> <span>17 June 2026</span></h3>\n'
+    '  <a class="btn btn-link" href="/Jun-2026">View Auction</a>\n'
+    '  <img src="https://t4p7b9.tandemauctions.com/sales/jun-2026/abc.webp">\n'
+    '</div></section>'
+)
+
+
+def _marteau_cards(html):
+    return [ma.parse_card(m.group("body")) for m in ma.CARD_RE.finditer(html)]
+
+
+def test_marteau_current_card_shape():
+    cards = _marteau_cards(_MARTEAU_CARD_2026_10)
+    assert len(cards) == 1, "the inner auction-card-* wrappers must not split the card"
+    c = cards[0]
+    assert c["title"] == "The Encore"
+    assert c["slug"] == "Oct-2026"
+    assert (c["date_start"], c["date_end"]) == ("2026-10-08", "2026-10-15")
+    assert c["image"].endswith("6af44eac.webp")
+
+
+def test_marteau_legacy_card_shape_still_parses():
+    c = _marteau_cards(_MARTEAU_CARD_LEGACY)[0]
+    assert c["title"] == "Marteau : The Heat Wave"
+    assert c["slug"] == "Jun-2026"
+    assert (c["date_start"], c["date_end"]) == ("2026-06-10", "2026-06-17")

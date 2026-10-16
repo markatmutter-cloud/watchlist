@@ -16,11 +16,19 @@ URL shape:
   /<slug>/catalogue        → all lots inline in one HTML page
   /<slug>/catalogue/NNNN   → per-lot detail (rich specs, condition PDF)
 
-Each calendar card is a `<div class="auction-card">` carrying:
-  - `<h2 class="card-title">Marteau : The Heat Wave</h2>`
+Each calendar card is a `<div class="auction-card …">` carrying:
+  - `<h2 class="card-title"><a class="stretched-link …" href="/Oct-2026">The Encore</a></h2>`
   - `<h3 class="card-subtitle"><span>10 -</span> <span>17 June 2026</span></h3>`
-  - `<a class="btn btn-link" href="/Jun-2026">View Auction</a>`
+  - `<a class="btn btn-outline-secondary" href="/Oct-2026">View Auction</a>`
   - `<img src="https://t4p7b9.tandemauctions.com/sales/<slug-lower>/...">`
+
+Markup is Bootstrap and churns (2026-10: the card gained
+`position-relative`, the title moved inside a `stretched-link` anchor, and
+the CTA button went from `btn btn-link` to `btn btn-outline-secondary` —
+three regexes stopped matching at once and the calendar emitted nothing for
+five weeks). So: never pin a full class attribute, and take the slug from
+the title's own anchor, which is load-bearing to their layout, before
+falling back to the button.
 
 The end-of-range date span carries the year; the start-of-range only has
 the day (and a trailing dash). Sales are short (1-2 weeks) so we can
@@ -51,13 +59,21 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
-# Card regex: anchor on the auction-card class, capture body until the
-# next card (or end-of-section). Non-greedy.
+# Card regex: anchor on the auction-card class plus any appended utility
+# classes (the card is `auction-card position-relative` as of 2026-10). The
+# (?=[ "]) lookahead is load-bearing: the card's own children are
+# `auction-card-image` / `-detail` / `-body`, so a bare prefix match splits
+# every card into fragments and silently drops its cover image.
 _CARD_RE = re.compile(
-    r'<div class="auction-card">(?P<body>.*?)(?=<div class="auction-card">|</section>|</main>)',
+    r'<div class="auction-card(?=[ "])[^"]*">(?P<body>.*?)'
+    r'(?=<div class="auction-card(?=[ "])[^"]*">|</section>|</main>)',
     re.S,
 )
-_TITLE_RE = re.compile(r'<h2 class="card-title">\s*([^<]+?)\s*</h2>', re.S)
+# Title sits inside a stretched-link anchor since 2026-10; the anchor is
+# optional so older snapshots still parse.
+_TITLE_RE = re.compile(
+    r'<h2 class="card-title">\s*(?:<a[^>]*>)?\s*(.*?)\s*(?:</a>)?\s*</h2>', re.S
+)
 _DATE_SUBTITLE_RE = re.compile(
     r'<h3 class="card-subtitle">\s*<span>\s*(?P<a>[^<]*?)\s*</span>\s*<span>\s*(?P<b>[^<]+?)\s*</span>',
     re.S,
@@ -66,7 +82,11 @@ _DATE_SINGLE_RE = re.compile(
     r'<h3 class="card-subtitle">\s*<span>\s*([^<]+?)\s*</span>\s*</h3>',
     re.S,
 )
-_VIEW_HREF_RE = re.compile(r'<a[^>]*class="btn btn-link"[^>]*href="/(?P<slug>[A-Za-z0-9_-]+)"')
+# Slug: the title's stretched-link first, else any CTA button. Pinning
+# `btn btn-link` is what dropped every card in 2026-10.
+_VIEW_HREF_RE = re.compile(
+    r'<a[^>]*class="(?:stretched-link[^"]*|btn btn-[^"]*)"[^>]*href="/(?P<slug>[A-Za-z0-9_-]+)"'
+)
 _IMAGE_RE = re.compile(r'<img[^>]+src="(?P<src>https://t4p7b9\.tandemauctions\.com/[^"]+)"')
 
 
@@ -134,6 +154,12 @@ def _parse_card(body):
     }
 
 
+# Public aliases for the regex + card parser, so tests can pin the markup
+# shape without reaching into underscore names.
+CARD_RE = _CARD_RE
+parse_card = _parse_card
+
+
 def _fetch(url):
     r = requests.get(url, headers=HEADERS, timeout=30)
     r.raise_for_status()
@@ -183,8 +209,14 @@ def main():
     print("Scraping Marteau & Co auctions calendar...")
     rows = scrape()
     if not rows:
-        print("\n⚠ No auctions parsed; writing empty CSV with header so the "
-              "merge step doesn't choke.")
+        # Exit non-zero: parsing nothing means the markup moved, not a quiet
+        # season — Marteau always lists past sales. Writing a header-only CSV
+        # and exiting 0 is how this rotted for five weeks (the workflow step
+        # is continue-on-error, so the batch still completes and
+        # auction_calendar_health.py decides whether to page).
+        print("\n⚠ No auctions parsed — the card markup has probably changed.",
+              file=sys.stderr)
+        sys.exit(1)
     out_file = "marteauandco_auctions_listings.csv"
     with open(out_file, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=[
