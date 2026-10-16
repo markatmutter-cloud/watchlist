@@ -110,8 +110,8 @@ delete branches.
 
 ## Addendum — 2026-10-04 (evening): the topic tagger stops re-paying (#986)
 
-**Merged 2026-10-04 23:59 UTC. Not yet proven in production** — the proof is
-the next two scheduled runs.
+**Merged 2026-10-04. Verified 2026-10-16:** ten corpus refreshes since merge removed
+zero `themes`, and the 10-11 tagger run tagged 10 articles (was ~3,000+ a week).
 
 The weekly Haiku tagger had made ~72,000 calls since May for a ~13,300-article
 corpus, because editorial scrapers rebuilt re-fetched records without `themes`,
@@ -121,12 +121,8 @@ URL), at the two scrapers (incremental mode stops at the first post already
 held), and with a cost guard in `corpus_topic_indexer.py` (a default run with
 more than 300 untagged articles exits non-zero before calling the API).
 
-**Check next session (30 seconds each):**
-- **Wed 2026-10-07** "Editorial corpus refresh" commit must NOT remove `themes`
-  lines from `public/rolex_magazine.json`.
-- **Sun 2026-10-11** "Index editorial corpus topics" commit should touch a few
-  dozen records, not thousands. A red run saying `COST GUARD` means stripping
-  has regressed; it spends nothing.
+If a scheduled tagger run ever goes red with `COST GUARD`, stripping has
+regressed; it spends nothing.
 
 Worth knowing:
 - The PR was opened green on 09-28 and sat unmerged for six days, so the old
