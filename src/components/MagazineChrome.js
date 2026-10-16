@@ -58,6 +58,31 @@ function useFonts() {
   }, []);
 }
 
+// The saved-watches heart in the chrome's utility cluster. Shared with the
+// compact shell bar for the same reason as Crescent.
+function SavedButton({ onClick }) {
+  return (
+    <button type="button" className="mag-icon" aria-label="Saved watches" onClick={onClick}>
+      <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <path d="M10 17S3 12.6 3 7.9A3.9 3.9 0 0 1 10 5.6a3.9 3.9 0 0 1 7 2.3C17 12.6 10 17 10 17z" />
+      </svg>
+    </button>
+  );
+}
+
+// The wordmark's crescent. One drawing, shared by this chrome and the compact
+// shell bar, so the two cannot drift.
+function Crescent() {
+  return (
+    <span className="mag-crescent" aria-hidden="true">
+      <svg viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r="15.2" fill="none" stroke="currentColor" strokeWidth="1.2" opacity=".55" />
+        <path d="M20 4.8a15.2 15.2 0 0 0 0 30.4 11 15.2 0 0 1 0-30.4z" fill="currentColor" />
+      </svg>
+    </span>
+  );
+}
+
 // The search is the page's main control, so it gets width and a preview of
 // what each destination holds, matching the current site's behaviour rather
 // than being a decorative box in the masthead.
@@ -131,7 +156,7 @@ function MagSearch({ onSubmit, onLiveQuery, counts, recent, addRecent, big }) {
 }
 
 
-export { MagSearch };
+export { MagSearch, Crescent, SavedButton, useFonts };
 
 export default function MagazineChrome({
   isMobile, tabs, authJSX, onSavedClick, showSaved,
@@ -148,21 +173,8 @@ export default function MagazineChrome({
     <MagSearch big onSubmit={onSearchSubmit} onLiveQuery={onSearchLiveQuery}
                counts={searchCounts} recent={recentSearches} addRecent={addRecentSearch} />
   );
-  const crescent = (
-    <span className="mag-crescent" aria-hidden="true">
-      <svg viewBox="0 0 40 40">
-        <circle cx="20" cy="20" r="15.2" fill="none" stroke="currentColor" strokeWidth="1.2" opacity=".55" />
-        <path d="M20 4.8a15.2 15.2 0 0 0 0 30.4 11 15.2 0 0 1 0-30.4z" fill="currentColor" />
-      </svg>
-    </span>
-  );
-  const savedBtn = showSaved && onSavedClick ? (
-    <button type="button" className="mag-icon" aria-label="Saved watches" onClick={onSavedClick}>
-      <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <path d="M10 17S3 12.6 3 7.9A3.9 3.9 0 0 1 10 5.6a3.9 3.9 0 0 1 7 2.3C17 12.6 10 17 10 17z" />
-      </svg>
-    </button>
-  ) : null;
+  const crescent = <Crescent />;
+  const savedBtn = showSaved && onSavedClick ? <SavedButton onClick={onSavedClick} /> : null;
   const tabList = (short) => (
     <div className="mag-bar-tabs">
       {(tabs || []).map((t) => (

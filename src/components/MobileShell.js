@@ -3,6 +3,7 @@ import { SearchIcon, FilterIcon, HomeIcon } from "./icons";
 import { Chip } from "./Chip";
 import { AboutModal } from "./AboutModal";
 import { SavedHeartLink } from "./SavedHeartLink";
+import { MagazineBrandRow, MagazineTabRow } from "./MagazineShellBar";
 import { SignInPromptModal } from "./SignInPromptModal";
 import { pillBase, inputBase } from "../styles";
 
@@ -61,6 +62,8 @@ export function MobileShell(props) {
     catalogReceiverJSX,
     listingsSubTabsJSX,
     topTabs,
+    // `?look=new` (src/lookFlag.js): the magazine's look in the top rows.
+    lookNew, chromeFaces,
     trackNewItemModalJSX, watchSubTabsJSX, watchHeartedToggleJSX, collectionsSubTabsJSX, watchlistTabJSX,
     saleContextHeaderJSX,
     catalogFullPage,
@@ -181,7 +184,16 @@ export function MobileShell(props) {
             returns null); mobile had been missed. Share / search-all
             surfaces keep tab="home" but are NOT the magazine, so they keep
             the row. */}
-        {!catalogFullPage && !(tab === "home" && !anyShareActive && !searchAllActive) && (
+        {!catalogFullPage && !(tab === "home" && !anyShareActive && !searchAllActive) && lookNew && (
+          <MagazineBrandRow
+            authJSX={authJSX}
+            showSaved={!!(user && goToSaved)}
+            onSavedClick={goToSaved}
+            onHome={() => { setTab("home"); setPage(1); }}
+            faces={chromeFaces}
+          />
+        )}
+        {!catalogFullPage && !(tab === "home" && !anyShareActive && !searchAllActive) && !lookNew && (
         <div style={{
           padding: "8px 16px 8px",
           paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)",
@@ -249,6 +261,8 @@ export function MobileShell(props) {
             the sticky stack, so the bar stays put while the lots scroll. */}
         {catalogFullPage ? (
           <>{catalogBarJSX}{catalogActionRowJSX}</>
+        ) : lookNew ? (
+          <MagazineTabRow tabs={topTabs} faces={chromeFaces} />
         ) : (
         <div style={{
           display: "flex",
