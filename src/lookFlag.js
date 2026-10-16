@@ -1,8 +1,8 @@
 // The site-look switches (Mark, 2026-10-16: "do this in a live site alongside
 // the current one to check before switching over").
 //
-//   ?look=new   the magazine chrome on every tab, not just Watches + Home
-//   ?look=old   back to the shells' own olive bar
+//   ?look=new   the magazine chrome on every tab (the DEFAULT since 2026-10-16)
+//   ?look=old   back to the shells' own olive bar — the way back
 //   ?chrome=display / ?chrome=system   Bodoni wordmark + mono tab labels in
 //                                      the chrome, or the app's own type
 //
@@ -30,9 +30,10 @@ function readSticky(param, key, allowed, fallback) {
   }
 }
 
-// "new" | "old". Default old until Mark has lived with it.
+// "new" | "old". New since 2026-10-16 (Mark, after trying `?look=new` live);
+// `?look=old` is sticky, so the way back survives a home-screen relaunch too.
 export function readLook() {
-  return readSticky("look", "dial_look", ["new", "old"], "old");
+  return readSticky("look", "dial_look", ["new", "old"], "new");
 }
 
 // "system" | "display". Default system: that is the type the Watches page

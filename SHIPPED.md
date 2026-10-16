@@ -769,6 +769,8 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-16 — The new look is the default on Articles, Saved and Guides.** Mark, after trying `?look=new`
+  live: yes, make it the default. `?look=old` is the way back (sticky, so a home-screen relaunch keeps it).
 - **2026-10-16 — The browser tint follows the page (`src/chromeTint.js`).** Mark: an olive address bar /
   bookmarks bar over the now-light Watches page "looks weird … don't want the olive." `theme-color` +
   the `<html>` background were olive on every tab but Home; now paper wherever the top edge is light
