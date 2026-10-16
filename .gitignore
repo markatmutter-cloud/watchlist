@@ -238,7 +238,7 @@ scrape_move.log
 # the repo root. Without these lines a stray `git add -A` after any install
 # commits the entire dependency tree. (CRA's `build/` output is already
 # covered by the Python "Distribution / packaging" entry above.)
-node_modules/
+node_modules
 .eslintcache
 /coverage
 
