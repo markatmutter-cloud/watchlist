@@ -1,4 +1,5 @@
 import React from "react";
+import { LOOK, magLabel } from "../styles";
 
 // PageHeader — the one bleed-bar page header (Mark 2026-06-01). Standardizes
 // the auction-catalog title treatment he liked into a shared component used
@@ -89,7 +90,8 @@ export function PageHeader({ eyebrow, title, meta, count, actions = [], onExit, 
             })}
             {trailing}
             {count && (
-              <span style={{ fontSize: 12, color: "var(--text3)", whiteSpace: "nowrap", marginLeft: 4 }}>
+              <span style={{ fontSize: 12, color: "var(--text3)", whiteSpace: "nowrap", marginLeft: 4,
+                             ...(LOOK.magazine ? { ...magLabel(), fontVariantNumeric: "tabular-nums" } : {}) }}>
                 {count}
               </span>
             )}

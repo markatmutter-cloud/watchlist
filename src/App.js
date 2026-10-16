@@ -81,7 +81,7 @@ import SubTabBar from "./components/SubTabBar";
 import { TOP_TABS, isTopTabActive } from "./topTabs";
 import { readLook, readChromeFaces, isMagWatchesOn } from "./lookFlag";
 import { ChromeTint, chromeIsLight } from "./chromeTint";
-import { innerToggleButton, actionButton } from "./styles";
+import { innerToggleButton, actionButton, setMagazineLook } from "./styles";
 
 // Same-origin paths — Vercel serves everything in /public at the
 // site root, so these resolve against the user's current host
@@ -236,6 +236,10 @@ function endingSoonComparator(a, b) {
 }
 
 export default function Watchlist() {
+  // The look flag for chrome tokens (styles.js `LOOK`): set before any child
+  // renders, so every pill and count below reads the same answer. A plain call,
+  // not a hook — safe above the early returns.
+  setMagazineLook(readLook() === "new");
   const screenWidth = useWidth();
   const sysDark = useSystemDark();
   // 760, was 640 (Mark 2026-06-06): half-screen laptop windows got the

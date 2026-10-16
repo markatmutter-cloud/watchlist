@@ -262,6 +262,22 @@ describe("App render-without-crash", () => {
     window.history.replaceState({}, "", "/");
   });
 
+  test("App sets the chrome tokens' look from the flag: new by default, old on ?look=old", async () => {
+    // styles.js `LOOK` is read by pure token functions mid-render, so the
+    // wiring is App calling setMagazineLook before any child renders.
+    const { LOOK } = require("./styles");
+    const { default: App } = require("./App");
+    window.history.replaceState({}, "", "/?tab=references&sub=editorial");
+    const first = render(<App />);
+    expect(LOOK.magazine).toBe(true);
+    first.unmount();
+    window.history.replaceState({}, "", "/?tab=references&sub=editorial&look=old");
+    render(<App />);
+    expect(LOOK.magazine).toBe(false);
+    window.localStorage.removeItem("dial_look"); // ?look=old is sticky
+    window.history.replaceState({}, "", "/");
+  });
+
   test("?view=classic keeps the shell's own Watches chrome (the way back)", async () => {
     // The rollback path Mark asked for: one param returns the old tab, built
     // from the same shells that never stopped existing.
