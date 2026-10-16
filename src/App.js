@@ -79,6 +79,7 @@ const SearchResultsView = React.lazy(() =>
 import DateDivider from "./components/DateDivider";
 import SubTabBar from "./components/SubTabBar";
 import { TOP_TABS, isTopTabActive } from "./topTabs";
+import { readLook, readChromeFaces } from "./lookFlag";
 import { innerToggleButton, actionButton } from "./styles";
 
 // Same-origin paths — Vercel serves everything in /public at the
@@ -5245,6 +5246,10 @@ export default function Watchlist() {
     catalogReceiverJSX,
     listingsSubTabsJSX,
     topTabs,
+    // `?look=new` — the magazine's skin on the shells' top bar, every tab.
+    // Read at render (not a hook: App.js has early returns above).
+    lookNew: readLook() === "new",
+    chromeFaces: readChromeFaces(),
     trackNewItemModalJSX, watchSubTabsJSX, watchHeartedToggleJSX, collectionsSubTabsJSX,
     saleContextHeaderJSX,
     // Auction catalog full-page takeover (Mark 2026-06-13). When

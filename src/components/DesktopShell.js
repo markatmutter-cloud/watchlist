@@ -3,6 +3,7 @@ import { TabIcon, HomeIcon } from "./icons";
 import { Chip } from "./Chip";
 import { AboutModal } from "./AboutModal";
 import { SavedHeartLink } from "./SavedHeartLink";
+import { MagazineShellBar } from "./MagazineShellBar";
 import { SignInPromptModal } from "./SignInPromptModal";
 import { StandardFilterBar, StandardSearchInput } from "./StandardFilterBar";
 import { pillBase, tabPill } from "../styles";
@@ -61,6 +62,8 @@ export function DesktopShell(props) {
     catalogReceiverJSX,
     listingsSubTabsJSX,
     topTabs,
+    // `?look=new` (src/lookFlag.js): the magazine's look in this top bar.
+    lookNew, chromeFaces,
     trackNewItemModalJSX, watchSubTabsJSX, watchHeartedToggleJSX, collectionsSubTabsJSX, watchlistTabJSX,
     saleContextHeaderJSX,
     catalogFullPage,
@@ -550,6 +553,21 @@ export function DesktopShell(props) {
         // Home is the magazine, which carries About / saved / account in its
         // own persistent bar, so this floating overlay would be a second copy.
         if (minimalTopBar) return null;
+        // `?look=new`: the same slot, the magazine's skin. Every guard above
+        // (catalog takeover, Home) has already run, so the swap is exactly the
+        // olive bar's footprint and nothing more.
+        if (lookNew) {
+          return (
+            <MagazineShellBar
+              tabs={topTabs}
+              authJSX={authJSX}
+              showSaved={!!(user && goToSaved)}
+              onSavedClick={goToSaved}
+              onHome={() => { setTab("home"); setPage(1); }}
+              faces={chromeFaces}
+            />
+          );
+        }
         return (
         <div style={{ display: "flex", alignItems: "center", gap: 10,
                       padding: minimalTopBar ? "6px 20px" : "10px 20px",
