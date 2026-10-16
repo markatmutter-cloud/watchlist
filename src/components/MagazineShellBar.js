@@ -132,6 +132,13 @@ export const MAGB_CSS = `
                                    font-size: 30px; }
 .mag.magb--display .mag-crescent svg { width: 26px; height: 26px; }
 
+/* The olive band: the same four tokens the Watches page reads. */
+.mag.magb .mag-wordmark, .mag.magb .mag-crescent { color: var(--band-ink); }
+.mag.magb .mag-bar-tabs button { color: var(--band-ink2); }
+.mag.magb .mag-bar-tabs button:hover, .mag.magb .mag-bar-tabs button.on { color: var(--band-ink); border-bottom-color: var(--band-ink); }
+.mag.magb .mag-icon { color: var(--band-ink); border-color: var(--band-line); }
+.mag.magb .mag-icon:hover { color: var(--band-ink); border-color: var(--band-ink); }
+
 .magb-home { flex: 0 0 auto; }
 .magb-sp { flex: 1 1 auto; }
 .magb-util { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
@@ -139,18 +146,18 @@ export const MAGB_CSS = `
 /* Desktop: padding matches the shell's 20px content inset, so the wordmark
    and the tabs hang from the same edge as everything under them. */
 .magb-bar { display: flex; align-items: center; gap: 30px; padding: 9px 20px;
-            background: var(--bg); border-bottom: .5px solid var(--border); flex-shrink: 0; }
+            background: var(--band-bg); flex-shrink: 0; }
 .magb-bar .mag-bar-tabs { flex-wrap: nowrap; }
 
 /* Mobile */
 .magb-brand { display: flex; align-items: center; gap: 8px;
               padding: 8px 16px; padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
-              background: var(--bg); border-bottom: .5px solid var(--border); }
+              background: var(--band-bg); }
 .magb-brand .mag-icon { width: 40px; height: 40px; }
 .magb-brand .mag-icon svg { width: 18px; height: 18px; }
 .magb-brand .mag-wordmark { font-size: 17px; }
 .magb-brand.magb--display .mag-wordmark { font-size: 28px; }
-.magb-tabs { padding: 0 16px; background: var(--bg); border-bottom: .5px solid var(--border); }
+.magb-tabs { padding: 0 16px; background: var(--band-bg); }
 .magb-tabs .mag-bar-tabs { flex-wrap: nowrap; overflow-x: auto; gap: 0 20px;
                            scrollbar-width: none; -ms-overflow-style: none;
                            -webkit-overflow-scrolling: touch; }

@@ -246,7 +246,15 @@ export const MAG_CSS = `
 .mag { --mag-display: "Bodoni Moda", Didot, "Times New Roman", serif;
        --mag-body: "Archivo", -apple-system, "Helvetica Neue", Arial, sans-serif;
        --mag-data: "IBM Plex Mono", ui-monospace, Menlo, monospace;
-       font-family: var(--mag-body); color: var(--text1); }
+       font-family: var(--mag-body); color: var(--text1);
+       /* The olive band the working tabs' header sits on (Mark, 2026-10-16:
+          "I loved the header was the olive color when the chrome was olive").
+          Home keeps its light masthead; every surface that wears the band
+          reads these four, so the colour decision lives here and nowhere
+          else. The account disc is already built for it: white with an olive
+          letter on every tab but Home. */
+       --band-bg: var(--brand-olive); --band-ink: #fff;
+       --band-ink2: rgba(255,255,255,.74); --band-line: rgba(255,255,255,.34); }
 .mag img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .mag a { color: inherit; }
 

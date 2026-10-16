@@ -1,6 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import MagazineWatches, { MAGW_CSS } from "./MagazineWatches";
+import { MAG_CSS } from "./MagazineChrome";
 
 // Direct coverage for the parallel Watches page (?view=watches). The shell
 // tests render MOCK grids and never execute this file, and a Vercel build
@@ -102,6 +103,28 @@ describe("MagazineWatches", () => {
     // MAG_CSS's own `.mag` rule whatever order the two blocks are injected.
     expect(MAGW_CSS).toMatch(/\.mag\.magw\s*\{[^}]*--mag-body:\s*-apple-system/);
     expect(MAGW_CSS).toMatch(/\.mag\.magw\s+\.mag-wordmark\s*\{[^}]*text-transform:\s*uppercase/);
+  });
+
+  it("wears the olive band, from the tokens MAG_CSS owns", () => {
+    // Mark, 2026-10-16: the header is olive again. The colours live in four
+    // --band-* tokens so this page and the shell bar cannot drift apart.
+    expect(MAG_CSS).toMatch(/--band-bg:\s*var\(--brand-olive\)/);
+    expect(MAGW_CSS).toMatch(/\.magw \.mag-flag, \.magw \.mag-bar\s*\{[^}]*background:\s*var\(--band-bg\)/);
+    expect(MAGW_CSS).toMatch(/\.magw \.mag-mhead\s*\{[^}]*background:\s*var\(--band-bg\)/);
+    expect(MAGW_CSS).toMatch(/\.magw \.mag-wordmark[^{]*\{[^}]*color:\s*var\(--band-ink\)/);
+  });
+
+  it("keeps the chrome outside the 1600px column so the band runs edge to edge", () => {
+    const { container } = render(<MagazineWatches {...props()} />);
+    const page = container.querySelector(".magw-page");
+    expect(page).not.toBeNull();
+    // The bar is a direct child of .magw (a tall parent, so it can stick),
+    // not of the max-width column.
+    expect(container.querySelector(".mag-bar").parentElement).toBe(container.querySelector(".magw"));
+    expect(page.querySelector(".mag-bar")).toBeNull();
+    // ...and the deck, grid and overlays are still the column's.
+    expect(page.querySelector(".magw-deck")).not.toBeNull();
+    expect(page.querySelector("[data-testid='grid']")).not.toBeNull();
   });
 
   it("renders the chrome, the sub-tabs, the count and the real grid", () => {

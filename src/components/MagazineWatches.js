@@ -150,17 +150,21 @@ export default function MagazineWatches(props) {
       <style>{MAG_CSS}</style>
       <style>{MAGW_CSS}</style>
 
-      <div className="magw-page">
-        <MagazineChrome
-          isMobile={isMobile}
-          tabs={tabs}
-          authJSX={authJSX}
-          showSaved={!!user}
-          onSavedClick={goToSaved}
-          onHome={onHome}
-          searchJSX={searchJSX}
-        />
+      {/* The chrome sits OUTSIDE the 1600px column so its olive band runs
+          edge to edge at any width; --magw-gutter lines its content up with
+          the column underneath. It stays a direct child of .magw (a tall
+          parent), which is what lets the bar stick. */}
+      <MagazineChrome
+        isMobile={isMobile}
+        tabs={tabs}
+        authJSX={authJSX}
+        showSaved={!!user}
+        onSavedClick={goToSaved}
+        onHome={onHome}
+        searchJSX={searchJSX}
+      />
 
+      <div className="magw-page">
         {/* The deck: what slice you're in, how many are in it, and the
             controls that change either. Sticky under the chrome so the
             filters stay reachable at any scroll depth, as they are in the
@@ -345,9 +349,24 @@ export const MAGW_CSS = `
 .mag.magw .mag-crescent svg { width: clamp(20px, 2.2vw, 26px); height: clamp(20px, 2.2vw, 26px); }
 .mag.magw .mag-mhead .mag-crescent svg { width: 21px; height: 21px; }
 
-.magw { min-height: 100vh; background: var(--bg); }
+.magw { min-height: 100vh; background: var(--bg);
+        --magw-gutter: max(clamp(14px, 2.4vw, 28px), calc((100% - 1600px) / 2 + clamp(14px, 2.4vw, 28px))); }
 .magw-page { max-width: 1600px; margin: 0 auto; padding: 0 clamp(14px, 2.4vw, 28px) 40px; }
-.magw-page .mag-flag { padding: 18px 0 10px; }
+
+/* The olive band (Mark, 2026-10-16). Masthead and bar are one colour with no
+   seam; the sticky bar keeps it when the masthead has scrolled away. Colours
+   come from the --band-* tokens in MAG_CSS. */
+.magw .mag-flag, .magw .mag-bar { background: var(--band-bg); border-bottom: none;
+                                  padding-left: var(--magw-gutter); padding-right: var(--magw-gutter); }
+.magw .mag-flag { padding-top: 18px; padding-bottom: 10px; }
+.magw .mag-mhead { background: var(--band-bg); border-bottom: none;
+                   padding-left: var(--magw-gutter); padding-right: var(--magw-gutter);
+                   padding-top: calc(env(safe-area-inset-top, 0px) + 6px); }
+.magw .mag-wordmark, .magw .mag-crescent { color: var(--band-ink); }
+.magw .mag-bar-tabs button { color: var(--band-ink2); }
+.magw .mag-bar-tabs button:hover, .magw .mag-bar-tabs button.on { color: var(--band-ink); border-bottom-color: var(--band-ink); }
+.magw .mag-icon { color: var(--band-ink); border-color: var(--band-line); }
+.magw .mag-icon:hover { color: var(--band-ink); border-color: var(--band-ink); }
 
 /* Deck — sub-tabs, count, controls.
    Desktop: sticky UNDER the chrome's own sticky bar (.mag-bar, ~58px tall:
@@ -429,6 +448,7 @@ export const MAGW_CSS = `
 .magw-grid { padding-top: 14px; }
 
 @media (max-width: 700px) {
+  .magw { --magw-gutter: 12px; }
   .magw-page { padding: 0 12px 32px; }
   .magw-deck { padding-top: 8px; }
   .magw-controls { gap: 6px; }

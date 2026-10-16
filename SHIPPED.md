@@ -769,6 +769,12 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-16 — Olive header band on the magazine chrome (working tabs).** Mark: "I loved the header was
+  the olive color when the chrome was olive." Watches page + the shell bar read four `--band-*` tokens
+  (MAG_CSS); Home keeps its light masthead. The Watches chrome moved outside the 1600px column so the band is edge to edge.
+- **2026-10-16 — Magazine look on Articles, Saved and Guides, behind `?look=new` (#995).** One compact row
+  (wordmark, tabs, account) in the shells' top bar; sticky in localStorage so the iOS PWA keeps it;
+  `?chrome=display` swaps in Bodoni + Plex Mono for the chrome only. Off by default.
 - **2026-10-16 — Magazine Watches page promoted to the default.** Mark, after living with
   `?view=watches`: "i now think it's better." The Watches tab now loads it with no flag; `?view=classic`
   is the way back to the shells' own chrome, kept for a trial window and then deleted.

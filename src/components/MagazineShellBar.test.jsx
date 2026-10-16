@@ -23,6 +23,13 @@ describe("MAGB_CSS", () => {
     expect(MAGB_CSS).toContain(".mag.magb--display .mag-wordmark");
     expect(MAGB_CSS.split("{").length).toBe(MAGB_CSS.split("}").length);
   });
+
+  it("sits on the olive band, from the same tokens as the Watches page", () => {
+    expect(MAGB_CSS).toMatch(/\.magb-bar\s*\{[^}]*background:\s*var\(--band-bg\)/);
+    expect(MAGB_CSS).toMatch(/\.magb-brand\s*\{[^}]*background:\s*var\(--band-bg\)/);
+    expect(MAGB_CSS).toMatch(/\.magb-tabs\s*\{[^}]*background:\s*var\(--band-bg\)/);
+    expect(MAGB_CSS).toContain("var(--band-ink)");
+  });
 });
 
 describe("MagazineShellBar", () => {

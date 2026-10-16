@@ -81,6 +81,14 @@ wordmark takes the app's uppercase, letterspaced treatment in olive. So a
 surface wearing `MagazineChrome` inherits its *colour*, and has to opt in to the
 faces — the serif/sans axis above still governs everywhere but Home.
 
+**The olive band (2026-10-16).** On every surface wearing the magazine chrome
+*except Home* — the Watches page and the shells' `MagazineShellBar` — the header
+is a full-width olive band with white ink, as the old chrome was. The colours are
+four tokens defined once in `MAG_CSS`: `--band-bg` (= `--brand-olive`),
+`--band-ink`, `--band-ink2`, `--band-line`. Change the band there, never per
+surface. Home keeps its light masthead; the account disc already flips (white
+with an olive letter on every tab but Home), so no surface styles it.
+
 **The faces (tokens in `styles.js` — never inline a font string).**
 `FONT_SANS` is the interface (also the `public/index.html` body default,
 which 75% of UI inherits via `fontFamily: "inherit"`). `FONT_SERIF` /
