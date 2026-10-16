@@ -769,6 +769,13 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-16 — The browser tint follows the page (`src/chromeTint.js`).** Mark: an olive address bar /
+  bookmarks bar over the now-light Watches page "looks weird … don't want the olive." `theme-color` +
+  the `<html>` background were olive on every tab but Home; now paper wherever the top edge is light
+  (Home, Watches, `?look=new`) and olive only over the shells' olive bar. First-paint defaults are paper.
+- **2026-10-16 — Magazine look on Articles, Saved and Guides, behind `?look=new` (#995).** One compact row
+  (wordmark, tabs, account) in the shells' top bar; sticky in localStorage so the iOS PWA keeps it;
+  `?chrome=display` swaps in Bodoni + Plex Mono for the chrome only. Off by default.
 - **2026-10-16 — Magazine Watches page promoted to the default.** Mark, after living with
   `?view=watches`: "i now think it's better." The Watches tab now loads it with no flag; `?view=classic`
   is the way back to the shells' own chrome, kept for a trial window and then deleted.

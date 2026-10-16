@@ -81,6 +81,14 @@ wordmark takes the app's uppercase, letterspaced treatment in olive. So a
 surface wearing `MagazineChrome` inherits its *colour*, and has to opt in to the
 faces — the serif/sans axis above still governs everywhere but Home.
 
+**The browser tint follows the page's top edge (2026-10-16).** `theme-color` (Safari's
+toolbar + bookmarks bar, the iOS PWA status strip, Android's address bar) and the
+`<html>` background are set by `<ChromeTint />` from one rule, `chromeIsLight()` in
+`src/chromeTint.js`: paper where the top surface is light (Home, the magazine Watches
+page, any surface under `?look=new`), olive only over the shells' olive bar and the
+green catalog bar. A surface that changes its top colour has to answer that rule — an
+olive toolbar over a light page is the bug it exists to prevent.
+
 **The faces (tokens in `styles.js` — never inline a font string).**
 `FONT_SANS` is the interface (also the `public/index.html` body default,
 which 75% of UI inherits via `fontFamily: "inherit"`). `FONT_SERIF` /
