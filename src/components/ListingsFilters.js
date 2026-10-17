@@ -24,9 +24,11 @@ const sourceFamilies = (listingsSubTab) => ({
 // Types straight into App.js's `search`, so what you see in the field is what the grid is
 // filtered by. Saved searches show as suggestions when the field is focused and empty
 // (Mark, 2026-10-16); signed out there are none, so nothing opens.
+//   size   "bar" (in the header) | "row" (in a filter bar) | "full" (a phone's own row);
+//          default: the header's, per device
 export function ListingsSearch({
   isMobile, user, search, setSearch, searchPlaceholder, openFavPrompt, currentIsSaved,
-  savedSearches, onRunSavedSearch, onRemoveSavedSearch,
+  savedSearches, onRunSavedSearch, onRemoveSavedSearch, size,
 }) {
   const [suggestOpen, setSuggestOpen] = useState(false);
   const wrap = useRef(null);
@@ -41,7 +43,7 @@ export function ListingsSearch({
   return (
     <div ref={wrap}>
       <SearchField
-        size={isMobile ? "full" : "bar"}
+        size={size || (isMobile ? "full" : "bar")}
         value={search || ""}
         onChange={(e) => { setSearch(e.target.value); setSuggestOpen(false); }}
         onClear={() => setSearch("")}
@@ -81,10 +83,13 @@ export function ListingsSearch({
 
 // ---- the filter bar -----------------------------------------------------------------
 //   count   the text at the bar's right edge, or omitted when the page shows it elsewhere
+//   stacked     give the bar's search its own row (see FilterBar)
+//   searchSlot  the bar's own search element (a page with no header search, like the catalog);
+//               not `search`, which in the shared props bag is the typed query
 //   Source / Brand / Model pills open a chip panel INSIDE the sticky zone; on a phone one
 //   Filter pill replaces them and opens the sheet.
 export function ListingsFilterBar({
-  isMobile, listingsSubTab, setDrawerOpen, count,
+  isMobile, listingsSubTab, setDrawerOpen, count, searchSlot, stacked,
   minPriceText, setMinPriceText, maxPriceText, setMaxPriceText,
   sort, setSort, hasFilters, resetFilters,
   activeFilterPop, setActiveFilterPop,
@@ -203,7 +208,7 @@ export function ListingsFilterBar({
   );
 
   return (
-    <FilterBar sticky pills={pills} end={end} count={count}
+    <FilterBar sticky stacked={stacked} pills={pills} end={end} count={count} search={searchSlot}
       panel={!isMobile
         ? (activeFilterPop === "source" ? sourcePanel
           : activeFilterPop === "brand" ? brandPanel

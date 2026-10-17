@@ -31,18 +31,20 @@ export function Count({ children }) {
 //   n        a count suffix: "Source · 2"
 //   quiet    present but quiet ("+36 more")
 //   toggle   adds aria-pressed (use for on/off controls, not for menus)
-export function Pill({ on, icon, n, quiet, toggle, children, className, ...rest }) {
+export function Pill({ on, icon, n, quiet, toggle, children, className, href, ...rest }) {
   const iconOnly = !!icon && !children;
-  return (
-    <button type="button"
-      className={cx("ui-pill", on && "is-on", quiet && "ui-pill--quiet",
-                    iconOnly && "ui-pill--icon", className)}
-      aria-pressed={toggle ? !!on : undefined}
-      {...rest}>
+  const cls = cx("ui-pill", on && "is-on", quiet && "ui-pill--quiet", iconOnly && "ui-pill--icon", className);
+  const inner = (
+    <>
       {icon || null}
       {children}
       {n ? <span className="ui-pill-n">· {n}</span> : null}
-    </button>
+    </>
+  );
+  // A pill that goes somewhere else (the auction house's own page) is a link, same look.
+  if (href) return <a className={cls} href={href} target="_blank" rel="noopener noreferrer" {...rest}>{inner}</a>;
+  return (
+    <button type="button" className={cls} aria-pressed={toggle ? !!on : undefined} {...rest}>{inner}</button>
   );
 }
 
@@ -138,12 +140,15 @@ export function SubTabs({ tabs, activeKey, onSelect, ariaLabel }) {
 // ---- FilterBar: pills left · search centred · count right -----------------------------
 //   panel    the open options panel (ChipPanel), kept INSIDE the sticky zone
 //   sticky   pin under the header while the page scrolls
+//   stacked  search on its own row above the pills, at any width: for a bar that carries
+//            too much for one line (the auction catalog: calendar, source, brand, price,
+//            sort, count AND its own search)
 //
 // A pinned bar publishes where it ends as `--sticky-top` on its page, which is what the
 // date dividers, list quick-jump and reference nav already read for "stick just below the
 // chrome". Without it they stuck at 0 and hid behind the header and this bar (the old
 // shells measured their own chrome; a window-scrolled page has to say so itself).
-export function FilterBar({ pills, search, count, end, panel, sticky }) {
+export function FilterBar({ pills, search, count, end, panel, sticky, stacked }) {
   const zone = useRef(null);
   useLayoutEffect(() => {
     const el = zone.current;
@@ -165,7 +170,7 @@ export function FilterBar({ pills, search, count, end, panel, sticky }) {
   }, [sticky]);
   return (
     <div ref={zone} className={cx("ui-filterzone", sticky && "is-sticky")}>
-      <div className={cx("ui-filterbar", !search && "ui-filterbar--nosearch")}>
+      <div className={cx("ui-filterbar", !search && "ui-filterbar--nosearch", stacked && "ui-filterbar--stacked")}>
         <div className="ui-filterbar-pills">{pills}</div>
         {search ? <div className="ui-filterbar-search">{search}</div> : null}
         <div className="ui-filterbar-end">{end}<Count>{count}</Count></div>

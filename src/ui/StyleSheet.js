@@ -435,6 +435,31 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
             </div>
             <p className="ss-small">Price range sits inline on a desktop filter bar and moves into the sheet on a phone, where one Filter pill (with the applied count) replaces Source, Brand and Model. The sheet floats above Lumé's launcher so its primary button is never covered.</p>
           </Specimen>
+          <Specimen label="A takeover header (the auction catalog) and a stacked filter bar">
+            <div className="ss-stack" style={{ maxWidth: 760 }}>
+              <div>
+                <div className="ui-takeover">
+                  <div className="ui-takeover-text">
+                    <div className="ui-takeover-eyebrow">Bonhams · Online, Paris · 8 - 22 October</div>
+                    <div className="ui-takeover-title">Paris Watches Online</div>
+                  </div>
+                  <button type="button" className="ui-takeover-x" aria-label="Back to auction calendar">×</button>
+                </div>
+                <div className="ui-takeover-acts">
+                  <Pill icon={<span aria-hidden>♡</span>}>Save catalog</Pill>
+                  <Pill>Share</Pill>
+                  <Pill href="https://example.com">Auction house ↗</Pill>
+                </div>
+              </div>
+              <div className="ui-frame" style={{ background: "transparent" }}>
+                <FilterBar stacked count="114 watches"
+                  pills={<><Pill>Auction calendar</Pill><Pill>Source</Pill><Pill>Brand</Pill></>}
+                  search={<SearchField size="row" value="" onChange={noop} placeholder="Brand, model, reference" />}
+                  end={<><PriceDemo /><Pill on>Date ↓</Pill><Pill>Price</Pill></>} />
+              </div>
+            </div>
+            <p className="ss-small">A focused full page (one auction sale) swaps the tab header for its own olive title bar, with the sale as a mono eyebrow, and a quiet row of actions that are the same pills. Its filter bar carries a search of its own plus the calendar, so it stacks: search on its own row, pills and controls under it. Every other page keeps the header and the one-line bar.</p>
+          </Specimen>
           <h3 className="ss-h3">Articles-like (filter bar with the search in the row)</h3>
           <div className="ss-screen"><ArticlesPage /></div>
           <div className="ss-phones">

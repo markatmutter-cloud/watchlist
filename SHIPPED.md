@@ -793,6 +793,11 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — Home and the auction-catalog page leave the old shells; nothing renders in them any more.** Home keeps its own masthead and gets
+  only the page's inset and overlays (`PageShell bare`, `.ui-home`). One auction sale is `CatalogPage`: the olive title bar (sale as a mono eyebrow, Bodoni
+  title, × back to the calendar) is the page's own pinned header (`PageShell header`, measured so the filter bar pins under it), its Save / Share / Auction
+  house actions are shared pills (a `Pill` with an `href` is a link), the filter bar is the shared `ListingsFilters` with its own search, and a crowded bar
+  can `stacked` its search onto its own row. The catalog's save heart is no longer red. `DesktopShell` / `MobileShell` are now dead code, deleted next.
 - **2026-10-17 — Watchbox, admin, the tools, the share receivers and cross-tab search move onto `src/ui`.** One generic page (header + `PageFrame` +
   the content App already builds) now serves everything that is not Home or the auction-catalog page, so those surfaces get the shared header, inset and
   sticky offset without a page of their own; the tools' Size / Links / Challenges switcher is the shared segmented `SubTabs`. The browser tint is now
