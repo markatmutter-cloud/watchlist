@@ -5077,7 +5077,9 @@ export default function Watchlist() {
       listingsSubTab={listingsSubTab}
       setListingsSubTab={setListingsSubTab}
       setPage={setPage}
+      drawerOpen={drawerOpen}
       setDrawerOpen={setDrawerOpen}
+      sectionHeadingStyle={sectionHeadingStyle}
       search={search}
       setSearch={setSearch}
       openFavPrompt={openFavPrompt}

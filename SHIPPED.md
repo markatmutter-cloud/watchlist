@@ -788,6 +788,9 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-16 — Mobile filter drawer on the new Watches page.** The one shell behaviour the page lacked
+  (SESSION_HANDOFF 2026-10-04). On a phone: one Filter pill (with an applied-count) opens the shells' own sheet,
+  now `FilterDrawer`, extracted from `MobileShell` so both share one copy. Desktop keeps its inline pills.
 - **2026-10-16 — Second layer: pills and counts in the magazine's label voice.** Filter pills and item counts on
   every tab take small tracked caps (the Watches page's treatment), via `pillBase` / `StandardFilterBar` /
   `PageHeader` and a `LOOK` flag in `styles.js`. Type and padding only; the olive-tint selected state and the

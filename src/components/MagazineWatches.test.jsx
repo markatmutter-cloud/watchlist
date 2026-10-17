@@ -29,7 +29,9 @@ function props(over = {}) {
     listingsSubTab: "live",
     setListingsSubTab: noop,
     setPage: noop,
+    drawerOpen: false,
     setDrawerOpen: noop,
+    sectionHeadingStyle: { fontSize: 11 },
     search: "",
     setSearch: noop,
     openFavPrompt: noop,
@@ -188,5 +190,71 @@ describe("MagazineWatches", () => {
     render(<MagazineWatches {...props({ hasFilters: true, resetFilters })} />);
     fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
     expect(resetFilters).toHaveBeenCalled();
+  });
+});
+
+describe("MagazineWatches on mobile: the shells' filter drawer", () => {
+  // The one shell behaviour the parallel page lacked (SESSION_HANDOFF
+  // 2026-10-04). Mark, 2026-10-16: bring it across. The sheet itself is
+  // FilterDrawer, shared with MobileShell — these pin the page's wiring.
+  const mobile = (over = {}) => props({ isMobile: true, ...over });
+
+  it("folds Source / Brand / Model / price into one Filter pill", () => {
+    render(<MagazineWatches {...mobile()} />);
+    expect(screen.getByRole("button", { name: "Filters" })).toBeInTheDocument();
+    for (const gone of ["Source", "Brand", "Model"]) {
+      expect(screen.queryByRole("button", { name: new RegExp(`^${gone}`, "i") })).toBeNull();
+    }
+    expect(screen.queryByLabelText("Minimum price USD")).toBeNull();
+    // ...but the sort pills and Saved-only stay inline, as in the old mobile row.
+    expect(screen.getByRole("button", { name: /^Date/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^♡ Saved$/ })).toBeInTheDocument();
+  });
+
+  it("opens the drawer from the Filter pill", () => {
+    const setDrawerOpen = jest.fn();
+    render(<MagazineWatches {...mobile({ setDrawerOpen })} />);
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    expect(setDrawerOpen).toHaveBeenCalledWith(true);
+  });
+
+  it("says how many filters are applied", () => {
+    render(<MagazineWatches {...mobile({ filterSources: ["Phillips"], filterBrands: ["Rolex"], minPriceText: "1000" })} />);
+    expect(screen.getByRole("button", { name: "Filters" })).toHaveTextContent("Filter · 3");
+  });
+
+  it("renders the real sheet when open, wired to App's handlers", () => {
+    const toggleBrand = jest.fn();
+    const setDrawerOpen = jest.fn();
+    render(<MagazineWatches {...mobile({ drawerOpen: true, toggleBrand, setDrawerOpen })} />);
+    expect(screen.getByText("Show 1234 watches")).toBeInTheDocument();
+    for (const heading of ["Source", "Brand", "Model", "Price range"]) {
+      expect(screen.getByText(heading)).toBeInTheDocument();
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Rolex" }));
+    expect(toggleBrand).toHaveBeenCalledWith("Rolex");
+    fireEvent.click(screen.getByText("Show 1234 watches"));
+    expect(setDrawerOpen).toHaveBeenCalledWith(false);
+  });
+
+  it("Escape closes the sheet", () => {
+    const setDrawerOpen = jest.fn();
+    render(<MagazineWatches {...mobile({ drawerOpen: true, setDrawerOpen })} />);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(setDrawerOpen).toHaveBeenCalledWith(false);
+  });
+
+  it("offers Reset only when something is filtering", () => {
+    const { rerender } = render(<MagazineWatches {...mobile({ drawerOpen: true })} />);
+    expect(screen.queryByRole("button", { name: "Reset" })).toBeNull();
+    rerender(<MagazineWatches {...mobile({ drawerOpen: true, hasFilters: true })} />);
+    expect(screen.getByRole("button", { name: "Reset" })).toBeInTheDocument();
+  });
+
+  it("desktop keeps its inline pills and never renders the sheet", () => {
+    render(<MagazineWatches {...props({ drawerOpen: true })} />);
+    expect(screen.getByRole("button", { name: /^Source/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Filters" })).toBeNull();
+    expect(screen.queryByText("Show 1234 watches")).toBeNull();
   });
 });
