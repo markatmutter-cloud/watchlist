@@ -28,6 +28,7 @@ import { AboutModal } from "./AboutModal";
 import { SignInPromptModal } from "./SignInPromptModal";
 import { FilterDrawer } from "./FilterDrawer";
 import { FilterIcon } from "./icons";
+import { CHROME } from "../styles";
 
 function Pill({ active, onClick, children, title, ariaPressed, icon, ariaLabel }) {
   return (
@@ -386,7 +387,11 @@ export const MAGW_CSS = `
 .mag.magw .mag-mhead .mag-crescent svg { width: 21px; height: 21px; }
 
 .magw { min-height: 100vh; background: var(--bg); }
-.magw-page { max-width: 1600px; margin: 0 auto; padding: 0 clamp(14px, 2.4vw, 28px) 40px; }
+/* The shells' own inset, from CHROME (B-100, Mark 2026-10-16: "Articles is justified
+   to the left and Watches has an indent"). It was a centred 1600px column with a
+   2.4vw gutter, so every Watches edge sat further in than every other tab's, and
+   the gap grew on wide screens. Full width at CHROME.INSET_X_*, like the shells. */
+.magw-page { padding: 0 ${CHROME.INSET_X_DESKTOP}px 40px; }
 .magw-page .mag-flag { padding: 18px 0 10px; }
 
 /* Deck — sub-tabs, count, controls.
@@ -470,7 +475,7 @@ export const MAGW_CSS = `
 .magw-grid { padding-top: 14px; }
 
 @media (max-width: 700px) {
-  .magw-page { padding: 0 12px 32px; }
+  .magw-page { padding: 0 ${CHROME.INSET_X_MOBILE}px 32px; }
   .magw-deck { padding-top: 8px; }
   .magw-controls { gap: 6px; }
   .magw-sp { display: none; }

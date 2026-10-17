@@ -788,6 +788,10 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-16 — Watches takes the other tabs' inset; desktop search is bigger on Articles / Guides / Saved
+  (B-100, B-101).** `.magw-page` is full width at `CHROME.INSET_X_*` (20 / 16px) instead of a centred 1600px column,
+  so every left edge now lines up across tabs (measured: wordmark, pills, titles and first card all at 20px).
+  Under the magazine look the filter-bar search is 38px / 14px in a 240-520px slot (was 30px / 13px in 340px).
 - **2026-10-16 — Mobile filter drawer on the new Watches page.** The one shell behaviour the page lacked
   (SESSION_HANDOFF 2026-10-04). On a phone: one Filter pill (with an applied-count) opens the shells' own sheet,
   now `FilterDrawer`, extracted from `MobileShell` so both share one copy. Desktop keeps its inline pills.

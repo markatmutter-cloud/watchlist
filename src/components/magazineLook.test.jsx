@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { pillBase, segItem, SELECTED_FILL, setMagazineLook, LOOK, CHROME } from "../styles";
-import { StandardFilterBar } from "./StandardFilterBar";
+import { StandardFilterBar, StandardSearchInput } from "./StandardFilterBar";
 import { PageHeader } from "./PageHeader";
 
 // The magazine look changes TYPE on pills and counts, and nothing that governs
@@ -68,6 +68,31 @@ describe("counts under the magazine look", () => {
     setMagazineLook(true);
     render(<PageHeader title="Saved" count="12 watches" isMobile={false} />);
     expect(screen.getByText("12 watches")).toHaveStyle({ textTransform: "uppercase" });
+  });
+});
+
+describe("search under the magazine look (B-101)", () => {
+  it("is bigger than the old 30px / 13px field, and the bar gives it a wider slot", () => {
+    window.innerWidth = 1400; // above the narrow-desktop guard
+    const barOld = render(<StandardFilterBar pills={<span />} search={<span data-testid="s" />} isMobile={false} />);
+    const gridOld = barOld.container.firstChild.style.gridTemplateColumns;
+    barOld.unmount();
+    setMagazineLook(true);
+    const barNew = render(<StandardFilterBar pills={<span />} search={<span data-testid="s" />} isMobile={false} />);
+    const gridNew = barNew.container.firstChild.style.gridTemplateColumns;
+    expect(gridOld).toContain("340px");
+    expect(gridNew).toContain("520px");
+    barNew.unmount();
+
+    const { container } = render(<StandardSearchInput value="" onChange={() => {}} placeholder="Search articles…" />);
+    expect(container.firstChild).toHaveStyle({ height: `${CHROME.MAG_SEARCH_H}px` });
+    expect(screen.getByPlaceholderText("Search articles…")).toHaveStyle({ fontSize: `${CHROME.MAG_SEARCH_FONT}px` });
+  });
+
+  it("is unchanged in the old look", () => {
+    const { container } = render(<StandardSearchInput value="" onChange={() => {}} placeholder="Search guides…" />);
+    expect(container.firstChild).toHaveStyle({ height: `${CHROME.CONTROL_H}px` });
+    expect(screen.getByPlaceholderText("Search guides…")).toHaveStyle({ fontSize: "13px" });
   });
 });
 

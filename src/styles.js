@@ -102,6 +102,13 @@ export const CHROME = {
   MAG_PILL_PAD: "8px 13px",
   MAG_PILL_PAD_TOUCH: "11px 14px",
   MAG_COUNT_MIN_W: 112,
+  // The search field, sized toward the Watches page's (B-101, Mark 2026-10-16:
+  // "really small compared to watches tab"). Still a filter-bar control, so it
+  // stays well under the chrome search's ~46px.
+  MAG_SEARCH_H: 38,
+  MAG_SEARCH_FONT: 14,
+  MAG_SEARCH_PAD: "4px 16px",
+  MAG_SEARCH_SLOT: "minmax(240px, 520px)",
 };
 
 // ── THE MAGAZINE LOOK (2026-10-16) ───────────────────────────────────

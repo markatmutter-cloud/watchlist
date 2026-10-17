@@ -69,7 +69,7 @@ export function StandardFilterBar({ pills, search, right, count, isMobile, backg
   }
   return (
     <div style={{
-      display: "grid", gridTemplateColumns: "1fr minmax(200px, 340px) 1fr",
+      display: "grid", gridTemplateColumns: LOOK.magazine ? `1fr ${CHROME.MAG_SEARCH_SLOT} 1fr` : "1fr minmax(200px, 340px) 1fr",
       alignItems: "center", columnGap: 12,
       padding: "6px 0", background, borderBottom,
     }}>
@@ -99,7 +99,8 @@ export function StandardSearchInput({ value, onChange, placeholder, ariaLabel, i
     <div style={{
       display: "flex", alignItems: "center", gap: 8,
       border: "0.5px solid var(--border)", borderRadius: 20,
-      padding: "4px 12px", height: CHROME.CONTROL_H, boxSizing: "border-box",
+      padding: LOOK.magazine ? CHROME.MAG_SEARCH_PAD : "4px 12px",
+      height: LOOK.magazine ? CHROME.MAG_SEARCH_H : CHROME.CONTROL_H, boxSizing: "border-box",
       width: "100%", minWidth: 0,
       // Surface fill, not transparent (Mark 2026-06-06: "easy to see the
       // search bar on Home — not on the other pages"). Home's hero search
@@ -117,7 +118,7 @@ export function StandardSearchInput({ value, onChange, placeholder, ariaLabel, i
         placeholder={placeholder}
         aria-label={ariaLabel || placeholder}
         style={{ flex: 1, border: "none", background: "transparent",
-                 fontSize: 13, color: "var(--text1)", outline: "none",
+                 fontSize: LOOK.magazine ? CHROME.MAG_SEARCH_FONT : 13, color: "var(--text1)", outline: "none",
                  fontFamily: "inherit", minWidth: 0 }}
       />
       {trailing}
