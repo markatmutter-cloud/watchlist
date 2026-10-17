@@ -81,6 +81,7 @@ import SubTabBar from "./components/SubTabBar";
 import { TOP_TABS, isTopTabActive } from "./topTabs";
 import { readLook, readChromeFaces, isMagWatchesOn } from "./lookFlag";
 import { ChromeTint, chromeIsLight } from "./chromeTint";
+import StyleSheet from "./ui/StyleSheet";
 import { innerToggleButton, actionButton, setMagazineLook } from "./styles";
 
 // Same-origin paths — Vercel serves everything in /public at the
@@ -5083,6 +5084,25 @@ export default function Watchlist() {
   // early returns below, and a new hook here would be exactly the React #310
   // trap CLAUDE.md warns about.
   const magWatchesFlagged = isMagWatchesOn();
+  // `?view=styleguide` — the live style sheet for the shared page frame
+  // (src/ui). A reference page, not a tab: nothing links to it. Its header
+  // tabs leave the page with a full navigation, because the flag lives in the
+  // URL and an in-app tab switch would keep rendering this page.
+  const styleSheetOn = (() => {
+    try {
+      return typeof window !== "undefined"
+        && new URLSearchParams(window.location.search).get("view") === "styleguide";
+    } catch { return false; }
+  })();
+  const styleSheetTabs = topTabs.map((t) => ({
+    ...t, active: false,
+    onSelect: () => {
+      window.location.href = t.key === "listings" ? "/?tab=listings"
+        : t.key === "articles" ? "/?tab=references&sub=editorial"
+        : "/?tab=references&sub=references";
+    },
+  }));
+
   // Only the Watches tab itself is restyled. Every takeover surface (share
   // receivers, cross-tab search, the auction-catalog full page) keeps the
   // shell, so nothing that isn't built yet can be reached through this page.
@@ -5308,7 +5328,10 @@ export default function Watchlist() {
           `?view=classic` is set. The swap is at the shell boundary, not
           inside it, so the shells' chrome is untouched — and ChatBubbleHost /
           ConfirmHost below still mount either way. */}
-      {magWatchesActive
+      {styleSheetOn
+        ? <StyleSheet tabs={styleSheetTabs} authJSX={authJSX} isMobile={isMobile}
+                      onHome={() => { window.location.href = "/"; }} />
+        : magWatchesActive
         ? magWatchesJSX
         : isMobile
         ? <MobileShell {...shellProps} />

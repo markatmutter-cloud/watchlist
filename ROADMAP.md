@@ -623,7 +623,16 @@ Filter pill that opens the shells' own sheet (`FilterDrawer`, extracted from
 **The other tabs followed the same day:** Articles, Saved and Reference Guides
 wear the magazine's bar by default (`MagazineShellBar`, one compact row — the
 shells' top region is pinned, so a two-tier masthead can't live there); `?look=old`
-is the way back. **Decided by Mark 2026-10-16 (Epic 9) — SHIPPED the same day (#1002, #1003, #1004, #1005):**
+is the way back. **UI consolidation (Mark, 2026-10-17: "every page is different ... without chasing leaks") — IN PROGRESS.** One shared
+page frame, `src/ui`, approved on the live style sheet `?view=styleguide` before any tab moves. Migration order, each its own
+PR, deleting the old pieces as each tab lands: (1) Mark approves the style sheet and picks D1-D5; (2) Articles + Reference
+Guides (smallest); (3) Watches; (4) Saved/Lists container + the account menu; (5) Home's search + masthead pieces; (6) delete
+`StandardFilterBar` / `StandardSearchInput` / `PageHeader` / `SubTabBar` / the `.magw-*` and `.mag-search*` copies, the
+`pillBase` family, and the inline `CHROME` numbers they used. Done when `ui-guard` can assert no page defines its own pill,
+search field or tab strip. Housekeeping found on the way: the repo lives in an iCloud-synced folder, which keeps creating
+duplicate files in `.git/refs` (`main 2`) and breaks `git fetch` — move it out (e.g. `~/Developer`).
+
+**Decided by Mark 2026-10-16 (Epic 9) — SHIPPED the same day (#1002, #1003, #1004, #1005):**
 1. B-100 / B-101: Watches takes the other tabs' inset; desktop search on Articles / Guides / Saved is as big as Watches'.
 2. **Icon-only ♡ pill** (no word, never red; olive when on) in the filter row on Articles and Reference Guides, replacing the
    segmented `All | ♡ Saved` row. Watches had saved TWICE (a `♡ Saved` sub-tab *and* a `♡ Saved` pill): de-duplicate.
