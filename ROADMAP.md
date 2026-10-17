@@ -623,13 +623,17 @@ Filter pill that opens the shells' own sheet (`FilterDrawer`, extracted from
 **The other tabs followed the same day:** Articles, Saved and Reference Guides
 wear the magazine's bar by default (`MagazineShellBar`, one compact row — the
 shells' top region is pinned, so a two-tier masthead can't live there); `?look=old`
-is the way back. **Queued from Mark's 2026-10-16 review (design thread, Epic 9):** Saved articles / saved
-guides as a **♡ SAVED filter pill** in the filter row (as Watches has), replacing the
-segmented `All | ♡ Saved` row on Articles and Reference Guides. That removes a whole row
-from both headers (compactness) and keeps "saved" scoped to the thing being browsed.
-Mark floated routing it through the header heart instead; the recommendation (given in
-session) is the pill, because that heart already means "my saved watches". Awaiting his
-go. Also queued as defects: B-100 (Watches inset) and B-101 (search size).
+is the way back. **Decided by Mark 2026-10-16 (Epic 9, in this order, each its own PR):**
+1. B-100 / B-101: Watches takes the other tabs' inset; desktop search on Articles / Guides / Saved is as big as Watches'.
+2. **Icon-only ♡ pill** (no word, never red; olive when on) in the filter row on Articles and Reference Guides, replacing the
+   segmented `All | ♡ Saved` row. Watches had saved TWICE (a `♡ Saved` sub-tab *and* a `♡ Saved` pill): de-duplicate.
+   **This reverses the 2026-07-30 rule "Saved is a sub-tab, never a filter pill"** (that rule came from Mark not finding
+   a pill that looked like every other filter); an icon-only heart carries the same discoverability risk, so watch for it.
+3. **Saved searches** come up as suggestions when the search bar is focused and empty (the heart in the bar already saves
+   them; unsave from there; editing is not important).
+4. **Lists move to the 'M' account menu, and the Saved top tab is retired** (Mark: "I've not been using that as a tab").
+   Internal keys (`watchlist`, `?tab=saved`) stay so old links resolve. Order matters: 3 and the Lists menu entry ship
+   BEFORE the tab goes, so nothing is orphaned.
 
 The second layer shipped too: pills and counts take the Watches page's
 tracked-caps label voice, with the segmented sub-tab pill KEPT (it replaced an
