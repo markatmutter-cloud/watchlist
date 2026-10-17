@@ -11,7 +11,7 @@
 
 import React, { useState } from "react";
 import {
-  Pill, SavedPill, SearchField, SubTabs, PageTitle, FilterBar, PageFrame, Count,
+  Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
   AccountDisc, SuggestionRows,
 } from "./index";
 import { MagazineShellBar, MagazineBrandRow, MagazineTabRow } from "../components/MagazineShellBar";
@@ -19,6 +19,12 @@ import { FilterIcon } from "../components/icons";
 import "./StyleSheet.css";
 
 const noop = () => {};
+
+// The Watches sub-tabs as approved: the Saved tab is the heart alone (D5).
+const WATCH_TABS = [
+  { key: "live", label: "For sale" }, { key: "auctions", label: "Auctions" },
+  { key: "sold", label: "Sold" }, { key: "saved", label: "♡", ariaLabel: "Saved" },
+];
 
 // ---- little helpers -----------------------------------------------------------------
 
@@ -95,7 +101,7 @@ function SavedSuggestions() {
   );
 }
 
-function ArticlesPage({ phone, title = true, tabsVariant }) {
+function ArticlesPage({ phone }) {
   const [q, setQ] = useState("");
   const [saved, setSaved] = useState(false);
   return (
@@ -105,7 +111,6 @@ function ArticlesPage({ phone, title = true, tabsVariant }) {
             <MagazineTabRow tabs={demoTabs("articles")} /></>
         : <MagazineShellBar tabs={demoTabs("articles")} authJSX={<AccountDisc initial="M" />} showSaved onSavedClick={noop} onHome={noop} />}
       <PageFrame
-        title={title ? "Articles" : null}
         filterBar={
           <FilterBar
             pills={<><TogglePill>Source</TogglePill><TogglePill>Brand</TogglePill>
@@ -120,7 +125,7 @@ function ArticlesPage({ phone, title = true, tabsVariant }) {
   );
 }
 
-function WatchesPage({ phone, tabsVariant = "segmented" }) {
+function WatchesPage({ phone }) {
   const [sub, setSub] = useState("live");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -140,9 +145,7 @@ function WatchesPage({ phone, tabsVariant = "segmented" }) {
         : <MagazineShellBar tabs={demoTabs("listings")} authJSX={<AccountDisc initial="M" />} showSaved onSavedClick={noop}
                             onHome={noop} searchJSX={search} />}
       <PageFrame
-        subTabs={<SubTabs variant={tabsVariant} ariaLabel="Watches views" activeKey={sub} onSelect={setSub}
-                          tabs={[{ key: "live", label: "For sale" }, { key: "auctions", label: "Auctions" },
-                                 { key: "sold", label: "Sold" }, { key: "saved", label: "♡ Saved" }]} />}
+        subTabs={<SubTabs ariaLabel="Watches views" activeKey={sub} onSelect={setSub} tabs={WATCH_TABS} />}
         subTabsEnd={<Count>4,503 watches</Count>}
         filterBar={
           <FilterBar
@@ -163,10 +166,7 @@ function WatchesPage({ phone, tabsVariant = "segmented" }) {
 export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
   const [saved, setSaved] = useState(false);
   const [q, setQ] = useState("Submariner");
-  const [tabA, setTabA] = useState("live");
-  const [tabB, setTabB] = useState("live");
-  const subTabs = [{ key: "live", label: "For sale" }, { key: "auctions", label: "Auctions" },
-                   { key: "sold", label: "Sold" }, { key: "saved", label: "♡ Saved" }];
+  const [tab, setTab] = useState("live");
   return (
     <div className="ss">
       {isMobile
@@ -179,25 +179,24 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
           <p className="ss-eyebrow">Style sheet · the shared page frame</p>
           <h1 className="ss-h1">One definition per piece</h1>
           <p className="ss-lede">
-            Every tab below the header is built from the pieces on this page and nothing else. Approve them here
-            once, and every tab moves over to match; nothing gets restyled page by page. Everything shown is the
-            real component, and the phone frames are real 390px containers, so you can judge the phone layout from
-            a desktop window (or open this page on your phone).
+            Every tab below the header is built from the pieces on this page and nothing else. This is the approved
+            version: Mark's five picks (2026-10-17) are in, and section 5 records them. Everything shown is the real
+            component, and the phone frames are real 390px containers, so the phone layout can be judged from a
+            desktop window (or open this page on a phone).
           </p>
           <p className="ss-lede">
-            <strong>To approve:</strong> look through sections 1–4, then pick an option in each of the five
-            decisions in section 5 (e.g. "D1 A, D2 A, D3 A, D4 A, D5 A"). Anything you want changed, say so by name.
+            Tabs are moving onto these one at a time, and each old piece is deleted as its last user goes. If a page
+            looks different from this one, the page is wrong, not the style sheet.
           </p>
         </header>
 
         <Section id="anatomy" title="1 · The page anatomy"
-                 note="Every page is these five bands, in this order, at one left edge (20px; 16px on a phone). Any band can be absent; none can move.">
+                 note="Every page is these four bands, in this order, at one left edge (20px; 16px on a phone). Any band can be absent; none can move.">
           <ol className="ss-anatomy">
             <li><b>Header bar</b>: wordmark · tabs · (Watches only: its search) · heart · account. 56px, every tab. Home keeps its masthead.</li>
-            <li><b>Page title</b>: optional (decision D3).</li>
-            <li><b>Sub-tabs</b>: optional; "where you are" (decision D1). The count can sit at their right.</li>
+            <li><b>Sub-tabs</b>: optional; "where you are", always the segmented control. The count can sit at their right.</li>
             <li><b>Filter bar</b>: pills left · search centred · count right. On a phone the search takes its own row above.</li>
-            <li><b>Content</b>: cards, lists, whatever the page is for.</li>
+            <li><b>Content</b>: cards, lists, whatever the page is for. There is no page title; the header's active tab says where you are.</li>
           </ol>
         </Section>
 
@@ -217,11 +216,11 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
             <Swatch name="Heart (save buttons on cards only)" token="--heart" />
           </div>
           <div className="ss-type">
-            <div><span className="ss-type-w">WATCHLIST</span><code>19px · 700 · tracked: wordmark</code></div>
-            <div><span className="ss-type-h">Articles</span><code>28px (23 phone) · 700: page title</code></div>
-            <div><span className="ss-type-t">For sale</span><code>17px · 500 / 600: underline sub-tab</code></div>
-            <div><span className="ss-type-l">SOURCE · 11,288 ARTICLES</span><code>11px · tracked caps: pills, counts, eyebrows</code></div>
-            <div><span className="ss-type-b">Search articles, brand, model, reference</span><code>14px: fields and body</code></div>
+            <div><span className="ss-type-d">Watchlist</span><code>Bodoni 30px: the wordmark (header only)</code></div>
+            <div><span className="ss-type-m">WATCHES · ARTICLES · REFERENCE GUIDES</span><code>mono 12.5px, tracked: header tabs</code></div>
+            <div><span className="ss-type-t">For sale</span><code>13px · 500 / 600: sub-tab</code></div>
+            <div><span className="ss-type-l">SOURCE · 11,288 ARTICLES</span><code>11px, tracked caps: pills, counts, eyebrows</code></div>
+            <div><span className="ss-type-b">Search articles, brand, model, reference</span><code>14px: fields and body (system sans)</code></div>
           </div>
           <table className="ss-table">
             <tbody>
@@ -259,9 +258,9 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
               <SavedPill on onClick={noop} />
               <Pill quiet>+36 more</Pill>
             </div>
-            <p className="ss-small">Click them. The heart is a bare icon: no word, never red, olive when on. Selected is a quiet olive tint on purpose: the sub-tab is "where you are", a pill is "how you narrowed it".</p>
+            <p className="ss-small">Click them. Selected is solid olive, the same "on" as the sub-tab's active chip. The heart is a bare icon: no word, never red.</p>
           </Specimen>
-          <Specimen label="Search field: header · filter row · phone · with a value · with the save heart · with suggestions">
+          <Specimen label="Search field: header · filter row · with a value and the save heart · with suggestions">
             <div className="ss-stack">
               <SearchField size="bar" value="" onChange={noop} placeholder="Brand, model, reference" />
               <SearchField size="row" value={q} onChange={(e) => setQ(e.target.value)} onClear={() => setQ("")} placeholder="Search…"
@@ -273,78 +272,35 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
               </div>
             </div>
           </Specimen>
-          <Specimen label="Sub-tabs: segmented and underline (decision D1)">
-            <div className="ss-stack">
-              <SubTabs variant="segmented" activeKey={tabA} onSelect={setTabA} tabs={subTabs} ariaLabel="Segmented" />
-              <SubTabs variant="underline" activeKey={tabB} onSelect={setTabB} tabs={subTabs} ariaLabel="Underline" />
-            </div>
+          <Specimen label="Sub-tabs: segmented, solid olive when active (the Saved tab is the heart alone)">
+            <SubTabs activeKey={tab} onSelect={setTab} tabs={WATCH_TABS} ariaLabel="Segmented" />
           </Specimen>
-          <Specimen label="Page title · count · account disc">
-            <PageTitle title="Reference guides" actions={<Count>5 guides</Count>} />
-            <div className="ss-row" style={{ marginTop: 14 }}><AccountDisc initial="M" /><AccountDisc initial="J" /></div>
+          <Specimen label="Count · account disc">
+            <div className="ss-row"><Count>5 guides</Count><AccountDisc initial="M" /><AccountDisc initial="J" /></div>
           </Specimen>
         </Section>
 
         <Section id="pages" title="4 · Composed pages"
                  note="Two real tabs built only from the pieces above, at desktop and at phone width. Click around: tabs, pills, the heart, the search (focus the Watches search to see saved searches).">
-          <h3 className="ss-h3">Articles-like (title · filter bar with search in the row)</h3>
+          <h3 className="ss-h3">Articles-like (filter bar with the search in the row)</h3>
           <div className="ss-screen"><ArticlesPage /></div>
           <div className="ss-phones">
             <div className="ss-phone"><ArticlesPage phone /></div>
             <div className="ss-phone"><WatchesPage phone /></div>
           </div>
-          <h3 className="ss-h3">Watches-like (no title · sub-tabs with the count · search seated in the header)</h3>
+          <h3 className="ss-h3">Watches-like (sub-tabs with the count · search seated in the header)</h3>
           <div className="ss-screen"><WatchesPage /></div>
         </Section>
 
-        <Section id="decisions" title="5 · Decisions for you"
-                 note="Where today's pages disagree, both versions are shown. Pick one in each; the other is deleted.">
-          <div className="ss-decision">
-            <h3 className="ss-h3">D1 · Sub-tabs</h3>
-            <div className="ss-ab">
-              <div><b>A · Segmented</b> (Articles/Saved today; chosen after the June usability audit: people missed underline tabs)<br /><br />
-                <SubTabs variant="segmented" activeKey="live" onSelect={noop} tabs={subTabs} /></div>
-              <div><b>B · Underline</b> (Watches today)<br /><br />
-                <SubTabs variant="underline" activeKey="live" onSelect={noop} tabs={subTabs} /></div>
-            </div>
-          </div>
-          <div className="ss-decision">
-            <h3 className="ss-h3">D2 · Selected pill</h3>
-            <div className="ss-ab">
-              <div><b>A · Olive tint</b> (most of the site today)<br /><br />
-                <div className="ss-row"><Pill>Source</Pill><Pill on>Brand</Pill><Pill on n={2}>Model</Pill></div></div>
-              <div><b>B · Solid olive</b> (Watches' sort pills today)<br /><br />
-                <div className="ss-row"><Pill solid>Source</Pill><Pill solid on>Brand</Pill><Pill solid on n={2}>Model</Pill></div></div>
-            </div>
-          </div>
-          <div className="ss-decision">
-            <h3 className="ss-h3">D3 · Page title</h3>
-            <div className="ss-ab">
-              <div><b>A · A title on every page</b> (Articles and Guides today)
-                <div className="ss-mini"><PageFrame title="Articles" filterBar={<FilterBar pills={<><Pill>Source</Pill><Pill>Brand</Pill></>} count="11,288 articles" />}><div style={{ height: 10 }} /></PageFrame></div></div>
-              <div><b>B · No title</b> (Watches today; the header's active tab already says where you are, and it saves ~60px)
-                <div className="ss-mini"><PageFrame filterBar={<FilterBar pills={<><Pill>Source</Pill><Pill>Brand</Pill></>} count="11,288 articles" />}><div style={{ height: 10 }} /></PageFrame></div></div>
-            </div>
-          </div>
-          <div className="ss-decision">
-            <h3 className="ss-h3">D4 · Header type</h3>
-            <div className="ss-ab ss-ab--stack">
-              <div><b>A · System type</b> (today, everywhere except Home)
-                <div className="ss-bar-demo"><MagazineShellBar tabs={demoTabs("articles")} authJSX={<AccountDisc initial="M" />} showSaved onSavedClick={noop} onHome={noop} faces="system" /></div></div>
-              <div><b>B · Bodoni wordmark + mono tabs</b> (the front page's chrome; the working UI below stays system sans)
-                <div className="ss-bar-demo"><MagazineShellBar tabs={demoTabs("articles")} authJSX={<AccountDisc initial="M" />} showSaved onSavedClick={noop} onHome={noop} faces="display" /></div></div>
-            </div>
-          </div>
-          <div className="ss-decision">
-            <h3 className="ss-h3">D5 · The Saved sub-tab on Watches</h3>
-            <div className="ss-ab">
-              <div><b>A · Word and heart</b> (today)<br /><br />
-                <SubTabs variant="underline" activeKey="live" onSelect={noop} tabs={subTabs} /></div>
-              <div><b>B · Heart only</b> (matches the icon-only pills; it is a navigation tab, and first-time users scan for words)<br /><br />
-                <SubTabs variant="underline" activeKey="live" onSelect={noop}
-                         tabs={[...subTabs.slice(0, 3), { key: "saved", label: "♡" }]} /></div>
-            </div>
-          </div>
+        <Section id="decisions" title="5 · Decisions made (2026-10-17)"
+                 note="Where today's pages disagreed, Mark chose. The loser of each is deleted as its tab migrates.">
+          <ul className="ss-picks">
+            <li><b>D1 · Sub-tabs:</b> segmented (the track with a solid chip). The underline form is retired.</li>
+            <li><b>D2 · Selected pill:</b> solid olive. The olive tint is retired.</li>
+            <li><b>D3 · Page title:</b> none. The header's active tab says where you are; each page gains about 60px.</li>
+            <li><b>D4 · Header type:</b> the front page's Bodoni wordmark and mono tab labels, on every tab; system sans below the header. <code>?chrome=system</code> is the way back.</li>
+            <li><b>D5 · Watches' Saved tab:</b> the heart alone (its accessible name is still "Saved").</li>
+          </ul>
         </Section>
       </div>
     </div>

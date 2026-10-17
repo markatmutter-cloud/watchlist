@@ -177,7 +177,8 @@ export default function MagazineWatches(props) {
     ["live", "For sale"],
     ["auctions", "Auctions"],
     ["sold", "Sold"],
-    ["saved", "♡ Saved"],
+    // Heart only (Mark, 2026-10-17, style-sheet D5 B); the accessible name keeps the word.
+    ["saved", "♡", "Saved"],
   ];
 
   return (
@@ -213,8 +214,9 @@ export default function MagazineWatches(props) {
         <div className="magw-deck">
           <div className="magw-deckrow">
             <div className="magw-subtabs" role="tablist" aria-label="Listings views">
-              {subTabs.map(([key, label]) => (
+              {subTabs.map(([key, label, name]) => (
                 <button key={key} type="button" role="tab"
+                        aria-label={name} title={name}
                         aria-selected={listingsSubTab === key}
                         className={listingsSubTab === key ? "on" : ""}
                         onClick={() => {

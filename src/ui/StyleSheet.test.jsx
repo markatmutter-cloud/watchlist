@@ -21,20 +21,20 @@ describe("StyleSheet", () => {
     expect(screen.getByText("One definition per piece")).toBeInTheDocument();
   });
 
-  it("has all five sections and all five decisions", () => {
+  it("has all five sections, with the five decisions recorded", () => {
     render(<StyleSheet tabs={tabs} authJSX={null} onHome={noop} isMobile={false} />);
-    for (const h of [/^1 · The page anatomy/, /^2 · Colour, type and size/, /^3 · The pieces/, /^4 · Composed pages/, /^5 · Decisions/]) {
+    for (const h of [/^1 · The page anatomy/, /^2 · Colour, type and size/, /^3 · The pieces/, /^4 · Composed pages/, /^5 · Decisions made/]) {
       expect(screen.getByRole("heading", { level: 2, name: h })).toBeInTheDocument();
     }
-    for (const d of ["D1 · Sub-tabs", "D2 · Selected pill", "D3 · Page title", "D4 · Header type", "D5 · The Saved sub-tab on Watches"]) {
-      expect(screen.getByRole("heading", { level: 3, name: d })).toBeInTheDocument();
+    for (const d of [/D1 · Sub-tabs/, /D2 · Selected pill/, /D3 · Page title/, /D4 · Header type/, /D5 · Watches' Saved tab/]) {
+      expect(screen.getByText(d)).toBeInTheDocument();
     }
   });
 
   it("shows every piece for real (not screenshots of them)", () => {
     const { container } = render(<StyleSheet tabs={tabs} authJSX={null} onHome={noop} isMobile={false} />);
-    for (const cls of [".ui-pill", ".ui-pill--icon", ".ui-search", ".ui-tabs--segmented", ".ui-tabs--underline",
-                       ".ui-title-row", ".ui-filterbar", ".ui-count", ".ui-disc", ".ui-frame"]) {
+    for (const cls of [".ui-pill", ".ui-pill--icon", ".ui-search", ".ui-tabs",
+                       ".ui-filterbar", ".ui-count", ".ui-disc", ".ui-frame"]) {
       expect(container.querySelector(cls)).not.toBeNull();
     }
   });

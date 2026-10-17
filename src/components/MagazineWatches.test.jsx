@@ -140,7 +140,7 @@ describe("MagazineWatches", () => {
     expect(screen.getByTestId("auth")).toBeInTheDocument();
     expect(screen.getByTestId("grid")).toBeInTheDocument();
     expect(screen.getByTestId("overlays")).toBeInTheDocument();
-    for (const label of ["For sale", "Auctions", "Sold", "♡ Saved"]) {
+    for (const label of ["For sale", "Auctions", "Sold", "Saved"]) {
       expect(screen.getByRole("tab", { name: label })).toBeInTheDocument();
     }
     expect(screen.getByText("1,234 watches")).toBeInTheDocument();
@@ -196,7 +196,8 @@ describe("MagazineWatches", () => {
     // cannot, so the pill went and the sub-tab stayed.
     render(<MagazineWatches {...props()} />);
     expect(screen.queryByRole("button", { name: "♡ Saved" })).toBeNull();
-    expect(screen.getByRole("tab", { name: "♡ Saved" })).toBeInTheDocument();
+    // Heart only (Mark, 2026-10-17, style-sheet D5 B); the accessible name keeps the word.
+    expect(screen.getByRole("tab", { name: "Saved" })).toHaveTextContent("♡");
   });
 
   it("cycles the sort pills the way the shells do", () => {

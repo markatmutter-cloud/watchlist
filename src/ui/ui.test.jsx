@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import {
-  Pill, SavedPill, SearchField, SubTabs, PageTitle, FilterBar, PageFrame, Count,
+  Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
   AccountDisc, SuggestionRows,
 } from "./index";
 
@@ -9,7 +9,7 @@ import {
 // here breaks every tab; shell tests render MOCK content and would never see it.
 
 describe("Pill", () => {
-  it("renders a button with the pill class, and marks the selected look", () => {
+  it("renders a button with the pill class, and marks the selected look (solid olive)", () => {
     const { rerender } = render(<Pill>Source</Pill>);
     const btn = screen.getByRole("button", { name: "Source" });
     expect(btn).toHaveClass("ui-pill");
@@ -92,15 +92,25 @@ describe("SearchField", () => {
 describe("SubTabs", () => {
   const tabs = [{ key: "a", label: "For sale" }, { key: "b", label: "Sold" }];
 
-  it.each(["segmented", "underline"])("%s: a tablist with one selected tab, and selecting reports the key", (variant) => {
+  it("is one segmented tablist with one selected tab, and selecting reports the key", () => {
     const onSelect = jest.fn();
-    const { container } = render(<SubTabs variant={variant} tabs={tabs} activeKey="a" onSelect={onSelect} ariaLabel="Views" />);
-    expect(container.firstChild).toHaveClass(`ui-tabs--${variant}`);
+    const { container } = render(<SubTabs tabs={tabs} activeKey="a" onSelect={onSelect} ariaLabel="Views" />);
+    expect(container.firstChild).toHaveClass("ui-tabs");
     expect(screen.getByRole("tablist", { name: "Views" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "For sale" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: "Sold" })).toHaveAttribute("aria-selected", "false");
     fireEvent.click(screen.getByRole("tab", { name: "Sold" }));
     expect(onSelect).toHaveBeenCalledWith("b");
+  });
+
+  it("an icon-only tab keeps an accessible name (the Watches Saved heart)", () => {
+    render(<SubTabs tabs={[{ key: "s", label: "♡", ariaLabel: "Saved" }]} activeKey="s" />);
+    expect(screen.getByRole("tab", { name: "Saved" })).toHaveTextContent("♡");
+  });
+
+  it("has no underline variant (retired by Mark, 2026-10-17)", () => {
+    const { container } = render(<SubTabs tabs={tabs} activeKey="a" variant="underline" />);
+    expect(container.firstChild.className).toBe("ui-tabs");
   });
 });
 
@@ -120,20 +130,19 @@ describe("FilterBar and PageFrame", () => {
     expect(container.querySelector(".ui-filterbar-search")).toBeNull();
   });
 
-  it("PageFrame always orders title, sub-tabs, filter bar, content", () => {
+  it("PageFrame always orders sub-tabs, filter bar, content (and has no title band)", () => {
     const { container } = render(
-      <PageFrame title="Articles" subTabs={<span>tabs</span>} filterBar={<div className="fb">bar</div>}>
+      <PageFrame subTabs={<span>tabs</span>} filterBar={<div className="fb">bar</div>}>
         <p>content</p>
       </PageFrame>);
-    const order = [...container.querySelectorAll(".ui-title-row, .ui-tabs-row, .fb, .ui-content")]
+    const order = [...container.querySelectorAll(".ui-tabs-row, .fb, .ui-content")]
       .map((el) => el.className.split(" ")[0]);
-    expect(order).toEqual(["ui-title-row", "ui-tabs-row", "fb", "ui-content"]);
-    expect(screen.getByRole("heading", { name: "Articles" })).toBeInTheDocument();
+    expect(order).toEqual(["ui-tabs-row", "fb", "ui-content"]);
+    expect(screen.queryByRole("heading")).toBeNull();
   });
 
   it("every band is optional", () => {
     const { container } = render(<PageFrame><p>only content</p></PageFrame>);
-    expect(container.querySelector(".ui-title-row")).toBeNull();
     expect(container.querySelector(".ui-tabs-row")).toBeNull();
     expect(screen.getByText("only content")).toBeInTheDocument();
   });
@@ -143,11 +152,6 @@ describe("the small ones", () => {
   it("Count renders nothing without a value", () => {
     const { container } = render(<Count>{null}</Count>);
     expect(container).toBeEmptyDOMElement();
-  });
-
-  it("PageTitle seats its actions at the end", () => {
-    render(<PageTitle title="Saved" actions={<span>3 lists</span>} />);
-    expect(screen.getByText("3 lists").parentElement).toHaveClass("ui-title-actions");
   });
 
   it("AccountDisc is one olive disc with the initial", () => {

@@ -40,10 +40,8 @@
             font-variant-numeric: tabular-nums; }
 
 /* ---------- pill --------------------------------------------------------- */
-/* A filter / toggle / sort control. Selected = the olive TINT (quieter than the
-   segmented sub-tab's solid olive, on purpose: the sub-tab is "where you are",
-   a pill is "how you've narrowed it"). `solid` is the alternative on the style
-   sheet, not yet in use. */
+/* A filter / toggle / sort control. Selected = SOLID olive (Mark, 2026-10-17, D2 B):
+   the same "on" the sub-tab's active chip wears, so "on" reads one way everywhere. */
 
 .ui-pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px;
            box-sizing: border-box; height: var(--ui-control-h); padding: 0 14px;
@@ -54,10 +52,8 @@
            white-space: nowrap; cursor: pointer; }
 .ui-pill:hover { border-color: var(--brand-olive-ink); color: var(--brand-olive-ink); }
 .ui-pill:focus-visible { outline: 2px solid var(--brand-olive-ink); outline-offset: 2px; }
-.ui-pill.is-on { background: var(--brand-olive-tint-12); border-color: var(--brand-olive-ink);
-                 color: var(--brand-olive-ink); font-weight: 600; }
-.ui-pill--solid.is-on { background: var(--brand-olive-text); border-color: var(--brand-olive-text);
-                        color: var(--bg); }
+.ui-pill.is-on { background: var(--brand-olive-text); border-color: var(--brand-olive-text);
+                 color: #fff; font-weight: 600; }
 /* A bare icon (the Saved heart): a circle, never red, never a word. */
 .ui-pill--icon { width: var(--ui-control-h); padding: 0; }
 .ui-pill--icon svg { width: 15px; height: 15px; }
@@ -113,32 +109,18 @@
            font: 600 14px var(--ui-sans); text-transform: uppercase; }
 
 /* ---------- sub-tabs ----------------------------------------------------- */
-/* Two forms are on the style sheet for a decision; the page frame will keep one. */
+/* Segmented only (Mark, 2026-10-17, D1 A): one track, a solid olive active chip.
+   The underline form is gone; do not add it back without a decision. */
 
-.ui-tabs { display: inline-flex; max-width: 100%; }
-.ui-tabs--segmented { align-items: center; padding: 3px; gap: 2px; border-radius: 999px;
-                      background: var(--surface); box-shadow: inset 0 0 0 .5px var(--border); }
-.ui-tabs--segmented button { border: none; border-radius: 999px; padding: 7px 14px; cursor: pointer;
-                             background: transparent; color: var(--text2); white-space: nowrap;
-                             font: 500 13px var(--ui-sans); letter-spacing: .01em;
-                             transition: background .15s ease, color .15s ease; }
-.ui-tabs--segmented button.is-on { background: var(--brand-olive); color: #fff; font-weight: 600; }
-.ui-tabs--underline { flex-wrap: wrap; gap: 4px 22px; }
-.ui-tabs--underline button { border: none; background: none; cursor: pointer; padding: 3px 0;
-                             border-bottom: 1.5px solid transparent; color: var(--text3);
-                             font: 500 17px/1.2 var(--ui-sans); letter-spacing: .01em; }
-.ui-tabs--underline button:hover { color: var(--text1); }
-.ui-tabs--underline button.is-on { color: var(--brand-olive-ink); font-weight: 600;
-                                   border-bottom-color: var(--brand-olive-text); }
+.ui-tabs { display: inline-flex; align-items: center; max-width: 100%; padding: 3px; gap: 2px;
+           border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 .5px var(--border); }
+.ui-tabs button { border: none; border-radius: 999px; padding: 7px 14px; cursor: pointer;
+                  background: transparent; color: var(--text2); white-space: nowrap;
+                  font: 500 13px var(--ui-sans); letter-spacing: .01em;
+                  transition: background .15s ease, color .15s ease; }
+.ui-tabs button.is-on { background: var(--brand-olive); color: #fff; font-weight: 600; }
 .ui-tabs-row { padding: 10px 0 8px; display: flex; align-items: baseline;
                justify-content: space-between; gap: 16px; }
-
-/* ---------- page title --------------------------------------------------- */
-
-.ui-title-row { display: flex; align-items: baseline; gap: 12px; padding: 14px 0 12px;
-                border-bottom: .5px solid var(--border); }
-.ui-title { margin: 0; font: 700 28px/1.12 var(--ui-sans); letter-spacing: -.01em; min-width: 0; }
-.ui-title-actions { margin-left: auto; display: flex; align-items: center; gap: var(--ui-gap); }
 
 /* ---------- filter bar --------------------------------------------------- */
 /* pills left · search centred · count right. The search never moves when the
@@ -172,8 +154,6 @@
   .ui-pill--icon { width: 40px; padding: 0; }
   .ui-search { height: 44px; }
   .ui-disc { width: 40px; height: 40px; }
-  .ui-title { font-size: 23px; }
-  .ui-tabs--underline button { font-size: 16px; }
   /* the count drops under the tabs rather than squeezing them */
   .ui-tabs-row { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 0 6px; }
 }

@@ -17,7 +17,7 @@ describe("src/ui", () => {
   });
 
   test("every shared piece is exported from the one index", () => {
-    for (const name of ["Pill", "SavedPill", "SearchField", "SubTabs", "PageTitle", "FilterBar",
+    for (const name of ["Pill", "SavedPill", "SearchField", "SubTabs", "FilterBar",
                         "PageFrame", "Count", "AccountDisc", "SuggestionRows"]) {
       expect(index).toMatch(new RegExp(`export function ${name}\\b`));
     }
@@ -26,6 +26,12 @@ describe("src/ui", () => {
   test("responsiveness is a CONTAINER query, so the style sheet can show the phone layout in a desktop window", () => {
     expect(css).toMatch(/@container ui-frame \(max-width: 640px\)/);
     expect(css).not.toMatch(/@media \(max-width/);
+  });
+
+  test("the retired forms stay retired: no underline tabs, no page title, no tinted pill", () => {
+    const stripped = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(stripped).not.toMatch(/\.ui-tabs--underline|\.ui-title|\.ui-pill--solid|brand-olive-tint/);
+    expect(index).not.toMatch(/export function PageTitle/);
   });
 
   test("the page-frame sizes are variables a page cannot quietly override", () => {
