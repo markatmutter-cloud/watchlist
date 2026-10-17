@@ -10,7 +10,9 @@ import { ReferenceBrowse } from "./ReferenceBrowse";
 describe("ReferenceBrowse", () => {
   test("renders the guides landing with the standard filter bar + cards", () => {
     render(<ReferenceBrowse items={[]} />);
-    expect(screen.getByText("Reference guides")).toBeInTheDocument();
+    // No page title any more (Mark, 2026-10-17, style-sheet D3): the header's active tab says where you are.
+    expect(screen.queryByRole("heading", { name: "Reference guides" })).not.toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Search guides" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Brand/ })).toBeInTheDocument();
     // 2026-10-16 (Mark): Saved is an icon-only heart pill in the filter row, no
     // word, no sub-tab row. This reverses 2026-07-30 (sub-tab, never a pill);

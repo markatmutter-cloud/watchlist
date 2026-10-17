@@ -625,8 +625,8 @@ wear the magazine's bar by default (`MagazineShellBar`, one compact row — the
 shells' top region is pinned, so a two-tier masthead can't live there); `?look=old`
 is the way back. **UI consolidation (Mark, 2026-10-17: "every page is different ... without chasing leaks") — IN PROGRESS.** One shared
 page frame, `src/ui`, approved on the live style sheet `?view=styleguide` before any tab moves. Migration order, each its own
-PR, deleting the old pieces as each tab lands: (1) DONE 2026-10-17: Mark's picks D1 segmented, D2 solid pill, D3 no title, D4 Bodoni header, D5 heart-only Saved tab; (2) Articles + Reference
-Guides (smallest); (3) Watches; (4) Saved/Lists container + the account menu; (5) Home's search + masthead pieces; (6) delete
+PR, deleting the old pieces as each tab lands: (1) DONE 2026-10-17: Mark's picks D1 segmented, D2 solid pill, D3 no title, D4 Bodoni header, D5 heart-only Saved tab; (2) DONE 2026-10-17: Articles + Reference
+Guides (via `PageShell` + `PageFrame`); (3) Watches; (4) Saved/Lists container + the account menu; (5) Home's search + masthead pieces; (6) delete
 `StandardFilterBar` / `StandardSearchInput` / `PageHeader` / `SubTabBar` / the `.magw-*` and `.mag-search*` copies, the
 `pillBase` family, and the inline `CHROME` numbers they used. Done when `ui-guard` can assert no page defines its own pill,
 search field or tab strip. Housekeeping found on the way: the repo lives in an iCloud-synced folder, which keeps creating

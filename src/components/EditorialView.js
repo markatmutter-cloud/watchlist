@@ -1,10 +1,7 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { pillBase, clearAllPill, editorialTitle, cardGridStyle } from "../styles";
-import { Chip } from "./Chip";
-import { PageHeader } from "./PageHeader";
-import { StandardFilterBar, StandardSearchInput } from "./StandardFilterBar";
-import { SavedPill } from "./SavedPill";
+import { editorialTitle, cardGridStyle } from "../styles";
+import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame } from "../ui";
 import { shortHash, imgSrc, fetchJsonCached } from "../utils";
 import { HeartIcon } from "./icons";
 
@@ -338,16 +335,6 @@ export function EditorialView({ isMobile, cols, compact, gridStyle, watchlist, h
   const [brandsExpanded, setBrandsExpanded] = useState(false);
   const [pageSize, setPageSize] = useState(RESULTS_PAGE_SIZE);
 
-  // B-01 (2026-05-24): on mobile, find the shell's editorial filter slot so we
-  // can portal the filter chrome into the shared sticky stack (one chrome, like
-  // every other tab — kills the 2nd-sticky-layer search squash). Desktop = null
-  // → renders inline below. Must run before any early return (React hook order).
-  const [filterSlot, setFilterSlot] = useState(null);
-  useLayoutEffect(() => {
-    if (!isMobile) { setFilterSlot(null); return; }
-    setFilterSlot(document.getElementById("editorial-filter-slot"));
-  }, [isMobile]);
-
   // Eager fetch of metadata only on first mount — small (~5 MB total
   // across all sources) so this lands well inside a second on broadband.
   // The bigger bodies files defer until the user actually searches.
@@ -578,176 +565,73 @@ export function EditorialView({ isMobile, cols, compact, gridStyle, watchlist, h
     );
   }
 
-  const expanded = activeFilterPop !== null;
-  // Filter chrome background. Reverted from the prior brand-tint
-  // (Mark spec 2026-05-21, with Hodinkee Featured Videos reference):
-  // the tinted strip read as "this is a different surface" but the
-  // editorial-section signal now comes from the dark Featured block
-  // below — letting the filter bar return to standard chrome
-  // matches the rest of the app's surfaces while still keeping
-  // Editorial visually distinct.
-  const filterBandBg = "var(--bg)";
-  const expansionPanelStyle = {
-    padding: "10px 20px 24px",
-    borderBottom: "0.5px solid var(--border)",
-    background: "var(--bg)",
-    display: "flex", flexWrap: "wrap", gap: 8,
-    alignItems: "flex-start",
-    lineHeight: 1.5,
-  };
-  const chipClearLinkStyle = {
-    fontSize: 12, padding: "4px 10px", borderRadius: 20,
-    fontFamily: "inherit", whiteSpace: "nowrap",
-    border: "none", outline: "none", cursor: "pointer",
-    background: "transparent", color: "var(--brand)",
-    boxShadow: "inset 0 0 0 0.5px var(--brand)",
-    marginLeft: 4,
-  };
-  // B-01 (2026-05-24): the filter chrome (FilterRow + expansion panels) as a
-  // standalone fragment. On mobile it's portaled into the shell's sticky stack
-  // (#editorial-filter-slot) so editorial's filters live in the SAME chrome as
-  // every other tab — no 2nd in-body sticky layer squashing the search. Desktop
-  // keeps the inline sticky wrapper (its chrome differs; not the B-01 surface).
-  const editorialFilterChrome = (
-    <>
-      {/* In-Editorial search input retired 2026-05-21 (Mark spec):
-          the global top-bar search now serves Editorial too, with a
-          context-aware placeholder. The shells (DesktopShell +
-          MobileShell) own the input element; App.js holds the state;
-          this component reads `search` from props. Removing the
-          duplicate input closes the visual asymmetry between
-          Listings and Collecting headers (the empty slot where the
-          search used to be). */}
-
-      {/* Filter strip — the StandardFilterBar layout (2026-06-03 chrome pass):
-          pills left · search CENTERED (desktop) · count right in a reserved
-          slot. The Date sort pill is gone (P-12 — derived sort above); the
-          mobile in-bar search input is gone (P-13 — the shell's sticky search
-          row is the single input on mobile; this bar carries only the pills
-          + count there). */}
-      <StandardFilterBar
-        isMobile={isMobile}
-        expanded={expanded}
-        background={filterBandBg}
-        count={loading
-          ? "Loading…"
-          : `${filtered.length.toLocaleString()} ${filtered.length === 1 ? "article" : "articles"}`}
-        search={isMobile ? null : (
-          <StandardSearchInput
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search articles…"
-            ariaLabel="Search articles"
-          />
-        )}
-        pills={
-          <>
-            {/* Source inline-expand pill */}
-            <button
-              onClick={() => setActiveFilterPop(p => p === "source" ? null : "source")}
-              style={pillBase(activeSources.length > 0 || activeFilterPop === "source", { compact: true })}>
-              Source{activeSources.length > 0 ? ` · ${activeSources.length}` : ""}
-            </button>
-            {/* Brand inline-expand pill */}
-            <button
-              onClick={() => setActiveFilterPop(p => p === "brand" ? null : "brand")}
-              style={pillBase(activeBrands.length > 0 || activeFilterPop === "brand", { compact: true })}>
-              Brand{activeBrands.length > 0 ? ` · ${activeBrands.length}` : ""}
-            </button>
-            {/* Saved: an icon-only heart pill again (Mark, 2026-10-16). It was a
-                labelled pill until 2026-07-30, then a sub-tab; Mark now wants the
-                bare heart in the filter row, as Watches had it, and the extra row
-                gone. Same `heartedOnly` state underneath. */}
-            <SavedPill active={heartedOnly} onClick={() => setHeartedOnly((v) => !v)} what="saved articles" />
-            {/* × Clear all — shared olive clearAllPill (same as Listings). */}
-            {hasFilters && (
-              <button onClick={clearAll} style={clearAllPill}>× Clear all</button>
+  // The filter bar, built from src/ui (Mark, 2026-10-17: one definition per piece).
+  // pills left · search centred (its own row on a phone) · count right; the open
+  // Source / Brand options panel lives INSIDE the sticky zone so it pins with the bar.
+  const filterBarJSX = (
+    <FilterBar
+      sticky
+      count={loading
+        ? "Loading…"
+        : `${filtered.length.toLocaleString()} ${filtered.length === 1 ? "article" : "articles"}`}
+      search={
+        <SearchField
+          size={isMobile ? "full" : "row"}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onClear={() => setSearch("")}
+          placeholder="Search articles…"
+          ariaLabel="Search articles" />
+      }
+      pills={
+        <>
+          <Pill on={activeSources.length > 0 || activeFilterPop === "source"} n={activeSources.length || null}
+                onClick={() => setActiveFilterPop((p) => (p === "source" ? null : "source"))}>Source</Pill>
+          <Pill on={activeBrands.length > 0 || activeFilterPop === "brand"} n={activeBrands.length || null}
+                onClick={() => setActiveFilterPop((p) => (p === "brand" ? null : "brand"))}>Brand</Pill>
+          {/* Saved: the bare heart (Mark, 2026-10-16/17). Same `heartedOnly` state. */}
+          <SavedPill on={heartedOnly} onClick={() => setHeartedOnly((v) => !v)} what="saved articles" />
+          {hasFilters && <Pill quiet onClick={clearAll}>× Clear all</Pill>}
+        </>
+      }
+      panel={
+        activeFilterPop === "source" ? (
+          <ChipPanel>
+            {SOURCES.map((s) => (
+              <Chip key={s.key} on={activeSources.includes(s.key)} n={sourceCounts[s.key] || 0}
+                    onClick={() => toggleSource(s.key)}>{s.label}</Chip>
+            ))}
+            {activeSources.length > 0 && <Chip quiet onClick={() => setActiveSources([])}>× Clear</Chip>}
+          </ChipPanel>
+        ) : activeFilterPop === "brand" ? (
+          <ChipPanel>
+            {brandOptions.length === 0 ? (
+              <span style={{ fontSize: 12, color: "var(--text3)" }}>No brands yet.</span>
+            ) : (
+              <>
+                {(brandsExpanded ? brandOptions : brandOptions.slice(0, BRAND_TOP_N)).map((b) => (
+                  <Chip key={b.brand} on={activeBrands.includes(b.brand)} n={b.count}
+                        onClick={() => toggleBrand(b.brand)}>{b.brand}</Chip>
+                ))}
+                {brandOptions.length > BRAND_TOP_N && (
+                  <Chip quiet onClick={() => setBrandsExpanded((v) => !v)}>
+                    {brandsExpanded ? "Less ↑" : `+${brandOptions.length - BRAND_TOP_N} more`}
+                  </Chip>
+                )}
+                {activeBrands.length > 0 && <Chip quiet onClick={() => setActiveBrands([])}>× Clear</Chip>}
+              </>
             )}
-          </>
-        }
-      />
-
-      {/* Source expansion panel */}
-      {activeFilterPop === "source" && (
-        <div style={expansionPanelStyle}>
-          {SOURCES.map(s => (
-            <Chip key={s.key}
-              label={s.label}
-              count={sourceCounts[s.key] || 0}
-              active={activeSources.includes(s.key)}
-              onClick={() => toggleSource(s.key)} />
-          ))}
-          {activeSources.length > 0 && (
-            <button onClick={() => setActiveSources([])} style={chipClearLinkStyle}>× Clear</button>
-          )}
-        </div>
-      )}
-
-      {/* Brand expansion panel */}
-      {activeFilterPop === "brand" && (
-        <div style={expansionPanelStyle}>
-          {brandOptions.length === 0 ? (
-            <span style={{ fontSize: 12, color: "var(--text3)" }}>No brands yet.</span>
-          ) : (
-            <>
-              {(brandsExpanded ? brandOptions : brandOptions.slice(0, BRAND_TOP_N)).map(b => (
-                <Chip key={b.brand}
-                  label={b.brand}
-                  count={b.count}
-                  active={activeBrands.includes(b.brand)}
-                  onClick={() => toggleBrand(b.brand)} />
-              ))}
-              {brandOptions.length > BRAND_TOP_N && (
-                <Chip
-                  label={brandsExpanded ? "Less ↑" : `+${brandOptions.length - BRAND_TOP_N} more`}
-                  active={false}
-                  blue
-                  onClick={() => setBrandsExpanded(v => !v)} />
-              )}
-              {activeBrands.length > 0 && (
-                <button onClick={() => setActiveBrands([])} style={chipClearLinkStyle}>× Clear</button>
-              )}
-            </>
-          )}
-        </div>
-      )}
-    </>
+          </ChipPanel>
+        ) : null
+      }
+    />
   );
 
+  // Built from src/ui (Mark, 2026-10-17): no page title (the header's active tab says where
+  // you are), the filter bar sticks under the header, one inset. The old PageHeader, the
+  // negative-margin sticky wrapper and the mobile portal into the shell are gone.
   return (
-    // paddingTop 4 → 0 (2026-06-03 ledger audit): the stray 4px made the
-    // Articles title sit lower than Guides/Saved. Title height is
-    // PageHeader's job alone — surface roots carry NO top padding.
-    <div style={{ paddingTop: 0 }}>
-      {/* Collapsing header (Mark 2026-06-02) — matches Reference guides / Saved /
-          catalog: the title scrolls away in normal flow while the filter chrome
-          below pins (desktop sticky wrapper; mobile portals it into the shell
-          sticky stack). */}
-      {/* Count moved out of the header meta into the filter bar's reserved
-          right slot (P-8/P-16, 2026-06-03) — it was rendering in BOTH places,
-          and the late-loading under-title copy jogged the layout. */}
-      <PageHeader isMobile={isMobile} title="Articles" />
-      {/* B-01: mobile portals the filter chrome into the shell sticky stack
-          (one shared chrome); desktop keeps the inline edge-to-edge sticky
-          wrapper. Falls back to inline if the slot isn't mounted yet. */}
-      {isMobile && filterSlot
-        ? createPortal(
-            <div style={{ background: "var(--bg)", padding: "4px 16px 0" }}>{editorialFilterChrome}</div>,
-            filterSlot
-          )
-        : (
-          <div style={{
-            position: "sticky", top: 0, zIndex: 20,
-            background: "var(--bg)",
-            marginLeft: isMobile ? -14 : -20,
-            marginRight: isMobile ? -14 : -20,
-            paddingLeft: isMobile ? 14 : 20,
-            paddingRight: isMobile ? 14 : 20,
-          }}>
-            {editorialFilterChrome}
-          </div>
-        )}
-
+    <PageFrame filterBar={filterBarJSX}>
       {/* Featured strip — top N most-recent articles, shown only when
           no filter / no search is active.
           The "FEATURED · most recent" dark slab above the cards was
@@ -759,7 +643,7 @@ export function EditorialView({ isMobile, cols, compact, gridStyle, watchlist, h
       {showFeatured && featured.length > 0 && (
         // Top margin = breathing room below the pinned filter bar (Mark's
         // 2026-06-03 verification pass — cards sat flush against it).
-        <div style={{ marginTop: isMobile ? 14 : 18, marginBottom: isMobile ? 32 : 48 }}>
+        <div style={{ marginBottom: isMobile ? 32 : 48 }}>
           {/* Featured strip uses the same 3-col magazine layout as
               the year-grouped grid below — Vogue/Hodinkee top-of-
               page pattern. Mobile keeps 1-col so the hero card
@@ -786,7 +670,7 @@ export function EditorialView({ isMobile, cols, compact, gridStyle, watchlist, h
       {/* Card grid grouped by year. Top padding gives the first year header
           breathing room below the pinned filter bar when the featured strip
           is hidden (filters/search active). */}
-      <div style={{ padding: isMobile ? "10px 14px 110px" : "14px 20px 110px" }}>
+      <div style={{ paddingBottom: 110 }}>
         {!loading && filtered.length === 0 && (
           <div style={{
             padding: 32, color: "var(--text2)", textAlign: "center",
@@ -859,7 +743,7 @@ export function EditorialView({ isMobile, cols, compact, gridStyle, watchlist, h
           </div>
         )}
       </div>
-    </div>
+    </PageFrame>
   );
 }
 

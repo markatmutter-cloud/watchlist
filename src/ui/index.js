@@ -15,6 +15,8 @@ import React from "react";
 import { HeartIcon } from "../components/icons";
 import "./ui.css";
 
+export { PageShell } from "./PageShell";
+
 // Join class names, skipping falsy ones.
 const cx = (...parts) => parts.filter(Boolean).join(" ");
 
@@ -51,6 +53,20 @@ export function SavedPill({ on, onClick, what = "saved" }) {
     <Pill on={on} toggle icon={<HeartIcon size={15} filled={!!on} />}
           aria-label={label} title={label} onClick={onClick} />
   );
+}
+
+// ---- Chip / ChipPanel: the options behind a pill (sources, brands, models) ----------
+//   on     selected (solid olive)    n   a count after the label    quiet   "× Clear", "+36 more"
+export function Chip({ on, n, quiet, children, className, ...rest }) {
+  return (
+    <button type="button" className={cx("ui-chip", on && "is-on", quiet && "ui-chip--quiet", className)} {...rest}>
+      {children}
+      {n !== undefined && n !== null ? <span className="ui-chip-n">{n}</span> : null}
+    </button>
+  );
+}
+export function ChipPanel({ children }) {
+  return <div className="ui-panel">{children}</div>;
 }
 
 // ---- SearchField: the one search box -----------------------------------------
@@ -95,13 +111,18 @@ export function SubTabs({ tabs, activeKey, onSelect, ariaLabel }) {
   );
 }
 
-// ---- FilterBar: pills left · search centred · count right ----------------------------
-export function FilterBar({ pills, search, count, end }) {
+// ---- FilterBar: pills left · search centred · count right -----------------------------
+//   panel    the open options panel (ChipPanel), kept INSIDE the sticky zone
+//   sticky   pin under the header while the page scrolls
+export function FilterBar({ pills, search, count, end, panel, sticky }) {
   return (
-    <div className={cx("ui-filterbar", !search && "ui-filterbar--nosearch")}>
-      <div className="ui-filterbar-pills">{pills}</div>
-      {search ? <div className="ui-filterbar-search">{search}</div> : null}
-      <div className="ui-filterbar-end">{end}<Count>{count}</Count></div>
+    <div className={cx("ui-filterzone", sticky && "is-sticky")}>
+      <div className={cx("ui-filterbar", !search && "ui-filterbar--nosearch")}>
+        <div className="ui-filterbar-pills">{pills}</div>
+        {search ? <div className="ui-filterbar-search">{search}</div> : null}
+        <div className="ui-filterbar-end">{end}<Count>{count}</Count></div>
+      </div>
+      {panel || null}
     </div>
   );
 }

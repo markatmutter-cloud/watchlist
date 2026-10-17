@@ -12,7 +12,7 @@
 import React, { useState } from "react";
 import {
   Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
-  AccountDisc, SuggestionRows,
+  AccountDisc, SuggestionRows, Chip, ChipPanel,
 } from "./index";
 import { MagazineShellBar, MagazineBrandRow, MagazineTabRow } from "../components/MagazineShellBar";
 import { FilterIcon } from "../components/icons";
@@ -259,6 +259,17 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
               <Pill quiet>+36 more</Pill>
             </div>
             <p className="ss-small">Click them. Selected is solid olive, the same "on" as the sub-tab's active chip. The heart is a bare icon: no word, never red.</p>
+          </Specimen>
+          <Specimen label="Chip: the options behind a pill (sources, brands, models), shown in the open panel">
+            <ChipPanel>
+              <Chip n={1648}>Hairspring Finds</Chip>
+              <Chip on n={256}>Bring a Loupe</Chip>
+              <Chip n={3756}>Rolex Magazine</Chip>
+              <Chip n={206}>On The Dash</Chip>
+              <Chip quiet>+36 more</Chip>
+              <Chip quiet>× Clear</Chip>
+            </ChipPanel>
+            <p className="ss-small">Sentence case and smaller than a pill, because there can be dozens. Selected is the same solid olive. The panel opens inside the sticky zone, so it pins with the filter bar.</p>
           </Specimen>
           <Specimen label="Search field: header · filter row · with a value and the save heart · with suggestions">
             <div className="ss-stack">

@@ -82,6 +82,7 @@ import { TOP_TABS, isTopTabActive } from "./topTabs";
 import { readLook, readChromeFaces, isMagWatchesOn } from "./lookFlag";
 import { ChromeTint, chromeIsLight } from "./chromeTint";
 import StyleSheet from "./ui/StyleSheet";
+import { PageShell } from "./ui";
 import { innerToggleButton, actionButton, setMagazineLook } from "./styles";
 
 // Same-origin paths — Vercel serves everything in /public at the
@@ -5111,6 +5112,50 @@ export default function Watchlist() {
     && !shareActive && !challengeShareActive && !listShareActive && !catalogShareActive
     && !searchAllActive && !catalogFullPage;
 
+  // Articles and Reference Guides are built from src/ui (Mark, 2026-10-17: one definition
+  // per piece), so they no longer sit inside the legacy shells: PageShell gives them the
+  // header, the modals and the overlays, and the page lays itself out with PageFrame. The
+  // other `references` subs (size comparison, challenges, links) are tools and still use
+  // the shells. There is no `?look=old` path for these two tabs: keeping the old chrome
+  // alive beside the new is exactly how pages ended up a blend of two systems.
+  const referencesPageActive = tab === "references"
+    && (referencesSubTab === "editorial" || referencesSubTab === "references")
+    && !shareActive && !challengeShareActive && !listShareActive && !catalogShareActive
+    && !searchAllActive && !catalogFullPage && !styleSheetOn;
+  const sharedOverlaysJSX = (
+    <>
+      {trackNewItemModalJSX}
+      {addSearchModalJSX}
+      {collectionEditModalJSX}
+      {collectionPickerModalJSX}
+      {settingsModalJSX}
+      {favSearchModalJSX}
+      {lotMigrationBannerJSX}
+      {userLimitBannerJSX}
+    </>
+  );
+  const referencesPageJSX = !referencesPageActive ? null : (
+    <PageShell
+      isMobile={isMobile}
+      baseStyle={baseStyle}
+      tabs={topTabs}
+      authJSX={authJSX}
+      user={user}
+      onHome={() => { setTabWithReceiveEscape("home"); setPage(1); }}
+      goToSaved={() => { setTabWithReceiveEscape("listings"); setListingsSubTab("saved"); setPage(1); }}
+      chromeFaces={readChromeFaces()}
+      overlaysJSX={sharedOverlaysJSX}
+      aboutModalOpen={aboutModalOpen}
+      setAboutModalOpen={setAboutModalOpen}
+      signInPromptOpen={signInPromptOpen}
+      setSignInPromptOpen={setSignInPromptOpen}
+      signInWithGoogle={signInWithGoogle}
+      primaryCurrency={primaryCurrency}
+    >
+      {referencesTabJSX}
+    </PageShell>
+  );
+
   const magWatchesJSX = !magWatchesActive ? null : (
     <MagazineWatches
       isMobile={isMobile}
@@ -5179,18 +5224,7 @@ export default function Watchlist() {
       gridJSX={listingsTabContentJSX}
       // The overlays the shells render at their own tail. Miss one and a
       // control on this page (share, add-to-list, settings) opens nothing.
-      overlaysJSX={
-        <>
-          {trackNewItemModalJSX}
-          {addSearchModalJSX}
-          {collectionEditModalJSX}
-          {collectionPickerModalJSX}
-          {settingsModalJSX}
-          {favSearchModalJSX}
-          {lotMigrationBannerJSX}
-          {userLimitBannerJSX}
-        </>
-      }
+      overlaysJSX={sharedOverlaysJSX}
       aboutModalOpen={aboutModalOpen}
       setAboutModalOpen={setAboutModalOpen}
       signInPromptOpen={signInPromptOpen}
@@ -5331,6 +5365,8 @@ export default function Watchlist() {
       {styleSheetOn
         ? <StyleSheet tabs={styleSheetTabs} authJSX={authJSX} isMobile={isMobile}
                       onHome={() => { window.location.href = "/"; }} />
+        : referencesPageActive
+        ? referencesPageJSX
         : magWatchesActive
         ? magWatchesJSX
         : isMobile
