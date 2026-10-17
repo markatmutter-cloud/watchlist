@@ -51,7 +51,6 @@ const AuctionCalendar = React.lazy(() =>
   import("./components/AuctionCalendar").then(m => ({ default: m.AuctionCalendar }))
 );
 import { LotMigrationBanner } from "./components/LotMigrationBanner";
-import { WatchlistTab } from "./components/WatchlistTab";
 import { EmptyState } from "./components/EmptyState";
 // AdminTab is code-split (B-22): admin-only code that every public visitor
 // used to download + parse on first load. React.lazy splits it into its own
@@ -61,12 +60,9 @@ import { EmptyState } from "./components/EmptyState";
 const AdminTab = React.lazy(() =>
   import("./components/AdminTab").then(m => ({ default: m.AdminTab }))
 );
-import { MobileShell } from "./components/MobileShell";
-import { DesktopShell } from "./components/DesktopShell";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ConfirmHost, confirm } from "./components/ConfirmModal";
 import { ChatBubbleHost } from "./components/ChatBubbleHost";
-import { PageHeader } from "./components/PageHeader";
 import { registerActionHandlers, registerItemResolver } from "./components/ActionBus";
 // IdentityBand import retired 2026-05-22 — component file still in
 // the repo for git history, no current call site.
@@ -77,9 +73,7 @@ const SearchResultsView = React.lazy(() =>
   import("./components/SearchResultsView").then(m => ({ default: m.SearchResultsView }))
 );
 import DateDivider from "./components/DateDivider";
-import SubTabBar from "./components/SubTabBar";
 import { TOP_TABS, isTopTabActive } from "./topTabs";
-import { readLook, readChromeFaces } from "./lookFlag";
 import { savedUrlGoesToWatches } from "./legacyRoutes";
 import { ChromeTint, chromeIsLight } from "./chromeTint";
 import StyleSheet from "./ui/StyleSheet";
@@ -87,7 +81,7 @@ import { PageShell, PageFrame } from "./ui";
 import ListsPage from "./components/ListsPage";
 import CatalogPage from "./components/CatalogPage";
 import { HeartIcon } from "./components/icons";
-import { innerToggleButton, actionButton, setMagazineLook } from "./styles";
+import { actionButton } from "./styles";
 
 // Same-origin paths — Vercel serves everything in /public at the
 // site root, so these resolve against the user's current host
@@ -242,10 +236,6 @@ function endingSoonComparator(a, b) {
 }
 
 export default function Watchlist() {
-  // The look flag for chrome tokens (styles.js `LOOK`): set before any child
-  // renders, so every pill and count below reads the same answer. A plain call,
-  // not a hook — safe above the early returns.
-  setMagazineLook(readLook() === "new");
   const screenWidth = useWidth();
   const sysDark = useSystemDark();
   // 760, was 640 (Mark 2026-06-06): half-screen laptop windows got the
@@ -282,7 +272,7 @@ export default function Watchlist() {
     filterModels,  setFilterModels,
     filterRefs,    setFilterRefs,
     filterSaleUrls, setFilterSaleUrls,
-    toggleSource, toggleBrand, toggleModel, toggleSaleUrl,
+    toggleSource, toggleBrand, toggleModel,
     sort, setSort,
     search, setSearch,
     minPriceText, setMinPriceText,
@@ -408,12 +398,6 @@ export default function Watchlist() {
   // reference this name. All four sub-tabs now route to CollectionsTab, so
   // SUB_VALUES_COLLECTIONS === SUB_VALUES.
   const SUB_VALUES_COLLECTIONS = SUB_VALUES;
-  // Bundle 2A.2b (2026-05-08) — the three hearted sub-tabs
-  // (listings/auctions/sold) collapse under a single "Saved" pill in
-  // the strip, with an internal Listings/Auctions/Sold toggle below.
-  // Sub-tab values themselves stay unchanged — backward compat for
-  // existing share URLs + localStorage prefs.
-  const SAVED_HEARTED_SUBS = ["listings", "auctions", "sold"];
   const [watchTopTab, setWatchTopTab] = useState(() => {
     // Map any legacy/unknown sub-tab value to the new four-key set.
     // Used for the URL `?sub=` deep-link (so old shared links resolve);
@@ -1392,7 +1376,6 @@ export default function Watchlist() {
   });
   // (brandsExpanded / sourcesExpanded / refsExpanded moved to useFilters.)
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
   const observerRef = useRef(null);
   const BRANDS_SHOW = 8;
   const SOURCES_SHOW = 8;
@@ -3197,7 +3180,6 @@ export default function Watchlist() {
       .sort((a, b) => (a.hiddenAt < b.hiddenAt ? 1 : -1));
   }, [items, hidden]);
 
-  const watchCount = Object.keys(watchlist).length;
   // (hasFilters now derived inside useFilters.)
 
   const savedSearchStats = useMemo(() => {
@@ -3628,16 +3610,6 @@ export default function Watchlist() {
   if (loading) return <><div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Pulling the latest listings…</div>{preloadTint}</>;
   if (loadError) return <><div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Couldn't pull the listings. Refresh to try again.</div>{preloadTint}</>;
 
-  // ── SHARED STYLE TOKEN ───────────────────────────────────────────────────
-  // sectionHeadingStyle still consumed by MobileShell for the filter
-  // drawer's Source / Brand / Price-range section labels. The desktop
-  // sidebar this once also fed (sidebarFilterPanelJSX, ~45 lines of
-  // dead JSX) was retired in the April '26 filter consolidation and
-  // removed in the 2026-05-04 cleanup pass.
-  const sectionHeadingStyle = {
-    fontSize: 10, fontWeight: 600, textTransform: "uppercase",
-    letterSpacing: "0.08em", color: "var(--text1)", marginBottom: 8,
-  };
 
   // ── SEARCH RUNNER ─────────────────────────────────────────────────────────
   // Saved searches aren't their own tab — they render as a subsection
@@ -3915,10 +3887,6 @@ export default function Watchlist() {
   // surface you drilled in from). Clearing filterSaleUrls ends the catalog
   // context so the normal chrome returns under the calendar modal.
   const exitCatalogToCalendar = () => { setFilterSaleUrls([]); setCalendarModalOpen(true); };
-  // saleContextHeaderJSX retired in favour of the green bar (same drill-in
-  // condition), but kept as a null prop so the shells' existing render slot
-  // is a harmless no-op rather than a removed-prop ReferenceError.
-  const saleContextHeaderJSX = null;
   const catalogActions = (() => {
     if (!catalogSale) return [];
     const sale = catalogSale;
@@ -3955,77 +3923,7 @@ export default function Watchlist() {
     if (sale.url) a.push({ label: "Auction house ↗", href: sale.url, external: true });
     return a;
   })();
-  // Green title bar (content only — the shells wrap it in their own sticky
-  // container so it pins as you scroll the lots). House · location · date
-  // eyebrow + sale title, × on the right.
-  const catalogBarJSX = catalogSale ? (
-    <div style={{
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      gap: 12, padding: "12px 16px",
-      paddingTop: isMobile ? "calc(12px + env(safe-area-inset-top, 0px))" : 12,
-      background: "var(--brand-olive)", color: "#fff",
-    }}>
-      <div style={{ minWidth: 0 }}>
-        <div style={{
-          fontSize: 10, fontWeight: 600, letterSpacing: "0.06em",
-          textTransform: "uppercase", opacity: 0.82,
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-        }}>
-          {`${catalogSale.house}${catalogSale.location ? ` · ${catalogSale.location}` : ""}${fmtSaleDateRange(catalogSale) ? ` · ${fmtSaleDateRange(catalogSale)}` : ""}`}
-        </div>
-        <div style={{
-          fontSize: 16, fontWeight: 600,
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-        }}>{catalogSale.title}</div>
-      </div>
-      <button onClick={exitCatalogToCalendar} aria-label="Back to auction calendar"
-        title="Back to auction calendar"
-        style={{
-          border: "none", background: "transparent", cursor: "pointer",
-          color: "#fff", fontSize: 22, lineHeight: 1, padding: "0 4px", flexShrink: 0,
-        }}>×</button>
-    </div>
-  ) : null;
-  // Slim action row beneath the green bar (Save catalog · Share · Auction
-  // house ↗). Sits in page-bg so it reads as a toolbar under the title.
-  const catalogActionRowJSX = catalogSale ? (
-    <div style={{
-      display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap",
-      padding: "8px 16px", background: "var(--bg)",
-      borderBottom: "0.5px solid var(--border)",
-    }}>
-      {catalogActions.map((a, i) => {
-        const style = {
-          display: "inline-flex", alignItems: "center", gap: 5,
-          fontFamily: "inherit", fontSize: 12, fontWeight: 600,
-          padding: "5px 11px", borderRadius: 999,
-          border: "1px solid var(--border)", background: "transparent",
-          color: "var(--text1)", cursor: "pointer", textDecoration: "none",
-          whiteSpace: "nowrap",
-        };
-        return a.href ? (
-          <a key={i} href={a.href} target="_blank" rel="noopener noreferrer" style={style}>{a.label}</a>
-        ) : (
-          <button key={i} onClick={a.onClick} style={style}>{a.icon}{a.label}</button>
-        );
-      })}
-    </div>
-  ) : null;
 
-  // Saved-tab scrolling header (Mark 2026-06-02). On the Saved (hearted)
-  // surface the title scrolls away while the filter bar pins — same collapsing
-  // pattern as the catalog. The shell renders this in the scroll pane above the
-  // sticky filter, so the title must live here (a shell slot), not in
-  // HeartedView. The under-title count was removed 2026-06-03 (P-8, Mark's
-  // verification pass): the count's ONE home is the filter bar's reserved
-  // right slot — the header carried a second, slightly different number
-  // ("434 items" over the grid's "432 watches") right above it.
-  const savedHeaderJSX = (
-    <PageHeader
-      isMobile={isMobile}
-      title="Saved"
-    />
-  );
 
   const listingsGridJSX = (
     <>
@@ -4202,20 +4100,6 @@ export default function Watchlist() {
     </React.Suspense>
   );
 
-  // Identity band — RETIRED 2026-05-22 (Mark spec). PR_β extended
-  // the olive chrome zone through brand + main-tabs + sub-tabs, so
-  // the sub-tab strip itself now visually identifies the section.
-  // The separate band below was doing a duplicate job. Mark: "the
-  // identity bars could be taken off now right?"
-  //
-  // Count display ("3,548 watches") moves back to the filter row's
-  // right edge — see DesktopShell + MobileShell filter rows.
-  //
-  // Const kept (= null) so shells still destructure
-  // `identityBandJSX` without conditional logic at the call site.
-  // Git history (#433 shipped it; this PR retired it) is the
-  // reference for the old shape if it ever needs to come back.
-  const identityBandJSX = null;
 
 
   // Save-current-search modal. Opened by the heart in the search input.
@@ -4259,35 +4143,6 @@ export default function Watchlist() {
   // Listings tab now uses sub-tabs. listingsSubTabsJSX below replaces
   // both controls.)
 
-  // Listings tab sub-tab strip — the shared SubTabBar (segmented control
-  // since audit:2026-06-06, horizontally scrollable). Mobile picks up the
-  // olive bg to extend the colored chrome zone from brand+tabs down through
-  // the sub-tabs (PR_β-A 2026-05-22); desktop is neutral + hairline divider.
-  const listingsSubTabsJSX = tab !== "listings" ? null : (
-    <SubTabBar
-      ariaLabel="Listings views"
-      // "For sale", not "Listings" (audit:2026-06-06 U-10): to a novice,
-      // "Listings" under a tab called "Watches" is a near-synonym that adds
-      // no meaning — outcome words make the row read as a real three-way
-      // choice (for sale now / at auction / already sold). Internal key
-      // stays `live`; only the label changes.
-      // "Saved" (2026-07-30) is a fourth SLICE, not a fourth state: For sale /
-      // Auctions / Sold are where a watch sits in the market, Saved is your
-      // relationship to it, cutting across all three. It earns the slot
-      // anyway because nothing else can show your saved set whole — see the
-      // LISTINGS_SUB_VALUES note. Cards keep showing their own state, so the
-      // row still reads honestly.
-      tabs={[["live", "For sale"], ["auctions", "Auctions"], ["sold", "Sold"], ["saved", "♡ Saved"]]}
-      activeKey={listingsSubTab}
-      onSelect={(key) => { setListingsSubTab(key); setDrawerOpen(false); setPage(1); }}
-      isMobile={isMobile}
-      onOlive={isMobile}
-      containerStyle={{
-        background: isMobile ? "var(--brand-olive)" : "var(--bg)",
-        borderBottom: isMobile ? "none" : "0.5px solid var(--border)",
-      }}
-    />
-  );
 
   // referencesSubTabsJSX retired 2026-06-03 (IA restructure): Articles and
   // Reference Guides are top-level tabs now; the tools family (size / links /
@@ -4310,60 +4165,6 @@ export default function Watchlist() {
   // (Retired 2026-04-30) AuctionsTab JSX was built here. Tracked lots
   // now flow into Watchlist > Listings; calendar lives at Watchlist >
   // Auction Calendar via AuctionCalendar.js.
-
-  // Watchlist tab content JSX (was `watchlistTabJSX` pre-2A.2). The
-  // dispatch in `savedContentJSX` below picks between this and the
-  // CollectionsTab content based on which Saved sub-tab is active.
-  const watchlistTabJSX_inner = (
-    <WatchlistTab
-      user={user}
-      signInWithGoogle={triggerSignInPrompt}
-      isAuthConfigured={isAuthConfigured}
-      watchlist={watchlist}
-      watchItems={watchItems}
-      watchCount={watchCount}
-      toggleWatchlist={toggleWatchlist}
-      liveStateById={liveStateById}
-      savedSearchStats={savedSearchStats}
-      searchEditor={searchEditor}
-      setSearchEditor={setSearchEditor}
-      startAddSearch={startAddSearch}
-      startEditSearch={startEditSearch}
-      cancelSearchEdit={cancelSearchEdit}
-      commitSearch={commitSearch}
-      removeSearch={removeSearch}
-      runSearch={runSearch}
-      handleWish={handleWish}
-      compact={compact}
-      gridStyle={gridStyle}
-      isMobile={isMobile}
-      sort={sort}
-      watchTopTab={watchTopTab}
-      setWatchTopTab={setWatchTopTab}
-      legacyLocal={legacyLocal}
-      importState={importState}
-      setImportState={setImportState}
-      legacyKeys={{ watchlist: LEGACY_WATCHLIST_KEY, hidden: LEGACY_HIDDEN_KEY }}
-      setTab={setTab}
-      setPage={setPage}
-      activeFiltersStripJSX={activeFiltersStripJSX}
-      collectionsApi={collectionsApi}
-      setEditingCollection={setEditingCollection}
-      openCollectionPicker={openCollectionPicker}
-      startCreateCollection={startCreateCollection}
-      openTrackModal={() => { setTrackOpen(true); setTrackError(""); }}
-      primaryCurrency={primaryCurrency}
-      handleShare={handleShare}
-      hiddenItems={hiddenItems}
-      toggleHide={toggleHide}
-      allListings={items}
-      hidden={hidden}
-      observeCard={observeCard}
-      onClickListing={onClickListing}
-      hasFilters={hasFilters}
-      resetFilters={resetFilters}
-    />
-  );
 
   // Admin tab JSX — only rendered by the shells when tab === "admin".
   // The component itself fetches its own data (verification.json,
@@ -4644,7 +4445,6 @@ export default function Watchlist() {
       // The shared active-filters strip (chips + Clear all) — rendered at
       // the top of the Hearted surface so Lists gets the same clear/save
       // filter affordances as Watches (closes B-48 for this surface).
-      activeFiltersStripJSX={activeFiltersStripJSX}
       pendingOpenListId={pendingOpenListId}
       clearPendingOpenList={() => setPendingOpenListId(null)}
       // Empty-list onboarding routes here to add watches/articles/guides.
@@ -4681,15 +4481,9 @@ export default function Watchlist() {
     />
   );
 
-  // Bundle 2A.2 dispatch: when the active Saved sub-tab is one of
-  // the collections-style values (my-collection / wishlist / lists /
-  // challenges), render the CollectionsTab content; otherwise render
-  // the WatchlistTab content (saved listings / auctions / sold /
-  // searches). Shells render this via the existing `watchlistTabJSX`
-  // prop name so the two render paths stay one-place-to-debug.
-  const savedContentJSX = SUB_VALUES_COLLECTIONS.includes(watchTopTab)
-    ? collectionsTabJSX
-    : watchlistTabJSX_inner;
+  // The Lists page's content. Lists and Searches both render through CollectionsTab; the
+  // hearted landing and the WatchlistTab that backed it are gone (the Saved tab is retired).
+  const savedContentJSX = collectionsTabJSX;
 
   // Watchbox tab (Mark spec 2026-05-14): re-uses the same
   // CollectionsTab component but pinned to the My Watches view.
@@ -4740,69 +4534,8 @@ export default function Watchlist() {
   // ending-soonest default sort. Const + shellProps wiring removed
   // in the same cleanup pass.)
 
-  // Lists sub-tab strip REBUILT 2026-06-01. The Lists tab is sub-tabbed
-  // again — Hearted (default landing) · Lists · Searches · Shared — using
-  // the shared SubTabBar so it's pixel-identical to the Listings /
-  // Collecting strips. Lands on Hearted: the #1 fix (one tap to your
-  // hearted watches, was two). All four route through CollectionsTab.
-  const watchSubTabsJSX = tab !== "watchlist" ? null : (
-    <SubTabBar
-      ariaLabel="Lists views"
-      tabs={[["hearted", "♡ Watches"], ["lists", "Lists"], ["searches", "Searches"]]}
-      activeKey={watchTopTab}
-      // Re-tapping the ACTIVE sub-tab returns to its landing (P-22, Mark
-      // 2026-06-03): inside a drilled-in list, tapping "Lists" used to be a
-      // no-op (only the "< All lists" breadcrumb exited). The bump feeds the
-      // same tabResetTick CollectionsTab already watches to clear its
-      // drill-in; the breadcrumb stays as the second door.
-      onSelect={(key) => {
-        if (key === watchTopTab) setTabResetTick((n) => n + 1);
-        else setWatchTopTab(key);
-        setDrawerOpen(false); setPage(1);
-      }}
-      isMobile={isMobile}
-      onOlive={isMobile}
-      containerStyle={{
-        background: isMobile ? "var(--brand-olive)" : "var(--bg)",
-        borderBottom: isMobile ? "none" : "0.5px solid var(--border)",
-      }}
-    />
-  );
 
-  // Internal Listings/Auctions/Sold toggle for the Saved tab.
-  // Bundle 2A.2b — the three hearted views still exist as separate
-  // underlying sub-tabs, they just share a top-level pill now.
-  //
-  // 2026-05-08 (Mark feedback) — was a separate row above the filter
-  // row; merged into the filter row to save vertical space. Now
-  // returns a JSX fragment of three pills (no wrapper) so each shell
-  // can prepend it to its filter row inline. The cluster is rendered
-  // exactly when the Saved tab is on a hearted sub-tab; outside that
-  // it's null and shells render the filter row unchanged.
-  const watchHeartedToggleJSX = (tab !== "watchlist" || !SAVED_HEARTED_SUBS.includes(watchTopTab)) ? null : (
-    <>
-      {[
-        // "For sale" matches the Watches sub-tab rename (audit:2026-06-06
-        // U-10) — same concept, same word everywhere. Keys unchanged.
-        ["listings", "For sale"],
-        ["auctions", "Auctions"],
-        ["sold",     "Sold"],
-      ].map(([key, label]) => {
-        const active = watchTopTab === key;
-        return (
-          <button key={key} onClick={() => setWatchTopTab(key)}
-            style={innerToggleButton(active)}>{label}</button>
-        );
-      })}
-    </>
-  );
 
-  // collectionsSubTabsJSX retired in Bundle 2A.2 (2026-05-07) —
-  // Collections collapsed into Saved (internal `tab=watchlist`); the
-  // four collections-style sub-tabs are now part of `watchSubTabsJSX`
-  // above. Shells receive a `null` here for backward compat (the
-  // shellProps key still exists but is never assigned a JSX value).
-  const collectionsSubTabsJSX = null;
 
   // Track new item modal — single-URL paste flow with source-list
   // instructions. Trigger lives in the watchSubTabsJSX strip above the
@@ -5122,7 +4855,7 @@ export default function Watchlist() {
   // per piece), so they no longer sit inside the legacy shells: PageShell gives them the
   // header, the modals and the overlays, and the page lays itself out with PageFrame. The
   // other `references` subs (size comparison, challenges, links) are tools and still use
-  // the shells. There is no `?look=old` path for these two tabs: keeping the old chrome
+  // the shells. There is no way back to the old chrome: keeping the old chrome
   // alive beside the new is exactly how pages ended up a blend of two systems.
   const referencesPageActive = tab === "references"
     && (referencesSubTab === "editorial" || referencesSubTab === "references")
@@ -5151,7 +4884,6 @@ export default function Watchlist() {
     onHome: () => { setTabWithReceiveEscape("home"); setPage(1); },
     // The header's ♡: your saved watches (Watches ▸ ♡). Watches overrides it, since it is already there.
     goToSaved: () => { setTabWithReceiveEscape("listings"); setListingsSubTab("saved"); setPage(1); },
-    chromeFaces: readChromeFaces(),
     overlaysJSX: sharedOverlaysJSX,
     aboutModalOpen,
     setAboutModalOpen,
@@ -5294,128 +5026,6 @@ export default function Watchlist() {
     </PageShell>
   );
 
-  const shellProps = {
-    // Auction calendar launcher (Phase 4) — both shells render a
-    // "Calendar" pill on the filter row for the auction surfaces.
-    onOpenCalendar: () => setCalendarModalOpen(true),
-    // Catalog / config
-    BRANDS, BRANDS_SHOW, SOURCES, SOURCES_SHOW,
-    MODELS, MODELS_SHOW,
-    // Effective list lengths drive the "+N more" chip — without
-    // these, the chip text says "+107 more" even when the filter has
-    // narrowed the rail to ~3 chips (Mark feedback 2026-05-20).
-    effectiveBrandsCount: effectiveBrands.length,
-    effectiveSourcesCount: effectiveSources.length,
-    effectiveModelsCount: effectiveModels.length,
-    DEALER_SOURCES, AUCTION_SOURCES,
-    // State
-    aboutModalOpen, activeFilterPop, allFiltered, displayedCount,
-    brandsExpanded, currentIsSaved,
-    drawerOpen,
-    filterBrands, filterSources, filterModels, filterSaleUrls,
-    listingsSubTab,
-    referencesSubTab,
-    hasFilters, hiddenItems,
-    maxPriceText, minPriceText,
-    filterHearted,
-    search, signInPromptOpen, signInWithGoogle, sort, sourcesExpanded, modelsExpanded, tab, user,
-    visibleBrands, visibleSources, visibleModels,
-    watchTopTab, watchlist,
-    // Setters / handlers
-    handleWish, openFavPrompt, resetFilters,
-    // Top-right "reach Saved from anywhere" heart link (Mark 2026-06-02).
-    // Routes through setTabWithReceiveEscape (Mark 2026-06-03): the raw
-    // setTab changed the tab state but left an active share-receive surface
-    // covering the content, so on share pages the heart looked dead — the
-    // wrapper dismisses the receiver (like the Home icon) before we route.
-    // 2026-07-30: destination moved from Saved > ♡ Watches to Watches > ♡
-    // Saved, the surface that now holds saved watches across every state.
-    goToSaved: () => { setTabWithReceiveEscape("listings"); setListingsSubTab("saved"); setPage(1); },
-    setAboutModalOpen, setActiveFilterPop, setBrandsExpanded,
-    setDrawerOpen,
-    setFilterBrands, setFilterHearted, setFilterSources, setFilterModels, setFilterSaleUrls,
-    setListingsSubTab,
-    setMaxPriceText, setMinPriceText,
-    setPage, setSearch, setShowUserMenu, setSignInPromptOpen,
-    setSort, setSourcePickerOpen, setSourcesExpanded, setModelsExpanded,
-    // Wrapped: top-level nav from shells uses the wrapper so that
-    // clicking the Watchlist logo or a main tab while a share-receive
-    // surface is up auto-escapes (clears URL params + dismisses the
-    // receiver) rather than leaving the recipient stuck. Internal
-    // setTab callsites in App.js use the raw setTab.
-    setTab: setTabWithReceiveEscape,
-    toggleBrand, toggleHide, toggleSource, toggleModel, toggleSaleUrl,
-    // Sale filter (PR 2026-05-22): catalog of active sales for the
-    // Sale chip dropdown + lot counts.
-    auctions, lotCountsByAuctionUrl,
-    // Style tokens / pre-built JSX
-    addSearchModalJSX,
-    authJSX, baseStyle,
-    collectionEditModalJSX, collectionPickerModalJSX,
-    favSearchModalJSX,
-    listingsGridJSX, listingsTabContentJSX, primaryCurrency, sectionHeadingStyle,
-    // View-settings (currency / theme / columns) threaded into shells so
-    // the same controls can render inline in the mobile filter drawer
-    // and the desktop user menu (2026-05-09 — Mark feedback that
-    // burying these in a Settings modal cost a tap users didn't have
-    // patience for, especially currency while comparing prices).
-    setPrimaryCurrency,
-    dark, setDarkOverride,
-    mobileCols, setMobileCols,
-    desktopCols, setDesktopCols, desktopAutoCols,
-    settingsModalJSX, shareReceiverJSX,
-    challengeReceiverJSX,
-    listReceiverJSX,
-    catalogReceiverJSX,
-    listingsSubTabsJSX,
-    topTabs,
-    // `?look=new` — the magazine's skin on the shells' top bar, every tab.
-    // Read at render (not a hook: App.js has early returns above).
-    lookNew: readLook() === "new",
-    chromeFaces: readChromeFaces(),
-    trackNewItemModalJSX, watchSubTabsJSX, watchHeartedToggleJSX, collectionsSubTabsJSX,
-    saleContextHeaderJSX,
-    // Auction catalog full-page takeover (Mark 2026-06-13). When
-    // catalogFullPage, the shells suppress the masthead / main tabs /
-    // sub-tabs and pin catalogBarJSX (green title bar + × back-to-calendar)
-    // with catalogActionRowJSX (Save/Share/Auction-house) beneath it; the
-    // filter bar + lot grid stay.
-    catalogFullPage,
-    catalogBarJSX,
-    catalogActionRowJSX,
-    savedHeaderJSX,
-    // Bundle 2A.2: shells render `watchlistTabJSX` for the Saved
-    // tab — the value is now the dispatched content (Watchlist or
-    // Collections style) computed by `savedContentJSX`.
-    watchlistTabJSX: savedContentJSX,
-    watchboxTabJSX,
-    adminTabJSX, referencesTabJSX, collectionsTabJSX, homeTabJSX,
-    lotMigrationBannerJSX,
-    userLimitBannerJSX,
-    // Unified header band (PR_Y, 2026-05-21). Colored slab beneath
-    // the controls row carrying section identity. Built per active
-    // tab/sub-tab in App.js so the shells just render it; null on
-    // Home and during share-receive surfaces.
-    identityBandJSX,
-    // PR_W (2026-05-22): cross-tab Search-all destination. When
-    // `searchAllActive` is true, shells render this in place of
-    // the regular tab content (and hide sub-tabs / band / filter
-    // chrome). Main tab bar stays visible so the user can exit.
-    searchAllResultsJSX,
-    searchAllActive,
-    // Whether a share-receive landing surface is taking over the
-    // content area. Shells gate their normal tab content on any of
-    // these flags — single-listing shares (#63), challenge shares
-    // (v1.5), or list shares (List Sharing v1, 2026-05-07).
-    shareActive,
-    challengeShareActive,
-    listShareActive,
-    catalogShareActive,
-    // Drill-in mirror so the shell can show the filter row when
-    // we're inside a list (Watchlists > Lists > [list]).
-    colDrillInId,
-  };
-
   return (
     <ErrorBoundary>
       {/* The Watches, Articles and Guides tabs swap the shell for the shared page
@@ -5435,11 +5045,7 @@ export default function Watchlist() {
         ? genericPageJSX
         : catalogPageActive
         ? catalogPageJSX
-        : homePageActive
-        ? homePageJSX
-        : isMobile
-        ? <MobileShell {...shellProps} />
-        : <DesktopShell {...shellProps} />}
+        : homePageJSX}
       <ConfirmHost />
       {/* The browser's tint follows whichever surface is at the top. */}
       <ChromeTint dark={dark} light={chromeIsLight({ catalogFullPage })} />

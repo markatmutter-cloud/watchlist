@@ -5,7 +5,7 @@ import CardStrip from "./CardStrip";
 import SectionHeader from "./SectionHeader";
 import { REFERENCE_NODES } from "../data/referencePages";
 import { articleAsListing } from "./EditorialView";
-import { pillBase, LOOK } from "../styles";
+import { pillBase } from "../styles";
 
 // Cross-tab search results — the "Search all" destination (PR_W v1,
 // 2026-05-22). When the user picks "Search all" from the Home
@@ -413,7 +413,7 @@ export function SearchResultsView({
                   style={{ ...pillBase(active, { compact: true }),
                            // Denser than the filter-bar pill; under the magazine look the
                            // size stays the label size and only the padding is tightened.
-                           ...(LOOK.magazine ? {} : { fontSize: 12 }), padding: "5px 11px" }}>
+                           padding: "5px 11px" }}>
                   {brand}
                   <span style={{
                     marginLeft: 6,

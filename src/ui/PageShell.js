@@ -22,7 +22,7 @@ import { SignInPromptModal } from "../components/SignInPromptModal";
 import "./ui.css";
 
 export function PageShell({
-  isMobile, baseStyle, tabs, authJSX, user, onHome, goToSaved, chromeFaces, searchJSX,
+  isMobile, baseStyle, tabs, authJSX, user, onHome, goToSaved, searchJSX,
   overlaysJSX, aboutModalOpen, setAboutModalOpen, signInPromptOpen, setSignInPromptOpen,
   signInWithGoogle, primaryCurrency, children, header, bare,
 }) {
@@ -57,15 +57,15 @@ export function PageShell({
       ) : isMobile ? (
         <>
           <MagazineBrandRow authJSX={authJSX} showSaved={!!user} onSavedClick={goToSaved}
-                            onHome={onHome} faces={chromeFaces} />
+                            onHome={onHome} />
           <div className="ui-page-stick">
-            <MagazineTabRow tabs={tabs} faces={chromeFaces} />
+            <MagazineTabRow tabs={tabs} />
             {searchJSX ? <div className="ui-page-search">{searchJSX}</div> : null}
           </div>
         </>
       ) : (
         <MagazineShellBar tabs={tabs} authJSX={authJSX} showSaved={!!user} onSavedClick={goToSaved}
-                          onHome={onHome} faces={chromeFaces} searchJSX={searchJSX} />
+                          onHome={onHome} searchJSX={searchJSX} />
       )}
       {children}
       {overlaysJSX}

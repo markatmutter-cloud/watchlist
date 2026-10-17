@@ -264,47 +264,6 @@ describe("App render-without-crash", () => {
     window.history.replaceState({}, "", "/");
   });
 
-  test("App sets the chrome tokens' look from the flag: new by default, old on ?look=old", async () => {
-    // styles.js `LOOK` is read by pure token functions mid-render, so the
-    // wiring is App calling setMagazineLook before any child renders.
-    const { LOOK } = require("./styles");
-    const { default: App } = require("./App");
-    window.history.replaceState({}, "", "/?tab=references&sub=editorial");
-    const first = render(<App />);
-    expect(LOOK.magazine).toBe(true);
-    first.unmount();
-    window.history.replaceState({}, "", "/?tab=references&sub=editorial&look=old");
-    render(<App />);
-    expect(LOOK.magazine).toBe(false);
-    window.localStorage.removeItem("dial_look"); // ?look=old is sticky
-    window.history.replaceState({}, "", "/");
-  });
-
-  test("the retired Saved tab's URLs land on Watches > Saved; Lists keeps its own", async () => {
-    // Mark, 2026-10-17: Saved is no longer a top tab. A bare ?tab=saved (and the old hearted
-    // subs) mean "my saved watches", which live on Watches > Saved now; ?sub=lists is the
-    // Lists page. Decided in the URL initialisers, so there is no redirect for back to bounce off.
-    const { default: App } = require("./App");
-    window.history.replaceState({}, "", "/?tab=saved");
-    const first = render(<App />);
-    await waitFor(() => {
-      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
-    });
-    expect(screen.getByRole("tab", { name: "Saved" })).toHaveAttribute("aria-selected", "true");
-    expect(window.location.search).toContain("sub=saved");
-    first.unmount();
-    window.history.replaceState({}, "", "/?tab=saved&sub=lists");
-    render(<App />);
-    await waitFor(() => {
-      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
-    });
-    expect(document.querySelector(".ui-page")).not.toBeNull();
-    expect(document.querySelector("[data-desktop-main]")).toBeNull();
-    expect(screen.getByRole("tab", { name: "Lists" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.queryByRole("tab", { name: "Saved" })).toBeNull();
-    window.history.replaceState({}, "", "/");
-  });
-
   test("?view=styleguide mounts the live style sheet", async () => {
     // The reference page for the shared frame (src/ui). Not a tab: reached only
     // by the URL flag, so this is the one test that proves the wiring.

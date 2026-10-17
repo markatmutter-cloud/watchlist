@@ -196,7 +196,7 @@ This means the pipeline is **self-healing**: if a single run misses listings (sc
 
 - **Scrapers:** Python 3.11 with `requests`. No Playwright, no Selenium, no third-party scraping service — every source is reachable with plain HTTP.
 - **Pipeline:** GitHub Actions (ubuntu-latest). Each scraper step uses `continue-on-error: true` so one failing source doesn't kill the batch.
-- **Frontend:** React (Create React App), inline styles only, no UI libraries. `App.js` is the orchestrator (the largest file by far — owns state and JSX consts); render is delegated to `src/components/MobileShell.js` + `DesktopShell.js`, each receiving a single `shellProps` bag. Home is `MagazineHome` (magazine format, 2026-09-07 — it replaced `HomeTab`, which was deleted); its chrome lives in `MagazineChrome` and is the one place the app loads its three display faces. `MagazineWatches` is the Watches tab, built from `src/ui` (`PageShell` + `PageFrame`, 2026-10-17) — its header is the same `MagazineShellBar` every other tab wears (only Home keeps the two-tier `MagazineChrome` masthead); App swaps it in for the shell at the shell boundary. It renders App's own grid JSX, so only the chrome is new. Every other tab gets the same look in the shells' top bar via `MagazineShellBar` (default since 2026-10-16; `?look=old` is the way back, flags in `src/lookFlag.js`), and the browser tint follows whichever surface is on top (`src/chromeTint.js`). The shared page frame (pill, search field, sub-tabs, title, filter bar, account disc) lives in `src/ui` — one class-based stylesheet, `ui.css`, and a live reference page at `?view=styleguide`; tabs are being migrated onto it (ROADMAP "UI consolidation"). Domain-state hooks live under `src/hooks/` (`useTrackModal`, `useFavSearchModal`, `useViewSettings`, `useFilters`, …); shared style tokens in `src/styles.js`. Pure helpers in `src/utils.js`.
+- **Frontend:** React (Create React App), inline styles plus one shared stylesheet, no UI libraries. `App.js` is the orchestrator (the largest file by far — owns state and JSX consts) and renders one page at a time, every page through `src/ui` (`PageShell` for the header, overlays and modals; `PageFrame` for sub-tabs · filter bar · content): `MagazineWatches` (Watches), `EditorialView`/`ReferenceBrowse` (Articles, Guides), `ListsPage`, `CatalogPage` (one auction sale, with its own title bar as the page header), a generic page for Watchbox / admin / the tools / share receivers / cross-tab search, and Home, which brings its own masthead (`MagazineHome` + `MagazineChrome`, the one place the app loads its three display faces). The shared pieces (pill, search field, sub-tabs, filter bar, chips, price range, buttons, the phone filter sheet, the Lumé dot and chat) are classes in `src/ui/ui.css`, shown live at `?view=styleguide`. The browser tint is paper except over the catalog's green bar (`src/chromeTint.js`). The search / filter bar / phone sheet that Watches, a drilled-in list and the catalog share is `ListingsFilters.js`. Domain-state hooks live under `src/hooks/` (`useTrackModal`, `useFavSearchModal`, `useViewSettings`, `useFilters`, …); shared style tokens in `src/styles.js`. Pure helpers in `src/utils.js`.
 - **Image delivery + persistence:** Display images route through **wsrv.nl** (a free resize CDN) in `imgSrc()` — served at ~720px WebP so the page never pulls multi-MB dealer originals (Phillips/Monaco use their own CDN resize; hot-link-protected, Cloudflare-blocked (Bonhams), and tiny-source (Tropical Watch) hosts serve direct). Hearted/tracked items also get their image cached to **Vercel Blob** by `cache_watchlist_images.mjs` (daily, in the auctions workflow) at **thumbnail** size, so favorited cards survive a dealer deleting the original. Blob *storage* is cheap (~1 GB free); *transfer/egress* is the metered cost — never cache or serve full-res.
 - **Auth + per-user data:** [Supabase](https://supabase.com) — Postgres with row-level security, Google OAuth provider. Free tier; no backend code of my own.
 - **Hosting:** Vercel free tier, auto-deploy from `main`.
@@ -251,7 +251,7 @@ watchlist/
 │                                  # hard lists, manual entries, reactions,
 │                                  # collaborators, RLS hardening, perf indexes.
 ├─ src/
-│   ├─ App.js                      # orchestrator — owns state, builds shellProps, delegates to shells
+│   ├─ App.js                      # orchestrator — owns state, builds each page from src/ui
 │   ├─ supabase.js                 # auth + per-user data hooks
 │   ├─ styles.js                   # shared inline-style tokens (pillBase, modalShell, actionButton, ...)
 │   ├─ utils.js                    # pure helpers + constants (matchesSearch, ageBucketFromDate, ...)
@@ -269,8 +269,6 @@ watchlist/
 │   │   ├─ useUserLimit.js         #   per-user watchlist cap state + soft/hard-warn thresholds
 │   │   └─ useEventTelemetry.js    #   fire-and-forget anonymous + signed-in event recording
 │   └─ components/
-│       ├─ MobileShell.js          # mobile render path (sticky stack, drawer, bottom nav)
-│       ├─ DesktopShell.js         # desktop render path (top bar, filter row, fluid grid)
 │       ├─ MagazineHome.js        # Home landing — magazine format (rotator, featured watch, auction calendar)
 │       ├─ MagazineChrome.js      # the landing chrome: masthead, tabs, search, account row
 │       ├─ MagazineWatches.js     # the Watches tab, built from src/ui (no styles of its own)
@@ -373,7 +371,7 @@ Direction, priorities, and what's explicitly off the roadmap live in [ROADMAP.md
 Test coverage is two suites, both in CI on every push and PR (`.github/workflows/tests.yml`):
 
 - **pytest** — `merge.update_state` state transitions, the layer where a regression would silently corrupt the cross-run memory that drives "NEW" badges, price-drop detection, and the sold/archive view.
-- **jest** — render-without-crash + key visibility smoke tests for `MobileShell` and `DesktopShell`. Catches the TDZ class of bug that shipped a white screen on mobile in late April 2026.
+- **jest** — render-without-crash + key visibility smoke tests for the pages (`MagazineWatches`, `ListsPage`, `CatalogPage`, App). Catches the TDZ class of bug that shipped a white screen on mobile in late April 2026.
 
 Scrapers aren't tested — most breakage there comes from external page changes that unit tests don't catch.
 

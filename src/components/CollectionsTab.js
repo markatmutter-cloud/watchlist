@@ -12,7 +12,6 @@ import { WatchDetailSheet } from "./WatchDetailSheet";
 import { ListReviewMode } from "./ListReviewMode";
 import { articleAsListing } from "./EditorialView";
 import CardShell from "./CardShell";
-import HeartedView from "./HeartedView";
 import { PageHeader } from "./PageHeader";
 import { DossierBlocks } from "./DossierBlocks";
 import { fmtUSD, matchesSearch, imgSrc } from "../utils";
@@ -451,7 +450,6 @@ export function CollectionsTab({
   runSearch,
   // Shared active-filters strip (chips + Clear all), rendered atop the
   // Hearted surface so Lists gets the same affordances as Watches (B-48).
-  activeFiltersStripJSX,
   // After creating a list, drill into it (set by App.js). Consumed in ListsView.
   pendingOpenListId,
   clearPendingOpenList,
@@ -626,38 +624,7 @@ export function CollectionsTab({
   // values working — the toggle initialises in shortlist mode
   // automatically via currentWatchTopTab.
   let body;
-  if (subTab === "hearted") {
-    // The Lists tab's default landing — hearted watches in the standard grid
-    // (filter bar + group-by None/Dealer/Brand), with a type filter to the
-    // saved Articles + Sales bookmark sections (Phase 2a — restores what the
-    // old "Saved" band carried). Self-contained component (its own hooks) so
-    // this dispatch stays render-only and #310-safe. Saved articles derive
-    // from the watchlist (kind==='article'); sales come via props.
-    const byRecency = (a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || ""));
-    const heartedArticles = Object.values(watchlist || {})
-      .filter(v => v && v.kind === "article").sort(byRecency);
-    const heartedGuides = Object.values(watchlist || {})
-      .filter(v => v && v.kind === "reference").sort(byRecency);
-    body = (
-      <HeartedView
-        items={watchItems}
-        articles={heartedArticles}
-        guides={heartedGuides}
-        isMobile={isMobile}
-        gridStyle={gridStyle}
-        compact={compact}
-        primaryCurrency={primaryCurrency}
-        watchlist={watchlist}
-        handleWish={handleWish}
-        handleShare={handleShare}
-        openCollectionPicker={openCollectionPicker}
-        observeCard={observeCard}
-        onClickListing={onClickListing}
-        user={user}
-        activeFiltersStripJSX={activeFiltersStripJSX}
-      />
-    );
-  } else if (subTab === "my-collection" || subTab === "wishlist") {
+  if (subTab === "my-collection" || subTab === "wishlist") {
     body = (
       <MyCollectionView
         owned={hardOwned}

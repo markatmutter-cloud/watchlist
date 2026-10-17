@@ -111,17 +111,10 @@ export const CHROME = {
   MAG_SEARCH_SLOT: "minmax(240px, 520px)",
 };
 
-// ── THE MAGAZINE LOOK (2026-10-16) ───────────────────────────────────
-// The look the site is moving to (src/lookFlag.js: `?look=new`, the default;
-// `?look=old` is the way back). Chrome tokens here are plain functions called
-// during render, with no React context to read, so the look is a module flag
-// that App sets once at the top of its render, before any child renders. It
-// changes TYPE only — the shapes, the olive tint on a selected pill, the
-// segmented sub-tab and every size that governs a tap target stay as they
-// were. Tests default to the old look; App flips it.
-export const LOOK = { magazine: false };
-export const setMagazineLook = (on) => { LOOK.magazine = !!on; };
-
+// ── THE MAGAZINE LOOK ─────────────────────────────────────────────────
+// The site's only look since 2026-10-17 (the `?look=old` way back and its module flag are
+// gone). It changes TYPE on the remaining legacy pills and counts, never a tap target or a
+// selected state. New pages use src/ui, not these.
 // Small tracked caps for labels (pills, counts). Spread; never inline.
 export const magLabel = () => ({
   fontSize: CHROME.MAG_LABEL_FONT,
@@ -167,9 +160,8 @@ export const pillBase = (active, { compact = false, surface = false } = {}) => (
   fontWeight: active ? 600 : 500,
   ...(active ? SELECTED_FILL : UNSELECTED(surface)),
   // The magazine look: the Watches page's pill voice. Type + padding only.
-  ...(LOOK.magazine
-    ? { ...magLabel(), padding: compact ? CHROME.MAG_PILL_PAD : CHROME.MAG_PILL_PAD_TOUCH }
-    : {}),
+  ...magLabel(),
+  padding: compact ? CHROME.MAG_PILL_PAD : CHROME.MAG_PILL_PAD_TOUCH,
 });
 
 // Inner-toggle pill. Smaller, denser variant used for nested sub-toggles
