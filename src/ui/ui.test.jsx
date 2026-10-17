@@ -163,6 +163,41 @@ describe("FilterBar zone", () => {
   });
 });
 
+describe("FilterBar publishes where the pinned chrome ends", () => {
+  // Date dividers read --sticky-top to stick just below the chrome. A window-scrolled
+  // page has to publish it itself, or they hide behind the header and the filter bar.
+  const heightDesc = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight");
+  beforeAll(() => {
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", { configurable: true, get() { return 57; } });
+  });
+  afterAll(() => {
+    if (heightDesc) Object.defineProperty(HTMLElement.prototype, "offsetHeight", heightDesc);
+    else delete HTMLElement.prototype.offsetHeight;
+  });
+
+  it("sets --sticky-top on the page to the bar's pinned offset plus its own height", () => {
+    const spy = jest.spyOn(window, "getComputedStyle").mockImplementation(() => ({ top: "56px" }));
+    const { container, unmount } = render(
+      <div className="ui-page"><FilterBar sticky pills={<span>p</span>} /></div>
+    );
+    expect(container.querySelector(".ui-page").style.getPropertyValue("--sticky-top")).toBe("113px");
+    unmount();
+    spy.mockRestore();
+  });
+
+  it("leaves the page alone when the bar is not pinned", () => {
+    const { container } = render(
+      <div className="ui-page"><FilterBar pills={<span>p</span>} /></div>
+    );
+    expect(container.querySelector(".ui-page").style.getPropertyValue("--sticky-top")).toBe("");
+  });
+
+  it("gives the page's own stylesheet a sensible default under the header alone", () => {
+    const css = require("fs").readFileSync(require("path").join(__dirname, "ui.css"), "utf8");
+    expect(css).toMatch(/\.ui-page\s*\{[^}]*--sticky-top:\s*var\(--ui-header-h\)/);
+  });
+});
+
 describe("Chip", () => {
   it("is a selectable option with an optional count, solid when on", () => {
     const onClick = jest.fn();
