@@ -21,7 +21,8 @@ import React, { useState, useEffect } from "react";
 import CardStrip from "./CardStrip";
 import { Card } from "./Card";
 import { imgSrc } from "../utils";
-import { innerToggleButton, FONT_SERIF, editorialDisplay, editorialHeading } from "../styles";
+import { FONT_SERIF, editorialDisplay, editorialHeading } from "../styles";
+import { Pill, SubTabs } from "../ui";
 import { referenceAsListing } from "../data/referencePages";
 
 const SERIF = FONT_SERIF;
@@ -290,14 +291,10 @@ export function ReferencePage({
           scroll transitions the nav tucks under the chrome, never over it. */}
       <nav style={{ position: "sticky", top: "var(--sticky-top, 0px)", zIndex: 15, background: "var(--bg)", borderBottom: "0.5px solid var(--border)" }}>
         {shell(
-          <div style={{ display: "flex", gap: 4, overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", padding: "9px 0" }}>
-            {NAV.map((s) => {
-              const on = active === s.id;
-              return (
-                <button key={s.id} onClick={() => goTo(s.id)}
-                  style={{ ...innerToggleButton(on), letterSpacing: "0.02em", padding: "5px 11px", whiteSpace: "nowrap" }}>{s.label}</button>
-              );
-            })}
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", padding: "8px 0" }}>
+            {NAV.map((s) => (
+              <Pill key={s.id} on={active === s.id} onClick={() => goTo(s.id)}>{s.label}</Pill>
+            ))}
           </div>
         )}
       </nav>
@@ -436,17 +433,11 @@ export function ReferencePage({
           <div style={{ background: "var(--surface)", borderRadius: 12, padding: isMobile ? 16 : "22px 24px", overflow: "hidden" }}>
             {/* segmented control */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
-              <div style={{ display: "flex", gap: 6 }}>
-                {[{ k: "live", label: "Available" }, { k: "auctions", label: "At auction" }, { k: "sold", label: "Sold" }].map(({ k, label }) => {
-                  const on = seg === k;
-                  return (
-                    <button key={k} onClick={() => setSegment(k)}
-                      style={{ ...innerToggleButton(on), fontSize: 13, padding: "6px 12px" }}>
-                      {label} <span style={{ opacity: 0.7, fontWeight: 500 }}>{market[k].length}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              <SubTabs ariaLabel="Market" activeKey={seg} onSelect={setSegment}
+                tabs={[{ k: "live", label: "Available" }, { k: "auctions", label: "At auction" }, { k: "sold", label: "Sold" }].map(({ k, label }) => ({
+                  key: k,
+                  label: <>{label} <span style={{ opacity: 0.7, fontWeight: 500 }}>{market[k].length}</span></>,
+                }))} />
               {market[seg].length > 0 && onViewAll && (
                 <button onClick={() => onViewAll(node.market.refs, seg)} style={{ border: "none", background: "none", cursor: "pointer", padding: 0, color: "var(--brand)", fontSize: 12, fontWeight: 600, fontFamily: "inherit", whiteSpace: "nowrap" }}>View all →</button>
               )}

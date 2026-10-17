@@ -797,6 +797,13 @@ within each section roughly last.
   searches and recents as Watches, a solid Search button seated in it); `MagazineChrome` is the desktop masthead only, so its phone rows, the scroll-compacting
   logic and ~60 lines of `.mag-search` / `.mag-drop` CSS are gone. Measured at 375px, Home's header, tab row and search are now the same boxes in the same
   places as Watches, Articles and Guides. `SearchField` / `SuggestionRows` moved to `src/ui/SearchField.js` so Home can import them without a cycle.
+- **2026-10-17 — The last page-level legacy styling moves onto `src/ui`; the old pill and header helpers are deleted.** The Lists page's own content
+  (list header, section nav, hearted-only, + Add / + From feed actions, sign-in), the auction calendar's filters, the guide page's section nav and market
+  segments, cross-tab search's brand chips and price range, the challenge screens' buttons, the screening "View listing" pill and the active-filter strip now
+  use `Pill` / `Chip` / `SavedPill` / `SubTabs` / `Button` / `PriceRange` plus three new shared pieces: `SectionHead` (a thing's name and its actions; not a
+  page title), `JumpNav` and `DismissChip`. Gone from `styles.js`: `pillBase`, `innerToggleButton`, `tabPill`, `segTrack`/`segItem`, `producedPill`,
+  `iconButton`, `clearAllPill`, `dismissChip`, `magLabel`, `SELECTED_FILL`, the `CHROME` sheet, and `PageHeader`. The active-filter strip lost its second
+  "Clear all" (the filter bar's is the one). Only the modals still use `modalShell` / `inputBase` / `actionButton`.
 - **2026-10-17 — One search box, one place, one control height on every page.** Mark's phone screenshots: the search was 38px on Watches, 44px on Articles and
   59px on Home, in three different places, with the sub-tab track 35px beside 40px pills. Now the search lives in the header on every page that has one (a 40px
   row under the tabs on a phone; the bar on a desktop): `HeaderSearch` portals a page's field into a slot the shell makes room for, so Articles and Guides moved

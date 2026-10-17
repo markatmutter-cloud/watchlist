@@ -253,7 +253,7 @@ watchlist/
 ├─ src/
 │   ├─ App.js                      # orchestrator — owns state, builds each page from src/ui
 │   ├─ supabase.js                 # auth + per-user data hooks
-│   ├─ styles.js                   # shared inline-style tokens (pillBase, modalShell, actionButton, ...)
+│   ├─ styles.js                   # editorial type ramp + the modal/form helpers (page chrome is src/ui)
 │   ├─ utils.js                    # pure helpers + constants (matchesSearch, ageBucketFromDate, ...)
 │   ├─ hooks.js                    # useWidth, useSystemDark (DOM-tracker hooks)
 │   ├─ setupTests.js               # jest setup — auto-loaded

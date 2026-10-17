@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { imgSrc, fmtUSD } from "../utils";
-import { producedPill, FONT_SANS, FONT_SERIF_DISPLAY } from "../styles";
+import { FONT_SANS, FONT_SERIF_DISPLAY } from "../styles";
+import { Pill } from "../ui";
 
 // Swipe gesture thresholds + tap detection.
 const SWIPE_THRESHOLD_X = 90;
@@ -663,10 +664,7 @@ export function ListReviewMode({
                   // block sits beside the image.
                   textAlign: isWide ? "left" : "center",
                 }}>
-                  <span style={producedPill({ tone: "brand" })}>
-                    View listing
-                    <span style={{ fontSize: 14, fontWeight: 400, letterSpacing: 0 }}>→</span>
-                  </span>
+                  <Pill as="span">View listing →</Pill>
                 </div>
               )}
             </a>

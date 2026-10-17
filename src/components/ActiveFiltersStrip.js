@@ -1,5 +1,5 @@
 import React from "react";
-import { dismissChip, dismissChipX, clearAllPill } from "../styles";
+import { DismissChip } from "../ui";
 
 // Single horizontal strip of × chips representing every active
 // filter, plus a trailing "Clear all" pill (Mark feedback
@@ -18,25 +18,11 @@ import { dismissChip, dismissChipX, clearAllPill } from "../styles";
 // Listings + Saved. Editorial owns its own filter state and gets
 // the strip too, threaded through `editorialFilterStripProps`.
 
-// 2026-05-28 design-library pass: these now reference the shared olive
-// helpers (was a blue-tint chip + grey clear-all, and a dead
-// --brand-tint-25 border ref). Single source of truth in styles.js.
-const chipStyle = dismissChip;
-const xButtonStyle = dismissChipX;
-const clearAllStyle = clearAllPill;
-
+// Each chip is the shared DismissChip (a selected filter you can take off). The strip carries no
+// "Clear all" of its own: the filter bar's "× Clear all" pill is the one (2026-10-17), so there
+// are not two of them on a page.
 function FilterChip({ label, onRemove }) {
-  return (
-    <span style={chipStyle}>
-      <span>{label}</span>
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label={`Remove filter ${label}`}
-        style={xButtonStyle}
-      >×</button>
-    </span>
-  );
+  return <DismissChip label={label} onRemove={onRemove}>{label}</DismissChip>;
 }
 
 export function ActiveFiltersStrip({
@@ -52,8 +38,6 @@ export function ActiveFiltersStrip({
   // Price
   minPriceText = "", setMinPriceText,
   maxPriceText = "", setMaxPriceText,
-  // Reset-all
-  resetFilters,
 }) {
   // The ♥ Saved-only toggle is deliberately NOT echoed here (P-24,
   // 2026-06-03): its pill in the filter bar already shows the lit state, so
@@ -96,14 +80,7 @@ export function ActiveFiltersStrip({
   };
 
   return (
-    <div style={{
-      // Tinted band same as the editorial filter row — visually
-      // anchors this as part of the filter system, separate from the
-      // card grid below.
-      display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center",
-      padding: "8px 0 10px",
-      // No background of its own — sits inline above the grid.
-    }}>
+    <div className="ui-dismiss-row">
       {filterSources.map(s => (
         <FilterChip key={`src-${s}`} label={s} onRemove={() => toggleSource && toggleSource(s)} />
       ))}
@@ -131,12 +108,6 @@ export function ActiveFiltersStrip({
       {priceLabel && (
         <FilterChip label={priceLabel} onRemove={removePriceRange} />
       )}
-      {/* Single "Clear all" — pushed to the right of the chips row
-          (Mark 2026-05-28). The filter-bar copies in both shells were
-          removed; this is now the only clear-all. */}
-      <button type="button" onClick={resetFilters} style={{ ...clearAllStyle, marginLeft: "auto" }}>
-        Clear all
-      </button>
     </div>
   );
 }

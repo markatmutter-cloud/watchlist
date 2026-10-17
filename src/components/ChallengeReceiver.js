@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { fmtUSD, imgSrc } from "../utils";
 import { supabase } from "../supabase";
-import { signInButton } from "../styles";
+import { Button } from "../ui";
 
 // Watch Challenges v1.5 — receive flow. Mirrors ShareReceiver
 // (single-listing receive) for two challenge-share modes:
@@ -374,17 +374,17 @@ export function ChallengeReceiver({
               }
             </p>
             {user ? (
-              <button onClick={onTakeChallenge} disabled={busy} style={primaryBtnStyle(busy)}>
+              <Button primary inline onClick={onTakeChallenge} disabled={busy}>
                 {busy ? "Creating…" : "Take this challenge →"}
-              </button>
+              </Button>
             ) : isAuthConfigured && signInWithGoogle ? (
-              <button onClick={signInWithGoogle} style={primaryBtnStyle(false)}>
+              <Button primary inline onClick={signInWithGoogle}>
                 Sign in to take this on
-              </button>
+              </Button>
             ) : null}
-            <button onClick={() => onClickAnchor("listings")} style={secondaryBtnStyle}>
+            <Button inline onClick={() => onClickAnchor("listings")}>
               Just browse Watchlist
-            </button>
+            </Button>
             {!user && (
               <p style={{ fontSize: 12, color: "var(--text3)", lineHeight: 1.5, margin: "4px 0 0" }}>
                 No account is needed to browse. Sign in only if you want to take the challenge.
@@ -461,9 +461,9 @@ function OrientationAnchors({ signedIn, onClickAnchor, onSignIn, signInCopy }) {
               <>Sign in to take this challenge, save searches, and build your lists.</>
             )}
           </p>
-          <button onClick={onSignIn} style={primaryBtnStyle(false)}>
+          <Button primary inline onClick={onSignIn}>
             Sign in to Watchlist →
-          </button>
+          </Button>
         </div>
       )}
       <div style={{ padding: "16px 20px 14px" }}>
@@ -512,23 +512,6 @@ const focusedCardStyle = () => ({
   boxShadow: "var(--shadow-modal)",
   overflow: "hidden",
 });
-
-const primaryBtnStyle = (busy) => ({
-  ...signInButton,
-  cursor: busy ? "wait" : "pointer",
-  opacity: busy ? 0.6 : 1,
-});
-
-const secondaryBtnStyle = {
-  border: "0.5px solid var(--border)",
-  background: "transparent",
-  color: "var(--text2)",
-  padding: "10px 20px",
-  borderRadius: 8,
-  fontFamily: "inherit",
-  fontSize: 14,
-  cursor: "pointer",
-};
 
 const anchorBtnStyle = {
   border: "0.5px solid var(--border)",

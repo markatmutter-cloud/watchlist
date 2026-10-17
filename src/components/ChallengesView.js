@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { ChallengeFlow, CreateStage } from "./ChallengeFlow";
 import { ListRow } from "./ListRow";
 import { fmtUSD } from "../utils";
-import { signInButton } from "../styles";
+import { Button } from "../ui";
 import { EmptyState } from "./EmptyState";
 import { confirm } from "./ConfirmModal";
 
@@ -73,7 +73,7 @@ export function ChallengesView({
         heading="Sign in to build a challenge"
         blurb="Build a constrained list: pick N watches under a budget. Save it, share it, ask a friend to fill in their own answer. Your challenges sync across every device you use."
         action={isAuthConfigured && (
-          <button onClick={signInWithGoogle} style={signInButton}>Sign in</button>
+          <Button primary inline onClick={signInWithGoogle}>Sign in</Button>
         )}
       />
     );

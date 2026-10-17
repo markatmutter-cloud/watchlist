@@ -53,6 +53,9 @@ describe("src/ui", () => {
     "components/MagazineWatches.js", "components/FilterDrawer.js", "components/ListingsFilters.js",
     "components/LumeConversation.js", "components/ChatBubbleHost.js", "components/LumeCanvas.js",
     "components/ReferencesTab.js", "components/CatalogPage.js", "components/ListsPage.js",
+    "components/CollectionsTab.js", "components/AuctionCalendar.js", "components/ReferencePage.js",
+    "components/SearchResultsView.js", "components/ActiveFiltersStrip.js", "components/ChallengesView.js",
+    "components/ChallengeReceiver.js", "components/ListReviewMode.js",
   ];
   const LEGACY = [
     /from "\.\/StandardFilterBar"/, /from "\.\/PageHeader"/, /from "\.\/Chip"/, /from "\.\/SavedPill"/,
@@ -60,7 +63,8 @@ describe("src/ui", () => {
   ];
   test.each(MIGRATED)("%s is built from src/ui, not the legacy pieces", (file) => {
     const src = fs.readFileSync(path.join(__dirname, "..", file), "utf8")
-      .replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/[^\n]*/g, "$1");
+      // Full-line // comments first (one can mention a "/*" path), then block comments, then trailing // ones.
+      .replace(/^\s*\/\/[^\n]*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/[^\n]*/g, "$1");
     expect(src).toMatch(/from "\.\.\/ui"/);
     for (const re of LEGACY) expect(src).not.toMatch(re);
   });

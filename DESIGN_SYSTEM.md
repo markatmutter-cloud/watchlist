@@ -78,16 +78,14 @@ the app's own sans, set once in `src/ui/ui.css`. No page re-declares the faces �
 that used to do this was deleted with the Watches migration.
 
 **Saved = an icon-only heart (2026-10-16).** On Articles and Reference Guides "show only what I saved"
-is `SavedPill` — a bare ♡ in the filter row (`pillBase`, olive selected state, fills with currentColor,
+is `SavedPill` — a bare ♡ in the filter row (olive selected state, fills with currentColor,
 never `--heart` red), not a word and not a sub-tab. Watches keeps its `♡ Saved` sub-tab as the one saved
 control because it spans For sale / Auctions / Sold; don't add a second saved pill beside it. (This reversed the
 2026-07-30 "sub-tab, never a pill" rule, which existed because a labelled pill went unfound — so the
 icon carries an `aria-label`/`title`, and the empty state invites.)
 
-**The label voice (2026-10-16).** The legacy pill family (`pillBase` and friends, still worn inside the Lists
-page, the calendar and cross-tab search) is small tracked caps: `magLabel()` / `CHROME.MAG_*` in `styles.js`. TYPE and
-padding only: the olive-tint selected state stays and the pill pad is sized so no tap target shrinks. New pages use
-`src/ui` pills, not these.
+**The label voice (2026-10-16).** Pills and counts are small tracked caps (`--ui-label-size` / `--ui-label-track` in
+`src/ui/ui.css`). TYPE and padding only; the pill height is the device's one control height.
 
 **The browser tint follows the page's top edge (2026-10-16).** `theme-color` (Safari's
 toolbar + bookmarks bar, the iOS PWA status strip, Android's address bar) and the
@@ -146,40 +144,22 @@ snap pass only consolidated odd values + the > 16 outliers. New
 padding should pick a stop on the scale; reach for 14 / 20 / 24
 before introducing a new outlier.
 
-## 2. Style tokens — `src/styles.js`
+## 2. Style tokens
 
-Each export is either a plain object (use directly:
-`style={modalBackdrop}`) or a factory function (use with state:
-`style={pillBase(active)}`). Tokens are presentation-only — no app
-state, no behavior. Compose with overrides via spread:
-`style={{ ...iconButton(), background: ... }}`.
+**Page chrome is `src/ui`** (section "Page chrome" below): pills, search, sub-tabs, chips, buttons, headers and the
+filter bar are classes in `src/ui/ui.css`, one definition each. **Selected = solid olive** everywhere (a pill, a chip,
+the sub-tab's active segment, a dismissable filter); a quiet "present but not chosen" is a dashed pill. The old
+`SELECTED_FILL` / `pillBase` / `innerToggleButton` / `segTrack` / `actionButton`-for-pages family is gone.
 
-**Selected = olive (one state language, 2026-05-28).** Every toggle/filter
-chip that can be "on" reads the same way via the shared `SELECTED_FILL`
-constant: **olive tint fill (`--brand-olive-tint-12`) + olive ink
-(`--brand-olive-ink`) + 0.5px olive hairline**. `pillBase`,
-`innerToggleButton`, and `iconButton` all spread it on active, so the
-selected look can't drift per surface. (Replaced the old split: pillBase
-bold-black-border ghost, innerToggle/icon solid-black fill, stray blue
-tints.) Blue `--brand` is retired from filter/toggle chrome — olive is the
-single chrome accent (links/text-accents may still use `--brand`).
+`src/styles.js` keeps what is not chrome:
 
 | Token | Use |
 |---|---|
-| `SELECTED_FILL` | The shared "selected/active" treatment (olive tint + ink + hairline). Spread into any toggle's active branch; don't hand-roll a selected look |
-| `pillBase(active, { compact, surface })` | Sort / filter pills (Date ↓, Price). Active = `SELECTED_FILL`. Mobile uses default size; desktop uses `{ compact: true, surface: true }` |
-| `innerToggleButton(active)` | Nested sub-toggles inside a tab (Listings/Auctions/Sold under Saved; Owned/Sold/All under My watches; Saved type filter). Active = `SELECTED_FILL` |
-| `clearAllPill` | Unified "× Clear all" / reset control — olive-ink **outline** pill (a reset action, not a selected state). Use everywhere filters are cleared |
-| `dismissChip` / `dismissChipX` | Removable active-filter chip ("× Brand") — olive tint fill + a trailing `dismissChipX` button that removes the filter |
-| `tabPill(active)` | Underline tab button (olive) — **TOP tabs only** since the 2026-06-06 sub-tab restyle. Sub-tab rows use the segmented control below |
-| `segTrack(onOlive)` / `segItem(active, { onOlive })` | **Sub-tab segmented control** (audit:2026-06-06 U-01) — one enclosed rounded track, active segment solid-filled (white-on-olive / olive-on-neutral). Deliberately louder than the filter pills' tint: navigation out-shouts filters, and inactive segments stay legible (never "disabled grey"). Reach for `SubTabBar` for a whole row — don't spread these raw |
-| `actionButton({ variant: "primary"\|"subtle"\|"danger" })` | Header / toolbar action buttons (Share / Manage / Delete / + From feed / Cancel / Save). ~32px tall. Primary = olive fill |
-| `signInButton` | Large primary CTA — sign-in buttons on signed-out gates and share-receive landings. One size class above actionButton |
-| `iconButton({ size, active })` | Round icon buttons (Filter, View, Clear in mobile top bar). Active = `SELECTED_FILL` |
-| `inputBase` | Form input style (text / number / select). Spread into `style={{ ...inputBase, ... }}` so callers can override fontSize / flex / marginBottom |
-| `cardGridStyle({ isMobile })` | **Shared content-card grid (2026-06-02)** — `auto-fill minmax(280px,1fr)` desktop / 1-col mobile, gap 24/16. Article cards · reference-guide cards · list cards ALL use it so the three families are one size. Don't hand-roll a content-card grid. |
-| `editorialTitle({ isMobile })` | Serif card/section title (magazine voice). Used by article + reference-guide cards |
-| `modalBackdrop` / `modalShell` / `modalCloseButton` / `modalTitleRow` / `modalTitle` | Modal primitives. AboutModal is the only documented exception (uses absolute-positioned close button — see comment in AboutModal.js line ~122) |
+| `FONT_SANS` / `FONT_SERIF` / `FONT_SERIF_DISPLAY` | The font stacks (the one place a family string lives) |
+| `editorialDisplay` / `editorialHeading` / `editorialTitle` / `editorialProse` | The editorial type ramp (articles, reference guides) |
+| `cardGridStyle({ isMobile })` | **Shared content-card grid** — `auto-fill minmax(280px,1fr)` desktop / 1-col mobile. Article cards · reference-guide cards · list cards all use it so the three families are the same size |
+| `actionButton` / `signInButton` / `inputBase` | Form helpers used by the modals, until the modals move onto `src/ui` |
+| `modalBackdrop` / `modalShell` / `modalCloseButton` / `modalTitleRow` / `modalTitle` | Modal primitives (same caveat). AboutModal is the only documented exception (absolute-positioned close button) |
 
 ## 3. Reusable React components — `src/components/`
 
@@ -211,13 +191,17 @@ they lived in are deleted.)
 - **`PageFrame`** — sub-tabs · filter bar · content, in that order, at one inset (20 / 16). No page title.
 - **`FilterBar`** — pills left · search centred · count right; `stacked` gives a crowded bar's search its own row.
   A sticky bar publishes `--sticky-top`, so date dividers pin just under it.
-- **`CHROME` (styles.js)** and **`PageHeader`** survive only for the legacy pill family and the headings inside
-  `CollectionsTab`; don't use them on a new page.
+- **Inside a page:** `SectionHead` (the heading for a thing on the page, such as a list's name, with its
+  actions as pills; not a page title), `DismissChip` (a selected filter you can take off), `JumpNav` (a sticky row
+  of pills that scrolls to a section), `Pill primary` (the one main action) and `Button` (sign-in, sheet actions).
+  The old `PageHeader`, `pillBase`, `innerToggleButton`, `CHROME` and the other pill helpers in `styles.js` are
+  deleted; `chrome-guard` fails the build if they return. `styles.js` keeps the editorial type ramp and, until the
+  modals move onto `src/ui`, the modal and form helpers.
 - **`topTabs.js`** — the only home of top-tab labels (Watches · Articles ·
   Reference Guides / "Guides" mobile); the one header + the Home masthead
   consume the same built model.
 - **Counts**: bar surfaces → the bar's right slot; bar-less headers →
-  PageHeader `count`; never under a title.
+  the section head's count; never under a title.
 - **Failed images** — terminal state is ALWAYS the favicon placeholder
   (`/favicon-192.png`, CardShell.CardImage pattern); wsrv-served images retry
   the raw origin once first (RefImg / ShareReceiver ladder). ShareReceiver's
@@ -237,18 +221,18 @@ and panel sit at 1400; the phone filter sheet (1450) covers the dot so it can't 
 
 ## Reach-for-this rules
 
-- **New button somewhere?** `actionButton` for header/toolbar; `pillBase` for filter row; `signInButton` for sign-in CTAs; `innerToggleButton` for nested sub-toggles. Don't hand-roll padding / borderRadius / colors.
-- **Selected / "on" state?** Spread `SELECTED_FILL` (olive tint + ink + hairline) — never invent a per-surface selected look. It's already baked into `pillBase` / `innerToggleButton` / `iconButton` active.
-- **Clearing filters?** ONE pattern (2026-05-28): a single `clearAllPill` (lives in the active-filters chips strip, right-aligned — NOT on the filter bar) clears everything; the per-value `dismissChipX` on each chip removes one value. **Don't add per-dimension "Clear" buttons** (the Source/Brand/Model pickers had them; removed as duplication).
-- **New modal?** `modalBackdrop` + `modalShell` + `modalTitleRow` + `modalTitle` + `modalCloseButton`. Inside the modal, use `inputBase` for form inputs.
+- **New button, pill or toggle somewhere?** `Pill` / `Button` from `src/ui` (`Pill primary` for the one main action, `Pill toggle` for on/off, `Button inline` for a sign-in). Don't hand-roll padding / radius / colour.
+- **Selected / "on" state?** The shared solid olive (`Pill on`, `Chip on`, the sub-tab's active segment). Never invent a per-surface selected look.
+- **Clearing filters?** ONE pattern: the filter bar's `× Clear all` pill clears everything; each active filter is a `DismissChip` that removes one value. Don't add per-dimension clear buttons.
+- **A heading inside a page** (a list's name, with actions)? `SectionHead`. A long page's jump links? `JumpNav`. Neither is a page title.
+- **New modal?** `modalBackdrop` + `modalShell` + `modalTitleRow` + `modalTitle` + `modalCloseButton`, with `inputBase` for inputs, until the modals move onto `src/ui`.
 - **New empty / signed-out / "nothing here yet" surface?** `<EmptyState />` from `./EmptyState`. Pick the size: `compact` for in-tab emptiness, `default` for general, `tall` for top-level signed-out gates.
 - **New color?** Add a CSS var to App.js's `c` block in BOTH light and dark modes. Never inline hex.
 - **Sub-section grouping inside a tab?** `<Section />` from `./Section`. Page-level tab headers (back-arrow + title + actions row) are intentionally a denser inline shape; don't try to consolidate them into Section.
 - **Need a confirm dialog?** `import { confirm } from "./ConfirmModal"`, then `await confirm({ title, message, confirmLabel, tone: "danger" })`. Never `window.confirm` — it breaks dark mode and reads as jarring against the rest of the UI.
-- **A sub-tab row (segmented control)?** `<SubTabs tabs activeKey onSelect>` from `src/ui` — don't hand-roll the row or spread raw `segTrack`/`segItem`. Same component for real tab-switchers and jump-to-section nav; pass per-surface chrome (olive bg, sticky) via `containerStyle`. Underline `tabPill` is the TOP-tab look only — the two nav levels must stay visually distinct (audit:2026-06-06 U-01). (The Reference page's pill chip-bar is a deliberately different look, not this.)
+- **A sub-tab row (segmented control)?** `<SubTabs tabs activeKey onSelect>` from `src/ui` — don't hand-roll the row. Same component for real tab-switchers and jump-to-section nav; pass per-surface chrome (olive bg, sticky) via `containerStyle`. Underline `tabPill` is the TOP-tab look only — the two nav levels must stay visually distinct (audit:2026-06-06 U-01). (The Reference page's pill chip-bar is a deliberately different look, not this.)
 - **New card, anywhere?** Render through `CardShell` (image + L1/L2/L3 slots + actions) — don't hand-roll a card frame or a second portal menu. Priced items go via `Card.js` (it keeps the price logic and fills the slots); articles fill the slots directly. **A horizontal row of cards?** `<CardStrip renderCard={…}>`. The editorial magazine `ArticleCard` is the one deliberate exception (its own floating/serif layout) — pending the design-uplift pass.
 - **A grid of content cards (articles / reference guides / lists)?** `style={cardGridStyle({ isMobile })}` — one shared track so all three families are the same size. Don't hand-roll `gridTemplateColumns`.
-- **A filterable surface with a title?** Use the **collapsing-header pattern** (Mark 2026-06-02): a normal-flow `PageHeader` title that scrolls away, above a `position:sticky; top:0` wrapper holding the search/filter that pins. Bleed the sticky wrapper to the pane edges with negative side margins equal to the scroll-pane padding (−20 desktop / −16 mobile). Live on Saved · catalog · Reference guides · Articles. **Low-facet filters** (few brands) = visible chips + one search box (simple); **high-facet** (Watches/Saved/Auctions, hundreds of values) = the dense expand-pill bar. Simple is the default; dense is the exception.
 
 ## Intentional drift (don't "fix")
 
@@ -280,7 +264,7 @@ landing as separate PRs when worth touching.
   labels, section eyebrows). Past the 3+ threshold. Promote to a
   `<Eyebrow>` component or `eyebrowText` style export.
 - **Button consolidation.** Roughly 184 hand-rolled `<button>`
-  elements skip `actionButton` / `pillBase` / `iconButton`. The
+  elements skip the shared `Button` / `Pill`. The
   grep over-counts (some legitimately need custom styles — card
   overlays, the SectionStrip pills), but the magnitude is real.
   CollectionEditModal got snapped in PR #318 from the desktop

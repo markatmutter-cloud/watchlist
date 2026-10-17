@@ -12,7 +12,7 @@
 import React, { useState } from "react";
 import {
   Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
-  AccountDisc, SuggestionRows, Chip, ChipPanel, PriceRange, Button,
+  AccountDisc, SuggestionRows, Chip, ChipPanel, PriceRange, Button, DismissChip, JumpNav, SectionHead,
 } from "./index";
 import { FilterDrawer } from "../components/FilterDrawer";
 import { MagazineShellBar, MagazineBrandRow, MagazineTabRow } from "../components/MagazineShellBar";
@@ -443,6 +443,24 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
               </div>
             </div>
             <p className="ss-small">Price range sits inline on a desktop filter bar and moves into the sheet on a phone, where one Filter pill (with the applied count) replaces Source, Brand and Model. The sheet floats above Lumé's launcher so its primary button is never covered.</p>
+          </Specimen>
+          <Specimen label="Inside a page: section head (a list's name) · dismissable filters · jump nav · primary action">
+            <div className="ss-stack" style={{ maxWidth: 760 }}>
+              <SectionHead onExit={noop} exitLabel="All lists" title="JLC shortlist" meta="Shared by Sam"
+                actions={[{ label: "Screen", onClick: noop }, { label: "Share", onClick: noop }]} />
+              <div className="ui-dismiss-row">
+                <DismissChip label="Rolex" onRemove={noop}>Rolex</DismissChip>
+                <DismissChip label="Under $15,000" onRemove={noop}>Under $15,000</DismissChip>
+              </div>
+              <JumpNav ariaLabel="Sections" activeKey="watches" onGo={noop}
+                items={[{ key: "notes", label: "Notes" }, { key: "watches", label: "Watches" }, { key: "articles", label: "Articles" }]} />
+              <div className="ss-row">
+                <Pill>+ Add a watch</Pill>
+                <Pill primary>+ From feed</Pill>
+                <Button primary inline>Sign in</Button>
+              </div>
+            </div>
+            <p className="ss-small">The heading for a thing on the page (not a page title: the sub-tab already says where you are), with its actions as pills and a quiet way back. A selected filter you can take off is a dismissable chip; a long page gets a jump nav that pins under the chrome; the one main action in a group is a primary pill.</p>
           </Specimen>
           <Specimen label="A takeover header (the auction catalog) and a stacked filter bar">
             <div className="ss-stack" style={{ maxWidth: 760 }}>
