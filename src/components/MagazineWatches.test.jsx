@@ -106,6 +106,14 @@ describe("MagazineWatches", () => {
     expect(MAGW_CSS).toMatch(/\.mag\.magw\s+\.mag-wordmark\s*\{[^}]*text-transform:\s*uppercase/);
   });
 
+  it("takes the shells' inset, not a centred column of its own (B-100)", () => {
+    // Articles / Guides / Saved sit at CHROME.INSET_X_* (20 / 16px); the Watches
+    // page was a centred 1600px column with a 2.4vw gutter, indented against them.
+    expect(MAGW_CSS).toMatch(/\.magw-page\s*\{\s*padding:\s*0 20px 40px;\s*\}/);
+    expect(MAGW_CSS).toMatch(/@media \(max-width: 700px\)\s*\{[^@]*\.magw-page\s*\{\s*padding:\s*0 16px 32px;/);
+    expect(MAGW_CSS).not.toMatch(/\.magw-page\s*\{[^}]*max-width/);
+  });
+
   it("renders the chrome, the sub-tabs, the count and the real grid", () => {
     render(<MagazineWatches {...props()} />);
     expect(screen.getByTestId("auth")).toBeInTheDocument();
