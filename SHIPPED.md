@@ -788,6 +788,11 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-16 — The Saved top tab is retired; Lists moved to the account ("M") menu.** Mark: "I've not been using
+  that as a tab." Top tabs are Watches · Articles · Reference Guides. The menu's Lists entry opens the same container
+  on Lists (`?tab=saved` links still resolve to it). Saved watches = the bar's heart + Watches ▸ ♡ Saved; saved
+  articles/guides = the ♡ pill; saved searches = suggestions in the search bar. `topTabs.test.js` fails if a tab
+  is re-added; `AppAccountMenu.test.jsx` drives the real signed-in menu (it caught a sub-tab reset bug).
 - **2026-10-16 — Saved searches come up as suggestions when you click the search bar.** Mark: "saved searches come
   up as suggested searches when you click on the search bar." On the Watches page and Home, focusing the empty
   search lists your saved searches (what is for sale, what is new); a row re-runs it, the × unsaves it (confirmed).

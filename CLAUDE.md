@@ -298,19 +298,24 @@ diagram, data model, and folder layout.
 ## Internal-vs-UI naming (deliberate — don't "fix" casually)
 
 UI labels diverge from internals on purpose — don't "fix" casually.
-- **Top tabs: Watches · Saved · Articles · Reference Guides ("Guides" on
-  mobile).** Labels live ONLY in `src/topTabs.js` (both shells + Home masthead
-  consume it). Internal keys stay `listings` · `watchlist` · `references` and
+- **Top tabs: Watches · Articles · Reference Guides ("Guides" on mobile) —
+  there is NO Saved tab (retired 2026-10-16).** Labels live ONLY in
+  `src/topTabs.js` (both shells + Home masthead consume it; `topTabs.test.js`
+  fails if a tab is re-added). Internal keys stay `listings` · `references` and
   `?tab=…` URLs are unchanged; Articles/Reference Guides are two top pills over
   the same internal `references` container (sub `editorial` / `references`).
-  Tools (Size compare · Challenges — placement provisional) live in the
-  account menu; Links parked.
-- **DB `collections` ↔ UI "Lists"** (the Saved sub-tab) — `collections` is the
-  umbrella for Lists, Wishlist, Owned, Sold, Challenges, shared inbox. Keep it.
-- **Internal `watchlist` (tab "Saved", `?tab=saved`)** — hook `useWatchlist`,
-  table `watchlist_items`; sub-tabs ♡ Saved · Lists · Searches.
-- **Never label anything "Hearted"** — the word is "♡ Saved" (internal
-  `hearted` keys stay).
+  Lists + Tools (Size compare · Challenges) live in the account ("M") menu;
+  Links parked.
+- **DB `collections` ↔ UI "Lists"** (the account-menu entry) — `collections`
+  is the umbrella for Lists, Wishlist, Owned, Sold, Challenges, shared inbox.
+- **Internal `watchlist` tab (`?tab=saved` still resolves)** — hook
+  `useWatchlist`, table `watchlist_items`; no top tab. The account menu's
+  Lists opens it (set the sub AFTER `setTabWithReceiveEscape`, which resets it).
+  Where "saved" lives now: saved watches = the bar's heart + Watches ▸ ♡ Saved;
+  saved articles/guides = the icon-only ♡ pill (`SavedPill`); saved searches =
+  suggestions under the focused search bar.
+- **Never label anything "Hearted"** — the word is "Saved" (internal
+  `hearted` keys stay); the pills are icon-only ♡, never red.
 
 A full internal rename is a parked, low-priority sweep. **Never bump these
 storage keys** (resets user data): `LEGACY_WATCHLIST_KEY`, `LEGACY_HIDDEN_KEY`,

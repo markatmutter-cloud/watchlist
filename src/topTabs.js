@@ -1,5 +1,5 @@
-// Top-level tab model — ONE source of truth (2026-06-03 IA restructure:
-// Watches · Saved · Articles · Reference Guides). Consumed by DesktopShell,
+// Top-level tab model — ONE source of truth (2026-10-16: Watches · Articles ·
+// Reference Guides; there is NO Saved top tab — see below). Consumed by DesktopShell,
 // MobileShell and the HomeTab masthead via the `topTabs` entry App.js builds
 // from this. The arrays used to be duplicated inline in all three render
 // sites — exactly how labels drift (the consistency bug class).
@@ -13,14 +13,13 @@
 // deep links resolve exactly as before.
 export const TOP_TABS = [
   { key: "listings",  label: "Watches",  icon: "listings" },
-  // Order set by Mark 2026-09-07: Watches, Articles, Saved, Reference Guides.
-  // Reading comes second because it is the second thing people do here; Saved
-  // is a return visit, so it sits after the two browse surfaces.
   { key: "articles",  label: "Articles", icon: "articles", tab: "references", sub: "editorial" },
-  // "Saved" (2026-06-03, was "Lists") — the truthful umbrella: hearts,
-  // lists and searches are all things you saved. Resolves the documented
-  // Lists/Lists label collision from the #655 rename.
-  { key: "watchlist", label: "Saved", icon: "watchlist" },
+  // No Saved tab (Mark, 2026-10-16: "I've not been using that as a tab"). What
+  // lived there moved to where it is used: saved watches = the heart in the bar
+  // and Watches ▸ ♡ Saved; saved articles / guides = the ♡ pill in their filter
+  // row; saved searches = suggestions under the focused search bar; Lists = the
+  // account ("M") menu. The container is still `tab="watchlist"` internally and
+  // `?tab=saved` links still resolve to it — only the top-level entry is gone.
   // "Reference Guides" on desktop, "Guides" on mobile (Mark's call — bare
   // "Reference" reads as ref-numbers; the full label doesn't fit mobile).
   { key: "guides", label: "Reference Guides", mobileLabel: "Guides", icon: "references", tab: "references", sub: "references" },
