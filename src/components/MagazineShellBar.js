@@ -17,8 +17,8 @@
 // the chrome would be exactly the duplicate-control bug MagazineChrome's
 // header describes.
 //
-// Gated by `?look=new` (src/lookFlag.js); the shells render their olive bar
-// otherwise, so the live site is unchanged until the flag is on.
+// The header of every page (src/ui PageShell), and Home's masthead lives in
+// MagazineChrome. The front page's faces: Bodoni wordmark, mono tab labels.
 //
 // MAGB_CSS is a template literal — a backtick inside a comment in it ends the
 // string and the rest parses as JavaScript (it bit MAGW_CSS twice). The test
@@ -27,23 +27,13 @@
 import React from "react";
 import { MAG_CSS, Crescent, SavedButton, useFonts } from "./MagazineChrome";
 
-const SANS = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif";
-
-// Loads Bodoni + Plex Mono only when the display faces are asked for. A hook
-// cannot be conditional, so it lives in a component that is.
-function DisplayFonts() {
+// Loads Bodoni + Plex Mono for the wordmark and the tab labels.
+function Wrap({ className, children }) {
   useFonts();
-  return null;
-}
-
-function Wrap({ faces, className, children }) {
-  // Display faces are the default (Mark, 2026-10-17); only an explicit "system" opts out.
-  const display = faces !== "system";
   return (
-    <div className={`mag magb${display ? " magb--display" : ""} ${className || ""}`}>
+    <div className={`mag magb ${className || ""}`}>
       <style>{MAG_CSS}</style>
       <style>{MAGB_CSS}</style>
-      {display ? <DisplayFonts /> : null}
       {children}
     </div>
   );
@@ -87,9 +77,9 @@ function Util({ authJSX, showSaved, onSavedClick }) {
 // (it types straight into the tab's filter), seated between the tabs and the
 // account cluster; every other tab leaves it out and keeps its search in its
 // filter row.
-export function MagazineShellBar({ tabs, authJSX, showSaved, onSavedClick, onHome, faces, searchJSX }) {
+export function MagazineShellBar({ tabs, authJSX, showSaved, onSavedClick, onHome, searchJSX }) {
   return (
-    <Wrap faces={faces} className="magb-bar">
+    <Wrap className="magb-bar">
       <Home onHome={onHome} />
       <Tabs tabs={tabs} />
       {searchJSX ? <div className="magb-search">{searchJSX}</div> : <span className="magb-sp" />}
@@ -100,9 +90,9 @@ export function MagazineShellBar({ tabs, authJSX, showSaved, onSavedClick, onHom
 
 // Mobile, row 1: wordmark + account. Non-sticky in MobileShell, so it scrolls
 // away exactly as the olive brand row did; the safe-area padding is the same.
-export function MagazineBrandRow({ authJSX, showSaved, onSavedClick, onHome, faces }) {
+export function MagazineBrandRow({ authJSX, showSaved, onSavedClick, onHome }) {
   return (
-    <Wrap faces={faces} className="magb-brand">
+    <Wrap className="magb-brand">
       <Home onHome={onHome} />
       <span className="magb-sp" />
       <Util authJSX={authJSX} showSaved={showSaved} onSavedClick={onSavedClick} />
@@ -111,30 +101,23 @@ export function MagazineBrandRow({ authJSX, showSaved, onSavedClick, onHome, fac
 }
 
 // Mobile, row 2: the tabs, first child of MobileShell's sticky stack.
-export function MagazineTabRow({ tabs, faces }) {
+export function MagazineTabRow({ tabs }) {
   return (
-    <Wrap faces={faces} className="magb-tabs">
+    <Wrap className="magb-tabs">
       <Tabs tabs={tabs} short />
     </Wrap>
   );
 }
 
-// Type for the chrome only. The three faces are the app's own system stack by
-// default (what the Watches page wears, and what Mark approved there);
-// `magb--display` restores Bodoni for the wordmark and Plex Mono for the tab
-// labels — the front page's chrome — without touching the working UI.
+// Type for the chrome only: Bodoni for the wordmark and Plex Mono for the tab labels (the
+// front page's chrome), without touching the working UI under it.
 export const MAGB_CSS = `
-.mag.magb { --mag-display: ${SANS}; --mag-body: ${SANS}; --mag-data: ${SANS}; }
-.mag.magb .mag-wordmark { font-family: var(--mag-body); text-transform: uppercase;
-                          font-weight: 700; letter-spacing: .14em; line-height: 1.1;
-                          font-size: 19px; display: inline-block; margin: 0; }
-.mag.magb .mag-crescent svg { width: 22px; height: 22px; }
-.mag.magb--display { --mag-display: "Bodoni Moda", Didot, "Times New Roman", serif;
-                     --mag-data: "IBM Plex Mono", ui-monospace, Menlo, monospace; }
-.mag.magb--display .mag-wordmark { font-family: var(--mag-display); text-transform: none;
-                                   font-weight: 500; letter-spacing: .015em; line-height: .95;
-                                   font-size: 30px; }
-.mag.magb--display .mag-crescent svg { width: 26px; height: 26px; }
+.mag.magb { --mag-display: "Bodoni Moda", Didot, "Times New Roman", serif;
+            --mag-data: "IBM Plex Mono", ui-monospace, Menlo, monospace; }
+.mag.magb .mag-wordmark { font-family: var(--mag-display); text-transform: none;
+                          font-weight: 500; letter-spacing: .015em; line-height: .95;
+                          font-size: 30px; display: inline-block; margin: 0; }
+.mag.magb .mag-crescent svg { width: 26px; height: 26px; }
 
 .magb-home { flex: 0 0 auto; }
 .magb-sp { flex: 1 1 auto; }
@@ -153,10 +136,6 @@ export const MAGB_CSS = `
 .magb-bar .mag-bar-tabs { flex-wrap: nowrap; }
 /* The Watches search, centred between the tabs and the account cluster. */
 .magb-search { flex: 1 1 300px; min-width: 200px; max-width: 520px; margin: 0 auto; }
-.magb-search .magw-searchwrap { flex: none; width: 100%; max-width: none; }
-/* Pinned to the bar's content height so a search in the bar can't make Watches'
-   header taller than the other tabs' (it was 62px against their 56). */
-.magb-search .magw-search { box-sizing: border-box; height: 37px; padding-top: 0; padding-bottom: 0; }
 @media (max-width: 1100px) {
   /* The mono tabs and the Bodoni wordmark are wider than the system ones: below
      this the Watches search drops to its own row rather than squeezing the tabs. */
@@ -170,8 +149,7 @@ export const MAGB_CSS = `
               background: var(--bg); border-bottom: .5px solid var(--border); }
 .magb-brand .mag-icon { width: 40px; height: 40px; }
 .magb-brand .mag-icon svg { width: 18px; height: 18px; }
-.magb-brand .mag-wordmark { font-size: 17px; }
-.magb-brand.magb--display .mag-wordmark { font-size: 28px; }
+.magb-brand .mag-wordmark { font-size: 28px; }
 .magb-tabs { box-sizing: border-box; min-height: var(--ui-tabrow-h, 42px); padding: 0 16px;
              background: var(--bg); border-bottom: .5px solid var(--border); }
 .magb-tabs .mag-bar-tabs { flex-wrap: nowrap; overflow-x: auto; gap: 0 20px;

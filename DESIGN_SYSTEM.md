@@ -84,20 +84,16 @@ control because it spans For sale / Auctions / Sold; don't add a second saved pi
 2026-07-30 "sub-tab, never a pill" rule, which existed because a labelled pill went unfound — so the
 icon carries an `aria-label`/`title`, and the empty state invites.)
 
-**The label voice (2026-10-16).** Under the magazine look (`?look=old` opts out), filter
-pills and item counts are small tracked caps — `magLabel()` / `CHROME.MAG_*` in
-`styles.js`, switched by the `LOOK` flag App sets at the top of its render. TYPE and
-padding only: the olive-tint selected state stays (it is deliberately quieter than the
-segmented sub-tab's solid olive — the June audit's U-01 hierarchy) and the pill pad is
-sized so no tap target shrinks. Sub-tabs stay the segmented control; don't swap in the
-Watches page's underline version without re-reading that audit.
+**The label voice (2026-10-16).** The legacy pill family (`pillBase` and friends, still worn inside the Lists
+page, the calendar and cross-tab search) is small tracked caps: `magLabel()` / `CHROME.MAG_*` in `styles.js`. TYPE and
+padding only: the olive-tint selected state stays and the pill pad is sized so no tap target shrinks. New pages use
+`src/ui` pills, not these.
 
 **The browser tint follows the page's top edge (2026-10-16).** `theme-color` (Safari's
 toolbar + bookmarks bar, the iOS PWA status strip, Android's address bar) and the
 `<html>` background are set by `<ChromeTint />` from one rule, `chromeIsLight()` in
-`src/chromeTint.js`: paper where the top surface is light (Home, the magazine Watches
-page, any surface under `?look=new`), olive only over the shells' olive bar and the
-green catalog bar. A surface that changes its top colour has to answer that rule — an
+`src/chromeTint.js`: paper everywhere, except over the
+green catalog title bar. A surface that changes its top colour has to answer that rule — an
 olive toolbar over a light page is the bug it exists to prevent.
 
 **The faces (tokens in `styles.js` — never inline a font string).**
@@ -191,9 +187,9 @@ single chrome accent (links/text-accents may still use `--brand`).
 |---|---|
 | `CardShell.js` | **Shared card frame** — square/editorial image + placeholder, L1/L2/L3 text slots, action stack (heart / ⋯ / quickAction), the single portal menu. Every card renders through it. |
 | `CardStrip.js` | **Shared horizontal card row** — scroll container + per-tile wrapper (38%/170 mobile · 210 desktop). Caller passes a `renderCard` fn. Scroll affordance = right-edge fade (hides at the end) + the peeking next tile; **no custom scrollbar/thumb** (the JS thumb was removed 2026-05-28 — it drove setState every scroll frame + eased, so it trailed the scroll). Snap is `proximity`. Used by Home, Search-all, ReferencePage, Collections strips. |
-| `SubTabBar.js` | **Shared sub-tab row** — the one segmented-control strip (`segTrack`/`segItem`, scrollable; restyled from underline audit:2026-06-06). Used by the Watches + Saved sub-tabs. Works for real tab-switchers and jump-to-section nav alike (only `onSelect` differs); surface chrome (olive-on-mobile bg, sticky, edge bleed) passed via `containerStyle`. |
+| `src/ui` `SubTabs` | **The sub-tab row** — the one segmented control (solid olive chip). The old `SubTabBar.js` is deleted. |
 | `Card.js` | Feed card (priced listings / auctions / sold). Renders **into** `CardShell`; keeps all the price/FX/auction/sold logic |
-| `Chip.js` | Filter chips (brands / sources / refs row) |
+| `src/ui` `Chip` | Filter chips (sources / brands / models): solid olive when on. The old `Chip.js` is deleted. |
 | `ListRow.js` | Collection list row (in Lists drill-in) |
 | `SubTabIntro.js` | Intro callout banner with optional action button (different visual primitive from `actionButton`; intentional — callout-banner action vs header toolbar action) |
 | `EmptyState.js` | Standard empty-state surface (icon + heading + blurb + optional CTA). Three sizes: `compact` / `default` / `tall` |
@@ -203,33 +199,23 @@ single chrome accent (links/text-accents may still use `--brand`).
 | `Links.js` / `icons.js` | Internal/external link helpers, SVG icons |
 | `ConfirmModal.js` | Styled confirm dialog. Imperative API — `await confirm({ title, message, confirmLabel, cancelLabel, tone: "danger" \| "default" })` returns `Promise<boolean>`. One `<ConfirmHost/>` mounts at App level. Replaces every `window.confirm` site since PR #317 |
 
-## Page chrome — the standard library (2026-06-03)
+## Page chrome — `src/ui` (2026-10-17)
 
-The one set of components + numbers for every named surface's chrome. The
-chrome-guard jest suite fails the build on drift.
+The one frame for every page, defined in `src/ui/ui.css` and shown live at `?view=styleguide`.
+`ui-guard` and `chrome-guard` fail the build on drift. (The 2026-06-03 standard library
+`StandardFilterBar` / `StandardSearchInput` / `SubTabBar` and the `DesktopShell` / `MobileShell`
+they lived in are deleted.)
 
-- **`CHROME` (styles.js)** — the metrics sheet: left inset (20/16), mobile body
-  top (12, flat on every tab), control height (30), pill font/pad (13 / 6×12),
-  PageHeader padding, header→bar gap (0/4), bar→content gap (18/14). Chrome
-  code imports the constant; a raw px for these properties is a smell.
-- **`PageHeader`** — every page title. One-inset rule: no horizontal
-  self-padding (the container provides the inset, so title + hairline + pills
-  share one left edge). One-row header: actions · `trailing` (composed
-  controls, e.g. ⋯ menu) · `count` sit inline-right of the title; `meta`
-  ("Shared by X") is the only line-adder.
-- **`StandardFilterBar`** — the one bar: pills left · search in a CENTERED
-  fixed slot (grid `1fr minmax(200,340) 1fr`) · right zone · count in a
-  reserved right slot (minWidth 86 — late counts can't jog). Below 1250px
-  viewport it self-stacks: search on its own full-width line, pills + right
-  zone wrapping beneath (the single-line grid overlaps below that). Mobile =
-  pill row only; search lives in the shell row (one input per surface).
-- **`StandardSearchInput`** — the one search field: SearchIcon · radius 20 ·
-  height `CHROME.CONTROL_H` · `--surface` fill (a transparent box vanished
-  next to the filled pills) · built-in clear ×; `trailing` slot for extras
-  (Save-search heart).
-- **`topTabs.js`** — the only home of top-tab labels (Watches · Saved ·
-  Articles · Reference Guides / "Guides" mobile); both shells + the Home
-  masthead consume the same built model.
+- **`PageShell`** — the header (desktop bar; phone brand row + sticky tab row), the overlays and modals.
+  `header` swaps in a page's own pinned header (the catalog's olive title bar); `bare` is for Home.
+- **`PageFrame`** — sub-tabs · filter bar · content, in that order, at one inset (20 / 16). No page title.
+- **`FilterBar`** — pills left · search centred · count right; `stacked` gives a crowded bar's search its own row.
+  A sticky bar publishes `--sticky-top`, so date dividers pin just under it.
+- **`CHROME` (styles.js)** and **`PageHeader`** survive only for the legacy pill family and the headings inside
+  `CollectionsTab`; don't use them on a new page.
+- **`topTabs.js`** — the only home of top-tab labels (Watches · Articles ·
+  Reference Guides / "Guides" mobile); the one header + the Home masthead
+  consume the same built model.
 - **Counts**: bar surfaces → the bar's right slot; bar-less headers →
   PageHeader `count`; never under a title.
 - **Failed images** — terminal state is ALWAYS the favicon placeholder
@@ -259,7 +245,7 @@ and panel sit at 1400; the phone filter sheet (1450) covers the dot so it can't 
 - **New color?** Add a CSS var to App.js's `c` block in BOTH light and dark modes. Never inline hex.
 - **Sub-section grouping inside a tab?** `<Section />` from `./Section`. Page-level tab headers (back-arrow + title + actions row) are intentionally a denser inline shape; don't try to consolidate them into Section.
 - **Need a confirm dialog?** `import { confirm } from "./ConfirmModal"`, then `await confirm({ title, message, confirmLabel, tone: "danger" })`. Never `window.confirm` — it breaks dark mode and reads as jarring against the rest of the UI.
-- **A sub-tab row (segmented control)?** `<SubTabBar tabs activeKey onSelect>` — don't hand-roll the row or spread raw `segTrack`/`segItem`. Same component for real tab-switchers and jump-to-section nav; pass per-surface chrome (olive bg, sticky) via `containerStyle`. Underline `tabPill` is the TOP-tab look only — the two nav levels must stay visually distinct (audit:2026-06-06 U-01). (The Reference page's pill chip-bar is a deliberately different look, not this.)
+- **A sub-tab row (segmented control)?** `<SubTabs tabs activeKey onSelect>` from `src/ui` — don't hand-roll the row or spread raw `segTrack`/`segItem`. Same component for real tab-switchers and jump-to-section nav; pass per-surface chrome (olive bg, sticky) via `containerStyle`. Underline `tabPill` is the TOP-tab look only — the two nav levels must stay visually distinct (audit:2026-06-06 U-01). (The Reference page's pill chip-bar is a deliberately different look, not this.)
 - **New card, anywhere?** Render through `CardShell` (image + L1/L2/L3 slots + actions) — don't hand-roll a card frame or a second portal menu. Priced items go via `Card.js` (it keeps the price logic and fills the slots); articles fill the slots directly. **A horizontal row of cards?** `<CardStrip renderCard={…}>`. The editorial magazine `ArticleCard` is the one deliberate exception (its own floating/serif layout) — pending the design-uplift pass.
 - **A grid of content cards (articles / reference guides / lists)?** `style={cardGridStyle({ isMobile })}` — one shared track so all three families are the same size. Don't hand-roll `gridTemplateColumns`.
 - **A filterable surface with a title?** Use the **collapsing-header pattern** (Mark 2026-06-02): a normal-flow `PageHeader` title that scrolls away, above a `position:sticky; top:0` wrapper holding the search/filter that pins. Bleed the sticky wrapper to the pane edges with negative side margins equal to the scroll-pane padding (−20 desktop / −16 mobile). Live on Saved · catalog · Reference guides · Articles. **Low-facet filters** (few brands) = visible chips + one search box (simple); **high-facet** (Watches/Saved/Auctions, hundreds of values) = the dense expand-pill bar. Simple is the default; dense is the exception.

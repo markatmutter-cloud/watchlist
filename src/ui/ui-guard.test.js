@@ -46,6 +46,7 @@ describe("src/ui", () => {
     "components/EditorialView.js", "components/ReferenceBrowse.js",
     "components/MagazineWatches.js", "components/FilterDrawer.js", "components/ListingsFilters.js",
     "components/LumeConversation.js", "components/ChatBubbleHost.js", "components/LumeCanvas.js",
+    "components/ReferencesTab.js", "components/CatalogPage.js", "components/ListsPage.js",
   ];
   const LEGACY = [
     /from "\.\/StandardFilterBar"/, /from "\.\/PageHeader"/, /from "\.\/Chip"/, /from "\.\/SavedPill"/,

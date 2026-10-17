@@ -107,8 +107,9 @@ the branch you'll create — branch before editing, never edit `main`.
 Python scrapers (GitHub Actions, 3×/day) write per-source CSVs; `merge.py`
 enriches into `public/listings.json` + `state.json` (cross-run memory via
 stable URL-hash IDs). Frontend is React (CRA, inline styles): `App.js`
-orchestrates state + builds JSX, delegating render to `MobileShell` /
-`DesktopShell` via one `shellProps` bag. Per-user data (watchlist, hidden,
+orchestrates state + builds JSX; every page is `src/ui`'s `PageShell` +
+`PageFrame` around the content App builds (Home keeps its own masthead).
+Per-user data (watchlist, hidden,
 saved searches, collections) is in Supabase with RLS. See README for the
 diagram, data model, and folder layout.
 
@@ -258,15 +259,16 @@ diagram, data model, and folder layout.
   React #310 (white screen). New hooks go in a self-contained component
   App.js mounts unconditionally, or above every early return. A `useEffect`
   must not reference state declared later in the function (TDZ).- **Page chrome = `src/ui`** (the shared frame; approved on `?view=styleguide`):
-  Pill, SearchField, SubTabs, PageTitle, FilterBar, PageFrame, Count, AccountDisc,
-  styled ONCE in `src/ui/ui.css`. A page never hand-rolls one — add a variant
-  there + on the style sheet first. Pages not yet migrated still use the legacy
-  `PageHeader`/`StandardFilterBar`/`CHROME`; `chrome-guard` and `ui-guard` fail
-  the build on drift — fix the surface, not the test.
-- **Shells move in lockstep.** Any `shellProps` field used in one of
-  `MobileShell` / `DesktopShell` must exist in both *and* in
-  `mockShellProps.js`. A name destructured in one and missing in the other is
-  a ReferenceError the moment that branch renders.
+  `PageShell` (header, overlays, modals), `PageFrame` (sub-tabs · filter bar ·
+  content), Pill, SearchField, SubTabs, FilterBar, Count, AccountDisc, Chip,
+  Button, styled ONCE in `src/ui/ui.css`. A page never hand-rolls one: add a
+  variant there + on the style sheet first. There are no shells: `DesktopShell`
+  / `MobileShell` / `StandardFilterBar` / `SubTabBar` and the `?look=old` /
+  `?chrome=system` flags are deleted, and `chrome-guard` + `ui-guard` fail the
+  build if they return. The `pillBase`/`PageHeader` family survives only inside
+  `CollectionsTab`, the calendar and `SearchResultsView` until those migrate.
+  A page that needs its own header (the auction catalog) passes `header` to
+  `PageShell`; a sticky `FilterBar` publishes `--sticky-top` for dividers.
 - **Navigation = `pushState`; cleanup = `replaceState`.** Tab / sub-tab /
   drill-in changes push (so browser-back walks backwards); URL-sync cleanup
   replaces. Stay on query params — no `react-router`. `?col=` is owned by
@@ -298,7 +300,7 @@ diagram, data model, and folder layout.
 UI labels diverge from internals on purpose — don't "fix" casually.
 - **Top tabs: Watches · Articles · Reference Guides ("Guides" on mobile) —
   there is NO Saved tab (retired 2026-10-16).** Labels live ONLY in
-  `src/topTabs.js` (both shells + Home masthead consume it; `topTabs.test.js`
+  `src/topTabs.js` (the one header + Home masthead consume it; `topTabs.test.js`
   fails if a tab is re-added). Internal keys stay `listings` · `references` and
   `?tab=…` URLs are unchanged; Articles/Reference Guides are two top pills over
   the same internal `references` container (sub `editorial` / `references`).
@@ -335,13 +337,12 @@ Two suites, CI on every push + PR:
 - **pytest** (`tests/test_merge_state.py`) — `merge.update_state` transitions.
   Add a test for any new field `merge.py` emits or any change to enrichment /
   disappearance logic.
-- **jest** — render-without-crash for shells, tab bodies (CollectionsTab /
-  WatchlistTab), and App (`.test.jsx` files). Adding a `shellProps` field →
-  mirror it in `mockShellProps.js`. Adding a prop to a tab/App → update its
-  `buildProps`. **Adding a `useX` supabase hook that App calls → add it to
+- **jest** — render-without-crash for the pages (`MagazineWatches`,
+  `ListsPage`, `CatalogPage`, …), tab bodies (CollectionsTab), and App
+  (`.test.jsx` files). Adding a prop to a tab/App → update its `buildProps`. **Adding a `useX` supabase hook that App calls → add it to
   `App.test.jsx`'s `jest.mock("./supabase")`** or the App render test throws
   "useX is not a function" (the Vercel build stays green — only jest catches it).
-  **Shell tests render MOCK grids — Card/CardShell/leaf components never execute
+  **Page tests render MOCK grids — Card/CardShell/leaf components never execute
   in them.** Editing a render path you can't run locally → give that component a
   direct render test (pattern: `CardShell.test.jsx`); a Vercel build compiles but
   never executes, so a ReferenceError ships green without one.

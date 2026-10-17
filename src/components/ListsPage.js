@@ -20,7 +20,7 @@ const SUB_TABS = [
 
 export default function ListsPage(props) {
   const {
-    isMobile, baseStyle, tabs, authJSX, user, onHome, goToSaved, chromeFaces,
+    isMobile, baseStyle, tabs, authJSX, user, onHome, goToSaved,
     watchTopTab, onSelectSub, colDrillInId, displayedCount, contentJSX, overlaysJSX,
     aboutModalOpen, setAboutModalOpen, signInPromptOpen, setSignInPromptOpen,
     signInWithGoogle, primaryCurrency,
@@ -32,7 +32,7 @@ export default function ListsPage(props) {
   return (
     <PageShell
       isMobile={isMobile} baseStyle={baseStyle} tabs={tabs} authJSX={authJSX} user={user}
-      onHome={onHome} goToSaved={goToSaved} chromeFaces={chromeFaces}
+      onHome={onHome} goToSaved={goToSaved}
       searchJSX={drilledIn ? <ListingsSearch {...f} /> : undefined}
       overlaysJSX={overlaysJSX}
       aboutModalOpen={aboutModalOpen} setAboutModalOpen={setAboutModalOpen}

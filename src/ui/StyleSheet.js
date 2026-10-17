@@ -478,7 +478,7 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
             <li><b>D1 · Sub-tabs:</b> segmented (the track with a solid chip). The underline form is retired.</li>
             <li><b>D2 · Selected pill:</b> solid olive. The olive tint is retired.</li>
             <li><b>D3 · Page title:</b> none. The header's active tab says where you are; each page gains about 60px.</li>
-            <li><b>D4 · Header type:</b> the front page's Bodoni wordmark and mono tab labels, on every tab; system sans below the header. <code>?chrome=system</code> is the way back.</li>
+            <li><b>D4 · Header type:</b> the front page's Bodoni wordmark and mono tab labels, on every tab; system sans below the header.</li>
             <li><b>D5 · Watches' Saved tab:</b> the heart alone (its accessible name is still "Saved").</li>
           </ul>
         </Section>

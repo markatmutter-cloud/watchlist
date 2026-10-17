@@ -1,13 +1,9 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MagazineShellBar, MagazineBrandRow, MagazineTabRow, MAGB_CSS } from "./MagazineShellBar";
-import { DesktopShell } from "./DesktopShell";
-import { MobileShell } from "./MobileShell";
-import { buildMockShellProps } from "./__fixtures__/mockShellProps";
 
-// Direct coverage for the compact shell bar, plus the one thing shell tests
-// can't see: that `lookNew` swaps the olive bar and nothing else. Shell tests
-// render MOCK content, so the bar itself never executes in them.
+// Direct coverage for the header every page wears. Page tests render MOCK content, so the
+// bar itself would never execute in them.
 
 const noop = () => {};
 const tabs = [
@@ -20,7 +16,7 @@ describe("MAGB_CSS", () => {
     expect(typeof MAGB_CSS).toBe("string");
     expect(MAGB_CSS).toContain(".magb-bar");
     expect(MAGB_CSS).toContain(".magb-tabs");
-    expect(MAGB_CSS).toContain(".mag.magb--display .mag-wordmark");
+    expect(MAGB_CSS).toContain(".mag.magb .mag-wordmark");
     expect(MAGB_CSS.split("{").length).toBe(MAGB_CSS.split("}").length);
   });
 });
@@ -58,16 +54,13 @@ describe("MagazineShellBar", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
-  it("wears the display faces by default (Mark, 2026-10-17) and loads them; only an explicit system opts out", () => {
+  it("wears the front page's faces (Bodoni wordmark, mono tabs) and loads them", () => {
     document.getElementById("mag-fonts")?.remove();
-    const shown = render(<MagazineShellBar tabs={tabs} authJSX={null} onHome={noop} />);
-    expect(shown.container.querySelector(".magb--display")).not.toBeNull();
+    const { container } = render(<MagazineShellBar tabs={tabs} authJSX={null} onHome={noop} />);
+    expect(container.querySelector(".mag.magb")).not.toBeNull();
+    expect(MAGB_CSS).toMatch(/Bodoni Moda/);
+    expect(MAGB_CSS).toMatch(/IBM Plex Mono/);
     expect(document.getElementById("mag-fonts")).not.toBeNull();
-    shown.unmount();
-    document.getElementById("mag-fonts")?.remove();
-    const sys = render(<MagazineShellBar tabs={tabs} authJSX={null} onHome={noop} faces="system" />);
-    expect(sys.container.querySelector(".magb--display")).toBeNull();
-    expect(document.getElementById("mag-fonts")).toBeNull();
   });
 });
 
@@ -81,57 +74,5 @@ describe("mobile rows", () => {
     expect(screen.getByTestId("auth")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guides" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Reference Guides" })).toBeNull();
-  });
-});
-
-describe("shells with lookNew", () => {
-  beforeEach(() => { window.innerWidth = 1440; });
-
-  it("DesktopShell swaps the olive bar for the magazine bar, nothing else", () => {
-    const setTab = jest.fn();
-    const { container } = render(<DesktopShell {...buildMockShellProps({ tab: "listings", lookNew: true, setTab })} />);
-    expect(container.querySelector(".magb-bar")).not.toBeNull();
-    // Everything below the bar is the shell's own, untouched.
-    expect(screen.getAllByText("Source").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByTestId("listings-tab-content")).toBeInTheDocument();
-    // One Home affordance, not the olive bar's ⌂ plus a wordmark.
-    expect(screen.getAllByRole("button", { name: "Home" })).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "Home" }));
-    expect(setTab).toHaveBeenCalledWith("home");
-  });
-
-  it("DesktopShell without lookNew is the olive bar, exactly as before", () => {
-    const { container } = render(<DesktopShell {...buildMockShellProps({ tab: "listings" })} />);
-    expect(container.querySelector(".magb-bar")).toBeNull();
-  });
-
-  it("the catalog takeover still wins over the new bar", () => {
-    const { container } = render(<DesktopShell {...buildMockShellProps({
-      tab: "listings", lookNew: true, catalogFullPage: true,
-      catalogBarJSX: <div data-testid="catalog-bar" />, catalogActionRowJSX: null,
-    })} />);
-    expect(screen.getByTestId("catalog-bar")).toBeInTheDocument();
-    expect(container.querySelector(".magb-bar")).toBeNull();
-  });
-
-  it("MobileShell swaps both olive rows for the magazine rows", () => {
-    const { container } = render(<MobileShell {...buildMockShellProps({ tab: "listings", lookNew: true })} />);
-    expect(container.querySelector(".magb-brand")).not.toBeNull();
-    expect(container.querySelector(".magb-tabs")).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Guides" })).toBeInTheDocument();
-  });
-
-  it("MobileShell without lookNew keeps the olive rows", () => {
-    const { container } = render(<MobileShell {...buildMockShellProps({ tab: "listings" })} />);
-    expect(container.querySelector(".magb-brand")).toBeNull();
-    expect(container.querySelector(".magb-tabs")).toBeNull();
-  });
-
-  it("Home renders no bar from the shell on either viewport (the magazine owns it)", () => {
-    const d = render(<DesktopShell {...buildMockShellProps({ tab: "home", lookNew: true })} />);
-    expect(d.container.querySelector(".magb-bar")).toBeNull();
-    d.unmount();
-    const m = render(<MobileShell {...buildMockShellProps({ tab: "home", lookNew: true })} />);
-    expect(m.container.querySelector(".magb-brand")).toBeNull();
   });
 });

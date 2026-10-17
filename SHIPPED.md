@@ -793,6 +793,11 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — The old shells are deleted; src/ui is the only page frame.** `DesktopShell`, `MobileShell`, `shellProps` (a ~100-field bag),
+  `StandardFilterBar`, `SubTabBar`, the legacy `Chip`, `SavedHeartLink`, `IdentityBand`, `WatchlistTab`, `HeartedView` and the mock-shell test fixture
+  are gone, with ten App.js consts only they used. The `?look=old` and `?chrome=system` escape hatches and `lookFlag.js` are gone too (nothing is left to
+  switch back to); the header is one Bodoni-and-mono layer instead of a system layer with a display override. `chrome-guard` now fails the build if any
+  of it returns. Still on the legacy `pillBase`/`PageHeader` family: `CollectionsTab`'s own headings, the calendar and cross-tab search results.
 - **2026-10-17 — Home and the auction-catalog page leave the old shells; nothing renders in them any more.** Home keeps its own masthead and gets
   only the page's inset and overlays (`PageShell bare`, `.ui-home`). One auction sale is `CatalogPage`: the olive title bar (sale as a mono eyebrow, Bodoni
   title, × back to the calendar) is the page's own pinned header (`PageShell header`, measured so the filter bar pins under it), its Save / Share / Auction

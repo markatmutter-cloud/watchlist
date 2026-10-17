@@ -27,14 +27,19 @@ const readComponent = (f) => fs.readFileSync(path.join(COMPONENTS, f), "utf8");
 const readSrc = (f) => fs.readFileSync(path.join(SRC, f), "utf8");
 
 describe("standard-library chrome contract", () => {
-  test("FilterRow stays retired — StandardFilterBar is the ONE filter bar", () => {
-    // FilterRow was the pre-2026-06-03 primitive; surfaces drifted because it
-    // only standardized the outer flex, not the layout (pills/search/count
-    // slots). It was deleted in the chrome pass — don't reintroduce it.
-    expect(fs.existsSync(path.join(COMPONENTS, "FilterRow.js"))).toBe(false);
+  test("the legacy shells and their chrome pieces stay deleted — src/ui is the one frame", () => {
+    // DesktopShell / MobileShell and the pieces only they used (StandardFilterBar,
+    // SubTabBar, the legacy Chip, SavedHeartLink, IdentityBand) were deleted 2026-10-17 when
+    // the last page moved onto src/ui. FilterRow went the same way in 2026-06. Don't bring any
+    // of them back: build the page from src/ui.
+    for (const gone of ["FilterRow.js", "DesktopShell.js", "MobileShell.js", "StandardFilterBar.js",
+                        "SubTabBar.js", "Chip.js", "SavedHeartLink.js", "IdentityBand.js", "HeartedView.js"]) {
+      expect(fs.existsSync(path.join(COMPONENTS, gone))).toBe(false);
+    }
     const offenders = componentFiles.filter((f) =>
-      /from ["']\.\/FilterRow["']/.test(readComponent(f)));
+      /from ["']\.\/(FilterRow|DesktopShell|MobileShell|StandardFilterBar|SubTabBar|Chip|SavedHeartLink|IdentityBand)["']/.test(readComponent(f)));
     expect(offenders).toEqual([]);
+    expect(fs.existsSync(path.join(SRC, "lookFlag.js"))).toBe(false);
   });
 
   test("PageHeader keeps the one-inset rule (no horizontal self-padding)", () => {
@@ -67,16 +72,12 @@ describe("standard-library chrome contract", () => {
     expect(offenders).toEqual([]);
   });
 
-  test("shells render top tabs from the shared topTabs model", () => {
-    for (const shell of ["DesktopShell.js", "MobileShell.js"]) {
-      const src = readComponent(shell);
-      expect(src).toContain("topTabs");
-    }
-    // Home's masthead consumes the same model via homeMastheadTabs. That is
-    // MagazineHome since 2026-09-07, when it replaced HomeTab as the landing
-    // page and HomeTab was retired.
-    // Home's chrome is MagazineChrome since 2026-09-07; it takes the model
-    // through `tabs` and MagazineHome hands it homeMastheadTabs.
+  test("every page's header renders the tabs from the shared topTabs model", () => {
+    // App builds `pageChromeProps.tabs` from topTabs, and PageShell hands them to the one
+    // header. Home's masthead consumes the same model via homeMastheadTabs (MagazineHome
+    // hands it to MagazineChrome).
+    expect(readSrc("App.js")).toMatch(/tabs: topTabs/);
+    expect(fs.readFileSync(path.join(SRC, "ui", "PageShell.js"), "utf8")).toContain("tabs={tabs}");
     expect(readComponent("MagazineHome.js")).toContain("homeMastheadTabs");
     expect(readComponent("MagazineChrome.js")).toContain("tabs");
   });

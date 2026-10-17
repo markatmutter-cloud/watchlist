@@ -30,8 +30,6 @@ export default function MagazineWatches(props) {
     isMobile, baseStyle, tabs, authJSX, user, onHome, goToSaved,
     // sub-tabs
     listingsSubTab, setListingsSubTab, setPage, setDrawerOpen,
-    // "system" | "display" — the header's faces (src/lookFlag.js)
-    chromeFaces,
     displayedCount,
     // content + overlays
     gridJSX, overlaysJSX,
@@ -50,7 +48,7 @@ export default function MagazineWatches(props) {
   return (
     <PageShell
       isMobile={isMobile} baseStyle={baseStyle} tabs={tabs} authJSX={authJSX} user={user}
-      onHome={onHome} goToSaved={goToSaved} chromeFaces={chromeFaces}
+      onHome={onHome} goToSaved={goToSaved}
       // The header's search on this page IS the tab filter (ListingsSearch).
       searchJSX={<ListingsSearch {...props} />}
       overlaysJSX={overlaysJSX}
