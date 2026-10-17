@@ -304,16 +304,6 @@ install/decision tails remaining.*
 - **Detail:** In the Home "search all" results, the **Auctions** strip cards don't line up with the Listings strip above (Mark screenshot 2026-05-27). Likely the auction item renders at a different card height/aspect in the shared `CardStrip` (countdown badge / image aspect / price line). Compare auction-vs-listing `Card` rendering and align the card dimensions within the strip.
 
 
-### B-100 — Watches page is inset further than the other tabs
-- **Reported:** 2026-10-16 (Mark, comparing Watches with Articles) · **Type:** Visual inconsistency · **Severity:** 3 · **Surface:** `MagazineWatches.js` `.magw-page` · **Status:** Open (queued behind the mobile drawer PR).
-- **Detail:** Articles / Guides / Saved sit flush at the shells' 20px content inset (`CHROME.INSET_X_DESKTOP`; 16px mobile). The Watches page is a centred 1600px column with a `clamp(14px, 2.4vw, 28px)` gutter, so its wordmark, tabs, sub-tabs, pills and grid are all indented relative to every other tab, and the gap grows on wide screens. Mark: "make Watches consistent with the other pages."
-- **Hypothesis / fix:** `.magw-page` takes `CHROME.INSET_X_DESKTOP` / `INSET_X_MOBILE` and drops the `max-width`; `--magw-gutter`-style values come from CHROME, not a second number.
-
-### B-101 — Desktop search field on Articles / Guides / Saved is far smaller than Watches'
-- **Reported:** 2026-10-16 (Mark) · **Type:** Visual inconsistency · **Severity:** 3 · **Surface:** `StandardSearchInput` + `StandardFilterBar`'s centred 200-340px slot vs the Watches chrome's search (up to 560px, ~46px tall, 15.5px type) · **Status:** Open (queued).
-- **Detail:** The Watches search is the page's main control; the other tabs' is a 30px / 13px field in a 340px slot, which reads as an afterthought beside it. Mark: "really small compared to watches tab."
-- **Hypothesis / fix:** under the magazine look, `StandardSearchInput` takes a taller height/larger type from `CHROME.MAG_*` and the bar's search slot widens; keep the narrow-desktop stacked layout and the pills' own height.
-
 ### B-87 — Home strips rendered a grey "scroll bar" rail under every row except Articles
 - **Reported:** 2026-08-30 (Mark, landing-page review) · **Type:** Visual defect / cross-surface inconsistency · **Severity:** 3 · **Surface:** `HomeTab.js` `SectionStrip` → `CardStrip` · **Status:** ✅ Fixed #940.
 - **Detail:** Recently added / Recently sold / Ending next each drew a thin grey horizontal bar under the row that read as a dead scrollbar. Articles didn't. Not a real scrollbar (native ones are hidden in `CardStrip`): `SectionStrip` passed `background="var(--border)"` into `CardStrip`, and the strip's `padding: 0 0 4px` let that border-coloured container background show as a 4px rail beneath the tiles. The Articles strip is mounted directly in `HomeTab` without a `background` prop, so it defaulted to `transparent`.
@@ -389,6 +379,12 @@ and want their own PR.
 - **Next step:** capture the raw payload on a recurrence to see whether the price field goes missing or changes shape; it is intermittent, so a fix without a captured bad payload would be guesswork.
 
 ## Resolved
+
+### B-100 — Watches page is inset further than the other tabs · Fixed #1002
+Mark 2026-10-16. `.magw-page` was a centred 1600px column with a 2.4vw gutter; it is now full width at `CHROME.INSET_X_*` (20 / 16px) like the shells. Measured live: wordmark, sub-tabs, pills, titles and first card all at x = 20 on both pages.
+
+### B-101 — Desktop search on Articles / Guides / Saved far smaller than Watches' · Fixed #1002
+Mark 2026-10-16. Under the magazine look the filter-bar search is 38px / 14px in a 240-520px slot (was 30px / 13px in 340px); the narrow-desktop stacked layout and the pills' height are untouched.
 
 ### Auction-data repair wave — 2026-06-12 → 06-15 (full detail in each PR + SESSION_HANDOFF_2026-06-15)
 - **B-62** — WoK post-sale hammer-price recovery → archive-surface merge (`/past-auctions/`), 46 hammers · Fixed
