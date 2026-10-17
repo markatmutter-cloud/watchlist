@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { modalBackdrop, modalShell, modalCloseButton } from "../styles";
+import { Modal, ModalClose, Button } from "../ui";
 import { buildFeedbackMailto, captureFeedbackContext } from "../utils";
 
 // AboutModal doubles as the welcome surface (first-visit auto-open) and
@@ -110,39 +110,15 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
     contextLines: captureFeedbackContext({ primaryCurrency }),
   });
   return (
-    <div onClick={close} className="welcome-backdrop" style={modalBackdrop}>
+    <Modal bare top width={720} onClose={close} ariaLabel="About Watchlist" className="welcome-card">
       <style>{`
-        /* Top-align the welcome card on mobile so it sits at the
-           top of the viewport (Mark feedback). The !important is
-           needed to override modalBackdrop's inline alignItems. */
-        .welcome-backdrop {
-          align-items: flex-start !important;
-          padding: 24px 20px 20px !important;
-        }
-        @media (min-width: 560px) {
-          .welcome-backdrop {
-            align-items: center !important;
-            padding: 20px !important;
-          }
-        }
-        /* The features grid switches from 2-col to 1-col at narrow
-           widths so each card stays readable. */
+        /* The features grid switches from 2-col to 1-col at narrow widths so each card stays readable. */
         @media (max-width: 559px) {
-          .watchlist-feature-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .welcome-extras-pad {
-            padding: 16px 20px 20px !important;
-          }
+          .watchlist-feature-grid { grid-template-columns: 1fr !important; }
+          .welcome-extras-pad { padding: 16px 20px 20px !important; }
         }
+        .welcome-card { max-height: 80vh; }
       `}</style>
-      <div onClick={e => e.stopPropagation()} style={{
-        ...modalShell,
-        maxWidth: 720,
-        maxHeight: "80vh",
-        overflowY: "auto",
-        padding: 0,
-      }}>
         {view === "about" ? (
           <>
           {/* Hero band — favicon + heading + tagline + intro. */}
@@ -157,9 +133,7 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
                 title-row layout would crush the title against the ×. The
                 absolute override is a one-off legitimate exception — don't
                 replicate it without the same hero-band justification. */}
-            <button onClick={close} aria-label="Close" style={{
-              ...modalCloseButton, position: "absolute", top: 12, right: 12,
-            }}>×</button>
+            <ModalClose float onClose={close} />
             <div style={{
               display: "flex", alignItems: "center", gap: 12, marginBottom: 10,
             }}>
@@ -261,9 +235,7 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
         ) : (
           /* ── "How it works" view — same shell, swapped content. ── */
           <div style={{ padding: "16px 24px 20px", position: "relative" }}>
-            <button onClick={close} aria-label="Close" style={{
-              ...modalCloseButton, position: "absolute", top: 12, right: 12,
-            }}>×</button>
+            <ModalClose float onClose={close} />
             <button onClick={() => setView("about")} style={{
               border: "none", background: "none", padding: 0,
               fontFamily: "inherit", fontSize: 13, fontWeight: 500,
@@ -322,16 +294,8 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
               </button>
             )}
           </div>
-          <button onClick={close} style={{
-            border: "none", background: "var(--brand-olive)", color: "#fff",
-            padding: "10px 20px", borderRadius: 10,
-            fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-            cursor: "pointer",
-          }}>
-            Get started →
-          </button>
+          <Button primary inline onClick={close}>Get started →</Button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

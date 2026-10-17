@@ -77,11 +77,10 @@ import { TOP_TABS, isTopTabActive } from "./topTabs";
 import { savedUrlGoesToWatches } from "./legacyRoutes";
 import { ChromeTint, chromeIsLight } from "./chromeTint";
 import StyleSheet from "./ui/StyleSheet";
-import { PageShell, PageFrame } from "./ui";
+import { PageShell, PageFrame, Button } from "./ui";
 import ListsPage from "./components/ListsPage";
 import CatalogPage from "./components/CatalogPage";
 import { HeartIcon } from "./components/icons";
-import { actionButton } from "./styles";
 
 // Same-origin paths — Vercel serves everything in /public at the
 // site root, so these resolve against the user's current host
@@ -3972,7 +3971,7 @@ export default function Watchlist() {
                   : hasFilters ? "Loosen the filters and the feed will fill back up." : undefined
               }
               action={hasFilters ? (
-                <button onClick={resetFilters} style={actionButton()}>Clear filters</button>
+                <Button small onClick={resetFilters}>Clear filters</Button>
               ) : undefined}
             />
           </div>

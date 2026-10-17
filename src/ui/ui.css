@@ -129,10 +129,74 @@ a.ui-pill:hover { text-decoration: none; }
           white-space: nowrap; font: 500 14px var(--ui-sans); }
 .ui-btn--inline { flex: none; }
 .ui-btn--ghost { border: .5px solid var(--border); background: transparent; color: var(--text2); }
-.ui-btn--primary { flex: 1; border: none; background: var(--text1); color: var(--bg); font-weight: 600; }
+.ui-btn--primary { flex: 1; border: none; background: var(--brand-olive-text); color: #fff; font-weight: 600; }
+.ui-btn--danger { flex: 1; border: none; background: var(--danger); color: #fff; font-weight: 600; }
+.ui-btn--sm { flex: none; padding: 9px 16px; border-radius: 10px; font-size: 13px; }
+.ui-btn--block { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; flex: none; }
+.ui-btn:disabled { opacity: .5; cursor: default; }
 .ui-input { box-sizing: border-box; flex: 1; width: 100%; min-width: 0; border: none; border-radius: 8px;
             padding: 10px 12px; background: var(--surface); color: var(--text1);
             font: 400 14px var(--ui-sans); outline: none; }
+.ui-input--area { resize: vertical; min-height: 72px; line-height: 1.4; }
+.ui-input::placeholder { color: var(--text3); }
+/* iOS zooms into any field under 16px */
+.ui-page--phone .ui-input, .ui-modal--full .ui-input, .ui-sheet .ui-input { font-size: 16px; }
+
+/* ---------- modal (a dialog over the page) -------------------------------- */
+/* One shell for every dialog (Mark, 2026-10-17): the scrim, the card, the Bodoni title with its x,
+   an optional note, the fields, and a right-aligned row of actions. 2500: above the filter sheet
+   and Lumé, below the user-limit banner (9000). */
+.ui-modal-scrim { position: fixed; inset: 0; z-index: 2500; background: rgba(0,0,0,.55);
+                  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+                  display: flex; align-items: center; justify-content: center;
+                  padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)); }
+.ui-modal-scrim--top { align-items: flex-start; }
+@media (min-width: 560px) { .ui-modal-scrim--top { align-items: center; } }
+.ui-modal-scrim--full { padding: 0; }
+.ui-modal { box-sizing: border-box; width: 100%; max-width: var(--ui-modal-w, 440px); max-height: 100%;
+            overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 22px;
+            background: var(--bg); color: var(--text1); font-family: var(--ui-sans);
+            border: .5px solid var(--border); border-radius: 16px;
+            box-shadow: 0 24px 64px rgba(0,0,0,.32), 0 4px 12px rgba(0,0,0,.08); }
+.ui-modal--bare { padding: 0; }
+.ui-modal--full { max-width: 100%; height: 100vh; max-height: 100vh; border-radius: 0; border: 0; }
+.ui-modal--sheet { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+.ui-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.ui-modal-title { margin: 0; min-width: 0; font-family: var(--ui-display); font-weight: 500; font-size: 22px;
+                  line-height: 1.15; letter-spacing: .005em; overflow-wrap: anywhere; }
+.ui-modal--sheet .ui-modal-head { margin: 0; flex-shrink: 0; padding: 16px 22px 12px; border-bottom: .5px solid var(--border); }
+.ui-modal--full .ui-modal-head { padding-top: max(14px, calc(env(safe-area-inset-top, 0px) + 12px)); }
+.ui-modal-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 22px 20px; }
+.ui-modal-x { width: 36px; height: 36px; margin-right: -8px; padding: 0; flex-shrink: 0; border: 0; border-radius: 50%;
+              background: none; color: var(--text2); font-size: 22px; line-height: 1; cursor: pointer; }
+.ui-modal-x:hover { background: var(--surface); color: var(--text1); }
+.ui-modal-x--float { position: absolute; top: 12px; right: 12px; margin: 0; z-index: 3; }
+.ui-field-label { margin: 0 0 4px; font-family: var(--ui-mono); font-size: 10px; letter-spacing: var(--ui-label-track);
+                  text-transform: uppercase; color: var(--text3); }
+.ui-modal-label { margin: 16px 0 8px; font-family: var(--ui-mono); font-size: var(--ui-label-size); letter-spacing: var(--ui-label-track);
+                  text-transform: uppercase; color: var(--text3); }
+.ui-modal-note { margin: 0 0 12px; font-size: 13px; line-height: 1.5; color: var(--text2); }
+.ui-modal-error { margin: 0 0 10px; font-size: 12px; color: var(--danger); }
+.ui-modal-foot { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+.ui-modal .ui-input + .ui-input { margin-top: 8px; }
+/* A row in a "choose from a list" dialog (the list picker, the note picker). */
+.ui-pickrow { box-sizing: border-box; width: 100%; display: flex; align-items: center; justify-content: space-between;
+              gap: 12px; padding: 12px 14px; border-radius: 12px; cursor: pointer; text-align: left;
+              border: .5px solid var(--border); background: var(--card-bg); color: var(--text1);
+              font: 500 14px var(--ui-sans); }
+.ui-pickrow:hover:not(:disabled) { border-color: var(--brand-olive-ink); }
+.ui-pickrow.is-on { border-color: var(--brand-olive-text); }
+.ui-pickrow:disabled { cursor: wait; }
+.ui-pickrow-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ui-pickrow-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-pickrow.is-on .ui-pickrow-name { font-weight: 600; }
+.ui-pickrow-meta { flex-shrink: 0; font-size: 12px; font-weight: 400; color: var(--text3); }
+.ui-pickrow-box { width: 18px; height: 18px; flex-shrink: 0; border-radius: 5px; border: 1.5px solid var(--text3);
+                  display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; line-height: 1; }
+.ui-pickrow.is-on .ui-pickrow-box { background: var(--brand-olive-text); border-color: var(--brand-olive-text); }
+.ui-pickrow-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.ui-pickbox { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px;
+              border: .5px solid var(--border); background: var(--card-bg); }
 /* 1450: above Lumé's launcher (ChatBubbleHost Z = 1400), which otherwise sat on top of the
    sheet's primary button; below the confirm / review modals (2000+). */
 .ui-sheet { position: fixed; inset: 0; z-index: 1450; font-family: var(--ui-sans); }
@@ -241,6 +305,8 @@ a.ui-pill:hover { text-decoration: none; }
                   font: 500 13px var(--ui-sans); letter-spacing: .01em;
                   transition: background .15s ease, color .15s ease; }
 .ui-tabs button.is-on { background: var(--brand-olive); color: #fff; font-weight: 600; }
+.ui-tabs--block { display: flex; width: 100%; }
+.ui-tabs--block button { flex: 1 1 0; padding: 0 8px; }
 .ui-tabs-row { padding: 8px 0 8px; display: flex; align-items: baseline;
                justify-content: space-between; gap: 16px; }
 

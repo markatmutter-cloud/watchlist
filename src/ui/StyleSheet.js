@@ -13,6 +13,7 @@ import React, { useState } from "react";
 import {
   Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
   AccountDisc, SuggestionRows, Chip, ChipPanel, PriceRange, Button, DismissChip, JumpNav, SectionHead,
+  Modal, ModalNote, ModalFoot, ModalLabel, FieldLabel, Input, PickRow,
 } from "./index";
 import { FilterDrawer } from "../components/FilterDrawer";
 import { MagazineShellBar, MagazineBrandRow, MagazineTabRow } from "../components/MagazineShellBar";
@@ -461,6 +462,39 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
               </div>
             </div>
             <p className="ss-small">The heading for a thing on the page (not a page title: the sub-tab already says where you are), with its actions as pills and a quiet way back. A selected filter you can take off is a dismissable chip; a long page gets a jump nav that pins under the chrome; the one main action in a group is a primary pill.</p>
+          </Specimen>
+          <Specimen label="A dialog: title, note, field, actions · a settings sheet (segmented choices) · a list picker">
+            <div className="ss-modal-row">
+              <div className="ss-modal-stage">
+                <Modal title="New list" onClose={noop} width={380}>
+                  <ModalNote>Group watches by reference, theme, or research thread.</ModalNote>
+                  <FieldLabel>Name</FieldLabel>
+                  <Input placeholder="List name" />
+                  <ModalFoot><Button small>Cancel</Button><Button small primary>Create</Button></ModalFoot>
+                </Modal>
+              </div>
+              <div className="ss-modal-stage">
+                <Modal title="Settings" onClose={noop} width={380} sheet>
+                  <ModalLabel>Primary currency</ModalLabel>
+                  <SubTabs block choice ariaLabel="Primary currency" activeKey="USD" onSelect={noop}
+                    tabs={[{ key: "USD", label: "$ USD" }, { key: "GBP", label: "£ GBP" }, { key: "EUR", label: "€ EUR" }]} />
+                  <ModalLabel>Theme</ModalLabel>
+                  <SubTabs block choice ariaLabel="Theme" activeKey="light" onSelect={noop}
+                    tabs={[{ key: "light", label: "Light" }, { key: "dark", label: "Dark" }]} />
+                </Modal>
+              </div>
+              <div className="ss-modal-stage">
+                <Modal title="Add to list" onClose={noop} width={380} sheet
+                       headAction={<Button small primary>Done</Button>}>
+                  <div className="ui-pickrow-list">
+                    <PickRow checked meta="3 items">Vintage divers</PickRow>
+                    <PickRow checked={false} meta="12 items">Rolex 5513s</PickRow>
+                  </div>
+                  <Button block small>+ Create new list</Button>
+                </Modal>
+              </div>
+            </div>
+            <p className="ss-small">Every dialog is one shell: a scrim, the card, the Bodoni title with its close, an optional note, fields, and a right-aligned row of actions (Cancel is ghost, the main action solid olive, a destructive confirm solid red). A settings dialog pins its head and scrolls its body, and a choice among a few options is the segmented control announced as a radio group. A list picker uses one row per list.</p>
           </Specimen>
           <Specimen label="A takeover header (the auction catalog) and a stacked filter bar">
             <div className="ss-stack" style={{ maxWidth: 760 }}>

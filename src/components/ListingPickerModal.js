@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle } from "../styles";
+import { Modal, Chip, Input, Button } from "../ui";
 import { fmtUSD, imgSrc, shortHash } from "../utils";
 import { EmptyState } from "./EmptyState";
 
@@ -112,16 +112,7 @@ export function ListingPickerModal({
   };
 
   return (
-    <div onClick={busy ? undefined : onClose} style={modalBackdrop}>
-      <div onClick={e => e.stopPropagation()}
-           style={{ ...modalShell, maxWidth: 640, maxHeight: "92vh",
-                    display: "flex", flexDirection: "column" }}>
-        <div style={modalTitleRow}>
-          <div style={modalTitle}>{title || "Pick a listing"}</div>
-          <button onClick={onClose} aria-label="Close" style={modalCloseButton}
-                  disabled={busy}>×</button>
-        </div>
-
+    <Modal title={title || "Pick a listing"} onClose={onClose} locked={busy} width={640} sheet>
         {/* Source chips. Wrap to multiple lines instead of horizontal-
             scroll: the prior overflowX:auto setup caused the chip row
             to be vertically clipped by the modal flex layout (Mark's
@@ -132,12 +123,12 @@ export function ListingPickerModal({
           display: "flex", flexWrap: "wrap", gap: 6,
           marginBottom: 12, flexShrink: 0,
         }}>
-          <Chip active={source === "favorites"} label="♥ Favorites" onClick={() => setSource("favorites")} />
-          <Chip active={source === "all"}       label="All listings" onClick={() => setSource("all")} />
+          <Chip on={source === "favorites"} onClick={() => setSource("favorites")}>♥ Favorites</Chip>
+          <Chip on={source === "all"} onClick={() => setSource("all")}>All listings</Chip>
           {userLists.map(c => (
-            <Chip key={c.id} active={source === c.id} label={c.name} onClick={() => setSource(c.id)} />
+            <Chip key={c.id} on={source === c.id} onClick={() => setSource(c.id)}>{c.name}</Chip>
           ))}
-          <Chip active={source === "paste"} label="Paste link" onClick={() => setSource("paste")} />
+          <Chip on={source === "paste"} onClick={() => setSource("paste")}>Paste link</Chip>
         </div>
 
         {source === "paste" ? (
@@ -146,24 +137,10 @@ export function ListingPickerModal({
               Paste a dealer URL from the feed (live or sold). The picker resolves it against listings.json; for off-platform watches use Manual entry.
             </p>
             <div style={{ display: "flex", gap: 6 }}>
-              <input value={pasteUrl}
+              <Input value={pasteUrl}
                 onChange={e => { setPasteUrl(e.target.value); setPasteError(""); }}
-                placeholder="https://…"
-                style={{
-                  flex: 1, fontSize: 13, fontFamily: "inherit",
-                  padding: "8px 10px", borderRadius: 8,
-                  border: "0.5px solid var(--border)",
-                  background: "var(--surface)", color: "var(--text1)",
-                  outline: "none",
-                }} />
-              <button onClick={handlePaste} disabled={busy || !pasteUrl.trim()}
-                style={{
-                  border: "none", background: "var(--brand-olive)", color: "#fff",
-                  padding: "8px 14px", borderRadius: 8,
-                  cursor: pasteUrl.trim() ? "pointer" : "not-allowed",
-                  fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-                  opacity: pasteUrl.trim() ? 1 : 0.5,
-                }}>Add</button>
+                placeholder="https://…" />
+              <Button small primary onClick={handlePaste} disabled={busy || !pasteUrl.trim()}>Add</Button>
             </div>
             {pasteError && (
               <div style={{ fontSize: 12, color: "var(--danger)", marginTop: 6 }}>{pasteError}</div>
@@ -171,15 +148,8 @@ export function ListingPickerModal({
           </div>
         ) : (
           <>
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search this set…"
-              style={{
-                fontSize: 13, fontFamily: "inherit",
-                padding: "8px 10px", borderRadius: 8,
-                border: "0.5px solid var(--border)",
-                background: "var(--surface)", color: "var(--text1)",
-                marginBottom: 8, outline: "none",
-              }} />
+            <Input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search this set…" style={{ marginBottom: 8 }} />
             {pasteError && (
               <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 6 }}>{pasteError}</div>
             )}
@@ -213,22 +183,7 @@ export function ListingPickerModal({
             </div>
           </>
         )}
-      </div>
-    </div>
-  );
-}
-
-function Chip({ active, label, onClick }) {
-  return (
-    <button onClick={onClick} style={{
-      flexShrink: 0,
-      padding: "4px 12px", borderRadius: 999,
-      border: "0.5px solid var(--border)",
-      background: active ? "var(--text1)" : "transparent",
-      color: active ? "var(--bg)" : "var(--text1)",
-      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-      whiteSpace: "nowrap",
-    }}>{label}</button>
+    </Modal>
   );
 }
 

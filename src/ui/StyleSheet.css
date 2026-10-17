@@ -68,3 +68,10 @@
                  background: var(--surface); border: .5px solid var(--border); }
 .ss-lume-stage--dark { background: #1c1c1e; border-color: transparent; }
 .ss-lume-row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+
+/* Modal specimens: a transformed stage makes the modal's position:fixed relative to it, so the real
+   component can sit in the page. */
+.ss-modal-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+.ss-modal-stage { position: relative; transform: translateZ(0); width: 420px; max-width: 100%; height: 380px;
+                  overflow: hidden; border-radius: 14px; border: .5px solid var(--border); }
+.ss-modal-stage .ui-modal-scrim { position: absolute; z-index: 1; }

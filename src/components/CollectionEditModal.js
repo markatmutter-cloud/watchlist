@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase, actionButton } from "../styles";
+import { Modal, ModalNote, ModalError, ModalFoot, Input, Button } from "../ui";
 
 // Create-or-rename modal for collections. Single name field; reuses
 // the same component for both flows because they share UI exactly.
@@ -50,35 +50,25 @@ export function CollectionEditModal({ editing, setEditing, createCollection, ren
   };
 
   return (
-    <div onClick={close} style={modalBackdrop}>
-      <div onClick={e => e.stopPropagation()} style={{ ...modalShell, maxWidth: 380 }}>
-        <div style={modalTitleRow}>
-          <div style={modalTitle}>{isNew ? "New list" : "Rename list"}</div>
-          <button onClick={close} aria-label="Close" style={modalCloseButton}>×</button>
-        </div>
-        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 10 }}>
-          {isNew
-            ? "Group watches by reference, theme, or research thread: \"Rolex 5513s\", \"Vintage divers\", \"Reference comps\"."
-            : "Renaming doesn't move any items."}
-        </div>
-        <input
-          autoFocus
-          value={name}
-          onChange={e => { setName(e.target.value); setError(""); }}
-          onKeyDown={e => { if (e.key === "Enter" && canSave) submit(); }}
-          placeholder="List name"
-          autoCapitalize="words" autoCorrect="off" spellCheck={false}
-          style={{ ...inputBase, fontSize: 14, marginBottom: 8 }}
-        />
-        {error && <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 8 }}>{error}</div>}
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button onClick={close} style={actionButton({ variant: "subtle" })}>Cancel</button>
-          <button onClick={submit} disabled={!canSave} style={{
-            ...actionButton({ variant: "primary" }),
-            opacity: canSave ? 1 : 0.5,
-          }}>{busy ? "Saving…" : isNew ? "Create" : "Save"}</button>
-        </div>
-      </div>
-    </div>
+    <Modal title={isNew ? "New list" : "Rename list"} onClose={close} width={380}>
+      <ModalNote>
+        {isNew
+          ? "Group watches by reference, theme, or research thread: \"Rolex 5513s\", \"Vintage divers\", \"Reference comps\"."
+          : "Renaming doesn't move any items."}
+      </ModalNote>
+      <Input
+        autoFocus
+        value={name}
+        onChange={e => { setName(e.target.value); setError(""); }}
+        onKeyDown={e => { if (e.key === "Enter" && canSave) submit(); }}
+        placeholder="List name"
+        autoCapitalize="words" autoCorrect="off" spellCheck={false}
+      />
+      <ModalError>{error}</ModalError>
+      <ModalFoot>
+        <Button small onClick={close}>Cancel</Button>
+        <Button small primary onClick={submit} disabled={!canSave}>{busy ? "Saving…" : isNew ? "Create" : "Save"}</Button>
+      </ModalFoot>
+    </Modal>
   );
 }

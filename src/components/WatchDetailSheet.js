@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { fmtUSD } from "../utils";
 import { resizeImage } from "../resizeImage";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase, actionButton } from "../styles";
+import { Modal, Pill, Button } from "../ui";
 import { confirm } from "./ConfirmModal";
 
 // Per-watch detail sheet for the My Watches surface (2026-05-09 —
@@ -199,47 +199,9 @@ export function WatchDetailSheet({
     }}>{children}</button>
   );
 
-  // Sheet sizing — mobile = full screen (no rounded corners on
-  // bottom), desktop = right-side panel. modalBackdrop handles
-  // overlay; modalShell is overridden inline.
-  //
-  // Mark feedback 2026-05-15 (#9 / IMG_6520): "the card doesn't fit
-  // the screen" — long form (7 sections), no obvious dismiss
-  // affordance once you scroll past the top. Two changes:
-  //   1. Sticky header (title + close ×) anchored to the top so the
-  //      escape hatch is always reachable.
-  //   2. Density pass on photo block, section labels, field padding
-  //      so the form fits more in one viewport before scrolling.
-  // The safe-area-inset-top now lives on the sticky header (was on
-  // the shell) so the sticky surface sits below the iOS status bar.
-  const sheetStyle = isMobile ? {
-    ...modalShell,
-    maxWidth: "100%", width: "100%",
-    maxHeight: "100vh", height: "100vh",
-    margin: 0, borderRadius: 0,
-    overflowY: "auto",
-    padding: 0,
-  } : {
-    ...modalShell,
-    maxWidth: 540, width: "92vw",
-    maxHeight: "90vh", overflowY: "auto",
-    padding: 0,
-  };
-  // Sticky header — wraps the title row + close button. Pulled flush
-  // to the shell edges so the bg band + bottom border read as a real
-  // header, not a contained pill.
-  const stickyHeaderStyle = {
-    position: "sticky", top: 0, zIndex: 2,
-    background: "var(--bg)",
-    borderBottom: "0.5px solid var(--border)",
-    padding: isMobile
-      ? "max(14px, calc(env(safe-area-inset-top, 0px) + 12px)) 22px 12px"
-      : "16px 22px 12px",
-  };
-  // Body wrapper — restores the modalShell padding (22) that we
-  // dropped from sheetStyle so the sticky header could span edge to
-  // edge.
-  const bodyStyle = { padding: "12px 20px 20px" };
+  // Sheet sizing: a phone fills the screen, a desktop gets a 540px panel (Modal sheet / full). The
+  // head (title + ×) is pinned and the body scrolls under it, so the escape hatch is always
+  // reachable (Mark 2026-05-15, "the card doesn't fit the screen").
 
   // Portal to document.body so the sheet shares a stacking context
   // with other body-level overlays (Screening mode) and z-indexes
@@ -248,16 +210,7 @@ export function WatchDetailSheet({
   // overlay even when its zIndex is higher.
   if (typeof document === "undefined") return null;
   return createPortal((
-    <div onClick={onClose} style={modalBackdrop}>
-      <div onClick={e => e.stopPropagation()} style={sheetStyle}>
-        <div style={stickyHeaderStyle}>
-          <div style={{ ...modalTitleRow, marginBottom: 0 }}>
-            <div style={modalTitle}>{title}</div>
-            <button onClick={onClose} aria-label="Close" style={modalCloseButton}>×</button>
-          </div>
-        </div>
-        <div style={bodyStyle}>
-
+    <Modal title={title} onClose={onClose} width={540} sheet full={isMobile}>
         {/* Photo + identifying info. Manual entries get an upload
             affordance — tap the photo (or the empty placeholder) to
             replace it. Listing-backed rows skip the affordance: the
@@ -388,13 +341,11 @@ export function WatchDetailSheet({
         {/* Plan section — for-sale flag + assumed value */}
         <div style={sectionLabel}>Plan</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
-          <button onClick={() => toggleFlagForSale(rowId, !item.flaggedForSale)}
-            style={actionButton({ variant: item.flaggedForSale ? "danger" : undefined })}>
+          <Pill on={!!item.flaggedForSale} toggle onClick={() => toggleFlagForSale(rowId, !item.flaggedForSale)}>
             {item.flaggedForSale ? "Flagged for sale ✓" : "Flag for sale"}
-          </button>
+          </Pill>
           {markItemAsSold && !item.soldPrice && (
-            <button onClick={() => markItemAsSold(rowId, item)}
-              style={actionButton()}>Mark as sold</button>
+            <Pill onClick={() => markItemAsSold(rowId, item)}>Mark as sold</Pill>
           )}
         </div>
         <div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 4 }}>Assumed sell value (USD)</div>
@@ -442,13 +393,11 @@ export function WatchDetailSheet({
             onChange={e => setCommentBody(e.target.value)}
             placeholder="Add a dated note: your thinking on this watch right now…"
             rows={2}
-            style={{ ...inputBase, width: "100%", resize: "vertical", fontSize: 13, fontFamily: "inherit" }} />
+            className="ui-input ui-input--area" />
           <div style={{ display: "flex", gap: 8, marginTop: 6, justifyContent: "flex-end" }}>
-            <button onClick={onPostComment} disabled={commentBusy || !commentBody.trim()}
-              style={{ ...actionButton({ variant: "primary" }),
-                       opacity: (commentBusy || !commentBody.trim()) ? 0.5 : 1 }}>
+            <Button small primary onClick={onPostComment} disabled={commentBusy || !commentBody.trim()}>
               {commentBusy ? "Saving…" : "Add note"}
-            </button>
+            </Button>
           </div>
         </div>
         {comments.length === 0 ? (
@@ -488,7 +437,7 @@ export function WatchDetailSheet({
         {removeItemFromCollection && collectionId && (
           <>
             <div style={{ height: "0.5px", background: "var(--border)", margin: "20px 0 12px" }} />
-            <button onClick={async () => {
+            <Button danger block small onClick={async () => {
               if (!(await confirm({
                 title: "Remove from collection?",
                 message: "This watch will be removed from your collection. Any journal entries on it will also be deleted.",
@@ -497,15 +446,12 @@ export function WatchDetailSheet({
               }))) return;
               await removeItemFromCollection(collectionId, item.id);
               onClose();
-            }}
-              style={{ ...actionButton({ variant: "danger" }), width: "100%" }}>
+            }}>
               Remove from collection
-            </button>
+            </Button>
           </>
         )}
-        </div>
-      </div>
-    </div>
+    </Modal>
   ), document.body);
 }
 
@@ -520,14 +466,10 @@ function EditField({ draft, setDraft, multiline, placeholder, inputMode, onSave,
         autoFocus
         rows={multiline ? 4 : undefined}
         inputMode={inputMode}
-        style={{
-          ...inputBase, width: "100%",
-          fontSize: 13, fontFamily: "inherit",
-          resize: multiline ? "vertical" : undefined,
-        }} />
+        className={multiline ? "ui-input ui-input--area" : "ui-input"} />
       <div style={{ display: "flex", gap: 8, marginTop: 6, justifyContent: "flex-end" }}>
-        <button onClick={onCancel} style={actionButton()}>Cancel</button>
-        <button onClick={onSave} style={actionButton({ variant: "primary" })}>Save</button>
+        <Button small onClick={onCancel}>Cancel</Button>
+        <Button small primary onClick={onSave}>Save</Button>
       </div>
     </div>
   );

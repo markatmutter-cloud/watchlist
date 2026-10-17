@@ -793,6 +793,14 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — Every dialog is one shared `Modal`; the button, input and modal helpers are deleted from `styles.js`.** Fifteen modals (new list, save search,
+  add search, confirm, sign in, mark as sold, share a list, add a watch, listing / list / note pickers, track an item, settings, About, a watch's details) now
+  share one shell: scrim, card, Bodoni title with its close, optional note, fields, and a right-aligned row of actions (Cancel ghost, the main action solid olive,
+  a destructive confirm solid red). New shared pieces: `Modal` (with `sheet`, `full`, `bare`, `top`, `locked`, `headAction`), `Input` / `Textarea`, `FieldLabel`,
+  `PickRow` (one row per list in a picker), `SubTabs choice block` (settings choices, announced as a radio group), and `Button` sizes / `danger` / `block`; `Button primary`
+  is now solid olive (it was near-black) so "the thing you do" is one colour everywhere. `styles.js` is down to the fonts and the editorial ramp.
+  Settings' currency / theme / columns are the segmented control instead of hand-rolled buttons. ManageListSheet, ManualEntryForm and WatchDetailSheet gained
+  direct render tests (they had none).
 - **2026-10-17 — Home's search is the shared search; a phone Home wears the shared header.** `MagSearch` is now `SearchField` + `SuggestionRows` (the same box, saved
   searches and recents as Watches, a solid Search button seated in it); `MagazineChrome` is the desktop masthead only, so its phone rows, the scroll-compacting
   logic and ~60 lines of `.mag-search` / `.mag-drop` CSS are gone. Measured at 375px, Home's header, tab row and search are now the same boxes in the same

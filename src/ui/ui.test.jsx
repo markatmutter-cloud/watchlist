@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import {
   Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
   AccountDisc, SuggestionRows, Chip, ChipPanel, DismissChip, JumpNav, SectionHead, Button,
+  Modal, ModalNote, ModalError, ModalFoot, FieldLabel, Input, PickRow,
 } from "./index";
 
 // The shared page frame. Pages are built from these and nothing else, so a break
@@ -325,5 +326,89 @@ describe("SectionHead", () => {
     expect(container.querySelector(".ui-sechead-title")).toBeNull();
     expect(screen.getByRole("button", { name: "Watchbox" })).toBeInTheDocument();
     expect(screen.getByText("3 lists")).toBeInTheDocument();
+  });
+});
+
+describe("Modal", () => {
+  it("is a labelled dialog with a title, a close x, and its content", () => {
+    const onClose = jest.fn();
+    render(<Modal title="New list" onClose={onClose}><p>body</p></Modal>);
+    const dlg = screen.getByRole("dialog", { name: "New list" });
+    expect(dlg).toHaveAttribute("aria-modal", "true");
+    expect(screen.getByRole("heading", { level: 2, name: "New list" })).toBeInTheDocument();
+    expect(screen.getByText("body")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes from the scrim and from Escape, but not from a click inside it", () => {
+    const onClose = jest.fn();
+    const { container } = render(<Modal title="T" onClose={onClose}><p>inside</p></Modal>);
+    fireEvent.click(screen.getByText("inside"));
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(container.querySelector(".ui-modal-scrim"));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
+
+  it("locked ignores the scrim and Escape (while saving)", () => {
+    const onClose = jest.fn();
+    const { container } = render(<Modal title="T" onClose={onClose} locked><p>x</p></Modal>);
+    fireEvent.click(container.querySelector(".ui-modal-scrim"));
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("takes a width, and a head action in place of the x", () => {
+    const { container } = render(
+      <Modal title="Add to list" onClose={() => {}} width={420} headAction={<Button small primary>Done</Button>}>x</Modal>);
+    expect(container.querySelector(".ui-modal").style.getPropertyValue("--ui-modal-w")).toBe("420px");
+    expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
+  });
+
+  it("sheet pins its head and scrolls the body; full fills a phone; bare has no head of its own", () => {
+    const a = render(<Modal title="Settings" onClose={() => {}} sheet full><p>b</p></Modal>);
+    expect(a.container.querySelector(".ui-modal--sheet.ui-modal--full .ui-modal-head")).not.toBeNull();
+    expect(a.container.querySelector(".ui-modal-body")).not.toBeNull();
+    a.unmount();
+    const b = render(<Modal bare onClose={() => {}} ariaLabel="About"><p>hero</p></Modal>);
+    expect(b.container.querySelector(".ui-modal-head")).toBeNull();
+    expect(screen.getByRole("dialog", { name: "About" })).toBeInTheDocument();
+  });
+
+  it("has the note, the error, the foot, the field label and the input", () => {
+    render(<Modal title="T" onClose={() => {}}>
+      <ModalNote>A note</ModalNote><FieldLabel>Name</FieldLabel><Input placeholder="List name" />
+      <ModalError>Could not save</ModalError>
+      <ModalFoot><Button small>Cancel</Button><Button small primary>Save</Button></ModalFoot>
+    </Modal>);
+    expect(screen.getByText("A note")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("List name")).toHaveClass("ui-input");
+    expect(screen.getByRole("alert")).toHaveTextContent("Could not save");
+    expect(screen.getByRole("button", { name: "Save" })).toHaveClass("ui-btn--primary", "ui-btn--sm");
+  });
+});
+
+describe("PickRow and the choice SubTabs", () => {
+  it("a plain pick row shows its name and meta; a toggle row shows a box and says whether it is on", () => {
+    const { rerender } = render(<PickRow meta="3 items">Vintage divers</PickRow>);
+    expect(screen.getByRole("button", { name: /Vintage divers/ })).not.toHaveAttribute("aria-pressed");
+    expect(screen.getByText("3 items")).toBeInTheDocument();
+    rerender(<PickRow checked meta="3 items">Vintage divers</PickRow>);
+    expect(screen.getByRole("button", { name: /Vintage divers/ })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("choice announces a radio group, block fills the width", () => {
+    const onSelect = jest.fn();
+    const { container } = render(
+      <SubTabs choice block ariaLabel="Theme" activeKey="dark" onSelect={onSelect}
+               tabs={[{ key: "light", label: "Light" }, { key: "dark", label: "Dark" }]} />);
+    expect(screen.getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Dark" })).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(screen.getByRole("radio", { name: "Light" }));
+    expect(onSelect).toHaveBeenCalledWith("light");
+    expect(container.querySelector(".ui-tabs--block")).not.toBeNull();
   });
 });

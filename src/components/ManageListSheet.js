@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase } from "../styles";
+import { Modal, FieldLabel } from "../ui";
 import { confirm } from "./ConfirmModal";
 
 // List Sharing v2 / slice 2 — Manage list sheet.
@@ -185,15 +185,7 @@ export function ManageListSheet({
   // form + roster (invite-token link → recipient joins the synced list). The
   // labels mirror the recipient surface's two clearly-labelled outcomes.
   return (
-    <div onClick={busy ? undefined : onClose} style={modalBackdrop}>
-      <div onClick={e => e.stopPropagation()} style={{
-        ...modalShell, maxWidth: 480, maxHeight: "90vh", overflowY: "auto",
-      }}>
-        <div style={modalTitleRow}>
-          <div style={modalTitle}>Share "{collection.name}"</div>
-          <button onClick={onClose} aria-label="Close" style={modalCloseButton}
-                  disabled={busy}>×</button>
-        </div>
+    <Modal title={`Share "${collection.name}"`} onClose={onClose} locked={busy} width={480}>
 
         {/* Two-mode share (Mark 2026-06-02). The sender's two sections mirror
             the recipient's two clearly-labelled outcomes:
@@ -202,7 +194,7 @@ export function ManageListSheet({
               Section 2 "Collaborate"  → invite-token link → recipient JOINS the
                 synced list under Shared with you. */}
         {/* Section 1 — Send a copy. Single big CTA. */}
-        <Label>Send a copy</Label>
+        <FieldLabel>Send a copy</FieldLabel>
         <button onClick={copyShareUrl}
           disabled={busy}
           style={{
@@ -236,7 +228,7 @@ export function ManageListSheet({
         </div>
 
         {/* Section 2 — Collaborate (invite form + roster). */}
-        <Label>Collaborate</Label>
+        <FieldLabel>Collaborate</FieldLabel>
         <div style={{
           padding: 12, borderRadius: 10,
           border: "0.5px solid var(--border)", background: "var(--card-bg)",
@@ -250,7 +242,7 @@ export function ManageListSheet({
               onKeyDown={e => { if (e.key === "Enter") submitInvite(); }}
               placeholder="name@example.com"
               autoCapitalize="none" autoCorrect="off" spellCheck={false}
-              style={{ ...inputBase, fontSize: 14, flex: 1 }} />
+              className="ui-input" />
             <select value={role} onChange={e => setRole(e.target.value)}
               style={{
                 fontSize: 13, fontFamily: "inherit",
@@ -286,7 +278,7 @@ export function ManageListSheet({
         {error && <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 10 }}>{error}</div>}
 
         {/* Roster */}
-        <Label>Collaborators ({rows.length})</Label>
+        <FieldLabel>Collaborators ({rows.length})</FieldLabel>
         {loading && <div style={{ fontSize: 12, color: "var(--text3)" }}>Pulling collaborators…</div>}
         {loadError && <div style={{ fontSize: 12, color: "var(--danger)" }}>{loadError}</div>}
         {!loading && rows.length === 0 && (
@@ -328,17 +320,6 @@ export function ManageListSheet({
             })}
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function Label({ children }) {
-  return (
-    <div style={{
-      fontSize: 11, fontWeight: 600, color: "var(--text3)",
-      textTransform: "uppercase", letterSpacing: "0.06em",
-      marginBottom: 6,
-    }}>{children}</div>
+    </Modal>
   );
 }
