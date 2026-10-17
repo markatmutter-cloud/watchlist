@@ -788,6 +788,11 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-16 — Saved on Articles and Reference Guides is an icon-only ♡ pill (`SavedPill`).** Mark: "I just like the
+  heart icon" (no word, never red). Replaces the `All | ♡ Saved` sub-tab row, so both headers lose a row; it raises
+  and is swept by "× Clear all" like the pills beside it. The Watches page lost its duplicate `♡ Saved` pill ("doubled
+  up"); the `♡ Saved` sub-tab stays, since it spans For sale / Auctions / Sold. **Reverses the 2026-07-30 "sub-tab,
+  never a pill" rule.**
 - **2026-10-16 — Watches takes the other tabs' inset; desktop search is bigger on Articles / Guides / Saved
   (B-100, B-101).** `.magw-page` is full width at `CHROME.INSET_X_*` (20 / 16px) instead of a centred 1600px column,
   so every left edge now lines up across tabs (measured: wordmark, pills, titles and first card all at 20px).
