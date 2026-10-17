@@ -23,7 +23,7 @@ residential); lot counts attributed per sale across `auction_lots.json`,
 |---|---|---|---|
 | 1 | Antiquorum's timed online sales never reached the calendar; the same miss made the next row's location read "Auction New York" | Calendar lists them month-only ("Hong Kong September 2026"); the regex required a day and one fixed title | Fixed #985 |
 | 2 | Marteau & Co missing entirely for five weeks, including The Encore (opened 8 Oct, catalogue live, 42 lots) | Site rebuilt its Bootstrap cards between 08-30 and 10-02; three regexes stopped matching; scraper wrote a header-only CSV and **exited 0** | Fixed #990 |
-| 3 | Phillips returned zero lots for every sale from 2026-10-03, including a live one | WAF widened from lot pages to the auction page; `403` per sale in CI, 200 + 88 lots residentially | Fixed #991 (pending CI proof) |
+| 3 | Phillips returned zero lots for every sale from 2026-10-03, including a live one | WAF widened from lot pages to the auction page; `403` per sale in CI, 200 + 88 lots residentially | Fixed #991, CI-proven |
 | 4 | Twelve sales on the calendar that the houses no longer list, two of them pinned at the top as "live" with no dates since June | Registry keys on (house, dateStart, title), so a date change mints a new entry and the old one is emitted forever | 6 fixed #985; rest B-102, B-103 |
 | 5 | Mixed "Jewellery & Watches" sales dropped whole | Title and URL-slug blocklist matched "Fine Jewelry & Watches" (Milan, 14 Oct) twice over; would also have killed Monaco Legend's recurring "Exclusive Timepieces & Jewels" | Fixed #992 |
 | 6 | The daily auctions workflow had failed every run for days | Two health gates, both pointing at findings 2 and 5. The alarm worked; nobody triaged it | Gate noise B-106 |
@@ -49,6 +49,18 @@ matched the card's own `auction-card-image` / `-detail` children, splitting
 every card into fragments and silently dropping its cover image. The live page
 still produced four rows, so only a test caught it. Pin the markup shape, don't
 eyeball the output.
+
+## Verified on CI after the fixes
+
+Run 38983842851, dispatched the same day: Phillips `/browse via curl-cffi: ok`
+(218 + 329 lots) while plain requests 403s in the same run, which confirms a
+TLS-fingerprint block rather than an IP ban; Marteau back to 5 sales including
+one we had never seen (The Blueprint, 6 Nov); `hiding 5 rescheduled sale(s)`
+from the merge. The coverage gate (B-106) is now the only failing step.
+
+The Antiquorum sale that started this audit cannot be recovered by the fix:
+it ended 28 September and has left the live host's upcoming index, so it is a
+manual-archive job (see the handoff).
 
 ## Open questions for Mark
 
