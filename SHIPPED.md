@@ -723,6 +723,11 @@ within each section roughly last.
 
 ## Epic 10 — Lumé (AI spine)
 
+- **2026-10-17 — The Lumé dot and chat get the new look.** The launcher is a calmer olive dot with a slowly breathing pip (still for
+  reduced motion) and a small paper "Ask me" label until first use; the panel wears the header's Bodoni name and a mono caption that says it
+  is an AI that is still learning. Lumé's words sit on the paper with a pip in the gutter, yours are a solid olive bubble, offers are outlined
+  olive chips, the composer is one rounded field with dictation and Send inside it (`LumeInput`, shared with the mobile canvas), and the phone
+  sheet's field is 16px so iOS stops zooming. All of it is `.ui-lume-*` in `src/ui/ui.css`, shown on the style sheet (§6), with no behaviour change.
 - **2026-08-31 — Seeded Lumé opens skip the standard intro (#936).** "Share with Lumé" (card ⋯) and
   the share-receive "Ask Lumé" callout now open the chat with no greeting and no starter chips, so the
   answer about that watch leads instead of the "what's your watch problem?" boilerplate; a plain

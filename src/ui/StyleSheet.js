@@ -17,6 +17,8 @@ import {
 import { FilterDrawer } from "../components/FilterDrawer";
 import { MagazineShellBar, MagazineBrandRow, MagazineTabRow } from "../components/MagazineShellBar";
 import { FilterIcon } from "../components/icons";
+import { LumeIcon } from "../components/LumeIcon";
+import { LumeConversation, GREETING, SUGGESTIONS } from "../components/LumeConversation";
 import "./StyleSheet.css";
 
 const noop = () => {};
@@ -159,6 +161,98 @@ function WatchesPage({ phone }) {
         <Cards n={phone ? 4 : 10} />
       </PageFrame>
     </>
+  );
+}
+
+// ---- Lumé: the launcher and the chat, with a canned exchange ---------------------------------------
+// The real LumeConversation and LumeInput, fed a fake `chat`, so what is reviewed here is what ships.
+
+const SAMPLE = [
+  { role: "user", content: "Is there a clean 5513 under $12k?" },
+  {
+    role: "assistant",
+    content: "Three **Submariner 5513** are live under $12,000. The cleanest is the [1968 gilt-dial example](https://example.com/5513) from Analog Shift at $11,400, with matching tritium and a service history.\n\nWant the other two, or a quick note on what to check on a 5513?",
+    actions: [{ label: "Show all three" }, { label: "Open the 1968" }],
+  },
+];
+
+function useSampleChat({ messages = SAMPLE, loading = false, capped = false, error = "" } = {}) {
+  const [draft, setDraft] = useState("");
+  return {
+    messages, draft, setDraft, loading, capped, error, actionState: { "1-0": { status: "done" } },
+    listening: false, send: noop, runAction: async () => ({ ok: true }), toggleMic: noop,
+    scrollRef: { current: null }, inputRef: { current: null },
+  };
+}
+
+function LumeHead({ sheet }) {
+  return (
+    <div className="ui-lume-head">
+      <span className="ui-lume-mark"><LumeIcon size={26} style={{ display: "block" }} /></span>
+      <div className="ui-lume-who">
+        <span className="ui-lume-name">Lumé</span>
+        <span className="ui-lume-sub">Watch chat · AI, still learning</span>
+      </div>
+      {!sheet ? <button type="button" className="ui-lume-hbtn" aria-label="Expand" title="Expand">⤢</button> : null}
+      <button type="button" className="ui-lume-hbtn" aria-label="Minimise" title="Minimise">{sheet ? "⌄" : "×"}</button>
+    </div>
+  );
+}
+
+function LumePanel({ fresh, sheet, ...state }) {
+  const chat = useSampleChat(fresh ? { messages: [] } : state);
+  return (
+    <div className="ui-lume-panel" style={{ width: sheet ? 390 : 380, height: sheet ? 640 : 560, maxWidth: "100%",
+                                            borderRadius: sheet ? 30 : undefined }}>
+      <LumeHead sheet={sheet} />
+      <LumeConversation chat={chat} isMobile={!!sheet}
+        greeting={fresh ? GREETING : ""} suggestions={fresh ? SUGGESTIONS : []} onOpenItem={noop} />
+    </div>
+  );
+}
+
+function LumeSection() {
+  return (
+    <Section id="lume" title="6 · Lumé: the dot and the chat"
+             note="Refreshed 2026-10-17 on the same language as the pages: paper surface, one hairline, the header's Bodoni name and mono caption, solid olive for what you did, outlined olive for what Lumé offers. The mark stays abstract (a lume pip, never a face).">
+      <Specimen label="The launcher: first visit (with the label) · after you have used it · over a light page · over a dark one">
+        <div className="ss-row" style={{ gap: 28, alignItems: "center" }}>
+          <div className="ss-lume-stage">
+            <button type="button" className="ui-lume-ask">Ask me</button>
+            <button type="button" className="ui-lume-dot" aria-label="Open Lumé"><LumeIcon size={44} style={{ display: "block" }} /></button>
+          </div>
+          <div className="ss-lume-stage">
+            <button type="button" className="ui-lume-dot" aria-label="Open Lumé"><LumeIcon size={44} style={{ display: "block" }} /></button>
+          </div>
+          <div className="ss-lume-stage ss-lume-stage--dark">
+            <button type="button" className="ui-lume-ask">Ask Lumé</button>
+            <button type="button" className="ui-lume-dot" aria-label="Open Lumé"><LumeIcon size={44} style={{ display: "block" }} /></button>
+          </div>
+        </div>
+        <p className="ss-small">The real one is bottom right of this page. The pip breathes slowly (and stops if the device asks for reduced motion). The label shows until the first open, and on a shared watch ("Ask Lumé").</p>
+      </Specimen>
+      <Specimen label="The panel: opening · a reply with offers · thinking · today's cap">
+        <div className="ss-lume-row">
+          <LumePanel fresh />
+          <LumePanel />
+          <LumePanel messages={[SAMPLE[0]]} loading />
+          <LumePanel messages={SAMPLE} capped />
+        </div>
+        <p className="ss-small">Lumé's words sit on the paper with a pip in the gutter; yours are a solid olive bubble. Offers are outlined and fill olive on hover; a visited one keeps its tick and stays clickable. Suggestions are the same chips as the filter panels.</p>
+      </Specimen>
+      <Specimen label="On a phone (the sheet) · signed out">
+        <div className="ss-lume-row">
+          <LumePanel sheet />
+          <div className="ui-lume-panel" style={{ width: 380, maxWidth: "100%" }}>
+            <LumeHead />
+            <div className="ui-lume-invite">
+              <div>Sign in to chat with <strong>Lumé</strong>, your watch guide. It digs through live listings and auctions, pulls up reference guides, and saves things to your lists.</div>
+              <Button primary>Sign in to chat</Button>
+            </div>
+          </div>
+        </div>
+      </Specimen>
+    </Section>
   );
 }
 
@@ -351,7 +445,9 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
           <div className="ss-screen"><WatchesPage /></div>
         </Section>
 
-        <Section id="decisions" title="5 · Decisions made (2026-10-17)"
+        <LumeSection />
+
+        <Section id="decisions" title="7 · Decisions made (2026-10-17)"
                  note="Where today's pages disagreed, Mark chose. The loser of each is deleted as its tab migrates.">
           <ul className="ss-picks">
             <li><b>D1 · Sub-tabs:</b> segmented (the track with a solid chip). The underline form is retired.</li>

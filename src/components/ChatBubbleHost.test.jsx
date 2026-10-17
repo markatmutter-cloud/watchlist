@@ -42,6 +42,35 @@ describe("ChatBubbleHost", () => {
     expect(screen.getByLabelText("Collapse")).toBeInTheDocument();
   });
 
+  test("the first visit shows the 'Ask me' label beside the dot; opening once retires it", () => {
+    mockUser = { id: "user-123" };
+    try { localStorage.removeItem("lume_opened_v1"); } catch {}
+    const first = render(<ChatBubbleHost />);
+    expect(screen.getByRole("button", { name: "Ask me" })).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("Open Lumé"));
+    first.unmount();
+    render(<ChatBubbleHost />);
+    expect(screen.queryByRole("button", { name: "Ask me" })).toBeNull();
+    expect(screen.getByLabelText("Open Lumé")).toBeInTheDocument();
+  });
+
+  test("the panel header names Lumé and says it is an AI that is still learning", () => {
+    mockUser = { id: "user-123" };
+    render(<ChatBubbleHost />);
+    fireEvent.click(screen.getByLabelText("Open Lumé"));
+    const panel = screen.getByRole("dialog", { name: "Lumé" });
+    expect(panel).toHaveClass("ui-lume-panel");
+    expect(panel.textContent).toMatch(/AI, still learning/);
+  });
+
+  test("signed out: the open panel is one sentence and one sign-in button", () => {
+    mockUser = null;
+    render(<ChatBubbleHost />);
+    fireEvent.click(screen.getByLabelText("Open Lumé"));
+    expect(screen.getByRole("button", { name: "Sign in to chat" })).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Ask about a watch…")).toBeNull();
+  });
+
   // The bubble renders through a portal to document.body, so assert on that.
   test("a plain open still shows the standard intro", () => {
     mockUser = { id: "user-123" };

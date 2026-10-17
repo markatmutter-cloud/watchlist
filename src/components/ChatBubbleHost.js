@@ -6,6 +6,7 @@ import { registerLumeOpener } from "./LumeBus";
 import { LumeIcon } from "./LumeIcon";
 import { useLumeChat, LumeConversation, describeItem, NAME, GREETING, SUGGESTIONS } from "./LumeConversation";
 import LumeCanvas from "./LumeCanvas";
+import { Button } from "../ui";
 
 // renderInline now lives with the conversation core; re-export it so the
 // existing ChatBubbleHost.test.jsx import keeps working.
@@ -28,7 +29,7 @@ export { renderInline } from "./LumeConversation";
 // NB: solid-olive surfaces use #fff text, NOT --brand-olive-ink (that ink is the
 // DARK sage for light olive *tints* — invisible on solid olive). (B-39)
 
-const Z = 1400; // below confirm/overlay modals, above page content
+// Layering lives in ui.css (--ui-lume-z: 1400, below the confirm / review modals).
 const OPENED_KEY = "lume_opened_v1";
 
 export function ChatBubbleHost({
@@ -126,100 +127,43 @@ export function ChatBubbleHost({
 
   if (typeof document === "undefined") return null;
 
-  const FIXED = {
-    position: "fixed",
-    right: "max(16px, env(safe-area-inset-right))",
-    bottom: "max(16px, env(safe-area-inset-bottom))",
-    zIndex: Z,
-  };
-  // Speech-bubble launcher → back to a circle (Mark), with a larger lume glow +
-  // drop shadow. (B-43)
-  const launcherStyle = {
-    width: 52, height: 52,
-    borderRadius: "50%",
-    border: "none", padding: 0,
-    background: "var(--brand-olive)",
-    boxShadow: "0 0 22px 5px rgba(201,255,214,0.45), 0 8px 24px rgba(0,0,0,0.32)",
-    cursor: "pointer",
-    display: "flex", alignItems: "center", justifyContent: "center",
-  };
   // Desktop: a floating rounded frame, bottom-right. Mobile: full-screen sheet
   // (you can't see the page behind it anyway), with safe-area-aware chrome.
   // Desktop EXPANDED: a centered near-full-screen takeover over a dimmed backdrop.
+  // All of it is `.ui-lume-*` in src/ui/ui.css (2026-10-17 refresh): one definition.
   const isExpanded = expanded && !isMobile;
-  const panelFrame = isMobile
-    ? {
-        position: "fixed", inset: 0, zIndex: Z,
-        width: "100%", height: "100dvh",
-        display: "flex", flexDirection: "column",
-        background: "var(--bg)",
-        overflow: "hidden",
-      }
-    : isExpanded
-    ? {
-        position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-        zIndex: Z,
-        width: "min(880px, calc(100vw - 48px))",
-        height: "min(820px, calc(100vh - 48px))",
-        display: "flex", flexDirection: "column",
-        background: "var(--bg)",
-        border: "1px solid rgba(255,255,255,0.22)",
-        borderRadius: 16,
-        boxShadow: "0 0 0 1px rgba(0,0,0,0.18), 0 24px 64px rgba(0,0,0,0.6)",
-        overflow: "hidden",
-      }
-    : {
-        ...FIXED,
-        width: "min(380px, calc(100vw - 24px))",
-        display: "flex", flexDirection: "column",
-        background: "var(--bg)",
-        border: "1px solid rgba(255,255,255,0.22)",
-        borderRadius: 16,
-        boxShadow: "0 0 0 1px rgba(0,0,0,0.18), 0 16px 48px rgba(0,0,0,0.5)",
-        overflow: "hidden",
-      };
+  const frameClass = isMobile ? "ui-lume-panel--sheet"
+    : isExpanded ? "ui-lume-panel--expanded"
+    : "ui-lume-panel--corner";
   const header = (
-    <div style={{
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: isMobile ? "calc(12px + env(safe-area-inset-top)) 14px 12px" : "12px 14px",
-      background: "var(--brand-olive)", color: "#fff", flexShrink: 0,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <LumeIcon size={18} style={{ display: "block" }} />
-        <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em" }}>{NAME}</span>
-        <span style={{ fontSize: 13, fontWeight: 400, opacity: 0.85 }}>· Watch chat</span>
+    <div className="ui-lume-head">
+      <span className="ui-lume-mark"><LumeIcon size={26} style={{ display: "block" }} /></span>
+      <div className="ui-lume-who">
+        <span className="ui-lume-name">{NAME}</span>
+        {/* The disclosure (UX principles 2 + 13): clearly the AI, and still learning. */}
+        <span className="ui-lume-sub">Watch chat · AI, still learning</span>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        {/* Desktop + signed-in only: ⤢ expand to a full-screen takeover / ⤡
-            collapse back to the corner frame. Mobile is already full-screen. */}
-        {!isMobile && user && (
-          <button onClick={() => setExpanded((e) => !e)}
-            aria-label={isExpanded ? "Collapse" : "Expand"} title={isExpanded ? "Collapse" : "Expand"} style={{
-            border: "none", background: "rgba(255,255,255,0.16)", color: "#fff",
-            width: 26, height: 26, borderRadius: "50%",
-            display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0,
-          }}>
-            {isExpanded
-              ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M4 14h6v6" /><path d="M20 10h-6V4" /><path d="M14 10l7-7" /><path d="M3 21l7-7" /></svg>
-              : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></svg>}
-          </button>
-        )}
-        {/* Mobile: a down-chevron reads as "minimise" (drop it back to the launcher);
-            desktop: the usual ×. Both minimise + reset expand. */}
-        <button onClick={() => { setOpen(false); setExpanded(false); }} aria-label="Minimise" title="Minimise" style={{
-          border: "none", background: "rgba(255,255,255,0.16)", color: "#fff",
-          width: isMobile ? 34 : 26, height: isMobile ? 34 : 26, borderRadius: "50%",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 17, lineHeight: 1, textAlign: "center", cursor: "pointer", padding: 0,
-        }}>
-          {isMobile
-            ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
-            : "×"}
+      {/* Desktop + signed-in only: ⤢ expand to a full-screen takeover / ⤡
+          collapse back to the corner frame. Mobile is already full-screen. */}
+      {!isMobile && user && (
+        <button type="button" className="ui-lume-hbtn" onClick={() => setExpanded((e) => !e)}
+          aria-label={isExpanded ? "Collapse" : "Expand"} title={isExpanded ? "Collapse" : "Expand"}>
+          {isExpanded
+            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M4 14h6v6" /><path d="M20 10h-6V4" /><path d="M14 10l7-7" /><path d="M3 21l7-7" /></svg>
+            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></svg>}
         </button>
-      </div>
+      )}
+      {/* Mobile: a down-chevron reads as "minimise" (drop it back to the launcher);
+          desktop: the usual ×. Both minimise + reset expand. */}
+      <button type="button" className="ui-lume-hbtn" onClick={() => { setOpen(false); setExpanded(false); }}
+        aria-label="Minimise" title="Minimise">
+        {isMobile
+          ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
+          : "×"}
+      </button>
     </div>
   );
 
@@ -237,18 +181,13 @@ export function ChatBubbleHost({
     };
     const showCallout = !!seedItem || !hasOpened;
     node = (
-      <div style={{ ...FIXED, display: "flex", alignItems: "center", gap: 10 }}>
+      <div className="ui-lume-launch">
         {showCallout && (
-          <button onClick={openSeeded} style={{
-            border: "none",
-            background: "rgba(20,24,18,0.72)",
-            WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)",
-            color: "#fff", borderRadius: 999, padding: "8px 12px",
-            fontSize: 13, fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap",
-            boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
-          }}>{seedItem ? "Ask Lumé" : "Ask me"}</button>
+          <button type="button" className="ui-lume-ask" onClick={openSeeded}>
+            {seedItem ? "Ask Lumé" : "Ask me"}
+          </button>
         )}
-        <button onClick={openSeeded} aria-label={`Open ${NAME}`} style={launcherStyle}>
+        <button type="button" className="ui-lume-dot" onClick={openSeeded} aria-label={`Open ${NAME}`}>
           <LumeIcon size={44} style={{ display: "block" }} />
         </button>
       </div>
@@ -256,18 +195,16 @@ export function ChatBubbleHost({
   } else if (!user) {
     // Signed-out: prompt to sign in. (B-43)
     node = (
-      <div style={panelFrame} role="dialog" aria-label={NAME}>
+      <div className={`ui-lume-panel ${frameClass}`} role="dialog" aria-label={NAME}>
         {header}
-        <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ fontSize: 14, lineHeight: 1.5, color: "var(--text1)" }}>
+        <div className="ui-lume-invite">
+          <div>
             Sign in to chat with <strong>Lumé</strong>, your watch guide. It digs through live
             listings and auctions, pulls up reference guides, and saves things to your lists.
           </div>
-          <button onClick={() => { try { signInWithGoogle && signInWithGoogle(); } catch {} }} style={{
-            border: "none", background: "var(--brand-olive)", color: "#fff",
-            borderRadius: 10, padding: "11px 16px", fontSize: 14, fontWeight: 600,
-            cursor: "pointer", fontFamily: "inherit",
-          }}>Sign in to chat</button>
+          <Button primary onClick={() => { try { signInWithGoogle && signInWithGoogle(); } catch {} }}>
+            Sign in to chat
+          </Button>
         </div>
       </div>
     );
@@ -279,7 +216,8 @@ export function ChatBubbleHost({
     // so expanding/collapsing keeps the thread. The canvas owns its own scroll,
     // so it slots into a flex:1 body below the shared header.
     node = (
-      <div style={{ ...panelFrame, ...(isMobile || isExpanded ? {} : { height: "min(560px, calc(100vh - 120px))" }) }} role="dialog" aria-label={NAME}>
+      <div className={`ui-lume-panel ${frameClass}${isMobile || isExpanded ? "" : " ui-lume-panel--tall"}`}
+           role="dialog" aria-label={NAME}>
         {header}
         {isExpanded ? (
           <div style={{ flex: 1, minHeight: 0, display: "flex" }}>
@@ -314,9 +252,7 @@ export function ChatBubbleHost({
     <>
       {/* Dimmed backdrop behind the expanded desktop takeover; click to collapse. */}
       {open && isExpanded && (
-        <div onClick={() => setExpanded(false)} aria-hidden style={{
-          position: "fixed", inset: 0, zIndex: Z - 1, background: "rgba(0,0,0,0.45)",
-        }} />
+        <div className="ui-lume-scrim" onClick={() => setExpanded(false)} aria-hidden />
       )}
       {node}
     </>,

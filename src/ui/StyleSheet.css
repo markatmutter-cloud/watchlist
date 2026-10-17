@@ -62,3 +62,9 @@
 .ss-ab > div { padding: 16px; border: .5px solid var(--border); border-radius: 12px; font-size: 13px; line-height: 1.45; min-width: 0; }
 .ss-mini { margin-top: 12px; border: .5px dashed var(--border); border-radius: 8px; overflow: hidden; }
 @media (max-width: 760px) { .ss-ab { grid-template-columns: 1fr; } .ss-h1 { font-size: 28px; } }
+
+/* Lumé specimens: the launcher over a page-coloured and a dark stage, and the panels side by side */
+.ss-lume-stage { display: flex; align-items: center; gap: 10px; padding: 18px 20px; border-radius: 14px;
+                 background: var(--surface); border: .5px solid var(--border); }
+.ss-lume-stage--dark { background: #1c1c1e; border-color: transparent; }
+.ss-lume-row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }

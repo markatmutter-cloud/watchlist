@@ -45,6 +45,7 @@ describe("src/ui", () => {
   const MIGRATED = [
     "components/EditorialView.js", "components/ReferenceBrowse.js",
     "components/MagazineWatches.js", "components/FilterDrawer.js", "components/ListingsFilters.js",
+    "components/LumeConversation.js", "components/ChatBubbleHost.js", "components/LumeCanvas.js",
   ];
   const LEGACY = [
     /from "\.\/StandardFilterBar"/, /from "\.\/PageHeader"/, /from "\.\/Chip"/, /from "\.\/SavedPill"/,

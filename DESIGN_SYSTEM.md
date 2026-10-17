@@ -239,6 +239,16 @@ chrome-guard jest suite fails the build on drift.
 - **Labels**: never "Hearted" — "♡ Saved". Tabs title-case; page titles
   sentence-case.
 
+## Lumé — the dot and the chat (2026-10-17)
+
+One definition, `.ui-lume-*` in `src/ui/ui.css`, shown live on `?view=styleguide` §6. **The mark stays abstract** (a lume pip,
+never a face: UX principles 12). The dot is `--brand-olive` with a hairline ring and one soft shadow, the pip breathes slowly and stops
+for `prefers-reduced-motion`, and the "Ask me" label is a paper pill in the mono label voice until the first open. The panel is the paper
+surface with one hairline; the header is the Bodoni name over a mono caption that discloses "AI, still learning" (principles 2 and 13).
+**Colour rule inside the chat:** solid olive is what *you* did (your bubble, Send, the mic while listening); outlined olive is what *Lumé
+offers* (action chips, filling olive on hover); suggestions are the shared `Chip`. Lumé's replies are not in a bubble. Layering: the launcher
+and panel sit at 1400; the phone filter sheet (1450) covers the dot so it can't sit on "Show N watches"; confirm / review modals (2000+) cover both.
+
 ## Reach-for-this rules
 
 - **New button somewhere?** `actionButton` for header/toolbar; `pillBase` for filter row; `signInButton` for sign-in CTAs; `innerToggleButton` for nested sub-toggles. Don't hand-roll padding / borderRadius / colors.

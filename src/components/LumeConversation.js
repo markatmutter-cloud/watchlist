@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "../supabase";
 import { dispatchAction, resolveItemByUrl } from "./ActionBus";
+import { Chip } from "../ui";
+import LumeInput from "./LumeInput";
+import { SpeechRec } from "./lumeSpeech";
 
 // LumeConversation — the conversation CORE shared across Lumé surfaces: the
 // floating ChatBubbleHost (corner frame) and the desktop expanded-bubble canvas
@@ -22,12 +25,9 @@ export const GREETING =
 export const SUGGESTIONS = ["What should I look at?", "I'm into dive watches", "Surprise me"];
 
 const LINK_STYLE = { color: "var(--brand)", textDecoration: "underline" };
-const ANIM_CSS = "@keyframes lumeBlink{0%,80%,100%{opacity:.25}40%{opacity:1}}";
 
-// Device-native dictation engine (Web Speech API uses the OS/browser engine).
-// null where unsupported → the mic button is hidden.
-export const SpeechRec =
-  typeof window !== "undefined" ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
+// Re-exported for existing importers; the engine lives in ./lumeSpeech.
+export { SpeechRec };
 
 // "Share with Lumé" seed: compose the opening user message from a listing the
 // user handed to Lumé via a card's ⋯ menu. Lumé resolves brand/model/ref (and
@@ -90,15 +90,6 @@ function renderRich(text, openInApp) {
     <React.Fragment key={i}>{i > 0 && <br />}{renderInline(line, `l${i}`, openInApp)}</React.Fragment>
   ));
 }
-
-const MicIcon = ({ size = 18 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <rect x="9" y="2" width="6" height="12" rx="3" />
-    <path d="M5 10a7 7 0 0 0 14 0" />
-    <line x1="12" y1="19" x2="12" y2="22" />
-  </svg>
-);
 
 // useLumeChat — the chat state + agentic send loop, independent of any surface.
 // A parent owns one instance; the bubble keeps its own (ephemeral), the inline
@@ -205,45 +196,29 @@ export function LumeConversation({
   isMobile = false,
   scrollStyle,
 }) {
-  const { messages, draft, setDraft, loading, capped, error, actionState, listening, send, runAction, toggleMic, scrollRef, inputRef } = chat;
+  const { messages, loading, capped, error, actionState, send, runAction, scrollRef, inputRef } = chat;
 
-  // Keep the transcript pinned to the latest message; grow the composer with
-  // the draft (to ~5 lines, then scroll). Effects live here so they fire when
-  // this view is mounted and the refs are attached.
+  // Keep the transcript pinned to the latest message. (The composer grows with its own
+  // draft; that lives in LumeInput.)
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, loading, scrollRef]);
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-  }, [draft, inputRef]);
 
   const display = greeting ? [{ role: "assistant", content: greeting }, ...messages] : messages;
 
   return (
     <>
-      <style>{ANIM_CSS}</style>
-      <div ref={scrollRef} style={{
-        flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "14px",
-        display: "flex", flexDirection: "column", gap: 10, ...scrollStyle,
-      }}>
+      <div ref={scrollRef} className="ui-lume-scroll" style={scrollStyle}>
         {display.map((m, i) => {
           const isUser = m.role === "user";
           const acts = !isUser && Array.isArray(m.actions) ? m.actions : [];
           return (
-            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start", gap: 6 }}>
-              <div style={{
-                maxWidth: "85%", padding: "8px 12px", borderRadius: 12, fontSize: 14, lineHeight: 1.45,
-                background: isUser ? "var(--brand-olive)" : "var(--card-bg, var(--surface))",
-                color: isUser ? "#fff" : "var(--text1)",
-                border: isUser ? "none" : "0.5px solid var(--border)",
-              }}>
-                {isUser ? m.content : renderRich(m.content, onOpenItem)}
-              </div>
+            <div key={i} className={`ui-lume-msg${isUser ? " ui-lume-msg--user" : ""}`}>
+              {isUser
+                ? <div className="ui-lume-bubble">{m.content}</div>
+                : <div className="ui-lume-text">{renderRich(m.content, onOpenItem)}</div>}
               {acts.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxWidth: "90%" }}>
+                <div className="ui-lume-acts">
                   {acts.map((a, ai) => {
                     const key = `${i}-${ai}`;
                     const st = actionState[key];
@@ -254,14 +229,10 @@ export function LumeConversation({
                       // Visited chips keep the ✓ but stay CLICKABLE (Mark: after
                       // opening a link I want to go back and re-open it). Only a
                       // chip mid-run is disabled.
-                      <button key={ai} onClick={() => { if (onAction && onAction(a)) return; runAction(a, key).then((res) => onActionResult && onActionResult(a, res)); }} disabled={running}
-                        title={failed ? st.message : undefined}
-                        style={{
-                          border: "none", borderRadius: 999, padding: "6px 12px", fontSize: 13,
-                          fontFamily: "inherit", cursor: running ? "default" : "pointer",
-                          background: failed ? "var(--danger)" : "var(--brand-olive)", color: "#fff",
-                          opacity: running ? 0.6 : (done ? 0.85 : 1),
-                        }}>
+                      <button key={ai} type="button" disabled={running}
+                        className={`ui-lume-act${done ? " is-done" : ""}${failed ? " is-failed" : ""}`}
+                        onClick={() => { if (onAction && onAction(a)) return; runAction(a, key).then((res) => onActionResult && onActionResult(a, res)); }}
+                        title={failed ? st.message : undefined}>
                         {done ? "✓ " : ""}{a.label}
                       </button>
                     );
@@ -273,80 +244,27 @@ export function LumeConversation({
         })}
 
         {messages.length === 0 && !loading && suggestions.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 2 }}>
+          <div className="ui-lume-chips">
             {suggestions.map((s) => (
-              <button key={s} onClick={() => send(s)} style={{
-                border: "0.5px solid var(--border)", background: "transparent", color: "var(--text1)",
-                borderRadius: 999, padding: "6px 12px", fontSize: 13, cursor: "pointer", fontFamily: "inherit",
-              }}>{s}</button>
+              <Chip key={s} onClick={() => send(s)}>{s}</Chip>
             ))}
           </div>
         )}
 
         {loading && (
-          <div aria-label={`${NAME} is thinking`} style={{
-            alignSelf: "flex-start", display: "flex", gap: 4, alignItems: "center",
-            padding: "10px 12px", borderRadius: 12, background: "var(--card-bg, var(--surface))",
-            border: "0.5px solid var(--border)",
-          }}>
-            {[0, 1, 2].map((d) => (
-              <span key={d} style={{
-                width: 6, height: 6, borderRadius: "50%", background: "var(--text2)", display: "inline-block",
-                animation: "lumeBlink 1.2s infinite", animationDelay: `${d * 0.15}s`,
-              }} />
-            ))}
+          <div className="ui-lume-think" role="status" aria-label={`${NAME} is thinking`}>
+            <i /><i /><i />
           </div>
         )}
-        {error && <div style={{ fontSize: 13, color: "var(--danger)", padding: "2px" }}>{error}</div>}
+        {error && <div className="ui-lume-note ui-lume-note--error">{error}</div>}
         {capped && (
-          <div style={{ fontSize: 13, color: "var(--text2)", padding: "2px" }}>
+          <div className="ui-lume-note">
             You've used today's messages with {NAME}. Back tomorrow.
           </div>
         )}
       </div>
 
-      {!capped && (
-        <form onSubmit={(e) => { e.preventDefault(); send(draft); }} style={{
-          display: "flex", alignItems: "flex-end", gap: 8,
-          padding: isMobile ? "10px 12px calc(10px + env(safe-area-inset-bottom))" : "10px 12px",
-          borderTop: "0.5px solid var(--border)", flexShrink: 0,
-        }}>
-          {SpeechRec && (
-            <button type="button" onClick={toggleMic}
-              aria-label={listening ? "Stop dictation" : "Dictate"} title="Dictate"
-              style={{
-                border: "0.5px solid var(--border)", borderRadius: 10, height: 38, width: 38,
-                flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", fontFamily: "inherit",
-                background: listening ? "var(--brand-olive)" : "transparent",
-                color: listening ? "#fff" : "var(--text2)",
-              }}>
-              <MicIcon />
-            </button>
-          )}
-          <textarea
-            ref={inputRef}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(draft); } }}
-            placeholder="Ask about a watch…"
-            disabled={loading}
-            rows={1}
-            style={{
-              flex: 1, border: "0.5px solid var(--border)", borderRadius: 10, padding: "9px 12px",
-              fontSize: 14, fontFamily: "inherit", lineHeight: 1.4, background: "var(--bg)",
-              color: "var(--text1)", WebkitTextFillColor: "var(--text1)", caretColor: "var(--text1)",
-              outline: "none", resize: "none", maxHeight: 120, overflowY: "auto",
-            }}
-          />
-          <button type="submit" disabled={loading || !draft.trim()} style={{
-            border: "none", background: "var(--brand-olive)", color: "#fff", borderRadius: 10,
-            padding: "0 14px", height: 38, flexShrink: 0, fontSize: 14, fontWeight: 600,
-            cursor: loading || !draft.trim() ? "default" : "pointer",
-            opacity: loading || !draft.trim() ? 0.5 : 1, fontFamily: "inherit",
-          }}>Send</button>
-        </form>
-      )}
+      {!capped && <LumeInput chat={chat} onSend={send} isMobile={isMobile} inputRef={inputRef} />}
     </>
   );
 }
