@@ -80,5 +80,5 @@ watches department page. Keep it or blocklist it? (B-105; asked 10-05.)
    and nothing else); it only needs writing now that #985 is in. This is what
    clears the last six ghosts and the two dateless Bonhams rows that sit at the
    top of the calendar as "live" since June.
-3. **B-106** — make the coverage gate able to go green, so the daily auctions
+2. **B-106** — make the coverage gate able to go green, so the daily auctions
    workflow stops being red for reasons nobody can act on.
