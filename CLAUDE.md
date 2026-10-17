@@ -306,9 +306,11 @@ UI labels diverge from internals on purpose — don't "fix" casually.
   Links parked.
 - **DB `collections` ↔ UI "Lists"** (the account-menu entry) — `collections`
   is the umbrella for Lists, Wishlist, Owned, Sold, Challenges, shared inbox.
-- **Internal `watchlist` tab (`?tab=saved` still resolves)** — hook
-  `useWatchlist`, table `watchlist_items`; no top tab. The account menu's
-  Lists opens it (set the sub AFTER `setTabWithReceiveEscape`, which resets it).
+- **Internal `watchlist` tab = the Lists page (Lists · Searches)** — hook
+  `useWatchlist`, table `watchlist_items`; no top tab; the account menu's Lists
+  opens it. `?sub=` is always written, because a bare `?tab=saved` (and the old
+  hearted subs) now mean Watches ▸ ♡ — decided in the URL initialisers
+  (`src/legacyRoutes.js`), never by an effect, so back can't bounce.
   Where "saved" lives now: saved watches = the bar's heart + Watches ▸ ♡ Saved;
   saved articles/guides = the icon-only ♡ pill (`SavedPill`); saved searches =
   suggestions under the focused search bar.

@@ -788,6 +788,11 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — The Lists page is built from `src/ui`; the Saved tab's last pieces are gone.** `ListsPage` (Lists · Searches, reached from the
+  account menu) wears the shared header; inside a drilled-in list the search, sort, source/brand/model and price controls are the SAME
+  `ListingsFilters` Watches uses (extracted from `MagazineWatches`, so the two cannot drift). The hearted landing and its For sale / Auctions /
+  Sold toggles are not rebuilt: a bare `?tab=saved` and the old hearted subs now open Watches ▸ ♡ (`src/legacyRoutes.js`). Also fixed: a refresh on
+  `?tab=saved&sub=searches` used to drop to the hearted landing because the init ignored the `saved` URL key.
 - **2026-10-17 — Date dividers pin under the filter bar again on the shared pages.** A pinned `FilterBar` now publishes where the chrome
   ends as `--sticky-top` on its page (default: just under the header), so the "Today · 34" divider, list quick-jump and reference nav
   stop sticking at 0 behind the header. The old shells measured their own chrome; a window-scrolled page has to say so itself.

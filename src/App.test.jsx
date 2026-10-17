@@ -253,7 +253,7 @@ describe("App render-without-crash", () => {
     expect(tint()).toBe("#ffffff");
     second.unmount();
     // ...olive only over a surface that still wears the legacy olive bar.
-    window.history.replaceState({}, "", "/?tab=saved&look=old");
+    window.history.replaceState({}, "", "/?tab=watchbox&look=old");
     render(<App />);
     await waitFor(() => {
       expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
@@ -277,6 +277,31 @@ describe("App render-without-crash", () => {
     render(<App />);
     expect(LOOK.magazine).toBe(false);
     window.localStorage.removeItem("dial_look"); // ?look=old is sticky
+    window.history.replaceState({}, "", "/");
+  });
+
+  test("the retired Saved tab's URLs land on Watches > Saved; Lists keeps its own", async () => {
+    // Mark, 2026-10-17: Saved is no longer a top tab. A bare ?tab=saved (and the old hearted
+    // subs) mean "my saved watches", which live on Watches > Saved now; ?sub=lists is the
+    // Lists page. Decided in the URL initialisers, so there is no redirect for back to bounce off.
+    const { default: App } = require("./App");
+    window.history.replaceState({}, "", "/?tab=saved");
+    const first = render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("tab", { name: "Saved" })).toHaveAttribute("aria-selected", "true");
+    expect(window.location.search).toContain("sub=saved");
+    first.unmount();
+    window.history.replaceState({}, "", "/?tab=saved&sub=lists");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    expect(document.querySelector(".ui-page")).not.toBeNull();
+    expect(document.querySelector("[data-desktop-main]")).toBeNull();
+    expect(screen.getByRole("tab", { name: "Lists" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByRole("tab", { name: "Saved" })).toBeNull();
     window.history.replaceState({}, "", "/");
   });
 

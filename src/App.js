@@ -80,9 +80,11 @@ import DateDivider from "./components/DateDivider";
 import SubTabBar from "./components/SubTabBar";
 import { TOP_TABS, isTopTabActive } from "./topTabs";
 import { readLook, readChromeFaces } from "./lookFlag";
+import { savedUrlGoesToWatches } from "./legacyRoutes";
 import { ChromeTint, chromeIsLight } from "./chromeTint";
 import StyleSheet from "./ui/StyleSheet";
 import { PageShell } from "./ui";
+import ListsPage from "./components/ListsPage";
 import { innerToggleButton, actionButton, setMagazineLook } from "./styles";
 
 // Same-origin paths — Vercel serves everything in /public at the
@@ -399,7 +401,7 @@ export default function Watchlist() {
   // 2026-06-01 Lists redesign: the Lists tab is sub-tabbed and LANDS ON
   // HEARTED by default. Four real sub-tabs, all rendered through
   // CollectionsTab (the WatchlistTab fork is retired for this tab).
-  const SUB_VALUES = ["hearted", "lists", "searches"];
+  const SUB_VALUES = ["lists", "searches"];
   // Back-compat alias — the savedContentJSX dispatch + tabResetTick guard
   // reference this name. All four sub-tabs now route to CollectionsTab, so
   // SUB_VALUES_COLLECTIONS === SUB_VALUES.
@@ -418,8 +420,9 @@ export default function Watchlist() {
       if (SUB_VALUES.includes(v)) return v;
       // "shared" is now a SECTION inside the Lists sub-tab, not its own tab.
       if (v === "challenges" || v === "shared") return "lists";
-      // listings/auctions/sold/calendar/my-collection/wishlist/etc.
-      return "hearted";
+      // The hearted landing and its sub-tabs went to Watches > ♡ with the Saved tab
+      // (src/legacyRoutes.js); anything unrecognised opens Lists.
+      return "lists";
     };
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -427,15 +430,15 @@ export default function Watchlist() {
       const sub = normalize(params.get("sub"));
       // Honour ?sub on tab=watchlist (default) AND tab=collections
       // (legacy URL — Bundle 2A.2 redirect target).
-      if (t === "watchlist" || t === "collections" || !t) {
+      // ("saved" is the external key the URL sync writes for this container.)
+      if (t === "watchlist" || t === "saved" || t === "collections" || !t) {
         if (SUB_VALUES.includes(sub)) return sub;
       }
     }
-    // No localStorage restore: the Lists tab always OPENS on Hearted
-    // (Mark 2026-06-01 — "land here when going to lists"). In-session
-    // sub-tab choices live in React state; a fresh load resets to Hearted.
-    // (`dial_watch_top_tab` is still written below — harmless, not read.)
-    return "hearted";
+    // No localStorage restore: the Lists page always OPENS on Lists. In-session sub-tab
+    // choices live in React state; a fresh load resets. (`dial_watch_top_tab` is still
+    // written below — harmless, not read.)
+    return "lists";
   });
   useEffect(() => {
     try { localStorage.setItem("dial_watch_top_tab", watchTopTab); } catch {}
@@ -488,6 +491,8 @@ export default function Watchlist() {
       if ((t === "listings" || !t) && LISTINGS_SUB_VALUES.includes(sub)) {
         return sub;
       }
+      // The retired Saved tab's own URLs open Watches > ♡ (src/legacyRoutes.js).
+      if (savedUrlGoesToWatches(t, sub)) return "saved";
     }
     try {
       const v = localStorage.getItem("dial_listings_sub_tab");
@@ -608,6 +613,8 @@ export default function Watchlist() {
       // lands on Collecting > Challenges (?tab=references&sub=challenges
       // — referencesSubTab init below catches the same param).
       if (t === "watchlist" && sub === "challenges") return "references";
+      // The Saved top tab is retired: its bare URL and hearted subs open Watches > ♡.
+      if (savedUrlGoesToWatches(t, sub)) return "listings";
       // External → internal redirect: ?tab=saved / ?tab=learn /
       // ?tab=collections (legacy) all map to internal values.
       if (URL_TAB_TO_INTERNAL[t]) return URL_TAB_TO_INTERNAL[t];
@@ -700,7 +707,8 @@ export default function Watchlist() {
     else params.set("tab", INTERNAL_TAB_TO_URL[tab] || tab);
     if (tab === "listings" && listingsSubTab !== "live") {
       params.set("sub", listingsSubTab);
-    } else if (tab === "watchlist" && watchTopTab !== "hearted") {
+    } else if (tab === "watchlist") {
+      // Always written: a bare ?tab=saved means Watches > ♡ now (src/legacyRoutes.js).
       params.set("sub", watchTopTab);
     } else if (tab === "references" && referencesSubTab !== "editorial") {
       params.set("sub", referencesSubTab);
@@ -762,14 +770,16 @@ export default function Watchlist() {
       } else if (TAB_VALUES.includes(tParam)) {
         nextTab = tParam;
       }
+      // The retired Saved tab's own URLs mean Watches > ♡ (src/legacyRoutes.js).
+      const toSaved = savedUrlGoesToWatches(tParam, sub);
+      if (toSaved) nextTab = "listings";
       setTab(nextTab);
       // Sub-tab routing depends on which main tab is active.
       if (nextTab === "listings") {
-        setListingsSubTab(LISTINGS_SUB_VALUES.includes(sub) ? sub : "live");
+        setListingsSubTab(toSaved ? "saved" : (LISTINGS_SUB_VALUES.includes(sub) ? sub : "live"));
       } else if (nextTab === "watchlist") {
-        // Lists is sub-tabbed again (2026-06-01): restore the sub-tab
-        // from ?sub, defaulting to the Hearted landing.
-        setWatchTopTab(SUB_VALUES.includes(sub) ? sub : "hearted");
+        // Restore the Lists-page sub-tab from ?sub, defaulting to Lists.
+        setWatchTopTab(SUB_VALUES.includes(sub) ? sub : "lists");
       } else if (nextTab === "references") {
         setReferencesSubTab(REFERENCES_SUB_VALUES.includes(sub) ? sub : "editorial");
       }
@@ -1126,7 +1136,7 @@ export default function Watchlist() {
     // tapping Watchlists from another tab. Now lands on Lists.
     // On cross-main-tab navigation, reset the destination tab's sub-tab to its first value — do NOT restore from localStorage (Mark spec: clicking a tab loads the first sub-tab).
     if (newTab === "listings") setListingsSubTab("live");
-    else if (newTab === "watchlist") setWatchTopTab("hearted");
+    else if (newTab === "watchlist") setWatchTopTab("lists");
     // `references` is NOT reset here (2026-06-03 IA): Articles and Reference
     // Guides are two top pills over the same internal container, so the
     // caller (selectTopTab / menu tools / challenge receive) sets the sub
@@ -3428,9 +3438,9 @@ export default function Watchlist() {
             {/* Lists live here now (Mark, 2026-10-16), not under a Saved top tab.
                 The container is still internal tab "watchlist"; this opens it on
                 Lists. setTabWithReceiveEscape so a share-receive landing is
-                dismissed first, like the other entries that leave the page. The
-                sub-tab is set AFTER it: a tab change resets the container to its
-                first sub-tab ("hearted"), which would otherwise win. */}
+                dismissed first, like the other entries that leave the page. A tab
+                change resets the container to its first sub-tab, which is Lists;
+                the explicit set after it just keeps this entry independent of that. */}
             <button onClick={() => { setShowUserMenu(false); setTabWithReceiveEscape("watchlist"); setWatchTopTab("lists"); setPage(1); }}
               style={{ display: "block", width: "100%", textAlign: "left",
                       padding: "8px 8px", border: "none", background: "transparent",
@@ -5103,6 +5113,11 @@ export default function Watchlist() {
     && !shareActive && !challengeShareActive && !listShareActive && !catalogShareActive
     && !searchAllActive && !catalogFullPage;
 
+  // The Lists container (internal tab "watchlist": Lists + Searches) is built from src/ui too.
+  const listsPageActive = tab === "watchlist"
+    && !shareActive && !challengeShareActive && !listShareActive && !catalogShareActive
+    && !searchAllActive && !catalogFullPage && !styleSheetOn;
+
   // Articles and Reference Guides are built from src/ui (Mark, 2026-10-17: one definition
   // per piece), so they no longer sit inside the legacy shells: PageShell gives them the
   // header, the modals and the overlays, and the page lays itself out with PageFrame. The
@@ -5147,81 +5162,106 @@ export default function Watchlist() {
     </PageShell>
   );
 
+  // The props the shared search / filter bar / phone sheet (ListingsFilters) read, in one
+  // bag, so Watches and a drilled-in list are wired to exactly the same App.js state.
+  const listingsFilterProps = {
+    isMobile,
+    user,
+    drawerOpen,
+    setDrawerOpen,
+    savedSearches: savedSearchStats,
+    onRunSavedSearch: runSearch,
+    onRemoveSavedSearch: removeSavedSearch,
+    search,
+    setSearch,
+    openFavPrompt,
+    currentIsSaved,
+    sort,
+    setSort,
+    minPriceText,
+    setMinPriceText,
+    maxPriceText,
+    setMaxPriceText,
+    hasFilters,
+    resetFilters,
+    displayedCount,
+    activeFilterPop,
+    setActiveFilterPop,
+    filterSources,
+    filterBrands,
+    filterModels,
+    toggleSource,
+    toggleBrand,
+    toggleModel,
+    visibleSources,
+    visibleBrands,
+    visibleModels,
+    DEALER_SOURCES,
+    AUCTION_SOURCES,
+    MODELS,
+    SOURCES_SHOW,
+    BRANDS_SHOW,
+    MODELS_SHOW,
+    effectiveSourcesCount: effectiveSources.length,
+    effectiveBrandsCount: effectiveBrands.length,
+    effectiveModelsCount: effectiveModels.length,
+    sourcesExpanded,
+    setSourcesExpanded,
+    brandsExpanded,
+    setBrandsExpanded,
+    modelsExpanded,
+    setModelsExpanded,
+    onOpenCalendar: () => setCalendarModalOpen(true),
+  };
+  // What every src/ui page needs from App: the header, the modals and the overlays.
+  const pageChromeProps = {
+    isMobile,
+    baseStyle,
+    tabs: topTabs,
+    authJSX,
+    user,
+    // The home affordance Mark asked to keep: the wordmark goes back to the landing page.
+    onHome: () => { setTabWithReceiveEscape("home"); setPage(1); },
+    chromeFaces: readChromeFaces(),
+    overlaysJSX: sharedOverlaysJSX,
+    aboutModalOpen,
+    setAboutModalOpen,
+    signInPromptOpen,
+    setSignInPromptOpen,
+    signInWithGoogle,
+    primaryCurrency,
+  };
+
   const magWatchesJSX = !magWatchesActive ? null : (
     <MagazineWatches
-      isMobile={isMobile}
-      baseStyle={baseStyle}
-      tabs={topTabs}
-      authJSX={authJSX}
-      user={user}
-      // The home affordance Mark asked to keep: the wordmark goes back to the
-      // landing page, same as the shells' Home icon.
-      onHome={() => { setTabWithReceiveEscape("home"); setPage(1); }}
+      {...pageChromeProps}
+      {...listingsFilterProps}
       goToSaved={() => { setListingsSubTab("saved"); setPage(1); }}
       listingsSubTab={listingsSubTab}
       setListingsSubTab={setListingsSubTab}
       setPage={setPage}
-      drawerOpen={drawerOpen}
-      setDrawerOpen={setDrawerOpen}
-      sectionHeadingStyle={sectionHeadingStyle}
-      savedSearches={savedSearchStats}
-      onRunSavedSearch={runSearch}
-      onRemoveSavedSearch={removeSavedSearch}
-      chromeFaces={readChromeFaces()}
-      search={search}
-      setSearch={setSearch}
-      openFavPrompt={openFavPrompt}
-      currentIsSaved={currentIsSaved}
-      sort={sort}
-      setSort={setSort}
-      minPriceText={minPriceText}
-      setMinPriceText={setMinPriceText}
-      maxPriceText={maxPriceText}
-      setMaxPriceText={setMaxPriceText}
-      filterHearted={filterHearted}
-      setFilterHearted={setFilterHearted}
-      hasFilters={hasFilters}
-      resetFilters={resetFilters}
-      displayedCount={displayedCount}
-      activeFilterPop={activeFilterPop}
-      setActiveFilterPop={setActiveFilterPop}
-      filterSources={filterSources}
-      filterBrands={filterBrands}
-      filterModels={filterModels}
-      toggleSource={toggleSource}
-      toggleBrand={toggleBrand}
-      toggleModel={toggleModel}
-      visibleSources={visibleSources}
-      visibleBrands={visibleBrands}
-      visibleModels={visibleModels}
-      DEALER_SOURCES={DEALER_SOURCES}
-      AUCTION_SOURCES={AUCTION_SOURCES}
-      MODELS={MODELS}
-      SOURCES_SHOW={SOURCES_SHOW}
-      BRANDS_SHOW={BRANDS_SHOW}
-      MODELS_SHOW={MODELS_SHOW}
-      effectiveSourcesCount={effectiveSources.length}
-      effectiveBrandsCount={effectiveBrands.length}
-      effectiveModelsCount={effectiveModels.length}
-      sourcesExpanded={sourcesExpanded}
-      setSourcesExpanded={setSourcesExpanded}
-      brandsExpanded={brandsExpanded}
-      setBrandsExpanded={setBrandsExpanded}
-      modelsExpanded={modelsExpanded}
-      setModelsExpanded={setModelsExpanded}
-      onOpenCalendar={() => setCalendarModalOpen(true)}
       // The grid, the cards and the calendar modal exactly as the shells get
       // them — this page restyles the chrome, it does not rebuild the feed.
       gridJSX={listingsTabContentJSX}
-      // The overlays the shells render at their own tail. Miss one and a
-      // control on this page (share, add-to-list, settings) opens nothing.
-      overlaysJSX={sharedOverlaysJSX}
-      aboutModalOpen={aboutModalOpen}
-      setAboutModalOpen={setAboutModalOpen}
-      signInPromptOpen={signInPromptOpen}
-      setSignInPromptOpen={setSignInPromptOpen}
-      signInWithGoogle={signInWithGoogle}
-      primaryCurrency={primaryCurrency}
+    />
+  );
+
+  const listsPageJSX = !listsPageActive ? null : (
+    <ListsPage
+      {...pageChromeProps}
+      {...listingsFilterProps}
+      goToSaved={() => { setTabWithReceiveEscape("listings"); setListingsSubTab("saved"); setPage(1); }}
+      watchTopTab={watchTopTab}
+      // Re-tapping the ACTIVE sub-tab returns to its landing (P-22, Mark 2026-06-03):
+      // inside a drilled-in list, tapping "Lists" used to be a no-op. The bump feeds the
+      // tabResetTick CollectionsTab already watches to clear its drill-in.
+      onSelectSub={(key) => {
+        if (key === watchTopTab) setTabResetTick((n) => n + 1);
+        else setWatchTopTab(key);
+        setDrawerOpen(false); setPage(1);
+      }}
+      colDrillInId={colDrillInId}
+      contentJSX={savedContentJSX}
     />
   );
 
@@ -5358,6 +5398,8 @@ export default function Watchlist() {
                       onHome={() => { window.location.href = "/"; }} />
         : referencesPageActive
         ? referencesPageJSX
+        : listsPageActive
+        ? listsPageJSX
         : magWatchesActive
         ? magWatchesJSX
         : isMobile

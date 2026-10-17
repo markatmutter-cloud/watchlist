@@ -44,7 +44,7 @@ describe("src/ui", () => {
   // pieces below are deleted for good when the last page leaves them.
   const MIGRATED = [
     "components/EditorialView.js", "components/ReferenceBrowse.js",
-    "components/MagazineWatches.js", "components/FilterDrawer.js",
+    "components/MagazineWatches.js", "components/FilterDrawer.js", "components/ListingsFilters.js",
   ];
   const LEGACY = [
     /from "\.\/StandardFilterBar"/, /from "\.\/PageHeader"/, /from "\.\/Chip"/, /from "\.\/SavedPill"/,
