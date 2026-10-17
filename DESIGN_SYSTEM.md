@@ -81,6 +81,13 @@ wordmark takes the app's uppercase, letterspaced treatment in olive. So a
 surface wearing `MagazineChrome` inherits its *colour*, and has to opt in to the
 faces — the serif/sans axis above still governs everywhere but Home.
 
+**Saved = an icon-only heart (2026-10-16).** On Articles and Reference Guides "show only what I saved"
+is `SavedPill` — a bare ♡ in the filter row (`pillBase`, olive selected state, fills with currentColor,
+never `--heart` red), not a word and not a sub-tab. Watches keeps its `♡ Saved` sub-tab as the one saved
+control because it spans For sale / Auctions / Sold; don't add a second saved pill beside it. (This reversed the
+2026-07-30 "sub-tab, never a pill" rule, which existed because a labelled pill went unfound — so the
+icon carries an `aria-label`/`title`, and the empty state invites.)
+
 **The label voice (2026-10-16).** Under the magazine look (`?look=old` opts out), filter
 pills and item counts are small tracked caps — `magLabel()` / `CHROME.MAG_*` in
 `styles.js`, switched by the `LOOK` flag App sets at the top of its render. TYPE and

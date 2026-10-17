@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { ReferenceBrowse } from "./ReferenceBrowse";
 
 // Render-without-crash smoke tests for the reference browse surface.
@@ -12,14 +12,23 @@ describe("ReferenceBrowse", () => {
     render(<ReferenceBrowse items={[]} />);
     expect(screen.getByText("Reference guides")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Brand/ })).toBeInTheDocument();
-    // 2026-07-30: ♥ Saved stopped being a filter pill and became a sub-tab
-    // (role="tab"), matching Watches and Articles. Asserting the ROLE is the
-    // point of the test — as a `button` it was indistinguishable from the
-    // filter pills beside it, which is exactly why nobody found it.
-    expect(screen.getByRole("tab", { name: /Saved/ })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /^All$/ })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Saved/ })).not.toBeInTheDocument();
+    // 2026-10-16 (Mark): Saved is an icon-only heart pill in the filter row, no
+    // word, no sub-tab row. This reverses 2026-07-30 (sub-tab, never a pill);
+    // the accessible name is what keeps it findable.
+    expect(screen.getByRole("button", { name: "Show only saved guides" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /Saved/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /^All$/ })).not.toBeInTheDocument();
     // Guide cards carry "BRAND · MODEL LINE" kickers from the node registry.
     expect(screen.getAllByText(/Rolex/).length).toBeGreaterThanOrEqual(1);
+  });
+
+  test("the heart toggles, raises Clear all, and saved-only with nothing saved is an invite", () => {
+    render(<ReferenceBrowse items={[]} />);
+    expect(screen.queryByText(/Clear all/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Show only saved guides" }));
+    expect(screen.getByText(/Nothing saved yet/)).toBeInTheDocument();
+    expect(screen.getByText(/Clear all/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/Clear all/));
+    expect(screen.getByRole("button", { name: "Show only saved guides" })).toHaveAttribute("aria-pressed", "false");
   });
 });

@@ -169,13 +169,13 @@ describe("MagazineWatches", () => {
     expect(screen.getByRole("button", { name: "Auction calendar" })).toBeInTheDocument();
   });
 
-  it("hides Saved-only where it could only be a no-op", () => {
-    const { unmount } = render(<MagazineWatches {...props({ listingsSubTab: "saved" })} />);
+  it("has no Saved-only pill: the ♡ Saved sub-tab is the one saved control", () => {
+    // Mark, 2026-10-16: "the saved feature was doubled up in the watches tab".
+    // The sub-tab spans For sale / Auctions / Sold; a pill inside one slice
+    // cannot, so the pill went and the sub-tab stayed.
+    render(<MagazineWatches {...props()} />);
     expect(screen.queryByRole("button", { name: "♡ Saved" })).toBeNull();
-    unmount();
-    // Signed out there is nothing saved to filter by either.
-    render(<MagazineWatches {...props({ user: null })} />);
-    expect(screen.queryByRole("button", { name: "♡ Saved" })).toBeNull();
+    expect(screen.getByRole("tab", { name: "♡ Saved" })).toBeInTheDocument();
   });
 
   it("cycles the sort pills the way the shells do", () => {
@@ -214,9 +214,9 @@ describe("MagazineWatches on mobile: the shells' filter drawer", () => {
       expect(screen.queryByRole("button", { name: new RegExp(`^${gone}`, "i") })).toBeNull();
     }
     expect(screen.queryByLabelText("Minimum price USD")).toBeNull();
-    // ...but the sort pills and Saved-only stay inline, as in the old mobile row.
+    // ...but the sort pills stay inline, as in the old mobile row.
     expect(screen.getByRole("button", { name: /^Date/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^♡ Saved$/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Price/ })).toBeInTheDocument();
   });
 
   it("opens the drawer from the Filter pill", () => {

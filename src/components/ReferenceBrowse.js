@@ -4,7 +4,7 @@ import { Breadcrumb } from "./Breadcrumb";
 import { PageHeader } from "./PageHeader";
 import { Chip } from "./Chip";
 import { StandardFilterBar, StandardSearchInput } from "./StandardFilterBar";
-import SubTabBar from "./SubTabBar";
+import { SavedPill } from "./SavedPill";
 import { editorialHeading, editorialProse, editorialTitle, pillBase, clearAllPill, cardGridStyle, FONT_SERIF } from "../styles";
 import { imgSrc } from "../utils";
 import {
@@ -161,10 +161,12 @@ export function ReferenceBrowse(props) {
       if (al !== bl) return al ? -1 : 1; // live guides first, coming-soon last
       return referenceUpdatedAt(b).localeCompare(referenceUpdatedAt(a)); // newest updated first
     });
-  // `heartedOnly` is a sub-tab now (2026-07-30), not a filter: it must not
-  // raise "× Clear all" by itself, and Clear all must not navigate you off it.
-  const hasFilters = !!ql || activeBrands.length > 0;
-  const clearAll = () => { setQ(""); setActiveBrands([]); setActiveFilterPop(null); };
+  // The Saved heart is a filter pill again (2026-10-16), so it raises
+  // "× Clear all" and is swept by it. `narrowing` (search / brand) is what
+  // tells the "nothing saved yet" invite from "no matches".
+  const narrowing = !!ql || activeBrands.length > 0;
+  const hasFilters = narrowing || heartedOnly;
+  const clearAll = () => { setQ(""); setActiveBrands([]); setHeartedOnly(false); setActiveFilterPop(null); };
   const toggleBrand = (b) =>
     setActiveBrands((prev) => prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]);
 
@@ -185,17 +187,6 @@ export function ReferenceBrowse(props) {
         // lives on the grid below (14/18), not here.
         paddingTop: isMobile ? 4 : 0,
       }}>
-        {/* Saved is a sub-tab on every content tab (2026-07-30) — Watches,
-            Articles and Guides all express it the same way, so it can't read
-            as "one more filter" and get lost among the pills again. */}
-        <SubTabBar
-          ariaLabel="Guide views"
-          tabs={[["all", "All"], ["saved", "♡ Saved"]]}
-          activeKey={heartedOnly ? "saved" : "all"}
-          onSelect={(key) => setHeartedOnly(key === "saved")}
-          isMobile={isMobile}
-          containerStyle={{ padding: isMobile ? "2px 0 8px" : "4px 0 10px" }}
-        />
         {/* Mobile: the shell search row doesn't render on this sub-tab, so the
             guides search keeps its own full-width row above the pill bar (one
             input per surface — P-13). Desktop: the input sits in the bar's
@@ -229,7 +220,8 @@ export function ReferenceBrowse(props) {
                 style={pillBase(activeBrands.length > 0 || activeFilterPop === "brand", { compact: true })}>
                 Brand{activeBrands.length > 0 ? ` · ${activeBrands.length}` : ""}
               </button>
-              {/* (♥ Saved moved to the sub-tab row above — see SubTabBar.) */}
+              {/* Saved: icon-only heart pill (Mark, 2026-10-16). See SavedPill. */}
+              <SavedPill active={heartedOnly} onClick={() => setHeartedOnly((v) => !v)} what="saved guides" />
               {hasFilters && (
                 <button onClick={clearAll} style={clearAllPill}>× Clear all</button>
               )}
@@ -252,7 +244,7 @@ export function ReferenceBrowse(props) {
       {cards.length === 0 ? (
         <p style={{ fontSize: 13, color: "var(--text3)" }}>
           {/* Saved sub-tab with nothing saved is an invite, not a dead end. */}
-          {heartedOnly && !hasFilters
+          {heartedOnly && !narrowing
             ? "Nothing saved yet. Tap the heart on any guide and it lands here."
             : "No guides match your search."}
         </p>
