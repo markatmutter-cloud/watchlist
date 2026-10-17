@@ -11,7 +11,7 @@
 // the style sheet — not hand-roll one. ui-guard.test.js fails the build when a
 // migrated page does.
 
-import React from "react";
+import React, { useLayoutEffect, useRef } from "react";
 import { HeartIcon } from "../components/icons";
 import "./ui.css";
 
@@ -138,9 +138,33 @@ export function SubTabs({ tabs, activeKey, onSelect, ariaLabel }) {
 // ---- FilterBar: pills left · search centred · count right -----------------------------
 //   panel    the open options panel (ChipPanel), kept INSIDE the sticky zone
 //   sticky   pin under the header while the page scrolls
+//
+// A pinned bar publishes where it ends as `--sticky-top` on its page, which is what the
+// date dividers, list quick-jump and reference nav already read for "stick just below the
+// chrome". Without it they stuck at 0 and hid behind the header and this bar (the old
+// shells measured their own chrome; a window-scrolled page has to say so itself).
 export function FilterBar({ pills, search, count, end, panel, sticky }) {
+  const zone = useRef(null);
+  useLayoutEffect(() => {
+    const el = zone.current;
+    const page = el && el.closest(".ui-page");
+    if (!sticky || !page) return undefined;
+    const publish = () => {
+      const top = parseFloat(window.getComputedStyle(el).top) || 0;
+      page.style.setProperty("--sticky-top", `${Math.round(top + el.offsetHeight)}px`);
+    };
+    publish();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(publish) : null;
+    if (ro) ro.observe(el);
+    window.addEventListener("resize", publish);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener("resize", publish);
+      page.style.removeProperty("--sticky-top");
+    };
+  }, [sticky]);
   return (
-    <div className={cx("ui-filterzone", sticky && "is-sticky")}>
+    <div ref={zone} className={cx("ui-filterzone", sticky && "is-sticky")}>
       <div className={cx("ui-filterbar", !search && "ui-filterbar--nosearch")}>
         <div className="ui-filterbar-pills">{pills}</div>
         {search ? <div className="ui-filterbar-search">{search}</div> : null}

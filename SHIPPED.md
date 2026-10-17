@@ -788,6 +788,9 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — Date dividers pin under the filter bar again on the shared pages.** A pinned `FilterBar` now publishes where the chrome
+  ends as `--sticky-top` on its page (default: just under the header), so the "Today · 34" divider, list quick-jump and reference nav
+  stop sticking at 0 behind the header. The old shells measured their own chrome; a window-scrolled page has to say so itself.
 - **2026-10-17 — Watches is built from `src/ui`; `?view=classic` is gone.** `MagazineWatches` no longer owns a single style rule: header,
   sub-tabs, pills, search, price range, chips, count and the phone filter sheet (`FilterDrawer`, now the shared `.ui-sheet`) are the same pieces
   Articles and Guides use. One fix on the way: Lumé's launcher sat on top of the sheet's "Show N watches" button (sheet now above it, below

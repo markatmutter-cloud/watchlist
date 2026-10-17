@@ -40,7 +40,10 @@
    scrolls; the header bar (desktop) or the tab row (phone) sticks. --ui-header-h
    is how far down the sticky filter bar pins. */
 
-.ui-page { min-height: 100vh; background: var(--bg); --ui-header-h: var(--ui-bar-h); }
+.ui-page { min-height: 100vh; background: var(--bg); --ui-header-h: var(--ui-bar-h);
+            /* Where pinned chrome ends, for anything that sticks "just below" it (date dividers,
+               list quick-jump). A sticky FilterBar raises it to cover itself too. */
+            --sticky-top: var(--ui-header-h); }
 .ui-page--phone { --ui-header-h: var(--ui-tabrow-h); }
 .ui-page-stick { position: sticky; top: 0; z-index: 40; background: var(--bg); }
 /* A search seated under the phone's tab row (Watches): sticky with it, and the filter
