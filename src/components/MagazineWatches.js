@@ -23,7 +23,8 @@
 //   the result count · the home affordance back to the landing page.
 
 import React, { useEffect, useRef, useState } from "react";
-import MagazineChrome, { MAG_CSS, SavedSearchRows } from "./MagazineChrome";
+import { MAG_CSS, SavedSearchRows } from "./MagazineChrome";
+import { MagazineShellBar, MagazineBrandRow, MagazineTabRow } from "./MagazineShellBar";
 import { AboutModal } from "./AboutModal";
 import { SignInPromptModal } from "./SignInPromptModal";
 import { FilterDrawer } from "./FilterDrawer";
@@ -61,6 +62,8 @@ export default function MagazineWatches(props) {
     listingsSubTab, setListingsSubTab, setPage, drawerOpen, setDrawerOpen, sectionHeadingStyle,
     // saved searches, offered under the focused empty search field
     savedSearches, onRunSavedSearch, onRemoveSavedSearch,
+    // "system" | "display" — the chrome's faces (src/lookFlag.js)
+    chromeFaces,
     // search
     search, setSearch, searchPlaceholder, openFavPrompt, currentIsSaved,
     // sort + price
@@ -182,17 +185,27 @@ export default function MagazineWatches(props) {
       <style>{MAG_CSS}</style>
       <style>{MAGW_CSS}</style>
 
-      <div className="magw-page">
-        <MagazineChrome
-          isMobile={isMobile}
-          tabs={tabs}
-          authJSX={authJSX}
-          showSaved={!!user}
-          onSavedClick={goToSaved}
-          onHome={onHome}
-          searchJSX={searchJSX}
-        />
+      {/* The SAME header bar every other tab wears (Mark, 2026-10-16: "stack is
+          different - on watches it's deep ... I'd like consistent"). This page
+          used the landing page's two-tier masthead; it now takes the one-row
+          bar, with its own search seated in it. Outside .magw-page so the
+          hairline runs edge to edge, and a direct child of the tall .magw so
+          the bar can stick. */}
+      {isMobile ? (
+        <>
+          <MagazineBrandRow authJSX={authJSX} showSaved={!!user} onSavedClick={goToSaved}
+                            onHome={onHome} faces={chromeFaces} />
+          <div className="magw-mstick">
+            <MagazineTabRow tabs={tabs} faces={chromeFaces} />
+            <div className="magw-msearch">{searchJSX}</div>
+          </div>
+        </>
+      ) : (
+        <MagazineShellBar tabs={tabs} authJSX={authJSX} showSaved={!!user} onSavedClick={goToSaved}
+                          onHome={onHome} faces={chromeFaces} searchJSX={searchJSX} />
+      )}
 
+      <div className="magw-page">
         {/* The deck: what slice you're in, how many are in it, and the
             controls that change either. Sticky under the chrome so the
             filters stay reachable at any scroll depth, as they are in the
@@ -387,21 +400,13 @@ export const MAGW_CSS = `
    classes, so it beats MAG_CSS's .mag regardless of injection order): the
    landing page is untouched and keeps Bodoni.
 
-   The wordmark changes with them: the app's original treatment — uppercase,
-   letterspaced, bold — set in olive rather than white on the olive bar. It
-   is the one place the two surfaces still differ in shape, so it stays
-   distinct without being a second typeface.
+   (The wordmark, tabs and account cluster are no longer styled here: the
+   header is the shared MagazineShellBar, so it cannot differ from the other
+   tabs.)
    --------------------------------------------------------------------- */
 .mag.magw { --mag-display: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
             --mag-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
             --mag-data: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif; }
-.mag.magw .mag-wordmark { font-family: var(--mag-body); text-transform: uppercase;
-                          font-weight: 700; letter-spacing: .14em; line-height: 1.1;
-                          font-size: clamp(19px, 2.6vw, 27px); }
-/* The crescent is sized off the Bodoni cap-height; with a smaller wordmark it
-   over-balanced the row. */
-.mag.magw .mag-crescent svg { width: clamp(20px, 2.2vw, 26px); height: clamp(20px, 2.2vw, 26px); }
-.mag.magw .mag-mhead .mag-crescent svg { width: 21px; height: 21px; }
 
 .magw { min-height: 100vh; background: var(--bg); }
 /* The shells' own inset, from CHROME (B-100, Mark 2026-10-16: "Articles is justified
@@ -409,22 +414,23 @@ export const MAGW_CSS = `
    2.4vw gutter, so every Watches edge sat further in than every other tab's, and
    the gap grew on wide screens. Full width at CHROME.INSET_X_*, like the shells. */
 .magw-page { padding: 0 ${CHROME.INSET_X_DESKTOP}px 40px; }
-.magw-page .mag-flag { padding: 18px 0 10px; }
 
 /* Deck — sub-tabs, count, controls.
-   Desktop: sticky UNDER the chrome's own sticky bar (.mag-bar, ~58px tall:
-   12px padding either side of a 34px control row), so the filters stay
-   reachable at depth the way the shells' pinned chrome does. The offset is a
-   measured constant because the two sticky elements are siblings; when this
-   page is promoted, chrome + deck should become one sticky stack and the
-   number goes away.
-   Mobile: static. The mobile masthead COMPACTS on scroll (three rows to two),
-   so there is no fixed offset to stick beneath — a pinned deck would tear
-   away from it mid-scroll. */
+   Desktop: sticky UNDER the header bar (.magb-bar, a fixed 56px by its
+   min-height), so the filters stay reachable at depth the way the shells'
+   pinned chrome does. The offset is that constant because the two sticky
+   elements are siblings; keep it in step with .magb-bar's min-height.
+   Mobile: static. The tab + search block above is sticky and its height
+   depends on the safe area and the font, so a pinned deck would tear away
+   from it; the filters stay one tap away in the Filter sheet instead. */
 .magw-deck { background: var(--bg); border-bottom: .5px solid var(--border); padding: 10px 0 8px; }
 @media (min-width: 701px) {
-  .magw-deck { position: sticky; top: 58px; z-index: 25; }
+  .magw-deck { position: sticky; top: 56px; z-index: 25; }
 }
+/* Mobile: the brand row scrolls away (as in the shells); the tabs + search stay. */
+.magw-mstick { position: sticky; top: 0; z-index: 40; background: var(--bg); }
+.magw-msearch { padding: 6px ${CHROME.INSET_X_MOBILE}px 8px; border-bottom: .5px solid var(--border); }
+.magw-msearch .magw-searchwrap { max-width: none; flex: none; width: 100%; }
 .magw-deckrow { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
 .magw-subtabs { display: flex; gap: 4px 20px; flex-wrap: wrap; min-width: 0; }
 /* Sans at 25px reads as a headline, which is what the serif was for. Sized
