@@ -265,8 +265,8 @@ diagram, data model, and folder layout.
   variant there + on the style sheet first. There are no shells: `DesktopShell`
   / `MobileShell` / `StandardFilterBar` / `SubTabBar` and the `?look=old` /
   `?chrome=system` flags are deleted, and `chrome-guard` + `ui-guard` fail the
-  build if they return. The `pillBase`/`PageHeader` family survives only inside
-  `CollectionsTab`, the calendar and `SearchResultsView` until those migrate.
+  build if they return; so are `PageHeader`, `pillBase`, `innerToggleButton` and the
+  rest of the old pill helpers. Only the modals still use `modalShell` / `inputBase`.
   A page that needs its own header (the auction catalog) passes `header` to
   `PageShell`; a sticky `FilterBar` publishes `--sticky-top` for dividers.
 - **Navigation = `pushState`; cleanup = `replaceState`.** Tab / sub-tab /

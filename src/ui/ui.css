@@ -127,6 +127,7 @@ a.ui-pill:hover { text-decoration: none; }
 
 .ui-btn { box-sizing: border-box; padding: 14px 16px; border-radius: 12px; cursor: pointer;
           white-space: nowrap; font: 500 14px var(--ui-sans); }
+.ui-btn--inline { flex: none; }
 .ui-btn--ghost { border: .5px solid var(--border); background: transparent; color: var(--text2); }
 .ui-btn--primary { flex: 1; border: none; background: var(--text1); color: var(--bg); font-weight: 600; }
 .ui-input { box-sizing: border-box; flex: 1; width: 100%; min-width: 0; border: none; border-radius: 8px;
@@ -242,6 +243,30 @@ a.ui-pill:hover { text-decoration: none; }
 .ui-tabs button.is-on { background: var(--brand-olive); color: #fff; font-weight: 600; }
 .ui-tabs-row { padding: 8px 0 8px; display: flex; align-items: baseline;
                justify-content: space-between; gap: 16px; }
+
+/* ---------- dismissable chip, jump nav, section head ------------------------ */
+/* A selected filter you can take off. Solid olive like every "on". */
+.ui-dismiss { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 4px 0 12px;
+              border-radius: 999px; background: var(--brand-olive-text); color: #fff; font: 500 12px var(--ui-sans); }
+.ui-dismiss button { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: none;
+                     color: inherit; font-size: 15px; line-height: 1; cursor: pointer; opacity: .85; }
+.ui-dismiss button:hover { opacity: 1; background: rgba(255,255,255,.18); }
+.ui-dismiss-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 0 10px; }
+/* A sticky row of pills that jump to a section of a long page; it pins just under the chrome. */
+.ui-jumpnav { position: sticky; top: var(--sticky-top, 0px); z-index: 15; display: flex; gap: var(--ui-gap);
+              overflow-x: auto; scrollbar-width: none; padding: 8px 0; margin-bottom: 10px;
+              background: var(--bg); border-bottom: .5px solid var(--border); }
+.ui-jumpnav::-webkit-scrollbar { display: none; }
+/* The heading inside a page's content: a thing's name, its actions, its count. */
+.ui-sechead { padding: 6px 0 14px; border-bottom: .5px solid var(--border); }
+.ui-sechead-back { margin-bottom: 8px; }
+.ui-sechead-eyebrow { font-family: var(--ui-mono); font-size: var(--ui-label-size); letter-spacing: var(--ui-label-track);
+                      text-transform: uppercase; color: var(--brand-olive-text); margin-bottom: 4px; }
+.ui-sechead-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ui-sechead-title { margin: 0; min-width: 0; font-family: var(--ui-display); font-weight: 500; font-size: 26px;
+                    line-height: 1.1; letter-spacing: .005em; color: var(--text1); overflow-wrap: anywhere; }
+.ui-sechead-end { margin-left: auto; display: flex; align-items: center; gap: var(--ui-gap); flex-wrap: wrap; }
+.ui-sechead-meta { margin-top: 6px; font-size: 13px; color: var(--text2); }
 
 /* ---------- filter bar --------------------------------------------------- */
 /* pills left · search centred · count right. The search never moves when the

@@ -5,7 +5,7 @@ import CardStrip from "./CardStrip";
 import SectionHeader from "./SectionHeader";
 import { REFERENCE_NODES } from "../data/referencePages";
 import { articleAsListing } from "./EditorialView";
-import { pillBase } from "../styles";
+import { Chip, PriceRange, Pill } from "../ui";
 
 // Cross-tab search results — the "Search all" destination (PR_W v1,
 // 2026-05-22). When the user picks "Search all" from the Home
@@ -405,74 +405,16 @@ export function SearchResultsView({
             display: "flex", alignItems: "center", gap: 8,
             flexWrap: "wrap",
           }}>
-            {availableBrands.slice(0, 8).map(({ brand, count }) => {
-              const active = selBrands.includes(brand);
-              return (
-                <button key={brand}
-                  onClick={() => toggleBrand(brand)}
-                  style={{ ...pillBase(active, { compact: true }),
-                           // Denser than the filter-bar pill; under the magazine look the
-                           // size stays the label size and only the padding is tightened.
-                           padding: "5px 11px" }}>
-                  {brand}
-                  <span style={{
-                    marginLeft: 6,
-                    color: active ? "var(--brand-olive-ink)" : "var(--text3)",
-                    fontVariantNumeric: "tabular-nums",
-                  }}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-            {/* Price — two slim inputs side by side. Same chrome as
-                the Listings filter row's price popover. USD-based
-                comparison. */}
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "3px 4px 3px 10px", borderRadius: 999,
-              border: "0.5px solid var(--border)",
-              background: "transparent",
-              fontFamily: "inherit",
-            }}>
-              <span style={{ fontSize: 12, color: "var(--text3)", whiteSpace: "nowrap" }}>$</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={minPriceText}
-                onChange={e => setMinPriceText(e.target.value)}
-                placeholder="Min"
-                style={{
-                  width: 56, fontFamily: "inherit", fontSize: 12,
-                  border: "none", outline: "none", background: "transparent",
-                  color: "var(--text1)", padding: "3px 0",
-                }}
-              />
-              <span style={{ fontSize: 12, color: "var(--text3)" }}>–</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={maxPriceText}
-                onChange={e => setMaxPriceText(e.target.value)}
-                placeholder="Max"
-                style={{
-                  width: 60, fontFamily: "inherit", fontSize: 12,
-                  border: "none", outline: "none", background: "transparent",
-                  color: "var(--text1)", padding: "3px 8px 3px 0",
-                }}
-              />
-            </div>
-            {hasFilters && (
-              <button onClick={clearFilters}
-                style={{
-                  fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-                  background: "transparent", border: "none", cursor: "pointer",
-                  color: "var(--text3)", padding: "5px 4px",
-                  textDecoration: "underline",
-                }}>
-                Clear
-              </button>
-            )}
+            {availableBrands.slice(0, 8).map(({ brand, count }) => (
+              <Chip key={brand} on={selBrands.includes(brand)} n={count} onClick={() => toggleBrand(brand)}>
+                {brand}
+              </Chip>
+            ))}
+            {/* Price: the shared inline range (USD-based comparison, same as the Watches bar). */}
+            <PriceRange min={minPriceText} max={maxPriceText}
+              onMin={setMinPriceText} onMax={setMaxPriceText}
+              onClear={() => { setMinPriceText(""); setMaxPriceText(""); }} />
+            {hasFilters && <Pill quiet onClick={clearFilters}>× Clear</Pill>}
           </div>
         )}
       </div>

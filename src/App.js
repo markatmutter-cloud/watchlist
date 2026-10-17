@@ -3858,7 +3858,6 @@ export default function Watchlist() {
       minPriceText={minPriceText}   setMinPriceText={setMinPriceText}
       maxPriceText={maxPriceText}   setMaxPriceText={setMaxPriceText}
       filterHearted={filterHearted} setFilterHearted={setFilterHearted}
-      resetFilters={resetFilters}
     />
   );
   // Auction catalog = a FULL-PAGE surface (Mark 2026-06-13). When you've

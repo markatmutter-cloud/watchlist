@@ -42,12 +42,21 @@ describe("standard-library chrome contract", () => {
     expect(fs.existsSync(path.join(SRC, "lookFlag.js"))).toBe(false);
   });
 
-  test("PageHeader keeps the one-inset rule (no horizontal self-padding)", () => {
-    // P-5/P-6: the container provides the surface inset; the header carrying
-    // its own would double-stack (titles at 40px while pills sit at 20) —
-    // the exact misalignment class Mark kept reporting.
-    const src = readComponent("PageHeader.js");
-    expect(src).toContain('padding: isMobile ? "10px 0 13px" : "14px 0 16px"');
+  test("the legacy pill, header and chip helpers stay deleted", () => {
+    // PageHeader, pillBase, innerToggleButton, tabPill, segTrack/segItem, producedPill, iconButton,
+    // clearAllPill, dismissChip and the CHROME metrics sheet were deleted 2026-10-17 when the last
+    // page using them moved onto src/ui (Pill / SubTabs / Chip / DismissChip / SectionHead /
+    // JumpNav). Build from src/ui; don't resurrect them.
+    expect(fs.existsSync(path.join(COMPONENTS, "PageHeader.js"))).toBe(false);
+    const styles = readSrc("styles.js");
+    for (const gone of ["pillBase", "innerToggleButton", "tabPill", "segTrack", "segItem", "producedPill",
+                        "iconButton", "clearAllPill", "dismissChip", "magLabel", "SELECTED_FILL", "export const CHROME"]) {
+      expect(styles).not.toContain(gone);
+    }
+    const offenders = componentFiles.filter((f) =>
+      /\b(pillBase|innerToggleButton|PageHeader|clearAllPill|producedPill)\b/.test(
+        readComponent(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/[^\n]*/g, "$1")));
+    expect(offenders).toEqual([]);
   });
 
   test("top-tab labels live ONLY in topTabs.js (no inline tab arrays)", () => {

@@ -12,10 +12,10 @@ import { WatchDetailSheet } from "./WatchDetailSheet";
 import { ListReviewMode } from "./ListReviewMode";
 import { articleAsListing } from "./EditorialView";
 import CardShell from "./CardShell";
-import { PageHeader } from "./PageHeader";
 import { DossierBlocks } from "./DossierBlocks";
 import { fmtUSD, matchesSearch, imgSrc } from "../utils";
-import { actionButton, signInButton, innerToggleButton, pillBase, FONT_SERIF, cardGridStyle } from "../styles";
+import { FONT_SERIF, cardGridStyle } from "../styles";
+import { Pill, Button, SavedPill, JumpNav, SectionHead } from "../ui";
 import { EmptyState } from "./EmptyState";
 import { Section } from "./Section";
 
@@ -349,7 +349,7 @@ function WLCardGrid({ isMobile, children }) {
 
 // (WLWatchboxVault retired 2026-06-01 — the Watchbox anchor card "looked out of
 // place vs the list cards" (Mark); it's now a Watchbox action on the Lists
-// PageHeader. Still reachable from the top-right account menu.)
+// SectionHead. Still reachable from the top-right account menu.)
 
 // (WLSavedStrip retired — the Saved band now renders through the shared
 // CardStrip + standard Card, so hearted cards are standard size and match
@@ -584,7 +584,7 @@ export function CollectionsTab({
         heading="Sign in to organize your watches"
         blurb="Owned watches, watches you've sold, your wishlist, custom lists, challenges, all in one place. Sync across every device."
         action={isAuthConfigured && (
-          <button onClick={signInWithGoogle} style={signInButton}>Sign in</button>
+          <Button primary inline onClick={signInWithGoogle}>Sign in</Button>
         )}
       />
     );
@@ -945,15 +945,14 @@ function MyCollectionView({
             and Archive show their existing add-flows. */}
         {toggle === "plan" && wishlist && (
           <>
-            <button onClick={() => onAddManual("owned")} style={actionButton()}>+ Add a watch</button>
-            <button onClick={onShortlistAddFromFeed} style={actionButton({ variant: "primary" })}>+ From feed</button>
+            <Pill onClick={() => onAddManual("owned")}>+ Add a watch</Pill>
+            <Pill primary onClick={onShortlistAddFromFeed}>+ From feed</Pill>
           </>
         )}
         {toggle !== "plan" && targetCollectionId && (
           <>
-            <button onClick={() => onAddManual(targetKind)} style={actionButton()}>+ Add a watch</button>
-            <button onClick={() => onAddFromFeed(targetCollectionId, `Add to ${targetName}`)}
-              style={actionButton({ variant: "primary" })}>+ From feed</button>
+            <Pill onClick={() => onAddManual(targetKind)}>+ Add a watch</Pill>
+            <Pill primary onClick={() => onAddFromFeed(targetCollectionId, `Add to ${targetName}`)}>+ From feed</Pill>
           </>
         )}
       </div>
@@ -993,8 +992,8 @@ function MyCollectionView({
             blurb="Add watches you currently own. Pick from the feed for anything bought via a tracked dealer, or enter manually with a photo for off-platform watches."
             action={
               <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                <button onClick={() => onAddFromFeed(owned?.id, "Add to Collection")} style={actionButton()}>+ From feed</button>
-                <button onClick={() => onAddManual("owned")} style={actionButton({ variant: "primary" })}>+ Add a watch</button>
+                <Pill onClick={() => onAddFromFeed(owned?.id, "Add to Collection")}>+ From feed</Pill>
+                <Pill primary onClick={() => onAddManual("owned")}>+ Add a watch</Pill>
               </div>
             }
           />
@@ -1288,7 +1287,7 @@ function PlanView({
             heading="Nothing on your wishlist"
             blurb="Build the hunt list: references you're chasing, dial variants you'd buy if one surfaced. Pick from a list below or + From feed."
             action={
-              <button onClick={onShortlistAddFromFeed} style={actionButton({ variant: "primary" })}>+ From feed</button>
+              <Pill primary onClick={onShortlistAddFromFeed}>+ From feed</Pill>
             }
           />
         ) : (
@@ -1430,9 +1429,7 @@ function ShortlistPickerSection({
           </div>
           {candidates.length > SHOW && !expanded && (
             <div style={{ textAlign: "center", marginTop: 10 }}>
-              <button onClick={() => setExpanded(true)} style={actionButton()}>
-                Show all {candidates.length}
-              </button>
+              <Pill onClick={() => setExpanded(true)}>Show all {candidates.length}</Pill>
             </div>
           )}
         </>
@@ -1920,14 +1917,11 @@ function ListsView({
             occupied its own row is gone — the discovery caption + a
             small "Review →" CTA carry the same information inline.
             Hidden entirely when inline-screening on desktop. */}
-        {/* In-list header → the shared PageHeader (P-18, 2026-06-03): the
-            tinted title CARD truncated the list name on mobile ("JLC Wat…")
-            and didn't match any other surface's header. PageHeader gives the
-            standard exit link + full wrapping title + meta + action pills;
-            the ⋯ menu rides the `trailing` slot. */}
+        {/* In-list header → the shared SectionHead (P-18, 2026-06-03): the tinted title CARD
+            truncated the list name on mobile ("JLC Wat…"). SectionHead gives the standard exit
+            pill + full wrapping title + meta + action pills; the ⋯ menu rides the `trailing` slot. */}
         {!inlineScreeningActive && (
-          <PageHeader
-            isMobile={!isWide}
+          <SectionHead
             onExit={() => setSelectedListId(null)}
             exitLabel="All lists"
             title={selected.name}
@@ -2193,20 +2187,9 @@ function ListsView({
             return (
               <>
                 {NAV_SECTIONS.length > 1 && (
-                  <nav style={{
-                    position: "sticky", top: "var(--sticky-top, 0px)", zIndex: 15,
-                    background: "var(--bg)", borderBottom: "0.5px solid var(--border)",
-                    display: "flex", gap: 4, overflowX: "auto",
-                    scrollbarWidth: "none", msOverflowStyle: "none", padding: "9px 0",
-                    marginBottom: 10,
-                  }}>
-                    {NAV_SECTIONS.map((s) => (
-                      <button key={s.id} onClick={() => goToSection(s.id)}
-                        style={{ ...innerToggleButton(false), letterSpacing: "0.02em", padding: "5px 11px", whiteSpace: "nowrap" }}>
-                        {s.label}
-                      </button>
-                    ))}
-                  </nav>
+                  <JumpNav ariaLabel="Sections of this list"
+                    items={NAV_SECTIONS.map((x) => ({ key: x.id, label: x.label }))}
+                    onGo={goToSection} />
                 )}
                 {hasDossier && (
                   <div id="list-notes" style={sectionAnchor}>
@@ -2223,24 +2206,8 @@ function ListsView({
                     standard `♡ Saved` filter-chip style (Mark 2026-05-28). */}
                 {!isSavedColl && !isHiddenColl && heartedCount > 0 && (
                   <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-                    {/* 2026-06-03 alignment audit: the one bar-level pill not
-                        on pillBase — now the same recipe as the ♥ Saved pill
-                        on Listings/Articles/Guides (olive SELECTED_FILL). */}
-                    <button
-                      onClick={() => setHeartedOnly(v => !v)}
-                      aria-pressed={heartedOnly}
-                      title={heartedOnly ? `Show all (${rawItems.length})` : `Show only your hearted items (${heartedCount})`}
-                      style={{
-                        ...pillBase(heartedOnly, { compact: true, surface: true }),
-                        display: "inline-flex", alignItems: "center", gap: 5,
-                      }}>
-                      <svg width="11" height="11" viewBox="0 0 24 24"
-                        fill={heartedOnly ? "var(--danger)" : "none"} stroke="var(--danger)"
-                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                      </svg>
-                      Saved
-                    </button>
+                    <SavedPill on={heartedOnly} what="saved items"
+                      onClick={() => setHeartedOnly(v => !v)} />
                   </div>
                 )}
                 <div id="list-items" style={{ ...gridStyle, borderRadius: 10, overflow: "hidden", ...sectionAnchor }}>
@@ -2294,7 +2261,7 @@ function ListsView({
   // on 2026-06-01. Saved articles/auctions remain reachable via their
   // drill-in resolver below; Phase 2 re-surfaces them as typed bookmark
   // sections. The section-nav scroll-spy retired with the single scroll.)
-  // (wlHeaderBtn retired 2026-06-01 — section actions moved into PageHeader.)
+  // (wlHeaderBtn retired 2026-06-01 — section actions moved into the section head.)
 
   // (renderListRow + the ListRow row family retired in B-08 — the
   // landing now renders cover-image cards, not icon+text rows. Rename/
@@ -2309,10 +2276,9 @@ function ListsView({
           type were retired in favour of these). */}
       {section === "lists" && (
         <>
-          {/* Count rides PageHeader's RIGHT-aligned slot (Mark 2026-06-03):
-              no filter bar on this surface, so the header row carries it —
-              but never under the title. */}
-          <PageHeader isMobile={isMobile} title="Lists"
+          {/* The sub-tab says "Lists", so this row carries no title (no page titles); the count
+              rides its right edge, since there is no filter bar on this surface. */}
+          <SectionHead
             count={`${ownedByRecency.length} ${ownedByRecency.length === 1 ? "list" : "lists"}`}
             actions={(user && goToWatchbox) ? [{
               label: "Watchbox", onClick: goToWatchbox,
@@ -2387,8 +2353,8 @@ function ListsView({
       {/* SEARCHES — saved searches, tap to re-run on Listings. */}
       {section === "searches" && (
         <>
-          {/* Count rides PageHeader's RIGHT-aligned slot (Mark 2026-06-03). */}
-          <PageHeader isMobile={isMobile} title="Searches"
+          {/* The sub-tab says "Searches": no title, just the count and the add action. */}
+          <SectionHead
             count={savedSearchStats ? `${savedSearchStats.length} saved` : null}
             actions={startAddSearch ? [{ label: "+ New search", onClick: startAddSearch }] : []} />
           <div style={{ paddingTop: isMobile ? 16 : 20 }}>

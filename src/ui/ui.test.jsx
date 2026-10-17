@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import {
   Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
-  AccountDisc, SuggestionRows, Chip, ChipPanel,
+  AccountDisc, SuggestionRows, Chip, ChipPanel, DismissChip, JumpNav, SectionHead, Button,
 } from "./index";
 
 // The shared page frame. Pages are built from these and nothing else, so a break
@@ -254,5 +254,76 @@ describe("the small ones", () => {
     expect(onRemove).toHaveBeenCalledWith(rows[0]);
     rerender(<SuggestionRows heading="Saved searches" rows={[]} />);
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe("Pill primary and as=span", () => {
+  it("primary is the solid olive look for the one main action, without claiming to be selected", () => {
+    render(<Pill primary>+ From feed</Pill>);
+    const p = screen.getByRole("button", { name: "+ From feed" });
+    expect(p).toHaveClass("ui-pill", "is-on");
+    expect(p).not.toHaveAttribute("aria-pressed");
+  });
+
+  it("as=span is the look without a second control, for use inside something already clickable", () => {
+    const { container } = render(<a href="/x"><Pill as="span">View listing →</Pill></a>);
+    expect(container.querySelector("a > span.ui-pill")).not.toBeNull();
+    expect(container.querySelector("button")).toBeNull();
+  });
+});
+
+describe("Button inline", () => {
+  it("sizes to its label instead of growing to fill a row", () => {
+    render(<Button primary inline>Sign in</Button>);
+    expect(screen.getByRole("button", { name: "Sign in" })).toHaveClass("ui-btn--primary", "ui-btn--inline");
+  });
+});
+
+describe("DismissChip", () => {
+  it("is a selected filter with a x that takes it off, named for what it removes", () => {
+    const onRemove = jest.fn();
+    render(<DismissChip label="Rolex" onRemove={onRemove}>Rolex</DismissChip>);
+    fireEvent.click(screen.getByRole("button", { name: "Remove filter Rolex" }));
+    expect(onRemove).toHaveBeenCalled();
+  });
+});
+
+describe("JumpNav", () => {
+  it("is a labelled nav of pills; the active one is on, and tapping one goes to its section", () => {
+    const onGo = jest.fn();
+    const { container } = render(
+      <JumpNav ariaLabel="Sections" activeKey="b" onGo={onGo}
+               items={[{ key: "a", label: "Notes" }, { key: "b", label: "Watches" }]} />);
+    expect(screen.getByRole("navigation", { name: "Sections" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Watches" })).toHaveClass("is-on");
+    expect(screen.getByRole("button", { name: "Notes" })).not.toHaveClass("is-on");
+    fireEvent.click(screen.getByRole("button", { name: "Notes" }));
+    expect(onGo).toHaveBeenCalledWith("a");
+    expect(container.querySelector(".ui-jumpnav")).not.toBeNull();
+  });
+});
+
+describe("SectionHead", () => {
+  it("names a thing on the page, with its actions as pills and a way back", () => {
+    const onExit = jest.fn();
+    const share = jest.fn();
+    render(<SectionHead title="JLC shortlist" meta="Shared by Sam" onExit={onExit} exitLabel="All lists"
+                        actions={[{ label: "Share", onClick: share }, { label: "Auction house", href: "https://x.example" }]}
+                        count="12 items" />);
+    expect(screen.getByRole("heading", { level: 2, name: "JLC shortlist" })).toBeInTheDocument();
+    expect(screen.getByText("Shared by Sam")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "← All lists" }));
+    expect(onExit).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    expect(share).toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: "Auction house" })).toHaveAttribute("href", "https://x.example");
+    expect(screen.getByText("12 items")).toBeInTheDocument();
+  });
+
+  it("with no title it is only the row of actions and the count (the sub-tab already says where you are)", () => {
+    const { container } = render(<SectionHead count="3 lists" actions={[{ label: "Watchbox", onClick: () => {} }]} />);
+    expect(container.querySelector(".ui-sechead-title")).toBeNull();
+    expect(screen.getByRole("button", { name: "Watchbox" })).toBeInTheDocument();
+    expect(screen.getByText("3 lists")).toBeInTheDocument();
   });
 });

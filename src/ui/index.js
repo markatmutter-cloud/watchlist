@@ -32,9 +32,12 @@ export function Count({ children }) {
 //   n        a count suffix: "Source · 2"
 //   quiet    present but quiet ("+36 more")
 //   toggle   adds aria-pressed (use for on/off controls, not for menus)
-export function Pill({ on, icon, n, quiet, toggle, children, className, href, ...rest }) {
+//   primary  solid olive for the one main action in a group ("+ From feed"); not a selected state
+//   href     the pill is a link that opens elsewhere
+//   as       "span": the look only, for use inside something already clickable
+export function Pill({ on, primary, icon, n, quiet, toggle, children, className, href, as, ...rest }) {
   const iconOnly = !!icon && !children;
-  const cls = cx("ui-pill", on && "is-on", quiet && "ui-pill--quiet", iconOnly && "ui-pill--icon", className);
+  const cls = cx("ui-pill", (on || primary) && "is-on", quiet && "ui-pill--quiet", iconOnly && "ui-pill--icon", className);
   const inner = (
     <>
       {icon || null}
@@ -44,6 +47,8 @@ export function Pill({ on, icon, n, quiet, toggle, children, className, href, ..
   );
   // A pill that goes somewhere else (the auction house's own page) is a link, same look.
   if (href) return <a className={cls} href={href} target="_blank" rel="noopener noreferrer" {...rest}>{inner}</a>;
+  // Inside something that is already a link or button (a card's "View listing →"): the look without a second control.
+  if (as === "span") return <span className={cls} {...rest}>{inner}</span>;
   return (
     <button type="button" className={cls} aria-pressed={toggle ? !!on : undefined} {...rest}>{inner}</button>
   );
@@ -88,9 +93,10 @@ export function PriceRange({ min, max, onMin, onMax, onClear }) {
 }
 
 // ---- Button: the sheet's actions ("Show 12 watches", "Reset") ------------------------
-export function Button({ primary, children, className, ...rest }) {
+//   inline   sized to its label instead of growing to fill a row (a sign-in button in an empty state)
+export function Button({ primary, inline, children, className, ...rest }) {
   return (
-    <button type="button" className={cx("ui-btn", primary ? "ui-btn--primary" : "ui-btn--ghost", className)} {...rest}>
+    <button type="button" className={cx("ui-btn", primary ? "ui-btn--primary" : "ui-btn--ghost", inline && "ui-btn--inline", className)} {...rest}>
       {children}
     </button>
   );
@@ -162,6 +168,60 @@ export function AccountDisc({ initial, onClick, ...rest }) {
   return (
     <button type="button" className="ui-disc" aria-label="Account menu" title="Account menu"
             onClick={onClick} {...rest}>{initial}</button>
+  );
+}
+
+// ---- DismissChip: a selected filter you can take off ("Rolex ×") ------------------------
+export function DismissChip({ children, onRemove, label }) {
+  return (
+    <span className="ui-dismiss">
+      <span>{children}</span>
+      <button type="button" onClick={onRemove} aria-label={`Remove filter ${label || children}`}>&times;</button>
+    </span>
+  );
+}
+
+// ---- JumpNav: a sticky row of pills that scroll to a section of a long page -------------
+//   items   [{ key, label }]   activeKey (optional)   onGo(key)
+export function JumpNav({ items, activeKey, onGo, ariaLabel }) {
+  return (
+    <nav className="ui-jumpnav" aria-label={ariaLabel}>
+      {items.map((it) => (
+        <Pill key={it.key} on={activeKey === it.key} onClick={() => onGo(it.key)}>{it.label}</Pill>
+      ))}
+    </nav>
+  );
+}
+
+// ---- SectionHead: the heading INSIDE a page's content (a list's name and its actions) -------
+//   Not a page title (the header's active tab says where you are); this names a thing on the
+//   page. title is optional: with none it is just the row of actions and the count.
+//   actions  [{ label, onClick, href, icon, active, ariaLabel, primary }]   rendered as Pills
+//   onExit   shows a quiet "← {exitLabel}" pill above the title
+export function SectionHead({ eyebrow, title, meta, count, actions = [], onExit, exitLabel = "Back", trailing }) {
+  return (
+    <div className="ui-sechead">
+      {onExit ? (
+        <div className="ui-sechead-back">
+          <Pill quiet onClick={onExit}>← {exitLabel}</Pill>
+        </div>
+      ) : null}
+      {eyebrow ? <div className="ui-sechead-eyebrow">{eyebrow}</div> : null}
+      <div className="ui-sechead-row">
+        {title ? <h2 className="ui-sechead-title">{title}</h2> : null}
+        {(actions.length > 0 || trailing || count) ? (
+          <div className="ui-sechead-end">
+            {actions.map((a) => (
+              <Pill key={a.label} href={a.href} icon={a.icon} on={!!a.active} primary={!!a.primary}
+                    aria-label={a.ariaLabel} onClick={a.onClick}>{a.label}</Pill>
+            ))}
+            {trailing || null}
+            <Count>{count}</Count>
+          </div>
+        ) : null}
+      </div>
+      {meta ? <div className="ui-sechead-meta">{meta}</div> : null}
+    </div>
   );
 }
 
