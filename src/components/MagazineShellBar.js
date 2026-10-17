@@ -82,13 +82,16 @@ function Util({ authJSX, showSaved, onSavedClick }) {
   );
 }
 
-// Desktop: the one pinned row.
-export function MagazineShellBar({ tabs, authJSX, showSaved, onSavedClick, onHome, faces }) {
+// Desktop: the one pinned row. `searchJSX` is the Watches page's own search
+// (it types straight into the tab's filter), seated between the tabs and the
+// account cluster; every other tab leaves it out and keeps its search in its
+// filter row.
+export function MagazineShellBar({ tabs, authJSX, showSaved, onSavedClick, onHome, faces, searchJSX }) {
   return (
     <Wrap faces={faces} className="magb-bar">
       <Home onHome={onHome} />
       <Tabs tabs={tabs} />
-      <span className="magb-sp" />
+      {searchJSX ? <div className="magb-search">{searchJSX}</div> : <span className="magb-sp" />}
       <Util authJSX={authJSX} showSaved={showSaved} onSavedClick={onSavedClick} />
     </Wrap>
   );
@@ -138,9 +141,25 @@ export const MAGB_CSS = `
 
 /* Desktop: padding matches the shell's 20px content inset, so the wordmark
    and the tabs hang from the same edge as everything under them. */
-.magb-bar { display: flex; align-items: center; gap: 30px; padding: 9px 20px;
+/* One height on every tab (Mark, 2026-10-16: "stack is different ... I'd like
+   consistent"): the bar is 56px whether or not a search sits in it, so Watches
+   and the rest line up and the Watches deck can stick at a known offset.
+   Sticky is a no-op in the shells (a fixed column) and does the work on the
+   Watches page, where the window scrolls. */
+.magb-bar { position: sticky; top: 0; z-index: 30; box-sizing: border-box; min-height: 56px;
+            display: flex; align-items: center; gap: 30px; padding: 9px 20px;
             background: var(--bg); border-bottom: .5px solid var(--border); flex-shrink: 0; }
 .magb-bar .mag-bar-tabs { flex-wrap: nowrap; }
+/* The Watches search, centred between the tabs and the account cluster. */
+.magb-search { flex: 1 1 300px; min-width: 200px; max-width: 520px; margin: 0 auto; }
+.magb-search .magw-searchwrap { flex: none; width: 100%; max-width: none; }
+/* Pinned to the bar's content height so a search in the bar can't make Watches'
+   header taller than the other tabs' (it was 62px against their 56). */
+.magb-search .magw-search { box-sizing: border-box; height: 37px; padding-top: 0; padding-bottom: 0; }
+@media (max-width: 900px) {
+  .magb-bar { flex-wrap: wrap; row-gap: 8px; }
+  .magb-search { order: 3; flex: 1 1 100%; max-width: none; }
+}
 
 /* Mobile */
 .magb-brand { display: flex; align-items: center; gap: 8px;

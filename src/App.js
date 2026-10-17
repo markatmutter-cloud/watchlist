@@ -5111,6 +5111,7 @@ export default function Watchlist() {
       savedSearches={savedSearchStats}
       onRunSavedSearch={runSearch}
       onRemoveSavedSearch={removeSavedSearch}
+      chromeFaces={readChromeFaces()}
       search={search}
       setSearch={setSearch}
       openFavPrompt={openFavPrompt}

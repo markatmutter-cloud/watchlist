@@ -788,6 +788,12 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-16 — One header on every tab: Watches takes the compact one-row bar.** Mark: "stack is different - on
+  watches it's deep on the others it's inline with wordmark ... I'd like consistent", and the chrome type differed. The
+  Watches page dropped the landing page's two-tier masthead for the shared `MagazineShellBar` (its own search seated in
+  the bar), so wordmark, tabs and account cluster are the same component, size and 56px height everywhere (measured:
+  19px / 700 wordmark, 12.5px tabs, 56px bar on Watches and Articles). Only Home keeps the masthead. The Watches
+  deck now sticks at 56px; on phones the brand row scrolls away and tabs + search stay.
 - **2026-10-16 — The Saved top tab is retired; Lists moved to the account ("M") menu.** Mark: "I've not been using
   that as a tab." Top tabs are Watches · Articles · Reference Guides. The menu's Lists entry opens the same container
   on Lists (`?tab=saved` links still resolve to it). Saved watches = the bar's heart + Watches ▸ ♡ Saved; saved

@@ -98,12 +98,33 @@ describe("MagazineWatches", () => {
     }
   });
 
-  it("sets its own type on top of the magazine's colour", () => {
-    // Mark, 2026-09-08: the app's fonts, not the magazine's, with the colour
-    // and layout kept. The override has to be two classes deep to beat
-    // MAG_CSS's own `.mag` rule whatever order the two blocks are injected.
+  it("sets its own type on top of the magazine's colour, and leaves the header to the shared bar", () => {
+    // The variable overrides still style the page's pills / sub-tabs; the
+    // wordmark and tabs are NOT styled here any more (Mark, 2026-10-16: the
+    // header must be the same on every tab), so no rule may reappear that
+    // restyles them for this page alone.
     expect(MAGW_CSS).toMatch(/\.mag\.magw\s*\{[^}]*--mag-body:\s*-apple-system/);
-    expect(MAGW_CSS).toMatch(/\.mag\.magw\s+\.mag-wordmark\s*\{[^}]*text-transform:\s*uppercase/);
+    expect(MAGW_CSS).not.toMatch(/\.mag-wordmark|\.mag-crescent|\.mag-bar-tabs/);
+  });
+
+  it("wears the same header bar as every other tab, with its search seated in it", () => {
+    const { container } = render(<MagazineWatches {...props()} />);
+    const bar = container.querySelector(".magb-bar");
+    expect(bar).not.toBeNull();
+    // Outside the page column (edge-to-edge hairline) and a direct child of the
+    // tall .magw so it can stick.
+    expect(bar.parentElement).toBe(container.querySelector(".magw"));
+    expect(container.querySelector(".magw-page .magb-bar")).toBeNull();
+    expect(bar.querySelector(".mag-wordmark")).not.toBeNull();
+    expect(bar.querySelector("input[type='search']")).not.toBeNull();
+    // The old two-tier masthead is gone.
+    expect(container.querySelector(".mag-flag")).toBeNull();
+  });
+
+  it("keeps the deck's sticky offset in step with the bar's height", () => {
+    const { MAGB_CSS } = require("./MagazineShellBar");
+    const barH = MAGB_CSS.match(/\.magb-bar\s*\{[^}]*min-height:\s*(\d+)px/)[1];
+    expect(MAGW_CSS).toMatch(new RegExp(`\\.magw-deck\\s*\\{[^}]*top:\\s*${barH}px`));
   });
 
   it("takes the shells' inset, not a centred column of its own (B-100)", () => {
@@ -244,6 +265,16 @@ describe("MagazineWatches on mobile: the shells' filter drawer", () => {
   // 2026-10-04). Mark, 2026-10-16: bring it across. The sheet itself is
   // FilterDrawer, shared with MobileShell — these pin the page's wiring.
   const mobile = (over = {}) => props({ isMobile: true, ...over });
+
+  it("takes the shells' mobile header: brand row, then sticky tabs + search", () => {
+    const { container } = render(<MagazineWatches {...mobile()} />);
+    expect(container.querySelector(".magb-brand")).not.toBeNull();
+    const stick = container.querySelector(".magw-mstick");
+    expect(stick).not.toBeNull();
+    expect(stick.querySelector(".magb-tabs")).not.toBeNull();
+    expect(stick.querySelector("input[type='search']")).not.toBeNull();
+    expect(container.querySelector(".mag-mhead")).toBeNull();
+  });
 
   it("folds Source / Brand / Model / price into one Filter pill", () => {
     render(<MagazineWatches {...mobile()} />);
