@@ -242,3 +242,141 @@
   /* the count drops under the tabs rather than squeezing them */
   .ui-tabs-row { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 0 6px; }
 }
+
+/* ---------- Lumé: the launcher dot and the chat ----------------------------- */
+/* Mark, 2026-10-17: "the Ask Lumé dot needs a refresh ... and the Lumé chat interface".
+   The same language as the pages: paper surface, one hairline, the header's Bodoni name and
+   mono caption, solid olive for the thing you did (your message, Send), outlined olive for
+   the things Lumé offers. The mark stays abstract (a lume pip, never a face). The portal
+   renders on <body>, outside .ui-frame, so none of this uses container queries: the phone
+   sheet is a class chosen in JS. */
+
+:root {
+  --ui-display: "Bodoni Moda", Didot, "Times New Roman", serif;
+  --ui-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --ui-lume-glow: rgba(176, 240, 192, .6);   /* the pip's light, on the olive disc */
+  --ui-lume-z: 1400;                          /* below confirm / review modals (2000+) */
+}
+
+/* Visually hidden, still announced (and findable by text in tests). */
+.ui-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+         clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* the launcher: a dot, and a small paper label beside it until you have used it */
+.ui-lume-launch { position: fixed; right: max(16px, env(safe-area-inset-right));
+                  bottom: max(16px, env(safe-area-inset-bottom)); z-index: var(--ui-lume-z);
+                  display: flex; align-items: center; gap: 10px; font-family: var(--ui-sans); }
+.ui-lume-dot { position: relative; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%;
+               background: var(--brand-olive); cursor: pointer; display: flex; align-items: center;
+               justify-content: center;
+               box-shadow: 0 0 0 .5px rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.24); }
+.ui-lume-dot:hover { box-shadow: 0 0 0 .5px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.3); }
+.ui-lume-dot:focus-visible { outline: 2px solid var(--brand-olive-ink); outline-offset: 3px; }
+/* the pip breathes, slowly; nothing flashes, and it stops for anyone who asks it to */
+.ui-lume-dot svg { animation: ui-lume-breathe 4.5s ease-in-out infinite; }
+@keyframes ui-lume-breathe { 0%, 100% { opacity: .82; transform: scale(.94); } 50% { opacity: 1; transform: scale(1); } }
+.ui-lume-ask { border: .5px solid var(--border); background: var(--bg); color: var(--text1); cursor: pointer;
+               height: 30px; padding: 0 12px; border-radius: 999px; white-space: nowrap;
+               font-family: var(--ui-mono); font-size: var(--ui-label-size); letter-spacing: var(--ui-label-track);
+               text-transform: uppercase; box-shadow: 0 2px 10px rgba(0,0,0,.14); }
+.ui-lume-ask:hover { border-color: var(--brand-olive-ink); }
+
+/* the panel: a corner frame, a centred takeover, or (phone) a full sheet */
+.ui-lume-panel { z-index: var(--ui-lume-z); display: flex; flex-direction: column; overflow: hidden;
+                 background: var(--bg); color: var(--text1); font-family: var(--ui-sans);
+                 border: .5px solid var(--border); border-radius: 16px;
+                 box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 18px 48px rgba(0,0,0,.3); }
+.ui-lume-panel--corner { position: fixed; right: max(16px, env(safe-area-inset-right));
+                         bottom: max(16px, env(safe-area-inset-bottom)); width: min(380px, calc(100vw - 24px)); }
+.ui-lume-panel--tall { height: min(560px, calc(100vh - 120px)); }
+.ui-lume-panel--expanded { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                           width: min(880px, calc(100vw - 48px)); height: min(820px, calc(100vh - 48px)); }
+.ui-lume-panel--sheet { position: fixed; inset: 0; width: 100%; height: 100dvh; border: 0; border-radius: 0;
+                        box-shadow: none; }
+.ui-lume-scrim { position: fixed; inset: 0; z-index: calc(var(--ui-lume-z) - 1); background: rgba(0,0,0,.45); }
+
+.ui-lume-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; flex-shrink: 0;
+                border-bottom: .5px solid var(--border); background: var(--bg); }
+.ui-lume-panel--sheet .ui-lume-head { padding-top: calc(12px + env(safe-area-inset-top)); }
+.ui-lume-mark { width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; background: var(--brand-olive);
+                display: flex; align-items: center; justify-content: center; }
+.ui-lume-who { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.ui-lume-name { font-family: var(--ui-display); font-weight: 500; font-size: 22px; line-height: 1;
+                letter-spacing: -.01em; }
+.ui-lume-sub { font-family: var(--ui-mono); font-size: 10px; letter-spacing: var(--ui-label-track);
+               text-transform: uppercase; color: var(--text3); white-space: nowrap; overflow: hidden;
+               text-overflow: ellipsis; }
+.ui-lume-hbtn { width: 30px; height: 30px; padding: 0; flex-shrink: 0; border-radius: 50%; cursor: pointer;
+                border: .5px solid var(--border); background: transparent; color: var(--text2);
+                display: flex; align-items: center; justify-content: center; font: inherit; font-size: 18px;
+                line-height: 1; }
+.ui-lume-hbtn:hover { background: var(--surface); color: var(--text1); }
+.ui-lume-panel--sheet .ui-lume-hbtn { width: 36px; height: 36px; }
+
+/* the conversation */
+.ui-lume-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+                  padding: 16px 16px 8px; display: flex; flex-direction: column; gap: 16px; }
+.ui-lume-msg { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.ui-lume-msg--user { align-items: flex-end; }
+/* Lumé's words sit on the paper, not in a bubble; the pip in the gutter says who is talking */
+.ui-lume-text { position: relative; max-width: 94%; padding-left: 18px; font-size: 14.5px; line-height: 1.55; }
+.ui-lume-text::before { content: ""; position: absolute; left: 1px; top: .62em; width: 7px; height: 7px;
+                        border-radius: 50%; background: var(--brand-olive);
+                        box-shadow: 0 0 7px 1px var(--ui-lume-glow); }
+.ui-lume-text a { color: var(--brand); text-decoration: underline; text-underline-offset: 2px; }
+.ui-lume-bubble { max-width: 85%; padding: 9px 14px; border-radius: 18px 18px 4px 18px;
+                  background: var(--brand-olive); color: #fff; font-size: 14.5px; line-height: 1.45;
+                  overflow-wrap: anywhere; }
+.ui-lume-acts { display: flex; flex-wrap: wrap; gap: 6px; max-width: 94%; padding-left: 18px; }
+.ui-lume-act { height: 32px; padding: 0 13px; border-radius: 999px; cursor: pointer; font: inherit;
+               font-size: 13px; font-weight: 500; background: transparent; color: var(--brand-olive-ink);
+               border: .5px solid var(--brand-olive-ink); }
+.ui-lume-act:hover:not(:disabled) { background: var(--brand-olive); border-color: var(--brand-olive); color: #fff; }
+.ui-lume-act.is-done { opacity: .75; }
+.ui-lume-act.is-failed { color: var(--danger); border-color: var(--danger); }
+.ui-lume-act:disabled { opacity: .5; cursor: default; }
+.ui-lume-chips { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 18px; }
+.ui-lume-think { display: flex; align-items: center; gap: 5px; padding: 6px 0 2px 18px; }
+.ui-lume-think i { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-olive-ink);
+                   animation: ui-lume-blink 1.2s infinite; }
+.ui-lume-think i:nth-child(2) { animation-delay: .15s; }
+.ui-lume-think i:nth-child(3) { animation-delay: .3s; }
+@keyframes ui-lume-blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+.ui-lume-note { padding-left: 18px; font-size: 13px; color: var(--text2); }
+.ui-lume-note--error { color: var(--danger); }
+
+/* the composer: one rounded field, the mic and Send seated inside it */
+.ui-lume-compose { display: flex; padding: 10px 12px; flex-shrink: 0; border-top: .5px solid var(--border);
+                   background: var(--bg); }
+.ui-lume-panel--sheet .ui-lume-compose, .ui-lume-compose--sheet { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+.ui-lume-field { flex: 1; min-width: 0; display: flex; align-items: flex-end; gap: 4px; background: var(--bg);
+                 border: .5px solid var(--border); border-radius: 22px; padding: 4px 4px 4px 14px; }
+.ui-lume-field:focus-within { border-color: var(--brand-olive-ink); }
+.ui-lume-field textarea { flex: 1; min-width: 0; border: 0; outline: 0; resize: none; background: transparent;
+                          color: var(--text1); -webkit-text-fill-color: var(--text1); caret-color: var(--text1);
+                          font: inherit; font-size: 14.5px; line-height: 1.4; padding: 8px 0; max-height: 120px;
+                          overflow-y: auto; }
+.ui-lume-field textarea::placeholder { color: var(--text3); }
+/* iOS zooms into any field under 16px; the phone sheet is where that bites */
+.ui-lume-panel--sheet .ui-lume-field textarea, .ui-lume-compose--sheet .ui-lume-field textarea { font-size: 16px; }
+.ui-lume-ibtn { width: 34px; height: 34px; padding: 0; flex-shrink: 0; border: 0; border-radius: 50%;
+                cursor: pointer; display: flex; align-items: center; justify-content: center; font: inherit; }
+.ui-lume-mic { background: transparent; color: var(--text2); }
+.ui-lume-mic:hover { background: var(--surface); }
+.ui-lume-mic.is-on { background: var(--brand-olive); color: #fff; }
+.ui-lume-send { background: var(--brand-olive); color: #fff; }
+.ui-lume-send:disabled { opacity: .35; cursor: default; }
+
+/* the session rail beside the canvas (desktop) */
+.ui-lume-railhead { flex-shrink: 0; border-bottom: .5px solid var(--border); padding: 12px 14px;
+                    display: flex; flex-direction: column; gap: 10px; }
+.ui-lume-railtitle { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+
+/* signed out: one sentence and one action */
+.ui-lume-invite { padding: 18px; display: flex; flex-direction: column; gap: 14px; font-size: 14px;
+                  line-height: 1.5; }
+.ui-lume-invite .ui-btn { flex: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-lume-dot svg, .ui-lume-think i { animation: none; }
+}

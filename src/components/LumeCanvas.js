@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { Chip, Pill } from "../ui";
 import LumeHome from "./LumeHome";
 import LumeResultPanel from "./LumeResultPanel";
 import LumeResultGrid from "./LumeResultGrid";
@@ -200,16 +201,13 @@ export default function LumeCanvas({
   // The session-guide rail: "Ask Lumé about this view" + contextual prompt chips
   // (no greeting repeat), then the conversation.
   const railHeader = (
-    <div style={{ flexShrink: 0, borderBottom: "0.5px solid var(--border)", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600, fontSize: 14 }}>
+    <div className="ui-lume-railhead">
+      <div className="ui-lume-railtitle">
         <LumeIcon size={18} /> Ask Lumé about this view
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+      <div className="ui-lume-chips" style={{ paddingLeft: 0 }}>
         {railPrompts.map((p) => (
-          <button key={p} onClick={() => askInRail(p)} style={{
-            border: "0.5px solid var(--border)", background: "var(--surface)", color: "var(--text1)",
-            borderRadius: 999, padding: "5px 11px", fontSize: 12, cursor: "pointer", fontFamily: "inherit",
-          }}>{p}</button>
+          <Chip key={p} onClick={() => askInRail(p)}>{p}</Chip>
         ))}
       </div>
     </div>
@@ -222,10 +220,7 @@ export default function LumeCanvas({
       return (
         <div style={rootStyle}>
           <div style={{ flexShrink: 0, padding: "10px 14px", borderBottom: "0.5px solid var(--border)" }}>
-            <button onClick={goHome} aria-label="Back" style={{
-              border: "0.5px solid var(--border)", background: "var(--surface)", color: "var(--text1)",
-              borderRadius: 999, padding: "5px 12px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit",
-            }}>← Back to start</button>
+            <Pill onClick={goHome} aria-label="Back">← Back to start</Pill>
           </div>
           <LumeConversation chat={chat} greeting="" suggestions={railPrompts} onOpenItem={onOpenItem} onAction={onChatAction} isMobile />
         </div>

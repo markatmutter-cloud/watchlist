@@ -21,9 +21,9 @@ describe("StyleSheet", () => {
     expect(screen.getByText("One definition per piece")).toBeInTheDocument();
   });
 
-  it("has all five sections, with the five decisions recorded", () => {
+  it("has all its sections, with the five decisions recorded", () => {
     render(<StyleSheet tabs={tabs} authJSX={null} onHome={noop} isMobile={false} />);
-    for (const h of [/^1 · The page anatomy/, /^2 · Colour, type and size/, /^3 · The pieces/, /^4 · Composed pages/, /^5 · Decisions made/]) {
+    for (const h of [/^1 · The page anatomy/, /^2 · Colour, type and size/, /^3 · The pieces/, /^4 · Composed pages/, /^6 · Lumé/, /^7 · Decisions made/]) {
       expect(screen.getByRole("heading", { level: 2, name: h })).toBeInTheDocument();
     }
     for (const d of [/D1 · Sub-tabs/, /D2 · Selected pill/, /D3 · Page title/, /D4 · Header type/, /D5 · Watches' Saved tab/]) {
@@ -34,7 +34,9 @@ describe("StyleSheet", () => {
   it("shows every piece for real (not screenshots of them)", () => {
     const { container } = render(<StyleSheet tabs={tabs} authJSX={null} onHome={noop} isMobile={false} />);
     for (const cls of [".ui-pill", ".ui-pill--icon", ".ui-search", ".ui-tabs",
-                       ".ui-filterbar", ".ui-count", ".ui-disc", ".ui-frame"]) {
+                       ".ui-filterbar", ".ui-count", ".ui-disc", ".ui-frame",
+                       ".ui-lume-dot", ".ui-lume-ask", ".ui-lume-panel", ".ui-lume-bubble", ".ui-lume-text",
+                       ".ui-lume-act", ".ui-lume-think", ".ui-lume-field", ".ui-lume-invite"]) {
       expect(container.querySelector(cls)).not.toBeNull();
     }
   });
