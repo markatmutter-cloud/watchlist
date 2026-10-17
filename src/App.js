@@ -5011,11 +5011,12 @@ export default function Watchlist() {
     />
   );
 
-  // Home: the magazine brings its own masthead, so the shared page gives it no header, only the
-  // overlays and the page's side inset.
+  // Home: on a desktop the magazine brings its own masthead (the big wordmark over a bar), so the
+  // shared page gives it no header, only the overlays and the page's side inset. A phone wears the
+  // same header as every other page, with Home's search seated in the header's search row.
   const homePageActive = tab === "home" && !styleSheetOn && !anyTakeoverNow;
   const homePageJSX = !homePageActive ? null : (
-    <PageShell {...pageChromeProps} bare>
+    <PageShell {...pageChromeProps} bare={!isMobile}>
       <div className="ui-home">{homeTabJSX}</div>
     </PageShell>
   );

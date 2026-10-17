@@ -285,6 +285,27 @@ describe("App render-without-crash", () => {
     window.history.replaceState({}, "", "/");
   });
 
+  test("Home on a phone wears the shared header, with its search in the header's search row", async () => {
+    const prev = window.innerWidth;
+    window.innerWidth = 390;
+    window.history.replaceState({}, "", "/");
+    const { default: App } = require("./App");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(document.querySelector(".ui-page-stick .ui-page-search input[type='search']")).not.toBeNull();
+    });
+    // the same three header rows as every other page, and no masthead of Home's own
+    expect(document.querySelector(".magb-brand")).not.toBeNull();
+    expect(document.querySelector(".magb-tabs")).not.toBeNull();
+    expect(document.querySelector(".mag-mhead")).toBeNull();
+    expect(document.querySelectorAll(".ui-page input[type='search']").length).toBe(1);
+    window.innerWidth = prev;
+    window.history.replaceState({}, "", "/");
+  });
+
   test("?view=styleguide mounts the live style sheet", async () => {
     // The reference page for the shared frame (src/ui). Not a tab: reached only
     // by the URL flag, so this is the one test that proves the wiring.

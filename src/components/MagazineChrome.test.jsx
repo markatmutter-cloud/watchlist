@@ -14,7 +14,7 @@ const tabs = [
 
 function props(over = {}) {
   return {
-    isMobile: false, tabs, authJSX: <span data-testid="auth" />,
+    tabs, authJSX: <span data-testid="auth" />,
     onSavedClick: noop, showSaved: false,
     onSearchSubmit: noop, onSearchLiveQuery: noop, searchCounts: null,
     recentSearches: [], addRecentSearch: noop,
@@ -25,7 +25,9 @@ function props(over = {}) {
 describe("MagazineChrome", () => {
   it("renders one search, the tabs and the passed account control", () => {
     const { container } = render(<MagazineChrome {...props()} />);
-    expect(container.querySelectorAll(".mag-search").length).toBe(1);
+    expect(container.querySelectorAll("form[role='search']").length).toBe(1);
+    // the shared field, not a masthead copy of it
+    expect(container.querySelector(".ui-search.ui-search--bar")).not.toBeNull();
     expect(screen.getByRole("button", { name: "Watches" })).toBeInTheDocument();
     expect(screen.getByTestId("auth")).toBeInTheDocument();
   });
@@ -38,11 +40,12 @@ describe("MagazineChrome", () => {
     expect(screen.queryByRole("button", { name: "About" })).toBeNull();
   });
 
-  it("uses short tab labels on mobile and long ones on desktop", () => {
-    const { rerender } = render(<MagazineChrome {...props()} />);
+  it("is the desktop masthead: long tab labels, no phone rows", () => {
+    // A phone wears the shared header instead (PageShell); Home only seats its search there.
+    const { container } = render(<MagazineChrome {...props()} />);
     expect(screen.getByRole("button", { name: "Reference Guides" })).toBeInTheDocument();
-    rerender(<MagazineChrome {...props({ isMobile: true })} />);
-    expect(screen.getByRole("button", { name: "Guides" })).toBeInTheDocument();
+    expect(container.querySelector(".mag-mhead")).toBeNull();
+    expect(container.querySelector(".mag-flag")).not.toBeNull();
   });
 
   it("shows the saved heart only when asked, and carries no count badge", () => {
@@ -57,15 +60,6 @@ describe("MagazineChrome", () => {
     expect(container.querySelector(".mag-badge")).toBeNull();
   });
 
-  it("compacts the mobile chrome on scroll", () => {
-    const { container } = render(<MagazineChrome {...props({ isMobile: true })} />);
-    expect(container.querySelector(".mag-mhead").className).not.toContain("is-compact");
-    Object.defineProperty(window, "scrollY", { value: 400, configurable: true });
-    fireEvent.scroll(window);
-    expect(container.querySelector(".mag-mhead").className).toContain("is-compact");
-    Object.defineProperty(window, "scrollY", { value: 0, configurable: true });
-  });
-
   it("submits a search through the handler it is given", () => {
     const calls = [];
     render(<MagazineChrome {...props({ onSearchSubmit: (q, t) => calls.push([q, t]) })} />);
@@ -73,6 +67,35 @@ describe("MagazineChrome", () => {
     fireEvent.change(input, { target: { value: "explorer" } });
     fireEvent.submit(input.closest("form"));
     expect(calls).toEqual([["explorer", "all"]]);
+  });
+
+  it("has a Search button seated in the field, and a clear x once you have typed", () => {
+    render(<MagazineChrome {...props()} />);
+    expect(screen.getByRole("button", { name: "Search" })).toHaveClass("ui-search-go");
+    expect(screen.queryByRole("button", { name: "Clear search" })).toBeNull();
+    fireEvent.change(screen.getByLabelText("Search watches"), { target: { value: "sub" } });
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(screen.getByLabelText("Search watches")).toHaveValue("");
+  });
+
+  it("previews what each destination holds as you type, and a row goes there", () => {
+    const calls = [];
+    render(<MagazineChrome {...props({
+      onSearchSubmit: (q, t) => calls.push([q, t]),
+      searchCounts: { all: 1200, live: 800, auctions: 300, sold: 100 },
+    })} />);
+    fireEvent.change(screen.getByLabelText("Search watches"), { target: { value: "sub" } });
+    expect(screen.getByText("800")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("At auction"));
+    expect(calls).toEqual([["sub", "auctions"]]);
+  });
+
+  it("offers recent searches on focus when empty", () => {
+    render(<MagazineChrome {...props({ recentSearches: ["speedmaster", "gmt"] })} />);
+    fireEvent.focus(screen.getByLabelText("Search watches"));
+    expect(screen.getByText("Recent")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("gmt"));
+    expect(screen.getByLabelText("Search watches")).toHaveValue("gmt");
   });
 
   describe("saved searches under the focused search", () => {
@@ -101,7 +124,7 @@ describe("MagazineChrome", () => {
       fireEvent.click(screen.getByText("Speedmaster pro"));
       expect(onRunSavedSearch).toHaveBeenCalledWith(saved[0]);
       fireEvent.focus(screen.getByRole("searchbox"));
-      fireEvent.click(screen.getByRole("button", { name: "Remove saved search Datejust 1601" }));
+      fireEvent.click(screen.getByRole("button", { name: "Remove Datejust 1601" }));
       expect(onRemoveSavedSearch).toHaveBeenCalledWith(saved[1]);
     });
 

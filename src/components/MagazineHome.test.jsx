@@ -98,19 +98,14 @@ describe("MagazineHome", () => {
     expect(screen.getAllByLabelText("Search watches").length).toBe(1);
   });
 
-  it("gives mobile its own pinned chrome with the short tab labels", () => {
-    const { container } = render(<MagazineHome {...props({
-      isMobile: true,
-      homeMastheadTabs: [
-        { key: "listings", label: "Watches", active: true, onSelect: noop },
-        { key: "guides", label: "Reference Guides", mobileLabel: "Guides", active: false, onSelect: noop },
-      ],
-    })} />);
-    expect(container.querySelector(".mag-mhead")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Guides" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Reference Guides" })).toBeNull();
-    // one search, and it lives inside the pinned chrome
-    expect(container.querySelectorAll(".mag-search").length).toBe(1);
+  it("gives a phone no masthead of its own: the shared header carries the tabs, Home seats its search", () => {
+    // PageShell renders the header (tabs, account); Home only supplies the search that sits in
+    // its search row. Outside a shell (here) the field renders inline, once.
+    const { container } = render(<MagazineHome {...props({ isMobile: true })} />);
+    expect(container.querySelector(".mag-mhead")).toBeNull();
+    expect(container.querySelector(".mag-flag")).toBeNull();
+    expect(container.querySelectorAll("form[role='search']").length).toBe(1);
+    expect(container.querySelector(".ui-search.ui-search--full")).not.toBeNull();
   });
 
   it("renders the tabs once, in the persistent bar", () => {
