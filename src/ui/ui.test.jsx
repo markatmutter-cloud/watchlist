@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import {
   Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
-  AccountDisc, SuggestionRows,
+  AccountDisc, SuggestionRows, Chip, ChipPanel,
 } from "./index";
 
 // The shared page frame. Pages are built from these and nothing else, so a break
@@ -126,7 +126,7 @@ describe("FilterBar and PageFrame", () => {
 
   it("a bar with no search says so, so it never reserves the search column", () => {
     const { container } = render(<FilterBar pills={<Pill>Source</Pill>} />);
-    expect(container.firstChild).toHaveClass("ui-filterbar--nosearch");
+    expect(container.querySelector(".ui-filterbar")).toHaveClass("ui-filterbar--nosearch");
     expect(container.querySelector(".ui-filterbar-search")).toBeNull();
   });
 
@@ -145,6 +145,34 @@ describe("FilterBar and PageFrame", () => {
     const { container } = render(<PageFrame><p>only content</p></PageFrame>);
     expect(container.querySelector(".ui-tabs-row")).toBeNull();
     expect(screen.getByText("only content")).toBeInTheDocument();
+  });
+});
+
+describe("FilterBar zone", () => {
+  it("keeps the open options panel INSIDE the sticky zone, so it pins with the bar", () => {
+    const { container } = render(
+      <FilterBar sticky pills={<Pill>Source</Pill>} panel={<ChipPanel><Chip>Rolex</Chip></ChipPanel>} />);
+    const zone = container.querySelector(".ui-filterzone");
+    expect(zone).toHaveClass("is-sticky");
+    expect(zone.querySelector(".ui-panel .ui-chip")).not.toBeNull();
+  });
+
+  it("is not sticky unless asked", () => {
+    const { container } = render(<FilterBar pills={<Pill>Source</Pill>} />);
+    expect(container.querySelector(".ui-filterzone")).not.toHaveClass("is-sticky");
+  });
+});
+
+describe("Chip", () => {
+  it("is a selectable option with an optional count, solid when on", () => {
+    const onClick = jest.fn();
+    const { rerender } = render(<Chip n={12} onClick={onClick}>Rolex</Chip>);
+    expect(screen.getByRole("button")).toHaveTextContent("Rolex12");
+    expect(screen.getByRole("button")).not.toHaveClass("is-on");
+    fireEvent.click(screen.getByRole("button"));
+    expect(onClick).toHaveBeenCalled();
+    rerender(<Chip on quiet>Rolex</Chip>);
+    expect(screen.getByRole("button")).toHaveClass("is-on", "ui-chip--quiet");
   });
 });
 

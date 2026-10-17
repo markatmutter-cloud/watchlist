@@ -291,6 +291,35 @@ describe("App render-without-crash", () => {
     window.history.replaceState({}, "", "/");
   });
 
+  test("Articles and Reference Guides are built from src/ui (PageShell), not the legacy shells", async () => {
+    // Migrated 2026-10-17 (Mark: one definition per piece). The real wiring: App picks
+    // PageShell for these two subs and nothing else.
+    for (const url of ["/?tab=references&sub=editorial", "/?tab=references&sub=references"]) {
+      window.history.replaceState({}, "", url);
+      const { default: App } = require("./App");
+      const r = render(<App />);
+      await waitFor(() => {
+        expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+      });
+      expect(document.querySelector(".ui-page")).not.toBeNull();
+      expect(document.querySelector(".magb-bar, .magb-brand")).not.toBeNull();
+      expect(document.querySelector("[data-desktop-main]")).toBeNull();
+      r.unmount();
+    }
+    window.history.replaceState({}, "", "/");
+  });
+
+  test("the tools under the references container (size comparison) still use the shells", async () => {
+    window.history.replaceState({}, "", "/?tab=references&sub=size");
+    const { default: App } = require("./App");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    expect(document.querySelector(".ui-page")).toBeNull();
+    window.history.replaceState({}, "", "/");
+  });
+
   test("?view=classic keeps the shell's own Watches chrome (the way back)", async () => {
     // The rollback path Mark asked for: one param returns the old tab, built
     // from the same shells that never stopped existing.

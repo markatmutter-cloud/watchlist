@@ -172,7 +172,8 @@ export const MAGB_CSS = `
 .magb-brand .mag-icon svg { width: 18px; height: 18px; }
 .magb-brand .mag-wordmark { font-size: 17px; }
 .magb-brand.magb--display .mag-wordmark { font-size: 28px; }
-.magb-tabs { padding: 0 16px; background: var(--bg); border-bottom: .5px solid var(--border); }
+.magb-tabs { box-sizing: border-box; min-height: var(--ui-tabrow-h, 42px); padding: 0 16px;
+             background: var(--bg); border-bottom: .5px solid var(--border); }
 .magb-tabs .mag-bar-tabs { flex-wrap: nowrap; overflow-x: auto; gap: 0 20px;
                            scrollbar-width: none; -ms-overflow-style: none;
                            -webkit-overflow-scrolling: touch; }
