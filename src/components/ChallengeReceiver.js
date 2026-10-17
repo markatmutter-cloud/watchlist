@@ -482,17 +482,11 @@ function OrientationAnchors({ signedIn, onClickAnchor, onSignIn, signInCopy }) {
           houses. One feed to manage watchlists, no ads, and it's free.
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <button onClick={() => onClickAnchor("listings")} style={anchorBtnStyle}>
-            Browse all listings →
-          </button>
+          <Button inline onClick={() => onClickAnchor("listings")}>Browse all listings →</Button>
           {signedIn && (
-            <button onClick={() => onClickAnchor("watchlist")} style={anchorBtnStyle}>
-              Go to your saved list →
-            </button>
+            <Button inline onClick={() => onClickAnchor("watchlist")}>Go to your saved list →</Button>
           )}
-          <button onClick={() => onClickAnchor("references")} style={anchorBtnStyle}>
-            Learn (tools + links) →
-          </button>
+          <Button inline onClick={() => onClickAnchor("references")}>Learn (tools + links) →</Button>
         </div>
       </div>
     </div>
@@ -513,14 +507,3 @@ const focusedCardStyle = () => ({
   overflow: "hidden",
 });
 
-const anchorBtnStyle = {
-  border: "0.5px solid var(--border)",
-  background: "var(--surface)",
-  color: "var(--text1)",
-  padding: "8px 14px",
-  borderRadius: 8,
-  fontFamily: "inherit",
-  fontSize: 13,
-  cursor: "pointer",
-  textAlign: "left",
-};

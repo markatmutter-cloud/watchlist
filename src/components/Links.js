@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { Button } from "../ui";
 
 // Cool Stuff > Links — curated outbound destinations beyond the feed
 // itself. Two kinds of section:
@@ -603,10 +604,7 @@ export function Links({ allListings = [], onBack }) {
     <div style={{ paddingTop: 4 }}>
       {onBack && (
         <div style={{ marginBottom: 10 }}>
-          <button onClick={onBack} aria-label="Back to Learn" style={{
-            border: "none", background: "transparent", color: "var(--text2)",
-            fontFamily: "inherit", fontSize: 13, cursor: "pointer", padding: "4px 0",
-          }}>← Learn</button>
+          <Button link onClick={onBack} aria-label="Back to Learn">← Learn</Button>
         </div>
       )}
 

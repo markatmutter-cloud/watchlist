@@ -793,6 +793,10 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — The control-like buttons across the pages move onto the shared pieces.** The share-receive frame, challenge flow, guide pages, calendar nav, size
+  compare, links, admin controls, the footer and the display-settings controls now use `Pill` / `Chip` / `Button` (new `link`, `muted`, `danger`, `href`) / `SubTabs choice`
+  instead of ~65 hand-rolled styled buttons (157 to 93 counted). What is left is not a control: image-overlay hearts and ⋯ buttons on cards, the ⋯ menus' item rows, and
+  clickable image tiles; those want a shared overlay-button and menu primitive, which is the next piece.
 - **2026-10-17 — Every dialog is one shared `Modal`; the button, input and modal helpers are deleted from `styles.js`.** Fifteen modals (new list, save search,
   add search, confirm, sign in, mark as sold, share a list, add a watch, listing / list / note pickers, track an item, settings, About, a watch's details) now
   share one shell: scrim, card, Bodoni title with its close, optional note, fields, and a right-aligned row of actions (Cancel ghost, the main action solid olive,

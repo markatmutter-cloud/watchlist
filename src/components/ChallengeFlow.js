@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { Button, Chip } from "../ui";
 import { fmtUSD, imgSrc } from "../utils";
 import { confirm } from "./ConfirmModal";
 
@@ -98,12 +99,7 @@ function StageHeader({ onBack, label, title, subtitle, activeStage, onDelete }) 
           marginBottom: 8,
         }}>
           {onBack ? (
-            <button onClick={onBack} style={{
-              background: "none", border: "none", cursor: "pointer",
-              display: "flex", alignItems: "center", gap: 6,
-              fontSize: 13, color: "var(--text2)",
-              fontFamily: "inherit", padding: 0,
-            }}>← {label || "back"}</button>
+            <Button link onClick={onBack}>← {label || "back"}</Button>
           ) : <span/>}
           {onDelete && (
             <button onClick={onDelete} aria-label="Delete challenge"
@@ -234,18 +230,8 @@ export function CreateStage({ challenge, onSubmit, onCancel, onDelete }) {
       </div>
 
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button onClick={onCancel} style={{
-          padding: "8px 16px", borderRadius: 8, border: "0.5px solid var(--border)",
-          background: "transparent", color: "var(--text2)", cursor: "pointer",
-          fontFamily: "inherit", fontSize: 13,
-        }}>Cancel</button>
-        <button onClick={handleSubmit} disabled={count < 1 || budget <= 0}
-          style={{
-            padding: "8px 16px", borderRadius: 8, border: "none",
-            background: "var(--brand-olive)", color: "#fff", cursor: "pointer",
-            fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-            opacity: (count < 1 || budget <= 0) ? 0.5 : 1,
-          }}>Start picking →</button>
+        <Button small onClick={onCancel}>Cancel</Button>
+        <Button small primary onClick={handleSubmit} disabled={count < 1 || budget <= 0}>Start picking →</Button>
       </div>
     </div>
   );
@@ -455,7 +441,7 @@ function PickingStage({
         {/* Finish CTA — full width, sits in the sticky so it's
             always visible regardless of where the user is scrolled. */}
         <div style={{ marginTop: 10 }}>
-          <button disabled={!canComplete}
+          <Button primary block disabled={!canComplete}
             onClick={async () => {
               flushNote();
               if (overBudget) {
@@ -465,17 +451,9 @@ function PickingStage({
                   confirmLabel: "Finish anyway",
                 })) onComplete();
               } else { onComplete(); }
-            }}
-            style={{
-              width: "100%",
-              padding: "10px 20px", borderRadius: 8, border: "none",
-              background: "var(--brand-olive)", color: "#fff",
-              cursor: canComplete ? "pointer" : "not-allowed",
-              fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-              opacity: canComplete ? 1 : 0.4,
             }}>
             Finish →
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -485,10 +463,7 @@ function PickingStage({
           <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text2)", textTransform: "uppercase", letterSpacing: "0.04em", margin: 0 }}>
             Final picks
           </p>
-          <button onClick={onEditConfig} style={{
-            background: "none", border: "none", cursor: "pointer",
-            color: "var(--text3)", fontSize: 12, fontFamily: "inherit", padding: 0,
-          }}>Edit constraints</button>
+          <Button link muted onClick={onEditConfig}>Edit constraints</Button>
         </div>
         <div style={{
           display: "grid",
@@ -590,11 +565,7 @@ function PickingStage({
                   fontFamily: "inherit", fontSize: 13, color: "var(--text1)", outline: "none",
                 }}
               />
-              <button onClick={handlePaste} style={{
-                padding: "8px 14px", borderRadius: 6, border: "none",
-                background: "var(--brand-olive)", color: "#fff", cursor: "pointer",
-                fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-              }}>Add</button>
+              <Button small primary onClick={handlePaste}>Add</Button>
             </div>
             {pasteError && (
               <p style={{ fontSize: 12, color: "var(--danger)", margin: "6px 0 0", lineHeight: 1.4 }}>
@@ -711,18 +682,7 @@ function SlotCell({ occupant, slotIdx, onRemove }) {
 }
 
 function SourceChip({ active, onClick, label }) {
-  return (
-    <button onClick={onClick} style={{
-      flexShrink: 0,
-      padding: "4px 12px",
-      borderRadius: 999,
-      border: "0.5px solid var(--border)",
-      background: active ? "var(--text1)" : "transparent",
-      color: active ? "var(--bg)" : "var(--text1)",
-      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-      whiteSpace: "nowrap",
-    }}>{label}</button>
-  );
+  return <Chip on={active} onClick={onClick}>{label}</Chip>;
 }
 
 // Compact card-tile for the source picker. Tap = add to shortlist.
@@ -849,31 +809,15 @@ function CompleteStage({ challenge, items, onShareSpec, onShareComplete, onBack,
           }}>{shareFeedback}</span>
         )}
         {onReopen && (
-          <button onClick={onReopen} style={{
-            padding: "10px 14px", borderRadius: 8,
-            border: "0.5px solid var(--border)", background: "transparent",
-            color: "var(--text2)", cursor: "pointer",
-            fontFamily: "inherit", fontSize: 13,
-          }}>Reopen for edits</button>
+          <Button inline onClick={onReopen}>Reopen for edits</Button>
         )}
         {onShareSpec && (
-          <button onClick={() => handleShareClick(onShareSpec, "spec")}
-            title="Send just the constraints; recipient builds their own answer"
-            style={{
-              padding: "10px 14px", borderRadius: 8,
-              border: "0.5px solid var(--border)", background: "transparent",
-              color: "var(--text1)", cursor: "pointer",
-              fontFamily: "inherit", fontSize: 13,
-            }}>Share the challenge</button>
+          <Button inline onClick={() => handleShareClick(onShareSpec, "spec")}
+            title="Send just the constraints; recipient builds their own answer">Share the challenge</Button>
         )}
         {onShareComplete && (
-          <button onClick={() => handleShareClick(onShareComplete, "complete")}
-            title="Send with your picks visible; recipient sees what you chose"
-            style={{
-              padding: "10px 16px", borderRadius: 8, border: "none",
-              background: "var(--brand-olive)", color: "#fff", cursor: "pointer",
-              fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-            }}>Share my collection →</button>
+          <Button primary inline onClick={() => handleShareClick(onShareComplete, "complete")}
+            title="Send with your picks visible; recipient sees what you chose">Share my collection →</Button>
         )}
       </div>
 

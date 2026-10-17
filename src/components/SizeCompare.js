@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Button } from "../ui";
 import { createPortal } from "react-dom";
 
 // Watch size comparison tool. Two case dimensions (width × length in
@@ -338,11 +339,7 @@ export function SizeCompare({ onBack }) {
             <span style={{ fontSize: 11, color: "var(--text2)" }}>
               Photo loaded · session only
             </span>
-            <button onClick={onClear} style={{
-              background: "transparent", border: "none",
-              color: "var(--text3)", fontSize: 12, fontFamily: "inherit",
-              cursor: "pointer", padding: 0, textAlign: "left",
-            }}>Remove</button>
+            <Button link onClick={onClear}>Remove</Button>
           </div>
         </div>
       ) : (
@@ -366,11 +363,7 @@ export function SizeCompare({ onBack }) {
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 4px" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 4 }}>
         {onBack && (
-          <button onClick={onBack} style={{
-            border: "none", background: "transparent",
-            color: "var(--text2)", fontFamily: "inherit",
-            fontSize: 13, cursor: "pointer", padding: "4px 0",
-          }}>← Learn</button>
+          <Button link onClick={onBack}>← Learn</Button>
         )}
       </div>
       <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 4px", color: "var(--text1)" }}>
@@ -433,12 +426,7 @@ export function SizeCompare({ onBack }) {
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
-          <button onClick={handlePrint} style={{
-            background: REF_COLOR, color: "#fff", border: "none",
-            padding: "8px 16px", borderRadius: 8,
-            fontSize: 13, fontFamily: "inherit", fontWeight: 500,
-            cursor: "pointer", flex: 1, minWidth: 180,
-          }}>Print to scale (Letter)</button>
+          <Button primary onClick={handlePrint} style={{ flex: 1, minWidth: 180 }}>Print to scale (Letter)</Button>
         </div>
       </div>
 

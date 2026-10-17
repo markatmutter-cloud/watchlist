@@ -22,7 +22,7 @@ import CardStrip from "./CardStrip";
 import { Card } from "./Card";
 import { imgSrc } from "../utils";
 import { FONT_SERIF, editorialDisplay, editorialHeading } from "../styles";
-import { Pill, SubTabs } from "../ui";
+import { Pill, SubTabs, Button } from "../ui";
 import { referenceAsListing } from "../data/referencePages";
 
 const SERIF = FONT_SERIF;
@@ -255,28 +255,13 @@ export function ReferencePage({
         return shell(
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: isMobile ? "12px 0 2px" : "14px 0 2px" }}>
             {handleWish && (
-              <button onClick={() => handleWish(asListing)}
-                aria-label={wished ? "Saved (tap to remove)" : "Save this guide"}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer",
-                  fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: "7px 14px",
-                  borderRadius: 999, border: "0.5px solid var(--border)",
-                  background: wished ? "var(--brand-olive-tint-12)" : "var(--surface)",
-                  color: wished ? "var(--brand-olive-ink)" : "var(--text1)",
-                }}>
-                <span style={{ color: wished ? "var(--heart)" : "var(--text2)" }}>{wished ? "♥" : "♡"}</span>
-                {wished ? "Saved" : "Save guide"}
-              </button>
+              <Pill on={!!wished} toggle onClick={() => handleWish(asListing)}
+                aria-label={wished ? "Saved (tap to remove)" : "Save this guide"}>
+                {wished ? "♥ Saved" : "♡ Save guide"}
+              </Pill>
             )}
             {openCollectionPicker && user && (
-              <button onClick={() => openCollectionPicker(asListing)}
-                style={{
-                  cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600,
-                  padding: "7px 14px", borderRadius: 999, border: "0.5px solid var(--border)",
-                  background: "var(--surface)", color: "var(--text1)",
-                }}>
-                Add to list…
-              </button>
+              <Pill onClick={() => openCollectionPicker(asListing)}>Add to list…</Pill>
             )}
           </div>
         );
@@ -380,10 +365,9 @@ export function ReferencePage({
           )}
           {synStories.length > 0 && node.storiesAndImages?.length > 0 && shell(
             <div style={{ paddingTop: 12 }}>
-              <button onClick={() => setMoreStories((v) => !v)}
-                style={{ border: "none", background: "none", cursor: "pointer", padding: 0, color: "var(--brand)", fontSize: 13, fontWeight: 600, fontFamily: "inherit" }}>
+              <Button link onClick={() => setMoreStories((v) => !v)}>
                 {moreStories ? "Fewer stories" : `More reference stories (${synStories.length})`}
-              </button>
+              </Button>
             </div>
           )}
         </>
@@ -408,10 +392,9 @@ export function ReferencePage({
             ))}
             {(node.guides || []).length > FEATURED_SOURCES && (
               <div style={{ paddingTop: 14, borderTop: "0.5px solid var(--border)" }}>
-                <button onClick={() => setAllSources((v) => !v)}
-                  style={{ border: "none", background: "none", cursor: "pointer", padding: 0, color: "var(--brand)", fontSize: 13, fontWeight: 600, fontFamily: "inherit" }}>
-                  {allSources ? "Show fewer sources" : `More sources (${node.guides.length - FEATURED_SOURCES})`}
-                </button>
+                <Button link onClick={() => setAllSources((v) => !v)}>
+                {allSources ? "Show fewer sources" : `More sources (${node.guides.length - FEATURED_SOURCES})`}
+              </Button>
               </div>
             )}
           </div>
@@ -439,7 +422,7 @@ export function ReferencePage({
                   label: <>{label} <span style={{ opacity: 0.7, fontWeight: 500 }}>{market[k].length}</span></>,
                 }))} />
               {market[seg].length > 0 && onViewAll && (
-                <button onClick={() => onViewAll(node.market.refs, seg)} style={{ border: "none", background: "none", cursor: "pointer", padding: 0, color: "var(--brand)", fontSize: 12, fontWeight: 600, fontFamily: "inherit", whiteSpace: "nowrap" }}>View all →</button>
+                <Button link onClick={() => onViewAll(node.market.refs, seg)}>View all →</Button>
               )}
             </div>
             {market[seg].length > 0
@@ -464,7 +447,7 @@ export function ReferencePage({
                   return (
                     <div key={i} style={{ gridColumn: isMobile ? "auto" : "1 / -1", borderTop: "0.5px solid var(--border)", padding: isMobile ? "14px 0" : "16px 0" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5, flexWrap: "wrap" }}>
-                        <button onClick={() => setOpenConn(null)} style={{ border: "none", background: "var(--surface)", color: "var(--text2)", cursor: "pointer", fontFamily: "inherit", fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", padding: "3px 10px", borderRadius: 999 }}>✕ Close</button>
+                        <Pill quiet onClick={() => setOpenConn(null)}>✕ Close</Pill>
                         {chip}<span style={{ fontSize: isMobile ? 16 : 17, fontWeight: 600, color: "var(--text1)" }}>{conn.label}</span>
                       </div>
                       <div style={{ fontSize: 14, lineHeight: 1.5, color: "var(--text2)", maxWidth: 640 }}>{conn.why}</div>

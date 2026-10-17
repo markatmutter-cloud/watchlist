@@ -1,4 +1,5 @@
 import React from "react";
+import { Pill, Button, ModalClose } from "../ui";
 
 // SharedReceiveFrame — the ONE shell every "shared with you" / library surface
 // wraps (Mark 2026-06-01). It owns the common chrome + language + layout so a
@@ -56,7 +57,7 @@ export function SharedReceiveFrame({
           top-left Back is wrong; × where the eye expects close). Returns the
           user to where they were browsing; only when wired. */}
       {onClose && (
-        <button onClick={onClose} aria-label="Close" title="Close" style={closeBtnStyle}>×</button>
+        <ModalClose float onClose={onClose} />
       )}
       {/* [A] Attribution — the single line of chrome copy; no explainer. */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingRight: onClose ? 40 : 0 }}>
@@ -99,31 +100,25 @@ export function SharedReceiveFrame({
           <div style={{ padding: "16px 18px 4px" }}>{identity}</div>
           {/* [C] Action bar — fixed verb order; one olive primary. */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", padding: "12px 18px 18px" }}>
-            {primaryCTA && (primaryCTA.href ? (
-              <a href={primaryCTA.href} target="_blank" rel="noopener noreferrer" onClick={primaryCTA.onClick}
-                style={{ ...primaryBtn, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-                {primaryCTA.label}
-              </a>
-            ) : (
-              <button onClick={primaryCTA.onClick} style={primaryBtn}>{primaryCTA.label}</button>
-            ))}
+            {primaryCTA && (primaryCTA.href
+              ? <Pill primary href={primaryCTA.href} onClick={primaryCTA.onClick}>{primaryCTA.label}</Pill>
+              : <Pill primary onClick={primaryCTA.onClick}>{primaryCTA.label}</Pill>)}
             {signedIn ? (
               <>
                 {onSave && (
-                  <button onClick={onSave} disabled={busy || saved}
-                    style={{ ...subtleBtn, opacity: (busy || saved) ? 0.6 : 1, cursor: busy ? "wait" : (saved ? "default" : "pointer") }}>
+                  <Pill on={saved} onClick={onSave} disabled={busy || saved}>
                     {saved ? "♥ Saved" : (busy ? "Saving…" : "♡ Save")}
-                  </button>
+                  </Pill>
                 )}
-                {onAddToList && <button onClick={onAddToList} style={subtleBtn}>Add to list</button>}
+                {onAddToList && <Pill onClick={onAddToList}>Add to list</Pill>}
               </>
             ) : (
-              onSignIn && <button onClick={onSignIn} style={subtleBtn}>Sign in to save</button>
+              onSignIn && <Pill onClick={onSignIn}>Sign in to save</Pill>
             )}
             {extraActions.map((a) => (
-              <button key={a.label} onClick={a.onClick} style={subtleBtn}>{a.label}</button>
+              <Pill key={a.label} onClick={a.onClick}>{a.label}</Pill>
             ))}
-            {onShare && <button onClick={onShare} style={subtleBtn}>Share</button>}
+            {onShare && <Pill onClick={onShare}>Share</Pill>}
             {/* "Ask Lumé" is NOT a button here (Mark 2026-06-01) — the floating
                 Lumé launcher stays on the surface and pops out an "Ask Lumé"
                 callout, opening seeded with this item (see ChatBubbleHost). */}
@@ -135,7 +130,7 @@ export function SharedReceiveFrame({
       {navCues.length > 0 && (
         <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginTop: 16 }}>
           {navCues.map((c) => (
-            <button key={c.label} onClick={c.onClick} style={navCueStyle}>{c.label}</button>
+            <Button link key={c.label} onClick={c.onClick}>{c.label}</Button>
           ))}
         </div>
       )}
@@ -143,23 +138,3 @@ export function SharedReceiveFrame({
   );
 }
 
-const primaryBtn = {
-  border: "none", background: "var(--brand-olive)", color: "#fff",
-  padding: "10px 18px", borderRadius: 8, fontFamily: "inherit",
-  fontSize: 14, fontWeight: 600, cursor: "pointer",
-};
-const subtleBtn = {
-  border: "0.5px solid var(--border)", background: "var(--surface)", color: "var(--text1)",
-  padding: "10px 16px", borderRadius: 8, fontFamily: "inherit", fontSize: 14, fontWeight: 500, cursor: "pointer",
-};
-const navCueStyle = {
-  border: "none", background: "transparent", color: "var(--text2)",
-  padding: 0, fontFamily: "inherit", fontSize: 13, cursor: "pointer",
-};
-const closeBtnStyle = {
-  position: "absolute", top: 14, right: 14, zIndex: 2,
-  border: "0.5px solid var(--border)", background: "var(--surface)", color: "var(--text1)",
-  width: 32, height: 32, borderRadius: 999, padding: 0,
-  fontFamily: "inherit", fontSize: 20, lineHeight: 1, fontWeight: 400,
-  display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-};

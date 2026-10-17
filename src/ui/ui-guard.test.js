@@ -61,6 +61,9 @@ describe("src/ui", () => {
     "components/ManageListSheet.js", "components/ManualEntryForm.js", "components/ListingPickerModal.js",
     "components/CollectionPickerModal.js", "components/NotePickerModal.js", "components/TrackNewItemModal.js",
     "components/SettingsModal.js", "components/AboutModal.js", "components/WatchDetailSheet.js",
+    "components/SharedReceiveFrame.js", "components/ChallengeFlow.js", "components/AdminTab.js",
+    "components/SizeCompare.js", "components/Links.js", "components/SiteFooter.js",
+    "components/ViewSettingsControls.js",
   ];
   const LEGACY = [
     /from "\.\/StandardFilterBar"/, /from "\.\/PageHeader"/, /from "\.\/Chip"/, /from "\.\/SavedPill"/,
