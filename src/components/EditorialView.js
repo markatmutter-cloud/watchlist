@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { editorialTitle, cardGridStyle } from "../styles";
-import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame } from "../ui";
+import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame, HeaderSearch } from "../ui";
 import { shortHash, imgSrc, fetchJsonCached } from "../utils";
 import { HeartIcon } from "./icons";
 
@@ -566,7 +566,7 @@ export function EditorialView({ isMobile, cols, compact, gridStyle, watchlist, h
   }
 
   // The filter bar, built from src/ui (Mark, 2026-10-17: one definition per piece).
-  // pills left · search centred (its own row on a phone) · count right; the open
+  // pills left · count right (the search is the header's: see HeaderSearch); the open
   // Source / Brand options panel lives INSIDE the sticky zone so it pins with the bar.
   const filterBarJSX = (
     <FilterBar
@@ -574,15 +574,6 @@ export function EditorialView({ isMobile, cols, compact, gridStyle, watchlist, h
       count={loading
         ? "Loading…"
         : `${filtered.length.toLocaleString()} ${filtered.length === 1 ? "article" : "articles"}`}
-      search={
-        <SearchField
-          size={isMobile ? "full" : "row"}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onClear={() => setSearch("")}
-          placeholder="Search articles…"
-          ariaLabel="Search articles" />
-      }
       pills={
         <>
           <Pill on={activeSources.length > 0 || activeFilterPop === "source"} n={activeSources.length || null}
@@ -631,6 +622,16 @@ export function EditorialView({ isMobile, cols, compact, gridStyle, watchlist, h
   // you are), the filter bar sticks under the header, one inset. The old PageHeader, the
   // negative-margin sticky wrapper and the mobile portal into the shell are gone.
   return (
+    <>
+    <HeaderSearch>
+      <SearchField
+        size={isMobile ? "full" : "bar"}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        onClear={() => setSearch("")}
+        placeholder="Search articles…"
+        ariaLabel="Search articles" />
+    </HeaderSearch>
     <PageFrame filterBar={filterBarJSX}>
       {/* Featured strip — top N most-recent articles, shown only when
           no filter / no search is active.
@@ -744,6 +745,7 @@ export function EditorialView({ isMobile, cols, compact, gridStyle, watchlist, h
         )}
       </div>
     </PageFrame>
+    </>
   );
 }
 

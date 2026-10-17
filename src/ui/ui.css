@@ -19,8 +19,8 @@
   --ui-inset: 20px;            /* the one left/right page edge (16px on a phone) */
   --ui-bar-h: 56px;            /* the header bar, every tab */
   --ui-control-h: 36px;        /* pills */
-  --ui-search-h: 38px;         /* search fields (44px on a phone) */
-  --ui-searchrow-h: 59px;      /* a search seated under the phone's tab row */
+  --ui-search-h: 38px;         /* search fields */
+  --ui-searchrow-h: 59px;      /* a search seated under the phone's tab row (54px on a phone) */
   --ui-tabrow-h: 42px;         /* the phone's tab row: what a sticky filter bar sits under */
   --ui-gap: 8px;
   --ui-label-size: 11px;       /* small tracked caps: pills, counts, eyebrows */
@@ -44,7 +44,12 @@
             /* Where pinned chrome ends, for anything that sticks "just below" it (date dividers,
                list quick-jump). A sticky FilterBar raises it to cover itself too. */
             --sticky-top: var(--ui-header-h); }
-.ui-page--phone { --ui-header-h: var(--ui-tabrow-h); }
+/* ONE control height per device (Mark, 2026-10-17: "all still different size boxes"): the
+   pills, the sub-tab track and the search are the same height, 36 on a desktop and 40 on a
+   phone, so nothing in a row is taller than its neighbour. */
+.ui-page--phone { --ui-header-h: var(--ui-tabrow-h); --ui-control-h: 40px; --ui-search-h: 40px;
+                  --ui-searchrow-h: 54px; }
+.ui-search-slot { width: 100%; min-width: 0; }
 .ui-page-stick { position: sticky; top: 0; z-index: 40; background: var(--bg); }
 /* A search seated under the phone's tab row (Watches): sticky with it, and the filter
    bar pins beneath both. */
@@ -183,6 +188,8 @@ a.ui-pill:hover { text-decoration: none; }
                    outline: none; padding: 0; font: 400 14px var(--ui-sans); color: var(--text1);
                    -webkit-appearance: none; appearance: none; }
 .ui-search input::placeholder { color: var(--text3); }
+/* iOS zooms into any field under 16px */
+.ui-page--phone .ui-search input { font-size: 16px; }
 .ui-search input::-webkit-search-cancel-button { display: none; }
 .ui-search-x, .ui-search-act { flex: 0 0 auto; width: 26px; height: 26px; border: none; border-radius: 999px;
                background: none; color: var(--text3); font-size: 17px; line-height: 1; cursor: pointer; }
@@ -221,14 +228,15 @@ a.ui-pill:hover { text-decoration: none; }
 /* Segmented only (Mark, 2026-10-17, D1 A): one track, a solid olive active chip.
    The underline form is gone; do not add it back without a decision. */
 
-.ui-tabs { display: inline-flex; align-items: center; max-width: 100%; padding: 3px; gap: 2px;
+.ui-tabs { display: inline-flex; align-items: center; box-sizing: border-box; height: var(--ui-control-h);
+           max-width: 100%; padding: 3px; gap: 2px;
            border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 .5px var(--border); }
-.ui-tabs button { border: none; border-radius: 999px; padding: 7px 14px; cursor: pointer;
+.ui-tabs button { border: none; border-radius: 999px; height: 100%; padding: 0 14px; cursor: pointer;
                   background: transparent; color: var(--text2); white-space: nowrap;
                   font: 500 13px var(--ui-sans); letter-spacing: .01em;
                   transition: background .15s ease, color .15s ease; }
 .ui-tabs button.is-on { background: var(--brand-olive); color: #fff; font-weight: 600; }
-.ui-tabs-row { padding: 10px 0 8px; display: flex; align-items: baseline;
+.ui-tabs-row { padding: 8px 0 8px; display: flex; align-items: baseline;
                justify-content: space-between; gap: 16px; }
 
 /* ---------- filter bar --------------------------------------------------- */
@@ -267,14 +275,15 @@ a.ui-pill:hover { text-decoration: none; }
      beside three pills wrapped the last pill onto a new row on a 375px phone. */
   .ui-filterbar:not(.ui-filterbar--nosearch) .ui-filterbar-pills { grid-column: 1 / -1; }
   .ui-filterbar:not(.ui-filterbar--nosearch) .ui-filterbar-end { grid-row: 3; grid-column: 1 / -1; justify-content: flex-start; }
+  /* A bar whose right side is only the count (Articles, Guides): the count drops under the pills,
+     where every other phone bar keeps it, instead of squeezing beside them. */
+  .ui-filterbar--endless.ui-filterbar--nosearch .ui-filterbar-end { grid-row: 2; grid-column: 1 / -1; justify-content: flex-start; }
   .ui-frame-in { padding: 0 16px; }
-  .ui-pill { height: 40px; padding: 0 14px; }
-  .ui-pill--icon { width: 40px; padding: 0; }
-  .ui-search { height: 44px; }
+  .ui-frame-in { --ui-control-h: 40px; --ui-search-h: 40px; }
   .ui-chip { height: 34px; }
   .ui-disc { width: 40px; height: 40px; }
   /* the count drops under the tabs rather than squeezing them */
-  .ui-tabs-row { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 0 6px; }
+  .ui-tabs-row { flex-direction: column; align-items: flex-start; gap: 6px; padding: 8px 0 6px; }
 }
 
 /* ---------- Lumé: the launcher dot and the chat ----------------------------- */

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { ReferencePage } from "./ReferencePage";
 import { Breadcrumb } from "./Breadcrumb";
-import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame } from "../ui";
+import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame, HeaderSearch } from "../ui";
 import { editorialHeading, editorialProse, editorialTitle, cardGridStyle, FONT_SERIF } from "../styles";
 import { imgSrc } from "../utils";
 import {
@@ -173,15 +173,6 @@ export function ReferenceBrowse(props) {
     <FilterBar
       sticky
       count={`${cards.length} ${cards.length === 1 ? "guide" : "guides"}`}
-      search={
-        <SearchField
-          size={isMobile ? "full" : "row"}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onClear={() => setQ("")}
-          placeholder="Search guides: brand, model, reference…"
-          ariaLabel="Search guides" />
-      }
       pills={
         <>
           <Pill on={activeBrands.length > 0 || activeFilterPop === "brand"} n={activeBrands.length || null}
@@ -202,6 +193,16 @@ export function ReferenceBrowse(props) {
   );
 
   return (
+    <>
+    <HeaderSearch>
+      <SearchField
+        size={isMobile ? "full" : "bar"}
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        onClear={() => setQ("")}
+        placeholder="Search guides…"
+        ariaLabel="Search guides" />
+    </HeaderSearch>
     <PageFrame filterBar={filterBarJSX}>
       {cards.length === 0 ? (
         <p style={{ fontSize: 13, color: "var(--text3)" }}>
@@ -222,6 +223,7 @@ export function ReferenceBrowse(props) {
         </div>
       )}
     </PageFrame>
+    </>
   );
 }
 

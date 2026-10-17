@@ -15,7 +15,7 @@ import React, { useLayoutEffect, useRef } from "react";
 import { HeartIcon } from "../components/icons";
 import "./ui.css";
 
-export { PageShell } from "./PageShell";
+export { PageShell, HeaderSearch } from "./PageShell";
 
 // Join class names, skipping falsy ones.
 const cx = (...parts) => parts.filter(Boolean).join(" ");
@@ -170,7 +170,7 @@ export function FilterBar({ pills, search, count, end, panel, sticky, stacked })
   }, [sticky]);
   return (
     <div ref={zone} className={cx("ui-filterzone", sticky && "is-sticky")}>
-      <div className={cx("ui-filterbar", !search && "ui-filterbar--nosearch", stacked && "ui-filterbar--stacked")}>
+      <div className={cx("ui-filterbar", !search && "ui-filterbar--nosearch", stacked && "ui-filterbar--stacked", !end && "ui-filterbar--endless")}>
         <div className="ui-filterbar-pills">{pills}</div>
         {search ? <div className="ui-filterbar-search">{search}</div> : null}
         <div className="ui-filterbar-end">{end}<Count>{count}</Count></div>

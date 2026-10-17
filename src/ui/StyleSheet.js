@@ -104,22 +104,32 @@ function SavedSuggestions() {
   );
 }
 
+// The header is the same on every page, search included: wordmark · tabs · search · heart · account
+// on a desktop, brand row · tabs · search row on a phone (Mark, 2026-10-17).
+function DemoHeader({ phone, active, search }) {
+  return phone
+    ? <><MagazineBrandRow authJSX={<AccountDisc initial="M" />} showSaved onSavedClick={noop} onHome={noop} />
+        <div className="ss-phone-stick"><MagazineTabRow tabs={demoTabs(active)} />
+          <div className="ss-phone-search">{search}</div></div></>
+    : <MagazineShellBar tabs={demoTabs(active)} authJSX={<AccountDisc initial="M" />} showSaved onSavedClick={noop}
+                        onHome={noop} searchJSX={search} />;
+}
+
 function ArticlesPage({ phone }) {
   const [q, setQ] = useState("");
   const [saved, setSaved] = useState(false);
+  const search = (
+    <SearchField size={phone ? "full" : "bar"} value={q} onChange={(e) => setQ(e.target.value)}
+                 onClear={() => setQ("")} placeholder="Search articles…" ariaLabel="Search articles" />
+  );
   return (
     <>
-      {phone
-        ? <><MagazineBrandRow authJSX={<AccountDisc initial="M" />} showSaved onSavedClick={noop} onHome={noop} />
-            <MagazineTabRow tabs={demoTabs("articles")} /></>
-        : <MagazineShellBar tabs={demoTabs("articles")} authJSX={<AccountDisc initial="M" />} showSaved onSavedClick={noop} onHome={noop} />}
+      <DemoHeader phone={phone} active="articles" search={search} />
       <PageFrame
         filterBar={
           <FilterBar
             pills={<><TogglePill>Source</TogglePill><TogglePill>Brand</TogglePill>
                     <SavedPill on={saved} onClick={() => setSaved((v) => !v)} what="saved articles" /></>}
-            search={<SearchField size={phone ? "full" : "row"} value={q} onChange={(e) => setQ(e.target.value)}
-                                  onClear={() => setQ("")} placeholder="Search articles…" ariaLabel="Search articles" />}
             count="11,288 articles" />
         }>
         <Cards n={phone ? 3 : 8} />
@@ -141,12 +151,7 @@ function WatchesPage({ phone }) {
   );
   return (
     <>
-      {phone
-        ? <><MagazineBrandRow authJSX={<AccountDisc initial="M" />} showSaved onSavedClick={noop} onHome={noop} />
-            <div className="ss-phone-stick"><MagazineTabRow tabs={demoTabs("listings")} />
-              <div className="ss-phone-search">{search}</div></div></>
-        : <MagazineShellBar tabs={demoTabs("listings")} authJSX={<AccountDisc initial="M" />} showSaved onSavedClick={noop}
-                            onHome={noop} searchJSX={search} />}
+      <DemoHeader phone={phone} active="listings" search={search} />
       <PageFrame
         subTabs={<SubTabs ariaLabel="Watches views" activeKey={sub} onSelect={setSub} tabs={WATCH_TABS} />}
         subTabsEnd={<Count>4,503 watches</Count>}
@@ -324,9 +329,9 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
         <Section id="anatomy" title="1 · The page anatomy"
                  note="Every page is these four bands, in this order, at one left edge (20px; 16px on a phone). Any band can be absent; none can move.">
           <ol className="ss-anatomy">
-            <li><b>Header bar</b>: wordmark · tabs · (Watches only: its search) · heart · account. 56px, every tab. Home keeps its masthead.</li>
+            <li><b>Header bar</b>: wordmark · tabs · search · heart · account. 56px, every tab, and the search is the same box in the same place on every page that has one (a phone: a 40px search row under the tabs). Home keeps its masthead on a desktop.</li>
             <li><b>Sub-tabs</b>: optional; "where you are", always the segmented control. The count can sit at their right.</li>
-            <li><b>Filter bar</b>: pills left · search centred · count right. On a phone the search takes its own row above.</li>
+            <li><b>Filter bar</b>: pills left · the page's controls and count right. It carries no search of its own (the search is the header's); a phone drops the count under the pills.</li>
             <li><b>Content</b>: cards, lists, whatever the page is for. There is no page title; the header's active tab says where you are.</li>
           </ol>
         </Section>
@@ -358,7 +363,8 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
               <tr><td>Page edge</td><td>20px · 16px phone</td></tr>
               <tr><td>Header bar</td><td>56px</td></tr>
               <tr><td>Pills</td><td>36px · 40px phone</td></tr>
-              <tr><td>Search field</td><td>38px · 44px phone</td></tr>
+              <tr><td>Sub-tab track</td><td>36px · 40px phone (same as a pill)</td></tr>
+              <tr><td>Search field</td><td>37 to 38px · 40px phone</td></tr>
               <tr><td>Account disc</td><td>36px · 40px phone</td></tr>
             </tbody>
           </table>
@@ -366,17 +372,20 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
 
         <Section id="pieces" title="3 · The pieces"
                  note="Each is one component in src/ui. Change it there and it changes everywhere.">
-          <Specimen label="Header bar: Watches (search seated in it) and the rest">
+          <Specimen label="Header bar: with a search seated in it, and without (a page with nothing to search)">
             <div className="ss-bar-demo">
               <MagazineShellBar tabs={demoTabs("listings")} authJSX={<AccountDisc initial="M" />} showSaved onSavedClick={noop} onHome={noop}
                 searchJSX={<SearchField size="bar" value="" onChange={noop} placeholder="Brand, model, reference" />} />
               <MagazineShellBar tabs={demoTabs("articles")} authJSX={<AccountDisc initial="M" />} showSaved onSavedClick={noop} onHome={noop} />
             </div>
           </Specimen>
-          <Specimen label="Header bar: phone (brand row scrolls away; tabs stay)">
+          <Specimen label="Header bar: phone (brand row scrolls away; tabs and the search row stay)">
             <div className="ss-phone-box">
               <MagazineBrandRow authJSX={<AccountDisc initial="M" />} showSaved onSavedClick={noop} onHome={noop} />
               <MagazineTabRow tabs={demoTabs("articles")} />
+              <div className="ss-phone-search">
+                <SearchField size="full" value="" onChange={noop} placeholder="Brand, model, reference" />
+              </div>
             </div>
           </Specimen>
           <Specimen label="Pill: default · selected · with a count · with an icon · icon-only (Saved) · quiet">
@@ -460,13 +469,13 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
             </div>
             <p className="ss-small">A focused full page (one auction sale) swaps the tab header for its own olive title bar, with the sale as a mono eyebrow, and a quiet row of actions that are the same pills. Its filter bar carries a search of its own plus the calendar, so it stacks: search on its own row, pills and controls under it. Every other page keeps the header and the one-line bar.</p>
           </Specimen>
-          <h3 className="ss-h3">Articles-like (filter bar with the search in the row)</h3>
+          <h3 className="ss-h3">Articles-like (no sub-tabs: the filter bar sits straight under the header)</h3>
           <div className="ss-screen"><ArticlesPage /></div>
           <div className="ss-phones">
             <div className="ss-phone"><ArticlesPage phone /></div>
             <div className="ss-phone"><WatchesPage phone /></div>
           </div>
-          <h3 className="ss-h3">Watches-like (sub-tabs with the count · search seated in the header)</h3>
+          <h3 className="ss-h3">Watches-like (sub-tabs with the count, then the filter bar)</h3>
           <div className="ss-screen"><WatchesPage /></div>
         </Section>
 
