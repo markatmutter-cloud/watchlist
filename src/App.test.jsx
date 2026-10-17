@@ -230,7 +230,7 @@ describe("App render-without-crash", () => {
     window.history.replaceState({}, "", "/");
   });
 
-  test("the browser tint follows the page: paper on the Watches page, olive only over the olive bar", async () => {
+  test("the browser tint follows the page: paper on every page, so never olive over a light one", async () => {
     // Mark, 2026-10-16: an olive toolbar over a light Watches page "looks
     // weird". The tint used to be olive on every tab but Home.
     const tint = () => document.querySelector('meta[name="theme-color"]:not([media])').getAttribute("content");
@@ -252,13 +252,13 @@ describe("App render-without-crash", () => {
     });
     expect(tint()).toBe("#ffffff");
     second.unmount();
-    // ...olive only over a surface that still wears the legacy olive bar.
+    // ...and no page keeps the olive bar any more, so Watchbox is paper too.
     window.history.replaceState({}, "", "/?tab=watchbox&look=old");
     render(<App />);
     await waitFor(() => {
       expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
     });
-    expect(tint()).toBe("#3b4a36");
+    expect(tint()).toBe("#ffffff");
     document.head.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
     window.localStorage.removeItem("dial_look"); // ?look=old is sticky
     window.history.replaceState({}, "", "/");
@@ -336,14 +336,27 @@ describe("App render-without-crash", () => {
     window.history.replaceState({}, "", "/");
   });
 
-  test("the tools under the references container (size comparison) still use the shells", async () => {
+  test("the tools under the references container (size comparison) are built from src/ui too", async () => {
     window.history.replaceState({}, "", "/?tab=references&sub=size");
     const { default: App } = require("./App");
     render(<App />);
     await waitFor(() => {
       expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
     });
-    expect(document.querySelector(".ui-page")).toBeNull();
+    expect(document.querySelector(".ui-page")).not.toBeNull();
+    expect(document.querySelector("[data-desktop-main]")).toBeNull();
+    window.history.replaceState({}, "", "/");
+  });
+
+  test("Watchbox is built from src/ui as well", async () => {
+    window.history.replaceState({}, "", "/?tab=watchbox");
+    const { default: App } = require("./App");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    expect(document.querySelector(".ui-page")).not.toBeNull();
+    expect(document.querySelector("[data-desktop-main]")).toBeNull();
     window.history.replaceState({}, "", "/");
   });
 
