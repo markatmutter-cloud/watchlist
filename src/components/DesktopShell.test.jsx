@@ -28,16 +28,16 @@ describe("DesktopShell", () => {
     expect(screen.getAllByLabelText("Home").length).toBeGreaterThanOrEqual(1);
   });
 
-  test("renders the four main tabs (Watches / Saved / Articles / Reference Guides)", () => {
+  test("renders the three main tabs (Watches / Articles / Reference Guides) and no Saved tab", () => {
     render(<DesktopShell {...buildMockShellProps()} />);
-    // 2026-06-03 IA restructure: Collecting dissolved into top-level
-    // Articles + Reference Guides; "Lists" tab renamed "Saved". Desktop
-    // shows the full "Reference Guides" label (mobile shows "Guides").
-    // Labels come from the shared topTabs model (src/topTabs.js).
+    // 2026-10-16 (Mark): the Saved top tab is retired. Lists moved to the
+    // account menu, saved searches to the search bar, saved watches to the heart.
+    // Labels come from the shared topTabs model (src/topTabs.js). Desktop shows
+    // the full "Reference Guides" label (mobile shows "Guides").
     expect(screen.getAllByText("Watches").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Saved").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Articles").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Reference Guides")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Saved" })).not.toBeInTheDocument();
     // Retired labels stay retired.
     expect(screen.queryByText("Collecting")).not.toBeInTheDocument();
     expect(screen.queryByText("Collections")).not.toBeInTheDocument();

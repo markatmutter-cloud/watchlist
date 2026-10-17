@@ -106,12 +106,11 @@ export function buildMockShellProps(overrides = {}) {
     listingsGridJSX: <div data-testid="listings-grid" />,
     listingsTabContentJSX: <div data-testid="listings-tab-content" />,
     listingsSubTabsJSX: <div data-testid="listings-sub-tabs" />,
-    // Top-tab model (2026-06-03 IA: Watches · Saved · Articles · Reference
-    // Guides) — mirrors what App.js builds from src/topTabs.js.
+    // Top-tab model (2026-10-16: Watches · Articles · Reference Guides — no
+    // Saved tab) — mirrors what App.js builds from src/topTabs.js.
     // referencesSubTabsJSX retired the same pass.
     topTabs: [
-      { key: "listings",  label: "Watches",  mobileLabel: "Watches",  icon: "listings",   active: false, onSelect: noop },
-      { key: "watchlist", label: "Saved",    mobileLabel: "Saved",    icon: "watchlist",  active: true,  onSelect: noop },
+      { key: "listings",  label: "Watches",  mobileLabel: "Watches",  icon: "listings",   active: true,  onSelect: noop },
       { key: "articles",  label: "Articles", mobileLabel: "Articles", icon: "articles",   active: false, onSelect: noop },
       { key: "guides", label: "Reference Guides", mobileLabel: "Guides", icon: "references", active: false, onSelect: noop },
     ],

@@ -81,15 +81,15 @@ describe("MobileShell", () => {
     expect(screen.queryByLabelText("Filters")).not.toBeInTheDocument();
   });
 
-  test("renders the main tabs: Watches + Saved + Articles + Guides", () => {
+  test("renders the main tabs: Watches + Articles + Guides, and no Saved tab", () => {
     render(<MobileShell {...buildMockShellProps()} />);
-    // 2026-06-03 IA restructure: Collecting dissolved into top-level
-    // Articles + Reference Guides ("Guides" on mobile); "Lists" tab
-    // renamed "Saved". Labels come from the shared topTabs model
-    // (src/topTabs.js). Brand title still says "Watchlist".
+    // 2026-10-16 (Mark): the Saved top tab is retired (Lists → account menu,
+    // saved searches → search bar). Labels come from the shared topTabs model
+    // (src/topTabs.js); "Guides" is the mobile label. Brand title still says
+    // "Watchlist".
     expect(screen.getAllByText("Watchlist").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Watches").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Saved").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByRole("button", { name: "Saved" })).not.toBeInTheDocument();
     expect(screen.getAllByText("Articles").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Guides")).toBeInTheDocument();
     expect(screen.queryByText("Collecting")).not.toBeInTheDocument();

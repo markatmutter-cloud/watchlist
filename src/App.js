@@ -3423,6 +3423,19 @@ export default function Watchlist() {
               vault, alongside its anchor on the Lists tab). About lives
               in the top nav; admin Site stats stays. */}
           <div style={{ marginTop: 8 }}>
+            {/* Lists live here now (Mark, 2026-10-16), not under a Saved top tab.
+                The container is still internal tab "watchlist"; this opens it on
+                Lists. setTabWithReceiveEscape so a share-receive landing is
+                dismissed first, like the other entries that leave the page. The
+                sub-tab is set AFTER it: a tab change resets the container to its
+                first sub-tab ("hearted"), which would otherwise win. */}
+            <button onClick={() => { setShowUserMenu(false); setTabWithReceiveEscape("watchlist"); setWatchTopTab("lists"); setPage(1); }}
+              style={{ display: "block", width: "100%", textAlign: "left",
+                      padding: "8px 8px", border: "none", background: "transparent",
+                      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
+                      fontSize: 13, fontWeight: 500, borderRadius: 6 }}>
+              Lists
+            </button>
             <button onClick={() => { setShowUserMenu(false); setTab("watchbox"); setPage(1); }}
               style={{ display: "block", width: "100%", textAlign: "left",
                       padding: "8px 8px", border: "none", background: "transparent",
