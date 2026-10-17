@@ -11,7 +11,7 @@
 // the style sheet — not hand-roll one. ui-guard.test.js fails the build when a
 // migrated page does.
 
-import React, { useLayoutEffect, useRef } from "react";
+import React, { forwardRef, useEffect, useLayoutEffect, useRef } from "react";
 import { HeartIcon } from "../components/icons";
 import "./ui.css";
 
@@ -92,24 +92,92 @@ export function PriceRange({ min, max, onMin, onMax, onClear }) {
   );
 }
 
-// ---- Button: the sheet's actions ("Show 12 watches", "Reset") ------------------------
+// ---- Button: an action in a sheet, a modal or an empty state ("Show 12 watches", "Save") ------
+//   primary  the one main action: solid olive (the same olive as "on" everywhere)
+//   danger   a destructive confirm: solid danger
+//   small    the modal-footer size
 //   inline   sized to its label instead of growing to fill a row (a sign-in button in an empty state)
-export function Button({ primary, inline, children, className, ...rest }) {
+//   block    the full width of its container, content centred (a modal's "Continue with Google")
+export function Button({ primary, danger, small, inline, block, children, className, ...rest }) {
+  const kind = danger ? "ui-btn--danger" : primary ? "ui-btn--primary" : "ui-btn--ghost";
   return (
-    <button type="button" className={cx("ui-btn", primary ? "ui-btn--primary" : "ui-btn--ghost", inline && "ui-btn--inline", className)} {...rest}>
+    <button type="button" className={cx("ui-btn", kind, small && "ui-btn--sm", inline && "ui-btn--inline", block && "ui-btn--block", className)} {...rest}>
       {children}
     </button>
   );
 }
 
+// ---- Input / Textarea: the one form field --------------------------------------------------
+export const Input = forwardRef(function Input({ className, ...rest }, ref) {
+  return <input ref={ref} className={cx("ui-input", className)} {...rest} />;
+});
+export const Textarea = forwardRef(function Textarea({ className, ...rest }, ref) {
+  return <textarea ref={ref} className={cx("ui-input ui-input--area", className)} {...rest} />;
+});
+
+// ---- Modal: a dialog over the page --------------------------------------------------------------
+//   title     the heading (a Bodoni name, like a section head), with the × beside it
+//   onClose   the × / the scrim / Escape. `locked` turns the scrim and Escape off (while saving)
+//   width     max width in px (default 440)
+//   sheet     flush layout: a pinned head, and the body scrolls (Settings, a watch's details)
+//   full      the sheet fills a phone screen
+//   bare      no head at all, for a modal that lays itself out (About)
+//   top       align to the top on a phone (About)
+//   headAction  replaces the x in the head (the list picker's Done: its toggles are live, so Done is the close)
+export function Modal({ title, onClose, width = 440, locked, sheet, full, bare, top, headAction, ariaLabel, className, children }) {
+  useEffect(() => {
+    if (!onClose || locked) return undefined;
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose, locked]);
+  return (
+    <div className={cx("ui-modal-scrim", top && "ui-modal-scrim--top", full && "ui-modal-scrim--full")}
+         onClick={locked ? undefined : onClose}>
+      <div className={cx("ui-modal", sheet && "ui-modal--sheet", full && "ui-modal--full", bare && "ui-modal--bare", className)}
+           style={{ "--ui-modal-w": `${width}px` }}
+           role="dialog" aria-modal="true" aria-label={ariaLabel || (typeof title === "string" ? title : undefined)}
+           onClick={(e) => e.stopPropagation()}>
+        {bare ? children : (
+          <>
+            <div className="ui-modal-head">
+              <h2 className="ui-modal-title">{title}</h2>
+              {headAction || <ModalClose onClose={onClose} />}
+            </div>
+            {sheet ? <div className="ui-modal-body">{children}</div> : children}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+export function ModalClose({ onClose, float }) {
+  return (
+    <button type="button" className={cx("ui-modal-x", float && "ui-modal-x--float")} aria-label="Close" onClick={onClose}>&times;</button>
+  );
+}
+//   ModalNote: the quiet line under a title.  ModalFoot: the right-aligned row of actions.
+export function FieldLabel({ children }) { return <div className="ui-field-label">{children}</div>; }
+export function ModalLabel({ children }) { return <div className="ui-modal-label">{children}</div>; }
+export function ModalNote({ children }) { return <p className="ui-modal-note">{children}</p>; }
+export function ModalError({ children }) { return children ? <p className="ui-modal-error" role="alert">{children}</p> : null; }
+export function ModalFoot({ children }) { return <div className="ui-modal-foot">{children}</div>; }
+
 // ---- SubTabs: "where you are" ------------------------------------------------------
 //   Segmented only: one track, a solid olive active chip (Mark, 2026-10-17).
 //   tabs      [{ key, label, ariaLabel? }]   (ariaLabel for an icon-only tab)
-export function SubTabs({ tabs, activeKey, onSelect, ariaLabel }) {
+//   block     fills its container, the options sharing the width (a choice in a settings dialog)
+//   choice    announced as a radio group (picking a setting) rather than tabs (views of a page)
+export function SubTabs({ tabs, activeKey, onSelect, ariaLabel, block, choice }) {
+  // `choice`: the same segmented look for picking ONE setting (currency, theme), announced as a
+  // radio group rather than as views of a page.
+  const group = choice ? "radiogroup" : "tablist";
   return (
-    <div className="ui-tabs" role="tablist" aria-label={ariaLabel}>
+    <div className={cx("ui-tabs", block && "ui-tabs--block")} role={group} aria-label={ariaLabel}>
       {tabs.map((t) => (
-        <button key={t.key} type="button" role="tab" aria-selected={activeKey === t.key}
+        <button key={t.key} type="button" role={choice ? "radio" : "tab"}
+                aria-selected={choice ? undefined : activeKey === t.key}
+                aria-checked={choice ? activeKey === t.key : undefined}
                 aria-label={t.ariaLabel} title={t.ariaLabel}
                 className={activeKey === t.key ? "is-on" : undefined}
                 onClick={() => onSelect && onSelect(t.key)}>
@@ -168,6 +236,24 @@ export function AccountDisc({ initial, onClick, ...rest }) {
   return (
     <button type="button" className="ui-disc" aria-label="Account menu" title="Account menu"
             onClick={onClick} {...rest}>{initial}</button>
+  );
+}
+
+// ---- PickRow: one row in a "choose from a list" dialog ---------------------------------------
+//   meta     the quiet text at the right ("3 items")
+//   checked  undefined for a plain pick (saves on tap); true / false for a live toggle (shows a box)
+export function PickRow({ children, meta, checked, className, ...rest }) {
+  return (
+    <button type="button" className={cx("ui-pickrow", checked && "is-on", className)}
+            aria-pressed={checked === undefined ? undefined : !!checked} {...rest}>
+      <span className="ui-pickrow-main">
+        {checked === undefined ? null : (
+          <span className="ui-pickrow-box" aria-hidden="true">{checked ? "✓" : ""}</span>
+        )}
+        <span className="ui-pickrow-name">{children}</span>
+      </span>
+      {meta ? <span className="ui-pickrow-meta">{meta}</span> : null}
+    </button>
   );
 }
 

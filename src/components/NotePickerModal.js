@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase } from "../styles";
+import { Modal, Button, PickRow } from "../ui";
 
 // Note picker — opens when Lumé's save_note action fires. Drops a note into an
 // existing list OR a new one (single-select: tap a list → the note saves there
@@ -62,15 +62,7 @@ export function NotePickerModal({
   };
 
   return (
-    <div onClick={close} style={modalBackdrop}>
-      <div onClick={(e) => e.stopPropagation()} style={{
-        ...modalShell, maxWidth: 420, maxHeight: "75vh", overflowY: "auto",
-      }}>
-        <div style={modalTitleRow}>
-          <div style={modalTitle}>Save note to a list</div>
-          <button onClick={close} aria-label="Close" style={modalCloseButton}>×</button>
-        </div>
-
+    <Modal title="Save note to a list" onClose={close} width={420}>
         {/* The note being saved. */}
         <div style={{
           fontSize: 13, color: "var(--text1)", background: "var(--card-bg)",
@@ -86,37 +78,23 @@ export function NotePickerModal({
           </div>
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
+        <div className="ui-pickrow-list">
           {visible.map((c) => {
             const count = countFor(c);
             return (
-              <button
-                key={c.id}
-                onClick={() => saveTo(c.id)}
-                disabled={busy}
-                title="Save the note to this list"
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "12px 14px", borderRadius: 10,
-                  border: "0.5px solid var(--border)", background: "var(--card-bg)",
-                  color: "var(--text1)", cursor: busy ? "wait" : "pointer",
-                  fontFamily: "inherit", fontSize: 14, textAlign: "left", width: "100%",
-                }}
-              >
-                <span style={{ fontWeight: 500 }}>{c.name}</span>
-                <span style={{ fontSize: 12, color: "var(--text3)" }}>
-                  {`${count} item${count === 1 ? "" : "s"}`}
-                </span>
-              </button>
+              <PickRow key={c.id} disabled={busy} title="Save the note to this list"
+                meta={`${count} item${count === 1 ? "" : "s"}`}
+                onClick={() => saveTo(c.id)}>
+                {c.name}
+              </PickRow>
             );
           })}
         </div>
 
-        {error && <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 8 }}>{error}</div>}
+        {error && <p className="ui-modal-error">{error}</p>}
 
         {creating ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12, borderRadius: 10,
-                        border: "0.5px solid var(--border)", background: "var(--card-bg)" }}>
+          <div className="ui-pickbox">
             <input
               autoFocus
               value={newName}
@@ -124,29 +102,16 @@ export function NotePickerModal({
               onKeyDown={(e) => { if (e.key === "Enter") submitNew(); }}
               placeholder="New list name"
               autoCapitalize="words" autoCorrect="off" spellCheck={false}
-              style={{ ...inputBase, fontSize: 14 }}
+              className="ui-input"
             />
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button onClick={() => { setCreating(false); setNewName(""); setError(""); }} style={{
-                border: "0.5px solid var(--border)", background: "transparent", color: "var(--text2)",
-                padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              }}>Cancel</button>
-              <button onClick={submitNew} disabled={busy || !newName.trim()} style={{
-                border: "none", background: "var(--brand-olive)", color: "#fff",
-                padding: "6px 12px", borderRadius: 6, cursor: "pointer",
-                fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-                opacity: (!newName.trim() || busy) ? 0.5 : 1,
-              }}>Create + save</button>
+              <Button small onClick={() => { setCreating(false); setNewName(""); setError(""); }}>Cancel</Button>
+              <Button small primary onClick={submitNew} disabled={busy || !newName.trim()}>Create + save</Button>
             </div>
           </div>
         ) : (
-          <button onClick={() => setCreating(true)} style={{
-            width: "100%", textAlign: "left", padding: "12px 14px", borderRadius: 10,
-            border: "0.5px dashed var(--border)", background: "transparent",
-            color: "var(--brand)", cursor: "pointer", fontFamily: "inherit", fontSize: 14,
-          }}>+ Create new list</button>
+          <Button block small onClick={() => setCreating(true)}>+ Create new list</Button>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }

@@ -56,6 +56,11 @@ describe("src/ui", () => {
     "components/CollectionsTab.js", "components/AuctionCalendar.js", "components/ReferencePage.js",
     "components/SearchResultsView.js", "components/ActiveFiltersStrip.js", "components/ChallengesView.js",
     "components/ChallengeReceiver.js", "components/ListReviewMode.js",
+    "components/CollectionEditModal.js", "components/FavSearchModal.js", "components/AddSearchModal.js",
+    "components/ConfirmModal.js", "components/SignInPromptModal.js", "components/MarkAsSoldModal.js",
+    "components/ManageListSheet.js", "components/ManualEntryForm.js", "components/ListingPickerModal.js",
+    "components/CollectionPickerModal.js", "components/NotePickerModal.js", "components/TrackNewItemModal.js",
+    "components/SettingsModal.js", "components/AboutModal.js", "components/WatchDetailSheet.js",
   ];
   const LEGACY = [
     /from "\.\/StandardFilterBar"/, /from "\.\/PageHeader"/, /from "\.\/Chip"/, /from "\.\/SavedPill"/,

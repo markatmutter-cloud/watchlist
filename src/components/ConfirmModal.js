@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { modalBackdrop, modalShell, actionButton } from "../styles";
+import { Modal, ModalNote, ModalFoot, Button } from "../ui";
 
 // Imperative-API styled confirm dialog. Replaces window.confirm
 // across the app so confirmations match the rest of the UI in light/
@@ -55,8 +55,8 @@ export function ConfirmHost() {
   useEffect(() => {
     if (!req) return undefined;
     const onKey = (e) => {
-      if (e.key === "Escape") handleCancel();
-      else if (e.key === "Enter") handleConfirm();
+      // Escape is the Modal's own (it calls handleCancel); Enter confirms.
+      if (e.key === "Enter") handleConfirm();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -72,76 +72,16 @@ export function ConfirmHost() {
     tone = "default",
   } = req;
 
-  // PR 2026-05-22 visual refresh (Mark feedback "modal could be
-  // better"): bumped typography + filled CTA buttons. Danger gets
-  // a solid red fill instead of red-on-transparent so destructive
-  // actions read as visibly weighted; default tone uses the olive
-  // primary (actionButton.primary is olive site-wide now).
-  const cancelStyle = {
-    ...actionButton({ variant: "subtle" }),
-    padding: "10px 16px",
-    fontSize: 13, fontWeight: 500,
-  };
-  const confirmStyle = tone === "danger"
-    ? {
-        padding: "10px 16px", borderRadius: 6,
-        fontFamily: "inherit", fontSize: 13, fontWeight: 600,
-        cursor: "pointer", whiteSpace: "nowrap",
-        border: "none",
-        background: "var(--danger)", color: "#fff",
-      }
-    : {
-        ...actionButton({ variant: "primary" }),
-        padding: "10px 18px",
-        fontSize: 13, fontWeight: 600,
-      };
-
   const overlay = (
-    <div
-      style={modalBackdrop}
-      onMouseDown={(e) => { if (e.target === e.currentTarget) handleCancel(); }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={title ? "confirm-modal-title" : undefined}
-    >
-      <div style={{ ...modalShell, maxWidth: 440 }}>
-        {title && (
-          <h2 id="confirm-modal-title" style={{
-            margin: "0 0 10px",
-            fontSize: 17, fontWeight: 600,
-            color: "var(--text1)",
-            letterSpacing: "-0.01em",
-            lineHeight: 1.3,
-          }}>
-            {title}
-          </h2>
-        )}
-        {message && (
-          <p style={{
-            margin: title ? "0 0 22px" : "0 0 22px",
-            fontSize: 14, lineHeight: 1.5,
-            color: "var(--text2)",
-          }}>
-            {message}
-          </p>
-        )}
-        <div style={{
-          display: "flex", justifyContent: "flex-end",
-          gap: 8, marginTop: 4,
-        }}>
-          <button onClick={handleCancel} style={cancelStyle}>
-            {cancelLabel}
-          </button>
-          <button
-            onClick={handleConfirm}
-            autoFocus
-            style={confirmStyle}
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+    <Modal title={title || "Are you sure?"} ariaLabel={title || "Confirm"} onClose={handleCancel} width={440}>
+      {message ? <ModalNote>{message}</ModalNote> : null}
+      <ModalFoot>
+        <Button small onClick={handleCancel}>{cancelLabel}</Button>
+        <Button small primary={tone !== "danger"} danger={tone === "danger"} autoFocus onClick={handleConfirm}>
+          {confirmLabel}
+        </Button>
+      </ModalFoot>
+    </Modal>
   );
 
   return createPortal(overlay, document.body);

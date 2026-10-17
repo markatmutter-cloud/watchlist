@@ -44,17 +44,19 @@ describe("standard-library chrome contract", () => {
 
   test("the legacy pill, header and chip helpers stay deleted", () => {
     // PageHeader, pillBase, innerToggleButton, tabPill, segTrack/segItem, producedPill, iconButton,
-    // clearAllPill, dismissChip and the CHROME metrics sheet were deleted 2026-10-17 when the last
+    // clearAllPill, dismissChip, the CHROME metrics sheet and the button / input / modal helpers
+    // (actionButton, inputBase, modalShell, ...) were deleted 2026-10-17 when the last
     // page using them moved onto src/ui (Pill / SubTabs / Chip / DismissChip / SectionHead /
     // JumpNav). Build from src/ui; don't resurrect them.
     expect(fs.existsSync(path.join(COMPONENTS, "PageHeader.js"))).toBe(false);
     const styles = readSrc("styles.js");
     for (const gone of ["pillBase", "innerToggleButton", "tabPill", "segTrack", "segItem", "producedPill",
-                        "iconButton", "clearAllPill", "dismissChip", "magLabel", "SELECTED_FILL", "export const CHROME"]) {
+                        "iconButton", "clearAllPill", "dismissChip", "magLabel", "SELECTED_FILL", "export const CHROME",
+                        "actionButton", "signInButton", "inputBase", "modalBackdrop", "modalShell", "modalCloseButton"]) {
       expect(styles).not.toContain(gone);
     }
     const offenders = componentFiles.filter((f) =>
-      /\b(pillBase|innerToggleButton|PageHeader|clearAllPill|producedPill)\b/.test(
+      /\b(pillBase|innerToggleButton|PageHeader|clearAllPill|producedPill|actionButton|inputBase|modalShell|modalBackdrop)\b/.test(
         readComponent(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/[^\n]*/g, "$1")));
     expect(offenders).toEqual([]);
   });

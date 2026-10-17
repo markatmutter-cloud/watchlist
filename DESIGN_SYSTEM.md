@@ -158,8 +158,6 @@ the sub-tab's active segment, a dismissable filter); a quiet "present but not ch
 | `FONT_SANS` / `FONT_SERIF` / `FONT_SERIF_DISPLAY` | The font stacks (the one place a family string lives) |
 | `editorialDisplay` / `editorialHeading` / `editorialTitle` / `editorialProse` | The editorial type ramp (articles, reference guides) |
 | `cardGridStyle({ isMobile })` | **Shared content-card grid** — `auto-fill minmax(280px,1fr)` desktop / 1-col mobile. Article cards · reference-guide cards · list cards all use it so the three families are the same size |
-| `actionButton` / `signInButton` / `inputBase` | Form helpers used by the modals, until the modals move onto `src/ui` |
-| `modalBackdrop` / `modalShell` / `modalCloseButton` / `modalTitleRow` / `modalTitle` | Modal primitives (same caveat). AboutModal is the only documented exception (absolute-positioned close button) |
 
 ## 3. Reusable React components — `src/components/`
 
@@ -194,9 +192,13 @@ they lived in are deleted.)
 - **Inside a page:** `SectionHead` (the heading for a thing on the page, such as a list's name, with its
   actions as pills; not a page title), `DismissChip` (a selected filter you can take off), `JumpNav` (a sticky row
   of pills that scrolls to a section), `Pill primary` (the one main action) and `Button` (sign-in, sheet actions).
-  The old `PageHeader`, `pillBase`, `innerToggleButton`, `CHROME` and the other pill helpers in `styles.js` are
-  deleted; `chrome-guard` fails the build if they return. `styles.js` keeps the editorial type ramp and, until the
-  modals move onto `src/ui`, the modal and form helpers.
+  The old `PageHeader`, `pillBase`, `innerToggleButton`, `CHROME`, `actionButton`, `inputBase`, `modalShell` and the
+  other chrome helpers in `styles.js` are deleted; `chrome-guard` fails the build if they return. `styles.js` keeps only
+  the font stacks, the editorial type ramp and `cardGridStyle`.
+- **Dialogs:** `Modal` (title + close, `sheet` for a pinned head over a scrolling body, `full` on a phone, `bare` for a
+  self-laid-out one) with `ModalNote` / `ModalError` / `ModalFoot`, `Input` / `Textarea` / `FieldLabel`, `PickRow` for a
+  list picker, and `SubTabs choice block` for a setting. The main action is `Button primary` (solid olive), a destructive
+  confirm is `Button danger`.
 - **`topTabs.js`** — the only home of top-tab labels (Watches · Articles ·
   Reference Guides / "Guides" mobile); the one header + the Home masthead
   consume the same built model.
@@ -225,7 +227,7 @@ and panel sit at 1400; the phone filter sheet (1450) covers the dot so it can't 
 - **Selected / "on" state?** The shared solid olive (`Pill on`, `Chip on`, the sub-tab's active segment). Never invent a per-surface selected look.
 - **Clearing filters?** ONE pattern: the filter bar's `× Clear all` pill clears everything; each active filter is a `DismissChip` that removes one value. Don't add per-dimension clear buttons.
 - **A heading inside a page** (a list's name, with actions)? `SectionHead`. A long page's jump links? `JumpNav`. Neither is a page title.
-- **New modal?** `modalBackdrop` + `modalShell` + `modalTitleRow` + `modalTitle` + `modalCloseButton`, with `inputBase` for inputs, until the modals move onto `src/ui`.
+- **New modal?** `Modal` from `src/ui` (+ `ModalNote` / `ModalFoot` / `Input` / `Button`). Never a hand-rolled backdrop and card.
 - **New empty / signed-out / "nothing here yet" surface?** `<EmptyState />` from `./EmptyState`. Pick the size: `compact` for in-tab emptiness, `default` for general, `tall` for top-level signed-out gates.
 - **New color?** Add a CSS var to App.js's `c` block in BOTH light and dark modes. Never inline hex.
 - **Sub-section grouping inside a tab?** `<Section />` from `./Section`. Page-level tab headers (back-arrow + title + actions row) are intentionally a denser inline shape; don't try to consolidate them into Section.

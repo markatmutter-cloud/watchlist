@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { modalBackdrop, modalShell, modalCloseButton, modalTitleRow, modalTitle, inputBase } from "../styles";
+import { Modal, ModalNote, ModalError, ModalFoot, FieldLabel, Button } from "../ui";
 import { resizeImage } from "../resizeImage";
 
 // Manual-entry form for Owned + Sold lists. PR #87 (2026-05-06).
@@ -133,25 +133,16 @@ export function ManualEntryForm({
   };
 
   return (
-    <div onClick={busy ? undefined : onClose} style={modalBackdrop}>
-      <div onClick={e => e.stopPropagation()}
-           style={{ ...modalShell, maxWidth: 460, maxHeight: "92vh", overflowY: "auto" }}>
-        <div style={modalTitleRow}>
-          <div style={modalTitle}>
-            {kind === "sold" ? "Add a sold watch" : "Add a watch you own"}
-          </div>
-          <button onClick={onClose} aria-label="Close" style={modalCloseButton}
-                  disabled={busy}>×</button>
-        </div>
-        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 12, lineHeight: 1.5 }}>
+    <Modal title={kind === "sold" ? "Add a sold watch" : "Add a watch you own"} onClose={onClose} locked={busy} width={460}>
+        <ModalNote>
           {kind === "sold"
             ? "Add a watch you've sold. Photo, sold price, and date are optional: you can leave any of them blank if you don't have them yet."
             : "Add a watch you own. Photo is optional; you can add one later. Brand is required; everything else fills in over time."}
-        </div>
+        </ModalNote>
 
         {/* Photo */}
         <div style={{ marginBottom: 14 }}>
-          <Label>Photo (optional)</Label>
+          <FieldLabel>Photo (optional)</FieldLabel>
           {photoPreview ? (
             <div style={{ position: "relative", marginBottom: 6 }}>
               <img src={photoPreview} alt="Preview"
@@ -182,52 +173,52 @@ export function ManualEntryForm({
 
         {/* Required: brand. Optional: model / reference / material. */}
         <div style={{ marginBottom: 10 }}>
-          <Label>Brand <span style={{ color: "var(--danger)" }}>*</span></Label>
+          <FieldLabel>Brand <span style={{ color: "var(--danger)" }}>*</span></FieldLabel>
           <input autoFocus value={brand}
             onChange={e => { setBrand(e.target.value); setError(""); }}
             placeholder="e.g. Rolex"
-            style={{ ...inputBase, fontSize: 14 }} />
+            className="ui-input" />
         </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
           <div style={{ flex: 1 }}>
-            <Label>Model</Label>
+            <FieldLabel>Model</FieldLabel>
             <input value={model} onChange={e => setModel(e.target.value)}
-              placeholder="Submariner" style={{ ...inputBase, fontSize: 14 }} />
+              placeholder="Submariner" className="ui-input" />
           </div>
           <div style={{ flex: 1 }}>
-            <Label>Reference</Label>
+            <FieldLabel>Reference</FieldLabel>
             <input value={reference} onChange={e => setReference(e.target.value)}
-              placeholder="5513" style={{ ...inputBase, fontSize: 14 }} />
+              placeholder="5513" className="ui-input" />
           </div>
         </div>
         <div style={{ marginBottom: 10 }}>
-          <Label>Material</Label>
+          <FieldLabel>Material</FieldLabel>
           <input value={material} onChange={e => setMaterial(e.target.value)}
-            placeholder="Steel · 18k yellow gold · etc." style={{ ...inputBase, fontSize: 14 }} />
+            placeholder="Steel · 18k yellow gold · etc." className="ui-input" />
         </div>
         <div style={{ marginBottom: 14 }}>
-          <Label>Link (optional)</Label>
+          <FieldLabel>Link (optional)</FieldLabel>
           <input
             type="url"
             value={sourceUrl}
             onChange={e => setSourceUrl(e.target.value)}
             placeholder="https://example.com/listing · dealer / eBay / auction lot"
-            style={{ ...inputBase, fontSize: 14 }} />
+            className="ui-input" />
         </div>
 
         {/* Price paid */}
         <div style={{ display: "flex", gap: 8, marginBottom: kind === "sold" ? 10 : 14 }}>
           <div style={{ flex: 2 }}>
-            <Label>Price paid</Label>
+            <FieldLabel>Price paid</FieldLabel>
             <input type="number" inputMode="decimal" value={pricePaid}
               onChange={e => setPricePaid(e.target.value)}
-              placeholder="0" style={{ ...inputBase, fontSize: 14 }} />
+              placeholder="0" className="ui-input" />
           </div>
           <div style={{ flex: 1 }}>
-            <Label>Currency</Label>
+            <FieldLabel>Currency</FieldLabel>
             <select value={priceCurrency}
               onChange={e => setPriceCurrency(e.target.value)}
-              style={{ ...inputBase, fontSize: 14 }}>
+              className="ui-input">
               <option>USD</option>
               <option>GBP</option>
               <option>EUR</option>
@@ -242,57 +233,34 @@ export function ManualEntryForm({
         {kind === "sold" && (
           <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
             <div style={{ flex: 2 }}>
-              <Label>Sold price (optional)</Label>
+              <FieldLabel>Sold price (optional)</FieldLabel>
               <input type="number" inputMode="decimal" value={soldPrice}
                 onChange={e => setSoldPrice(e.target.value)}
-                placeholder="0" style={{ ...inputBase, fontSize: 14 }} />
+                placeholder="0" className="ui-input" />
             </div>
             <div style={{ flex: 1 }}>
-              <Label>Sold on</Label>
+              <FieldLabel>Sold on</FieldLabel>
               <input type="date" value={soldDate}
                 onChange={e => setSoldDate(e.target.value)}
-                style={{ ...inputBase, fontSize: 14 }} />
+                className="ui-input" />
             </div>
           </div>
         )}
 
         <div style={{ marginBottom: 14 }}>
-          <Label>Notes</Label>
+          <FieldLabel>Notes</FieldLabel>
           <textarea value={comments} onChange={e => setComments(e.target.value)}
             placeholder="Provenance, condition, story, anything you want to remember…"
             rows={3}
-            style={{ ...inputBase, fontSize: 14, fontFamily: "inherit", resize: "vertical" }} />
+            className="ui-input ui-input--area" />
         </div>
 
-        {error && (
-          <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 10 }}>{error}</div>
-        )}
+        <ModalError>{error}</ModalError>
 
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button onClick={onClose} disabled={busy} style={{
-            border: "0.5px solid var(--border)", background: "transparent",
-            color: "var(--text2)", padding: "8px 14px", borderRadius: 8,
-            cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit", fontSize: 13,
-          }}>Cancel</button>
-          <button onClick={submit} disabled={!canSave} style={{
-            border: "none", background: "var(--brand-olive)", color: "#fff",
-            padding: "8px 14px", borderRadius: 8,
-            cursor: canSave ? "pointer" : "not-allowed",
-            fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-            opacity: canSave ? 1 : 0.5,
-          }}>{busy ? "Saving…" : "Save watch"}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Label({ children }) {
-  return (
-    <div style={{
-      fontSize: 11, fontWeight: 600, color: "var(--text3)",
-      textTransform: "uppercase", letterSpacing: "0.04em",
-      marginBottom: 4,
-    }}>{children}</div>
+        <ModalFoot>
+          <Button small onClick={onClose} disabled={busy}>Cancel</Button>
+          <Button small primary onClick={submit} disabled={!canSave}>{busy ? "Saving…" : "Save watch"}</Button>
+        </ModalFoot>
+    </Modal>
   );
 }

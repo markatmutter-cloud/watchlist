@@ -1,5 +1,5 @@
 import React from "react";
-import { modalBackdrop, modalCloseButton, inputBase } from "../styles";
+import { Modal, ModalNote, ModalFoot, Input, Button } from "../ui";
 
 // Track new item modal — single-URL paste flow with source-list
 // instructions. Lifted out of App.js on 2026-04-30 (was an inline JSX
@@ -13,66 +13,43 @@ export function TrackNewItemModal({
 }) {
   if (!open) return null;
   return (
-    <div onClick={() => setOpen(false)} style={modalBackdrop}>
-      <div onClick={(e) => e.stopPropagation()} style={{
-        background: "var(--card-bg)",
-        border: "0.5px solid var(--border)",
-        borderRadius: 12,
-        padding: "20px 20px",
-        width: "100%", maxWidth: 520,
-        color: "var(--text1)", fontFamily: "inherit",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-          <div style={{ fontSize: 16, fontWeight: 600 }}>Track eBay item</div>
-          <button onClick={() => setOpen(false)} aria-label="Close" style={modalCloseButton}>×</button>
-        </div>
-        <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 14, lineHeight: 1.5 }}>
-          Paste an eBay item URL. The tracked item appears in your
-          Favorites and refreshes on the next scrape (current bid,
-          hammer price, end time).
-        </div>
-        <div style={{ fontSize: 11, color: "var(--text3)", marginBottom: 12, lineHeight: 1.5 }}>
-          For auction-house lots (Antiquorum, Christie's, Sotheby's,
-          Phillips, Watches of Knightsbridge, Marteau & Co), heart them
-          directly from the main feed; they're scraped automatically
-          every day.
-        </div>
-        <input
-          autoFocus
-          value={trackUrl}
-          onChange={e => { setTrackUrl(e.target.value); setTrackError(""); }}
-          onKeyDown={e => { if (e.key === "Enter") submitTrack(); }}
-          placeholder="https://..."
-          type="url"
-          inputMode="url"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          style={{ ...inputBase, width: "100%", fontSize: 13, marginBottom: 8 }}
-        />
-        {trackError && (
-          <div style={{ fontSize: 11, color: "var(--danger)", marginBottom: 8 }}>{trackError}</div>
-        )}
-        <div style={{ fontSize: 10, color: "var(--text3)", lineHeight: 1.55, marginBottom: 14 }}>
-          Supported: eBay item URLs, auction or Buy-It-Now, any region
-          (.com, .co.uk, .de, .fr, .it, .es, .nl, .at, .ch, .ca,
-          .com.au) plus eBay's short share links (ebay.us / ebay.gg /
-          ebay.to).
-        </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button onClick={() => setOpen(false)} style={{
-            border: "0.5px solid var(--border)", background: "transparent",
-            color: "var(--text2)", padding: "8px 16px", borderRadius: 8,
-            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-          }}>Cancel</button>
-          <button onClick={submitTrack} disabled={trackBusy || !trackUrl.trim()} style={{
-            border: "none", background: "var(--brand-olive)", color: "#fff",
-            padding: "8px 16px", borderRadius: 8, cursor: "pointer",
-            fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-            opacity: (trackBusy || !trackUrl.trim()) ? 0.5 : 1,
-          }}>{trackBusy ? "Tracking…" : "Track"}</button>
-        </div>
-      </div>
-    </div>
+    <Modal title="Track eBay item" onClose={() => setOpen(false)} width={520}>
+      <ModalNote>
+        Paste an eBay item URL. The tracked item appears in your
+        Favorites and refreshes on the next scrape (current bid,
+        hammer price, end time).
+      </ModalNote>
+      <p className="ui-modal-note" style={{ fontSize: 11, color: "var(--text3)" }}>
+        For auction-house lots (Antiquorum, Christie's, Sotheby's,
+        Phillips, Watches of Knightsbridge, Marteau & Co), heart them
+        directly from the main feed; they're scraped automatically
+        every day.
+      </p>
+      <Input
+        autoFocus
+        value={trackUrl}
+        onChange={e => { setTrackUrl(e.target.value); setTrackError(""); }}
+        onKeyDown={e => { if (e.key === "Enter") submitTrack(); }}
+        placeholder="https://..."
+        type="url"
+        inputMode="url"
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck={false}
+      />
+      {trackError && <p className="ui-modal-error" style={{ marginTop: 8 }}>{trackError}</p>}
+      <p className="ui-modal-note" style={{ fontSize: 11, color: "var(--text3)", marginTop: 10, marginBottom: 0 }}>
+        Supported: eBay item URLs, auction or Buy-It-Now, any region
+        (.com, .co.uk, .de, .fr, .it, .es, .nl, .at, .ch, .ca,
+        .com.au) plus eBay's short share links (ebay.us / ebay.gg /
+        ebay.to).
+      </p>
+      <ModalFoot>
+        <Button small onClick={() => setOpen(false)}>Cancel</Button>
+        <Button small primary onClick={submitTrack} disabled={trackBusy || !trackUrl.trim()}>
+          {trackBusy ? "Tracking…" : "Track"}
+        </Button>
+      </ModalFoot>
+    </Modal>
   );
 }

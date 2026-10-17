@@ -39,11 +39,11 @@ describe("SettingsModal", () => {
     expect(screen.getByText("Columns")).toBeInTheDocument();
   });
 
-  test("renders all three currency buttons", () => {
+  test("renders all three currency choices", () => {
     render(<SettingsModal open={true} {...baseProps} />);
-    expect(screen.getByRole("button", { name: /USD/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /GBP/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /EUR/ })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /USD/ })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /GBP/ })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /EUR/ })).toBeInTheDocument();
   });
 
   test("the default-landing 'Make Lumé my home' preference is gone (removed with the Lumé tab 2026-06-18)", () => {
@@ -54,15 +54,15 @@ describe("SettingsModal", () => {
 
   test("renders the mobile column picker (1/2/3) when isMobile", () => {
     render(<SettingsModal open={true} {...baseProps} isMobile />);
-    expect(screen.getByRole("button", { name: "1" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "2" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "3" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "1" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "2" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "3" })).toBeInTheDocument();
   });
 
   test("renders the desktop column picker (Auto/3/4/5/6/7) when not mobile", () => {
     render(<SettingsModal open={true} {...baseProps} isMobile={false} />);
-    expect(screen.getByRole("button", { name: "Auto" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "5" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "7" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Auto" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "5" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "7" })).toBeInTheDocument();
   });
 });

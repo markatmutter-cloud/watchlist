@@ -266,7 +266,8 @@ diagram, data model, and folder layout.
   / `MobileShell` / `StandardFilterBar` / `SubTabBar` and the `?look=old` /
   `?chrome=system` flags are deleted, and `chrome-guard` + `ui-guard` fail the
   build if they return; so are `PageHeader`, `pillBase`, `innerToggleButton` and the
-  rest of the old pill helpers. Only the modals still use `modalShell` / `inputBase`.
+  rest of the old pill, button, input and modal helpers (`styles.js` is just fonts and the editorial ramp).
+  Every dialog is `Modal`.
   A page that needs its own header (the auction catalog) passes `header` to
   `PageShell`; a sticky `FilterBar` publishes `--sticky-top` for dividers.
 - **Navigation = `pushState`; cleanup = `replaceState`.** Tab / sub-tab /
