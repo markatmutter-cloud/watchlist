@@ -83,7 +83,7 @@ import { readLook, readChromeFaces } from "./lookFlag";
 import { savedUrlGoesToWatches } from "./legacyRoutes";
 import { ChromeTint, chromeIsLight } from "./chromeTint";
 import StyleSheet from "./ui/StyleSheet";
-import { PageShell } from "./ui";
+import { PageShell, PageFrame } from "./ui";
 import ListsPage from "./components/ListsPage";
 import { innerToggleButton, actionButton, setMagazineLook } from "./styles";
 
@@ -3621,9 +3621,7 @@ export default function Watchlist() {
   // minus the catalog takeover (not known until the data is in).
   const anyTakeoverNow = shareActive || challengeShareActive || listShareActive || catalogShareActive || searchAllActive;
   const preloadTint = (
-    <ChromeTint dark={dark}
-      light={chromeIsLight({ tab, anyTakeover: anyTakeoverNow,
-                             lookNew: readLook() === "new", catalogFullPage: false })} />
+    <ChromeTint dark={dark} light={chromeIsLight({ catalogFullPage: false })} />
   );
   if (loading) return <><div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Pulling the latest listings…</div>{preloadTint}</>;
   if (loadError) return <><div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Couldn't pull the listings. Refresh to try again.</div>{preloadTint}</>;
@@ -5140,24 +5138,29 @@ export default function Watchlist() {
       {userLimitBannerJSX}
     </>
   );
+  // What every src/ui page needs from App: the header, the modals and the overlays.
+  const pageChromeProps = {
+    isMobile,
+    baseStyle,
+    tabs: topTabs,
+    authJSX,
+    user,
+    // The home affordance Mark asked to keep: the wordmark goes back to the landing page.
+    onHome: () => { setTabWithReceiveEscape("home"); setPage(1); },
+    // The header's ♡: your saved watches (Watches ▸ ♡). Watches overrides it, since it is already there.
+    goToSaved: () => { setTabWithReceiveEscape("listings"); setListingsSubTab("saved"); setPage(1); },
+    chromeFaces: readChromeFaces(),
+    overlaysJSX: sharedOverlaysJSX,
+    aboutModalOpen,
+    setAboutModalOpen,
+    signInPromptOpen,
+    setSignInPromptOpen,
+    signInWithGoogle,
+    primaryCurrency,
+  };
+
   const referencesPageJSX = !referencesPageActive ? null : (
-    <PageShell
-      isMobile={isMobile}
-      baseStyle={baseStyle}
-      tabs={topTabs}
-      authJSX={authJSX}
-      user={user}
-      onHome={() => { setTabWithReceiveEscape("home"); setPage(1); }}
-      goToSaved={() => { setTabWithReceiveEscape("listings"); setListingsSubTab("saved"); setPage(1); }}
-      chromeFaces={readChromeFaces()}
-      overlaysJSX={sharedOverlaysJSX}
-      aboutModalOpen={aboutModalOpen}
-      setAboutModalOpen={setAboutModalOpen}
-      signInPromptOpen={signInPromptOpen}
-      setSignInPromptOpen={setSignInPromptOpen}
-      signInWithGoogle={signInWithGoogle}
-      primaryCurrency={primaryCurrency}
-    >
+    <PageShell {...pageChromeProps}>
       {referencesTabJSX}
     </PageShell>
   );
@@ -5213,25 +5216,6 @@ export default function Watchlist() {
     setModelsExpanded,
     onOpenCalendar: () => setCalendarModalOpen(true),
   };
-  // What every src/ui page needs from App: the header, the modals and the overlays.
-  const pageChromeProps = {
-    isMobile,
-    baseStyle,
-    tabs: topTabs,
-    authJSX,
-    user,
-    // The home affordance Mark asked to keep: the wordmark goes back to the landing page.
-    onHome: () => { setTabWithReceiveEscape("home"); setPage(1); },
-    chromeFaces: readChromeFaces(),
-    overlaysJSX: sharedOverlaysJSX,
-    aboutModalOpen,
-    setAboutModalOpen,
-    signInPromptOpen,
-    setSignInPromptOpen,
-    signInWithGoogle,
-    primaryCurrency,
-  };
-
   const magWatchesJSX = !magWatchesActive ? null : (
     <MagazineWatches
       {...pageChromeProps}
@@ -5250,7 +5234,6 @@ export default function Watchlist() {
     <ListsPage
       {...pageChromeProps}
       {...listingsFilterProps}
-      goToSaved={() => { setTabWithReceiveEscape("listings"); setListingsSubTab("saved"); setPage(1); }}
       watchTopTab={watchTopTab}
       // Re-tapping the ACTIVE sub-tab returns to its landing (P-22, Mark 2026-06-03):
       // inside a drilled-in list, tapping "Lists" used to be a no-op. The bump feeds the
@@ -5263,6 +5246,25 @@ export default function Watchlist() {
       colDrillInId={colDrillInId}
       contentJSX={savedContentJSX}
     />
+  );
+
+  // Everything else that is not Home or the auction-catalog takeover wears the same frame:
+  // the tools under References (size comparison, challenges, links), Watchbox, admin, the share
+  // receivers and cross-tab search. They have no bars of their own, just content under the header.
+  const anyShareActive = shareActive || challengeShareActive || listShareActive || catalogShareActive;
+  const genericPageActive = !styleSheetOn && !catalogFullPage
+    && !referencesPageActive && !listsPageActive && !magWatchesActive
+    && (anyTakeoverNow || tab === "watchbox" || tab === "admin" || tab === "references");
+  const genericContentJSX = searchAllActive ? searchAllResultsJSX
+    : anyShareActive
+    ? <>{shareReceiverJSX}{challengeReceiverJSX}{listReceiverJSX}{catalogReceiverJSX}</>
+    : tab === "watchbox" ? watchboxTabJSX
+    : tab === "admin" ? adminTabJSX
+    : referencesTabJSX;
+  const genericPageJSX = !genericPageActive ? null : (
+    <PageShell {...pageChromeProps}>
+      <PageFrame>{genericContentJSX}</PageFrame>
+    </PageShell>
   );
 
   const shellProps = {
@@ -5402,14 +5404,14 @@ export default function Watchlist() {
         ? listsPageJSX
         : magWatchesActive
         ? magWatchesJSX
+        : genericPageActive
+        ? genericPageJSX
         : isMobile
         ? <MobileShell {...shellProps} />
         : <DesktopShell {...shellProps} />}
       <ConfirmHost />
       {/* The browser's tint follows whichever surface is at the top. */}
-      <ChromeTint dark={dark}
-        light={chromeIsLight({ tab, anyTakeover: anyTakeoverNow,
-                               lookNew: shellProps.lookNew, catalogFullPage })} />
+      <ChromeTint dark={dark} light={chromeIsLight({ catalogFullPage })} />
       <ChatBubbleHost
         seedItem={lumeSeedItem}
         liveItems={items}

@@ -20,18 +20,11 @@ const PAPER_LIGHT = "#ffffff";
 const PAPER_DARK = "#1c1c1e"; // the dark theme's --surface, as Home has always used
 
 // True when the surface at the top of the viewport is light (paper), false
-// when it is the shells' olive bar (or the green auction-catalog bar).
-export function chromeIsLight({ tab, anyTakeover, lookNew, catalogFullPage }) {
-  // The catalog takeover's green title bar replaces every other top edge.
-  if (catalogFullPage) return false;
-  // `?look=new` swaps the shells' bar for the magazine bar, receive surfaces
-  // and cross-tab search included, so those are light too.
-  if (lookNew) return true;
-  // Otherwise the shells show their olive bar on the receive / search-all
-  // surfaces even though `tab` still says "home".
-  if (anyTakeover) return false;
-  if (tab === "home") return true;
-  return tab === "listings";
+// when it is the green auction-catalog bar. Every other surface wears the shared
+// header (Home's masthead, the src/ui pages, the receive and search surfaces), which
+// is paper; the shells' olive bar no longer renders anywhere else.
+export function chromeIsLight({ catalogFullPage }) {
+  return !catalogFullPage;
 }
 
 export function ChromeTint({ light, dark }) {

@@ -793,6 +793,10 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — Watchbox, admin, the tools, the share receivers and cross-tab search move onto `src/ui`.** One generic page (header + `PageFrame` +
+  the content App already builds) now serves everything that is not Home or the auction-catalog page, so those surfaces get the shared header, inset and
+  sticky offset without a page of their own; the tools' Size / Links / Challenges switcher is the shared segmented `SubTabs`. The browser tint is now
+  just "paper, except the green catalog bar" (the olive bar renders nowhere else). Only Home and the catalog page still sit in the old shells.
 - **2026-10-17 — The Lists page is built from `src/ui`; the Saved tab's last pieces are gone.** `ListsPage` (Lists · Searches, reached from the
   account menu) wears the shared header; inside a drilled-in list the search, sort, source/brand/model and price controls are the SAME
   `ListingsFilters` Watches uses (extracted from `MagazineWatches`, so the two cannot drift). The hearted landing and its For sale / Auctions /

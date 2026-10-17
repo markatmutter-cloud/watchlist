@@ -5,33 +5,11 @@ import { ChromeTint, chromeIsLight } from "./chromeTint";
 // The browser's tint follows the page's top surface. These pin the rule
 // (Mark, 2026-10-16: an olive toolbar over a light page "looks weird").
 
-const base = { tab: "listings", anyTakeover: false, lookNew: false, catalogFullPage: false };
-const light = (over) => chromeIsLight({ ...base, ...over });
-
 describe("chromeIsLight", () => {
-  it("Home is light", () => expect(light({ tab: "home" })).toBe(true));
-
-  it("the Watches page is light whatever the look flag says", () => {
-    expect(light({})).toBe(true);
-    expect(light({ lookNew: true })).toBe(true);
-  });
-
-  it("the shells' olive bar tabs are olive until ?look=new swaps the bar", () => {
-    for (const tab of ["references", "watchlist", "watchbox", "admin"]) {
-      expect(light({ tab })).toBe(false);
-      expect(light({ tab, lookNew: true })).toBe(true);
-    }
-  });
-
-  it("receive and search-all surfaces keep the olive bar (tab still says home)", () => {
-    expect(light({ tab: "home", anyTakeover: true })).toBe(false);
-    expect(light({ tab: "listings", anyTakeover: true })).toBe(false);
-    expect(light({ tab: "home", anyTakeover: true, lookNew: true })).toBe(true);
-  });
-
-  it("the green catalog takeover is never light", () => {
-    expect(light({ catalogFullPage: true })).toBe(false);
-    expect(light({ catalogFullPage: true, lookNew: true })).toBe(false);
+  it("is paper on every surface but the green auction-catalog bar", () => {
+    expect(chromeIsLight({ catalogFullPage: false })).toBe(true);
+    expect(chromeIsLight({})).toBe(true);
+    expect(chromeIsLight({ catalogFullPage: true })).toBe(false);
   });
 });
 

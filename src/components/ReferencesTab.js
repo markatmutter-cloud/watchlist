@@ -4,7 +4,7 @@ import { Links } from "./Links";
 import { EditorialView } from "./EditorialView";
 import { ChallengesView } from "./ChallengesView";
 import { ReferenceBrowse } from "./ReferenceBrowse";
-import { innerToggleButton } from "../styles";
+import { SubTabs } from "../ui";
 
 // Tools — bundles the utility surfaces (size comparison · links · challenges)
 // under one Collecting sub-tab (Mark 2026-06-01), with an inner toggle to pick
@@ -17,11 +17,10 @@ function ToolsView({ initialTool = "size", challengeProps }) {
     { key: "challenges", label: "Challenges" },
   ];
   return (
-    <div style={{ paddingTop: 4 }}>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", padding: "4px 0 14px" }}>
-        {OPTS.map((o) => (
-          <button key={o.key} onClick={() => setTool(o.key)} style={innerToggleButton(tool === o.key)}>{o.label}</button>
-        ))}
+    <div>
+      {/* The tools are views of one page, so they take the shared segmented sub-tabs. */}
+      <div className="ui-tabs-row">
+        <SubTabs ariaLabel="Tools" tabs={OPTS} activeKey={tool} onSelect={setTool} />
       </div>
       {tool === "links" ? (
         <Links allListings={challengeProps.allListings || []} onBack={null} />
