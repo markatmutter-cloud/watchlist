@@ -85,6 +85,8 @@ import { ChromeTint, chromeIsLight } from "./chromeTint";
 import StyleSheet from "./ui/StyleSheet";
 import { PageShell, PageFrame } from "./ui";
 import ListsPage from "./components/ListsPage";
+import CatalogPage from "./components/CatalogPage";
+import { HeartIcon } from "./components/icons";
 import { innerToggleButton, actionButton, setMagazineLook } from "./styles";
 
 // Same-origin paths — Vercel serves everything in /public at the
@@ -3946,7 +3948,7 @@ export default function Watchlist() {
     const a = [];
     if (user) a.push({
       label: saved ? "Saved" : "Save catalog", active: saved,
-      icon: <span style={{ color: saved ? "var(--heart)" : "var(--text2)" }}>{saved ? "♥" : "♡"}</span>,
+      icon: <HeartIcon size={14} filled={saved} />,
       onClick: () => toggleSavedAuction(sale.url),
     });
     if (sale.url) a.push({ label: "Share", onClick: shareCatalog });
@@ -5252,7 +5254,7 @@ export default function Watchlist() {
   // the tools under References (size comparison, challenges, links), Watchbox, admin, the share
   // receivers and cross-tab search. They have no bars of their own, just content under the header.
   const anyShareActive = shareActive || challengeShareActive || listShareActive || catalogShareActive;
-  const genericPageActive = !styleSheetOn && !catalogFullPage
+  const genericPageActive = !styleSheetOn
     && !referencesPageActive && !listsPageActive && !magWatchesActive
     && (anyTakeoverNow || tab === "watchbox" || tab === "admin" || tab === "references");
   const genericContentJSX = searchAllActive ? searchAllResultsJSX
@@ -5264,6 +5266,31 @@ export default function Watchlist() {
   const genericPageJSX = !genericPageActive ? null : (
     <PageShell {...pageChromeProps}>
       <PageFrame>{genericContentJSX}</PageFrame>
+    </PageShell>
+  );
+
+  // The auction catalog: one sale as a full page. Its own olive title bar replaces the tab header.
+  const catalogPageActive = !!catalogSale && !styleSheetOn
+    && !shareActive && !challengeShareActive && !listShareActive && !catalogShareActive && !searchAllActive;
+  const catalogPageJSX = !catalogPageActive ? null : (
+    <CatalogPage
+      {...pageChromeProps}
+      {...listingsFilterProps}
+      listingsSubTab={listingsSubTab}
+      sale={catalogSale}
+      saleDates={fmtSaleDateRange(catalogSale)}
+      onExit={exitCatalogToCalendar}
+      actions={catalogActions}
+      gridJSX={listingsTabContentJSX}
+    />
+  );
+
+  // Home: the magazine brings its own masthead, so the shared page gives it no header, only the
+  // overlays and the page's side inset.
+  const homePageActive = tab === "home" && !styleSheetOn && !anyTakeoverNow;
+  const homePageJSX = !homePageActive ? null : (
+    <PageShell {...pageChromeProps} bare>
+      <div className="ui-home">{homeTabJSX}</div>
     </PageShell>
   );
 
@@ -5406,6 +5433,10 @@ export default function Watchlist() {
         ? magWatchesJSX
         : genericPageActive
         ? genericPageJSX
+        : catalogPageActive
+        ? catalogPageJSX
+        : homePageActive
+        ? homePageJSX
         : isMobile
         ? <MobileShell {...shellProps} />
         : <DesktopShell {...shellProps} />}

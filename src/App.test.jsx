@@ -348,6 +348,20 @@ describe("App render-without-crash", () => {
     window.history.replaceState({}, "", "/");
   });
 
+  test("Home is built from src/ui as well: no shell pane, its own masthead, the page's inset", async () => {
+    window.history.replaceState({}, "", "/");
+    const { default: App } = require("./App");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    expect(document.querySelector(".ui-page .ui-home")).not.toBeNull();
+    expect(document.querySelector("[data-desktop-main]")).toBeNull();
+    // Home brings its own masthead, so the shared header is not rendered above it.
+    expect(document.querySelector(".magb-bar")).toBeNull();
+    window.history.replaceState({}, "", "/");
+  });
+
   test("Watchbox is built from src/ui as well", async () => {
     window.history.replaceState({}, "", "/?tab=watchbox");
     const { default: App } = require("./App");

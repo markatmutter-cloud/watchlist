@@ -161,6 +161,24 @@ describe("FilterBar zone", () => {
     const { container } = render(<FilterBar pills={<Pill>Source</Pill>} />);
     expect(container.querySelector(".ui-filterzone")).not.toHaveClass("is-sticky");
   });
+
+  it("can stack its search onto its own row, for a bar that carries too much for one line", () => {
+    const { container } = render(<FilterBar stacked pills={<Pill>Source</Pill>} search={<input aria-label="s" />} />);
+    expect(container.querySelector(".ui-filterbar")).toHaveClass("ui-filterbar--stacked");
+    const plain = render(<FilterBar pills={<Pill>Source</Pill>} search={<input aria-label="s" />} />);
+    expect(plain.container.querySelector(".ui-filterbar")).not.toHaveClass("ui-filterbar--stacked");
+  });
+});
+
+describe("Pill as a link", () => {
+  it("a pill with an href is an anchor that opens elsewhere, in the same look", () => {
+    render(<Pill href="https://auction.example/sale">Auction house ↗</Pill>);
+    const a = screen.getByRole("link", { name: "Auction house ↗" });
+    expect(a).toHaveClass("ui-pill");
+    expect(a).toHaveAttribute("href", "https://auction.example/sale");
+    expect(a).toHaveAttribute("target", "_blank");
+    expect(a.getAttribute("rel")).toMatch(/noopener/);
+  });
 });
 
 describe("FilterBar publishes where the pinned chrome ends", () => {
