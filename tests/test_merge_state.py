@@ -689,3 +689,31 @@ def test_different_city_or_title_does_not_supersede():
         "online": _sale("2026-10-20", "2026-08-17", "2026-09-18", title="Only Online Auction"),
     }
     assert merge.superseded_auction_ids(state) == set()
+
+# ── Mixed jewellery-and-watches sales ──────────────────────────────────────
+# A sale title naming both is carried whole and filtered per lot (Mark
+# 2026-10-05). The cross-listed jewels sale titled "Fine Watches" with a
+# fine-jewelry URL must stay blocked.
+
+
+def test_mixed_jewellery_watch_sales_are_carried():
+    assert merge.is_excluded_catalog(
+        "Fine Jewelry & Watches",
+        "https://www.sothebys.com/en/buy/auction/2026/fine-jewelry-watches") is False
+    assert merge.is_excluded_catalog(
+        "Exclusive Timepieces & Jewels",
+        "https://www.monacolegendauctions.com/auction/exclusive-timepieces-jewels-14") is False
+
+
+def test_jewels_sale_cross_listed_as_fine_watches_stays_blocked():
+    # Sotheby's L26050: misleading title, jewellery URL. The title names no
+    # jewellery, so the exemption must not fire and the slug still blocks it.
+    assert merge.is_excluded_catalog(
+        "Fine Watches",
+        "https://www.sothebys.com/en/buy/auction/2026/fine-jewelry-l26050") is True
+
+
+def test_pure_jewels_sales_stay_blocked():
+    assert merge.is_excluded_catalog("Magnificent Jewels", "") is True
+    assert merge.is_excluded_catalog("Fine Jewelry", "") is True
+    assert merge.is_excluded_catalog("Noble & Private Collections", "") is True
