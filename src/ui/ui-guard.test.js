@@ -42,7 +42,10 @@ describe("src/ui", () => {
 
   // Pages already moved onto src/ui. Add a file here when its tab migrates; the legacy
   // pieces below are deleted for good when the last page leaves them.
-  const MIGRATED = ["components/EditorialView.js", "components/ReferenceBrowse.js"];
+  const MIGRATED = [
+    "components/EditorialView.js", "components/ReferenceBrowse.js",
+    "components/MagazineWatches.js", "components/FilterDrawer.js",
+  ];
   const LEGACY = [
     /from "\.\/StandardFilterBar"/, /from "\.\/PageHeader"/, /from "\.\/Chip"/, /from "\.\/SavedPill"/,
     /\bpillBase\b/, /\bclearAllPill\b/, /from "\.\/SubTabBar"/,

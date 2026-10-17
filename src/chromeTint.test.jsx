@@ -5,15 +5,15 @@ import { ChromeTint, chromeIsLight } from "./chromeTint";
 // The browser's tint follows the page's top surface. These pin the rule
 // (Mark, 2026-10-16: an olive toolbar over a light page "looks weird").
 
-const base = { tab: "listings", anyTakeover: false, magWatchesOn: true, lookNew: false, catalogFullPage: false };
+const base = { tab: "listings", anyTakeover: false, lookNew: false, catalogFullPage: false };
 const light = (over) => chromeIsLight({ ...base, ...over });
 
 describe("chromeIsLight", () => {
   it("Home is light", () => expect(light({ tab: "home" })).toBe(true));
 
-  it("the magazine Watches page is light, and ?view=classic is olive again", () => {
+  it("the Watches page is light whatever the look flag says", () => {
     expect(light({})).toBe(true);
-    expect(light({ magWatchesOn: false })).toBe(false);
+    expect(light({ lookNew: true })).toBe(true);
   });
 
   it("the shells' olive bar tabs are olive until ?look=new swaps the bar", () => {

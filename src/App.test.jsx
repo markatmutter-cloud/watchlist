@@ -209,9 +209,10 @@ describe("App render-without-crash", () => {
     await waitFor(() => {
       expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
     });
-    // Keyed on the page's own wrapper: the shell's sub-tabs are ALSO
+    // Keyed on the shared frame's wrapper: the legacy shells' sub-tabs were ALSO
     // role=tab "For sale", so a role query can't tell the two apart.
-    expect(document.querySelector(".magw-page")).not.toBeNull();
+    expect(document.querySelector(".ui-page")).not.toBeNull();
+    expect(document.querySelector("[data-desktop-main]")).toBeNull();
     // The home affordance Mark asked to keep.
     expect(screen.getByRole("button", { name: "Home" })).toBeInTheDocument();
     window.history.replaceState({}, "", "/");
@@ -225,7 +226,7 @@ describe("App render-without-crash", () => {
     await waitFor(() => {
       expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
     });
-    expect(document.querySelector(".magw-page")).not.toBeNull();
+    expect(document.querySelector(".ui-page")).not.toBeNull();
     window.history.replaceState({}, "", "/");
   });
 
@@ -242,16 +243,17 @@ describe("App render-without-crash", () => {
     });
     expect(tint()).toBe("#ffffff");
     first.unmount();
-    // The shell's own Watches chrome, on the new bar (the look default): paper.
-    window.history.replaceState({}, "", "/?tab=listings&view=classic");
+    // Watches is the shared page whatever the look flag says (there is no classic Watches
+    // any more), so ?look=old does not turn its toolbar olive.
+    window.history.replaceState({}, "", "/?tab=listings&look=old");
     const second = render(<App />);
     await waitFor(() => {
       expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
     });
     expect(tint()).toBe("#ffffff");
     second.unmount();
-    // ...and the olive bar only when the way back to it is taken as well.
-    window.history.replaceState({}, "", "/?tab=listings&view=classic&look=old");
+    // ...olive only over a surface that still wears the legacy olive bar.
+    window.history.replaceState({}, "", "/?tab=saved&look=old");
     render(<App />);
     await waitFor(() => {
       expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
@@ -320,19 +322,18 @@ describe("App render-without-crash", () => {
     window.history.replaceState({}, "", "/");
   });
 
-  test("?view=classic keeps the shell's own Watches chrome (the way back)", async () => {
-    // The rollback path Mark asked for: one param returns the old tab, built
-    // from the same shells that never stopped existing.
+  test("?view=classic is gone: Watches is always the shared page", async () => {
+    // The classic Watches (the shells' own chrome) was retired 2026-10-17 with the move
+    // onto src/ui; an old bookmark with the param must still land on the page.
     window.history.replaceState({}, "", "/?tab=listings&view=classic");
     const { default: App } = require("./App");
     render(<App />);
     await waitFor(() => {
       expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
     });
-    expect(document.querySelector(".magw-page")).toBeNull();
-    // The shell still renders its own sub-tabs.
+    expect(document.querySelector(".ui-page")).not.toBeNull();
+    expect(document.querySelector("[data-desktop-main]")).toBeNull();
     expect(screen.getByRole("tab", { name: "For sale" })).toBeInTheDocument();
-    // The shell's own top bar still carries the home affordance.
     expect(screen.getByRole("button", { name: "Home" })).toBeInTheDocument();
     window.history.replaceState({}, "", "/");
   });

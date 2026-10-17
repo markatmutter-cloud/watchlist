@@ -69,6 +69,30 @@ export function ChipPanel({ children }) {
   return <div className="ui-panel">{children}</div>;
 }
 
+// ---- PriceRange: $ min – max, inline (desktop; the phone has it in the filter sheet) --
+export function PriceRange({ min, max, onMin, onMax, onClear }) {
+  return (
+    <div className="ui-price">
+      <span>$</span>
+      <input value={min} onChange={(e) => onMin(e.target.value)} placeholder="Min" inputMode="numeric" aria-label="Minimum price USD" />
+      <span>–</span>
+      <input value={max} onChange={(e) => onMax(e.target.value)} placeholder="Max" inputMode="numeric" aria-label="Maximum price USD" />
+      {(min || max) && onClear ? (
+        <button type="button" aria-label="Clear price filter" onClick={onClear}>&times;</button>
+      ) : null}
+    </div>
+  );
+}
+
+// ---- Button: the sheet's actions ("Show 12 watches", "Reset") ------------------------
+export function Button({ primary, children, className, ...rest }) {
+  return (
+    <button type="button" className={cx("ui-btn", primary ? "ui-btn--primary" : "ui-btn--ghost", className)} {...rest}>
+      {children}
+    </button>
+  );
+}
+
 // ---- SearchField: the one search box -----------------------------------------
 //   size   "bar" (in the header) | "row" (in a filter bar) | "full" (a phone's own row)
 //   trailing   a control seated at the end (the save-this-search heart)

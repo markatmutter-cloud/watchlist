@@ -20,6 +20,7 @@
   --ui-bar-h: 56px;            /* the header bar, every tab */
   --ui-control-h: 36px;        /* pills */
   --ui-search-h: 38px;         /* search fields (44px on a phone) */
+  --ui-searchrow-h: 59px;      /* a search seated under the phone's tab row */
   --ui-tabrow-h: 42px;         /* the phone's tab row: what a sticky filter bar sits under */
   --ui-gap: 8px;
   --ui-label-size: 11px;       /* small tracked caps: pills, counts, eyebrows */
@@ -42,6 +43,11 @@
 .ui-page { min-height: 100vh; background: var(--bg); --ui-header-h: var(--ui-bar-h); }
 .ui-page--phone { --ui-header-h: var(--ui-tabrow-h); }
 .ui-page-stick { position: sticky; top: 0; z-index: 40; background: var(--bg); }
+/* A search seated under the phone's tab row (Watches): sticky with it, and the filter
+   bar pins beneath both. */
+.ui-page-search { box-sizing: border-box; height: var(--ui-searchrow-h); padding: 6px 16px 8px;
+                  border-bottom: .5px solid var(--border); background: var(--bg); }
+.ui-page--phone-search { --ui-header-h: calc(var(--ui-tabrow-h) + var(--ui-searchrow-h)); }
 
 /* ---------- count -------------------------------------------------------- */
 
@@ -70,6 +76,52 @@
 /* "+36 more" style: present but quiet. */
 .ui-pill--quiet { background: none; color: var(--text3); border-style: dashed; }
 .ui-pill-n { font-weight: 400; opacity: .8; font-variant-numeric: tabular-nums; }
+
+/* ---------- price range (inline, desktop) ------------------------------- */
+
+.ui-price { display: inline-flex; align-items: center; gap: 5px; box-sizing: border-box;
+            height: var(--ui-control-h); padding: 0 8px 0 14px; border: .5px solid var(--border);
+            border-radius: 999px; background: var(--card-bg); color: var(--text3);
+            font: 400 11px var(--ui-sans); }
+.ui-price input { width: 52px; border: none; background: transparent; outline: none; padding: 0;
+                  color: var(--text1); font: 400 12px var(--ui-sans); font-variant-numeric: tabular-nums; }
+.ui-price button { border: none; background: none; color: var(--text3); cursor: pointer;
+                   font-size: 15px; line-height: 1; padding: 0 2px; }
+
+/* ---------- button, input, sheet (the phone's filter sheet) --------------- */
+
+.ui-btn { box-sizing: border-box; padding: 14px 16px; border-radius: 12px; cursor: pointer;
+          white-space: nowrap; font: 500 14px var(--ui-sans); }
+.ui-btn--ghost { border: .5px solid var(--border); background: transparent; color: var(--text2); }
+.ui-btn--primary { flex: 1; border: none; background: var(--text1); color: var(--bg); font-weight: 600; }
+.ui-input { box-sizing: border-box; flex: 1; width: 100%; min-width: 0; border: none; border-radius: 8px;
+            padding: 10px 12px; background: var(--surface); color: var(--text1);
+            font: 400 14px var(--ui-sans); outline: none; }
+/* 1450: above Lumé's launcher (ChatBubbleHost Z = 1400), which otherwise sat on top of the
+   sheet's primary button; below the confirm / review modals (2000+). */
+.ui-sheet { position: fixed; inset: 0; z-index: 1450; font-family: var(--ui-sans); }
+.ui-sheet-scrim { position: absolute; inset: 0; background: rgba(0,0,0,.5); }
+.ui-sheet-panel { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88vh; display: flex;
+                  flex-direction: column; background: var(--bg); color: var(--text1);
+                  border-radius: 16px 16px 0 0; }
+.ui-sheet-grab { display: flex; justify-content: center; padding: 10px 0 4px; }
+.ui-sheet-grab i { display: block; width: 36px; height: 4px; border-radius: 2px; background: var(--border); }
+.ui-sheet-head { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+                 padding: 4px 16px 10px; border-bottom: .5px solid var(--border); }
+.ui-sheet-title { font: 600 15px var(--ui-sans); }
+.ui-sheet-x { width: 32px; height: 32px; padding: 0; border-radius: 50%; border: .5px solid var(--border);
+              background: var(--surface); color: var(--text2); font-size: 18px; line-height: 1; cursor: pointer; }
+.ui-sheet-body { flex: 1; overflow-y: auto; padding-bottom: 8px; }
+.ui-sheet-sec { padding: 12px 16px 10px; border-bottom: .5px solid var(--border); }
+.ui-sheet-sec:last-child { border-bottom: none; }
+.ui-sheet-h { margin: 0 0 8px; font: 600 10px var(--ui-sans); letter-spacing: .08em; text-transform: uppercase; }
+.ui-sheet-sub { margin: 4px 0 6px; font: 600 10px var(--ui-sans); letter-spacing: .08em;
+                text-transform: uppercase; color: var(--text3); }
+.ui-sheet-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ui-sheet-row { display: flex; align-items: center; gap: 8px; }
+.ui-sheet-row span { flex-shrink: 0; font-size: 12px; color: var(--text3); }
+.ui-sheet-foot { display: flex; gap: 8px; padding: 14px 16px 16px; border-top: .5px solid var(--border);
+                 background: var(--bg); }
 
 /* ---------- chip --------------------------------------------------------- */
 /* An option in a list ("Rolex", "Phillips"): smaller and sentence case, because
@@ -102,9 +154,11 @@
                    -webkit-appearance: none; appearance: none; }
 .ui-search input::placeholder { color: var(--text3); }
 .ui-search input::-webkit-search-cancel-button { display: none; }
-.ui-search-x { flex: 0 0 auto; width: 26px; height: 26px; border: none; border-radius: 999px;
+.ui-search-x, .ui-search-act { flex: 0 0 auto; width: 26px; height: 26px; border: none; border-radius: 999px;
                background: none; color: var(--text3); font-size: 17px; line-height: 1; cursor: pointer; }
-.ui-search-x:hover { color: var(--text1); background: var(--surface); }
+.ui-search-x:hover, .ui-search-act:hover { color: var(--text1); background: var(--surface); }
+.ui-search-act:disabled { cursor: default; color: var(--brand-olive-text); }
+.ui-search-act svg { width: 14px; height: 14px; }
 .ui-search-trailing { flex: 0 0 auto; display: flex; align-items: center; }
 /* Suggestions dropdown (saved searches, recent): children of the field. */
 .ui-search-drop { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; right: 0;
