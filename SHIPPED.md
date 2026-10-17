@@ -788,6 +788,10 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — Watches is built from `src/ui`; `?view=classic` is gone.** `MagazineWatches` no longer owns a single style rule: header,
+  sub-tabs, pills, search, price range, chips, count and the phone filter sheet (`FilterDrawer`, now the shared `.ui-sheet`) are the same pieces
+  Articles and Guides use. One fix on the way: Lumé's launcher sat on top of the sheet's "Show N watches" button (sheet now above it, below
+  the modals). The classic Watches branch in App.js, `isMagWatchesOn`, `MAGW_CSS` and the `?view=classic` tint case are deleted.
 - **2026-10-17 — Articles and Reference Guides are built from `src/ui`.** First tabs migrated off the legacy shells (`PageShell` gives
   them the header, modals and overlays; the page lays itself out with `PageFrame`). No page title; one inset; the filter bar pins under
   the header with its open options panel inside it; the search is the same `SearchField` on a phone and a desktop; selected pills and

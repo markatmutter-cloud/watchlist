@@ -42,13 +42,3 @@ export function readLook() {
 export function readChromeFaces() {
   return readSticky("chrome", "dial_chrome_faces", ["display", "system"], "display");
 }
-
-// Whether the Watches tab wears the magazine page (the default since
-// 2026-10-16). `?view=classic` is the way back to the shells' own chrome.
-// Read per call, like the flags above — no hook, no stored state.
-export function isMagWatchesOn() {
-  try {
-    return typeof window === "undefined"
-      || new URLSearchParams(window.location.search).get("view") !== "classic";
-  } catch { return true; }
-}

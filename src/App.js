@@ -79,7 +79,7 @@ const SearchResultsView = React.lazy(() =>
 import DateDivider from "./components/DateDivider";
 import SubTabBar from "./components/SubTabBar";
 import { TOP_TABS, isTopTabActive } from "./topTabs";
-import { readLook, readChromeFaces, isMagWatchesOn } from "./lookFlag";
+import { readLook, readChromeFaces } from "./lookFlag";
 import { ChromeTint, chromeIsLight } from "./chromeTint";
 import StyleSheet from "./ui/StyleSheet";
 import { PageShell } from "./ui";
@@ -3612,7 +3612,7 @@ export default function Watchlist() {
   const anyTakeoverNow = shareActive || challengeShareActive || listShareActive || catalogShareActive || searchAllActive;
   const preloadTint = (
     <ChromeTint dark={dark}
-      light={chromeIsLight({ tab, anyTakeover: anyTakeoverNow, magWatchesOn: isMagWatchesOn(),
+      light={chromeIsLight({ tab, anyTakeover: anyTakeoverNow,
                              lookNew: readLook() === "new", catalogFullPage: false })} />
   );
   if (loading) return <><div style={{ ...baseStyle, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--text2)" }}>Pulling the latest listings…</div>{preloadTint}</>;
@@ -5071,20 +5071,13 @@ export default function Watchlist() {
     : (tab === "watchlist" ? watchItems.length : allFiltered.length);
 
   // ---------------------------------------------------------------------
-  // Watches in the magazine's clothes. Built 2026-09-08 as a parallel page at
-  // `?view=watches`, PROMOTED to the default 2026-10-16 (Mark, after living
-  // with it: "i now think it's better"). The old shell chrome is still one
-  // param away at `?view=classic` — the way back, kept for a trial window and
-  // then deleted along with the shells' Watches-only branches.
+  // Watches is built from src/ui (MagazineWatches), the default since 2026-10-16 and rebuilt
+  // on the shared frame 2026-10-17. There is NO `?view=classic` path any more: the shells'
+  // own Watches chrome was deleted with the migration (keeping it alive beside the new is how
+  // pages became a blend of two systems); the way back is a git revert.
   //
-  // `view` is not one of the params the nav-sync effect rewrites, and that
-  // effect preserves params it doesn't own, so the opt-out survives tab and
-  // sub-tab navigation without any extra plumbing.
-  //
-  // Read at render rather than through a useState initialiser: App.js has
-  // early returns below, and a new hook here would be exactly the React #310
-  // trap CLAUDE.md warns about.
-  const magWatchesFlagged = isMagWatchesOn();
+  // Read at render rather than through a useState initialiser: App.js has early returns
+  // below, and a new hook here would be exactly the React #310 trap CLAUDE.md warns about.
   // `?view=styleguide` — the live style sheet for the shared page frame
   // (src/ui). A reference page, not a tab: nothing links to it. Its header
   // tabs leave the page with a full navigation, because the flag lives in the
@@ -5104,11 +5097,9 @@ export default function Watchlist() {
     },
   }));
 
-  // Only the Watches tab itself is restyled. Every takeover surface (share
-  // receivers, cross-tab search, the auction-catalog full page) keeps the
-  // shell, so nothing that isn't built yet can be reached through this page.
-  const magWatchesActive = magWatchesFlagged
-    && tab === "listings"
+  // Every takeover surface (share receivers, cross-tab search, the auction-catalog full
+  // page) still uses the shell until it is migrated too.
+  const magWatchesActive = tab === "listings"
     && !shareActive && !challengeShareActive && !listShareActive && !catalogShareActive
     && !searchAllActive && !catalogFullPage;
 
@@ -5358,9 +5349,9 @@ export default function Watchlist() {
 
   return (
     <ErrorBoundary>
-      {/* The Watches tab swaps the shell for the magazine-styled page unless
-          `?view=classic` is set. The swap is at the shell boundary, not
-          inside it, so the shells' chrome is untouched — and ChatBubbleHost /
+      {/* The Watches, Articles and Guides tabs swap the shell for the shared page
+          (src/ui). The swap is at the shell boundary, not inside it, so the shells'
+          chrome is untouched for everything else — and ChatBubbleHost /
           ConfirmHost below still mount either way. */}
       {styleSheetOn
         ? <StyleSheet tabs={styleSheetTabs} authJSX={authJSX} isMobile={isMobile}
@@ -5375,7 +5366,7 @@ export default function Watchlist() {
       <ConfirmHost />
       {/* The browser's tint follows whichever surface is at the top. */}
       <ChromeTint dark={dark}
-        light={chromeIsLight({ tab, anyTakeover: anyTakeoverNow, magWatchesOn: magWatchesFlagged,
+        light={chromeIsLight({ tab, anyTakeover: anyTakeoverNow,
                                lookNew: shellProps.lookNew, catalogFullPage })} />
       <ChatBubbleHost
         seedItem={lumeSeedItem}

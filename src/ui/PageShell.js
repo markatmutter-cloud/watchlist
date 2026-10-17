@@ -3,7 +3,8 @@
 // shared frame: src/ui supplies the pieces, this supplies the page they sit in.
 //
 //   desktop: the one sticky header bar (wordmark · tabs · [search] · heart · account)
-//   phone:   the brand row (scrolls away) + the tab row (sticks)
+//   phone:   the brand row (scrolls away) + the tab row (sticks), and the search
+//            row under it when the page seats its own search (Watches)
 //
 // The window scrolls (like the Watches page), so a page's sticky filter bar pins
 // under the header at --ui-header-h. The overlays, About and sign-in modals the
@@ -25,12 +26,16 @@ export function PageShell({
   // reset itself; the window keeps whatever offset the previous tab had.
   useEffect(() => { try { window.scrollTo(0, 0); } catch { /* jsdom */ } }, []);
   return (
-    <div className={`ui-page${isMobile ? " ui-page--phone" : ""}`} style={baseStyle}>
+    <div className={`ui-page${isMobile ? " ui-page--phone" : ""}${isMobile && searchJSX ? " ui-page--phone-search" : ""}`}
+         style={baseStyle}>
       {isMobile ? (
         <>
           <MagazineBrandRow authJSX={authJSX} showSaved={!!user} onSavedClick={goToSaved}
                             onHome={onHome} faces={chromeFaces} />
-          <div className="ui-page-stick"><MagazineTabRow tabs={tabs} faces={chromeFaces} /></div>
+          <div className="ui-page-stick">
+            <MagazineTabRow tabs={tabs} faces={chromeFaces} />
+            {searchJSX ? <div className="ui-page-search">{searchJSX}</div> : null}
+          </div>
         </>
       ) : (
         <MagazineShellBar tabs={tabs} authJSX={authJSX} showSaved={!!user} onSavedClick={goToSaved}

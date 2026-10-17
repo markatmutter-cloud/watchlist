@@ -12,8 +12,9 @@
 import React, { useState } from "react";
 import {
   Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
-  AccountDisc, SuggestionRows, Chip, ChipPanel,
+  AccountDisc, SuggestionRows, Chip, ChipPanel, PriceRange, Button,
 } from "./index";
+import { FilterDrawer } from "../components/FilterDrawer";
 import { MagazineShellBar, MagazineBrandRow, MagazineTabRow } from "../components/MagazineShellBar";
 import { FilterIcon } from "../components/icons";
 import "./StyleSheet.css";
@@ -163,6 +164,42 @@ function WatchesPage({ phone }) {
 
 // ---- the page ------------------------------------------------------------------------------------
 
+// The phone's filter sheet, opened for real from a button: it is `position: fixed`, so it can only
+// be shown live, not laid out in the page.
+function SheetDemo() {
+  const [open, setOpen] = useState(false);
+  const [brands, setBrands] = useState(["Rolex"]);
+  const [min, setMin] = useState("");
+  const [max, setMax] = useState("");
+  const toggle = (b) => setBrands((p) => (p.includes(b) ? p.filter((x) => x !== b) : [...p, b]));
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>Open the filter sheet</Button>
+      <FilterDrawer
+        drawerOpen={open} setDrawerOpen={setOpen}
+        showDealerSources showAuctionSources
+        DEALER_SOURCES={["Analog Shift"]} AUCTION_SOURCES={["Phillips"]}
+        visibleSources={["Analog Shift", "Phillips"]} filterSources={[]} toggleSource={noop}
+        effectiveSourcesCount={2} SOURCES_SHOW={8} sourcesExpanded={false} setSourcesExpanded={noop}
+        visibleBrands={["Rolex", "Omega", "Patek Philippe"]} filterBrands={brands} toggleBrand={toggle}
+        effectiveBrandsCount={3} BRANDS_SHOW={8} brandsExpanded={false} setBrandsExpanded={noop}
+        MODELS={["Submariner"]} visibleModels={["Submariner"]} filterModels={[]} toggleModel={noop}
+        effectiveModelsCount={1} MODELS_SHOW={8} modelsExpanded={false} setModelsExpanded={noop}
+        minPriceText={min} setMinPriceText={setMin} maxPriceText={max} setMaxPriceText={setMax}
+        hasFilters={brands.length > 0 || !!min || !!max}
+        resetFilters={() => { setBrands([]); setMin(""); setMax(""); }}
+        displayedCount={1234} />
+    </>
+  );
+}
+
+function PriceDemo() {
+  const [min, setMin] = useState("");
+  const [max, setMax] = useState("5000");
+  return <PriceRange min={min} max={max} onMin={setMin} onMax={setMax}
+                     onClear={() => { setMin(""); setMax(""); }} />;
+}
+
 export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
   const [saved, setSaved] = useState(false);
   const [q, setQ] = useState("Submariner");
@@ -293,6 +330,17 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
 
         <Section id="pages" title="4 · Composed pages"
                  note="Two real tabs built only from the pieces above, at desktop and at phone width. Click around: tabs, pills, the heart, the search (focus the Watches search to see saved searches).">
+          <Specimen label="Price range · buttons · the phone filter sheet">
+            <div className="ss-stack">
+              <PriceDemo />
+              <div className="ss-row">
+                <Button primary>Show 1,234 watches</Button>
+                <Button>Reset</Button>
+                <SheetDemo />
+              </div>
+            </div>
+            <p className="ss-small">Price range sits inline on a desktop filter bar and moves into the sheet on a phone, where one Filter pill (with the applied count) replaces Source, Brand and Model. The sheet floats above Lumé's launcher so its primary button is never covered.</p>
+          </Specimen>
           <h3 className="ss-h3">Articles-like (filter bar with the search in the row)</h3>
           <div className="ss-screen"><ArticlesPage /></div>
           <div className="ss-phones">

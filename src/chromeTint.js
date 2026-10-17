@@ -21,7 +21,7 @@ const PAPER_DARK = "#1c1c1e"; // the dark theme's --surface, as Home has always 
 
 // True when the surface at the top of the viewport is light (paper), false
 // when it is the shells' olive bar (or the green auction-catalog bar).
-export function chromeIsLight({ tab, anyTakeover, magWatchesOn, lookNew, catalogFullPage }) {
+export function chromeIsLight({ tab, anyTakeover, lookNew, catalogFullPage }) {
   // The catalog takeover's green title bar replaces every other top edge.
   if (catalogFullPage) return false;
   // `?look=new` swaps the shells' bar for the magazine bar, receive surfaces
@@ -31,7 +31,7 @@ export function chromeIsLight({ tab, anyTakeover, magWatchesOn, lookNew, catalog
   // surfaces even though `tab` still says "home".
   if (anyTakeover) return false;
   if (tab === "home") return true;
-  return tab === "listings" && !!magWatchesOn;
+  return tab === "listings";
 }
 
 export function ChromeTint({ light, dark }) {
