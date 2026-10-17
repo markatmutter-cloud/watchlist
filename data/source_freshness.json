@@ -18,10 +18,10 @@
     "rows": 743
   },
   "Belmont Watches": {
-    "fingerprint": "b40dd6b728b545fd",
-    "lastChanged": "2026-10-15",
+    "fingerprint": "6172cbf29c65d709",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 30
+    "rows": 29
   },
   "Bob's Watches": {
     "fingerprint": "e8ec1f021774fec0",
@@ -60,10 +60,10 @@
     "rows": 101
   },
   "Craft & Tailored": {
-    "fingerprint": "1c664127bd34a7cb",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "f92214e295d5be86",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 101
+    "rows": 106
   },
   "DB1983": {
     "fingerprint": "848ac884bab9770f",
@@ -84,10 +84,10 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "467304a588369805",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "4d833818e8c5a25d",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 31
+    "rows": 28
   },
   "Hairspring": {
     "fingerprint": "c7f91a03df1715de",
@@ -192,8 +192,8 @@
     "rows": 35
   },
   "Tropical Watch": {
-    "fingerprint": "e871aa5e636bc6b0",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "11a0e97dc11de121",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
     "rows": 108
   },
@@ -234,10 +234,10 @@
     "rows": 429
   },
   "Watch Club": {
-    "fingerprint": "24e0f31d28335484",
-    "lastChanged": "2026-10-13",
+    "fingerprint": "0a89b8000f235d5a",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 56
+    "rows": 55
   },
   "Watches of Knightsbridge": {
     "fingerprint": "0f40f820a5fa0687",
@@ -252,8 +252,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "1812843be699bbdc",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "7f53a6cc0a8671db",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
     "rows": 67
   },
@@ -426,9 +426,9 @@
     "rows": 112
   },
   "merged:listings": {
-    "fingerprint": "337096ee93a6e80b",
+    "fingerprint": "21384ff9896c7ad2",
     "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 12096
+    "rows": 12103
   }
 }
