@@ -1,11 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { ReferencePage } from "./ReferencePage";
 import { Breadcrumb } from "./Breadcrumb";
-import { PageHeader } from "./PageHeader";
-import { Chip } from "./Chip";
-import { StandardFilterBar, StandardSearchInput } from "./StandardFilterBar";
-import { SavedPill } from "./SavedPill";
-import { editorialHeading, editorialProse, editorialTitle, pillBase, clearAllPill, cardGridStyle, FONT_SERIF } from "../styles";
+import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame } from "../ui";
+import { editorialHeading, editorialProse, editorialTitle, cardGridStyle, FONT_SERIF } from "../styles";
 import { imgSrc } from "../utils";
 import {
   REFERENCE_NODES,
@@ -103,7 +100,7 @@ export function ReferenceBrowse(props) {
       { label: node.group || (node.refs || []).join(" / ") },
     ];
     return (
-      <div style={{ paddingTop: 4 }}>
+      <PageFrame>
         <Breadcrumb items={crumbs} />
         {isLiveNode(node) ? (
           <ReferencePage
@@ -132,7 +129,7 @@ export function ReferenceBrowse(props) {
             />
           </ComingSoon>
         )}
-      </div>
+      </PageFrame>
     );
   }
 
@@ -170,77 +167,42 @@ export function ReferenceBrowse(props) {
   const toggleBrand = (b) =>
     setActiveBrands((prev) => prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]);
 
-  return (
-    <div style={{ paddingTop: 0 }}>
-      {/* Collapsing header (Mark 2026-06-02), same pattern as Saved + catalog:
-          the title scrolls away while the filter bar PINS. Count lives in the
-          bar's reserved right slot, not under the title (P-8/P-16). The sticky
-          wrapper offsets by --sticky-top so it pins BELOW the mobile chrome
-          stack, not under it (same fix as the guide-page section nav, P-11). */}
-      <PageHeader isMobile={isMobile} title="Reference guides" />
-      <div style={{
-        position: "sticky", top: "var(--sticky-top, 0px)", zIndex: 15, background: "var(--bg)",
-        marginLeft: isMobile ? -16 : -20, marginRight: isMobile ? -16 : -20,
-        paddingLeft: isMobile ? 16 : 20, paddingRight: isMobile ? 16 : 20,
-        // One vertical rhythm with Articles/Watches (2026-06-03 alignment
-        // audit): header→bar gap 4 mobile / 0 desktop; the bar→content gap
-        // lives on the grid below (14/18), not here.
-        paddingTop: isMobile ? 4 : 0,
-      }}>
-        {/* Mobile: the shell search row doesn't render on this sub-tab, so the
-            guides search keeps its own full-width row above the pill bar (one
-            input per surface — P-13). Desktop: the input sits in the bar's
-            centered slot. */}
-        {isMobile && (
-          <div style={{ marginBottom: 8 }}>
-            <StandardSearchInput
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search guides: brand, model, reference…"
-              ariaLabel="Search guides"
-            />
-          </div>
-        )}
-        <StandardFilterBar
-          isMobile={isMobile}
-          expanded={activeFilterPop !== null}
-          count={`${cards.length} ${cards.length === 1 ? "guide" : "guides"}`}
-          search={isMobile ? null : (
-            <StandardSearchInput
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search guides: brand, model, reference…"
-              ariaLabel="Search guides"
-            />
-          )}
-          pills={
-            <>
-              <button
-                onClick={() => setActiveFilterPop((p) => p === "brand" ? null : "brand")}
-                style={pillBase(activeBrands.length > 0 || activeFilterPop === "brand", { compact: true })}>
-                Brand{activeBrands.length > 0 ? ` · ${activeBrands.length}` : ""}
-              </button>
-              {/* Saved: icon-only heart pill (Mark, 2026-10-16). See SavedPill. */}
-              <SavedPill active={heartedOnly} onClick={() => setHeartedOnly((v) => !v)} what="saved guides" />
-              {hasFilters && (
-                <button onClick={clearAll} style={clearAllPill}>× Clear all</button>
-              )}
-            </>
-          }
-        />
-        {activeFilterPop === "brand" && (
-          <div style={{
-            padding: "10px 0 18px", borderBottom: "0.5px solid var(--border)",
-            display: "flex", flexWrap: "wrap", gap: 8, alignItems: "flex-start",
-          }}>
-            {brands.map((b) => (
-              <Chip key={b} label={b} count={brandCounts[b]}
-                active={activeBrands.includes(b)} onClick={() => toggleBrand(b)} />
-            ))}
-          </div>
-        )}
-      </div>
+  // Built from src/ui (Mark, 2026-10-17): no page title, the filter bar sticks under the
+  // header, one inset, and the search is the same field on a phone and a desktop.
+  const filterBarJSX = (
+    <FilterBar
+      sticky
+      count={`${cards.length} ${cards.length === 1 ? "guide" : "guides"}`}
+      search={
+        <SearchField
+          size={isMobile ? "full" : "row"}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onClear={() => setQ("")}
+          placeholder="Search guides: brand, model, reference…"
+          ariaLabel="Search guides" />
+      }
+      pills={
+        <>
+          <Pill on={activeBrands.length > 0 || activeFilterPop === "brand"} n={activeBrands.length || null}
+                onClick={() => setActiveFilterPop((p) => (p === "brand" ? null : "brand"))}>Brand</Pill>
+          <SavedPill on={heartedOnly} onClick={() => setHeartedOnly((v) => !v)} what="saved guides" />
+          {hasFilters && <Pill quiet onClick={clearAll}>× Clear all</Pill>}
+        </>
+      }
+      panel={activeFilterPop === "brand" ? (
+        <ChipPanel>
+          {brands.map((b) => (
+            <Chip key={b} on={activeBrands.includes(b)} n={brandCounts[b]}
+                  onClick={() => toggleBrand(b)}>{b}</Chip>
+          ))}
+        </ChipPanel>
+      ) : null}
+    />
+  );
 
+  return (
+    <PageFrame filterBar={filterBarJSX}>
       {cards.length === 0 ? (
         <p style={{ fontSize: 13, color: "var(--text3)" }}>
           {/* Saved sub-tab with nothing saved is an invite, not a dead end. */}
@@ -249,7 +211,7 @@ export function ReferenceBrowse(props) {
             : "No guides match your search."}
         </p>
       ) : (
-        <div style={{ ...cardGridStyle({ isMobile }), marginTop: isMobile ? 14 : 18 }}>
+        <div style={cardGridStyle({ isMobile })}>
           {cards.map((n) => (
             <RefGuideCard key={n.id} node={n} isMobile={isMobile}
               onClick={() => go({ level: "node", nodeId: n.id })}
@@ -259,7 +221,7 @@ export function ReferenceBrowse(props) {
           ))}
         </div>
       )}
-    </div>
+    </PageFrame>
   );
 }
 

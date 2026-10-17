@@ -32,7 +32,9 @@ const buildProps = (overrides = {}) => ({
 describe("EditorialView", () => {
   test("renders the Articles surface with Saved as an icon-only heart pill", () => {
     render(<EditorialView {...buildProps()} />);
-    expect(screen.getByText("Articles")).toBeInTheDocument();
+    // No page title (Mark, 2026-10-17, style-sheet D3) and the search is in the bar for every width.
+    expect(screen.queryByRole("heading", { name: "Articles" })).not.toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Search articles" })).toBeInTheDocument();
     // Mark, 2026-10-16: the heart in the filter row, no word, and no extra
     // sub-tab row. This REVERSES the 2026-07-30 rule (a sub-tab, never a pill):
     // that rule's reason (a labelled pill went unfound) is why the accessible

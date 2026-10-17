@@ -788,6 +788,12 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — Articles and Reference Guides are built from `src/ui`.** First tabs migrated off the legacy shells (`PageShell` gives
+  them the header, modals and overlays; the page lays itself out with `PageFrame`). No page title; one inset; the filter bar pins under
+  the header with its open options panel inside it; the search is the same `SearchField` on a phone and a desktop; selected pills and
+  chips are solid olive. Gone from these two files: `PageHeader`, `StandardFilterBar`, `pillBase`, the old `Chip` and `SavedPill`, the
+  negative-margin sticky wrapper and the mobile portal into the shell. **No `?look=old` path for these two tabs** (keeping the old chrome
+  alive beside the new is how pages became a blend); `?tab=references&sub=size|links|challenges` still use the shells.
 - **2026-10-17 — Mark's five style-sheet picks are locked in.** D1 sub-tabs segmented (underline retired) · D2 selected pill solid
   olive (tint retired) · D3 no page titles · D4 the Bodoni wordmark + mono tab labels in the header of EVERY tab (default; `?chrome=system`
   is the way back; the fonts now load on every page) · D5 the Watches Saved tab is the heart alone (accessible name "Saved"). `src/ui`

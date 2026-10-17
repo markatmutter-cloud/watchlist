@@ -20,6 +20,7 @@
   --ui-bar-h: 56px;            /* the header bar, every tab */
   --ui-control-h: 36px;        /* pills */
   --ui-search-h: 38px;         /* search fields (44px on a phone) */
+  --ui-tabrow-h: 42px;         /* the phone's tab row: what a sticky filter bar sits under */
   --ui-gap: 8px;
   --ui-label-size: 11px;       /* small tracked caps: pills, counts, eyebrows */
   --ui-label-track: .1em;
@@ -32,6 +33,15 @@
             font-family: var(--ui-sans); color: var(--text1); background: var(--bg); }
 .ui-frame-in { padding: 0 var(--ui-inset); }
 .ui-content { padding-top: 18px; padding-bottom: 40px; }
+
+/* ---------- the page shell ------------------------------------------------ */
+/* Header + page, for any tab that is not wrapped by the legacy shells. The window
+   scrolls; the header bar (desktop) or the tab row (phone) sticks. --ui-header-h
+   is how far down the sticky filter bar pins. */
+
+.ui-page { min-height: 100vh; background: var(--bg); --ui-header-h: var(--ui-bar-h); }
+.ui-page--phone { --ui-header-h: var(--ui-tabrow-h); }
+.ui-page-stick { position: sticky; top: 0; z-index: 40; background: var(--bg); }
 
 /* ---------- count -------------------------------------------------------- */
 
@@ -60,6 +70,21 @@
 /* "+36 more" style: present but quiet. */
 .ui-pill--quiet { background: none; color: var(--text3); border-style: dashed; }
 .ui-pill-n { font-weight: 400; opacity: .8; font-variant-numeric: tabular-nums; }
+
+/* ---------- chip --------------------------------------------------------- */
+/* An option in a list ("Rolex", "Phillips"): smaller and sentence case, because
+   there can be dozens. Selected = the same solid olive as a pill. */
+
+.ui-chip { display: inline-flex; align-items: center; gap: 5px; box-sizing: border-box; height: 30px;
+           padding: 0 12px; border: .5px solid var(--border); border-radius: 999px;
+           background: var(--card-bg); color: var(--text2); cursor: pointer; white-space: nowrap;
+           font: 400 12.5px var(--ui-sans); }
+.ui-chip:hover { border-color: var(--brand-olive-ink); color: var(--brand-olive-ink); }
+.ui-chip.is-on { background: var(--brand-olive-text); border-color: var(--brand-olive-text); color: #fff; }
+.ui-chip--quiet { background: none; color: var(--text3); border-style: dashed; }
+.ui-chip-n { opacity: .7; font-variant-numeric: tabular-nums; }
+.ui-panel { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; padding: 12px 0 18px;
+            border-bottom: .5px solid var(--border); background: var(--bg); line-height: 1.5; }
 
 /* ---------- search field ------------------------------------------------- */
 /* ONE search field. `bar` seats in the header (Watches), `row` in a filter bar,
@@ -126,6 +151,8 @@
 /* pills left · search centred · count right. The search never moves when the
    pill count changes (it sits in its own grid column). */
 
+/* The zone = the bar plus any open options panel; THIS is what sticks. */
+.ui-filterzone.is-sticky { position: sticky; top: var(--ui-header-h, 0px); z-index: 20; background: var(--bg); }
 .ui-filterbar { display: grid; grid-template-columns: 1fr minmax(240px, 520px) 1fr;
                 align-items: center; column-gap: 12px; padding: 8px 0;
                 border-bottom: .5px solid var(--border); background: var(--bg); }
@@ -153,6 +180,7 @@
   .ui-pill { height: 40px; padding: 0 14px; }
   .ui-pill--icon { width: 40px; padding: 0; }
   .ui-search { height: 44px; }
+  .ui-chip { height: 34px; }
   .ui-disc { width: 40px; height: 40px; }
   /* the count drops under the tabs rather than squeezing them */
   .ui-tabs-row { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 0 6px; }

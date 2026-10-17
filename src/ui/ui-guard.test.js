@@ -39,4 +39,18 @@ describe("src/ui", () => {
       expect(css).toContain(`${v}:`);
     }
   });
+
+  // Pages already moved onto src/ui. Add a file here when its tab migrates; the legacy
+  // pieces below are deleted for good when the last page leaves them.
+  const MIGRATED = ["components/EditorialView.js", "components/ReferenceBrowse.js"];
+  const LEGACY = [
+    /from "\.\/StandardFilterBar"/, /from "\.\/PageHeader"/, /from "\.\/Chip"/, /from "\.\/SavedPill"/,
+    /\bpillBase\b/, /\bclearAllPill\b/, /from "\.\/SubTabBar"/,
+  ];
+  test.each(MIGRATED)("%s is built from src/ui, not the legacy pieces", (file) => {
+    const src = fs.readFileSync(path.join(__dirname, "..", file), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/[^\n]*/g, "$1");
+    expect(src).toMatch(/from "\.\.\/ui"/);
+    for (const re of LEGACY) expect(src).not.toMatch(re);
+  });
 });
