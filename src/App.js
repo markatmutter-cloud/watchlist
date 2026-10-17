@@ -431,8 +431,6 @@ export default function Watchlist() {
     // Reset scroll on sub-tab change so switching from a long Listings
     // grid to the shorter Searches list doesn't leave the user mid-page.
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" });
-    const desktopMain = document.querySelector("[data-desktop-main]");
-    if (desktopMain) desktopMain.scrollTop = 0;
   }, [watchTopTab]);
 
   // (Saved-tab Brand/Source grouping retired 2026-06-02 — redundant with the
@@ -488,8 +486,6 @@ export default function Watchlist() {
   useEffect(() => {
     try { localStorage.setItem("dial_listings_sub_tab", listingsSubTab); } catch {}
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" });
-    const desktopMain = document.querySelector("[data-desktop-main]");
-    if (desktopMain) desktopMain.scrollTop = 0;
   }, [listingsSubTab]);
   // Bundle 2A.2 (2026-05-07) — the standalone `collectionsSubTab`
   // state was dropped. Its sub-tab values (my-collection / wishlist /
@@ -551,8 +547,6 @@ export default function Watchlist() {
   useEffect(() => {
     try { localStorage.setItem("dial_references_sub_tab", referencesSubTab); } catch {}
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" });
-    const desktopMain = document.querySelector("[data-desktop-main]");
-    if (desktopMain) desktopMain.scrollTop = 0;
   }, [referencesSubTab]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
