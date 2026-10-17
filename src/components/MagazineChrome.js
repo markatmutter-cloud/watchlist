@@ -12,40 +12,11 @@
 // skin over the app's own controls, not a reimplementation of them.
 
 import React, { useEffect, useRef, useState } from "react";
+import { SearchField, SuggestionRows } from "../ui/SearchField";
 
 // The three magazine faces, loaded on mount and only on mount, so the rest of
 // the app's font payload is unchanged.
 const FONTS = "https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap";
-
-// Mobile chrome compacts on scroll: the masthead row (wordmark, moon, saved,
-// account) drops away and the tabs and search stay pinned. The previous Home
-// earned that behaviour and the magazine had lost it (Mark, 2026-09-07).
-function useScrolled(threshold) {
-  const [past, setPast] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    // The app scrolls an inner pane, not the window, so listen on both and
-    // take whichever is actually moving.
-    const read = () => {
-      const el = document.scrollingElement || document.documentElement;
-      const y = Math.max(window.scrollY || 0, el ? el.scrollTop || 0 : 0);
-      // `prev === y > threshold` parses as `(prev === y) > threshold`, which
-      // is a boolean compared to a number and always false, so the header
-      // never compacted. Compute the boolean first.
-      const next = y > threshold;
-      setPast((prev) => (prev === next ? prev : next));
-    };
-    read();
-    const opts = { passive: true };
-    window.addEventListener("scroll", read, opts);
-    document.addEventListener("scroll", read, true);
-    return () => {
-      window.removeEventListener("scroll", read, opts);
-      document.removeEventListener("scroll", read, true);
-    };
-  }, [threshold]);
-  return past;
-}
 
 function useFonts() {
   useEffect(() => {
@@ -83,43 +54,14 @@ function Crescent() {
   );
 }
 
-// The user's saved searches, as suggestions under a focused, empty search bar
-// (Mark, 2026-10-16: saved searches "come up as suggested searches when you
-// click on the search bar"). One component for Home's search and the Watches
-// page's, so they cannot drift. Each row re-runs the search; the × unsaves it
-// (the heart in the bar is what saves). Rendering nothing when there are none
-// keeps the dropdown free of an empty heading.
-export function SavedSearchRows({ searches, onRun, onRemove }) {
-  if (!searches || searches.length === 0) return null;
-  return (
-    <>
-      <p className="mag-drop-head">Saved searches</p>
-      {searches.map((s) => (
-        <div key={s.id} className="mag-drop-saved">
-          <button type="button" className="mag-drop-main" onClick={() => onRun && onRun(s)}>
-            <span className="mag-drop-label">{s.label}</span>
-            <span className="mag-drop-n">
-              {`${s.count} for sale`}{s.newCount ? ` · ${s.newCount} new` : ""}
-            </span>
-          </button>
-          {onRemove ? (
-            <button type="button" className="mag-drop-x"
-                    aria-label={`Remove saved search ${s.label}`} title="Remove saved search"
-                    onClick={() => onRemove(s)}>&times;</button>
-          ) : null}
-        </div>
-      ))}
-    </>
-  );
-}
-
-// The search is the page's main control, so it gets width and a preview of
-// what each destination holds, matching the current site's behaviour rather
-// than being a decorative box in the masthead.
-function MagSearch({ onSubmit, onLiveQuery, counts, recent, addRecent, big, saved, onRunSaved, onRemoveSaved }) {
+// Home's search: the shared SearchField (the same box, size and place as every other page's
+// search; Mark, 2026-10-17) with a Search button seated in it. It routes rather than filters:
+// typing previews what each destination holds, Enter or a row goes there. Under the focused,
+// empty field it offers the user's saved searches (Mark, 2026-10-16) and recent searches.
+//   size   "bar" (the desktop masthead's bar) | "full" (the phone header's search row)
+function MagSearch({ size = "bar", onSubmit, onLiveQuery, counts, recent, addRecent, saved, onRunSaved, onRemoveSaved }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
-  const [focus, setFocus] = useState(false);
   const wrap = useRef(null);
 
   useEffect(() => {
@@ -142,114 +84,82 @@ function MagSearch({ onSubmit, onLiveQuery, counts, recent, addRecent, big, save
     if (onLiveQuery) onLiveQuery("");
   };
 
-  const rows = [
-    ["all", "Everything", counts && counts.all],
-    ["live", "For sale", counts && counts.live],
-    ["auctions", "At auction", counts && counts.auctions],
-    ["sold", "Sold", counts && counts.sold],
-  ];
+  const targets = [
+    { id: "all", label: "Everything", n: counts && counts.all },
+    { id: "live", label: "For sale", n: counts && counts.live },
+    { id: "auctions", label: "At auction", n: counts && counts.auctions },
+    { id: "sold", label: "Sold", n: counts && counts.sold },
+  ].map((t) => ({ id: t.id, label: t.label, meta: t.n == null ? "" : t.n.toLocaleString() }));
+  const savedRows = (saved || []).map((x) => ({
+    id: x.id, label: x.label, saved: x,
+    meta: `${x.count} for sale${x.newCount ? ` · ${x.newCount} new` : ""}`,
+  }));
+  const recentRows = (recent || []).slice(0, 5).map((r) => ({ id: r, label: r }));
+  const typing = q.trim().length > 0;
 
   return (
-    <div className={`mag-searchwrap${big ? " mag-searchwrap--big" : ""}`} ref={wrap}>
-      <form className={`mag-search${focus ? " is-focus" : ""}`} role="search" onSubmit={(e) => { e.preventDefault(); fire("all"); }}>
-        <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <circle cx="7" cy="7" r="5" /><path d="M11 11l4 4" />
-        </svg>
-        <input type="search" value={q} onChange={(e) => change(e.target.value)}
-               onFocus={() => { setFocus(true); setOpen(q.trim().length > 0 || (recent || []).length > 0 || (saved || []).length > 0); }}
-               onBlur={() => setFocus(false)}
-               placeholder="Brand, model, reference" aria-label="Search watches" />
-        <button type="submit" className="mag-search-go">Search</button>
-      </form>
-      {open && (
-        <div className="mag-drop">
-          {q.trim().length > 0 && rows.map(([target, label, n]) => (
-            <button key={target} type="button" className="mag-drop-row" onClick={() => fire(target)}>
-              <span>{label}</span>
-              <span className="mag-drop-n">{n == null ? "" : n.toLocaleString()}</span>
-            </button>
-          ))}
-          {q.trim().length === 0 && (
-            <SavedSearchRows searches={saved}
-              onRun={(x) => { setOpen(false); if (onRunSaved) onRunSaved(x); }}
-              onRemove={onRemoveSaved} />
-          )}
-          {q.trim().length === 0 && (recent || []).length > 0 && (
-            <>
-              <p className="mag-drop-head">Recent</p>
-              {recent.slice(0, 5).map((r) => (
-                <button key={r} type="button" className="mag-drop-row" onClick={() => { setQ(r); change(r); }}>
-                  <span>{r}</span>
-                </button>
-              ))}
-            </>
-          )}
-        </div>
-      )}
+    <div className="mag-searchwrap" ref={wrap}>
+      <SearchField
+        size={size}
+        value={q}
+        onChange={(e) => change(e.target.value)}
+        onClear={() => { setQ(""); setOpen(false); if (onLiveQuery) onLiveQuery(""); }}
+        onFocus={() => setOpen(q.trim().length > 0 || recentRows.length > 0 || savedRows.length > 0)}
+        onSubmit={() => fire("all")}
+        placeholder="Brand, model, reference"
+        ariaLabel="Search watches"
+        trailing={<button type="submit" className="ui-search-go">Search</button>}>
+        {open ? (
+          <div className="ui-search-drop">
+            {typing ? (
+              <SuggestionRows rows={targets} onRun={(r) => fire(r.id)} />
+            ) : (
+              <>
+                <SuggestionRows heading="Saved searches" rows={savedRows}
+                  onRun={(r) => { setOpen(false); if (onRunSaved) onRunSaved(r.saved); }}
+                  onRemove={onRemoveSaved ? (r) => onRemoveSaved(r.saved) : undefined} />
+                <SuggestionRows heading="Recent" rows={recentRows}
+                  onRun={(r) => { setQ(r.label); change(r.label); }} />
+              </>
+            )}
+          </div>
+        ) : null}
+      </SearchField>
     </div>
   );
 }
 
-
 export { MagSearch, Crescent, SavedButton, useFonts };
 
+// The desktop masthead: the big wordmark over a sticky bar of tabs · search · saved heart · account.
+// A phone has no masthead of its own: Home wears the same header as every other page (PageShell),
+// and its search is seated in that header's search row (Mark, 2026-10-17: "all still different").
 export default function MagazineChrome({
-  isMobile, tabs, authJSX, onSavedClick, showSaved,
+  tabs, authJSX, onSavedClick, showSaved,
   onSearchSubmit, onSearchLiveQuery, searchCounts, recentSearches, addRecentSearch,
   savedSearches, onRunSavedSearch, onRemoveSavedSearch,
-  // Optional slots a second surface fills. `searchJSX` replaces the routing
-  // MagSearch with the consumer's own field (Watches types straight into the
-  // tab's filter); `onHome` turns the wordmark into the way back to the
-  // landing page (Mark, 2026-09-08). Home passes neither, so it is unchanged.
+  // Optional slots a second surface fills. `searchJSX` replaces the routing MagSearch with the
+  // consumer's own field; `onHome` turns the wordmark into the way back to the landing page
+  // (Mark, 2026-09-08). Home passes neither, so it is unchanged.
   searchJSX, onHome,
 }) {
   useFonts();
-  const scrolled = useScrolled(64);
   const search = searchJSX || (
-    <MagSearch big onSubmit={onSearchSubmit} onLiveQuery={onSearchLiveQuery}
+    <MagSearch size="bar" onSubmit={onSearchSubmit} onLiveQuery={onSearchLiveQuery}
                counts={searchCounts} recent={recentSearches} addRecent={addRecentSearch}
                saved={savedSearches} onRunSaved={onRunSavedSearch} onRemoveSaved={onRemoveSavedSearch} />
   );
   const crescent = <Crescent />;
   const savedBtn = showSaved && onSavedClick ? <SavedButton onClick={onSavedClick} /> : null;
-  const tabList = (short) => (
+  const tabList = () => (
     <div className="mag-bar-tabs">
       {(tabs || []).map((t) => (
         <button key={t.key} type="button" onClick={t.onSelect} className={t.active ? "on" : ""}>
-          {short ? (t.mobileLabel || t.label) : t.label}
+          {t.label}
         </button>
       ))}
     </div>
   );
-
-  if (isMobile) {
-    // Three rows that collapse to two on scroll: wordmark with saved and
-    // account, then the tabs, then the search. All pinned, so nothing
-    // important is ever a scroll away.
-    return (
-      <div className={`mag-mhead${scrolled ? " is-compact" : ""}`}>
-        <div className="mag-mhead-top">
-          {onHome ? (
-            <button type="button" className="mag-home" onClick={onHome}
-                    aria-label="Home" title="Home">
-              {crescent}
-              <h1 className="mag-wordmark">Watchlist</h1>
-            </button>
-          ) : (
-            <>
-              {crescent}
-              <h1 className="mag-wordmark">Watchlist</h1>
-            </>
-          )}
-          <span className="mag-mhead-sp" />
-          {savedBtn}
-          {authJSX}
-        </div>
-        <div className="mag-mhead-row">{tabList(true)}</div>
-        <div className="mag-mhead-row mag-mhead-search">{search}</div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -268,7 +178,7 @@ export default function MagazineChrome({
         )}
       </header>
       <div className="mag-bar">
-        {tabList(false)}
+        {tabList()}
         {search}
         <div className="mag-bar-util">
           {savedBtn}
@@ -300,7 +210,6 @@ export const MAG_CSS = `
             background: none; border: none; padding: 0; cursor: pointer; text-align: left; }
 .mag-home:hover .mag-wordmark, .mag-home:hover .mag-crescent { opacity: .78; }
 .mag-crescent svg { width: clamp(26px,3.4vw,44px); height: clamp(26px,3.4vw,44px); }
-.mag-mhead .mag-crescent svg { width: 26px; height: 26px; }
 /* Olive wordmark (Mark, 2026-09-07). --brand-olive-ink is theme-aware: deep
    olive on paper, a lifted sage on the dark ground, so it holds contrast in
    both without needing a second colour. */
@@ -312,46 +221,6 @@ export const MAG_CSS = `
 .mag { --mag-tile: 268px; }
 
 .mag-searchwrap { position: relative; flex: 0 0 auto; }
-.mag-searchwrap--big { flex: 1 1 420px; max-width: 560px; }
-.mag-search { display: flex; align-items: center; gap: 10px; border: .5px solid var(--border);
-              border-radius: 999px; padding: 6px 6px 6px 16px; background: var(--card-bg); }
-/* Do NOT use :focus-within here. jsdom resolves it with contains(activeElement)
-   and throws when nothing is focused, which breaks every getByRole in this
-   component's tests. Focus is tracked in React state instead. */
-.mag-search.is-focus { border-color: var(--brand-olive-text); }
-.mag-search svg { width: 14px; height: 14px; flex: 0 0 auto; color: var(--text3); }
-.mag-search input { border: none; background: transparent; outline: none; width: 100%;
-                    font-family: var(--mag-body); font-size: 14px; color: var(--text1); padding: 6px 0; }
-.mag-search input::placeholder { color: var(--text3); }
-.mag-searchwrap--big .mag-search { padding: 9px 9px 9px 22px; border-width: 1px;
-                                  box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-.mag-searchwrap--big .mag-search.is-focus { box-shadow: 0 2px 10px rgba(0,0,0,.10); }
-.mag-searchwrap--big .mag-search svg { width: 17px; height: 17px; color: var(--text2); }
-.mag-searchwrap--big .mag-search input { font-size: 15.5px; padding: 9px 0; }
-.mag-search-go { font-family: var(--mag-data); font-size: 11.5px; letter-spacing: .16em;
-                 text-transform: uppercase; border: none; border-radius: 999px; cursor: pointer;
-                 background: var(--brand-olive-text); color: var(--bg); padding: 12px 22px; flex: 0 0 auto; }
-.mag-searchwrap:not(.mag-searchwrap--big) .mag-search-go { display: none; }
-.mag-drop { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; right: 0;
-            background: var(--card-bg); border: .5px solid var(--border); border-radius: 14px;
-            box-shadow: 0 12px 34px rgba(0,0,0,.16); padding: 6px; display: grid; gap: 1px; }
-.mag-drop-head { font-family: var(--mag-data); font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
-                 color: var(--text3); margin: 6px 10px 4px; }
-.mag-drop-row { display: flex; align-items: center; justify-content: space-between; gap: 14px;
-                background: none; border: none; cursor: pointer; text-align: left; width: 100%;
-                padding: 10px 12px; border-radius: 10px; font-family: var(--mag-body); font-size: 14px; color: var(--text1); }
-.mag-drop-row:hover { background: var(--surface, rgba(0,0,0,.05)); }
-.mag-drop-n { font-family: var(--mag-data); font-size: 12px; color: var(--text3); font-variant-numeric: tabular-nums; }
-/* A saved-search row: the whole row re-runs it, the × at the end unsaves it. */
-.mag-drop-saved { display: flex; align-items: center; border-radius: 10px; }
-.mag-drop-saved:hover { background: var(--surface, rgba(0,0,0,.05)); }
-.mag-drop-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: space-between;
-                 gap: 14px; background: none; border: none; cursor: pointer; text-align: left;
-                 padding: 10px 4px 10px 12px; font-family: var(--mag-body); font-size: 14px; color: var(--text1); }
-.mag-drop-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mag-drop-x { flex: 0 0 auto; width: 30px; height: 30px; margin-right: 4px; border-radius: 999px; border: none;
-              background: none; cursor: pointer; color: var(--text3); font-size: 17px; line-height: 1; }
-.mag-drop-x:hover { color: var(--text1); background: var(--surface, rgba(0,0,0,.06)); }
 
 /* persistent bar */
 .mag-bar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center;
@@ -395,26 +264,9 @@ export const MAG_CSS = `
             justify-content: center; color: var(--text1); position: relative; padding: 0; }
 .mag-icon:hover { border-color: var(--brand-olive-text); color: var(--brand-olive-text); }
 .mag-icon svg { width: 17px; height: 17px; }
-.mag-mhead .mag-icon { width: 40px; height: 40px; }
-.mag-mhead .mag-icon svg { width: 18px; height: 18px; }
 .mag-avatar { width: 34px; height: 34px; border-radius: 999px; background: var(--brand-olive-text);
               color: var(--bg); font-family: var(--mag-display); font-size: 15px; font-weight: 500;
               display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-
-/* ---------- mobile chrome ---------- */
-.mag-mhead { position: sticky; top: 0; z-index: 40; background: var(--bg);
-             border-bottom: .5px solid var(--border); padding-top: 6px; }
-.mag-mhead-top { display: flex; align-items: center; gap: 10px; padding-bottom: 4px; }
-.mag-mhead-sp { flex: 1 1 auto; }
-.mag-mhead-row { padding: 4px 0 8px; }
-.mag-mhead .mag-wordmark { font-size: 30px; line-height: 1; }
-.mag-mhead .mag-bar-tabs { gap: 4px 20px; }
-.mag-mhead .mag-searchwrap { position: static; transform: none; width: 100%; max-width: none; }
-/* Compact: the masthead row goes, tabs and search stay pinned. Height, not
-   display, so it collapses rather than jumping. */
-.mag-mhead.is-compact .mag-mhead-top { height: 0; overflow: hidden; padding: 0; opacity: 0; }
-.mag-mhead.is-compact .mag-mhead-search { padding-top: 0; }
-.mag-mhead-top, .mag-mhead-search { transition: height .18s ease, opacity .18s ease, padding .18s ease; }
 
 /* dealer shortcuts */
 /* Same band treatment and the same width as the featured-watch band below,
@@ -601,7 +453,6 @@ export const MAG_CSS = `
 }
 @media (max-width: 620px) {
   .mag-bar-link { display: none; }
-  .mag-mhead .mag-bar-tabs button { font-size: 11.5px; letter-spacing: .11em; }
 }
 @media (prefers-reduced-motion: reduce) { .mag * { transition: none !important; } }
 `;

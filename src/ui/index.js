@@ -16,6 +16,7 @@ import { HeartIcon } from "../components/icons";
 import "./ui.css";
 
 export { PageShell, HeaderSearch } from "./PageShell";
+export { SearchField, SuggestionRows } from "./SearchField";
 
 // Join class names, skipping falsy ones.
 const cx = (...parts) => parts.filter(Boolean).join(" ");
@@ -95,30 +96,6 @@ export function Button({ primary, children, className, ...rest }) {
   );
 }
 
-// ---- SearchField: the one search box -----------------------------------------
-//   size   "bar" (in the header) | "row" (in a filter bar) | "full" (a phone's own row)
-//   trailing   a control seated at the end (the save-this-search heart)
-//   children   a suggestions dropdown (<div className="ui-search-drop">)
-export function SearchField({ value, onChange, placeholder, ariaLabel, size = "row",
-                              inputRef, onFocus, onBlur, onKeyDown, onClear, trailing, children }) {
-  return (
-    <form className={cx("ui-search", `ui-search--${size}`)} role="search"
-          onSubmit={(e) => e.preventDefault()}>
-      <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <circle cx="7" cy="7" r="5" /><path d="M11 11l4 4" />
-      </svg>
-      <input type="search" ref={inputRef} value={value || ""} onChange={onChange}
-             onFocus={onFocus} onBlur={onBlur} onKeyDown={onKeyDown}
-             placeholder={placeholder} aria-label={ariaLabel || placeholder} />
-      {value && onClear ? (
-        <button type="button" className="ui-search-x" aria-label="Clear search" onClick={onClear}>&times;</button>
-      ) : null}
-      {trailing ? <span className="ui-search-trailing">{trailing}</span> : null}
-      {children}
-    </form>
-  );
-}
-
 // ---- SubTabs: "where you are" ------------------------------------------------------
 //   Segmented only: one track, a solid olive active chip (Mark, 2026-10-17).
 //   tabs      [{ key, label, ariaLabel? }]   (ariaLabel for an icon-only tab)
@@ -185,29 +162,6 @@ export function AccountDisc({ initial, onClick, ...rest }) {
   return (
     <button type="button" className="ui-disc" aria-label="Account menu" title="Account menu"
             onClick={onClick} {...rest}>{initial}</button>
-  );
-}
-
-// ---- SuggestionRows: saved searches / recent searches under a focused field ---------
-//   rows   [{ id, label, meta }]   onRun(row)   onRemove(row) (optional ×)
-export function SuggestionRows({ heading, rows, onRun, onRemove }) {
-  if (!rows || rows.length === 0) return null;
-  return (
-    <>
-      {heading ? <p className="ui-drop-head">{heading}</p> : null}
-      {rows.map((r) => (
-        <div key={r.id} className="ui-drop-row">
-          <button type="button" className="ui-drop-main" onClick={() => onRun && onRun(r)}>
-            <span className="ui-drop-label">{r.label}</span>
-            {r.meta ? <span className="ui-drop-meta">{r.meta}</span> : null}
-          </button>
-          {onRemove ? (
-            <button type="button" className="ui-drop-x" aria-label={`Remove ${r.label}`} title="Remove"
-                    onClick={() => onRemove(r)}>&times;</button>
-          ) : null}
-        </div>
-      ))}
-    </>
   );
 }
 

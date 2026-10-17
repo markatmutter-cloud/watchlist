@@ -19,7 +19,8 @@
 //    own :root tokens, so dark mode needs no second palette.
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import MagazineChrome, { MAG_CSS } from "./MagazineChrome";
+import MagazineChrome, { MAG_CSS, MagSearch } from "./MagazineChrome";
+import { HeaderSearch } from "../ui";
 import { imgSrc, fmt, priceIn, CURRENCY_SYM, fmtSaleDateRange } from "../utils";
 import { FooterBand } from "./SiteFooter";
 import { articleAsListing, sourceLabel } from "./EditorialView";
@@ -407,21 +408,31 @@ export default function MagazineHome(props) {
     <div className="mag" style={gridCols ? { "--mag-cols": gridCols } : undefined}>
       <style>{MAG_CSS}</style>
 
-      <MagazineChrome
-        isMobile={isMobile}
-        tabs={homeMastheadTabs}
-        authJSX={homeMastheadAuthJSX}
-        showSaved={!!user}
-        onSavedClick={goToSavedHearts}
-        onSearchSubmit={homeSearchSubmit}
-        onSearchLiveQuery={homeSearchLiveQuery}
-        searchCounts={homeSearchCounts}
-        recentSearches={homeRecentSearches}
-        addRecentSearch={homeAddRecentSearch}
-        savedSearches={homeSavedSearches}
-        onRunSavedSearch={homeRunSavedSearch}
-        onRemoveSavedSearch={homeRemoveSavedSearch}
-      />
+      {isMobile ? (
+        // A phone wears the same header as every other page (PageShell); Home only supplies the
+        // search that sits in its search row, so the box is the same size in the same place.
+        <HeaderSearch>
+          <MagSearch size="full"
+            onSubmit={homeSearchSubmit} onLiveQuery={homeSearchLiveQuery}
+            counts={homeSearchCounts} recent={homeRecentSearches} addRecent={homeAddRecentSearch}
+            saved={homeSavedSearches} onRunSaved={homeRunSavedSearch} onRemoveSaved={homeRemoveSavedSearch} />
+        </HeaderSearch>
+      ) : (
+        <MagazineChrome
+          tabs={homeMastheadTabs}
+          authJSX={homeMastheadAuthJSX}
+          showSaved={!!user}
+          onSavedClick={goToSavedHearts}
+          onSearchSubmit={homeSearchSubmit}
+          onSearchLiveQuery={homeSearchLiveQuery}
+          searchCounts={homeSearchCounts}
+          recentSearches={homeRecentSearches}
+          addRecentSearch={homeAddRecentSearch}
+          savedSearches={homeSavedSearches}
+          onRunSavedSearch={homeRunSavedSearch}
+          onRemoveSavedSearch={homeRemoveSavedSearch}
+        />
+      )}
 
       {articles.length > 0 && (
         <section className="mag-sec mag-sec--first">

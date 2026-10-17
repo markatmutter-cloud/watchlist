@@ -197,6 +197,10 @@ a.ui-pill:hover { text-decoration: none; }
 .ui-search-act:disabled { cursor: default; color: var(--brand-olive-text); }
 .ui-search-act svg { width: 14px; height: 14px; }
 .ui-search-trailing { flex: 0 0 auto; display: flex; align-items: center; }
+/* The button seated inside a field that routes rather than filters (Home): solid olive. */
+.ui-search-go { height: calc(var(--ui-search-h) - 10px); padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer;
+                background: var(--brand-olive-text); color: #fff; font-family: var(--ui-mono);
+                font-size: var(--ui-label-size); letter-spacing: var(--ui-label-track); text-transform: uppercase; }
 /* Suggestions dropdown (saved searches, recent): children of the field. */
 .ui-search-drop { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; right: 0;
                   background: var(--card-bg); border: .5px solid var(--border); border-radius: 14px;

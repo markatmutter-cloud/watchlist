@@ -17,9 +17,15 @@ describe("src/ui", () => {
   });
 
   test("every shared piece is exported from the one index", () => {
-    for (const name of ["Pill", "SavedPill", "SearchField", "SubTabs", "FilterBar",
-                        "PageFrame", "Count", "AccountDisc", "SuggestionRows"]) {
+    const searchModule = fs.readFileSync(path.join(__dirname, "SearchField.js"), "utf8");
+    for (const name of ["Pill", "SavedPill", "SubTabs", "FilterBar", "PageFrame", "Count", "AccountDisc"]) {
       expect(index).toMatch(new RegExp(`export function ${name}\\b`));
+    }
+    // The search field and its suggestion rows live in their own module (so Home's masthead can
+    // import them without a cycle) and are re-exported from the one index.
+    for (const name of ["SearchField", "SuggestionRows"]) {
+      expect(searchModule).toMatch(new RegExp(`export function ${name}\\b`));
+      expect(index).toMatch(new RegExp(`export \\{[^}]*\\b${name}\\b[^}]*\\} from "\\./SearchField"`));
     }
   });
 

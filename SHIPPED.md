@@ -793,11 +793,15 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — Home's search is the shared search; a phone Home wears the shared header.** `MagSearch` is now `SearchField` + `SuggestionRows` (the same box, saved
+  searches and recents as Watches, a solid Search button seated in it); `MagazineChrome` is the desktop masthead only, so its phone rows, the scroll-compacting
+  logic and ~60 lines of `.mag-search` / `.mag-drop` CSS are gone. Measured at 375px, Home's header, tab row and search are now the same boxes in the same
+  places as Watches, Articles and Guides. `SearchField` / `SuggestionRows` moved to `src/ui/SearchField.js` so Home can import them without a cycle.
 - **2026-10-17 — One search box, one place, one control height on every page.** Mark's phone screenshots: the search was 38px on Watches, 44px on Articles and
   59px on Home, in three different places, with the sub-tab track 35px beside 40px pills. Now the search lives in the header on every page that has one (a 40px
   row under the tabs on a phone; the bar on a desktop): `HeaderSearch` portals a page's field into a slot the shell makes room for, so Articles and Guides moved
   up beside Watches and own no search row of their own. Pills, the sub-tab track and the search share one height per device (36 desktop, 40 phone), the first row
-  under the header starts at the same y on every page, and phone fields are 16px so iOS stops zooming. Home is the one page still to join (its masthead search).
+  under the header starts at the same y on every page, and phone fields are 16px so iOS stops zooming. Home joined in the next change: its search is the same shared field (with a Search button in it), and on a phone Home wears the same three header rows as every other page.
 - **2026-10-17 — The old shells are deleted; src/ui is the only page frame.** `DesktopShell`, `MobileShell`, `shellProps` (a ~100-field bag),
   `StandardFilterBar`, `SubTabBar`, the legacy `Chip`, `SavedHeartLink`, `IdentityBand`, `WatchlistTab`, `HeartedView` and the mock-shell test fixture
   are gone, with ten App.js consts only they used. The `?look=old` and `?chrome=system` escape hatches and `lookFlag.js` are gone too (nothing is left to
