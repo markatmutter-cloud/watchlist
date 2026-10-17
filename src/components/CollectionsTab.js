@@ -15,7 +15,7 @@ import CardShell from "./CardShell";
 import { DossierBlocks } from "./DossierBlocks";
 import { fmtUSD, matchesSearch, imgSrc } from "../utils";
 import { FONT_SERIF, cardGridStyle } from "../styles";
-import { Pill, Button, SavedPill, JumpNav, SectionHead } from "../ui";
+import { Pill, Button, Chip, SavedPill, SubTabs, JumpNav, SectionHead } from "../ui";
 import { EmptyState } from "./EmptyState";
 import { Section } from "./Section";
 
@@ -896,48 +896,12 @@ function MyCollectionView({
             nav inside My Watches reads as a distinct block. Mark
             feedback: pills read as filter chips, not as the primary
             axis people are picking between. */}
-        <div style={{
-          display: "inline-flex",
-          background: "var(--surface)",
-          border: "0.5px solid var(--border)",
-          borderRadius: 10,
-          padding: 3,
-          flexShrink: 0,
-        }}>
-          {[
-            ["collection", "Collection", ownedItems.length],
-            ["archive",    "Archive",    soldItems.length],
-            ["plan",       "Plan",       null],
-          ].map(([key, label, count]) => {
-            const active = toggle === key;
-            return (
-              <button key={key} onClick={() => setToggle(key)}
-                style={{
-                  border: "none",
-                  background: active ? "var(--bg)" : "transparent",
-                  color: active ? "var(--text1)" : "var(--text2)",
-                  boxShadow: active ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                  borderRadius: 8,
-                  padding: "8px 16px",
-                  fontFamily: "inherit", fontSize: 13,
-                  fontWeight: active ? 600 : 500,
-                  cursor: "pointer",
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                }}>
-                <span>{label}</span>
-                {count != null && (
-                  <span style={{
-                    fontSize: 11, fontWeight: 500,
-                    color: "var(--text3)",
-                    background: active ? "var(--surface)" : "transparent",
-                    padding: "2px 6px", borderRadius: 999,
-                    minWidth: 18, textAlign: "center",
-                  }}>{count}</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <SubTabs ariaLabel="Watchbox views" activeKey={toggle} onSelect={setToggle}
+          tabs={[
+            { key: "collection", label: `Collection · ${ownedItems.length}` },
+            { key: "archive", label: `Archive · ${soldItems.length}` },
+            { key: "plan", label: "Plan" },
+          ]} />
         <div style={{ flex: 1 }} />
         {/* +Add CTAs scope to the active toggle. Plan view shows
             "+ From feed" pulling into Wants (shortlist), with a
@@ -1439,17 +1403,7 @@ function ShortlistPickerSection({
 }
 
 function PickerChip({ active, label, onClick }) {
-  return (
-    <button onClick={onClick} style={{
-      flexShrink: 0,
-      padding: "4px 12px", borderRadius: 999,
-      border: "0.5px solid var(--border)",
-      background: active ? "var(--text1)" : "transparent",
-      color: active ? "var(--bg)" : "var(--text1)",
-      cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-      whiteSpace: "nowrap",
-    }}>{label}</button>
-  );
+  return <Chip on={active} onClick={onClick}>{label}</Chip>;
 }
 
 function PoolCard({ item, busy, onAdd, primaryCurrency }) {
@@ -2722,12 +2676,7 @@ function SavedArticlesView({ items, isWide, gridStyle, watchlist, handleWish, op
   return (
     <div style={{ padding: isWide ? "0 24px 80px" : "0 14px 80px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 0 6px" }}>
-        <button
-          onClick={onBack}
-          style={{
-            background: "transparent", border: "none", padding: "4px 10px 4px 0",
-            color: "var(--text2)", cursor: "pointer", fontSize: 13, fontFamily: "inherit",
-          }}>← Lists</button>
+        <Pill quiet onClick={onBack}>← Lists</Pill>
         <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
           Saved articles
         </h1>
@@ -2790,12 +2739,7 @@ function SavedAuctionsView({ items, isWide, gridStyle, onOpenSale, onToggleSave,
   return (
     <div style={{ padding: isWide ? "0 24px 80px" : "0 14px 80px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 0 6px" }}>
-        <button
-          onClick={onBack}
-          style={{
-            background: "transparent", border: "none", padding: "4px 10px 4px 0",
-            color: "var(--text2)", cursor: "pointer", fontSize: 13, fontFamily: "inherit",
-          }}>← Lists</button>
+        <Pill quiet onClick={onBack}>← Lists</Pill>
         <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
           Saved auctions
         </h1>

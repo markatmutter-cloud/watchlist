@@ -332,16 +332,7 @@ export function SearchResultsView({
               </span>
             )}
           </div>
-          <button onClick={onExit}
-            style={{
-              background: "transparent", border: "0.5px solid var(--border)",
-              borderRadius: 18, padding: "5px 12px",
-              fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-              color: "var(--text2)", cursor: "pointer", flexShrink: 0,
-              whiteSpace: "nowrap",
-            }}>
-            Exit
-          </button>
+          <Pill onClick={onExit}>Exit</Pill>
         </div>
         {/* PR_φ-refresh 2026-05-22: query is always an editable input
             (was a click-to-edit button). Cleaner affordance — same

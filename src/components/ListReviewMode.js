@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { imgSrc, fmtUSD } from "../utils";
 import { FONT_SANS, FONT_SERIF_DISPLAY } from "../styles";
-import { Pill } from "../ui";
+import { Pill, Button } from "../ui";
 
 // Swipe gesture thresholds + tap detection.
 const SWIPE_THRESHOLD_X = 90;
@@ -985,9 +985,7 @@ function OnboardingCard({ ownerName, total, onDismiss }) {
             <strong>Details</strong>: tap the card to read the full listing.
           </IntroRow>
         </ul>
-        <button onClick={onDismiss} style={primaryBtnStyle()}>
-          Start review
-        </button>
+        <Button primary inline onClick={onDismiss}>Start review</Button>
       </div>
     </div>
   );
@@ -1044,12 +1042,8 @@ function BreakInterstitial({ idx, total, onContinue, onPause }) {
           {idx} of {total} reviewed. Come back anytime; your place is saved.
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onPause} style={ghostBtnStyle()}>
-            Pause &amp; bookmark
-          </button>
-          <button onClick={onContinue} style={primaryBtnStyle()}>
-            Keep going
-          </button>
+          <Button inline onClick={onPause}>Pause &amp; bookmark</Button>
+          <Button primary inline onClick={onContinue}>Keep going</Button>
         </div>
       </div>
     </div>
@@ -1092,9 +1086,7 @@ function CompletionView({ total, heartedThisSession, onClose }) {
           ? "Your saves are in your watchlist."
           : "Swipe right or tap Save to add a watch to your watchlist."}
       </div>
-      <button onClick={onClose} style={primaryBtnStyle()}>
-        Done
-      </button>
+      <Button primary inline onClick={onClose}>Done</Button>
     </div>
   );
 }
@@ -1204,29 +1196,3 @@ function editorialPanel(maxWidth) {
   };
 }
 
-function ghostBtnStyle() {
-  return {
-    flex: 1, padding: "12px 14px",
-    border: "0.5px solid var(--border)",
-    background: "transparent", color: "var(--text2)",
-    borderRadius: 8,
-    fontFamily: SANS_STACK,
-    fontSize: 13, fontWeight: 500,
-    letterSpacing: "0.06em",
-    cursor: "pointer",
-  };
-}
-
-function primaryBtnStyle() {
-  return {
-    width: "100%",
-    padding: "12px 20px",
-    border: "none",
-    background: "var(--brand-olive-text)", color: "#fff",
-    borderRadius: 8,
-    fontFamily: SANS_STACK,
-    fontSize: 13, fontWeight: 500,
-    letterSpacing: "0.14em", textTransform: "uppercase",
-    cursor: "pointer",
-  };
-}

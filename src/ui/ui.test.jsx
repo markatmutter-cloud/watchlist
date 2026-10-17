@@ -412,3 +412,29 @@ describe("PickRow and the choice SubTabs", () => {
     expect(container.querySelector(".ui-tabs--block")).not.toBeNull();
   });
 });
+
+describe("Button link, muted, danger and href", () => {
+  it("link is a text action with no box; muted is the quiet footer size; link+danger is red text", () => {
+    render(<><Button link>View all</Button><Button link muted>About</Button><Button link danger>Remove</Button></>);
+    expect(screen.getByRole("button", { name: "View all" })).toHaveClass("ui-btn--link");
+    expect(screen.getByRole("button", { name: "About" })).toHaveClass("ui-btn--link", "ui-btn--muted");
+    expect(screen.getByRole("button", { name: "Remove" })).toHaveClass("ui-btn--link", "ui-btn--link-danger");
+  });
+
+  it("danger is the solid destructive confirm", () => {
+    render(<Button danger>Delete</Button>);
+    expect(screen.getByRole("button", { name: "Delete" })).toHaveClass("ui-btn--danger");
+  });
+
+  it("an href makes the same look an anchor (a footer's Privacy / Terms)", () => {
+    render(<Button link muted href="/privacy.html">Privacy</Button>);
+    const a = screen.getByRole("link", { name: "Privacy" });
+    expect(a).toHaveAttribute("href", "/privacy.html");
+    expect(a).toHaveClass("ui-btn", "ui-btn--link");
+  });
+
+  it("a submit button keeps its type", () => {
+    render(<form><Button primary type="submit">Set cap</Button></form>);
+    expect(screen.getByRole("button", { name: "Set cap" })).toHaveAttribute("type", "submit");
+  });
+});

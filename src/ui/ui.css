@@ -131,6 +131,12 @@ a.ui-pill:hover { text-decoration: none; }
 .ui-btn--ghost { border: .5px solid var(--border); background: transparent; color: var(--text2); }
 .ui-btn--primary { flex: 1; border: none; background: var(--brand-olive-text); color: #fff; font-weight: 600; }
 .ui-btn--danger { flex: 1; border: none; background: var(--danger); color: #fff; font-weight: 600; }
+.ui-btn--link { flex: none; padding: 4px 0; border: 0; border-radius: 6px; background: none; color: var(--brand);
+                font-weight: 600; font-size: 13px; text-align: left; }
+.ui-btn--link:hover:not(:disabled) { text-decoration: underline; text-underline-offset: 2px; }
+.ui-btn--link-danger { color: var(--danger); }
+.ui-btn--muted { color: var(--text2); font-weight: 400; font-size: 12px; letter-spacing: .02em; }
+a.ui-btn { text-decoration: none; display: inline-block; }
 .ui-btn--sm { flex: none; padding: 9px 16px; border-radius: 10px; font-size: 13px; }
 .ui-btn--block { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; flex: none; }
 .ui-btn:disabled { opacity: .5; cursor: default; }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Modal, FieldLabel } from "../ui";
+import { Modal, FieldLabel, Button } from "../ui";
 import { confirm } from "./ConfirmModal";
 
 // List Sharing v2 / slice 2 — Manage list sheet.
@@ -195,19 +195,7 @@ export function ManageListSheet({
                 synced list under Shared with you. */}
         {/* Section 1 — Send a copy. Single big CTA. */}
         <FieldLabel>Send a copy</FieldLabel>
-        <button onClick={copyShareUrl}
-          disabled={busy}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            width: "100%",
-            border: "none",
-            background: "var(--brand-olive)", color: "#fff",
-            padding: "12px 16px", borderRadius: 8,
-            cursor: busy ? "wait" : "pointer",
-            fontFamily: "inherit", fontSize: 14, fontWeight: 600,
-            letterSpacing: "0.02em",
-            marginBottom: 8,
-          }}>
+        <Button primary block onClick={copyShareUrl} disabled={busy} style={{ marginBottom: 8 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2"
             strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -218,7 +206,7 @@ export function ManageListSheet({
           {shareCopyState === "copied-readonly" ? "Link copied to clipboard ✓"
            : shareCopyState === "shared-readonly" ? "Shared ✓"
            : "Share a copy of this list"}
-        </button>
+        </Button>
         <div style={{
           fontSize: 11, color: "var(--text3)",
           marginBottom: 22, lineHeight: 1.5,
@@ -254,21 +242,12 @@ export function ManageListSheet({
               <option value="viewer">Viewer</option>
             </select>
           </div>
-          <button onClick={submitInvite} disabled={busy || !email.trim()}
-            style={{
-              display: "block", width: "100%",
-              border: "0.5px solid var(--brand)",
-              background: "transparent", color: "var(--brand)",
-              padding: "8px 14px", borderRadius: 6,
-              cursor: busy ? "wait" : "pointer",
-              fontFamily: "inherit", fontSize: 13, fontWeight: 600,
-              opacity: (!email.trim() || busy) ? 0.5 : 1,
-            }}>
+          <Button small block onClick={submitInvite} disabled={busy || !email.trim()}>
             {busy ? "Sending…"
              : shareCopyState === "copied-collab" ? "Invite copied to clipboard ✓"
              : shareCopyState === "shared-collab" ? "Sent ✓"
              : "Send invite"}
-          </button>
+          </Button>
           <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 8, lineHeight: 1.5 }}>
             You'll share one synced list. It shows up under their Lists ▸ Shared
             with you. Editors add and remove watches; viewers see read-only.
@@ -307,14 +286,7 @@ export function ManageListSheet({
                       {isPending ? "Pending" : "Accepted"} · {r.role === 'viewer' ? "Viewer" : "Editor"}
                     </div>
                   </div>
-                  <button onClick={() => onRevoke(r)} disabled={busy}
-                    title="Remove access"
-                    style={{
-                      border: "none", background: "transparent",
-                      color: "var(--danger)", cursor: busy ? "wait" : "pointer",
-                      padding: "4px 10px", borderRadius: 6,
-                      fontFamily: "inherit", fontSize: 12,
-                    }}>Remove</button>
+                  <Button link danger small onClick={() => onRevoke(r)} disabled={busy} title="Remove access">Remove</Button>
                 </div>
               );
             })}

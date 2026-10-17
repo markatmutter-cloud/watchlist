@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { ReferencePage } from "./ReferencePage";
 import { Breadcrumb } from "./Breadcrumb";
-import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame, HeaderSearch } from "../ui";
+import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame, HeaderSearch, Button } from "../ui";
 import { editorialHeading, editorialProse, editorialTitle, cardGridStyle, FONT_SERIF } from "../styles";
 import { imgSrc } from "../utils";
 import {
@@ -350,11 +350,7 @@ function ComingSoon({ node, isMobile, children }) {
           {noted ? (
             <div style={{ fontSize: 13, color: "var(--text1)", fontWeight: 600, marginBottom: 16 }}>✓ Noted. We'll let you know when it's live.</div>
           ) : (
-            <button onClick={() => setNoted(true)} style={{
-              cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600,
-              color: "#fff", background: "var(--brand-olive, #4a5240)", border: "none",
-              borderRadius: 8, padding: "8px 14px", marginBottom: 16,
-            }}>I want this guide</button>
+            <Button small primary inline onClick={() => setNoted(true)} style={{ marginBottom: 16 }}>I want this guide</Button>
           )}
           <div style={{ borderTop: "0.5px solid var(--border)", paddingTop: 14 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text1)", marginBottom: 6 }}>Help shape the guides</div>
@@ -364,11 +360,7 @@ function ComingSoon({ node, isMobile, children }) {
             <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
               placeholder="A reference you'd like covered, or a fix for an existing guide…"
               style={{ width: "100%", boxSizing: "border-box", fontFamily: "inherit", fontSize: 13, lineHeight: 1.5, color: "var(--text1)", background: "var(--surface)", border: "0.5px solid var(--border)", borderRadius: 8, padding: "8px 10px", resize: "vertical" }} />
-            <button onClick={send} disabled={!note.trim()} style={{
-              cursor: note.trim() ? "pointer" : "default", fontFamily: "inherit", fontSize: 13, fontWeight: 600,
-              color: note.trim() ? "var(--text1)" : "var(--text3)", background: "var(--surface)",
-              border: "0.5px solid var(--border)", borderRadius: 8, padding: "7px 14px", marginTop: 8,
-            }}>Send suggestion</button>
+            <Button small inline onClick={send} disabled={!note.trim()} style={{ marginTop: 8 }}>Send suggestion</Button>
           </div>
         </div>
       </div>
@@ -380,10 +372,7 @@ function NotFound({ onHome }) {
   return (
     <div style={{ paddingTop: 4 }}>
       <p style={{ fontSize: 14, color: "var(--text2)" }}>That reference isn't available.</p>
-      <button onClick={onHome} style={{
-        cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: "var(--text2)",
-        background: "none", border: "none", padding: 0,
-      }}>← Back to reference guides</button>
+      <Button link onClick={onHome}>← Back to reference guides</Button>
     </div>
   );
 }

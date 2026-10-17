@@ -98,13 +98,14 @@ export function PriceRange({ min, max, onMin, onMax, onClear }) {
 //   small    the modal-footer size
 //   inline   sized to its label instead of growing to fill a row (a sign-in button in an empty state)
 //   block    the full width of its container, content centred (a modal's "Continue with Google")
-export function Button({ primary, danger, small, inline, block, children, className, ...rest }) {
-  const kind = danger ? "ui-btn--danger" : primary ? "ui-btn--primary" : "ui-btn--ghost";
-  return (
-    <button type="button" className={cx("ui-btn", kind, small && "ui-btn--sm", inline && "ui-btn--inline", block && "ui-btn--block", className)} {...rest}>
-      {children}
-    </button>
-  );
+//   link     no box at all: a text action in the page's flow ("View all →", "← Back")
+//   muted    with link: quiet grey and small, for a footer
+//   href     renders an anchor with the same look (a footer's Privacy / Terms)
+export function Button({ primary, danger, small, inline, block, link, muted, href, children, className, ...rest }) {
+  const kind = link ? "ui-btn--link" : danger ? "ui-btn--danger" : primary ? "ui-btn--primary" : "ui-btn--ghost";
+  const cls = cx("ui-btn", kind, link && danger && "ui-btn--link-danger", small && "ui-btn--sm", inline && "ui-btn--inline", block && "ui-btn--block", muted && "ui-btn--muted", className);
+  if (href) return <a className={cls} href={href} {...rest}>{children}</a>;
+  return <button type="button" className={cls} {...rest}>{children}</button>;
 }
 
 // ---- Input / Textarea: the one form field --------------------------------------------------

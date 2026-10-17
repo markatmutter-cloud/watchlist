@@ -1,22 +1,18 @@
 import React from "react";
+import { SubTabs, FieldLabel } from "../ui";
 
 // Compact view-settings controls — currency / theme / columns. Lives
-// outside SettingsModal so we can render the same fields in two
-// in-flow surfaces (mobile filter tray + desktop account menu)
-// without duplicating logic.
+// outside SettingsModal so we can render the same fields in an in-flow surface
+// (the desktop account menu) without duplicating logic.
 //
-// User feedback 2026-05-09: the standalone Settings modal hid these
-// behind one too many taps. Currency in particular is something you
-// adjust while comparing prices — having to leave the filter you're
-// using to swap currencies broke flow.
+// User feedback 2026-05-09: the standalone Settings modal hid these behind one
+// too many taps. Currency in particular is something you adjust while comparing
+// prices — having to leave the filter you're using to swap currencies broke flow.
 //
-// All three values still write through useViewSettings (per-device,
-// localStorage) and useUserSettings (currency, cross-device Supabase).
-// This component is a pure render of those getters/setters.
-//
-// `compact` prop tightens vertical rhythm for the desktop account-
-// menu surface; mobile filter-tray uses the default loose spacing
-// (touch targets read better with breathing room).
+// All three values still write through useViewSettings (per-device, localStorage)
+// and useUserSettings (currency, cross-device Supabase). This component is a pure
+// render of those getters/setters. Each choice is the shared segmented control
+// (SubTabs `choice`), the same one the Settings dialog uses, so the two cannot drift.
 
 const CURRENCIES = [
   { code: "USD", label: "USD", symbol: "$" },
@@ -24,89 +20,41 @@ const CURRENCIES = [
   { code: "EUR", label: "EUR", symbol: "€" },
 ];
 
-const sectionLabel = (compact) => ({
-  fontSize: 11, fontWeight: 600, color: "var(--text3)",
-  textTransform: "uppercase", letterSpacing: "0.06em",
-  marginTop: compact ? 10 : 14, marginBottom: 6,
-});
-
-const segmentBtn = (active, compact) => ({
-  flex: "1 1 auto",
-  minWidth: 44,
-  padding: compact ? "7px 10px" : "10px 12px",
-  borderRadius: 8,
-  border: "0.5px solid var(--border)",
-  // PR_ε5 2026-05-22: olive active state across VIEW SETTINGS pills
-  // (Currency / Theme / Columns). Matches the avatar + Watchbox disc
-  // + Admin badge — single brand-thread color across user surfaces.
-  background: active ? "var(--brand-olive)" : "var(--card-bg)",
-  color: active ? "#ffffff" : "var(--text1)",
-  cursor: "pointer", fontFamily: "inherit",
-  fontSize: compact ? 12 : 13,
-  fontWeight: active ? 600 : 500,
-  display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-});
-
 export function ViewSettingsControls({
   primaryCurrency, setPrimaryCurrency,
   isMobile,
   dark, setDarkOverride,
   mobileCols, setMobileCols,
   desktopCols, setDesktopCols, desktopAutoCols,
-  // `compact` tightens vertical spacing for the desktop dropdown
-  // surface. Mobile filter tray uses default loose rhythm.
-  compact = false,
 }) {
   return (
-    <div>
-      <div style={sectionLabel(compact)}>Currency</div>
-      <div style={{ display: "flex", gap: 6 }}>
-        {CURRENCIES.map(c => {
-          const active = primaryCurrency === c.code;
-          return (
-            <button key={c.code} onClick={() => setPrimaryCurrency(c.code)}
-              style={segmentBtn(active, compact)}>
-              <span>{c.symbol}</span>
-              <span>{c.label}</span>
-            </button>
-          );
-        })}
+    <div style={{ display: "grid", gap: 12 }}>
+      <div>
+        <FieldLabel>Currency</FieldLabel>
+        <SubTabs block choice ariaLabel="Currency" activeKey={primaryCurrency} onSelect={setPrimaryCurrency}
+          tabs={CURRENCIES.map(c => ({ key: c.code, label: `${c.symbol} ${c.label}` }))} />
       </div>
-
-      <div style={sectionLabel(compact)}>Theme</div>
-      <div style={{ display: "flex", gap: 6 }}>
-        {[["light", "Light"], ["dark", "Dark"]].map(([key, lbl]) => {
-          const active = (key === "dark") === dark;
-          return (
-            <button key={key} onClick={() => setDarkOverride(key === "dark")}
-              style={segmentBtn(active, compact)}>{lbl}</button>
-          );
-        })}
+      <div>
+        <FieldLabel>Theme</FieldLabel>
+        <SubTabs block choice ariaLabel="Theme" activeKey={dark ? "dark" : "light"}
+          onSelect={(k) => setDarkOverride(k === "dark")}
+          tabs={[{ key: "light", label: "Light" }, { key: "dark", label: "Dark" }]} />
       </div>
-
-      <div style={sectionLabel(compact)}>Columns</div>
-      {isMobile ? (
-        <div style={{ display: "flex", gap: 6 }}>
-          {[1, 2, 3].map(n => (
-            <button key={n} onClick={() => setMobileCols(n)}
-              style={segmentBtn(mobileCols === n, compact)}>{n}</button>
-          ))}
-        </div>
-      ) : (
-        <>
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-            {["auto", 3, 4, 5, 6, 7].map(n => (
-              <button key={n} onClick={() => setDesktopCols(n)}
-                style={segmentBtn(desktopCols === n, compact)}>
-                {n === "auto" ? "Auto" : n}
-              </button>
-            ))}
-          </div>
-          <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 6 }}>
-            Auto = {desktopAutoCols} columns at this width.
-          </div>
-        </>
-      )}
+      <div>
+        <FieldLabel>Columns</FieldLabel>
+        {isMobile ? (
+          <SubTabs block choice ariaLabel="Columns" activeKey={mobileCols} onSelect={setMobileCols}
+            tabs={[1, 2, 3].map(n => ({ key: n, label: String(n) }))} />
+        ) : (
+          <>
+            <SubTabs block choice ariaLabel="Columns" activeKey={desktopCols} onSelect={setDesktopCols}
+              tabs={["auto", 3, 4, 5, 6, 7].map(n => ({ key: n, label: n === "auto" ? "Auto" : String(n) }))} />
+            <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 6 }}>
+              Auto = {desktopAutoCols} columns at this width.
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

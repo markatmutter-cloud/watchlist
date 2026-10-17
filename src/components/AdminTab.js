@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { SubTabs, Chip, Button } from "../ui";
 import { supabase } from "../supabase";
 import { Card } from "./Card";
 import { daysOnSale, FORCE_OTHER_BRANDS, SUPPRESS_AT_SOLD_BRANDS, EXCLUDED_BRANDS } from "../utils";
@@ -1271,38 +1272,12 @@ export function AdminTab({ watchItems, hiddenItems }) {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 12 }}>
         {/* Window toggle */}
-        <div style={{ display: "flex", gap: 4 }}>
-          {[["30d", "30 days"], ["90d", "90 days"], ["all", "All"]].map(([key, label]) => {
-            const active = fastestWindow === key;
-            return (
-              <button key={key} onClick={() => setFastestWindow(key)} style={{
-                padding: "6px 12px", borderRadius: 12,
-                border: "0.5px solid var(--border)",
-                background: active ? "var(--text1)" : "var(--surface)",
-                color: active ? "var(--bg)" : "var(--text2)",
-                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                fontWeight: active ? 600 : 500,
-              }}>{label}</button>
-            );
-          })}
-        </div>
+        <SubTabs choice ariaLabel="Window" activeKey={fastestWindow} onSelect={setFastestWindow}
+          tabs={[["30d", "30 days"], ["90d", "90 days"], ["all", "All"]].map(([key, label]) => ({ key, label }))} />
         <div aria-hidden style={{ width: 1, height: 18, background: "var(--border)", margin: "0 4px" }} />
         {/* Top N */}
-        <div style={{ display: "flex", gap: 4 }}>
-          {[25, 50, 100].map((n) => {
-            const active = fastestLimit === n;
-            return (
-              <button key={n} onClick={() => setFastestLimit(n)} style={{
-                padding: "6px 12px", borderRadius: 12,
-                border: "0.5px solid var(--border)",
-                background: active ? "var(--text1)" : "var(--surface)",
-                color: active ? "var(--bg)" : "var(--text2)",
-                cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-                fontWeight: active ? 600 : 500,
-              }}>Top {n}</button>
-            );
-          })}
-        </div>
+        <SubTabs choice ariaLabel="How many" activeKey={fastestLimit} onSelect={setFastestLimit}
+          tabs={[25, 50, 100].map((n) => ({ key: n, label: `Top ${n}` }))} />
       </div>
 
       {/* Brand chip filter — sourced from fastestBrands so dead
@@ -1314,27 +1289,11 @@ export function AdminTab({ watchItems, hiddenItems }) {
           display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14,
           maxHeight: 80, overflowY: "auto",
         }}>
-          <button onClick={() => setFastestBrand(null)} style={{
-            padding: "4px 10px", borderRadius: 12,
-            border: "0.5px solid var(--border)",
-            background: fastestBrand == null ? "var(--text1)" : "transparent",
-            color: fastestBrand == null ? "var(--bg)" : "var(--text2)",
-            cursor: "pointer", fontFamily: "inherit", fontSize: 11,
-            fontWeight: fastestBrand == null ? 600 : 500,
-          }}>All brands</button>
+          <Chip on={fastestBrand == null} onClick={() => setFastestBrand(null)}>All brands</Chip>
           {fastestBrands.slice(0, 20).map(({ brand, count }) => {
             const active = fastestBrand === brand;
             return (
-              <button key={brand} onClick={() => setFastestBrand(brand)} style={{
-                padding: "4px 10px", borderRadius: 12,
-                border: "0.5px solid var(--border)",
-                background: active ? "var(--text1)" : "transparent",
-                color: active ? "var(--bg)" : "var(--text2)",
-                cursor: "pointer", fontFamily: "inherit", fontSize: 11,
-                fontWeight: active ? 600 : 500,
-              }}>
-                {brand} <span style={{ color: active ? "var(--bg)" : "var(--text3)", fontWeight: 400 }}>·{count}</span>
-              </button>
+              <Chip key={brand} on={fastestBrand === brand} n={count} onClick={() => setFastestBrand(brand)}>{brand}</Chip>
             );
           })}
         </div>
@@ -1541,22 +1500,9 @@ export function AdminTab({ watchItems, hiddenItems }) {
             style={{ ...cellBase, fontFamily: "inherit", fontSize: 13, padding: "6px 8px", border: "0.5px solid var(--border)", borderRadius: 6, background: "var(--bg)", color: "var(--text1)" }}
           />
         </div>
-        <button
-          type="submit"
-          disabled={capBusy}
-          style={{
-            padding: "8px 14px",
-            border: "0.5px solid var(--border)",
-            borderRadius: 6,
-            background: "var(--text1)",
-            color: "var(--bg)",
-            fontSize: 13, fontWeight: 500,
-            cursor: capBusy ? "wait" : "pointer",
-            opacity: capBusy ? 0.6 : 1,
-          }}
-        >
+        <Button small primary type="submit" disabled={capBusy}>
           {capBusy ? "Saving…" : "Set cap"}
-        </button>
+        </Button>
         {capError && (
           <div style={{ flex: "1 1 100%", color: "var(--danger)", fontSize: 12, marginTop: 4 }}>
             {capError}
@@ -1621,24 +1567,10 @@ export function AdminTab({ watchItems, hiddenItems }) {
                         {n === 0 ? (
                           <span style={{ color: "var(--text3)" }}>—</span>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleCleanupDelete(r, src)}
-                            disabled={busy}
-                            title={`Delete ${n} ${src} item${n === 1 ? "" : "s"}`}
-                            style={{
-                              fontFamily: "inherit", fontSize: 12,
-                              padding: "2px 8px",
-                              border: "0.5px solid var(--border)",
-                              borderRadius: 4,
-                              background: "var(--surface)",
-                              color: "var(--danger)",
-                              cursor: busy ? "wait" : "pointer",
-                              opacity: busy ? 0.6 : 1,
-                            }}
-                          >
+                          <Button link danger small onClick={() => handleCleanupDelete(r, src)} disabled={busy}
+                            title={`Delete ${n} ${src} item${n === 1 ? "" : "s"}`}>
                             {busy ? "…" : n.toLocaleString()}
-                          </button>
+                          </Button>
                         )}
                       </td>
                     );

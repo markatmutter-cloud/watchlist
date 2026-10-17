@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { Chip, SavedPill } from "../ui";
+import { Chip, SavedPill, Pill } from "../ui";
 import { imgSrc, fmtSaleDateRange } from "../utils";
 import { houseTint, HouseLogo } from "./auctionThumb";
 
@@ -47,14 +47,6 @@ function jumpToSection(id) {
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
-const navChipStyle = {
-  flexShrink: 0, cursor: "pointer", fontFamily: "inherit",
-  fontSize: 12, fontWeight: 600, letterSpacing: "0.04em",
-  padding: "5px 11px", borderRadius: 999,
-  border: "0.5px solid var(--border)", background: "var(--surface)", color: "var(--text2)",
-  whiteSpace: "nowrap", textTransform: "uppercase",
-};
 
 export function AuctionCalendar({
   auctions = [],
@@ -201,26 +193,18 @@ export function AuctionCalendar({
               2026-05-27). Month chips scroll-to (they don't filter), so the
               old "All" chip was removed — there's nothing to un-filter. */}
           {pastGroups.length > 0 && (
-            <button
-              onClick={() => { setArchiveOpen(true); setTimeout(() => jumpToSection("auction-archive"), 60); }}
-              style={{
-                flexShrink: 0, cursor: "pointer", fontFamily: "inherit",
-                fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
-                padding: "6px 13px", borderRadius: 999,
-                border: "none", background: "var(--brand-olive)", color: "#fff",
-                whiteSpace: "nowrap", textTransform: "uppercase",
-              }}>
+            <Pill primary onClick={() => { setArchiveOpen(true); setTimeout(() => jumpToSection("auction-archive"), 60); }}>
               Closed
-            </button>
+            </Pill>
           )}
           <div style={{
             display: "flex", gap: 4, overflowX: "auto", flex: 1, minWidth: 0,
             WebkitOverflowScrolling: "touch", scrollbarWidth: "none",
           }}>
             {upcomingGroups.map(g => (
-              <button key={g.key} onClick={() => jumpToSection(`auction-month-${g.key}`)} style={navChipStyle}>
+              <Chip key={g.key} onClick={() => jumpToSection(`auction-month-${g.key}`)}>
                 {monthChipLabel(g.key)}
-              </button>
+              </Chip>
             ))}
           </div>
         </div>
@@ -523,22 +507,5 @@ function AuctionRow({ a, archive, lotCount = 0, heroImg = "", saved = false, onT
 }
 
 function ActionButton({ label, onClick, primary, disabled, title }) {
-  return (
-    <button onClick={onClick} disabled={disabled} title={title}
-      style={{
-        flexShrink: 0,
-        cursor: disabled ? "default" : "pointer",
-        fontFamily: "inherit", fontSize: 12, fontWeight: 600,
-        letterSpacing: "0.02em",
-        padding: "6px 12px", borderRadius: 999,
-        border: primary ? "none" : "0.5px solid var(--text2)",
-        background: primary ? "var(--brand-olive)" : "transparent",
-        color: primary ? "#fff" : "var(--text2)",
-        opacity: disabled ? 0.5 : 1,
-        lineHeight: 1.2,
-        whiteSpace: "nowrap",
-      }}>
-      {label}
-    </button>
-  );
+  return <Pill primary={primary} onClick={onClick} disabled={disabled} title={title}>{label}</Pill>;
 }

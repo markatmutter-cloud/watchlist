@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { ChallengeFlow, CreateStage } from "./ChallengeFlow";
 import { ListRow } from "./ListRow";
 import { fmtUSD } from "../utils";
-import { Button } from "../ui";
+import { Button, Pill } from "../ui";
 import { EmptyState } from "./EmptyState";
 import { confirm } from "./ConfirmModal";
 
@@ -159,14 +159,7 @@ export function ChallengesView({
       {/* Back button (drill-in only). */}
       {onBack && (
         <div style={{ marginBottom: 8 }}>
-          <button onClick={onBack} aria-label="Back" style={{
-            border: "none", background: "transparent", color: "var(--text2)",
-            cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-            padding: 0, display: "flex", alignItems: "center", gap: 4,
-          }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-            Back
-          </button>
+          <Button link onClick={onBack} aria-label="Back">← Back</Button>
         </div>
       )}
 
@@ -175,18 +168,7 @@ export function ChallengesView({
           heading="No challenges yet"
           blurb="Create a virtual collection. Share your picks. Challenge someone else to do the same under your constraints."
           action={
-            <button onClick={handleNewChallenge}
-              style={{
-                cursor: "pointer", fontFamily: "inherit",
-                fontSize: 13, fontWeight: 600, letterSpacing: "0.04em",
-                padding: "8px 16px", borderRadius: 999,
-                border: "0.5px solid var(--text2)",
-                background: "transparent",
-                color: "var(--text2)",
-                display: "inline-flex", alignItems: "center", gap: 4,
-              }}>
-              + New challenge
-            </button>
+            <Pill onClick={handleNewChallenge}>+ New challenge</Pill>
           }
         />
       ) : (() => {
@@ -214,19 +196,7 @@ export function ChallengesView({
                   label={sentToYou.length > 0 ? "Yours" : "Challenges"}
                   count={yours.length}
                   action={
-                    <button onClick={handleNewChallenge}
-                      style={{
-                        flexShrink: 0, cursor: "pointer", fontFamily: "inherit",
-                        fontSize: 12, fontWeight: 600, letterSpacing: "0.04em",
-                        padding: "6px 12px", borderRadius: 999,
-                        border: "0.5px solid var(--text2)",
-                        background: "transparent",
-                        color: "var(--text2)",
-                        display: "inline-flex", alignItems: "center", gap: 4,
-                        lineHeight: 1,
-                      }}>
-                      + New challenge
-                    </button>
+                    <Pill onClick={handleNewChallenge}>+ New challenge</Pill>
                   }
                 />
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
