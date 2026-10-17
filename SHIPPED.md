@@ -788,6 +788,10 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-16 — Saved searches come up as suggestions when you click the search bar.** Mark: "saved searches come
+  up as suggested searches when you click on the search bar." On the Watches page and Home, focusing the empty
+  search lists your saved searches (what is for sale, what is new); a row re-runs it, the × unsaves it (confirmed).
+  The heart in the bar still saves. `SavedSearchRows`, one component for both fields. Step 3 of the Saved-tab retirement.
 - **2026-10-16 — Saved on Articles and Reference Guides is an icon-only ♡ pill (`SavedPill`).** Mark: "I just like the
   heart icon" (no word, never red). Replaces the `All | ♡ Saved` sub-tab row, so both headers lose a row; it raises
   and is swept by "× Clear all" like the pills beside it. The Watches page lost its duplicate `♡ Saved` pill ("doubled
