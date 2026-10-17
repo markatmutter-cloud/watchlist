@@ -74,4 +74,47 @@ describe("MagazineChrome", () => {
     fireEvent.submit(input.closest("form"));
     expect(calls).toEqual([["explorer", "all"]]);
   });
+
+  describe("saved searches under the focused search", () => {
+    const saved = [
+      { id: "s1", label: "Speedmaster pro", query: "speedmaster", count: 12, newCount: 2 },
+      { id: "s2", label: "Datejust 1601", query: "1601", count: 4, newCount: 0 },
+    ];
+    const withSaved = (over = {}) => props({
+      savedSearches: saved, onRunSavedSearch: jest.fn(), onRemoveSavedSearch: jest.fn(), ...over,
+    });
+
+    it("lists them on focus, with what is for sale and what is new", () => {
+      render(<MagazineChrome {...withSaved()} />);
+      fireEvent.focus(screen.getByRole("searchbox"));
+      expect(screen.getByText("Saved searches")).toBeInTheDocument();
+      expect(screen.getByText("Speedmaster pro")).toBeInTheDocument();
+      expect(screen.getByText("12 for sale · 2 new")).toBeInTheDocument();
+      expect(screen.getByText("4 for sale")).toBeInTheDocument();
+    });
+
+    it("a row re-runs the search; the x unsaves it", () => {
+      const onRunSavedSearch = jest.fn();
+      const onRemoveSavedSearch = jest.fn();
+      render(<MagazineChrome {...withSaved({ onRunSavedSearch, onRemoveSavedSearch })} />);
+      fireEvent.focus(screen.getByRole("searchbox"));
+      fireEvent.click(screen.getByText("Speedmaster pro"));
+      expect(onRunSavedSearch).toHaveBeenCalledWith(saved[0]);
+      fireEvent.focus(screen.getByRole("searchbox"));
+      fireEvent.click(screen.getByRole("button", { name: "Remove saved search Datejust 1601" }));
+      expect(onRemoveSavedSearch).toHaveBeenCalledWith(saved[1]);
+    });
+
+    it("steps aside once you type, and shows nothing when there are none", () => {
+      const { unmount } = render(<MagazineChrome {...withSaved()} />);
+      const box = screen.getByRole("searchbox");
+      fireEvent.focus(box);
+      fireEvent.change(box, { target: { value: "rol" } });
+      expect(screen.queryByText("Saved searches")).toBeNull();
+      unmount();
+      render(<MagazineChrome {...withSaved({ savedSearches: [] })} />);
+      fireEvent.focus(screen.getByRole("searchbox"));
+      expect(screen.queryByText("Saved searches")).toBeNull();
+    });
+  });
 });

@@ -83,10 +83,40 @@ function Crescent() {
   );
 }
 
+// The user's saved searches, as suggestions under a focused, empty search bar
+// (Mark, 2026-10-16: saved searches "come up as suggested searches when you
+// click on the search bar"). One component for Home's search and the Watches
+// page's, so they cannot drift. Each row re-runs the search; the × unsaves it
+// (the heart in the bar is what saves). Rendering nothing when there are none
+// keeps the dropdown free of an empty heading.
+export function SavedSearchRows({ searches, onRun, onRemove }) {
+  if (!searches || searches.length === 0) return null;
+  return (
+    <>
+      <p className="mag-drop-head">Saved searches</p>
+      {searches.map((s) => (
+        <div key={s.id} className="mag-drop-saved">
+          <button type="button" className="mag-drop-main" onClick={() => onRun && onRun(s)}>
+            <span className="mag-drop-label">{s.label}</span>
+            <span className="mag-drop-n">
+              {`${s.count} for sale`}{s.newCount ? ` · ${s.newCount} new` : ""}
+            </span>
+          </button>
+          {onRemove ? (
+            <button type="button" className="mag-drop-x"
+                    aria-label={`Remove saved search ${s.label}`} title="Remove saved search"
+                    onClick={() => onRemove(s)}>&times;</button>
+          ) : null}
+        </div>
+      ))}
+    </>
+  );
+}
+
 // The search is the page's main control, so it gets width and a preview of
 // what each destination holds, matching the current site's behaviour rather
 // than being a decorative box in the masthead.
-function MagSearch({ onSubmit, onLiveQuery, counts, recent, addRecent, big }) {
+function MagSearch({ onSubmit, onLiveQuery, counts, recent, addRecent, big, saved, onRunSaved, onRemoveSaved }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [focus, setFocus] = useState(false);
@@ -126,7 +156,7 @@ function MagSearch({ onSubmit, onLiveQuery, counts, recent, addRecent, big }) {
           <circle cx="7" cy="7" r="5" /><path d="M11 11l4 4" />
         </svg>
         <input type="search" value={q} onChange={(e) => change(e.target.value)}
-               onFocus={() => { setFocus(true); setOpen(q.trim().length > 0 || (recent || []).length > 0); }}
+               onFocus={() => { setFocus(true); setOpen(q.trim().length > 0 || (recent || []).length > 0 || (saved || []).length > 0); }}
                onBlur={() => setFocus(false)}
                placeholder="Brand, model, reference" aria-label="Search watches" />
         <button type="submit" className="mag-search-go">Search</button>
@@ -139,6 +169,11 @@ function MagSearch({ onSubmit, onLiveQuery, counts, recent, addRecent, big }) {
               <span className="mag-drop-n">{n == null ? "" : n.toLocaleString()}</span>
             </button>
           ))}
+          {q.trim().length === 0 && (
+            <SavedSearchRows searches={saved}
+              onRun={(x) => { setOpen(false); if (onRunSaved) onRunSaved(x); }}
+              onRemove={onRemoveSaved} />
+          )}
           {q.trim().length === 0 && (recent || []).length > 0 && (
             <>
               <p className="mag-drop-head">Recent</p>
@@ -161,6 +196,7 @@ export { MagSearch, Crescent, SavedButton, useFonts };
 export default function MagazineChrome({
   isMobile, tabs, authJSX, onSavedClick, showSaved,
   onSearchSubmit, onSearchLiveQuery, searchCounts, recentSearches, addRecentSearch,
+  savedSearches, onRunSavedSearch, onRemoveSavedSearch,
   // Optional slots a second surface fills. `searchJSX` replaces the routing
   // MagSearch with the consumer's own field (Watches types straight into the
   // tab's filter); `onHome` turns the wordmark into the way back to the
@@ -171,7 +207,8 @@ export default function MagazineChrome({
   const scrolled = useScrolled(64);
   const search = searchJSX || (
     <MagSearch big onSubmit={onSearchSubmit} onLiveQuery={onSearchLiveQuery}
-               counts={searchCounts} recent={recentSearches} addRecent={addRecentSearch} />
+               counts={searchCounts} recent={recentSearches} addRecent={addRecentSearch}
+               saved={savedSearches} onRunSaved={onRunSavedSearch} onRemoveSaved={onRemoveSavedSearch} />
   );
   const crescent = <Crescent />;
   const savedBtn = showSaved && onSavedClick ? <SavedButton onClick={onSavedClick} /> : null;
@@ -305,6 +342,16 @@ export const MAG_CSS = `
                 padding: 10px 12px; border-radius: 10px; font-family: var(--mag-body); font-size: 14px; color: var(--text1); }
 .mag-drop-row:hover { background: var(--surface, rgba(0,0,0,.05)); }
 .mag-drop-n { font-family: var(--mag-data); font-size: 12px; color: var(--text3); font-variant-numeric: tabular-nums; }
+/* A saved-search row: the whole row re-runs it, the × at the end unsaves it. */
+.mag-drop-saved { display: flex; align-items: center; border-radius: 10px; }
+.mag-drop-saved:hover { background: var(--surface, rgba(0,0,0,.05)); }
+.mag-drop-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: space-between;
+                 gap: 14px; background: none; border: none; cursor: pointer; text-align: left;
+                 padding: 10px 4px 10px 12px; font-family: var(--mag-body); font-size: 14px; color: var(--text1); }
+.mag-drop-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mag-drop-x { flex: 0 0 auto; width: 30px; height: 30px; margin-right: 4px; border-radius: 999px; border: none;
+              background: none; cursor: pointer; color: var(--text3); font-size: 17px; line-height: 1; }
+.mag-drop-x:hover { color: var(--text1); background: var(--surface, rgba(0,0,0,.06)); }
 
 /* persistent bar */
 .mag-bar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center;

@@ -22,8 +22,8 @@
 //   sub-tab) · min/max price · date + price sort · clear all ·
 //   the result count · the home affordance back to the landing page.
 
-import React from "react";
-import MagazineChrome, { MAG_CSS } from "./MagazineChrome";
+import React, { useEffect, useRef, useState } from "react";
+import MagazineChrome, { MAG_CSS, SavedSearchRows } from "./MagazineChrome";
 import { AboutModal } from "./AboutModal";
 import { SignInPromptModal } from "./SignInPromptModal";
 import { FilterDrawer } from "./FilterDrawer";
@@ -59,6 +59,8 @@ export default function MagazineWatches(props) {
     isMobile, baseStyle, tabs, authJSX, user, onHome, goToSaved,
     // sub-tabs
     listingsSubTab, setListingsSubTab, setPage, drawerOpen, setDrawerOpen, sectionHeadingStyle,
+    // saved searches, offered under the focused empty search field
+    savedSearches, onRunSavedSearch, onRemoveSavedSearch,
     // search
     search, setSearch, searchPlaceholder, openFavPrompt, currentIsSaved,
     // sort + price
@@ -81,6 +83,18 @@ export default function MagazineWatches(props) {
     aboutModalOpen, setAboutModalOpen,
     signInPromptOpen, setSignInPromptOpen, signInWithGoogle, primaryCurrency,
   } = props;
+
+  // Saved searches as suggestions when the field is focused and empty (Mark,
+  // 2026-10-16). Signed out there are none, so nothing opens.
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const searchWrap = useRef(null);
+  useEffect(() => {
+    if (!suggestOpen) return undefined;
+    const away = (e) => { if (searchWrap.current && !searchWrap.current.contains(e.target)) setSuggestOpen(false); };
+    document.addEventListener("mousedown", away);
+    return () => document.removeEventListener("mousedown", away);
+  }, [suggestOpen]);
+  const haveSaved = !!user && (savedSearches || []).length > 0;
 
   // Same sub-tab-aware source split the shells use: the Auctions slice has no
   // dealers in it and the For-sale slice has no houses, so offering the other
@@ -109,7 +123,7 @@ export default function MagazineWatches(props) {
   // filtered by. (Home's masthead search routes instead; that's why the
   // chrome takes the field as a slot rather than owning one.)
   const searchJSX = (
-    <div className="magw-searchwrap">
+    <div className="magw-searchwrap" ref={searchWrap}>
       <form className="magw-search" role="search" onSubmit={(e) => { e.preventDefault(); }}>
         <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5">
           <circle cx="7" cy="7" r="5" /><path d="M11 11l4 4" />
@@ -117,10 +131,11 @@ export default function MagazineWatches(props) {
         <input
           type="search"
           value={search || ""}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setSuggestOpen(false); }}
+          onFocus={() => { if (haveSaved && !search) setSuggestOpen(true); }}
           onKeyDown={(e) => {
             if (e.key === "Enter") { e.preventDefault(); e.target.blur(); }
-            if (e.key === "Escape") { setSearch(""); e.target.blur(); }
+            if (e.key === "Escape") { setSuggestOpen(false); setSearch(""); e.target.blur(); }
           }}
           placeholder={searchPlaceholder || "Brand, model, reference"}
           aria-label="Search watches"
@@ -145,6 +160,13 @@ export default function MagazineWatches(props) {
           </button>
         ) : null}
       </form>
+      {suggestOpen && haveSaved && !search ? (
+        <div className="mag-drop">
+          <SavedSearchRows searches={savedSearches}
+            onRun={(x) => { setSuggestOpen(false); if (onRunSavedSearch) onRunSavedSearch(x); }}
+            onRemove={onRemoveSavedSearch} />
+        </div>
+      ) : null}
     </div>
   );
 
