@@ -4,7 +4,7 @@
 //   ?look=new   the magazine chrome on every tab (the DEFAULT since 2026-10-16)
 //   ?look=old   back to the shells' own olive bar — the way back
 //   ?chrome=display / ?chrome=system   Bodoni wordmark + mono tab labels in
-//                                      the chrome, or the app's own type
+//                                      the header (the default), or the app's own type
 //
 // Sticky in localStorage because Mark lives in the iOS PWA, where a home-screen
 // launch drops the query string: set it once in the URL and the app keeps it
@@ -36,10 +36,11 @@ export function readLook() {
   return readSticky("look", "dial_look", ["new", "old"], "new");
 }
 
-// "system" | "display". Default system: that is the type the Watches page
-// wears today, and it is the one Mark has approved.
+// "display" | "system". DISPLAY is the default since 2026-10-17 (Mark, style-sheet
+// decision D4): the front page's Bodoni wordmark and mono tab labels in the header
+// of every tab, system sans below it. `?chrome=system` is the way back.
 export function readChromeFaces() {
-  return readSticky("chrome", "dial_chrome_faces", ["system", "display"], "system");
+  return readSticky("chrome", "dial_chrome_faces", ["display", "system"], "display");
 }
 
 // Whether the Watches tab wears the magazine page (the default since

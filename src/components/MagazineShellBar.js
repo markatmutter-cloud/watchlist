@@ -37,7 +37,8 @@ function DisplayFonts() {
 }
 
 function Wrap({ faces, className, children }) {
-  const display = faces === "display";
+  // Display faces are the default (Mark, 2026-10-17); only an explicit "system" opts out.
+  const display = faces !== "system";
   return (
     <div className={`mag magb${display ? " magb--display" : ""} ${className || ""}`}>
       <style>{MAG_CSS}</style>
@@ -156,7 +157,9 @@ export const MAGB_CSS = `
 /* Pinned to the bar's content height so a search in the bar can't make Watches'
    header taller than the other tabs' (it was 62px against their 56). */
 .magb-search .magw-search { box-sizing: border-box; height: 37px; padding-top: 0; padding-bottom: 0; }
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+  /* The mono tabs and the Bodoni wordmark are wider than the system ones: below
+     this the Watches search drops to its own row rather than squeezing the tabs. */
   .magb-bar { flex-wrap: wrap; row-gap: 8px; }
   .magb-search { order: 3; flex: 1 1 100%; max-width: none; }
 }

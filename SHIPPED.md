@@ -788,6 +788,10 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — Mark's five style-sheet picks are locked in.** D1 sub-tabs segmented (underline retired) · D2 selected pill solid
+  olive (tint retired) · D3 no page titles · D4 the Bodoni wordmark + mono tab labels in the header of EVERY tab (default; `?chrome=system`
+  is the way back; the fonts now load on every page) · D5 the Watches Saved tab is the heart alone (accessible name "Saved"). `src/ui`
+  and the style sheet show the final state; `ui-guard` fails if a retired form comes back.
 - **2026-10-17 — The shared page frame (`src/ui`) and its live style sheet (`?view=styleguide`).** Mark: "every page is
   different ... how can I fix this without chasing leaks." Diagnosis: no single page frame, ~6 search fields, pills in 18 files,
   ~1,800 inline style blocks vs 139 class names. One class-based stylesheet (`ui.css`) and eight components (Pill, SavedPill,

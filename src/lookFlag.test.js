@@ -39,16 +39,16 @@ describe("readLook", () => {
 });
 
 describe("readChromeFaces", () => {
-  it("defaults to system type (what the Watches page wears)", () => {
-    expect(readChromeFaces()).toBe("system");
+  it("defaults to the display faces (Mark's pick, 2026-10-17)", () => {
+    expect(readChromeFaces()).toBe("display");
   });
 
-  it("?chrome=display opts into the front page's faces and sticks", () => {
-    at("?chrome=display");
-    expect(readChromeFaces()).toBe("display");
-    at("");
-    expect(readChromeFaces()).toBe("display");
+  it("?chrome=system is the way back, and it sticks", () => {
     at("?chrome=system");
     expect(readChromeFaces()).toBe("system");
+    at("");
+    expect(readChromeFaces()).toBe("system");
+    at("?chrome=display");
+    expect(readChromeFaces()).toBe("display");
   });
 });

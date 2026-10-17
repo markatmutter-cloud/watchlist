@@ -58,16 +58,16 @@ describe("MagazineShellBar", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
-  it("loads the display faces only when asked for them", () => {
+  it("wears the display faces by default (Mark, 2026-10-17) and loads them; only an explicit system opts out", () => {
     document.getElementById("mag-fonts")?.remove();
-    const { container, unmount } = render(<MagazineShellBar tabs={tabs} authJSX={null} onHome={noop} faces="system" />);
-    expect(container.querySelector(".magb--display")).toBeNull();
-    expect(document.getElementById("mag-fonts")).toBeNull();
-    unmount();
-    const shown = render(<MagazineShellBar tabs={tabs} authJSX={null} onHome={noop} faces="display" />);
+    const shown = render(<MagazineShellBar tabs={tabs} authJSX={null} onHome={noop} />);
     expect(shown.container.querySelector(".magb--display")).not.toBeNull();
     expect(document.getElementById("mag-fonts")).not.toBeNull();
+    shown.unmount();
     document.getElementById("mag-fonts")?.remove();
+    const sys = render(<MagazineShellBar tabs={tabs} authJSX={null} onHome={noop} faces="system" />);
+    expect(sys.container.querySelector(".magb--display")).toBeNull();
+    expect(document.getElementById("mag-fonts")).toBeNull();
   });
 });
 

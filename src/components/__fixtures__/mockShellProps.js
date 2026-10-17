@@ -116,7 +116,7 @@ export function buildMockShellProps(overrides = {}) {
     ],
     // `?look=new` — off in the fixture; the shell tests that need it pass it.
     lookNew: false,
-    chromeFaces: "system",
+    chromeFaces: "display",
     lotMigrationBannerJSX: null,
     userLimitBannerJSX: null,
     identityBandJSX: null,

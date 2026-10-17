@@ -24,17 +24,16 @@ export function Count({ children }) {
 }
 
 // ---- Pill: a filter / toggle / sort control ---------------------------------
-//   on       the selected look (olive tint)
-//   solid    selected look is solid olive instead (style-sheet alternative)
+//   on       the selected look: solid olive (Mark, 2026-10-17)
 //   icon     a leading icon; with no children it is an icon-only circle
 //   n        a count suffix: "Source · 2"
 //   quiet    present but quiet ("+36 more")
 //   toggle   adds aria-pressed (use for on/off controls, not for menus)
-export function Pill({ on, solid, icon, n, quiet, toggle, children, className, ...rest }) {
+export function Pill({ on, icon, n, quiet, toggle, children, className, ...rest }) {
   const iconOnly = !!icon && !children;
   return (
     <button type="button"
-      className={cx("ui-pill", on && "is-on", solid && "ui-pill--solid", quiet && "ui-pill--quiet",
+      className={cx("ui-pill", on && "is-on", quiet && "ui-pill--quiet",
                     iconOnly && "ui-pill--icon", className)}
       aria-pressed={toggle ? !!on : undefined}
       {...rest}>
@@ -78,29 +77,20 @@ export function SearchField({ value, onChange, placeholder, ariaLabel, size = "r
   );
 }
 
-// ---- SubTabs: "where you are" ----------------------------------------------------
-//   variant   "segmented" (a track with a solid olive active chip) | "underline"
-//   tabs      [{ key, label }]
-export function SubTabs({ tabs, activeKey, onSelect, variant = "segmented", ariaLabel }) {
+// ---- SubTabs: "where you are" ------------------------------------------------------
+//   Segmented only: one track, a solid olive active chip (Mark, 2026-10-17).
+//   tabs      [{ key, label, ariaLabel? }]   (ariaLabel for an icon-only tab)
+export function SubTabs({ tabs, activeKey, onSelect, ariaLabel }) {
   return (
-    <div className={cx("ui-tabs", `ui-tabs--${variant}`)} role="tablist" aria-label={ariaLabel}>
+    <div className="ui-tabs" role="tablist" aria-label={ariaLabel}>
       {tabs.map((t) => (
         <button key={t.key} type="button" role="tab" aria-selected={activeKey === t.key}
+                aria-label={t.ariaLabel} title={t.ariaLabel}
                 className={activeKey === t.key ? "is-on" : undefined}
                 onClick={() => onSelect && onSelect(t.key)}>
           {t.label}
         </button>
       ))}
-    </div>
-  );
-}
-
-// ---- PageTitle ---------------------------------------------------------------------
-export function PageTitle({ title, actions }) {
-  return (
-    <div className="ui-title-row">
-      <h1 className="ui-title">{title}</h1>
-      {actions ? <div className="ui-title-actions">{actions}</div> : null}
     </div>
   );
 }
@@ -148,13 +138,13 @@ export function SuggestionRows({ heading, rows, onRun, onRemove }) {
 }
 
 // ---- PageFrame: the anatomy of every page below the header ---------------------------
-//   title → sub-tabs → filter bar → content, in that order, at one inset.
-//   Each is optional; none can be reordered, which is the point.
-export function PageFrame({ title, titleActions, subTabs, subTabsEnd, filterBar, children }) {
+//   sub-tabs → filter bar → content, in that order, at one inset. No page title
+//   (Mark, 2026-10-17): the header's active tab already says where you are.
+//   Each band is optional; none can be reordered, which is the point.
+export function PageFrame({ subTabs, subTabsEnd, filterBar, children }) {
   return (
     <div className="ui-frame">
       <div className="ui-frame-in">
-        {title ? <PageTitle title={title} actions={titleActions} /> : null}
         {subTabs ? (
           <div className="ui-tabs-row">{subTabs}{subTabsEnd || null}</div>
         ) : null}
