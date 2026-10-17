@@ -19,7 +19,7 @@
 //   sub-tabs (For sale / Auctions / Sold / ♡ Saved) · in-tab search + the
 //   save-search heart · Source / Brand / Model chip panels with their
 //   cross-axis filtering and +N more expanders · Auction Calendar (auctions
-//   sub-tab) · ♡ Saved-only · min/max price · date + price sort · clear all ·
+//   sub-tab) · min/max price · date + price sort · clear all ·
 //   the result count · the home affordance back to the landing page.
 
 import React from "react";
@@ -64,7 +64,7 @@ export default function MagazineWatches(props) {
     // sort + price
     sort, setSort, minPriceText, setMinPriceText, maxPriceText, setMaxPriceText,
     // filters
-    filterHearted, setFilterHearted, hasFilters, resetFilters, displayedCount,
+    hasFilters, resetFilters, displayedCount,
     activeFilterPop, setActiveFilterPop,
     filterSources, filterBrands, filterModels,
     toggleSource, toggleBrand, toggleModel,
@@ -225,16 +225,11 @@ export default function MagazineWatches(props) {
               ) : null}
               </>
             )}
-            {/* Saved-only is a filter, not a sort, so it sits with the nouns
-                (P-1). Hidden on the Saved slice, where it could only be a
-                no-op, and signed-out, where there's nothing saved to filter. */}
-            {user && listingsSubTab !== "saved" && listingsSubTab !== "calendar" ? (
-              <Pill active={!!filterHearted} ariaPressed={!!filterHearted}
-                    title={filterHearted ? "Show all" : "Show only saved"}
-                    onClick={() => setFilterHearted && setFilterHearted(!filterHearted)}>
-                ♡ Saved
-              </Pill>
-            ) : null}
+            {/* No Saved-only pill here (Mark, 2026-10-16: "the saved feature was doubled
+                up in the watches tab"): the ♡ Saved sub-tab above already is the saved
+                control, and it spans For sale / Auctions / Sold, which a pill inside one
+                slice cannot. Articles and Guides, which have no such slices, take the
+                icon-only heart pill instead. */}
 
             <span className="magw-sp" />
 
