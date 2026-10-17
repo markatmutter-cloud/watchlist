@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useCollectionBlocks, useSearches } from "../supabase";
+import { Pill, Button, PickRow } from "../ui";
 import {
   REFERENCE_NODES,
   REFERENCE_NODES_BY_ID,
@@ -44,17 +45,6 @@ const eyebrow = {
   textTransform: "uppercase",
   letterSpacing: "0.08em",
 };
-const ctrlBtn = {
-  background: "none",
-  border: "0.5px solid var(--border)",
-  borderRadius: 6,
-  cursor: "pointer",
-  color: "var(--text2)",
-  fontSize: 12,
-  fontFamily: "inherit",
-  padding: "2px 7px",
-};
-
 export function DossierBlocks({
   collectionId,
   user,
@@ -75,12 +65,12 @@ export function DossierBlocks({
     if (!canEdit) return null;
     return (
       <div style={{ display: "flex", gap: 6 }}>
-        <button style={ctrlBtn} title="Move up" disabled={i === 0}
-          onClick={() => move(b.id, "up")}>↑</button>
-        <button style={ctrlBtn} title="Move down" disabled={i === blocks.length - 1}
-          onClick={() => move(b.id, "down")}>↓</button>
-        <button style={ctrlBtn} title="Remove block"
-          onClick={() => removeBlock(b.id)}>×</button>
+        <Button link icon title="Move up" aria-label="Move up" disabled={i === 0}
+          onClick={() => move(b.id, "up")}>↑</Button>
+        <Button link icon title="Move down" aria-label="Move down" disabled={i === blocks.length - 1}
+          onClick={() => move(b.id, "down")}>↓</Button>
+        <Button link icon title="Remove block" aria-label="Remove block"
+          onClick={() => removeBlock(b.id)}>×</Button>
       </div>
     );
   };
@@ -262,16 +252,11 @@ function AddBlockBar({ adding, setAdding, savedSearches, referenceNodes, onAdd }
         textTransform: "uppercase", color: "var(--text3)", marginRight: 2,
       }}>Add</span>
       {rows.map((r) => (
-        <button key={r.label} onClick={r.go} title={`Add a ${r.label.toLowerCase()}`} style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          cursor: "pointer", fontFamily: "inherit", fontSize: 12.5, fontWeight: 500,
-          background: "var(--surface)", color: "var(--text1)",
-          border: "0.5px solid var(--border)", borderRadius: 999, padding: "5px 12px",
-        }}>
+        <Pill key={r.label} onClick={r.go} title={`Add a ${r.label.toLowerCase()}`}>
           <span aria-hidden>{r.icon}</span>
           {r.label}
-          <span aria-hidden style={{ color: "var(--text3)" }}>＋</span>
-        </button>
+          <span aria-hidden>＋</span>
+        </Pill>
       ))}
     </div>
   );
@@ -286,15 +271,11 @@ function PickerRow({ label, options, onPick, onCancel, emptyHint }) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
           {options.map((o) => (
-            <button key={o.value} onClick={() => onPick(o.value)} style={{
-              textAlign: "left", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              color: "var(--text1)", background: "transparent",
-              border: "0.5px solid var(--border)", borderRadius: 8, padding: "8px 10px",
-            }}>{o.label}</button>
+            <PickRow key={o.value} onClick={() => onPick(o.value)}>{o.label}</PickRow>
           ))}
         </div>
       )}
-      <button style={ctrlBtn} onClick={onCancel}>Cancel</button>
+      <Button link onClick={onCancel}>Cancel</Button>
     </div>
   );
 }

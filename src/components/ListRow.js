@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "../ui";
 
 // Shared row card used across the navigation-style list surfaces
 // (Watchlist > Lists, Cool Stuff > Watch Challenges, …). One
@@ -76,12 +77,11 @@ export function ListRow({ icon, accent = "var(--brand-olive)", title, subtitle, 
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
         {(actions || []).map((a, i) => (
-          <button key={i}
+          <Button key={i} link icon
             onClick={(e) => { e.stopPropagation(); a.onClick(e); }}
             aria-label={a.ariaLabel}
             title={a.title || a.ariaLabel}
-            style={iconActionBtnStyle}
-          >{a.icon}</button>
+          >{a.icon}</Button>
         ))}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ marginLeft: actions && actions.length > 0 ? 4 : 0 }}><path d="M9 18l6-6-6-6"/></svg>
       </div>
@@ -110,18 +110,6 @@ export function ListRow({ icon, accent = "var(--brand-olive)", title, subtitle, 
     </div>
   );
 }
-
-const iconActionBtnStyle = {
-  width: 28, height: 28,
-  display: "flex", alignItems: "center", justifyContent: "center",
-  border: "none",
-  background: "transparent",
-  color: "var(--text2)",
-  cursor: "pointer",
-  borderRadius: 6,
-  padding: 0,
-  fontFamily: "inherit",
-};
 
 // Disc-tint lookup keyed by stroke accent. Olive is the Watchlists
 // default (PR 2026-05-22). Brand-blue retained for legacy callers;

@@ -160,6 +160,8 @@ a.ui-pill:hover { text-decoration: none; }
                 font-weight: 600; font-size: 13px; text-align: left; }
 .ui-btn--link:hover:not(:disabled) { text-decoration: underline; text-underline-offset: 2px; }
 .ui-btn--link-danger { color: var(--danger); }
+.ui-btn--icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+                padding: 0; color: var(--text2); }
 .ui-btn--muted { color: var(--text2); font-weight: 400; font-size: 12px; letter-spacing: .02em; }
 a.ui-btn { text-decoration: none; display: inline-block; }
 .ui-btn--sm { flex: none; padding: 9px 16px; border-radius: 10px; font-size: 13px; }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase, useAuth } from "../supabase";
+import { SubTabs, Button } from "../ui";
 
 // Settings panel for Lumé's memory (the per-user taste profile). View what it's
 // learned, turn it on/off, and reset (forget). Reads the profile directly (RLS
@@ -66,17 +67,9 @@ export function LumeMemorySettings() {
         Lumé quietly learns your taste as you chat, so it remembers you across sessions. It's private to you.
       </div>
 
-      <button onClick={toggle} disabled={busy} style={{
-        width: "100%", textAlign: "left", padding: "10px 12px", borderRadius: 10,
-        border: "0.5px solid var(--border)", cursor: busy ? "default" : "pointer",
-        fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-        background: enabled ? "var(--brand-olive)" : "transparent",
-        color: enabled ? "#fff" : "var(--text1)",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-      }}>
-        <span>{enabled ? "Remembering your taste" : "Memory is off"}</span>
-        <span style={{ fontSize: 12, opacity: 0.85 }}>{enabled ? "On · tap to turn off" : "Off · tap to turn on"}</span>
-      </button>
+      <SubTabs block choice ariaLabel="Lumé memory" activeKey={enabled ? "on" : "off"}
+        onSelect={(k) => { if (!busy && (k === "on") !== enabled) toggle(); }}
+        tabs={[{ key: "on", label: "Remember my taste" }, { key: "off", label: "Off" }]} />
 
       {loaded && (
         <div style={{ fontSize: 12, color: "var(--text3)", margin: "10px 0", lineHeight: 1.5 }}>
@@ -86,12 +79,7 @@ export function LumeMemorySettings() {
         </div>
       )}
 
-      <button onClick={reset} disabled={busy || !summary} style={{
-        padding: "8px 12px", borderRadius: 10, border: "0.5px solid var(--border)",
-        background: "transparent", color: summary ? "var(--danger)" : "var(--text3)",
-        cursor: busy || !summary ? "default" : "pointer", fontFamily: "inherit",
-        fontSize: 13, fontWeight: 500,
-      }}>Forget everything</button>
+      <Button link danger onClick={reset} disabled={busy || !summary}>Forget everything</Button>
 
       {status && <div style={{ fontSize: 12, color: "var(--text3)", marginTop: 8 }}>{status}</div>}
     </div>

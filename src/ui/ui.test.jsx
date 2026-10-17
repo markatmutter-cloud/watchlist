@@ -434,6 +434,11 @@ describe("Button link, muted, danger and href", () => {
     expect(a).toHaveClass("ui-btn", "ui-btn--link");
   });
 
+  it("icon is the bare 28px row button (a list row's pencil / share)", () => {
+    render(<Button link icon aria-label="Rename">✎</Button>);
+    expect(screen.getByRole("button", { name: "Rename" })).toHaveClass("ui-btn--link", "ui-btn--icon");
+  });
+
   it("a submit button keeps its type", () => {
     render(<form><Button primary type="submit">Set cap</Button></form>);
     expect(screen.getByRole("button", { name: "Set cap" })).toHaveAttribute("type", "submit");

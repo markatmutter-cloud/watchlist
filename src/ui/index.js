@@ -176,10 +176,11 @@ export function PriceRange({ min, max, onMin, onMax, onClear }) {
 //   block    the full width of its container, content centred (a modal's "Continue with Google")
 //   link     no box at all: a text action in the page's flow ("View all →", "← Back")
 //   muted    with link: quiet grey and small, for a footer
+//   icon     with link: a bare 28px icon button in a row (the pencil / share on a list row)
 //   href     renders an anchor with the same look (a footer's Privacy / Terms)
-export function Button({ primary, danger, small, inline, block, link, muted, href, children, className, ...rest }) {
+export function Button({ primary, danger, small, inline, block, link, muted, icon, href, children, className, ...rest }) {
   const kind = link ? "ui-btn--link" : danger ? "ui-btn--danger" : primary ? "ui-btn--primary" : "ui-btn--ghost";
-  const cls = cx("ui-btn", kind, link && danger && "ui-btn--link-danger", small && "ui-btn--sm", inline && "ui-btn--inline", block && "ui-btn--block", muted && "ui-btn--muted", className);
+  const cls = cx("ui-btn", kind, link && danger && "ui-btn--link-danger", small && "ui-btn--sm", inline && "ui-btn--inline", block && "ui-btn--block", muted && "ui-btn--muted", icon && "ui-btn--icon", className);
   if (href) return <a className={cls} href={href} {...rest}>{children}</a>;
   return <button type="button" className={cls} {...rest}>{children}</button>;
 }
