@@ -320,6 +320,7 @@ export default function MagazineHome(props) {
     homeDealerSources,
     goToSavedHearts,
     homeSearchLiveQuery, homeSearchCounts, homeRecentSearches, homeAddRecentSearch,
+    homeSavedSearches, homeRunSavedSearch, homeRemoveSavedSearch,
     homeAuctionHeroes, toggleHide, isAdmin, openAbout, signInWithGoogle, homeMastheadAuthJSX,
   } = props;
 
@@ -417,6 +418,9 @@ export default function MagazineHome(props) {
         searchCounts={homeSearchCounts}
         recentSearches={homeRecentSearches}
         addRecentSearch={homeAddRecentSearch}
+        savedSearches={homeSavedSearches}
+        onRunSavedSearch={homeRunSavedSearch}
+        onRemoveSavedSearch={homeRemoveSavedSearch}
       />
 
       {articles.length > 0 && (

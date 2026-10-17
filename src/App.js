@@ -64,7 +64,7 @@ const AdminTab = React.lazy(() =>
 import { MobileShell } from "./components/MobileShell";
 import { DesktopShell } from "./components/DesktopShell";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { ConfirmHost } from "./components/ConfirmModal";
+import { ConfirmHost, confirm } from "./components/ConfirmModal";
 import { ChatBubbleHost } from "./components/ChatBubbleHost";
 import { PageHeader } from "./components/PageHeader";
 import { registerActionHandlers, registerItemResolver } from "./components/ActionBus";
@@ -3639,6 +3639,17 @@ export default function Watchlist() {
     setPage(1);
   };
 
+  // Unsave from the search-bar suggestions (the heart in the bar is what saves).
+  // Same confirm the Searches list uses: a stray tap shouldn't lose a search.
+  const removeSavedSearch = async (s) => {
+    if (await confirm({
+      title: "Delete saved search?",
+      message: `"${s.label}" will be removed from your saved searches.`,
+      confirmLabel: "Delete",
+      tone: "danger",
+    })) removeSearch(s.id);
+  };
+
   // Inline editor row for add/edit. Rendered as a JSX helper (not a sub-
   // component) so React doesn't remount the inputs on every parent re-render
   // and lose focus mid-keystroke.
@@ -4471,6 +4482,10 @@ export default function Watchlist() {
       homeRecentSearches={homeRecentSearches}
       homeAddRecentSearch={homeAddRecentSearch}
       homeRemoveRecentSearch={homeRemoveRecentSearch}
+      // Saved searches as suggestions under the focused bar (Mark, 2026-10-16).
+      homeSavedSearches={savedSearchStats}
+      homeRunSavedSearch={runSearch}
+      homeRemoveSavedSearch={removeSavedSearch}
       homeSearchCounts={homeSearchCounts}
       homeSearchLiveQuery={homeSearchLiveQuery}
     />
@@ -5080,6 +5095,9 @@ export default function Watchlist() {
       drawerOpen={drawerOpen}
       setDrawerOpen={setDrawerOpen}
       sectionHeadingStyle={sectionHeadingStyle}
+      savedSearches={savedSearchStats}
+      onRunSavedSearch={runSearch}
+      onRemoveSavedSearch={removeSavedSearch}
       search={search}
       setSearch={setSearch}
       openFavPrompt={openFavPrompt}

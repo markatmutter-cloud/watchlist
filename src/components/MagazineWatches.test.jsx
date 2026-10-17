@@ -201,6 +201,44 @@ describe("MagazineWatches", () => {
   });
 });
 
+describe("MagazineWatches: saved searches under the focused search", () => {
+  // Mark, 2026-10-16: saved searches "come up as suggested searches when you
+  // click on the search bar" (the heart in the bar already saves them).
+  const saved = [{ id: "s1", label: "Speedmaster pro", query: "speedmaster", count: 12, newCount: 2 }];
+
+  it("opens on focus when empty and re-runs a search on tap", () => {
+    const onRunSavedSearch = jest.fn();
+    render(<MagazineWatches {...props({ savedSearches: saved, onRunSavedSearch })} />);
+    fireEvent.focus(screen.getByRole("searchbox", { name: "Search watches" }));
+    expect(screen.getByText("Saved searches")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Speedmaster pro"));
+    expect(onRunSavedSearch).toHaveBeenCalledWith(saved[0]);
+    expect(screen.queryByText("Saved searches")).toBeNull();
+  });
+
+  it("unsaves from the x", () => {
+    const onRemoveSavedSearch = jest.fn();
+    render(<MagazineWatches {...props({ savedSearches: saved, onRemoveSavedSearch })} />);
+    fireEvent.focus(screen.getByRole("searchbox", { name: "Search watches" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove saved search Speedmaster pro" }));
+    expect(onRemoveSavedSearch).toHaveBeenCalledWith(saved[0]);
+  });
+
+  it("stays shut when signed out, when there are none, and while a query is typed", () => {
+    const { unmount } = render(<MagazineWatches {...props({ savedSearches: saved, user: null })} />);
+    fireEvent.focus(screen.getByRole("searchbox", { name: "Search watches" }));
+    expect(screen.queryByText("Saved searches")).toBeNull();
+    unmount();
+    const none = render(<MagazineWatches {...props({ savedSearches: [] })} />);
+    fireEvent.focus(screen.getByRole("searchbox", { name: "Search watches" }));
+    expect(screen.queryByText("Saved searches")).toBeNull();
+    none.unmount();
+    render(<MagazineWatches {...props({ savedSearches: saved, search: "rolex" })} />);
+    fireEvent.focus(screen.getByRole("searchbox", { name: "Search watches" }));
+    expect(screen.queryByText("Saved searches")).toBeNull();
+  });
+});
+
 describe("MagazineWatches on mobile: the shells' filter drawer", () => {
   // The one shell behaviour the parallel page lacked (SESSION_HANDOFF
   // 2026-10-04). Mark, 2026-10-16: bring it across. The sheet itself is
