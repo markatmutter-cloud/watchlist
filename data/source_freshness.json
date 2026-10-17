@@ -1,15 +1,15 @@
 {
   "Amsterdam Vintage Watches": {
-    "fingerprint": "1492fef3444bb624",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "483c79a55cc1fac9",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 76
+    "rows": 75
   },
   "Amsterdam Watch Company": {
-    "fingerprint": "872d228475fa59dc",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "7badc213098341fe",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 299
+    "rows": 298
   },
   "Analog Shift": {
     "fingerprint": "f0d17e8c8a605ea9",
@@ -54,10 +54,10 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "9d97fe3d71d9854f",
-    "lastChanged": "2026-10-15",
+    "fingerprint": "9fdff176ce309c41",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 101
+    "rows": 100
   },
   "Craft & Tailored": {
     "fingerprint": "f92214e295d5be86",
@@ -90,10 +90,10 @@
     "rows": 28
   },
   "Hairspring": {
-    "fingerprint": "c7f91a03df1715de",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "9101b9ad37d23164",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 42
+    "rows": 43
   },
   "Heuertime": {
     "fingerprint": "77ea08369a6532de",
@@ -108,10 +108,10 @@
     "rows": 126
   },
   "Luna Royster": {
-    "fingerprint": "81bfac663cb7942c",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "8272bf189b9ec9e7",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 27
+    "rows": 29
   },
   "Maunder Watches": {
     "fingerprint": "1b40d0d8891c8323",
@@ -138,14 +138,14 @@
     "rows": 114
   },
   "Pascal Karp": {
-    "fingerprint": "21fd551c1c5ce541",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "57aeb3d2a909b38f",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 94
+    "rows": 95
   },
   "Romain R\u00e9a": {
-    "fingerprint": "7d76c1c22d2ef025",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "7787d65fd900092b",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
     "rows": 240
   },
@@ -174,8 +174,8 @@
     "rows": 171
   },
   "Swiss Hours": {
-    "fingerprint": "54c5390af3bca679",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "21d97a7abce8fa8b",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
     "rows": 68
   },
@@ -198,10 +198,10 @@
     "rows": 108
   },
   "Vintage Watch Collective": {
-    "fingerprint": "0c659a52cfc874d6",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "ed69a274ab778e03",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 38
+    "rows": 39
   },
   "Vintage Watch Fam": {
     "fingerprint": "cc5ab7d646f379d3",
@@ -234,10 +234,10 @@
     "rows": 429
   },
   "Watch Club": {
-    "fingerprint": "0a89b8000f235d5a",
+    "fingerprint": "24c8086fbeb24ea4",
     "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 55
+    "rows": 53
   },
   "Watches of Knightsbridge": {
     "fingerprint": "0f40f820a5fa0687",
@@ -258,16 +258,16 @@
     "rows": 67
   },
   "Watchurbia": {
-    "fingerprint": "d39cd093102f2f0a",
-    "lastChanged": "2026-10-15",
+    "fingerprint": "e4a04fc8811e6fd9",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
     "rows": 7
   },
   "Wind Vintage": {
-    "fingerprint": "3391aa14de51cfa5",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "550a02c4de409406",
+    "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 195
+    "rows": 196
   },
   "calendar:antiquorum": {
     "fingerprint": "7ab207fc3307af13",
@@ -426,9 +426,9 @@
     "rows": 114
   },
   "merged:listings": {
-    "fingerprint": "21384ff9896c7ad2",
+    "fingerprint": "08a4e2083268a9d4",
     "lastChanged": "2026-10-17",
     "lastSeen": "2026-10-17",
-    "rows": 12103
+    "rows": 12118
   }
 }
