@@ -15,11 +15,32 @@
 // shells render at their tail are rendered here too, so a control on the page
 // (share, add to list, settings) opens something.
 
-import React, { useEffect, useLayoutEffect, useRef } from "react";
+import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { MagazineShellBar, MagazineBrandRow, MagazineTabRow } from "../components/MagazineShellBar";
 import { AboutModal } from "../components/AboutModal";
 import { SignInPromptModal } from "../components/SignInPromptModal";
 import "./ui.css";
+
+// A page's search lives in the header, at the same place and size on every page (Mark,
+// 2026-10-17: "all still different size boxes and y axis locations"). The page that owns the
+// search state renders <HeaderSearch>...</HeaderSearch>; the shell makes room for it in the
+// header (a slot in the desktop bar, a row under the phone's tabs) and the field is portalled
+// into it. A page with no search renders no slot, so nothing is reserved. Outside a PageShell
+// (a component test, say) it just renders inline.
+const SearchSlotContext = createContext(null);
+
+export function HeaderSearch({ children }) {
+  const ctx = useContext(SearchSlotContext);
+  const setWanted = ctx && ctx.setWanted;
+  useLayoutEffect(() => {
+    if (!setWanted) return undefined;
+    setWanted(true);
+    return () => setWanted(false);
+  }, [setWanted]);
+  if (!ctx) return children;
+  return ctx.slotEl ? createPortal(children, ctx.slotEl) : null;
+}
 
 export function PageShell({
   isMobile, baseStyle, tabs, authJSX, user, onHome, goToSaved, searchJSX,
@@ -28,6 +49,11 @@ export function PageShell({
 }) {
   const root = useRef(null);
   const pinned = useRef(null);
+  const [slotEl, setSlotEl] = useState(null);
+  const [wanted, setWanted] = useState(false);
+  const slotCtx = useMemo(() => ({ slotEl, setWanted }), [slotEl]);
+  // The page's own search element wins (Watches, a list); otherwise the slot, if a child asked.
+  const searchEl = searchJSX || (wanted ? <div className="ui-search-slot" ref={setSlotEl} /> : null);
   // A window-scrolled page opens at the top. The shells scrolled an inner pane that
   // reset itself; the window keeps whatever offset the previous tab had.
   useEffect(() => { try { window.scrollTo(0, 0); } catch { /* jsdom */ } }, []);
@@ -50,7 +76,7 @@ export function PageShell({
   }, [header]);
   return (
     <div ref={root}
-         className={`ui-page${isMobile ? " ui-page--phone" : ""}${isMobile && searchJSX && !header && !bare ? " ui-page--phone-search" : ""}`}
+         className={`ui-page${isMobile ? " ui-page--phone" : ""}${isMobile && searchEl && !header && !bare ? " ui-page--phone-search" : ""}`}
          style={baseStyle}>
       {bare ? null : header ? (
         <div ref={pinned} className="ui-page-stick">{header}</div>
@@ -60,14 +86,14 @@ export function PageShell({
                             onHome={onHome} />
           <div className="ui-page-stick">
             <MagazineTabRow tabs={tabs} />
-            {searchJSX ? <div className="ui-page-search">{searchJSX}</div> : null}
+            {searchEl ? <div className="ui-page-search">{searchEl}</div> : null}
           </div>
         </>
       ) : (
         <MagazineShellBar tabs={tabs} authJSX={authJSX} showSaved={!!user} onSavedClick={goToSaved}
-                          onHome={onHome} searchJSX={searchJSX} />
+                          onHome={onHome} searchJSX={searchEl} />
       )}
-      {children}
+      <SearchSlotContext.Provider value={slotCtx}>{children}</SearchSlotContext.Provider>
       {overlaysJSX}
       <AboutModal open={!!aboutModalOpen} onClose={() => setAboutModalOpen && setAboutModalOpen(false)}
                   primaryCurrency={primaryCurrency} />

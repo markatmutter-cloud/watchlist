@@ -264,6 +264,27 @@ describe("App render-without-crash", () => {
     window.history.replaceState({}, "", "/");
   });
 
+  test("Articles and Guides seat their search in the header, like Watches", async () => {
+    // Mark, 2026-10-17: "all still different size boxes and y axis locations". One search, one
+    // place: the header, on every page that has one.
+    const { default: App } = require("./App");
+    for (const url of ["/?tab=listings", "/?tab=references&sub=editorial", "/?tab=references&sub=references"]) {
+      window.history.replaceState({}, "", url);
+      const r = render(<App />);
+      await waitFor(() => {
+        expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(document.querySelector(".magb-bar input[type='search']")).not.toBeNull();
+      });
+      // exactly one search on the page, and none inside the filter bar
+      expect(document.querySelectorAll(".ui-page input[type='search']").length).toBe(1);
+      expect(document.querySelector(".ui-filterbar input[type='search']")).toBeNull();
+      r.unmount();
+    }
+    window.history.replaceState({}, "", "/");
+  });
+
   test("?view=styleguide mounts the live style sheet", async () => {
     // The reference page for the shared frame (src/ui). Not a tab: reached only
     // by the URL flag, so this is the one test that proves the wiring.

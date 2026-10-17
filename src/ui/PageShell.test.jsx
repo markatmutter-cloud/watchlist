@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { PageShell } from "./PageShell";
+import { PageShell, HeaderSearch } from "./PageShell";
 
 // The page every src/ui tab sits in. The shell tests render MOCK content, so this is the
 // place the header variants (standard, page-supplied, none) are pinned.
@@ -49,5 +49,52 @@ describe("PageShell", () => {
   it("still renders the overlays Home and every page need", () => {
     render(<PageShell {...base} bare overlaysJSX={<div data-testid="overlays" />}><p>x</p></PageShell>);
     expect(screen.getByTestId("overlays")).toBeInTheDocument();
+  });
+
+  describe("HeaderSearch: one place and one size for a page's search", () => {
+    const field = <input type="search" aria-label="Search things" />;
+
+    it("seats the page's search in the desktop header bar", () => {
+      const { container } = render(<PageShell {...base}><HeaderSearch>{field}</HeaderSearch><p>body</p></PageShell>);
+      expect(container.querySelector(".magb-bar .magb-search .ui-search-slot input[type='search']")).not.toBeNull();
+      // ...and not also in the page body.
+      expect(container.querySelectorAll("input[type='search']").length).toBe(1);
+    });
+
+    it("seats it in the phone's sticky block, under the tabs, and makes room for the row", () => {
+      const { container } = render(<PageShell {...base} isMobile><HeaderSearch>{field}</HeaderSearch><p>body</p></PageShell>);
+      expect(container.querySelector(".ui-page--phone-search")).not.toBeNull();
+      expect(container.querySelector(".ui-page-stick .ui-page-search .ui-search-slot input[type='search']")).not.toBeNull();
+    });
+
+    it("reserves nothing when the page has no search", () => {
+      const { container } = render(<PageShell {...base} isMobile><p>body</p></PageShell>);
+      expect(container.querySelector(".ui-page-search")).toBeNull();
+      expect(container.querySelector(".ui-page--phone-search")).toBeNull();
+      const d = render(<PageShell {...base}><p>body</p></PageShell>);
+      expect(d.container.querySelector(".magb-search")).toBeNull();
+    });
+
+    it("gives the room back when the page stops rendering its search", () => {
+      const Page = ({ on }) => (
+        <PageShell {...base} isMobile>{on ? <HeaderSearch>{field}</HeaderSearch> : null}<p>body</p></PageShell>);
+      const { container, rerender } = render(<Page on />);
+      expect(container.querySelector(".ui-page-search")).not.toBeNull();
+      rerender(<Page on={false} />);
+      expect(container.querySelector(".ui-page-search")).toBeNull();
+    });
+
+    it("renders inline outside a shell (a component test, say)", () => {
+      const { container } = render(<HeaderSearch>{field}</HeaderSearch>);
+      expect(container.querySelector("input[type='search']")).not.toBeNull();
+    });
+
+    it("a search the page passes in itself wins over the slot", () => {
+      const { container } = render(
+        <PageShell {...base} searchJSX={<input type="search" aria-label="Own" />}>
+          <HeaderSearch>{field}</HeaderSearch>
+        </PageShell>);
+      expect(container.querySelector("input[aria-label='Own']")).not.toBeNull();
+    });
   });
 });
