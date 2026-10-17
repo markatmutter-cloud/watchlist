@@ -15,17 +15,13 @@
 // Stage 0 of the migration: extracted verbatim from Card.js so the priced card
 // is pixel-identical. Other renderers fold in over later stages.
 //
-// IMPORTANT (preserved from Card.js):
-//   - The ⋯ menu renders via createPortal to document.body and MUST pin an
-//     explicit font-family, or iOS falls back to Times (Mark report 2026-05-11).
-//   - Menu is viewport-anchored via getBoundingClientRect (top/right) and
-//     width-clamped so it can't fall off-screen on rightmost cards.
-//   - Action-button sizes track `size` ("compact" = 26/16px, "full" = 36/16px)
-//     — at 1/2/3 cols a 26px tap target is too small (Mark 2026-05-xx).
+// The heart, ⋯ and quick-action buttons and the portal menu are the shared
+// OverlayButton / OverlayHeart / OverlayMenu / MenuItem in src/ui (the portal font pin, the
+// viewport anchoring and the click-outside close live there). `size="compact"` picks the small
+// 26px button; the full card uses the 34px one.
 
-import React, { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { HeartIcon } from "./icons";
+import React, { useState } from "react";
+import { OverlayButton, OverlayHeart, OverlayMenu, MenuItem } from "../ui";
 
 // Image sub-component: owns the onError→placeholder fallback (dealer image
 // URLs 404 over time — Card.js relied on this). Falls back to the same
@@ -58,12 +54,6 @@ function CardImage({ image, priority, aspect }) {
   );
 }
 
-// Portal-only sans stack. Intentionally NOT the shared FONT_SANS token: the
-// card ⋯ menu portals to document.body, so it must hard-set a face or iOS
-// falls back to Times serif (Mark report 2026-05-11). Distinct name so it
-// can't be confused with the interface FONT_SANS in styles.js.
-const PORTAL_SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
-
 const ASPECT = { square: "100%", editorial: "62.5%" /* 16:10 */ };
 
 export default function CardShell({
@@ -92,45 +82,9 @@ export default function CardShell({
   children,              // optional extra body content below L3
 }) {
   const compact = size === "compact";
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState(null);
   const [shareFeedback, setShareFeedback] = useState("");
-  const triggerRef = useRef(null);
-  const portalRef = useRef(null);
-
-  // Click-outside closes the portal menu. Deferred bind (setTimeout 0) so the
-  // opening click doesn't immediately re-close it.
-  useEffect(() => {
-    if (!menuOpen) return undefined;
-    const onDown = (e) => {
-      if (portalRef.current && portalRef.current.contains(e.target)) return;
-      if (triggerRef.current && triggerRef.current.contains(e.target)) return;
-      setMenuOpen(false);
-    };
-    const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
-    // Defer one tick so the click that opened the menu doesn't immediately
-    // close it. mousedown + Escape, matching the original Card.js behaviour.
-    const id = setTimeout(() => {
-      document.addEventListener("mousedown", onDown);
-      document.addEventListener("keydown", onKey);
-    }, 0);
-    return () => {
-      clearTimeout(id);
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menuOpen]);
-
-  const menuItemStyle = {
-    display: "block", width: "100%", textAlign: "left",
-    background: "none", border: "none", cursor: "pointer",
-    padding: "8px 12px", fontFamily: "inherit", fontSize: 13,
-    color: "var(--text1)", whiteSpace: "nowrap", borderRadius: 6,
-  };
   const hasMenu = !!menu && (menu.onShare || menu.onAddToCollection || menu.onHide
     || (menu.extraMenuItems && menu.extraMenuItems.length > 0));
-  const actionSize = compact ? 26 : 36;
-  const heartIconSize = compact ? 12 : 16;
 
   return (
     <div ref={innerRef} style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative", minWidth: 0, overflow: "hidden" }}>
@@ -149,86 +103,45 @@ export default function CardShell({
         </div>
       </a>
       {quickAction && (
-        <button onClick={e => { e.preventDefault(); e.stopPropagation(); quickAction.onClick(); }}
-          aria-label={quickAction.label} title={quickAction.label}
-          style={{
-            position: "absolute", top: 6, left: 6,
-            width: compact ? 22 : 28, height: compact ? 22 : 28,
-            borderRadius: "50%", border: "none", cursor: "pointer",
-            background: quickAction.active ? "rgba(220,38,38,0.88)" : "rgba(0,0,0,0.55)",
-            color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: compact ? 12 : 14, fontWeight: 700, fontFamily: "inherit", padding: 0, lineHeight: 1,
-          }}>{quickAction.icon || "↑"}</button>
+        <div style={{ position: "absolute", top: 6, left: 6 }}>
+          <OverlayButton small={compact} on={!!quickAction.active}
+            onClick={e => { e.preventDefault(); e.stopPropagation(); quickAction.onClick(); }}
+            aria-label={quickAction.label} title={quickAction.label}>{quickAction.icon || "↑"}</OverlayButton>
+        </div>
       )}
       {(heart || hasMenu) && (
         <div style={{ position: "absolute", top: 6, right: 6, display: "flex", flexDirection: "column", gap: 6 }}>
           {heart && (
-            <button onClick={e => { e.preventDefault(); e.stopPropagation(); heart.onToggle(); }}
-              aria-label="Save"
-              style={{ width: actionSize, height: actionSize, borderRadius: "50%", border: "none", cursor: "pointer",
-                      background: heart.wished ? "rgba(220,38,38,0.88)" : "rgba(0,0,0,0.28)",
-                      color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <HeartIcon filled={heart.wished} size={heartIconSize} />
-            </button>
+            <OverlayHeart small={compact} on={heart.wished} aria-label="Save"
+              onClick={e => { e.preventDefault(); e.stopPropagation(); heart.onToggle(); }} />
           )}
           {hasMenu && (
-            <div style={{ position: "relative" }}>
-              <button ref={triggerRef}
-                onClick={e => {
-                  e.preventDefault(); e.stopPropagation();
-                  if (!menuOpen && triggerRef.current) {
-                    const r = triggerRef.current.getBoundingClientRect();
-                    setMenuPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) });
-                  }
-                  setMenuOpen(o => !o);
-                }}
-                aria-label="More actions"
-                style={{ width: actionSize, height: actionSize, borderRadius: "50%", border: "none", cursor: "pointer",
-                        background: menuOpen ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.28)",
-                        color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-                        padding: 0, fontFamily: "inherit", fontSize: compact ? 16 : 20, lineHeight: 1 }}>
-                ⋯
-              </button>
-              {menuOpen && menuPos && createPortal(
-                <div ref={portalRef} onClick={e => e.preventDefault()}
-                  style={{
-                    position: "fixed", top: menuPos.top, right: menuPos.right, zIndex: 1000,
-                    maxWidth: `calc(100vw - ${menuPos.right + 16}px)`,
-                    background: "var(--bg)", border: "0.5px solid var(--border)",
-                    borderRadius: 8, padding: 4, whiteSpace: "nowrap",
-                    boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
-                    // Portal mounts to document.body — pin font-family or iOS
-                    // falls back to Times (Mark report 2026-05-11).
-                    fontFamily: PORTAL_SANS,
-                  }}>
+            <OverlayMenu small={compact}>
+              {({ close }) => (
+                <>
                   {menu.onShare && (
-                    <button onClick={async e => {
-                      e.preventDefault(); e.stopPropagation();
+                    <MenuItem onClick={async () => {
                       let result;
                       try { result = await menu.onShare(); }
                       catch (err) { console.warn("share failed", err); result = null; }
-                      if (result?.copied) { setShareFeedback("Copied!"); setTimeout(() => { setShareFeedback(""); setMenuOpen(false); }, 1200); }
-                      else { setMenuOpen(false); }
-                    }} style={menuItemStyle}>{shareFeedback || "Share"}</button>
+                      if (result?.copied) { setShareFeedback("Copied!"); setTimeout(() => { setShareFeedback(""); close(); }, 1200); }
+                      else { close(); }
+                    }}>{shareFeedback || "Share"}</MenuItem>
                   )}
                   {menu.onAddToCollection && (
-                    <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); menu.onAddToCollection(); }}
-                      style={menuItemStyle}>Add to…</button>
+                    <MenuItem onClick={() => { close(); menu.onAddToCollection(); }}>Add to…</MenuItem>
                   )}
                   {menu.onHide && (
-                    <button onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); menu.onHide(); }}
-                      style={menuItemStyle}>
+                    <MenuItem onClick={() => { close(); menu.onHide(); }}>
                       {menu.hideLabel === "Remove from list" ? "Remove" : (menu.hideLabel || (menu.isHidden ? "Unhide" : "Hide"))}
-                    </button>
+                    </MenuItem>
                   )}
                   {(menu.extraMenuItems || []).map((entry, i) => (
-                    <button key={i} onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false); entry.onClick(); }}
-                      style={menuItemStyle}>{entry.label}</button>
+                    <MenuItem key={i} onClick={() => { close(); entry.onClick(); }}>{entry.label}</MenuItem>
                   ))}
-                </div>,
-                document.body
+                </>
               )}
-            </div>
+            </OverlayMenu>
           )}
         </div>
       )}

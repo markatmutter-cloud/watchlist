@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { ReferencePage } from "./ReferencePage";
 import { Breadcrumb } from "./Breadcrumb";
-import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame, HeaderSearch, Button } from "../ui";
+import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame, HeaderSearch, Button, OverlayHeart, OverlayMenu, MenuItem } from "../ui";
 import { editorialHeading, editorialProse, editorialTitle, cardGridStyle, FONT_SERIF } from "../styles";
 import { imgSrc } from "../utils";
 import {
@@ -233,7 +233,6 @@ export function ReferenceBrowse(props) {
 // name. Carries the same heart + ⋯ actions as article cards (Mark 2026-06-02)
 // — save / add to list / share / Ask Lumé — via referenceAsListing(node).
 function RefGuideCard({ node, isMobile, onClick, watchlist, handleWish, openCollectionPicker, handleShare, user }) {
-  const [menuOpen, setMenuOpen] = useState(false);
   const coming = !isLiveNode(node);
   const title = node.group || (node.refs || []).join(" / ");
   const asListing = referenceAsListing(node);
@@ -241,16 +240,6 @@ function RefGuideCard({ node, isMobile, onClick, watchlist, handleWish, openColl
   const onKey = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } };
   const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
   const hasActions = asListing && (handleWish || (openCollectionPicker && user) || handleShare);
-  const overlayBtn = {
-    width: 28, height: 28, borderRadius: 999, border: "none", cursor: "pointer",
-    background: "rgba(0,0,0,0.45)", color: "#fff", display: "flex", alignItems: "center",
-    justifyContent: "center", fontFamily: "inherit", fontSize: 14, lineHeight: 1, padding: 0,
-  };
-  const menuItem = {
-    display: "block", width: "100%", textAlign: "left", padding: "9px 13px",
-    fontSize: 13, fontFamily: "inherit", border: "none", background: "transparent",
-    color: "var(--text1)", cursor: "pointer", whiteSpace: "nowrap",
-  };
   return (
     <div style={{ position: "relative" }}>
       <div role="button" tabIndex={0} onClick={onClick} onKeyDown={onKey} style={{
@@ -288,28 +277,24 @@ function RefGuideCard({ node, isMobile, onClick, watchlist, handleWish, openColl
       {hasActions && (
         <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 6 }}>
           {handleWish && (
-            <button onClick={(e) => { stop(e); handleWish(asListing); }}
-              aria-label={wished ? "Saved: tap to remove" : "Save guide"}
-              style={{ ...overlayBtn, color: wished ? "var(--heart)" : "#fff" }}>{wished ? "♥" : "♡"}</button>
+            <OverlayHeart on={wished} onClick={(e) => { stop(e); handleWish(asListing); }}
+              aria-label={wished ? "Saved: tap to remove" : "Save guide"} />
           )}
           {((openCollectionPicker && user) || handleShare) && (
-            <button onClick={(e) => { stop(e); setMenuOpen(o => !o); }} aria-label="More" style={overlayBtn}>⋯</button>
+            <OverlayMenu label="More">
+              {({ close }) => (
+                <>
+                  {openCollectionPicker && user && (
+                    <MenuItem onClick={() => { close(); openCollectionPicker(asListing); }}>Add to list…</MenuItem>
+                  )}
+                  {handleShare && (
+                    <MenuItem onClick={() => { close(); handleShare(asListing); }}>Share</MenuItem>
+                  )}
+                  <MenuItem onClick={() => { close(); askLumeAbout(asListing); }}>Ask Lumé</MenuItem>
+                </>
+              )}
+            </OverlayMenu>
           )}
-        </div>
-      )}
-      {menuOpen && (
-        <div onClick={stop} style={{
-          position: "absolute", top: 40, right: 8, zIndex: 20, minWidth: 150,
-          background: "var(--bg)", border: "0.5px solid var(--border)", borderRadius: 10,
-          boxShadow: "0 6px 20px rgba(0,0,0,0.18)", overflow: "hidden",
-        }}>
-          {openCollectionPicker && user && (
-            <button style={menuItem} onClick={(e) => { stop(e); setMenuOpen(false); openCollectionPicker(asListing); }}>Add to list…</button>
-          )}
-          {handleShare && (
-            <button style={menuItem} onClick={(e) => { stop(e); setMenuOpen(false); handleShare(asListing); }}>Share</button>
-          )}
-          <button style={menuItem} onClick={(e) => { stop(e); setMenuOpen(false); askLumeAbout(asListing); }}>Ask Lumé</button>
         </div>
       )}
     </div>

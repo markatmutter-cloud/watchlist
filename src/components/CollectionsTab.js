@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { createPortal } from "react-dom";
 import { supabase } from "../supabase";
 import { Card } from "./Card";
 import { ChallengesView } from "./ChallengesView";
@@ -15,7 +14,7 @@ import CardShell from "./CardShell";
 import { DossierBlocks } from "./DossierBlocks";
 import { fmtUSD, matchesSearch, imgSrc } from "../utils";
 import { FONT_SERIF, cardGridStyle } from "../styles";
-import { Pill, Button, Chip, SavedPill, SubTabs, JumpNav, SectionHead } from "../ui";
+import { Pill, Button, Chip, SavedPill, SubTabs, JumpNav, SectionHead, OverlayMenu, MenuItem } from "../ui";
 import { EmptyState } from "./EmptyState";
 import { Section } from "./Section";
 
@@ -2424,34 +2423,6 @@ function CollectionGrid({
 }
 
 function ManualItemCard({ item, onRemove, onMarkSold, onClickDetail }) {
-  const [menuOpen, setMenuOpen] = React.useState(false);
-  // Portal-anchored coords. The menu used to be absolutely positioned
-  // inside the card, which clipped via overflow:hidden when the menu
-  // was wider than the card. Mark report 2026-05-10.
-  const [menuPos, setMenuPos] = React.useState(null);
-  // Click-outside + Escape dismiss for the ⋯ menu (2026-05-09 — was
-  // missing; menu stayed open until tapped again, with no obvious
-  // affordance to close. Mark report: couldn't easily reach Remove.)
-  const triggerRef = React.useRef(null);
-  const portalRef = React.useRef(null);
-  React.useEffect(() => {
-    if (!menuOpen) return undefined;
-    const onDown = (e) => {
-      const inTrigger = triggerRef.current && triggerRef.current.contains(e.target);
-      const inPortal  = portalRef.current && portalRef.current.contains(e.target);
-      if (!inTrigger && !inPortal) setMenuOpen(false);
-    };
-    const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
-    const t = setTimeout(() => {
-      document.addEventListener("mousedown", onDown);
-      document.addEventListener("keydown", onKey);
-    }, 0);
-    return () => {
-      clearTimeout(t);
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menuOpen]);
   const title = item.title || [item.brand, item.model].filter(Boolean).join(" ").trim() || "Untitled";
   const metaParts = [];
   if (item.ref) metaParts.push(`Ref ${item.ref}`);
@@ -2512,62 +2483,31 @@ function ManualItemCard({ item, onRemove, onMarkSold, onClickDetail }) {
         </div>
       </button>
       <div style={{ position: "absolute", top: 6, right: 6 }}>
-        <button ref={triggerRef}
-          onClick={() => {
-            if (!menuOpen && triggerRef.current) {
-              const r = triggerRef.current.getBoundingClientRect();
-              setMenuPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) });
-            }
-            setMenuOpen(o => !o);
-          }}
-          aria-label="More" style={{
-            border: "none", background: "rgba(0,0,0,0.5)",
-            color: "#fff", width: 26, height: 26, borderRadius: "50%",
-            cursor: "pointer", fontSize: 14, fontFamily: "inherit",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>⋯</button>
-        {menuOpen && menuPos && createPortal(
-          <div ref={portalRef} style={{
-            position: "fixed",
-            top: menuPos.top, right: menuPos.right,
-            zIndex: 1000,
-            maxWidth: `calc(100vw - ${menuPos.right + 16}px)`,
-            background: "var(--card-bg)",
-            border: "0.5px solid var(--border)", borderRadius: 8,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            minWidth: 140,
-          }}>
-            {onClickDetail && (
-              <button onClick={() => { setMenuOpen(false); onClickDetail(); }}
-                style={menuItemStyle("var(--text1)")}>Watch details</button>
-            )}
-            {onMarkSold && (
-              <button onClick={() => { setMenuOpen(false); onMarkSold(); }}
-                style={menuItemStyle("var(--text1)")}>Mark sold</button>
-            )}
-            <button onClick={async () => {
-              setMenuOpen(false);
-              if (await confirm({
-                title: "Remove watch?",
-                message: "This watch will be removed from this list.",
-                confirmLabel: "Remove",
-                tone: "danger",
-              })) await onRemove();
-            }} style={menuItemStyle("var(--danger)")}>Remove</button>
-          </div>,
-          document.body
-        )}
+        <OverlayMenu small label="More">
+          {({ close }) => (
+            <>
+              {onClickDetail && (
+                <MenuItem onClick={() => { close(); onClickDetail(); }}>Watch details</MenuItem>
+              )}
+              {onMarkSold && (
+                <MenuItem onClick={() => { close(); onMarkSold(); }}>Mark sold</MenuItem>
+              )}
+              <MenuItem danger onClick={async () => {
+                close();
+                if (await confirm({
+                  title: "Remove watch?",
+                  message: "This watch will be removed from this list.",
+                  confirmLabel: "Remove",
+                  tone: "danger",
+                })) await onRemove();
+              }}>Remove</MenuItem>
+            </>
+          )}
+        </OverlayMenu>
       </div>
     </div>
   );
 }
-
-const menuItemStyle = (color) => ({
-  width: "100%", border: "none", background: "transparent",
-  padding: "10px 12px", textAlign: "left",
-  cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-  color,
-});
 
 // (Inline Lists-view SVG icon family retired in B-08 — the landing's
 // cover-image cards don't use icon+text rows. Synthetic-row icons
