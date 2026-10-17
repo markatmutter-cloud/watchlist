@@ -257,12 +257,12 @@ diagram, data model, and folder layout.
   *after* the `if (loading)` / `if (loadError)` early returns — it triggers
   React #310 (white screen). New hooks go in a self-contained component
   App.js mounts unconditionally, or above every early return. A `useEffect`
-  must not reference state declared later in the function (TDZ).- **Page chrome = the standard library** (see DESIGN_SYSTEM "Page chrome"):
-  titles via `PageHeader`, bars via `StandardFilterBar`/`StandardSearchInput`,
-  governed numbers from `CHROME` in styles.js (raw px in chrome code is a
-  smell), counts in the bar's right slot / PageHeader `count` (never under a
-  title), failed images end at the favicon placeholder. `chrome-guard.test.js`
-  fails the build on drift — fix the surface, not the test.
+  must not reference state declared later in the function (TDZ).- **Page chrome = `src/ui`** (the shared frame; approved on `?view=styleguide`):
+  Pill, SearchField, SubTabs, PageTitle, FilterBar, PageFrame, Count, AccountDisc,
+  styled ONCE in `src/ui/ui.css`. A page never hand-rolls one — add a variant
+  there + on the style sheet first. Pages not yet migrated still use the legacy
+  `PageHeader`/`StandardFilterBar`/`CHROME`; `chrome-guard` and `ui-guard` fail
+  the build on drift — fix the surface, not the test.
 - **Shells move in lockstep.** Any `shellProps` field used in one of
   `MobileShell` / `DesktopShell` must exist in both *and* in
   `mockShellProps.js`. A name destructured in one and missing in the other is
@@ -285,14 +285,12 @@ diagram, data model, and folder layout.
 - **No `eslint-disable` for unconfigured CRA rules** (e.g.
   `react-hooks/exhaustive-deps`) — it fails the build under `CI=true`.
 - **Cross-surface consistency = shared abstraction, not per-surface patches.**
-  When a tab/surface looks or behaves differently from its siblings (Editorial's
-  chrome vs other tabs; a sticky/divider gap that recurs), treat it as a *smell
-  pointing at a missing shared component or single source of truth* — fix the
-  root so every surface inherits correct behavior. Resist local band-aids; they
-  re-drift (the date-divider gap took 4 attempts because the chrome isn't one
-  component). Mark flags this often — divergence is the bug, not the styling. The
-  planned per-tab **dispatch layer** (purpose + area cards + CTA) must be ONE shared
-  component, not per-tab variants (see [docs/IA_REDESIGN.md](docs/IA_REDESIGN.md)).
+  A tab that looks or behaves unlike its siblings is a *smell pointing at a
+  missing shared component* — fix the root (`src/ui`), never band-aid one page;
+  patches re-drift. Styling lives in classes in one stylesheet, not ~1,800 inline
+  blocks next to each use (that is how six search fields happened). Don't build a
+  parallel copy of a surface "to protect the old one" without a dated plan to
+  migrate and delete it; the two systems become a blend on every page.
 - Visual tokens, components, and reach-for rules: **see DESIGN_SYSTEM.md**.
 
 ## Internal-vs-UI naming (deliberate — don't "fix" casually)

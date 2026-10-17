@@ -1,0 +1,179 @@
+/* ui.css — THE shared page-frame styles. One place to look.
+
+   Why this file exists (Mark, 2026-10-17: "every page is different ... how can I
+   fix this without chasing leaks"): the site's look lived in ~1,800 inline style
+   blocks, one next to each use, so nothing made two pages alike. Everything a
+   page frame is made of (pill, search field, sub-tabs, title, filter bar, count)
+   is defined ONCE here, as classes, and every page builds from src/ui. A page
+   that wants a different pill has to change this file, which changes all of them.
+
+   Rules for this file:
+   - Every size and colour is a variable (--ui-*, or the app's own --bg / --text1 /
+     --brand-olive-* tokens, so dark mode needs nothing extra).
+   - Responsive behaviour is a CONTAINER query on .ui-frame, not a viewport query,
+     so the style-sheet page can show the phone layout inside a desktop window.
+   - A new variant is a decision: add it here, show it on the style sheet
+     (?view=styleguide), then use it. Never restyle a ui- class from a page. */
+
+:root {
+  --ui-inset: 20px;            /* the one left/right page edge (16px on a phone) */
+  --ui-bar-h: 56px;            /* the header bar, every tab */
+  --ui-control-h: 36px;        /* pills */
+  --ui-search-h: 38px;         /* search fields (44px on a phone) */
+  --ui-gap: 8px;
+  --ui-label-size: 11px;       /* small tracked caps: pills, counts, eyebrows */
+  --ui-label-track: .1em;
+  --ui-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+}
+
+/* ---------- the frame ---------------------------------------------------- */
+
+.ui-frame { container-type: inline-size; container-name: ui-frame;
+            font-family: var(--ui-sans); color: var(--text1); background: var(--bg); }
+.ui-frame-in { padding: 0 var(--ui-inset); }
+.ui-content { padding-top: 18px; padding-bottom: 40px; }
+
+/* ---------- count -------------------------------------------------------- */
+
+.ui-count { font-size: var(--ui-label-size); letter-spacing: var(--ui-label-track);
+            text-transform: uppercase; color: var(--text3); white-space: nowrap;
+            font-variant-numeric: tabular-nums; }
+
+/* ---------- pill --------------------------------------------------------- */
+/* A filter / toggle / sort control. Selected = the olive TINT (quieter than the
+   segmented sub-tab's solid olive, on purpose: the sub-tab is "where you are",
+   a pill is "how you've narrowed it"). `solid` is the alternative on the style
+   sheet, not yet in use. */
+
+.ui-pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+           box-sizing: border-box; height: var(--ui-control-h); padding: 0 14px;
+           border: .5px solid var(--border); border-radius: 999px;
+           background: var(--card-bg); color: var(--text2);
+           font: 500 var(--ui-label-size)/1 var(--ui-sans);
+           letter-spacing: var(--ui-label-track); text-transform: uppercase;
+           white-space: nowrap; cursor: pointer; }
+.ui-pill:hover { border-color: var(--brand-olive-ink); color: var(--brand-olive-ink); }
+.ui-pill:focus-visible { outline: 2px solid var(--brand-olive-ink); outline-offset: 2px; }
+.ui-pill.is-on { background: var(--brand-olive-tint-12); border-color: var(--brand-olive-ink);
+                 color: var(--brand-olive-ink); font-weight: 600; }
+.ui-pill--solid.is-on { background: var(--brand-olive-text); border-color: var(--brand-olive-text);
+                        color: var(--bg); }
+/* A bare icon (the Saved heart): a circle, never red, never a word. */
+.ui-pill--icon { width: var(--ui-control-h); padding: 0; }
+.ui-pill--icon svg { width: 15px; height: 15px; }
+/* "+36 more" style: present but quiet. */
+.ui-pill--quiet { background: none; color: var(--text3); border-style: dashed; }
+.ui-pill-n { font-weight: 400; opacity: .8; font-variant-numeric: tabular-nums; }
+
+/* ---------- search field ------------------------------------------------- */
+/* ONE search field. `bar` seats in the header (Watches), `row` in a filter bar,
+   `full` is the phone's full-width row. Same shape and type in all three. */
+
+.ui-search { position: relative; display: flex; align-items: center; gap: 10px;
+             box-sizing: border-box; height: var(--ui-search-h); padding: 0 8px 0 16px;
+             border: 1px solid var(--border); border-radius: 999px;
+             background: var(--card-bg); color: var(--text2); width: 100%; min-width: 0; }
+.ui-search--bar { height: 37px; }   /* fills the 56px header bar exactly (37 + 18 padding + hairline) */
+.ui-search:focus-within { border-color: var(--brand-olive-text); }
+.ui-search > svg { width: 15px; height: 15px; flex: 0 0 auto; color: var(--text3); }
+.ui-search input { flex: 1 1 auto; min-width: 0; border: none; background: transparent;
+                   outline: none; padding: 0; font: 400 14px var(--ui-sans); color: var(--text1);
+                   -webkit-appearance: none; appearance: none; }
+.ui-search input::placeholder { color: var(--text3); }
+.ui-search input::-webkit-search-cancel-button { display: none; }
+.ui-search-x { flex: 0 0 auto; width: 26px; height: 26px; border: none; border-radius: 999px;
+               background: none; color: var(--text3); font-size: 17px; line-height: 1; cursor: pointer; }
+.ui-search-x:hover { color: var(--text1); background: var(--surface); }
+.ui-search-trailing { flex: 0 0 auto; display: flex; align-items: center; }
+/* Suggestions dropdown (saved searches, recent): children of the field. */
+.ui-search-drop { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; right: 0;
+                  background: var(--card-bg); border: .5px solid var(--border); border-radius: 14px;
+                  box-shadow: 0 12px 34px rgba(0,0,0,.16); padding: 6px; display: grid; gap: 1px; }
+
+.ui-drop-head { margin: 6px 10px 4px; font-size: var(--ui-label-size); letter-spacing: var(--ui-label-track);
+                text-transform: uppercase; color: var(--text3); }
+.ui-drop-row { display: flex; align-items: center; border-radius: 10px; }
+.ui-drop-row:hover { background: var(--surface); }
+.ui-drop-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: space-between;
+                gap: 14px; border: none; background: none; cursor: pointer; text-align: left;
+                padding: 10px 4px 10px 12px; font: 400 14px var(--ui-sans); color: var(--text1); }
+.ui-drop-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-drop-meta { font-size: 12px; color: var(--text3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ui-drop-x { flex: 0 0 auto; width: 30px; height: 30px; margin-right: 4px; border: none; border-radius: 999px;
+             background: none; color: var(--text3); font-size: 17px; line-height: 1; cursor: pointer; }
+.ui-drop-x:hover { color: var(--text1); background: var(--surface); }
+
+/* ---------- account disc -------------------------------------------------- */
+/* The account control, ONE look on every page: an olive disc with the initial.
+   (Today App.js flips it white-on-olive / olive-on-white by tab, so on the light
+   bar it shows as a bare letter.) */
+
+.ui-disc { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+           background: var(--brand-olive); color: #fff; border: none; cursor: pointer;
+           font: 600 14px var(--ui-sans); text-transform: uppercase; }
+
+/* ---------- sub-tabs ----------------------------------------------------- */
+/* Two forms are on the style sheet for a decision; the page frame will keep one. */
+
+.ui-tabs { display: inline-flex; max-width: 100%; }
+.ui-tabs--segmented { align-items: center; padding: 3px; gap: 2px; border-radius: 999px;
+                      background: var(--surface); box-shadow: inset 0 0 0 .5px var(--border); }
+.ui-tabs--segmented button { border: none; border-radius: 999px; padding: 7px 14px; cursor: pointer;
+                             background: transparent; color: var(--text2); white-space: nowrap;
+                             font: 500 13px var(--ui-sans); letter-spacing: .01em;
+                             transition: background .15s ease, color .15s ease; }
+.ui-tabs--segmented button.is-on { background: var(--brand-olive); color: #fff; font-weight: 600; }
+.ui-tabs--underline { flex-wrap: wrap; gap: 4px 22px; }
+.ui-tabs--underline button { border: none; background: none; cursor: pointer; padding: 3px 0;
+                             border-bottom: 1.5px solid transparent; color: var(--text3);
+                             font: 500 17px/1.2 var(--ui-sans); letter-spacing: .01em; }
+.ui-tabs--underline button:hover { color: var(--text1); }
+.ui-tabs--underline button.is-on { color: var(--brand-olive-ink); font-weight: 600;
+                                   border-bottom-color: var(--brand-olive-text); }
+.ui-tabs-row { padding: 10px 0 8px; display: flex; align-items: baseline;
+               justify-content: space-between; gap: 16px; }
+
+/* ---------- page title --------------------------------------------------- */
+
+.ui-title-row { display: flex; align-items: baseline; gap: 12px; padding: 14px 0 12px;
+                border-bottom: .5px solid var(--border); }
+.ui-title { margin: 0; font: 700 28px/1.12 var(--ui-sans); letter-spacing: -.01em; min-width: 0; }
+.ui-title-actions { margin-left: auto; display: flex; align-items: center; gap: var(--ui-gap); }
+
+/* ---------- filter bar --------------------------------------------------- */
+/* pills left · search centred · count right. The search never moves when the
+   pill count changes (it sits in its own grid column). */
+
+.ui-filterbar { display: grid; grid-template-columns: 1fr minmax(240px, 520px) 1fr;
+                align-items: center; column-gap: 12px; padding: 8px 0;
+                border-bottom: .5px solid var(--border); background: var(--bg); }
+.ui-filterbar-pills { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ui-gap); min-width: 0; }
+.ui-filterbar-search { min-width: 0; }
+.ui-filterbar-end { display: flex; align-items: center; justify-content: flex-end; gap: var(--ui-gap); min-width: 0; }
+
+/* No search in the bar (Watches keeps its own in the header): two columns. */
+.ui-filterbar--nosearch { grid-template-columns: 1fr auto; }
+
+/* ---------- narrow: stacked, bigger targets ------------------------------ */
+
+@container ui-frame (max-width: 1000px) {
+  .ui-filterbar:not(.ui-filterbar--nosearch) { grid-template-columns: 1fr auto; row-gap: 8px; }
+  .ui-filterbar-search { grid-column: 1 / -1; grid-row: 1; }
+  .ui-filterbar:not(.ui-filterbar--nosearch) .ui-filterbar-pills { grid-row: 2; }
+  .ui-filterbar:not(.ui-filterbar--nosearch) .ui-filterbar-end { grid-row: 2; }
+}
+@container ui-frame (max-width: 640px) {
+  /* Phone: search, then pills, then the count on its own line. A count squeezed
+     beside three pills wrapped the last pill onto a new row on a 375px phone. */
+  .ui-filterbar:not(.ui-filterbar--nosearch) .ui-filterbar-pills { grid-column: 1 / -1; }
+  .ui-filterbar:not(.ui-filterbar--nosearch) .ui-filterbar-end { grid-row: 3; grid-column: 1 / -1; justify-content: flex-start; }
+  .ui-frame-in { padding: 0 16px; }
+  .ui-pill { height: 40px; padding: 0 14px; }
+  .ui-pill--icon { width: 40px; padding: 0; }
+  .ui-search { height: 44px; }
+  .ui-disc { width: 40px; height: 40px; }
+  .ui-title { font-size: 23px; }
+  .ui-tabs--underline button { font-size: 16px; }
+  /* the count drops under the tabs rather than squeezing them */
+  .ui-tabs-row { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 0 6px; }
+}

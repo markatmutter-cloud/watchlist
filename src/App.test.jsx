@@ -278,6 +278,19 @@ describe("App render-without-crash", () => {
     window.history.replaceState({}, "", "/");
   });
 
+  test("?view=styleguide mounts the live style sheet", async () => {
+    // The reference page for the shared frame (src/ui). Not a tab: reached only
+    // by the URL flag, so this is the one test that proves the wiring.
+    window.history.replaceState({}, "", "/?view=styleguide");
+    const { default: App } = require("./App");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    expect(screen.getByText("One definition per piece")).toBeInTheDocument();
+    window.history.replaceState({}, "", "/");
+  });
+
   test("?view=classic keeps the shell's own Watches chrome (the way back)", async () => {
     // The rollback path Mark asked for: one param returns the old tab, built
     // from the same shells that never stopped existing.

@@ -788,6 +788,12 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — The shared page frame (`src/ui`) and its live style sheet (`?view=styleguide`).** Mark: "every page is
+  different ... how can I fix this without chasing leaks." Diagnosis: no single page frame, ~6 search fields, pills in 18 files,
+  ~1,800 inline style blocks vs 139 class names. One class-based stylesheet (`ui.css`) and eight components (Pill, SavedPill,
+  SearchField, SubTabs, PageTitle, FilterBar, PageFrame, AccountDisc, SuggestionRows) approved once on a live page, with the
+  phone layout shown in real 390px containers and five A/B decisions to pick. **No tab uses them yet**: migration is next, one
+  tab at a time, deleting each old piece as it goes. `ui-guard.test.js` guards the stylesheet.
 - **2026-10-16 — One header on every tab: Watches takes the compact one-row bar.** Mark: "stack is different - on
   watches it's deep on the others it's inline with wordmark ... I'd like consistent", and the chrome type differed. The
   Watches page dropped the landing page's two-tier masthead for the shared `MagazineShellBar` (its own search seated in
