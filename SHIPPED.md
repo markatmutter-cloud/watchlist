@@ -793,6 +793,9 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — The heart and ⋯ on every card, tile and cover are one shared overlay control.** New `OverlayButton` / `OverlayHeart` / `OverlayMenu` / `MenuItem` in
+  `src/ui` replace the hand-rolled round buttons and portal menus on listing cards (`CardShell`), article cards, guide tiles, auction covers, list tiles, the list screener,
+  challenge picks and the photo clear: one 34px (26px small) dark-glass button, saved is olive not red, one menu that portals to body and closes on outside press or Escape.
 - **2026-10-17 — The control-like buttons across the pages move onto the shared pieces.** The share-receive frame, challenge flow, guide pages, calendar nav, size
   compare, links, admin controls, the footer and the display-settings controls now use `Pill` / `Chip` / `Button` (new `link`, `muted`, `danger`, `href`) / `SubTabs choice`
   instead of ~65 hand-rolled styled buttons (157 to 93 counted). What is left is not a control: image-overlay hearts and ⋯ buttons on cards, the ⋯ menus' item rows, and

@@ -14,6 +14,7 @@ import {
   Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
   AccountDisc, SuggestionRows, Chip, ChipPanel, PriceRange, Button, DismissChip, JumpNav, SectionHead,
   Modal, ModalNote, ModalFoot, ModalLabel, FieldLabel, Input, PickRow,
+  OverlayButton, OverlayHeart, OverlayMenu, MenuItem,
 } from "./index";
 import { FilterDrawer } from "../components/FilterDrawer";
 import { MagazineShellBar, MagazineBrandRow, MagazineTabRow } from "../components/MagazineShellBar";
@@ -495,6 +496,27 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
               </div>
             </div>
             <p className="ss-small">Every dialog is one shell: a scrim, the card, the Bodoni title with its close, an optional note, fields, and a right-aligned row of actions (Cancel is ghost, the main action solid olive, a destructive confirm solid red). A settings dialog pins its head and scrolls its body, and a choice among a few options is the segmented control announced as a radio group. A list picker uses one row per list.</p>
+          </Specimen>
+          <Specimen label="On an image: heart (saved is olive, never red) · the ⋯ and its menu · small, for tight grids · a remove ×">
+            <div className="ss-row" style={{ gap: 28, alignItems: "flex-start" }}>
+              <div style={{ position: "relative", width: 220, height: 130, borderRadius: 8, background: "linear-gradient(135deg, #6b6b60, #2b2b27)" }}>
+                <div style={{ position: "absolute", top: 8, right: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                  <OverlayHeart on aria-label="Save" onClick={noop} />
+                  <OverlayMenu>
+                    <MenuItem>Share</MenuItem>
+                    <MenuItem>Add to list…</MenuItem>
+                    <MenuItem danger>Remove</MenuItem>
+                  </OverlayMenu>
+                </div>
+              </div>
+              <div style={{ position: "relative", width: 150, height: 90, borderRadius: 8, background: "linear-gradient(135deg, #6b6b60, #2b2b27)" }}>
+                <div style={{ position: "absolute", top: 6, right: 6, display: "flex", gap: 6 }}>
+                  <OverlayHeart small aria-label="Save" onClick={noop} />
+                  <OverlayButton small aria-label="Remove" onClick={noop}>&times;</OverlayButton>
+                </div>
+              </div>
+            </div>
+            <p className="ss-small">The heart and the ⋯ that sit on a card, an article, a guide, an auction cover or a list tile are these, nothing else: 34px (26px in a tight grid), dark glass that reads on any photo, olive when saved. The menu opens under its button, outside the card so nothing clips it, and a press inside it never follows the card's link.</p>
           </Specimen>
           <Specimen label="A takeover header (the auction catalog) and a stacked filter bar">
             <div className="ss-stack" style={{ maxWidth: 760 }}>

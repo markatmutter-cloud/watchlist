@@ -63,11 +63,13 @@ describe("src/ui", () => {
     "components/SettingsModal.js", "components/AboutModal.js", "components/WatchDetailSheet.js",
     "components/SharedReceiveFrame.js", "components/ChallengeFlow.js", "components/AdminTab.js",
     "components/SizeCompare.js", "components/Links.js", "components/SiteFooter.js",
-    "components/ViewSettingsControls.js",
+    "components/ViewSettingsControls.js", "components/CardShell.js",
   ];
   const LEGACY = [
     /from "\.\/StandardFilterBar"/, /from "\.\/PageHeader"/, /from "\.\/Chip"/, /from "\.\/SavedPill"/,
     /\bpillBase\b/, /\bclearAllPill\b/, /from "\.\/SubTabBar"/,
+    // The hand-rolled card overlay buttons and menu rows (now OverlayButton / OverlayMenu / MenuItem).
+    /\boverlayBtn\b/, /\boverlayIconBtn\b/, /\bmenuItemStyle\b/, /\barticleMenuItemStyle\b/, /\bOverflowMenu\b/,
   ];
   test.each(MIGRATED)("%s is built from src/ui, not the legacy pieces", (file) => {
     const src = fs.readFileSync(path.join(__dirname, "..", file), "utf8")

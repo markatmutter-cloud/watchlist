@@ -13,9 +13,8 @@
 // Hoefler Text (Mark's call): Apple-native, ligatures, magazine contrast;
 // Iowan Old Style / Georgia are fallbacks. Never inline a font string —
 // import from here so the editorial face can't drift per surface. See
-// DESIGN_SYSTEM.md "Serif vs sans". (Portal menus that must hard-set a
-// face for the iOS Times-serif fallback are the one exception — see
-// PORTAL_SANS in CardShell.js.)
+// DESIGN_SYSTEM.md "Serif vs sans". (The portalled ⋯ menu hard-sets its
+// face in ui.css `.ui-menu` for the iOS Times-serif fallback: the one exception.)
 export const FONT_SANS = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif";
 export const FONT_SERIF = "'Hoefler Text', 'Iowan Old Style', Georgia, 'Times New Roman', serif";          // body + titles
 export const FONT_SERIF_DISPLAY = "'Hoefler Text', 'Iowan Old Style', Georgia, 'Times New Roman', serif";  // hero/display (same face; separate name documents the role)

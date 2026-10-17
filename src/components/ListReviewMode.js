@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { imgSrc, fmtUSD } from "../utils";
 import { FONT_SANS, FONT_SERIF_DISPLAY } from "../styles";
-import { Pill, Button } from "../ui";
+import { Pill, Button, OverlayHeart, OverlayMenu, MenuItem } from "../ui";
 
 // Swipe gesture thresholds + tap detection.
 const SWIPE_THRESHOLD_X = 90;
@@ -250,10 +250,6 @@ export function ListReviewMode({
     }
     goBack();
   };
-
-  // ⋯ menu state.
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuTriggerRef = useRef(null);
 
   // Onboarding card — once per browser before the first card.
   const [showIntro, setShowIntro] = useState(() => !readIntroSeen() && total > 0);
@@ -535,34 +531,32 @@ export function ListReviewMode({
                   </div>
                 )}
 
-                {/* Heart — top-right. Standard red bg when active
-                    (matches Card.js convention). */}
-                {handleWish && (
-                  <button data-no-drag
-                    onClick={(e) => { e.stopPropagation(); handleHeart(); }}
-                    aria-label={isHearted ? "Remove from watchlist" : "Add to watchlist"}
-                    style={overlayIconBtn("right", 10, "heart", isHearted)}>
-                    <svg width="15" height="15" viewBox="0 0 24 24"
-                      fill={isHearted ? "#fff" : "none"}
-                      stroke="#fff"
-                      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                    </svg>
-                  </button>
-                )}
-
-                {/* ⋯ menu — top-right under heart. */}
-                {(openCollectionPicker || onShare) && (
-                  <button data-no-drag ref={menuTriggerRef}
-                    onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v); }}
-                    aria-label="More actions"
-                    style={overlayIconBtn("right", 52, "menu", menuOpen)}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="5" cy="12" r="1.5"/>
-                      <circle cx="12" cy="12" r="1.5"/>
-                      <circle cx="19" cy="12" r="1.5"/>
-                    </svg>
-                  </button>
+                {/* Heart + ⋯ — top-right, the shared overlay pieces (olive when saved). */}
+                {(handleWish || openCollectionPicker || onShare) && (
+                  <div style={{ position: "absolute", top: 10, right: 10, zIndex: 5, display: "flex", flexDirection: "column", gap: 8 }}>
+                    {handleWish && (
+                      <OverlayHeart data-no-drag on={isHearted}
+                        onClick={(e) => { e.stopPropagation(); handleHeart(); }}
+                        aria-label={isHearted ? "Remove from watchlist" : "Add to watchlist"} />
+                    )}
+                    {(openCollectionPicker || onShare) && current && (
+                      <OverlayMenu above data-no-drag>
+                        {({ close }) => (
+                          <>
+                            {openSourceListing && current.url && (
+                              <MenuItem onClick={() => { close(); openSourceListing(); }}>View listing →</MenuItem>
+                            )}
+                            {openCollectionPicker && (
+                              <MenuItem onClick={() => { close(); openCollectionPicker(current); }}>Add to list…</MenuItem>
+                            )}
+                            {onShare && (
+                              <MenuItem onClick={() => { close(); onShare(current); }}>Share</MenuItem>
+                            )}
+                          </>
+                        )}
+                      </OverlayMenu>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -773,18 +767,6 @@ export function ListReviewMode({
         </div>
       )}
 
-      {/* ⋯ menu */}
-      {menuOpen && menuTriggerRef.current && current && (
-        <OverflowMenu
-          triggerRef={menuTriggerRef}
-          onClose={() => setMenuOpen(false)}
-          item={current}
-          openCollectionPicker={openCollectionPicker}
-          onShare={onShare}
-          openSourceListing={openSourceListing}
-        />
-      )}
-
       {/* Onboarding (one-time per browser) */}
       {showIntro && current && (
         <OnboardingCard
@@ -863,70 +845,6 @@ function EdgeWash({ side, color, label, opacity }) {
         {label}
       </span>
     </div>
-  );
-}
-
-function OverflowMenu({ triggerRef, onClose, item, openCollectionPicker, onShare, openSourceListing }) {
-  const portalRef = useRef(null);
-  useEffect(() => {
-    const onDown = (e) => {
-      if (triggerRef.current?.contains(e.target)) return;
-      if (portalRef.current?.contains(e.target)) return;
-      onClose();
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("touchstart", onDown);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("touchstart", onDown);
-    };
-  }, [onClose, triggerRef]);
-  const rect = triggerRef.current?.getBoundingClientRect();
-  if (!rect) return null;
-  const minWidth = 180;
-  const left = Math.min(rect.left, window.innerWidth - minWidth - 12);
-  const menu = (
-    <div ref={portalRef} style={{
-      position: "fixed",
-      top: rect.bottom + 6,
-      left,
-      minWidth,
-      background: "var(--bg)",
-      border: "0.5px solid var(--border)",
-      borderRadius: 8,
-      boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
-      padding: "4px 0",
-      zIndex: 2100,
-      fontFamily: SANS_STACK,
-    }}>
-      {openSourceListing && item.url && (
-        <MenuItem label="View listing →" onClick={() => { onClose(); openSourceListing(); }} />
-      )}
-      {openCollectionPicker && (
-        <MenuItem label="Add to list…" onClick={() => { onClose(); openCollectionPicker(item); }} />
-      )}
-      {onShare && (
-        <MenuItem label="Share" onClick={() => { onClose(); onShare(item); }} />
-      )}
-    </div>
-  );
-  return createPortal(menu, document.body);
-}
-
-function MenuItem({ label, onClick }) {
-  return (
-    <button onClick={onClick} style={{
-      display: "block", width: "100%",
-      padding: "10px 14px",
-      border: "none", background: "transparent",
-      color: "var(--text1)",
-      fontFamily: SANS_STACK,
-      fontSize: 13, fontWeight: 400,
-      letterSpacing: "0.01em",
-      textAlign: "left", cursor: "pointer",
-    }}>
-      {label}
-    </button>
   );
 }
 
@@ -1150,28 +1068,6 @@ function edgeNavStyle(disabled, { small = false } = {}) {
     padding: small ? "8px 8px" : "12px 10px",
     cursor: disabled ? "default" : "pointer",
     fontWeight: 400,
-  };
-}
-
-function overlayIconBtn(side, top, kind, active = false) {
-  let bg = "rgba(0,0,0,0.50)";
-  if (kind === "heart" && active) bg = "rgba(217,38,38,0.92)";
-  else if (kind === "menu" && active) bg = "rgba(0,0,0,0.72)";
-  return {
-    position: "absolute",
-    top,
-    [side]: 10,
-    zIndex: 5,
-    width: 34, height: 34,
-    borderRadius: "50%",
-    border: "none",
-    background: bg,
-    color: "#fff",
-    cursor: "pointer",
-    fontFamily: SANS_STACK,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    padding: 0,
-    backdropFilter: "blur(6px)",
   };
 }
 

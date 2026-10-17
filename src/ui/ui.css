@@ -130,6 +130,7 @@ a.ui-pill:hover { text-decoration: none; }
            background: var(--bg); border: .5px solid var(--border); border-radius: 8px;
            box-shadow: 0 6px 20px rgba(0,0,0,.18); white-space: nowrap;
            font-family: var(--ui-sans); }
+.ui-menu--above { z-index: 2100; }
 .ui-menu-item { display: block; width: 100%; padding: 8px 12px; border: none; border-radius: 6px;
                 background: none; text-align: left; cursor: pointer; color: var(--text1);
                 font: 400 13px var(--ui-sans); }
