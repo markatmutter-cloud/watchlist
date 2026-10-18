@@ -558,6 +558,8 @@ describe("AccountMenu", () => {
     fireEvent.click(disc);
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("button", { name: "Lists" })).toBeNull();
+  });
+});
 
 describe("AddTile and the plain ⋯", () => {
   it("the dashed add tile is one button with a title and a hint", () => {
@@ -575,4 +577,3 @@ describe("AddTile and the plain ⋯", () => {
     expect(screen.getByRole("button", { name: "List options" })).toHaveClass("ui-ovl", "ui-ovl--plain");
   });
 });
-
