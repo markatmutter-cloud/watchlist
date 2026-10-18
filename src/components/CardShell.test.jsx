@@ -90,4 +90,20 @@ describe("CardShell", () => {
     fireEvent.click(qa);
     expect(onClick).toHaveBeenCalledTimes(1);
   });
+
+  test("with no href it opens in-app: a button that takes click and Enter, and its menu still works", () => {
+    const onOpen = jest.fn();
+    const onClickLink = jest.fn();
+    render(<CardShell image={null} onOpen={onOpen} onClickLink={onClickLink} level1={<div>Title</div>}
+      menu={{ extraMenuItems: [{ label: "Remove", danger: true, onClick: () => {} }] }} />);
+    const card = screen.getByRole("button", { name: /Title/ });
+    expect(card.tagName).toBe("DIV");
+    fireEvent.click(card);
+    fireEvent.keyDown(card, { key: "Enter" });
+    expect(onOpen).toHaveBeenCalledTimes(2);
+    expect(onClickLink).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    expect(screen.getByRole("menuitem", { name: "Remove" })).toHaveClass("ui-menu-item--danger");
+  });
 });
+

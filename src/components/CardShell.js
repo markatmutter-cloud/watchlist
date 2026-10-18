@@ -69,6 +69,7 @@ export default function CardShell({
   // Link
   href,
   onClickLink,           // fired on link follow (telemetry: onClickListing)
+  onOpen,                // no href: the card opens in-app (a watch's detail sheet) instead of a link
   // Sizing
   size = "full",         // "compact" | "full" — chrome + action-button scale
   // Body padding (caller can match its old value during migration)
@@ -76,7 +77,7 @@ export default function CardShell({
   // Actions
   quickAction,           // { label, icon, active, onClick } | null
   heart,                 // { wished, onToggle } | null
-  menu,                  // { onShare, onAddToCollection, onHide, hideLabel, isHidden, extraMenuItems, shareFeedbackText } | null
+  menu,                  // { onShare, onAddToCollection, onHide, hideLabel, isHidden, extraMenuItems: [{ label, onClick, danger? }], shareFeedbackText } | null
   // Telemetry / layout
   innerRef,              // ref forwarded to the root (IntersectionObserver in Card)
   children,              // optional extra body content below L3
@@ -86,22 +87,37 @@ export default function CardShell({
   const hasMenu = !!menu && (menu.onShare || menu.onAddToCollection || menu.onHide
     || (menu.extraMenuItems && menu.extraMenuItems.length > 0));
 
+  const body = (
+    <>
+      <div style={{ position: "relative", paddingTop: ASPECT[aspect] || ASPECT.square, overflow: "hidden" }}>
+        <CardImage image={image} priority={priority} aspect={aspect} />
+        {imageOverlay}
+      </div>
+      <div style={{ padding: bodyPadding || (compact ? "8px 10px 10px" : "10px 12px 12px"), minWidth: 0 }}>
+        {level2}
+        {level1}
+        {level3}
+        {children}
+      </div>
+    </>
+  );
+
   return (
     <div ref={innerRef} style={{ background: "var(--card-bg)", display: "flex", flexDirection: "column", position: "relative", minWidth: 0, overflow: "hidden" }}>
-      <a href={href} target="_blank" rel="noopener noreferrer"
-        onClick={() => { if (onClickLink) onClickLink(); }}
-        style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
-        <div style={{ position: "relative", paddingTop: ASPECT[aspect] || ASPECT.square, overflow: "hidden" }}>
-          <CardImage image={image} priority={priority} aspect={aspect} />
-          {imageOverlay}
+      {href ? (
+        <a href={href} target="_blank" rel="noopener noreferrer"
+          onClick={() => { if (onClickLink) onClickLink(); }}
+          style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
+        {body}
+        </a>
+      ) : (
+        <div role={onOpen ? "button" : undefined} tabIndex={onOpen ? 0 : undefined}
+          onClick={onOpen || undefined}
+          onKeyDown={onOpen ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } } : undefined}
+          style={{ color: "inherit", display: "flex", flexDirection: "column", cursor: onOpen ? "pointer" : "default" }}>
+        {body}
         </div>
-        <div style={{ padding: bodyPadding || (compact ? "8px 10px 10px" : "10px 12px 12px"), minWidth: 0 }}>
-          {level2}
-          {level1}
-          {level3}
-          {children}
-        </div>
-      </a>
+      )}
       {quickAction && (
         <div style={{ position: "absolute", top: 6, left: 6 }}>
           <OverlayButton small={compact} on={!!quickAction.active}
@@ -137,7 +153,7 @@ export default function CardShell({
                     </MenuItem>
                   )}
                   {(menu.extraMenuItems || []).map((entry, i) => (
-                    <MenuItem key={i} onClick={() => { close(); entry.onClick(); }}>{entry.label}</MenuItem>
+                    <MenuItem key={i} danger={!!entry.danger} onClick={() => { close(); entry.onClick(); }}>{entry.label}</MenuItem>
                   ))}
                 </>
               )}
