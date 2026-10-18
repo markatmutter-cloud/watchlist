@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { imgSrc, fmtUSD } from "../utils";
 import { FONT_SANS, FONT_SERIF_DISPLAY } from "../styles";
-import { Pill, Button, OverlayHeart, OverlayMenu, MenuItem } from "../ui";
+import { Pill, Button, OverlayHeart, OverlayMenu, MenuItem, Modal, ModalNote, ModalFoot } from "../ui";
 
 // Swipe gesture thresholds + tap detection.
 const SWIPE_THRESHOLD_X = 90;
@@ -360,10 +360,10 @@ export function ListReviewMode({
         background: "var(--bg)",
         flexShrink: 0,
       }}>
-        <button onClick={onClose} style={topLinkStyle}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        <Button link onClick={onClose}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
           {isWide ? "Exit" : "Done"}
-        </button>
+        </Button>
         <div style={{
           // Mark feedback 2026-05-14: the all-caps + 0.18em tracking
           // was chewing horizontal space and forcing mid-word ellipsis
@@ -684,15 +684,11 @@ export function ListReviewMode({
                   gridTemplateColumns: "1fr 1fr",
                   gap: 12,
                 }}>
-                  <button onClick={handleSkip} style={skipBtnStyle()}>
-                    <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: 0, marginRight: -2 }}>←</span>
-                    <span>Skip</span>
-                  </button>
-                  <button onClick={handleSaveAndAdvance} style={saveBtnStyle(isHearted)}>
+                  <Button onClick={handleSkip} style={{ flex: 1 }}>← Skip</Button>
+                  <Button primary onClick={handleSaveAndAdvance}>
                     <HeartGlyph filled={isHearted} />
-                    <span>{isHearted ? "Saved" : "Save"}</span>
-                    <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: 0, marginLeft: -2 }}>→</span>
-                  </button>
+                    {isHearted ? "Saved" : "Save"} →
+                  </Button>
                 </div>
                 {/* Secondary nav as a quiet text link — much less
                     visual weight than the primary action CTAs. */}
@@ -701,18 +697,7 @@ export function ListReviewMode({
                   marginTop: 12,
                   fontSize: 12, color: "var(--text3)",
                 }}>
-                  <button onClick={handleUndo} disabled={idx === 0}
-                    style={{
-                      background: "transparent", border: "none",
-                      padding: "4px 0", cursor: idx === 0 ? "default" : "pointer",
-                      fontFamily: SANS_STACK, fontSize: 12,
-                      color: idx === 0 ? "var(--text3)" : "var(--text2)",
-                      opacity: idx === 0 ? 0.5 : 1,
-                      textDecoration: "underline", textUnderlineOffset: 2,
-                      letterSpacing: "0.02em",
-                    }}>
-                    Undo
-                  </button>
+                  <Button link muted onClick={handleUndo} disabled={idx === 0}>Undo</Button>
                   {heartedThisSession > 0 && (
                     <span style={{
                       marginLeft: "auto",
@@ -751,18 +736,12 @@ export function ListReviewMode({
             {/* Undo sits quiet on the left; Skip / Save are the
                 primary pair, arrow-cued to match the swipe direction
                 ("Skip = swipe left" / "Save = swipe right"). */}
-            <button onClick={handleUndo} disabled={idx === 0} style={edgeNavStyle(idx === 0, { small: true })}>
-              Undo
-            </button>
-            <button onClick={handleSkip} style={skipBtnStyle()}>
-              <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: 0, marginRight: -2 }}>←</span>
-              <span>Skip</span>
-            </button>
-            <button onClick={handleSaveAndAdvance} style={saveBtnStyle(isHearted)}>
+            <Button link muted onClick={handleUndo} disabled={idx === 0}>Undo</Button>
+            <Button onClick={handleSkip} style={{ flex: 1 }}>← Skip</Button>
+            <Button primary onClick={handleSaveAndAdvance}>
               <HeartGlyph filled={isHearted} />
-              <span>{isHearted ? "Saved" : "Save"}</span>
-              <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: 0, marginLeft: -2 }}>→</span>
-            </button>
+              {isHearted ? "Saved" : "Save"} →
+            </Button>
           </div>
         </div>
       )}
@@ -850,80 +829,37 @@ function EdgeWash({ side, color, label, opacity }) {
 
 function OnboardingCard({ ownerName, total, onDismiss }) {
   return (
-    <div style={modalScrim(2120)}>
-      <div style={editorialPanel(420)}>
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 11, color: "var(--text3)",
-          letterSpacing: "0.20em", textTransform: "uppercase",
-          fontWeight: 500, marginBottom: 16,
-        }}>
-          Screening
-        </div>
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 22, fontWeight: 600, color: "var(--text1)",
-          lineHeight: 1.2, marginBottom: 12,
-          letterSpacing: "-0.005em",
-        }}>
-          Quick review
-        </div>
-        {/* Why — the purpose of the feature, not just the mechanics
-            (Mark feedback 2026-05-13). */}
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 13, color: "var(--text2)",
-          lineHeight: 1.55, marginBottom: 18,
-        }}>
-          Go through the list one watch at a time and save the ones
-          worth coming back to. Saves land in your watchlist; skip
-          the rest.
-        </div>
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 12, color: "var(--text3)",
-          lineHeight: 1.5, marginBottom: 18,
-        }}>
-          {total} {total === 1 ? "watch" : "watches"}{ownerName ? ` from ${ownerName}` : ""}.
-        </div>
-        <ul style={{
-          listStyle: "none", margin: 0, padding: 0,
-          fontFamily: SANS_STACK,
-          fontSize: 13, color: "var(--text1)",
-          lineHeight: 1.55,
-          marginBottom: 24,
-        }}>
-          <IntroRow color="var(--heart)" glyph="♥">
-            <strong>Save</strong>: swipe right or tap Save. Adds the watch to your watchlist.
-          </IntroRow>
-          <IntroRow color="var(--text2)" glyph="←">
-            <strong>Skip</strong>: swipe left or tap Skip. Moves on, saves nothing.
-          </IntroRow>
-          <IntroRow color="var(--text2)" glyph="↗">
-            <strong>Details</strong>: tap the card to read the full listing.
-          </IntroRow>
-        </ul>
-        <Button primary inline onClick={onDismiss}>Start review</Button>
-      </div>
-    </div>
+    <Modal title="Quick review" onClose={onDismiss} width={420}>
+      {/* Why: the purpose of the feature, not just the mechanics (Mark feedback 2026-05-13). */}
+      <ModalNote>
+        Go through the list one watch at a time and save the ones worth coming back to. Saves land
+        in your watchlist; skip the rest. {total} {total === 1 ? "watch" : "watches"}{ownerName ? ` from ${ownerName}` : ""}.
+      </ModalNote>
+      <ul style={{ listStyle: "none", margin: "0 0 4px", padding: 0, fontSize: 13, color: "var(--text1)", lineHeight: 1.55 }}>
+        <IntroRow glyph="♥">
+          <strong>Save</strong>: swipe right or tap Save. Adds the watch to your watchlist.
+        </IntroRow>
+        <IntroRow glyph="←">
+          <strong>Skip</strong>: swipe left or tap Skip. Moves on, saves nothing.
+        </IntroRow>
+        <IntroRow glyph="↗">
+          <strong>Details</strong>: tap the card to read the full listing.
+        </IntroRow>
+      </ul>
+      <ModalFoot>
+        <Button small primary onClick={onDismiss}>Start review</Button>
+      </ModalFoot>
+    </Modal>
   );
 }
 
-function IntroRow({ color, glyph, children }) {
+function IntroRow({ glyph, children }) {
   return (
-    <li style={{
-      display: "flex", alignItems: "flex-start",
-      gap: 12, marginBottom: 12,
-    }}>
-      <span style={{
-        display: "inline-flex", alignItems: "center", justifyContent: "center",
-        flexShrink: 0,
-        width: 24, height: 24, borderRadius: "50%",
-        background: "var(--surface)",
-        border: `0.5px solid ${color}`,
-        color, fontSize: 12, fontWeight: 600,
-        marginTop: 1,
-        fontFamily: SANS_STACK,
+    <li style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+      <span aria-hidden="true" style={{
+        display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+        width: 24, height: 24, borderRadius: "50%", marginTop: 1,
+        background: "var(--surface)", border: "0.5px solid var(--border)", color: "var(--text2)", fontSize: 12,
       }}>
         {glyph}
       </span>
@@ -934,37 +870,13 @@ function IntroRow({ color, glyph, children }) {
 
 function BreakInterstitial({ idx, total, onContinue, onPause }) {
   return (
-    <div style={modalScrim(2050)}>
-      <div style={editorialPanel(380)}>
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 11, color: "var(--text3)",
-          letterSpacing: "0.20em", textTransform: "uppercase",
-          fontWeight: 500, marginBottom: 14,
-        }}>
-          Pause
-        </div>
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 22, fontWeight: 600, color: "var(--text1)",
-          lineHeight: 1.25, marginBottom: 10,
-          letterSpacing: "-0.005em",
-        }}>
-          Take a break?
-        </div>
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 14, color: "var(--text2)",
-          lineHeight: 1.5, marginBottom: 24,
-        }}>
-          {idx} of {total} reviewed. Come back anytime; your place is saved.
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <Button inline onClick={onPause}>Pause &amp; bookmark</Button>
-          <Button primary inline onClick={onContinue}>Keep going</Button>
-        </div>
-      </div>
-    </div>
+    <Modal title="Take a break?" onClose={onContinue} width={380}>
+      <ModalNote>{idx} of {total} reviewed. Come back anytime; your place is saved.</ModalNote>
+      <ModalFoot>
+        <Button small onClick={onPause}>Pause &amp; bookmark</Button>
+        <Button small primary onClick={onContinue}>Keep going</Button>
+      </ModalFoot>
+    </Modal>
   );
 }
 
@@ -1008,87 +920,3 @@ function CompletionView({ total, heartedThisSession, onClose }) {
     </div>
   );
 }
-
-// ── Shared styles ───────────────────────────────────────────────
-
-const topLinkStyle = {
-  border: "none", background: "transparent", cursor: "pointer",
-  color: "var(--brand-olive-text)",
-  fontFamily: SANS_STACK,
-  fontSize: 14, padding: 0,
-  display: "flex", alignItems: "center", gap: 4,
-  fontWeight: 500,
-  letterSpacing: "0.02em",
-};
-
-// Save — solid heart-red fill so the primary "save to watchlist"
-// action carries the watchlist's own color language (matches the
-// active on-card heart). Subtle press shadow so it reads as a CTA.
-function saveBtnStyle(saved) {
-  return {
-    padding: "14px 20px",
-    border: "1px solid var(--heart)",
-    background: "var(--heart)",
-    color: "#fff",
-    fontFamily: SANS_STACK,
-    fontSize: 14, fontWeight: 600,
-    letterSpacing: "0.18em", textTransform: "uppercase",
-    borderRadius: 8, cursor: "pointer",
-    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-    minHeight: 52,
-    boxShadow: saved
-      ? "inset 0 0 0 2px var(--heart), 0 0 0 1px var(--heart)"
-      : "0 1px 2px rgba(0,0,0,0.08)",
-  };
-}
-
-// Skip — substantial outlined ghost (the neutral, no-op pass).
-function skipBtnStyle() {
-  return {
-    padding: "14px 20px",
-    border: "1px solid var(--border)",
-    background: "var(--surface)",
-    color: "var(--text1)",
-    fontFamily: SANS_STACK,
-    fontSize: 14, fontWeight: 600,
-    letterSpacing: "0.18em", textTransform: "uppercase",
-    borderRadius: 8, cursor: "pointer",
-    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-    minHeight: 52,
-  };
-}
-
-function edgeNavStyle(disabled, { small = false } = {}) {
-  return {
-    border: "none", background: "transparent",
-    color: disabled ? "var(--text3)" : "var(--text2)",
-    fontFamily: SANS_STACK,
-    fontSize: small ? 11 : 13,
-    letterSpacing: "0.10em", textTransform: "uppercase",
-    padding: small ? "8px 8px" : "12px 10px",
-    cursor: disabled ? "default" : "pointer",
-    fontWeight: 400,
-  };
-}
-
-function modalScrim(z) {
-  return {
-    position: "fixed", inset: 0, zIndex: z,
-    background: "rgba(0,0,0,0.45)",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    padding: 24,
-  };
-}
-
-function editorialPanel(maxWidth) {
-  return {
-    background: "var(--bg)",
-    border: "0.5px solid var(--border)",
-    borderRadius: 12,
-    padding: "32px 24px",
-    maxWidth, width: "100%",
-    fontFamily: SANS_STACK,
-    boxShadow: "0 24px 60px rgba(0,0,0,0.20)",
-  };
-}
-

@@ -69,9 +69,10 @@ export function SavedPill({ on, onClick, what = "saved" }) {
 //   a heart (save) and a ⋯ (more). One size pair, one dark glass, one saved colour (olive,
 //   never red). The caller positions the stack; these only draw the buttons.
 //   on     the saved / open state          small   the tight grids (26px) instead of 34px
-export const OverlayButton = forwardRef(function OverlayButton({ on, small, className, children, ...rest }, ref) {
+//   light  a paper paddle over a strip (the card rails' ‹ ›), 44px for touch
+export const OverlayButton = forwardRef(function OverlayButton({ on, small, light, className, children, ...rest }, ref) {
   return (
-    <button type="button" ref={ref} className={cx("ui-ovl", on && "is-on", small && "ui-ovl--sm", className)} {...rest}>
+    <button type="button" ref={ref} className={cx("ui-ovl", on && "is-on", small && "ui-ovl--sm", light && "ui-ovl--light", className)} {...rest}>
       {children}
     </button>
   );
@@ -87,8 +88,9 @@ export function OverlayHeart({ on, small, ...rest }) {
 // it, anchors under the button, closes on an outside press or Escape, and swallows its own clicks
 // so a tap never reaches the card's link behind it. `children` is the items, or a function of
 // { close } for items that keep the menu open for a moment ("Copied!"). `above`: for a menu that
-// opens over a full-screen layer (the list screener); other props go to the ⋯ button.
-export function OverlayMenu({ small, above, label = "More actions", children, ...rest }) {
+// opens over a full-screen layer (the list screener); `plain`: the ⋯ on a page surface rather than a photo
+// (a list's header); other props go to the ⋯ button.
+export function OverlayMenu({ small, above, plain, label = "More actions", children, ...rest }) {
   const [pos, setPos] = useState(null);
   const triggerRef = useRef(null);
   const panelRef = useRef(null);
@@ -122,7 +124,7 @@ export function OverlayMenu({ small, above, label = "More actions", children, ..
   return (
     <>
       <OverlayButton ref={triggerRef} small={small} aria-label={label} aria-haspopup="menu" aria-expanded={open}
-                     onClick={toggle} className={cx("ui-ovl--more", open && "is-open")} {...rest}>⋯</OverlayButton>
+                     onClick={toggle} className={cx("ui-ovl--more", plain && "ui-ovl--plain", open && "is-open")} {...rest}>⋯</OverlayButton>
       {open && createPortal(
         <div ref={panelRef} className={cx("ui-menu", above && "ui-menu--above")} role="menu"
              style={{ top: pos.top, right: pos.right, maxWidth: `calc(100vw - ${pos.right + 16}px)` }}
@@ -144,6 +146,17 @@ export function MenuItem({ danger, badge, children, className, ...rest }) {
     <button type="button" role={role || undefined}
             className={cx("ui-menu-item", danger && "ui-menu-item--danger", badge && "ui-menu-item--split", className)} {...rest}>
       {badge ? <><span>{children}</span><span className="ui-menu-badge">{badge}</span></> : children}
+    </button>
+  );
+}
+
+// ---- AddTile: the dashed "add one" tile that sits in a grid of cards ("Start a list") ----
+export function AddTile({ icon = "＋", title, hint, minHeight, className, style, ...rest }) {
+  return (
+    <button type="button" className={cx("ui-addtile", className)} style={minHeight ? { minHeight, ...style } : style} {...rest}>
+      <span className="ui-addtile-icon" aria-hidden="true">{icon}</span>
+      <span className="ui-addtile-title">{title}</span>
+      {hint ? <span className="ui-addtile-hint">{hint}</span> : null}
     </button>
   );
 }

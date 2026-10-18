@@ -793,6 +793,9 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — The Lists tiles and menus, the screener, the card rails and the auction calendar dialog move onto the shared pieces.** New `AddTile` ("Start a list"), `OverlayMenu plain`
+  (a list's ⋯ on a page) and `OverlayButton light` (the rails' ‹ ›); saved-search and "add a first watch" rows are `ListRow`; the screener's Skip / Save / Undo / Exit are `Button`, its heart and
+  ⋯ the overlay pieces, and its intro and break dialogs the shared `Modal`; the Home admin hide × is the overlay ×; the auction calendar is a `Modal` instead of an olive-headed one-off.
 - **2026-10-17 — The account control and its menu are one shared `AccountMenu`.** The two hand-built dropdowns in `App.js` (signed in / signed out, ~230 lines) are now
   `AccountMenu` + `MenuItem` + `AccountMenuHead` + `AccountMenuSection` in `src/ui`. Fixes: the disc was a bare letter on every tab but Home (white-on-olive flipped by tab on
   a bar that is paper now), and the menu had no outside-press or Escape close. Signed out it is a "Sign in" pill; both open the same panel.

@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { ListReviewMode } from "./ListReviewMode";
 
 // Render-without-crash smoke tests for the two screening modes
@@ -126,3 +126,57 @@ describe("ListReviewMode render-without-crash", () => {
     }).not.toThrow();
   });
 });
+
+// The screener's controls are the shared Button / OverlayHeart / OverlayMenu. These click them for real
+// (the tests above only check that nothing throws).
+describe("ListReviewMode controls", () => {
+  beforeEach(() => { localStorage.setItem("screening_intro_seen_v1", "1"); });
+  afterEach(() => { localStorage.clear(); });
+
+  const two = () => [makeItem(), makeItem({ id: "item-2", rowId: "row-2", title: "Omega Speedmaster", brand: "Omega", model: "Speedmaster" })];
+
+  test("Save hearts the card and moves on; Skip moves on without saving; Exit closes", () => {
+    const handleWish = jest.fn();
+    const onClose = jest.fn();
+    render(<ListReviewMode {...baseProps({ mode: "list", items: two(), handleWish, onClose })} />);
+    const save = screen.getAllByRole("button", { name: /Save/ })[0];
+    expect(save).toHaveClass("ui-btn--primary");
+    fireEvent.click(save);
+    expect(handleWish).toHaveBeenCalledTimes(1);
+    expect(handleWish.mock.calls[0][0].id).toBe("item-1");
+    fireEvent.click(screen.getAllByRole("button", { name: /Skip/ })[0]);
+    expect(handleWish).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getAllByRole("button", { name: /Exit|Done/ })[0]);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test("the heart and ⋯ on the photo are the shared overlay controls", () => {
+    const handleWish = jest.fn();
+    const openCollectionPicker = jest.fn();
+    render(<ListReviewMode {...baseProps({ mode: "list", items: two(), handleWish, openCollectionPicker })} />);
+    const heart = screen.getByRole("button", { name: "Add to watchlist" });
+    expect(heart).toHaveClass("ui-ovl");
+    fireEvent.click(heart);
+    expect(handleWish).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Add to list…" }));
+    expect(openCollectionPicker).toHaveBeenCalledTimes(1);
+    expect(openCollectionPicker.mock.calls[0][0].id).toBe("item-1");
+  });
+
+  test("Undo is off on the first card", () => {
+    render(<ListReviewMode {...baseProps({ mode: "list", items: two() })} />);
+    for (const undo of screen.getAllByRole("button", { name: "Undo" })) expect(undo).toBeDisabled();
+  });
+
+  test("the first-visit intro is the shared Modal and Start review dismisses it", () => {
+    localStorage.removeItem("screening_intro_seen_v1");
+    render(<ListReviewMode {...baseProps({ mode: "list", items: two() })} />);
+    const dialog = screen.getByRole("dialog", { name: "Quick review" });
+    expect(dialog).toHaveClass("ui-modal");
+    fireEvent.click(screen.getByRole("button", { name: "Start review" }));
+    expect(screen.queryByRole("dialog", { name: "Quick review" })).toBeNull();
+    expect(localStorage.getItem("screening_intro_seen_v1")).toBeTruthy();
+  });
+});
+

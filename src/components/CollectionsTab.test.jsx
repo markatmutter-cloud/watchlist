@@ -1,6 +1,9 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { CollectionsTab } from "./CollectionsTab";
+import { confirm } from "./ConfirmModal";
+
+jest.mock("./ConfirmModal", () => ({ confirm: jest.fn() }));
 
 // Render-without-crash smoke tests for CollectionsTab + its sub-views
 // (MyCollectionView / ListsView / ChallengesView). The Shortlist
@@ -228,3 +231,48 @@ describe("CollectionsTab render-without-crash", () => {
     expect(screen.getByText(/Sign in to organize your watches/i)).toBeInTheDocument();
   });
 });
+
+// The shared pieces on the Lists page, rendered for real (the tests above only check that nothing throws).
+describe("CollectionsTab shared controls", () => {
+  beforeEach(() => { confirm.mockResolvedValue(true); });
+
+  test("Searches: a row runs the search; the pencil and bin act without running it", async () => {
+    const runSearch = jest.fn();
+    const startEditSearch = jest.fn();
+    const removeSearch = jest.fn();
+    const search = { id: "s1", label: "JLC Reverso", query: "reverso", minPrice: 5000, maxPrice: 15000, count: 12 };
+    render(<CollectionsTab {...buildProps({
+      collectionsSubTab: "searches", savedSearchStats: [search], runSearch, startEditSearch, removeSearch,
+    })} />);
+    expect(screen.getByText("JLC Reverso")).toBeInTheDocument();
+    expect(screen.getByText(/12 for sale/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Edit search" }));
+    expect(startEditSearch).toHaveBeenCalledWith(search);
+    expect(runSearch).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Delete search" }));
+    await waitFor(() => expect(removeSearch).toHaveBeenCalledWith("s1"));
+    expect(runSearch).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("JLC Reverso"));
+    expect(runSearch).toHaveBeenCalledWith(search);
+  });
+
+  test("Lists: the Start a list tile creates, and a list's ⋯ offers Rename and Delete", async () => {
+    const startCreateCollection = jest.fn();
+    const deleteCollection = jest.fn(async () => ({ error: null }));
+    const api = {
+      ...baseCollectionsApi,
+      deleteCollection,
+      collections: [{ id: "l1", name: "JLC shortlist", description: null, type: "free-form",
+                      userId: "test-user", isSharedInbox: false, isSystem: false }],
+      itemsByCollection: { l1: [] },
+    };
+    render(<CollectionsTab {...buildProps({ collectionsSubTab: "lists", collectionsApi: api, startCreateCollection })} />);
+    fireEvent.click(screen.getByRole("button", { name: /Start a list/ }));
+    expect(startCreateCollection).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "List options" }));
+    expect(screen.getByRole("menuitem", { name: "Rename" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
+    await waitFor(() => expect(deleteCollection).toHaveBeenCalledWith("l1"));
+  });
+});
+

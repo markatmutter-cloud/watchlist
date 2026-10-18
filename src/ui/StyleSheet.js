@@ -14,7 +14,7 @@ import {
   Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
   AccountDisc, SuggestionRows, Chip, ChipPanel, PriceRange, Button, DismissChip, JumpNav, SectionHead,
   Modal, ModalNote, ModalFoot, ModalLabel, FieldLabel, Input, PickRow,
-  OverlayButton, OverlayHeart, OverlayMenu, MenuItem, AccountMenu, AccountMenuHead, AccountMenuSection,
+  OverlayButton, OverlayHeart, OverlayMenu, MenuItem, AccountMenu, AccountMenuHead, AccountMenuSection, AddTile,
 } from "./index";
 import { FilterDrawer } from "../components/FilterDrawer";
 import { MagazineShellBar, MagazineBrandRow, MagazineTabRow } from "../components/MagazineShellBar";
@@ -515,7 +515,7 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
             </div>
             <p className="ss-small">One olive disc with the initial on every tab (a "Sign in" pill when signed out), and one panel under it: who you are with Sign out beside it, the rows, then the display settings. An outside press or Escape closes it.</p>
           </Specimen>
-          <Specimen label="On an image: heart (saved is olive, never red) · the ⋯ and its menu · small, for tight grids · a remove ×">
+          <Specimen label="On an image: heart (saved is olive, never red) · the ⋯ and its menu · small, for tight grids · a remove × · the paper paddle · the plain ⋯ on a page · the add tile">
             <div className="ss-row" style={{ gap: 28, alignItems: "flex-start" }}>
               <div style={{ position: "relative", width: 220, height: 130, borderRadius: 8, background: "linear-gradient(135deg, #6b6b60, #2b2b27)" }}>
                 <div style={{ position: "absolute", top: 8, right: 8, display: "flex", flexDirection: "column", gap: 6 }}>
@@ -533,6 +533,11 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
                   <OverlayButton small aria-label="Remove" onClick={noop}>&times;</OverlayButton>
                 </div>
               </div>
+              <div className="ss-row" style={{ gap: 10 }}>
+                <OverlayButton light aria-label="Scroll left">&lsaquo;</OverlayButton>
+                <OverlayMenu plain label="List options"><MenuItem>Rename</MenuItem><MenuItem danger>Delete</MenuItem></OverlayMenu>
+              </div>
+              <AddTile title="Start a list" hint="Pick a watch or reference." minHeight={110} style={{ width: 170 }} />
             </div>
             <p className="ss-small">The heart and the ⋯ that sit on a card, an article, a guide, an auction cover or a list tile are these, nothing else: 34px (26px in a tight grid), dark glass that reads on any photo, olive when saved. The menu opens under its button, outside the card so nothing clips it, and a press inside it never follows the card's link.</p>
           </Specimen>

@@ -20,7 +20,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import MagazineChrome, { MAG_CSS, MagSearch } from "./MagazineChrome";
-import { HeaderSearch } from "../ui";
+import { HeaderSearch, OverlayButton } from "../ui";
 import { imgSrc, fmt, priceIn, CURRENCY_SYM, fmtSaleDateRange } from "../utils";
 import { FooterBand } from "./SiteFooter";
 import { articleAsListing, sourceLabel } from "./EditorialView";
@@ -284,10 +284,8 @@ function Rotator({ articles, isAdmin, onHide }) {
           )}
         </span>
         {isAdmin && onHide ? (
-          <button type="button" className="mag-hide" title="Hide from Home"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onHide(a); }}>
-            &times;
-          </button>
+          <OverlayButton small className="mag-hide" title="Hide from Home" aria-label="Hide from Home"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onHide(a); }}>&times;</OverlayButton>
         ) : null}
         <div className="mag-cover-lines">
           <p className="mag-kicker">{articleSource(a)}</p>
@@ -379,10 +377,8 @@ export default function MagazineHome(props) {
          onClick={() => onClickListing && onClickListing(i)}>
         <img src={imgSrc(i.img, 480)} alt="" loading="lazy" />
         {isAdmin && toggleHide ? (
-          <button type="button" className="mag-hide mag-hide--tile" title="Hide from Home"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleHide(i); }}>
-            &times;
-          </button>
+          <OverlayButton small className="mag-hide" title="Hide from Home" aria-label="Hide from Home"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleHide(i); }}>&times;</OverlayButton>
         ) : null}
       </a>
       <div className="mag-lot-body">
@@ -444,10 +440,8 @@ export default function MagazineHome(props) {
                 <a className="mag-card-img" href={a.url} target="_blank" rel="noopener noreferrer">
                   <img src={imgSrc(a.image, 520)} alt="" loading="lazy" />
                   {isAdmin ? (
-                    <button type="button" className="mag-hide mag-hide--tile" title="Hide from Home"
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); hideArticle(a); }}>
-                      &times;
-                    </button>
+                    <OverlayButton small className="mag-hide" title="Hide from Home" aria-label="Hide from Home"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); hideArticle(a); }}>&times;</OverlayButton>
                   ) : null}
                 </a>
                 <p className="mag-kicker mag-kicker--card">{articleSource(a)}</p>
@@ -501,10 +495,8 @@ export default function MagazineHome(props) {
                  onClick={() => onClickListing && onClickListing(feature)}>
                 <img src={imgSrc(feature.img, 900)} alt="" />
                 {isAdmin && toggleHide ? (
-                  <button type="button" className="mag-hide" title="Hide from Home"
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleHide(feature); }}>
-                    &times;
-                  </button>
+                  <OverlayButton small className="mag-hide" title="Hide from Home" aria-label="Hide from Home"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleHide(feature); }}>&times;</OverlayButton>
                 ) : null}
               </a>
               <div className="mag-pick-body">

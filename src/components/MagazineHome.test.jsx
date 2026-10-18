@@ -135,6 +135,8 @@ describe("MagazineHome", () => {
     const buttons = screen.queryAllByTitle("Hide from Home");
     // one per article (hero + tiles) and one per watch (feature + tiles)
     expect(buttons.length).toBeGreaterThan(2);
+    // The shared overlay ×, positioned by the page.
+    for (const b of buttons) expect(b).toHaveClass("ui-ovl", "mag-hide");
     buttons[buttons.length - 1].click();
     expect(hidden.length).toBe(1);
   });

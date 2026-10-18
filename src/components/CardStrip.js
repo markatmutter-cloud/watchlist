@@ -35,6 +35,7 @@
 //   rail chaining into browser / PWA back-navigation.
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
+import { OverlayButton } from "../ui";
 
 // Arrows page by (viewport - one tile) so the tile at the edge carries over
 // and the reader never loses their place. Matches how Netflix and Apple TV
@@ -102,22 +103,13 @@ export default function CardStrip({
   // Arrows are desktop-only: touch already has the gesture, and on a phone
   // they would sit on top of the tiles they are meant to reveal.
   const showArrows = !isMobile && overflowing;
+  // Placement and reveal only: the look is the shared OverlayButton `light` (44px, the touch floor,
+  // even though this is a pointer control: it doubles as the keyboard target).
   const arrowStyle = (side, disabled) => ({
     position: "absolute",
     top: "50%",
     [side]: 6,
     transform: "translateY(-50%)",
-    // Sized off the 44pt touch floor even though this is a pointer control:
-    // it doubles as the keyboard target.
-    width: 44, height: 44, borderRadius: "50%",
-    border: "0.5px solid var(--border)",
-    background: "var(--card-bg)",
-    boxShadow: "0 1px 6px rgba(0,0,0,0.14)",
-    color: "var(--text1)",
-    fontFamily: "inherit", fontSize: 18, lineHeight: 1,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    cursor: "pointer",
-    padding: 0,
     zIndex: 2,
     // Hidden until hover or keyboard focus so a resting page stays quiet.
     // `visibility` rather than unmounting so focus can still land on them
@@ -185,18 +177,18 @@ export default function CardStrip({
         }} />
         {showArrows && (
           <>
-            <button type="button" onClick={() => page(-1)}
+            <OverlayButton light onClick={() => page(-1)}
               aria-label={label ? `Scroll ${label} left` : "Scroll left"}
               tabIndex={atStart ? -1 : 0}
               style={arrowStyle("left", atStart)}>
               <span aria-hidden>‹</span>
-            </button>
-            <button type="button" onClick={() => page(1)}
+            </OverlayButton>
+            <OverlayButton light onClick={() => page(1)}
               aria-label={label ? `Scroll ${label} right` : "Scroll right"}
               tabIndex={atEnd ? -1 : 0}
               style={arrowStyle("right", atEnd)}>
               <span aria-hidden>›</span>
-            </button>
+            </OverlayButton>
           </>
         )}
       </div>
