@@ -4,7 +4,7 @@ import {
   Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
   AccountDisc, SuggestionRows, Chip, ChipPanel, DismissChip, JumpNav, SectionHead, Button,
   Modal, ModalNote, ModalError, ModalFoot, FieldLabel, Input, PickRow,
-  OverlayButton, OverlayHeart, OverlayMenu, MenuItem,
+  OverlayButton, OverlayHeart, OverlayMenu, MenuItem, AddTile,
   AccountMenu, AccountMenuHead, AccountMenuSection,
 } from "./index";
 
@@ -558,6 +558,21 @@ describe("AccountMenu", () => {
     fireEvent.click(disc);
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("button", { name: "Lists" })).toBeNull();
+
+describe("AddTile and the plain ⋯", () => {
+  it("the dashed add tile is one button with a title and a hint", () => {
+    const onClick = jest.fn();
+    render(<AddTile title="Start a list" hint="Pick a watch." onClick={onClick} />);
+    const tile = screen.getByRole("button", { name: /Start a list/ });
+    expect(tile).toHaveClass("ui-addtile");
+    expect(tile).toHaveTextContent("Pick a watch.");
+    fireEvent.click(tile);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("plain is the ⋯ on a page surface rather than a photo", () => {
+    render(<OverlayMenu plain label="List options"><MenuItem>Rename</MenuItem></OverlayMenu>);
+    expect(screen.getByRole("button", { name: "List options" })).toHaveClass("ui-ovl", "ui-ovl--plain");
   });
 });
 

@@ -70,7 +70,7 @@ describe("src/ui", () => {
     /from "\.\/StandardFilterBar"/, /from "\.\/PageHeader"/, /from "\.\/Chip"/, /from "\.\/SavedPill"/,
     /\bpillBase\b/, /\bclearAllPill\b/, /from "\.\/SubTabBar"/,
     // The hand-rolled card overlay buttons and menu rows (now OverlayButton / OverlayMenu / MenuItem).
-    /\boverlayBtn\b/, /\boverlayIconBtn\b/, /\bmenuItemStyle\b/, /\barticleMenuItemStyle\b/, /\bOverflowMenu\b/,
+    /\boverlayBtn\b/, /\boverlayIconBtn\b/, /\bmenuItemStyle\b/, /\barticleMenuItemStyle\b/, /\bOverflowMenu\b/, /\bwlMenuItem\b/, /\bwlIconBtn\b/,
   ];
   test.each(MIGRATED)("%s is built from src/ui, not the legacy pieces", (file) => {
     const src = fs.readFileSync(path.join(__dirname, "..", file), "utf8")

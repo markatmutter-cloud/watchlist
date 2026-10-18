@@ -14,7 +14,8 @@ import CardShell from "./CardShell";
 import { DossierBlocks } from "./DossierBlocks";
 import { fmtUSD, matchesSearch, imgSrc } from "../utils";
 import { FONT_SERIF, cardGridStyle } from "../styles";
-import { Pill, Button, Chip, SavedPill, SubTabs, JumpNav, SectionHead, OverlayMenu, MenuItem } from "../ui";
+import { ListRow } from "./ListRow";
+import { Pill, Button, Chip, SavedPill, SubTabs, JumpNav, SectionHead, OverlayMenu, OverlayHeart, MenuItem, AddTile } from "../ui";
 import { EmptyState } from "./EmptyState";
 import { Section } from "./Section";
 
@@ -189,44 +190,16 @@ function WLCover({ images }) {
 // Compact ⋯ menu for list management (rename / delete) — overlaid on a
 // list card and inline in the drill-in header. Closes on click-outside +
 // Escape; stopPropagation so it doesn't trigger the card's open handler.
-const wlMenuItem = {
-  display: "block", width: "100%", textAlign: "left", padding: "9px 13px",
-  fontSize: 13, fontFamily: "inherit", border: "none", background: "transparent",
-  color: "var(--text1)", cursor: "pointer", whiteSpace: "nowrap",
-};
 function WLCardMenu({ onRename, onDelete }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
-  }, [open]);
-  const pick = (fn) => (e) => { e.stopPropagation(); e.preventDefault(); setOpen(false); if (fn) fn(); };
   return (
-    <div ref={ref} style={{ position: "relative" }}>
-      <button aria-label="List options"
-        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setOpen(o => !o); }}
-        style={{
-          width: 28, height: 28, borderRadius: 999, cursor: "pointer",
-          background: "var(--bg)", border: "0.5px solid var(--border)",
-          color: "var(--text1)", fontSize: 15, lineHeight: 1, fontFamily: "inherit",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>⋯</button>
-      {open && (
-        <div style={{
-          position: "absolute", top: 32, right: 0, minWidth: 132, zIndex: 30,
-          background: "var(--bg)", border: "0.5px solid var(--border)",
-          borderRadius: 8, boxShadow: "0 6px 20px rgba(0,0,0,0.14)", overflow: "hidden",
-        }}>
-          {onRename && <button onClick={pick(onRename)} style={wlMenuItem}>Rename</button>}
-          {onDelete && <button onClick={pick(onDelete)} style={{ ...wlMenuItem, color: "#c0453d" }}>Delete</button>}
-        </div>
+    <OverlayMenu plain label="List options">
+      {({ close }) => (
+        <>
+          {onRename && <MenuItem onClick={() => { close(); onRename(); }}>Rename</MenuItem>}
+          {onDelete && <MenuItem danger onClick={() => { close(); onDelete(); }}>Delete</MenuItem>}
+        </>
       )}
-    </div>
+    </OverlayMenu>
   );
 }
 
@@ -271,20 +244,8 @@ function WLListCard({ name, images, chips, shared, isMobile, onOpen, onRename, o
 // "+ Start a list" CTA rendered as a card so it sits in the grid.
 function WLStartCard({ isMobile, onClick }) {
   return (
-    <button onClick={onClick} style={{
-      cursor: "pointer", fontFamily: "inherit",
-      border: "0.5px dashed var(--text3)", borderRadius: 12,
-      background: "transparent", color: "var(--text2)",
-      minHeight: isMobile ? 240 : 264,
-      display: "flex", flexDirection: "column", alignItems: "center",
-      justifyContent: "center", gap: 6, padding: 16, textAlign: "center",
-    }}>
-      <span style={{ fontSize: 24, lineHeight: 1 }}>＋</span>
-      <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>Start a list</span>
-      <span style={{ fontSize: 11.5, color: "var(--text3)", lineHeight: 1.4, maxWidth: 200 }}>
-        Pick a watch or reference; pull in articles, comps, examples & notes.
-      </span>
-    </button>
+    <AddTile onClick={onClick} minHeight={isMobile ? 240 : 264} title="Start a list"
+      hint="Pick a watch or reference; pull in articles, comps, examples & notes." />
   );
 }
 
@@ -315,24 +276,10 @@ function EmptyListOnboarding({ name, isMobile, goToTab }) {
         A list collects what you're tracking on one watch or idea: the watches, the
         writing, the references, and your own notes. Start with whatever you have.
       </div>
-      <div style={{ border: "0.5px solid var(--border)", borderRadius: 12, overflow: "hidden", maxWidth: 520 }}>
-        {rows.map((r, i) => (
-          <button key={r.label} onClick={r.go} style={{
-            display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left",
-            cursor: "pointer", fontFamily: "inherit", background: "transparent",
-            border: "none", borderTop: i ? "0.5px solid var(--border)" : "none", padding: "13px 14px",
-          }}>
-            <span aria-hidden style={{
-              flexShrink: 0, width: 34, height: 34, borderRadius: 999,
-              background: "var(--brand-olive-tint-12)", color: "var(--brand-olive-ink)",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15,
-            }}>{r.icon}</span>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>{r.label}</span>
-              <span style={{ display: "block", fontSize: 12, color: "var(--text3)", marginTop: 1 }}>{r.help}</span>
-            </span>
-            <span style={{ flexShrink: 0, color: "var(--text3)", fontSize: 16 }}>{r.inPlace ? "＋" : "›"}</span>
-          </button>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 520 }}>
+        {rows.map((r) => (
+          <ListRow key={r.label} onClick={r.go} title={r.label} subtitle={r.help}
+            icon={<span aria-hidden style={{ fontSize: 15 }}>{r.icon}</span>} />
         ))}
       </div>
     </div>
@@ -366,35 +313,18 @@ function WLSearchCard({ search, onRun, onEdit, onRemove }) {
     search.count != null ? `${search.count.toLocaleString()} for sale` : null,
   ].filter(Boolean).join(" · ");
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      border: "0.5px solid var(--border)", borderRadius: 10,
-      padding: "11px 14px", background: "var(--bg)",
-    }}>
-      <button onClick={onRun} style={{
-        flex: 1, minWidth: 0, textAlign: "left", cursor: "pointer",
-        fontFamily: "inherit", border: "none", background: "transparent", padding: 0,
-      }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text1)" }}>{search.label}</div>
-        {meta && <div style={{ fontSize: 12, color: "var(--text3)", marginTop: 2,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{meta}</div>}
-      </button>
-      <span style={{ fontSize: 12.5, color: "var(--brand-olive-text)", fontWeight: 600, flexShrink: 0 }}>View →</span>
-      {onEdit && <button onClick={onEdit} aria-label="Edit search" style={wlIconBtn}>✎</button>}
-      {onRemove && <button onClick={onRemove} aria-label="Delete search" style={wlIconBtn}>🗑</button>}
-    </div>
+    <ListRow onClick={onRun} title={search.label} subtitle={meta || undefined}
+      icon={<span aria-hidden style={{ fontSize: 15 }}>🔍</span>}
+      actions={[
+        ...(onEdit ? [{ ariaLabel: "Edit search", icon: "✎", onClick: onEdit }] : []),
+        ...(onRemove ? [{ ariaLabel: "Delete search", icon: "🗑", onClick: onRemove }] : []),
+      ]} />
   );
 }
 
 // (WLSectionNav retired 2026-06-01 — the single-scroll landing's
 // jump-to-section nav is replaced by the real Lists sub-tab strip in
 // App.js. Scroll-spy lives on in HeartedView for the grouped quick-jump.)
-
-const wlIconBtn = {
-  flexShrink: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-  border: "0.5px solid var(--border)", borderRadius: 8, background: "transparent",
-  color: "var(--text2)", padding: "4px 8px", lineHeight: 1,
-};
 
 export function CollectionsTab({
   user,
@@ -2736,23 +2666,12 @@ function SavedAuctionsView({ items, isWide, gridStyle, onOpenSale, onToggleSave,
                     }}>{isLive ? "LIVE" : "CLOSED"}</span>
                   )}
                   {onToggleSave && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onToggleSave(a.url); }}
-                      aria-label="Remove this auction from saved"
-                      title="Saved · tap to remove"
-                      style={{
-                        position: "absolute", top: 8, right: 8,
-                        width: 30, height: 30, borderRadius: "50%",
-                        border: "none", padding: 0, cursor: "pointer",
-                        background: "rgba(217,38,38,0.92)", color: "#fff",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        backdropFilter: "blur(6px)",
-                      }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="#fff" stroke="#fff"
-                        strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                      </svg>
-                    </button>
+                    <div style={{ position: "absolute", top: 8, right: 8 }}>
+                      <OverlayHeart on
+                        onClick={(e) => { e.stopPropagation(); onToggleSave(a.url); }}
+                        aria-label="Remove this auction from saved"
+                        title="Saved · tap to remove" />
+                    </div>
                   )}
                 </div>
                 <div style={{ padding: "10px 12px 12px", display: "flex", flexDirection: "column", gap: 3 }}>
