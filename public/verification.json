@@ -1,9 +1,9 @@
 {
   "date": "2026-10-18",
-  "updated_at": "2026-10-18T07:18:11+00:00",
+  "updated_at": "2026-10-18T17:41:32+00:00",
   "alerts": [],
   "counts": {
-    "Wind Vintage": 99,
+    "Wind Vintage": 98,
     "Tropical Watch": 106,
     "Menta Watches": 52,
     "Collectors Corner NY": 91,
@@ -13,18 +13,18 @@
     "Romain R\u00e9a": 240,
     "Grey & Patina": 26,
     "Oliver & Clarke": 98,
-    "Craft & Tailored": 78,
+    "Craft & Tailored": 77,
     "Watch Brothers London": 5,
     "Sierra Time Co": 32,
     "DB1983": 23,
-    "Hairspring": 30,
+    "Hairspring": 31,
     "Somlo": 171,
     "Analog Shift": 724,
     "Watches of Knightsbridge": 65,
     "Belmont Watches": 28,
-    "Watchfid": 67,
+    "Watchfid": 68,
     "Bulang & Sons": 174,
-    "Moonphase": 27,
+    "Moonphase": 28,
     "Huntington Company": 126,
     "The Vintage Watch": 27,
     "Chronoholic": 4,
@@ -46,8 +46,8 @@
     "Watch Center": 261,
     "Amsterdam Watch Company": 292,
     "Amsterdam Vintage Watches": 73,
-    "eBay": 41
+    "eBay": 39
   },
-  "total_listings": 4477,
+  "total_listings": 4476,
   "sources_tracked": 44
 }

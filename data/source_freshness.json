@@ -90,10 +90,10 @@
     "rows": 26
   },
   "Hairspring": {
-    "fingerprint": "aa71b2b7e861a8bd",
-    "lastChanged": "2026-10-17",
+    "fingerprint": "f03a855d9fbcc1dc",
+    "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
-    "rows": 42
+    "rows": 43
   },
   "Heuertime": {
     "fingerprint": "77ea08369a6532de",
@@ -108,10 +108,10 @@
     "rows": 126
   },
   "Luna Royster": {
-    "fingerprint": "aa98ff53c4b65217",
+    "fingerprint": "9c867fb2ecc3a22c",
     "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
-    "rows": 25
+    "rows": 31
   },
   "Maunder Watches": {
     "fingerprint": "1b40d0d8891c8323",
@@ -126,10 +126,10 @@
     "rows": 53
   },
   "Moonphase": {
-    "fingerprint": "7c0be450e57affd5",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "32707ba5c9c30f05",
+    "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
-    "rows": 27
+    "rows": 28
   },
   "Oliver & Clarke": {
     "fingerprint": "2a8ad4af9668502d",
@@ -192,10 +192,10 @@
     "rows": 35
   },
   "Tropical Watch": {
-    "fingerprint": "f3751d5db75a9d77",
+    "fingerprint": "6ebb9fb30c7d8360",
     "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
-    "rows": 107
+    "rows": 106
   },
   "Vintage Watch Collective": {
     "fingerprint": "624a5bb3fd61c5c8",
@@ -252,10 +252,10 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "75f62f823e1698e2",
+    "fingerprint": "45a46988098db9a7",
     "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
-    "rows": 67
+    "rows": 65
   },
   "Watchurbia": {
     "fingerprint": "e4a04fc8811e6fd9",
@@ -264,7 +264,7 @@
     "rows": 7
   },
   "Wind Vintage": {
-    "fingerprint": "74bff573473826d8",
+    "fingerprint": "bc5567179e632fa5",
     "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
     "rows": 196
@@ -426,9 +426,9 @@
     "rows": 114
   },
   "merged:listings": {
-    "fingerprint": "d493896d4dcabc71",
+    "fingerprint": "320c95ed99bdb549",
     "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
-    "rows": 12122
+    "rows": 12125
   }
 }
