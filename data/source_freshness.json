@@ -18,10 +18,10 @@
     "rows": 742
   },
   "Belmont Watches": {
-    "fingerprint": "0cd7b8aa5d00df9e",
-    "lastChanged": "2026-10-17",
+    "fingerprint": "313734a457cda794",
+    "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
-    "rows": 28
+    "rows": 27
   },
   "Bob's Watches": {
     "fingerprint": "e8ec1f021774fec0",
@@ -84,7 +84,7 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "0c89640ceb3ac158",
+    "fingerprint": "d76e692870ffd9f2",
     "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
     "rows": 26
@@ -120,10 +120,10 @@
     "rows": 73
   },
   "Menta Watches": {
-    "fingerprint": "600f7e422ef9e4c2",
-    "lastChanged": "2026-10-15",
+    "fingerprint": "a38f9222b4611031",
+    "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
-    "rows": 53
+    "rows": 52
   },
   "Moonphase": {
     "fingerprint": "32707ba5c9c30f05",
@@ -204,10 +204,10 @@
     "rows": 39
   },
   "Vintage Watch Fam": {
-    "fingerprint": "cc5ab7d646f379d3",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "29267f4e3b52c63e",
+    "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
-    "rows": 601
+    "rows": 604
   },
   "Vintage Watch Shop": {
     "fingerprint": "ac33bb21151f6b30",
@@ -216,10 +216,10 @@
     "rows": 29
   },
   "Vision Vintage Watches": {
-    "fingerprint": "d4250396fe6e5cd4",
-    "lastChanged": "2026-10-15",
+    "fingerprint": "dd4ac618728ba131",
+    "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
-    "rows": 101
+    "rows": 100
   },
   "Watch Brothers London": {
     "fingerprint": "e7ae1be3491cca69",
@@ -264,7 +264,7 @@
     "rows": 7
   },
   "Wind Vintage": {
-    "fingerprint": "bc5567179e632fa5",
+    "fingerprint": "a9704cafbde061b2",
     "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
     "rows": 196
@@ -426,9 +426,9 @@
     "rows": 114
   },
   "merged:listings": {
-    "fingerprint": "acdb5e575955f761",
+    "fingerprint": "db421d07e05dab26",
     "lastChanged": "2026-10-18",
     "lastSeen": "2026-10-18",
-    "rows": 12125
+    "rows": 12129
   }
 }
