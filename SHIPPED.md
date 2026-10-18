@@ -793,6 +793,9 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — The account control and its menu are one shared `AccountMenu`.** The two hand-built dropdowns in `App.js` (signed in / signed out, ~230 lines) are now
+  `AccountMenu` + `MenuItem` + `AccountMenuHead` + `AccountMenuSection` in `src/ui`. Fixes: the disc was a bare letter on every tab but Home (white-on-olive flipped by tab on
+  a bar that is paper now), and the menu had no outside-press or Escape close. Signed out it is a "Sign in" pill; both open the same panel.
 - **2026-10-17 — The Lumé memory, lead, dossier, About and list-row buttons move onto the shared pieces.** Lumé's memory on/off is the segmented `SubTabs choice`
   and "Forget everything" a `Button link danger`; the lead's two calls to action are `Button`s; dossier block controls / add pills / pickers are `Button link icon` /
   `Pill` / `PickRow`; About's back and legal links and a journal entry's delete are `Button link`; list-row icon actions are `Button link icon` (new `icon` variant).
