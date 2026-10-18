@@ -33,7 +33,9 @@ describe("standard-library chrome contract", () => {
     // the last page moved onto src/ui. FilterRow went the same way in 2026-06. Don't bring any
     // of them back: build the page from src/ui.
     for (const gone of ["FilterRow.js", "DesktopShell.js", "MobileShell.js", "StandardFilterBar.js",
-                        "SubTabBar.js", "Chip.js", "SavedHeartLink.js", "IdentityBand.js", "HeartedView.js"]) {
+                        "SubTabBar.js", "Chip.js", "SavedHeartLink.js", "IdentityBand.js", "HeartedView.js",
+                        // Home sections nothing mounted since the magazine front page (MagazineHome) replaced them.
+                        "HomeGuidesRow.js", "HomeAuctionModule.js", "MoonPhaseIndicator.js"]) {
       expect(fs.existsSync(path.join(COMPONENTS, gone))).toBe(false);
     }
     const offenders = componentFiles.filter((f) =>
