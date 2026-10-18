@@ -2,10 +2,9 @@ import React, { useMemo, useState, useRef, useEffect } from "react";
 import { Card } from "./Card";
 import CardShell from "./CardShell";
 import CardStrip from "./CardStrip";
-import SectionHeader from "./SectionHeader";
 import { REFERENCE_NODES } from "../data/referencePages";
 import { articleAsListing } from "./EditorialView";
-import { Chip, PriceRange, Pill } from "../ui";
+import { Chip, PriceRange, Pill, SectionHead, SearchField } from "../ui";
 
 // Cross-tab search results — the "Search all" destination (PR_W v1,
 // 2026-05-22). When the user picks "Search all" from the Home
@@ -84,21 +83,23 @@ function matchesReferenceQuery(node, q) {
   return haystack.includes(q);
 }
 
+// The head over a strip of results: the shared SectionHead (name, count, a "View all" action),
+// inset to the strip's own edge.
+function StripHead({ heading, count, onViewAll, isMobile }) {
+  return (
+    <div style={{ padding: isMobile ? "0 16px 12px" : "0 20px 12px" }}>
+      <SectionHead title={heading} count={typeof count === "number" ? count.toLocaleString() : count}
+        actions={onViewAll ? [{ label: "View all →", onClick: onViewAll }] : []} />
+    </div>
+  );
+}
+
 function Strip({ heading, count, items, onViewAll, isMobile, watchlist, handleWish, hidden, toggleHide, primaryCurrency, openCollectionPicker, handleShare, isAdmin, onClickListing }) {
   const isEmpty = items.length === 0;
   const visible = items.slice(0, STRIP_MAX);
   return (
     <section style={{ padding: isMobile ? "16px 0" : "20px 0" }}>
-      {/* One shared SectionHeader (2026-08-30). This used to be a third
-          hand-rolled copy of the Home header, with the OLD pill (radius 18 /
-          13px / --border) that Home itself had already moved off. Same
-          divergence class as B-93: the fix is the shared component. */}
-      <SectionHeader
-        heading={heading}
-        count={count}
-        onViewAll={count > STRIP_MAX ? onViewAll : undefined}
-        isMobile={isMobile}
-      />
+      <StripHead heading={heading} count={count} onViewAll={count > STRIP_MAX ? onViewAll : undefined} isMobile={isMobile} />
       {isEmpty ? (
         <div style={{
           padding: isMobile ? "0 16px 8px" : "0 20px 8px",
@@ -339,48 +340,12 @@ export function SearchResultsView({
             chrome as the top-bar expanding search, sized up to read
             as the page's primary input. Auto-focus when entering the
             surface so the user can immediately refine without clicking. */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8,
-          background: "transparent",
-          border: "0.5px solid var(--border)",
-          borderRadius: 10,
-          padding: "8px 14px",
-          maxWidth: isMobile ? "100%" : 520,
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-            style={{ color: "var(--text3)", flexShrink: 0 }} aria-hidden="true">
-            <circle cx="11" cy="11" r="7"/>
-            <line x1="21" y1="21" x2="16.5" y2="16.5"/>
-          </svg>
-          <input
-            ref={inputRef}
-            value={search}
+        <div style={{ maxWidth: isMobile ? "100%" : 520 }}>
+          <SearchField size="row" value={search} inputRef={inputRef}
             onChange={e => canEdit && setSearch(e.target.value)}
-            readOnly={!canEdit}
-            onKeyDown={e => {
-              if (e.key === "Enter") { e.target.blur(); }
-              if (e.key === "Escape") { e.target.blur(); }
-            }}
-            placeholder="Search brand, model, or reference…"
-            style={{ flex: 1, border: "none", background: "transparent",
-                     fontSize: isMobile ? 15 : 16, fontWeight: 600,
-                     color: "var(--text1)", outline: "none",
-                     fontFamily: "inherit", minWidth: 0 }}
-          />
-          {search && canEdit && (
-            <button onClick={() => setSearch("")} aria-label="Clear search"
-              style={{ flexShrink: 0, background: "none", border: "none",
-                      cursor: "pointer", color: "var(--text3)", padding: 2,
-                      fontFamily: "inherit", display: "flex",
-                      alignItems: "center", justifyContent: "center" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          )}
+            onClear={canEdit ? () => setSearch("") : undefined}
+            onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") e.target.blur(); }}
+            placeholder="Search brand, model, or reference…" ariaLabel="Search watches" />
         </div>
         {/* Filter row — Brand chips + Price min/max. Local-state
             filters scoped to this surface; Mark spec: "submariner
@@ -476,12 +441,7 @@ function ArticleStrip({ heading, count, items, onViewAll, isMobile, watchlist = 
   const visible = items.slice(0, STRIP_MAX);
   return (
     <section style={{ padding: isMobile ? "16px 0" : "20px 0" }}>
-      <SectionHeader
-        heading={heading}
-        count={count}
-        onViewAll={count > STRIP_MAX && onViewAll ? onViewAll : undefined}
-        isMobile={isMobile}
-      />
+      <StripHead heading={heading} count={count} onViewAll={count > STRIP_MAX && onViewAll ? onViewAll : undefined} isMobile={isMobile} />
       {/* Card system S1+S3: article tiles render through the shared CardShell
           (square image, L2 source kicker, L1 title) inside the shared
           CardStrip — same look as before (B-12/B-13). */}

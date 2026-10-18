@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Button } from "../ui";
 import { shortHash } from "../utils";
 
 // One-shot Phase B2 migration (2026-05-04). Before B2, users tracked
@@ -144,17 +145,7 @@ export function LotMigrationBanner({
         Auction lots are now hearted just like dealer listings: no more
         +Track button for auction houses. eBay items still work via +Track.
       </div>
-      <button onClick={() => setDismissed(true)} aria-label="Dismiss" style={{
-        flexShrink: 0,
-        background: "transparent",
-        border: "0.5px solid var(--border)",
-        color: "var(--text2)",
-        cursor: "pointer",
-        fontFamily: "inherit",
-        fontSize: 12,
-        padding: "4px 10px",
-        borderRadius: 12,
-      }}>Got it</button>
+      <Button small inline onClick={() => setDismissed(true)} aria-label="Dismiss" style={{ flexShrink: 0 }}>Got it</Button>
     </div>
   );
 }

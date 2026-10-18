@@ -1,5 +1,6 @@
 import React from "react";
 import CardStrip from "./CardStrip";
+import { Pill } from "../ui";
 
 // LumeModule — a curated supporting shelf (Worth your attention / Useful comps /
 // Rabbit holes). Editorial framing carries it: an eyebrow, a heading, a one-line
@@ -21,10 +22,7 @@ export default function LumeModule({ eyebrow, heading, dek, count, items, render
         {(ctaLabel || count != null) && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
             {ctaLabel && (
-              <button onClick={onCta} style={{
-                border: "0.5px solid var(--border)", background: "transparent", color: "var(--text1)",
-                borderRadius: 999, padding: "6px 14px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
-              }}>{ctaLabel}</button>
+              <Pill onClick={onCta}>{ctaLabel}</Pill>
             )}
             {count != null && count > items.length && (
               <span style={{ fontSize: 11, color: "var(--text3)" }}>{count} total</span>

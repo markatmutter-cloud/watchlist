@@ -1,4 +1,5 @@
 import React from "react";
+import { Pill } from "../ui";
 
 // LumeResultPanel — the generic frame a journey morphs the canvas into: a
 // back affordance, the journey title, Lumé's one-line voice on the result, and
@@ -7,11 +8,7 @@ export default function LumeResultPanel({ title, voice, onBack, isEmpty, emptyTe
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <button onClick={onBack} aria-label="Back to journeys" style={{
-          border: "0.5px solid var(--border)", background: "var(--surface)", color: "var(--text1)",
-          borderRadius: 999, padding: "5px 12px", fontSize: 13, fontWeight: 500,
-          cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
-        }}>← Back</button>
+        <Pill onClick={onBack} aria-label="Back to journeys">← Back</Pill>
         <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: "var(--text1)", letterSpacing: "-0.01em" }}>
           {title}
         </h2>
