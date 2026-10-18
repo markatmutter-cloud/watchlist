@@ -793,6 +793,9 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — Every page-content heading is the shared `SectionHead`.** The admin sections (seven, 18px sans), saved articles / saved auctions, the challenge stages, a challenge's shared-link
+  view and Size comparison each had a hand-sized `<h1>` (18px, 18px, 22px...); they now take the one heading (Bodoni, with its count / meta line and the `← Lists` back pill), and a guard
+  fails the build on a new `<h1>` outside Lumé's lead, a guide's hero and the masthead.
 - **2026-10-17 — Every form field is the shared `Input` / `Textarea` / `Select`.** The new-challenge form, the pick-a-source paste box, size compare, the admin cap form, a list's invite role,
   a list note and the guides' suggestion box had their own bordered boxes (6, 8 and 10px radii, three paddings); they are now the one field, with `FieldLabel` for labels and a shared
   `Select` (new). A guard (`ui-guard`) fails the build on a raw `<input>` / `<select>` / `<textarea>` in a page or dialog; Lumé's chat box is the one exception.

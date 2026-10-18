@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { fmtUSD, imgSrc } from "../utils";
 import { supabase } from "../supabase";
-import { Button } from "../ui";
+import { Button, SectionHead } from "../ui";
 
 // Watch Challenges v1.5 — receive flow. Mirrors ShareReceiver
 // (single-listing receive) for two challenge-share modes:
@@ -411,12 +411,7 @@ export function ChallengeReceiver({
 // ── helpers ──────────────────────────────────────────────────────
 
 function FocusedHeader({ title }) {
-  return (
-    <h1 style={{
-      fontSize: 18, fontWeight: 600,
-      color: "var(--text1)", margin: "0 0 14px", lineHeight: 1.3,
-    }}>{title}</h1>
-  );
+  return <div style={{ marginBottom: 14 }}><SectionHead title={title} /></div>;
 }
 
 function PickThumbnail({ snapshot }) {

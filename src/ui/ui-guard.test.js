@@ -110,5 +110,15 @@ describe("src/ui", () => {
     }
     expect(offenders).toEqual([]);
   });
+
+  // One page-content heading. A hand-sized <h1> in a page is a one-off title (18px here, 22px
+  // there, Bodoni on a list): use SectionHead. The exceptions are not page headings: Lumé's lead
+  // headline, a guide's hero title over its photo, and the masthead wordmark.
+  const H1_EXEMPT = ["components/LumeLead.js", "components/ReferencePage.js", "components/MagazineChrome.js"];
+  test.each(componentFiles.filter((f) => !H1_EXEMPT.includes(f)))("%s has no hand-sized <h1>", (file) => {
+    const src = fs.readFileSync(path.join(__dirname, "..", file), "utf8")
+      .replace(/^\s*\/\/[^\n]*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(src).not.toMatch(/<h1\b/);
+  });
 });
 

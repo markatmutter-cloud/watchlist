@@ -10,6 +10,7 @@ describe("CreateStage (new challenge)", () => {
   it("title, count and budget are the shared fields; Start picking submits them", () => {
     const onSubmit = jest.fn();
     const { container } = render(<CreateStage challenge={null} onSubmit={onSubmit} onCancel={() => {}} />);
+    expect(screen.getByRole("heading", { name: "New challenge" })).toHaveClass("ui-sechead-title");
     const fields = container.querySelectorAll("input.ui-input");
     expect(fields.length).toBe(3);
     fireEvent.change(fields[0], { target: { value: "Three for 30k" } });
@@ -33,6 +34,7 @@ describe("SizeCompare", () => {
   it("renders the shared fields and the photo slot as a pill, and Learn goes back", () => {
     const onBack = jest.fn();
     const { container } = render(<SizeCompare onBack={onBack} />);
+    expect(screen.getByRole("heading", { name: "Watch size comparison" })).toHaveClass("ui-sechead-title");
     expect(container.querySelectorAll("input.ui-input").length).toBe(6);
     expect(screen.getAllByText("+ Add photo")[0]).toHaveClass("ui-pill");
     fireEvent.click(screen.getByRole("button", { name: /Learn/ }));

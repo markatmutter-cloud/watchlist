@@ -274,5 +274,33 @@ describe("CollectionsTab shared controls", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
     await waitFor(() => expect(deleteCollection).toHaveBeenCalledWith("l1"));
   });
+
+  // The two drill-in pages (saved auctions / saved articles) now head with the shared SectionHead.
+  function withCol(col, props) {
+    const origLocation = window.location;
+    delete window.location;
+    window.location = { ...origLocation, search: `?col=${col}` };
+    try {
+      return render(<CollectionsTab {...buildProps({ collectionsSubTab: "lists", ...props })} />);
+    } finally {
+      window.location = origLocation;
+    }
+  }
+
+  test("Saved auctions: the shared head with its count, and ← Lists goes back", () => {
+    const sale = { url: "https://c/1", house: "Christie's", title: "Rare Watches", status: "upcoming", dateLabel: "Dec 3" };
+    withCol("__saved_auctions__", { savedAuctions: [sale] });
+    expect(screen.getByRole("heading", { name: "Saved auctions" })).toHaveClass("ui-sechead-title");
+    expect(screen.getByText("Rare Watches")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Lists/ })).toBeInTheDocument();
+  });
+
+  test("Saved articles: the shared head, with an empty state when none are hearted", () => {
+    // The virtual list only exists once an article is hearted: seed one.
+    const article = { kind: "article", id: "a1", url: "https://f/1", title: "An article", savedAt: "2026-10-01",
+                      listing_snapshot: { kind: "article", title: "An article", url: "https://f/1" } };
+    withCol("__saved_articles__", { watchlist: { a1: article } });
+    expect(screen.getByRole("heading", { name: "Saved articles" })).toHaveClass("ui-sechead-title");
+  });
 });
 

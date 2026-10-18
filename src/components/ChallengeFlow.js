@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { Button, Chip, OverlayButton, Input, Textarea, FieldLabel } from "../ui";
+import { Button, Chip, OverlayButton, Input, Textarea, FieldLabel, SectionHead } from "../ui";
 import { fmtUSD, imgSrc } from "../utils";
 import { confirm } from "./ConfirmModal";
 
@@ -102,34 +102,20 @@ function StageHeader({ onBack, label, title, subtitle, activeStage, onDelete }) 
             <Button link onClick={onBack}>← {label || "back"}</Button>
           ) : <span/>}
           {onDelete && (
-            <button onClick={onDelete} aria-label="Delete challenge"
-              title="Delete challenge"
-              style={{
-                background: "none", border: "none", cursor: "pointer",
-                color: "var(--text3)", padding: 4,
-                display: "flex", alignItems: "center",
-              }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <Button link icon onClick={onDelete} aria-label="Delete challenge" title="Delete challenge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="3 6 5 6 21 6"/>
                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
                 <path d="M10 11v6"/>
                 <path d="M14 11v6"/>
                 <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
               </svg>
-            </button>
+            </Button>
           )}
         </div>
       )}
       <Stepper activeStage={activeStage} />
-      <h1 style={{
-        fontSize: 18, fontWeight: 600, margin: 0, color: "var(--text1)",
-        letterSpacing: "-0.01em",
-      }}>{title}</h1>
-      {subtitle && (
-        <p style={{ fontSize: 12, color: "var(--text2)", margin: "3px 0 0", lineHeight: 1.4 }}>
-          {subtitle}
-        </p>
-      )}
+      <SectionHead title={title} meta={subtitle || undefined} />
     </div>
   );
 }

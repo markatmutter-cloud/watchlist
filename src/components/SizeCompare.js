@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Pill, Input, FieldLabel } from "../ui";
+import { Button, Pill, Input, FieldLabel, SectionHead } from "../ui";
 import { createPortal } from "react-dom";
 
 // Watch size comparison tool. Two case dimensions (width × length in
@@ -350,12 +350,10 @@ export function SizeCompare({ onBack }) {
           <Button link onClick={onBack}>← Learn</Button>
         )}
       </div>
-      <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 4px", color: "var(--text1)" }}>
-        Watch size comparison
-      </h1>
-      <p style={{ fontSize: 13, color: "var(--text2)", margin: "0 0 20px" }}>
-        Compare any two watches by case dimensions. Print to scale on US Letter to lay on your wrist.
-      </p>
+      <div style={{ marginBottom: 20 }}>
+        <SectionHead title="Watch size comparison"
+          meta="Compare any two watches by case dimensions. Print to scale on US Letter to lay on your wrist." />
+      </div>
 
       <div style={{ ...sectionCard, marginBottom: 16 }}>
         <div style={{
