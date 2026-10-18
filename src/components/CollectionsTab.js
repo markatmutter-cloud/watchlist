@@ -2352,7 +2352,9 @@ function CollectionGrid({
   );
 }
 
-function ManualItemCard({ item, onRemove, onMarkSold, onClickDetail }) {
+// A watch you entered by hand (Owned / Sold lists). The same CardShell as every other card in
+// the grid, so a list that mixes them lines up; it opens the detail sheet instead of a link.
+export function ManualItemCard({ item, onRemove, onMarkSold, onClickDetail }) {
   const title = item.title || [item.brand, item.model].filter(Boolean).join(" ").trim() || "Untitled";
   const metaParts = [];
   if (item.ref) metaParts.push(`Ref ${item.ref}`);
@@ -2364,78 +2366,38 @@ function ManualItemCard({ item, onRemove, onMarkSold, onClickDetail }) {
   const soldLine = item.soldPrice != null
     ? `Sold ${item.currency || ""} ${Number(item.soldPrice).toLocaleString()}${item.soldDate ? ` · ${item.soldDate}` : ""}`.trim()
     : null;
+  const extraMenuItems = [];
+  if (onClickDetail) extraMenuItems.push({ label: "Watch details", onClick: onClickDetail });
+  if (onMarkSold) extraMenuItems.push({ label: "Mark sold", onClick: onMarkSold });
+  extraMenuItems.push({
+    label: "Remove", danger: true,
+    onClick: async () => {
+      if (await confirm({
+        title: "Remove watch?",
+        message: "This watch will be removed from this list.",
+        confirmLabel: "Remove",
+        tone: "danger",
+      })) await onRemove();
+    },
+  });
   return (
-    <div style={{
-      position: "relative",
-      border: "0.5px solid var(--border)", borderRadius: 10,
-      background: "var(--card-bg)", overflow: "hidden",
-      display: "flex", flexDirection: "column",
-    }}>
-      {/* Image + body wrapped in a click target when onClickDetail is
-          provided (My Watches surface). The ⋯ menu uses
-          stopPropagation to keep its own click contained. */}
-      <button
-        type="button"
-        onClick={onClickDetail || undefined}
-        disabled={!onClickDetail}
-        style={{
-          all: "unset", display: "flex", flexDirection: "column",
-          cursor: onClickDetail ? "pointer" : "default",
-        }}>
-        <div style={{
-          aspectRatio: "1 / 1", background: "var(--surface)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          {item.img ? (
-            <img src={item.img} alt={title} loading="lazy"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <img src="/favicon-192.png" alt="" aria-hidden="true"
-              style={{ width: "44%", maxWidth: 72, opacity: 0.5 }} />
-          )}
-        </div>
-        <div style={{ padding: "10px 12px 12px", flex: 1, width: "100%", textAlign: "left" }}>
+    <CardShell
+      image={item.img ? { src: item.img, alt: title } : null}
+      onOpen={onClickDetail}
+      level1={<div style={{ fontSize: 12, fontWeight: 500, lineHeight: 1.3, marginBottom: 4, color: "var(--text1)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{title}</div>}
+      level3={<>
+        {meta && <div style={{ fontSize: 11, color: "var(--text2)", marginBottom: 2 }}>{meta}</div>}
+        {priceLine && <div style={{ fontSize: 11, color: "var(--text2)" }}>Paid {priceLine}</div>}
+        {soldLine && <div style={{ fontSize: 11, color: "var(--text2)" }}>{soldLine}</div>}
+        {item.comments && (
           <div style={{
-            fontSize: 13, fontWeight: 500, color: "var(--text1)",
-            marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}>{title}</div>
-          {meta && <div style={{ fontSize: 11, color: "var(--text2)", marginBottom: 2 }}>{meta}</div>}
-          {priceLine && <div style={{ fontSize: 11, color: "var(--text2)" }}>Paid {priceLine}</div>}
-          {soldLine && <div style={{ fontSize: 11, color: "var(--text2)" }}>{soldLine}</div>}
-          {item.comments && (
-            <div style={{
-              fontSize: 11, color: "var(--text3)", marginTop: 6,
-              lineHeight: 1.4, fontStyle: "italic",
-              overflow: "hidden", display: "-webkit-box",
-              WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-            }}>{item.comments}</div>
-          )}
-        </div>
-      </button>
-      <div style={{ position: "absolute", top: 6, right: 6 }}>
-        <OverlayMenu small label="More">
-          {({ close }) => (
-            <>
-              {onClickDetail && (
-                <MenuItem onClick={() => { close(); onClickDetail(); }}>Watch details</MenuItem>
-              )}
-              {onMarkSold && (
-                <MenuItem onClick={() => { close(); onMarkSold(); }}>Mark sold</MenuItem>
-              )}
-              <MenuItem danger onClick={async () => {
-                close();
-                if (await confirm({
-                  title: "Remove watch?",
-                  message: "This watch will be removed from this list.",
-                  confirmLabel: "Remove",
-                  tone: "danger",
-                })) await onRemove();
-              }}>Remove</MenuItem>
-            </>
-          )}
-        </OverlayMenu>
-      </div>
-    </div>
+            fontSize: 11, color: "var(--text3)", marginTop: 6, lineHeight: 1.4, fontStyle: "italic",
+            overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+          }}>{item.comments}</div>
+        )}
+      </>}
+      menu={{ extraMenuItems }}
+    />
   );
 }
 
