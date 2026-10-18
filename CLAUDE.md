@@ -260,8 +260,10 @@ diagram, data model, and folder layout.
   App.js mounts unconditionally, or above every early return. A `useEffect`
   must not reference state declared later in the function (TDZ).- **Page chrome = `src/ui`** (the shared frame; approved on `?view=styleguide`):
   `PageShell` (header, overlays, modals), `PageFrame` (sub-tabs · filter bar ·
-  content), Pill, SearchField, SubTabs, FilterBar, Count, AccountDisc, Chip,
-  Button, styled ONCE in `src/ui/ui.css`. A page never hand-rolls one: add a
+  content), Pill, SearchField, SubTabs, FilterBar, Count, AccountMenu, Chip,
+  Button, OverlayButton / OverlayHeart / OverlayMenu / MenuItem (the heart and ⋯
+  on an image), AddTile, SectionHead, styled ONCE in `src/ui/ui.css`. A page
+  never hand-rolls one: add a
   variant there + on the style sheet first. There are no shells: `DesktopShell`
   / `MobileShell` / `StandardFilterBar` / `SubTabBar` and the `?look=old` /
   `?chrome=system` flags are deleted, and `chrome-guard` + `ui-guard` fail the
