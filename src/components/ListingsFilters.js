@@ -8,7 +8,7 @@
 // already threads), so a page spreads its props into whichever of them it renders.
 
 import React, { useEffect, useRef, useState } from "react";
-import { Pill, Chip, ChipPanel, SearchField, FilterBar, PriceRange, SuggestionRows } from "../ui";
+import { Pill, Chip, ChipPanel, FilterGroup, SearchField, FilterBar, PriceRange, SuggestionRows } from "../ui";
 import { FilterDrawer } from "./FilterDrawer";
 import { FilterIcon, HeartIcon } from "./icons";
 
@@ -175,16 +175,14 @@ export function ListingsFilterBar({
         <Pill icon={<FilterIcon />} aria-label="Filters" on={activeFilterCount > 0}
               n={activeFilterCount || null} onClick={() => setDrawerOpen(true)}>Filter</Pill>
       ) : (
-        <>
-          <Pill on={filterSources.length > 0 || activeFilterPop === "source"} n={filterSources.length || null}
-                onClick={() => togglePop("source")}>Source</Pill>
-          <Pill on={filterBrands.length > 0 || activeFilterPop === "brand"} n={filterBrands.length || null}
-                onClick={() => togglePop("brand")}>Brand</Pill>
-          {(MODELS?.length || 0) > 0 ? (
-            <Pill on={(filterModels?.length || 0) > 0 || activeFilterPop === "model"}
-                  n={(filterModels?.length || 0) || null} onClick={() => togglePop("model")}>Model</Pill>
-          ) : null}
-        </>
+        <FilterGroup ariaLabel="Filters" items={[
+          { key: "source", label: "Source", on: filterSources.length > 0 || activeFilterPop === "source", n: filterSources.length || null,
+            onClick: () => togglePop("source") },
+          { key: "brand", label: "Brand", on: filterBrands.length > 0 || activeFilterPop === "brand", n: filterBrands.length || null,
+            onClick: () => togglePop("brand") },
+          ...((MODELS?.length || 0) > 0 ? [{ key: "model", label: "Model", on: (filterModels?.length || 0) > 0 || activeFilterPop === "model",
+            n: (filterModels?.length || 0) || null, onClick: () => togglePop("model") }] : []),
+        ]} />
       )}
       {hasFilters ? <Pill quiet onClick={resetFilters}>× Clear all</Pill> : null}
     </>

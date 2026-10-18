@@ -793,6 +793,9 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-18 — Source, Brand, Model and the Saved heart are one segmented `FilterGroup`, matching the For sale / Auctions / Sold track.** Mark: "can the source and brand filters match the for sale
+  auction and sold pills? And brand heart." On Articles, Guides and desktop Watches they were separate uppercase-mono pills (the heart its own circle); they now share the sub-tabs' track and chips (the ♡ is the
+  same glyph the sub-tabs carry). Sort, price and the phone's Filter stay pills.
 - **2026-10-17 — The admin page's jump bar is the shared `JumpNav`.** Its own sticky row of hand-styled anchor chips is replaced by the same pill row the Lists page uses (`JumpNav`), scrolling to each section.
 - **2026-10-17 — A hand-entered watch is the same `CardShell` as every other card.** The Owned / Sold lists drew their manual watches as a bordered, rounded one-off card in the same grid as
   the listing cards (so a mixed list did not line up). `ManualItemCard` now renders through `CardShell`, which gains `onOpen` (a card that opens a sheet rather than a link) and a `danger` menu entry.

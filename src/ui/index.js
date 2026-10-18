@@ -292,6 +292,30 @@ export function SubTabs({ tabs, activeKey, onSelect, ariaLabel, block, choice })
   );
 }
 
+// ---- FilterGroup: the filter buttons (Source, Brand, Model, the Saved heart) as one segmented track ----
+//   Same track, same chips as SubTabs (Mark, 2026-10-18: "match the for sale / auctions / sold pills"):
+//   a filter that is open or has a selection takes the solid olive chip. Unlike SubTabs several can
+//   be on at once, so each is a toggle button (aria-pressed), not a tab.
+//   items  [{ key, label, on, n, onClick, ariaLabel?, title? }]
+export function FilterGroup({ items, ariaLabel }) {
+  return (
+    <div className="ui-tabs ui-tabs--filters" role="group" aria-label={ariaLabel}>
+      {items.map((it) => (
+        <button key={it.key} type="button" aria-pressed={!!it.on} aria-label={it.ariaLabel} title={it.title || it.ariaLabel}
+                className={it.on ? "is-on" : undefined} onClick={it.onClick}>
+          {it.label}
+          {it.n ? <span className="ui-tabs-n">· {it.n}</span> : null}
+        </button>
+      ))}
+    </div>
+  );
+}
+// The Saved heart as a FilterGroup item: the same ♡ the Watches sub-tabs carry.
+export function savedFilterItem({ on, onClick, what = "saved" }) {
+  const label = on ? "Show all" : `Show only ${what}`;
+  return { key: "saved", label: "♡", on, onClick, ariaLabel: label, title: label };
+}
+
 // ---- FilterBar: pills left · search centred · count right -----------------------------
 //   panel    the open options panel (ChipPanel), kept INSIDE the sticky zone
 //   sticky   pin under the header while the page scrolls

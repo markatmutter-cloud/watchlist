@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { editorialTitle, cardGridStyle } from "../styles";
-import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame, HeaderSearch, OverlayHeart, OverlayMenu, MenuItem } from "../ui";
+import { Pill, Chip, ChipPanel, FilterGroup, savedFilterItem, SearchField, FilterBar, PageFrame, HeaderSearch, OverlayHeart, OverlayMenu, MenuItem } from "../ui";
 import { shortHash, imgSrc, fetchJsonCached } from "../utils";
 
 // Map an editorial article record into the listing-shaped item that
@@ -574,12 +574,14 @@ export function EditorialView({ isMobile, cols, compact, gridStyle, watchlist, h
         : `${filtered.length.toLocaleString()} ${filtered.length === 1 ? "article" : "articles"}`}
       pills={
         <>
-          <Pill on={activeSources.length > 0 || activeFilterPop === "source"} n={activeSources.length || null}
-                onClick={() => setActiveFilterPop((p) => (p === "source" ? null : "source"))}>Source</Pill>
-          <Pill on={activeBrands.length > 0 || activeFilterPop === "brand"} n={activeBrands.length || null}
-                onClick={() => setActiveFilterPop((p) => (p === "brand" ? null : "brand"))}>Brand</Pill>
-          {/* Saved: the bare heart (Mark, 2026-10-16/17). Same `heartedOnly` state. */}
-          <SavedPill on={heartedOnly} onClick={() => setHeartedOnly((v) => !v)} what="saved articles" />
+          <FilterGroup ariaLabel="Filters" items={[
+            { key: "source", label: "Source", on: activeSources.length > 0 || activeFilterPop === "source", n: activeSources.length || null,
+              onClick: () => setActiveFilterPop((p) => (p === "source" ? null : "source")) },
+            { key: "brand", label: "Brand", on: activeBrands.length > 0 || activeFilterPop === "brand", n: activeBrands.length || null,
+              onClick: () => setActiveFilterPop((p) => (p === "brand" ? null : "brand")) },
+            /* Saved: the bare heart (Mark, 2026-10-16/17). Same `heartedOnly` state. */
+            savedFilterItem({ on: heartedOnly, onClick: () => setHeartedOnly((v) => !v), what: "saved articles" }),
+          ]} />
           {hasFilters && <Pill quiet onClick={clearAll}>× Clear all</Pill>}
         </>
       }

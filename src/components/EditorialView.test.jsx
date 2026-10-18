@@ -41,12 +41,16 @@ describe("EditorialView", () => {
     // name and title say what the heart does.
     const heart = screen.getByRole("button", { name: "Show only saved articles" });
     expect(heart).toHaveAttribute("aria-pressed", "false");
-    expect(heart).toHaveTextContent(""); // an icon, not a word
+    expect(heart).toHaveTextContent(/^♡$/); // the same bare glyph the Watches sub-tabs carry: no word
     expect(screen.queryByRole("tab", { name: /Saved/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: /^All$/ })).not.toBeInTheDocument();
-    // The other filter pills stay where they were.
+    // Source, Brand and the heart are ONE segmented track, the same one the sub-tabs use.
     expect(screen.getByRole("button", { name: /^Source/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Brand/ })).toBeInTheDocument();
+    const track = heart.closest(".ui-tabs");
+    expect(track).not.toBeNull();
+    expect(track).toContainElement(screen.getByRole("button", { name: /^Source/ }));
+    expect(track).toContainElement(screen.getByRole("button", { name: /^Brand/ }));
   });
 
   test("the heart toggles, raises Clear all like the pills beside it, and Clear all turns it off", () => {

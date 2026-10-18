@@ -368,6 +368,7 @@ a.ui-btn { text-decoration: none; display: inline-block; }
                   font: 500 13px var(--ui-sans); letter-spacing: .01em;
                   transition: background .15s ease, color .15s ease; }
 .ui-tabs button.is-on { background: var(--brand-olive); color: #fff; font-weight: 600; }
+.ui-tabs-n { margin-left: 4px; font-weight: 400; opacity: .8; font-variant-numeric: tabular-nums; }
 .ui-tabs--block { display: flex; width: 100%; }
 .ui-tabs--block button { flex: 1 1 0; padding: 0 8px; }
 .ui-tabs-row { padding: 8px 0 8px; display: flex; align-items: baseline;
