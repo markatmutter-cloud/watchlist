@@ -80,6 +80,8 @@ describe("ListsPage", () => {
       expect(container.querySelector(".magb-bar input[type='search']")).not.toBeNull();
       expect(container.querySelector(".ui-filterzone.is-sticky")).not.toBeNull();
       expect(screen.getByText("7 items")).toBeInTheDocument();
+      // On the filter bar, where every other page keeps its count.
+      expect(screen.getByText("7 items").closest(".ui-filterbar-count")).not.toBeNull();
     });
 
     it("singularises the count", () => {

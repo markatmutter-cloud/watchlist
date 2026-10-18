@@ -127,6 +127,27 @@ describe("FilterBar and PageFrame", () => {
     expect(screen.getByText("12 articles")).toHaveClass("ui-count");
   });
 
+  it("the count is its own element after the controls, on every bar, so a phone can give it a line of its own", () => {
+    const { container } = render(
+      <FilterBar pills={<Pill>Source</Pill>} count="12 articles" end={<Pill>Date</Pill>} />);
+    const tail = container.querySelector(".ui-filterbar-tail");
+    expect(tail).not.toBeNull();
+    const kids = [...tail.children].map((c) => c.className);
+    expect(kids).toEqual(["ui-filterbar-end", "ui-filterbar-count"]);
+    expect(tail.querySelector(".ui-filterbar-count")).toHaveTextContent("12 articles");
+    // No controls and no count: nothing is rendered for either.
+    const bare = render(<FilterBar pills={<Pill>Source</Pill>} />);
+    expect(bare.container.querySelector(".ui-filterbar-end")).toBeNull();
+    expect(bare.container.querySelector(".ui-filterbar-count")).toBeNull();
+  });
+
+  it("the sub-tabs row is only the tabs: the count is never beside them", () => {
+    const { container } = render(
+      <PageFrame subTabs={<span>tabs</span>} subTabsEnd={<span>9 watches</span>} filterBar={<div>bar</div>}><p>c</p></PageFrame>);
+    expect(container.querySelector(".ui-tabs-row")).toHaveTextContent("tabs");
+    expect(container.querySelector(".ui-tabs-row")).not.toHaveTextContent("9 watches");
+  });
+
   it("a bar with no search says so, so it never reserves the search column", () => {
     const { container } = render(<FilterBar pills={<Pill>Source</Pill>} />);
     expect(container.querySelector(".ui-filterbar")).toHaveClass("ui-filterbar--nosearch");

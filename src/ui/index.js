@@ -349,10 +349,13 @@ export function FilterBar({ pills, search, count, end, panel, sticky, stacked })
   }, [sticky]);
   return (
     <div ref={zone} className={cx("ui-filterzone", sticky && "is-sticky")}>
-      <div className={cx("ui-filterbar", !search && "ui-filterbar--nosearch", stacked && "ui-filterbar--stacked", !end && "ui-filterbar--endless")}>
+      <div className={cx("ui-filterbar", !search && "ui-filterbar--nosearch", stacked && "ui-filterbar--stacked",)}>
         <div className="ui-filterbar-pills">{pills}</div>
         {search ? <div className="ui-filterbar-search">{search}</div> : null}
-        <div className="ui-filterbar-end">{end}<Count>{count}</Count></div>
+        <div className="ui-filterbar-tail">
+          {end ? <div className="ui-filterbar-end">{end}</div> : null}
+          {count ? <div className="ui-filterbar-count"><Count>{count}</Count></div> : null}
+        </div>
       </div>
       {panel || null}
     </div>
@@ -500,12 +503,12 @@ export function SectionHead({ eyebrow, title, meta, count, actions = [], onExit,
 //   sub-tabs → filter bar → content, in that order, at one inset. No page title
 //   (Mark, 2026-10-17): the header's active tab already says where you are.
 //   Each band is optional; none can be reordered, which is the point.
-export function PageFrame({ subTabs, subTabsEnd, filterBar, children }) {
+export function PageFrame({ subTabs, filterBar, children }) {
   return (
     <div className="ui-frame">
       <div className="ui-frame-in">
         {subTabs ? (
-          <div className="ui-tabs-row">{subTabs}{subTabsEnd || null}</div>
+          <div className="ui-tabs-row">{subTabs}</div>
         ) : null}
         {filterBar || null}
         <div className="ui-content">{children}</div>

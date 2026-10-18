@@ -22,7 +22,7 @@
 // Filter pill that opens the filter sheet.
 
 import React from "react";
-import { PageShell, SubTabs, PageFrame, Count } from "../ui";
+import { PageShell, SubTabs, PageFrame } from "../ui";
 import { ListingsSearch, ListingsFilterBar, ListingsFilterSheet } from "./ListingsFilters";
 
 export default function MagazineWatches(props) {
@@ -64,10 +64,8 @@ export default function MagazineWatches(props) {
                      setPage(1);
                    }} />
         }
-        subTabsEnd={
-          <Count>{(displayedCount || 0).toLocaleString()} {displayedCount === 1 ? "watch" : "watches"}</Count>
-        }
-        filterBar={<ListingsFilterBar {...props} />}>
+        filterBar={<ListingsFilterBar {...props}
+          count={`${(displayedCount || 0).toLocaleString()} ${displayedCount === 1 ? "watch" : "watches"}`} />}>
         {/* The real grid, untouched: App.js's listingsTabContentJSX. */}
         {gridJSX}
       </PageFrame>

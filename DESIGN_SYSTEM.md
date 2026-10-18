@@ -187,7 +187,7 @@ they lived in are deleted.)
 - **`PageShell`** — the header (desktop bar; phone brand row + sticky tab row), the overlays and modals.
   `header` swaps in a page's own pinned header (the catalog's olive title bar); `bare` is for Home.
 - **`PageFrame`** — sub-tabs · filter bar · content, in that order, at one inset (20 / 16). No page title.
-- **`FilterBar`** — pills left · search centred · count right; `stacked` gives a crowded bar's search its own row.
+- **`FilterBar`** — pills left · search centred · count right; `stacked` gives a crowded bar's search its own row. **The count is the filter bar's, on every page** (Watches, a list, Articles, Guides, the catalog): the last thing on the bar's right on a desktop, its own line under the controls (16px inset, clear space above) on a phone. Never beside the sub-tabs, never squeezed against the pills.
   A sticky bar publishes `--sticky-top`, so date dividers pin just under it.
 - **Inside a page:** `SectionHead` (the heading for a thing on the page, such as a list's name, with its
   actions as pills; not a page title), `DismissChip` (a selected filter you can take off), `JumpNav` (a sticky row
