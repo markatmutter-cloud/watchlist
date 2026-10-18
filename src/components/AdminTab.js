@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { SubTabs, Chip, Button, Input, FieldLabel, SectionHead } from "../ui";
+import { SubTabs, Chip, Button, Input, FieldLabel, SectionHead, JumpNav } from "../ui";
 import { supabase } from "../supabase";
 import { Card } from "./Card";
 import { daysOnSale, FORCE_OTHER_BRANDS, SUPPRESS_AT_SOLD_BRANDS, EXCLUDED_BRANDS } from "../utils";
@@ -955,39 +955,19 @@ export function AdminTab({ watchItems, hiddenItems }) {
 
   return (
     <div style={{ padding: "16px 20px 60px" }}>
-      {/* Section nav (2026-05-09). Sticky-at-top anchor links so the
-          dense admin page is navigable without scrolling. Anchor
-          targets are the section ids on each h1 below. Click goes
-          via plain href so the browser handles the smooth scroll +
-          URL hash for free. */}
-      <div style={{
-        position: "sticky", top: 0, zIndex: 5,
-        marginLeft: -18, marginRight: -18, marginTop: -16, marginBottom: 14,
-        padding: "10px 20px",
-        background: "var(--bg)",
-        borderBottom: "0.5px solid var(--border)",
-        display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center",
-      }}>
-        <span style={{ fontSize: 11, color: "var(--text3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginRight: 4 }}>
-          Jump to
-        </span>
-        {[
-          ["sec-source",     "Sources"],
-          ["sec-brand",      "Brands"],
-          ["sec-curation",   "Curation rules"],
-          ["sec-fastest",    "Fastest sales"],
-          ["sec-house",      "Auction houses"],
-          ["sec-limits",     "User limits"],
-          ["sec-cleanup",    "Collection cleanup"],
-        ].map(([id, label]) => (
-          <a key={id} href={`#${id}`} style={{
-            fontSize: 12, padding: "4px 10px", borderRadius: 12,
-            border: "0.5px solid var(--border)",
-            color: "var(--text2)", textDecoration: "none",
-            background: "var(--surface)",
-          }}>{label}</a>
-        ))}
-      </div>
+      {/* Section nav (2026-05-09): the shared sticky JumpNav, so the dense admin page is
+          navigable without scrolling. Targets are the section ids below. */}
+      <JumpNav ariaLabel="Jump to a section"
+        items={[
+          { key: "sec-source", label: "Sources" },
+          { key: "sec-brand", label: "Brands" },
+          { key: "sec-curation", label: "Curation rules" },
+          { key: "sec-fastest", label: "Fastest sales" },
+          { key: "sec-house", label: "Auction houses" },
+          { key: "sec-limits", label: "User limits" },
+          { key: "sec-cleanup", label: "Collection cleanup" },
+        ]}
+        onGo={(id) => { const el = document.getElementById(id); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "start" }); }} />
 
       <div id="sec-source" style={{ marginTop: 0 }}>
         <SectionHead title="Source quality" trailing={<>
