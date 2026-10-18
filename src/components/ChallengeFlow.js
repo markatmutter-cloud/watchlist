@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { Button, Chip, OverlayButton } from "../ui";
+import { Button, Chip, OverlayButton, Input, Textarea, FieldLabel } from "../ui";
 import { fmtUSD, imgSrc } from "../utils";
 import { confirm } from "./ConfirmModal";
 
@@ -153,17 +153,6 @@ export function CreateStage({ challenge, onSubmit, onCancel, onDelete }) {
 
   const titlePlaceholder = `${count} watch${count === 1 ? "" : "es"} for $${(budget / 1000).toFixed(0)}k`;
 
-  const inputStyle = {
-    width: "100%", boxSizing: "border-box",
-    border: "0.5px solid var(--border)", borderRadius: 8,
-    background: "var(--surface)", padding: "10px 12px",
-    fontSize: 14, fontFamily: "inherit", color: "var(--text1)", outline: "none",
-  };
-  const labelStyle = {
-    fontSize: 12, fontWeight: 600, color: "var(--text2)",
-    textTransform: "uppercase", letterSpacing: "0.04em",
-    margin: "0 0 6px",
-  };
   const hintStyle = {
     fontSize: 12, color: "var(--text3)", margin: "5px 0 0", lineHeight: 1.4,
   };
@@ -202,29 +191,26 @@ export function CreateStage({ challenge, onSubmit, onCancel, onDelete }) {
       />
 
       <div style={{ marginBottom: 16 }}>
-        <p style={labelStyle}>Title</p>
-        <input type="text" value={title}
+        <FieldLabel>Title</FieldLabel>
+        <Input type="text" value={title}
           onChange={e => setTitle(e.target.value)}
-          placeholder={titlePlaceholder}
-          style={inputStyle} />
+          placeholder={titlePlaceholder} />
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <p style={labelStyle}>Number of watches</p>
-        <input type="number" min={1} max={10} value={count}
-          onChange={e => setCount(Math.max(1, Math.min(10, parseInt(e.target.value || "1") | 0)))}
-          style={inputStyle} />
+        <FieldLabel>Number of watches</FieldLabel>
+        <Input type="number" min={1} max={10} value={count}
+          onChange={e => setCount(Math.max(1, Math.min(10, parseInt(e.target.value || "1") | 0)))} />
         <p style={hintStyle}>1 to 10. Most people pick 3 or 5.</p>
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <p style={labelStyle}>Budget (USD)</p>
-        <input
+        <FieldLabel>Budget (USD)</FieldLabel>
+        <Input
           type="text" inputMode="numeric"
           value={budgetText ? `$${budgetText}` : ""}
           onChange={handleBudgetChange}
           placeholder="$50,000"
-          style={inputStyle}
         />
         <p style={hintStyle}>Soft cap of 20% over budget. You can complete with a confirm above that, but no further.</p>
       </div>
@@ -495,22 +481,13 @@ function PickingStage({
       {/* Single challenge-wide note (replaces per-pick reasoning).
           Saves to challenges.descriptionLong with a debounced flush. */}
       <div style={{ marginBottom: 14 }}>
-        <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text2)", textTransform: "uppercase", letterSpacing: "0.04em", margin: "0 0 6px" }}>
-          Note <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "var(--text3)" }}>· optional</span>
-        </p>
-        <textarea
+        <FieldLabel>Note <span style={{ textTransform: "none", letterSpacing: 0, color: "var(--text3)" }}>· optional</span></FieldLabel>
+        <Textarea
           value={noteDraft}
           onChange={(e) => { noteDirty.current = true; setNoteDraft(e.target.value); }}
           onBlur={flushNote}
           placeholder="Why these picks? (one note for the whole challenge)"
           rows={2}
-          style={{
-            width: "100%", boxSizing: "border-box", resize: "vertical",
-            border: "0.5px solid var(--border)", borderRadius: 6,
-            background: "var(--bg)", padding: "8px 10px",
-            fontFamily: "inherit", fontSize: 13, color: "var(--text1)", outline: "none",
-            lineHeight: 1.45,
-          }}
         />
       </div>
 
@@ -554,17 +531,10 @@ function PickingStage({
               Paste a Watchlist share URL, a dealer URL, or a 12-char watch ID.
             </p>
             <div style={{ display: "flex", gap: 6 }}>
-              <input type="text" value={pasteUrl}
+              <Input type="text" value={pasteUrl}
                 onChange={(e) => { setPasteUrl(e.target.value); setPasteError(""); }}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePaste(); } }}
-                placeholder="https://the-watch-list.app/share/…"
-                style={{
-                  flex: 1, boxSizing: "border-box",
-                  border: "0.5px solid var(--border)", borderRadius: 6,
-                  background: "var(--bg)", padding: "8px 10px",
-                  fontFamily: "inherit", fontSize: 13, color: "var(--text1)", outline: "none",
-                }}
-              />
+                placeholder="https://the-watch-list.app/share/…" />
               <Button small primary onClick={handlePaste}>Add</Button>
             </div>
             {pasteError && (

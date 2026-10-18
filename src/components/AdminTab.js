@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { SubTabs, Chip, Button } from "../ui";
+import { SubTabs, Chip, Button, Input, FieldLabel } from "../ui";
 import { supabase } from "../supabase";
 import { Card } from "./Card";
 import { daysOnSale, FORCE_OTHER_BRANDS, SUPPRESS_AT_SOLD_BRANDS, EXCLUDED_BRANDS } from "../utils";
@@ -1468,36 +1468,33 @@ export function AdminTab({ watchItems, hiddenItems }) {
         display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end",
       }}>
         <div style={{ display: "flex", flexDirection: "column", flex: "2 1 240px", minWidth: 200 }}>
-          <label style={{ fontSize: 11, color: "var(--text2)", marginBottom: 4 }}>User email</label>
-          <input
+          <FieldLabel>User email</FieldLabel>
+          <Input
             type="email"
             value={capForm.email}
             onChange={(e) => setCapForm((f) => ({ ...f, email: e.target.value }))}
             placeholder="user@example.com"
-            style={{ ...cellBase, fontFamily: "inherit", fontSize: 13, padding: "6px 8px", border: "0.5px solid var(--border)", borderRadius: 6, background: "var(--bg)", color: "var(--text1)" }}
             required
           />
         </div>
         <div style={{ display: "flex", flexDirection: "column", flex: "1 1 100px", minWidth: 90 }}>
-          <label style={{ fontSize: 11, color: "var(--text2)", marginBottom: 4 }}>New cap</label>
-          <input
+          <FieldLabel>New cap</FieldLabel>
+          <Input
             type="number"
             min="0"
             max="100000"
             value={capForm.cap}
             onChange={(e) => setCapForm((f) => ({ ...f, cap: e.target.value }))}
-            style={{ ...cellBase, fontFamily: "inherit", fontSize: 13, padding: "6px 8px", border: "0.5px solid var(--border)", borderRadius: 6, background: "var(--bg)", color: "var(--text1)" }}
             required
           />
         </div>
         <div style={{ display: "flex", flexDirection: "column", flex: "3 1 240px", minWidth: 200 }}>
-          <label style={{ fontSize: 11, color: "var(--text2)", marginBottom: 4 }}>Note (optional)</label>
-          <input
+          <FieldLabel>Note (optional)</FieldLabel>
+          <Input
             type="text"
             value={capForm.note}
             onChange={(e) => setCapForm((f) => ({ ...f, note: e.target.value }))}
             placeholder="why the override"
-            style={{ ...cellBase, fontFamily: "inherit", fontSize: 13, padding: "6px 8px", border: "0.5px solid var(--border)", borderRadius: 6, background: "var(--bg)", color: "var(--text1)" }}
           />
         </div>
         <Button small primary type="submit" disabled={capBusy}>

@@ -189,6 +189,7 @@ a.ui-btn { text-decoration: none; display: inline-block; }
 .ui-input { box-sizing: border-box; flex: 1; width: 100%; min-width: 0; border: none; border-radius: 8px;
             padding: 10px 12px; background: var(--surface); color: var(--text1);
             font: 400 14px var(--ui-sans); outline: none; }
+.ui-input--select { flex: none; width: auto; padding-right: 8px; }
 .ui-input--area { resize: vertical; min-height: 72px; line-height: 1.4; }
 .ui-input::placeholder { color: var(--text3); }
 /* iOS zooms into any field under 16px */

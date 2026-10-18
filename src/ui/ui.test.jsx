@@ -4,7 +4,7 @@ import {
   Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
   AccountDisc, SuggestionRows, Chip, ChipPanel, DismissChip, JumpNav, SectionHead, Button,
   Modal, ModalNote, ModalError, ModalFoot, FieldLabel, Input, PickRow,
-  OverlayButton, OverlayHeart, OverlayMenu, MenuItem, AddTile,
+  OverlayButton, OverlayHeart, OverlayMenu, MenuItem, AddTile, Select, Textarea,
   AccountMenu, AccountMenuHead, AccountMenuSection,
 } from "./index";
 
@@ -577,3 +577,19 @@ describe("AddTile and the plain ⋯", () => {
     expect(screen.getByRole("button", { name: "List options" })).toHaveClass("ui-ovl", "ui-ovl--plain");
   });
 });
+
+describe("Select and Textarea", () => {
+  it("a select beside a field is the same field, sized to its options", () => {
+    render(<Select aria-label="Role" defaultValue="editor"><option value="editor">Editor</option><option value="viewer">Viewer</option></Select>);
+    const sel = screen.getByRole("combobox", { name: "Role" });
+    expect(sel).toHaveClass("ui-input", "ui-input--select");
+    fireEvent.change(sel, { target: { value: "viewer" } });
+    expect(sel).toHaveValue("viewer");
+  });
+
+  it("a textarea is the shared area field", () => {
+    render(<Textarea aria-label="Note" rows={2} />);
+    expect(screen.getByRole("textbox", { name: "Note" })).toHaveClass("ui-input", "ui-input--area");
+  });
+});
+

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { ReferencePage } from "./ReferencePage";
 import { Breadcrumb } from "./Breadcrumb";
-import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame, HeaderSearch, Button, OverlayHeart, OverlayMenu, MenuItem } from "../ui";
+import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame, HeaderSearch, Button, OverlayHeart, OverlayMenu, MenuItem, Textarea } from "../ui";
 import { editorialHeading, editorialProse, editorialTitle, cardGridStyle, FONT_SERIF } from "../styles";
 import { imgSrc } from "../utils";
 import {
@@ -342,9 +342,8 @@ function ComingSoon({ node, isMobile, children }) {
             <div style={{ fontSize: 13, lineHeight: 1.5, color: "var(--text2)", marginBottom: 10 }}>
               Suggest the next reference we should cover, or tell us what to add or change in the guides so far.
             </div>
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
-              placeholder="A reference you'd like covered, or a fix for an existing guide…"
-              style={{ width: "100%", boxSizing: "border-box", fontFamily: "inherit", fontSize: 13, lineHeight: 1.5, color: "var(--text1)", background: "var(--surface)", border: "0.5px solid var(--border)", borderRadius: 8, padding: "8px 10px", resize: "vertical" }} />
+            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
+              placeholder="A reference you'd like covered, or a fix for an existing guide…" />
             <Button small inline onClick={send} disabled={!note.trim()} style={{ marginTop: 8 }}>Send suggestion</Button>
           </div>
         </div>

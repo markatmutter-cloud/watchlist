@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Modal, FieldLabel, Button } from "../ui";
+import { Modal, FieldLabel, Button, Select } from "../ui";
 import { confirm } from "./ConfirmModal";
 
 // List Sharing v2 / slice 2 — Manage list sheet.
@@ -231,16 +231,10 @@ export function ManageListSheet({
               placeholder="name@example.com"
               autoCapitalize="none" autoCorrect="off" spellCheck={false}
               className="ui-input" />
-            <select value={role} onChange={e => setRole(e.target.value)}
-              style={{
-                fontSize: 13, fontFamily: "inherit",
-                padding: "8px 10px", borderRadius: 8,
-                border: "0.5px solid var(--border)",
-                background: "var(--surface)", color: "var(--text1)",
-              }}>
+            <Select value={role} onChange={e => setRole(e.target.value)}>
               <option value="editor">Editor</option>
               <option value="viewer">Viewer</option>
-            </select>
+            </Select>
           </div>
           <Button small block onClick={submitInvite} disabled={busy || !email.trim()}>
             {busy ? "Sending…"
