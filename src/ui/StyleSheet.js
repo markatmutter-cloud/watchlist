@@ -14,7 +14,7 @@ import {
   Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
   AccountDisc, SuggestionRows, Chip, ChipPanel, PriceRange, Button, DismissChip, JumpNav, SectionHead,
   Modal, ModalNote, ModalFoot, ModalLabel, FieldLabel, Input, PickRow,
-  OverlayButton, OverlayHeart, OverlayMenu, MenuItem,
+  OverlayButton, OverlayHeart, OverlayMenu, MenuItem, AccountMenu, AccountMenuHead, AccountMenuSection,
 } from "./index";
 import { FilterDrawer } from "../components/FilterDrawer";
 import { MagazineShellBar, MagazineBrandRow, MagazineTabRow } from "../components/MagazineShellBar";
@@ -496,6 +496,24 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
               </div>
             </div>
             <p className="ss-small">Every dialog is one shell: a scrim, the card, the Bodoni title with its close, an optional note, fields, and a right-aligned row of actions (Cancel is ghost, the main action solid olive, a destructive confirm solid red). A settings dialog pins its head and scrolls its body, and a choice among a few options is the segmented control announced as a radio group. A list picker uses one row per list.</p>
+          </Specimen>
+          <Specimen label="The account control: signed in (menu open) · signed out (menu open)">
+            <div className="ss-row" style={{ gap: 40, alignItems: "flex-start", minHeight: 270, justifyContent: "flex-end" }}>
+              <AccountMenu signedIn initial="M" defaultOpen>
+                <AccountMenuHead name="Mark Mutter" onSignOut={noop} />
+                <MenuItem>Lists</MenuItem>
+                <MenuItem>My Watchbox</MenuItem>
+                <MenuItem>Size comparison</MenuItem>
+                <MenuItem badge="Admin">Site stats</MenuItem>
+                <AccountMenuSection><Count>Display settings sit here</Count></AccountMenuSection>
+              </AccountMenu>
+              <AccountMenu defaultOpen>
+                <MenuItem className="ui-menu-item--lead">Sign in with Google</MenuItem>
+                <MenuItem>About Watchlist</MenuItem>
+                <MenuItem>Display settings</MenuItem>
+              </AccountMenu>
+            </div>
+            <p className="ss-small">One olive disc with the initial on every tab (a "Sign in" pill when signed out), and one panel under it: who you are with Sign out beside it, the rows, then the display settings. An outside press or Escape closes it.</p>
           </Specimen>
           <Specimen label="On an image: heart (saved is olive, never red) · the ⋯ and its menu · small, for tight grids · a remove ×">
             <div className="ss-row" style={{ gap: 28, alignItems: "flex-start" }}>

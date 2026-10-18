@@ -5,6 +5,7 @@ import {
   AccountDisc, SuggestionRows, Chip, ChipPanel, DismissChip, JumpNav, SectionHead, Button,
   Modal, ModalNote, ModalError, ModalFoot, FieldLabel, Input, PickRow,
   OverlayButton, OverlayHeart, OverlayMenu, MenuItem,
+  AccountMenu, AccountMenuHead, AccountMenuSection,
 } from "./index";
 
 // The shared page frame. Pages are built from these and nothing else, so a break
@@ -501,3 +502,62 @@ describe("Overlay controls (the heart and ⋯ on an image)", () => {
     expect(screen.getByRole("menuitem", { name: "Remove" })).toHaveClass("ui-menu-item", "ui-menu-item--danger");
   });
 });
+
+describe("AccountMenu", () => {
+  it("signed in: the olive initial disc opens a panel of plain buttons, with Sign out beside the name", () => {
+    const onSignOut = jest.fn();
+    const onLists = jest.fn();
+    render(
+      <AccountMenu signedIn initial="M">
+        {({ close }) => (
+          <>
+            <AccountMenuHead name="Mark Mutter" onSignOut={() => { close(); onSignOut(); }} />
+            <MenuItem badge="Admin" onClick={() => { close(); onLists(); }}>Site stats</MenuItem>
+            <AccountMenuSection>settings</AccountMenuSection>
+          </>
+        )}
+      </AccountMenu>
+    );
+    const disc = screen.getByRole("button", { name: "Account menu" });
+    expect(disc).toHaveClass("ui-disc");
+    expect(disc).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Mark Mutter")).toBeNull();
+    fireEvent.click(disc);
+    expect(disc).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Mark Mutter")).toBeInTheDocument();
+    // The panel also holds settings controls, so its rows are buttons, not ARIA menu items.
+    expect(screen.getByRole("button", { name: /Site stats/ })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem")).toBeNull();
+    expect(screen.getByText("Admin")).toHaveClass("ui-menu-badge");
+    fireEvent.click(screen.getByRole("button", { name: /Site stats/ }));
+    expect(onLists).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Mark Mutter")).toBeNull();
+    fireEvent.click(disc);
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    expect(onSignOut).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Mark Mutter")).toBeNull();
+  });
+
+  it("signed out: a Sign in pill opens the same panel", () => {
+    render(<AccountMenu><MenuItem>About Watchlist</MenuItem></AccountMenu>);
+    const pill = screen.getByRole("button", { name: "Menu" });
+    expect(pill).toHaveClass("ui-pill");
+    expect(pill).toHaveTextContent("Sign in");
+    fireEvent.click(pill);
+    expect(screen.getByRole("button", { name: "About Watchlist" })).toBeInTheDocument();
+  });
+
+  it("an outside press or Escape closes it; a press inside does not", () => {
+    render(<div><AccountMenu signedIn initial="M"><MenuItem>Lists</MenuItem></AccountMenu><p>elsewhere</p></div>);
+    const disc = screen.getByRole("button", { name: "Account menu" });
+    fireEvent.click(disc);
+    fireEvent.mouseDown(screen.getByRole("button", { name: "Lists" }));
+    expect(screen.getByRole("button", { name: "Lists" })).toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByText("elsewhere"));
+    expect(screen.queryByRole("button", { name: "Lists" })).toBeNull();
+    fireEvent.click(disc);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("button", { name: "Lists" })).toBeNull();
+  });
+});
+

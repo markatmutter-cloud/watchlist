@@ -77,7 +77,7 @@ import { TOP_TABS, isTopTabActive } from "./topTabs";
 import { savedUrlGoesToWatches } from "./legacyRoutes";
 import { ChromeTint, chromeIsLight } from "./chromeTint";
 import StyleSheet from "./ui/StyleSheet";
-import { PageShell, PageFrame, Button } from "./ui";
+import { PageShell, PageFrame, Button, AccountMenu, AccountMenuHead, AccountMenuSection, MenuItem } from "./ui";
 import ListsPage from "./components/ListsPage";
 import CatalogPage from "./components/CatalogPage";
 import { HeartIcon } from "./components/icons";
@@ -252,10 +252,8 @@ export default function Watchlist() {
   } = useViewSettings();
   // Auth. `user` is null when signed out; non-null with `.email` etc. when
   // signed in via Google. `ready` gates UI from flickering "Sign in" for a
-  // returning user while we check the session. `showUserMenu` toggles the
-  // small dropdown over the user badge.
+  // returning user while we check the session.
   const { user, ready: authReady, signInWithGoogle, signOut } = useAuth();
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const dark = darkOverride !== null ? darkOverride : sysDark;
 
   // (Desktop sidebar + drag-resize machinery retired with the
@@ -3261,51 +3259,16 @@ export default function Watchlist() {
     }
   }, [authReady, tab, isAdmin]);
 
+  // The account control is the shared AccountMenu (src/ui): the olive initial disc when signed in,
+  // a "Sign in" pill when not, and one panel under it on every tab and viewport. It owns its open
+  // state (outside press / Escape close it), so each row only runs its action and calls close().
   const authJSX = !isAuthConfigured ? null : !authReady ? (
     <div style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--surface)" }} />
   ) : !user ? (
-    // Signed-out chrome — ONE control, both viewports (Mark, 2026-09-08).
-    //
-    // The rule is: signed out it says "Sign in", signed in it shows the
-    // Google initial, and in BOTH cases the control opens the same menu.
-    // Before this, mobile showed a bare hamburger glyph (no "Sign in"
-    // anywhere) and desktop's pill fired the sign-in modal directly, so the
-    // signed-out user never met About / the rest of the menu.
-    <div style={{ position: "relative" }}>
-      <button onClick={() => setShowUserMenu(o => !o)}
-        aria-label="Menu" title="Menu"
-        style={{
-          fontSize: 13, fontWeight: 600, letterSpacing: "0.01em",
-          padding: isMobile ? "7px 12px" : "4px 12px", borderRadius: 20,
-          border: "0.5px solid var(--border)", background: "var(--surface)",
-          color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-          whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 7,
-          flexShrink: 0,
-        }}>
-        {/* The three rules keep the hamburger affordance Mark asked to
-            retain; the word carries the meaning. */}
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-          aria-hidden="true">
-          <line x1="4" y1="7" x2="20" y2="7"/>
-          <line x1="4" y1="12" x2="20" y2="12"/>
-          <line x1="4" y1="17" x2="20" y2="17"/>
-        </svg>
-        Sign in
-      </button>
-      {showUserMenu && (
-        <div style={{
-          position: "absolute", right: 0, top: isMobile ? 46 : 42, zIndex: 50,
-          background: "var(--bg)", border: "0.5px solid var(--border)",
-          borderRadius: 12, padding: 10, minWidth: 220,
-          boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
-        }}>
-          <button onClick={() => { setShowUserMenu(false); setSignInPromptOpen(true); }}
-            style={{ display: "flex", alignItems: "center", gap: 8,
-                    width: "100%", textAlign: "left",
-                    padding: "10px 12px", border: "none", background: "transparent",
-                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 14, fontWeight: 600, borderRadius: 6 }}>
+    <AccountMenu signedIn={false}>
+      {({ close }) => (
+        <>
+          <MenuItem className="ui-menu-item--lead" onClick={() => { close(); setSignInPromptOpen(true); }}>
             <svg width="14" height="14" viewBox="0 0 48 48" aria-hidden="true" style={{ flexShrink: 0 }}>
               <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.6 2.1 30.1 0 24 0 14.8 0 6.8 5.3 3 13l7.8 6C12.7 13.5 17.8 9.5 24 9.5z"/>
               <path fill="#4285F4" d="M46.5 24.5c0-1.6-.2-3.1-.5-4.5H24v9h12.7c-.6 3-2.3 5.5-4.9 7.2l7.6 5.9c4.4-4.1 7.1-10.1 7.1-17.6z"/>
@@ -3313,183 +3276,33 @@ export default function Watchlist() {
               <path fill="#34A853" d="M24 48c6.1 0 11.3-2 15.1-5.5l-7.6-5.9c-2.1 1.4-4.8 2.2-7.5 2.2-6.2 0-11.3-4-13.2-9.5l-7.8 6C6.8 42.7 14.8 48 24 48z"/>
             </svg>
             Sign in with Google
-          </button>
-          <button onClick={() => { setShowUserMenu(false); setAboutModalOpen(true); }}
-            style={{ display: "block", width: "100%", textAlign: "left",
-                    padding: "10px 12px", border: "none", background: "transparent",
-                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 14, borderRadius: 6 }}>
-            About Watchlist
-          </button>
-          <button onClick={() => { setShowUserMenu(false); setSettingsModalOpen(true); }}
-            style={{ display: "block", width: "100%", textAlign: "left",
-                    padding: "10px 12px", border: "none", background: "transparent",
-                    color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 14, borderRadius: 6 }}>
-            Display settings
-          </button>
-        </div>
+          </MenuItem>
+          <MenuItem onClick={() => { close(); setAboutModalOpen(true); }}>About Watchlist</MenuItem>
+          <MenuItem onClick={() => { close(); setSettingsModalOpen(true); }}>Display settings</MenuItem>
+        </>
       )}
-    </div>
+    </AccountMenu>
   ) : (
-    <div style={{ position: "relative" }}>
-      {/* Desktop: brand-tinted pill that wraps the avatar initial +
-          a visible "Watchbox" label, so users discover where the
-          Watchbox lives (Mark feedback 2026-05-14 — the bare initial
-          gave no hint there was a primary destination behind it).
-          Mobile keeps the small initial circle to preserve the
-          tight top-bar layout — the dropdown reveals Watchbox as
-          its highlighted primary entry. */}
-      {/* PR_ε2 2026-05-22: avatar disc + letter colors INVERT when the
-          top bar is olive (every tab except Home, both viewports). On
-          neutral top bar (Home): olive disc + white letter. On olive
-          top bar (non-Home): white disc + olive letter. Single rule;
-          fixes the mobile regression from ε5 where olive disc on
-          olive chrome was invisible. */}
-      {(() => {
-        // The share-receive surfaces keep tab="home" but paint the top bar
-        // olive — without OR-ing them in, the disc rendered olive-on-olive
-        // (only the white initial visible; P-32, Mark 2026-06-03).
-        const onOliveBar = tab !== "home"
-          || shareActive || challengeShareActive || listShareActive || catalogShareActive || searchAllActive;
-        const discBg     = onOliveBar ? "#ffffff" : "var(--brand-olive)";
-        const discFg     = onOliveBar ? "var(--brand-olive)" : "#ffffff";
-        // Home: the olive disc sits in the olive masthead band once it
-        // scrolls/sticks, so the circle vanished (only the M showed) — a
-        // white ring keeps it visible there (Mark 2026-06-03).
-        const pillBorder = onOliveBar ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.85)";
-        // Just the initial disc (Mark 2026-05-28): dropped the "Watchbox"
-        // label pill — Watchbox is no longer the menu's primary destination
-        // (it lives in the Lists tab), so the bare "M" reads cleanly as the
-        // account / settings entry. Same disc on both viewports.
-        return (
-        <button onClick={() => setShowUserMenu(o => !o)}
-          aria-label="Account menu" title="Account menu"
-          style={{
-            width: isMobile ? 40 : 36, height: isMobile ? 40 : 36, borderRadius: "50%",
-            // 1px on Home so the white ring actually reads on the olive band.
-            border: `${onOliveBar ? "0.5px" : "1px"} solid ${pillBorder}`,
-            background: discBg, color: discFg, cursor: "pointer", fontFamily: "inherit",
-            fontSize: 14, fontWeight: 600,
-            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-          }}>
-          {userInitial.toUpperCase()}
-        </button>
-        );
-      })()}
-      {showUserMenu && (
-        <div style={{
-          position: "absolute", right: 0, top: isMobile ? 46 : 42, zIndex: 50,
-          // Always open downward — both desktop and mobile buttons live in
-          // the top header now, so opening up would push the menu off the
-          // top of the viewport.
-          background: "var(--bg)", border: "0.5px solid var(--border)",
-          borderRadius: 12, padding: 10, minWidth: 240,
-          boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
-        }}>
-          {/* Identity header — small eyebrow + name. */}
-          <div style={{ fontSize: 10, color: "var(--text3)", letterSpacing: "0.12em",
-                       textTransform: "uppercase", fontWeight: 600,
-                       padding: "2px 8px" }}>
-            Signed in as
-          </div>
-          <div style={{ fontSize: 13, color: "var(--text1)", padding: "2px 8px 0",
-                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {userName}
-          </div>
-          {/* Sign out lives WITH the identity it signs out of (Mark
-              2026-06-03) — a quiet link under the name, not a menu row. */}
-          <button onClick={() => { setShowUserMenu(false); signOut(); }}
-            style={{ display: "block", textAlign: "left",
-                    padding: "2px 8px 8px", border: "none", background: "transparent",
-                    color: "var(--text3)", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: 12, textDecoration: "underline", textUnderlineOffset: 2 }}>
-            Sign out
-          </button>
-
-          {/* Utilities. Watchbox is re-added here 2026-06-01 (eBay "My
-              eBay" model — the second door to the owned/wishlist/sold
-              vault, alongside its anchor on the Lists tab). About lives
-              in the top nav; admin Site stats stays. */}
-          <div style={{ marginTop: 8 }}>
-            {/* Lists live here now (Mark, 2026-10-16), not under a Saved top tab.
-                The container is still internal tab "watchlist"; this opens it on
-                Lists. setTabWithReceiveEscape so a share-receive landing is
-                dismissed first, like the other entries that leave the page. A tab
-                change resets the container to its first sub-tab, which is Lists;
-                the explicit set after it just keeps this entry independent of that. */}
-            <button onClick={() => { setShowUserMenu(false); setTabWithReceiveEscape("watchlist"); setWatchTopTab("lists"); setPage(1); }}
-              style={{ display: "block", width: "100%", textAlign: "left",
-                      padding: "8px 8px", border: "none", background: "transparent",
-                      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                      fontSize: 13, fontWeight: 500, borderRadius: 6 }}>
-              Lists
-            </button>
-            <button onClick={() => { setShowUserMenu(false); setTab("watchbox"); setPage(1); }}
-              style={{ display: "block", width: "100%", textAlign: "left",
-                      padding: "8px 8px", border: "none", background: "transparent",
-                      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                      fontSize: 13, fontWeight: 500, borderRadius: 6 }}>
-              My Watchbox
-            </button>
-            {/* Tools — relocated from the dissolved Collecting tab (2026-06-03
-                IA restructure). Size comparison + Challenges launch the old
-                tools surface (internal tab "references", sub set first so
-                setTabWithReceiveEscape doesn't need to know which tool).
-                Links is parked (legacy ?tab=learn&sub=links still resolves).
-                Challenges' final home is provisional — Mark to revisit. */}
-            <button onClick={() => { setShowUserMenu(false); setReferencesSubTab("size"); setTabWithReceiveEscape("references"); setPage(1); }}
-              style={{ display: "block", width: "100%", textAlign: "left",
-                      padding: "8px 8px", border: "none", background: "transparent",
-                      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                      fontSize: 13, fontWeight: 500, borderRadius: 6 }}>
-              Size comparison
-            </button>
-            <button onClick={() => { setShowUserMenu(false); setReferencesSubTab("challenges"); setTabWithReceiveEscape("references"); setPage(1); }}
-              style={{ display: "block", width: "100%", textAlign: "left",
-                      padding: "8px 8px", border: "none", background: "transparent",
-                      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                      fontSize: 13, fontWeight: 500, borderRadius: 6 }}>
-              Challenges
-            </button>
-            {isAdmin && (
-              // Site Stats is admin-only — shown only to Mark.
-              <button onClick={() => { setShowUserMenu(false); setTab("admin"); setPage(1); }}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-                        gap: 8, width: "100%", textAlign: "left",
-                        padding: "8px 8px", border: "none", background: "transparent",
-                        color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                        fontSize: 13, fontWeight: 500, borderRadius: 6 }}>
-                <span>Site stats</span>
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.18em",
-                              textTransform: "uppercase", color: "#ffffff",
-                              background: "var(--brand-olive)",
-                              padding: "2px 6px", borderRadius: 4 }}>
-                  Admin
-                </span>
-              </button>
-            )}
-          </div>
-
-          {/* View settings — visually contained card (Mark spec
-              2026-05-14): currency / theme / columns. Surfaced
-              inline on desktop so users can flip these without a
-              modal hop; mobile shows a "Display settings" button
-              that opens the SettingsModal instead (filter drawer
-              owns most of those toggles already on mobile). */}
+    <AccountMenu signedIn initial={userInitial.toUpperCase()}>
+      {({ close }) => (
+        <>
+          {/* Sign out lives WITH the identity it signs out of (Mark 2026-06-03). */}
+          <AccountMenuHead name={userName} onSignOut={() => { close(); signOut(); }} />
+          {/* Lists live here (Mark, 2026-10-16), not under a Saved top tab. The container is still
+              internal tab "watchlist"; this opens it on Lists. setTabWithReceiveEscape so a
+              share-receive landing is dismissed first, like the other entries that leave the page. */}
+          <MenuItem onClick={() => { close(); setTabWithReceiveEscape("watchlist"); setWatchTopTab("lists"); setPage(1); }}>Lists</MenuItem>
+          <MenuItem onClick={() => { close(); setTab("watchbox"); setPage(1); }}>My Watchbox</MenuItem>
+          {/* Tools, relocated from the dissolved Collecting tab (2026-06-03). Sub set first so
+              setTabWithReceiveEscape doesn't need to know which tool. Challenges' home is provisional. */}
+          <MenuItem onClick={() => { close(); setReferencesSubTab("size"); setTabWithReceiveEscape("references"); setPage(1); }}>Size comparison</MenuItem>
+          <MenuItem onClick={() => { close(); setReferencesSubTab("challenges"); setTabWithReceiveEscape("references"); setPage(1); }}>Challenges</MenuItem>
+          {isAdmin && (
+            <MenuItem badge="Admin" onClick={() => { close(); setTab("admin"); setPage(1); }}>Site stats</MenuItem>
+          )}
+          {/* Display settings: inline on desktop, a button to the Settings dialog on a phone. */}
           {!isMobile ? (
-            <div style={{
-              marginTop: 10,
-              // Horizontal inset matches the utility rows above (8px) so
-              // every left edge in the menu lines up. The redundant
-              // "Settings" umbrella label was removed (2026-05-28, Mark):
-              // it duplicated the Currency/Theme/Columns labels below it and
-              // clashed with them in size/tracking. The hairline top-rule is
-              // the section break between account utilities and display
-              // settings — no second label needed.
-              padding: "10px 8px 4px",
-              borderTop: "0.5px solid var(--border)",
-            }}>
+            <AccountMenuSection>
               <ViewSettingsControls
                 primaryCurrency={primaryCurrency}
                 setPrimaryCurrency={setPrimaryCurrency}
@@ -3503,20 +3316,13 @@ export default function Watchlist() {
                 desktopAutoCols={desktopAutoCols}
                 compact={true}
               />
-            </div>
+            </AccountMenuSection>
           ) : (
-            <button onClick={() => { setShowUserMenu(false); setSettingsModalOpen(true); }}
-              style={{ display: "block", width: "100%", textAlign: "left",
-                      marginTop: 4,
-                      padding: "8px 8px", border: "none", background: "transparent",
-                      color: "var(--text1)", cursor: "pointer", fontFamily: "inherit",
-                      fontSize: 13, borderRadius: 6 }}>
-              Display settings
-            </button>
+            <MenuItem onClick={() => { close(); setSettingsModalOpen(true); }}>Display settings</MenuItem>
           )}
-        </div>
+        </>
       )}
-    </div>
+    </AccountMenu>
   );
   // Home tab slice memos — MUST sit before the loading/loadError
   // early returns below. React #310 (rendered more hooks than during

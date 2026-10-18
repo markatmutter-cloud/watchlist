@@ -136,6 +136,10 @@ a.ui-pill:hover { text-decoration: none; }
                 font: 400 13px var(--ui-sans); }
 .ui-menu-item:hover { background: var(--surface); }
 .ui-menu-item--danger { color: var(--danger); }
+.ui-menu-item--split { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ui-menu-item--lead { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+.ui-menu-badge { padding: 2px 6px; border-radius: 4px; background: var(--brand-olive); color: #fff;
+                 font: 700 10px var(--ui-sans); letter-spacing: .18em; text-transform: uppercase; }
 
 /* ---------- price range (inline, desktop) ------------------------------- */
 
@@ -318,13 +322,23 @@ a.ui-btn { text-decoration: none; display: inline-block; }
 .ui-drop-x:hover { color: var(--text1); background: var(--surface); }
 
 /* ---------- account disc -------------------------------------------------- */
-/* The account control, ONE look on every page: an olive disc with the initial.
-   (Today App.js flips it white-on-olive / olive-on-white by tab, so on the light
-   bar it shows as a bare letter.) */
+/* The account control, ONE look on every page: an olive disc with the initial
+   (or a "Sign in" pill), and the panel that opens under it. */
 
 .ui-disc { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
            background: var(--brand-olive); color: #fff; border: none; cursor: pointer;
            font: 600 14px var(--ui-sans); text-transform: uppercase; }
+
+.ui-acct { position: relative; flex: none; }
+.ui-acct-panel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; box-sizing: border-box;
+                 min-width: 240px; padding: 8px; background: var(--bg); border: .5px solid var(--border);
+                 border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.18); font-family: var(--ui-sans); }
+.ui-acct-head { padding: 2px 12px 8px; }
+.ui-acct-eyebrow { font: 600 10px var(--ui-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--text3); }
+.ui-acct-name { margin: 2px 0 2px; font: 400 13px var(--ui-sans); color: var(--text1);
+                overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-acct-head .ui-btn--link { padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+.ui-acct-section { margin-top: 8px; padding: 10px 12px 4px; border-top: .5px solid var(--border); }
 
 /* ---------- sub-tabs ----------------------------------------------------- */
 /* Segmented only (Mark, 2026-10-17, D1 A): one track, a solid olive active chip.

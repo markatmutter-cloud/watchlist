@@ -164,4 +164,20 @@ describe("account menu (signed in)", () => {
     expect(screen.queryByRole("button", { name: "Saved" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Articles" }).length).toBeGreaterThanOrEqual(1);
   });
+
+  test("the account control is the shared olive disc on every tab, and an outside press closes the menu", async () => {
+    window.history.replaceState({}, "", "/?tab=listings");
+    const { default: App } = require("./App");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    const disc = screen.getByRole("button", { name: "Account menu" });
+    expect(disc).toHaveClass("ui-disc");
+    expect(disc).toHaveTextContent("M");
+    fireEvent.click(disc);
+    expect(screen.getByRole("button", { name: "Lists" })).toBeInTheDocument();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole("button", { name: "Lists" })).not.toBeInTheDocument();
+  });
 });

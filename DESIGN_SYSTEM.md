@@ -199,6 +199,9 @@ they lived in are deleted.)
   self-laid-out one) with `ModalNote` / `ModalError` / `ModalFoot`, `Input` / `Textarea` / `FieldLabel`, `PickRow` for a
   list picker, and `SubTabs choice block` for a setting. The main action is `Button primary` (solid olive), a destructive
   confirm is `Button danger`.
+- **The account control:** `AccountMenu` (olive initial disc signed in, "Sign in" pill signed out) with `AccountMenuHead`
+  (name + Sign out), `MenuItem` rows (`badge` for "Admin") and `AccountMenuSection` for the display settings. It owns its
+  open state: an outside press or Escape closes it. One look on every tab; never restyle the disc per page.
 - **On an image:** the heart and ⋯ on any card, article, guide tile, auction cover, list tile or the screener are
   `OverlayHeart` / `OverlayMenu` (+ `MenuItem`), a one-off round `OverlayButton` for anything else (a remove ×). 34px,
   26px with `small`; dark glass; saved is olive, never red. The caller positions the stack; the menu portals to body, so

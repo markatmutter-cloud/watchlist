@@ -134,9 +134,18 @@ export function OverlayMenu({ small, above, label = "More actions", children, ..
     </>
   );
 }
-// One row of a menu. `danger` for the destructive one.
-export function MenuItem({ danger, children, className, ...rest }) {
-  return <button type="button" role="menuitem" className={cx("ui-menu-item", danger && "ui-menu-item--danger", className)} {...rest}>{children}</button>;
+// One row of a menu. `danger` for the destructive one; `badge` a small tag at the right ("Admin").
+// Inside an AccountMenu the rows are plain buttons (the panel also holds settings controls, so it
+// is not an ARIA menu); everywhere else they are menu items.
+const MenuRole = React.createContext("menuitem");
+export function MenuItem({ danger, badge, children, className, ...rest }) {
+  const role = React.useContext(MenuRole);
+  return (
+    <button type="button" role={role || undefined}
+            className={cx("ui-menu-item", danger && "ui-menu-item--danger", badge && "ui-menu-item--split", className)} {...rest}>
+      {badge ? <><span>{children}</span><span className="ui-menu-badge">{badge}</span></> : children}
+    </button>
+  );
 }
 
 // ---- Chip / ChipPanel: the options behind a pill (sources, brands, models) ----------
@@ -315,6 +324,63 @@ export function AccountDisc({ initial, onClick, ...rest }) {
     <button type="button" className="ui-disc" aria-label="Account menu" title="Account menu"
             onClick={onClick} {...rest}>{initial}</button>
   );
+}
+
+// ---- AccountMenu: the account control and the panel under it, one look on every tab -------
+//   signedIn  the olive initial disc (AccountDisc); signed out it is a "Sign in" pill with the three rules
+//   children  the panel's rows (MenuItem, AccountMenuHead, AccountMenuSection), or a function of { close }
+//   defaultOpen  starts open (the style sheet)
+// It owns its open state: an outside press or Escape closes it, and so does any row that calls close().
+export function AccountMenu({ signedIn, initial, defaultOpen, children }) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  const toggle = () => setOpen((o) => !o);
+  const close = () => setOpen(false);
+  return (
+    <div className="ui-acct" ref={ref}>
+      {signedIn ? (
+        <AccountDisc initial={initial} onClick={toggle} aria-haspopup="true" aria-expanded={open} />
+      ) : (
+        <Pill aria-label="Menu" title="Menu" aria-haspopup="true" aria-expanded={open} onClick={toggle}
+              icon={(
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" />
+                </svg>
+              )}>Sign in</Pill>
+      )}
+      {open && (
+        <MenuRole.Provider value={null}>
+          <div className="ui-acct-panel">{typeof children === "function" ? children({ close }) : children}</div>
+        </MenuRole.Provider>
+      )}
+    </div>
+  );
+}
+// Who you are signed in as, with Sign out beside the identity it signs out of.
+export function AccountMenuHead({ name, onSignOut }) {
+  return (
+    <div className="ui-acct-head">
+      <div className="ui-acct-eyebrow">Signed in as</div>
+      <div className="ui-acct-name">{name}</div>
+      <Button link muted onClick={onSignOut}>Sign out</Button>
+    </div>
+  );
+}
+// A ruled-off block of controls inside the panel (the display settings).
+export function AccountMenuSection({ children }) {
+  return <div className="ui-acct-section">{children}</div>;
 }
 
 // ---- PickRow: one row in a "choose from a list" dialog ---------------------------------------
