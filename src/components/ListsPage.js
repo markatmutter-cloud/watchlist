@@ -10,7 +10,7 @@
 // Watches (the same ListingsFilters pieces, so the two cannot drift).
 
 import React from "react";
-import { PageShell, SubTabs, PageFrame, Count } from "../ui";
+import { PageShell, SubTabs, PageFrame } from "../ui";
 import { ListingsSearch, ListingsFilterBar, ListingsFilterSheet } from "./ListingsFilters";
 
 const SUB_TABS = [
@@ -40,11 +40,11 @@ export default function ListsPage(props) {
       signInWithGoogle={signInWithGoogle} primaryCurrency={primaryCurrency}>
       <PageFrame
         subTabs={<SubTabs ariaLabel="Lists views" activeKey={watchTopTab} tabs={SUB_TABS} onSelect={onSelectSub} />}
-        // "N items" inside a list: a bare number read as a stray "1" (Mark, 2026-06-03).
-        subTabsEnd={drilledIn
-          ? <Count>{(displayedCount || 0).toLocaleString()} {displayedCount === 1 ? "item" : "items"}</Count>
-          : null}
-        filterBar={drilledIn ? <ListingsFilterBar {...f} /> : null}>
+        // "N items" inside a list: a bare number read as a stray "1" (Mark, 2026-06-03). The count
+        // is the filter bar's, like every page.
+        filterBar={drilledIn
+          ? <ListingsFilterBar {...f} count={`${(displayedCount || 0).toLocaleString()} ${displayedCount === 1 ? "item" : "items"}`} />
+          : null}>
         {contentJSX}
       </PageFrame>
       {drilledIn ? <ListingsFilterSheet {...f} /> : null}

@@ -793,6 +793,9 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-18 — The result count is the filter bar's on every page, with room to breathe.** Mark: the count was "squashed to the filters" and in a different place on each tab. Watches and a list kept it beside
+  the sub-tabs while Articles and Guides had it under the pills. It is now one element of `FilterBar` everywhere: far right on a desktop, its own line under the controls on a phone (same 16px inset and
+  spacing on Watches, Articles, Guides, a list and the catalog). `PageFrame` loses `subTabsEnd`.
 - **2026-10-18 — A text-only article card keeps its headline clear of the heart and ⋯.** With no photo the two buttons sat over the title ("... QUI" ran under the heart on Mark's phone); the text block now reserves their width.
 - **2026-10-18 — Source, Brand, Model and the Saved heart are one segmented `FilterGroup`, matching the For sale / Auctions / Sold track.** Mark: "can the source and brand filters match the for sale
   auction and sold pills? And brand heart." On Articles, Guides and desktop Watches they were separate uppercase-mono pills (the heart its own circle); they now share the sub-tabs' track and chips (the ♡ is the

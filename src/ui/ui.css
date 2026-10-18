@@ -399,8 +399,11 @@ a.ui-btn { text-decoration: none; display: inline-block; }
 .ui-sechead-meta { margin-top: 6px; font-size: 13px; color: var(--text2); }
 
 /* ---------- filter bar --------------------------------------------------- */
-/* pills left · search centred · count right. The search never moves when the
-   pill count changes (it sits in its own grid column). */
+/* pills left · search centred · the right-hand controls and the COUNT at the far right. The
+   count is the same on every page (Watches, Articles, Guides, a list, the catalog): the last
+   thing on the bar's right on a desktop, and on a phone its own line under the controls with
+   space above it, never squeezed beside them. The search never moves when the pill count
+   changes (it sits in its own grid column). */
 
 /* The zone = the bar plus any open options panel; THIS is what sticks. */
 .ui-filterzone.is-sticky { position: sticky; top: var(--ui-header-h, 0px); z-index: 20; background: var(--bg); }
@@ -409,7 +412,11 @@ a.ui-btn { text-decoration: none; display: inline-block; }
                 border-bottom: .5px solid var(--border); background: var(--bg); }
 .ui-filterbar-pills { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ui-gap); min-width: 0; }
 .ui-filterbar-search { min-width: 0; }
+/* The right-hand side: the controls (price, sort) then the count. */
+.ui-filterbar-tail { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end;
+                     column-gap: 16px; row-gap: 6px; min-width: 0; }
 .ui-filterbar-end { display: flex; align-items: center; justify-content: flex-end; gap: var(--ui-gap); min-width: 0; }
+.ui-filterbar-count { flex: none; }
 
 /* No search in the bar (Watches keeps its own in the header): two columns. */
 .ui-filterbar--nosearch { grid-template-columns: 1fr auto; }
@@ -419,7 +426,7 @@ a.ui-btn { text-decoration: none; display: inline-block; }
 .ui-filterbar--stacked:not(.ui-filterbar--nosearch) { grid-template-columns: 1fr auto; row-gap: 8px; }
 .ui-filterbar--stacked .ui-filterbar-search { grid-column: 1 / -1; grid-row: 1; max-width: 520px; }
 .ui-filterbar--stacked:not(.ui-filterbar--nosearch) .ui-filterbar-pills { grid-row: 2; }
-.ui-filterbar--stacked:not(.ui-filterbar--nosearch) .ui-filterbar-end { grid-row: 2; }
+.ui-filterbar--stacked:not(.ui-filterbar--nosearch) .ui-filterbar-tail { grid-row: 2; }
 
 /* ---------- narrow: stacked, bigger targets ------------------------------ */
 
@@ -427,22 +434,25 @@ a.ui-btn { text-decoration: none; display: inline-block; }
   .ui-filterbar:not(.ui-filterbar--nosearch) { grid-template-columns: 1fr auto; row-gap: 8px; }
   .ui-filterbar-search { grid-column: 1 / -1; grid-row: 1; }
   .ui-filterbar:not(.ui-filterbar--nosearch) .ui-filterbar-pills { grid-row: 2; }
-  .ui-filterbar:not(.ui-filterbar--nosearch) .ui-filterbar-end { grid-row: 2; }
+  .ui-filterbar:not(.ui-filterbar--nosearch) .ui-filterbar-tail { grid-row: 2; }
 }
 @container ui-frame (max-width: 640px) {
-  /* Phone: search, then pills, then the count on its own line. A count squeezed
-     beside three pills wrapped the last pill onto a new row on a 375px phone. */
-  .ui-filterbar:not(.ui-filterbar--nosearch) .ui-filterbar-pills { grid-column: 1 / -1; }
-  .ui-filterbar:not(.ui-filterbar--nosearch) .ui-filterbar-end { grid-row: 3; grid-column: 1 / -1; justify-content: flex-start; }
-  /* A bar whose right side is only the count (Articles, Guides): the count drops under the pills,
-     where every other phone bar keeps it, instead of squeezing beside them. */
-  .ui-filterbar--endless.ui-filterbar--nosearch .ui-filterbar-end { grid-row: 2; grid-column: 1 / -1; justify-content: flex-start; }
+  /* Phone: (search,) the controls, then the count on its own line with space above it. A count
+     squeezed beside three pills wrapped the last pill onto a new row on a 375px phone, and a count
+     tight under them read as part of them. The tail dissolves so its controls and its count
+     become rows of the bar. */
+  .ui-filterbar { row-gap: 8px; padding: 8px 0 10px; }
+  .ui-filterbar-pills { grid-column: 1 / -1; }
+  .ui-filterbar:not(.ui-filterbar--nosearch) .ui-filterbar-pills { grid-row: 2; }
+  .ui-filterbar-tail { display: contents; }
+  .ui-filterbar-end { grid-column: 1 / -1; justify-content: flex-start; }
+  .ui-filterbar-count { grid-column: 1 / -1; justify-content: flex-start; padding-top: 6px; }
   .ui-frame-in { padding: 0 16px; }
   .ui-frame-in { --ui-control-h: 40px; --ui-search-h: 40px; }
   .ui-chip { height: 34px; }
   .ui-disc { width: 40px; height: 40px; }
-  /* the count drops under the tabs rather than squeezing them */
-  .ui-tabs-row { flex-direction: column; align-items: flex-start; gap: 6px; padding: 8px 0 6px; }
+  /* the sub-tabs row is just the tabs now (the count lives on the filter bar) */
+  .ui-tabs-row { padding: 8px 0 6px; }
 }
 
 /* ---------- Lumé: the launcher dot and the chat ----------------------------- */

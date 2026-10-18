@@ -131,8 +131,11 @@ function ArticlesPage({ phone }) {
       <PageFrame
         filterBar={
           <FilterBar
-            pills={<><TogglePill>Source</TogglePill><TogglePill>Brand</TogglePill>
-                    <SavedPill on={saved} onClick={() => setSaved((v) => !v)} what="saved articles" /></>}
+            pills={<FilterGroup ariaLabel="Filters" items={[
+              { key: "source", label: "Source", onClick: noop },
+              { key: "brand", label: "Brand", onClick: noop },
+              savedFilterItem({ on: saved, onClick: () => setSaved((v) => !v), what: "saved articles" }),
+            ]} />}
             count="11,288 articles" />
         }>
         <Cards n={phone ? 3 : 8} />
@@ -157,12 +160,16 @@ function WatchesPage({ phone }) {
       <DemoHeader phone={phone} active="listings" search={search} />
       <PageFrame
         subTabs={<SubTabs ariaLabel="Watches views" activeKey={sub} onSelect={setSub} tabs={WATCH_TABS} />}
-        subTabsEnd={<Count>4,503 watches</Count>}
         filterBar={
           <FilterBar
+            count="4,503 watches"
             pills={phone
               ? <><Pill icon={<FilterIcon />} n={2} on>Filter</Pill><TogglePill start>Date ↓</TogglePill><TogglePill>Price</TogglePill></>
-              : <><TogglePill>Source</TogglePill><TogglePill>Brand</TogglePill><TogglePill>Model</TogglePill></>}
+              : <FilterGroup ariaLabel="Filters" items={[
+                  { key: "source", label: "Source", onClick: noop },
+                  { key: "brand", label: "Brand", onClick: noop },
+                  { key: "model", label: "Model", onClick: noop },
+                ]} />}
             end={phone ? null : <><TogglePill start>Date ↓</TogglePill><TogglePill>Price</TogglePill></>}
           />
         }>

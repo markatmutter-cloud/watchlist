@@ -109,6 +109,14 @@ describe("MagazineWatches", () => {
     expect(screen.getByText("1,234 watches")).toBeInTheDocument();
   });
 
+  it("the count is on the filter bar, the same place as Articles and Guides, not beside the sub-tabs", () => {
+    const { container } = render(<MagazineWatches {...props()} />);
+    const count = screen.getByText("1,234 watches");
+    expect(count.closest(".ui-filterbar-count")).not.toBeNull();
+    expect(count.closest(".ui-filterbar")).not.toBeNull();
+    expect(container.querySelector(".ui-tabs-row")).not.toHaveTextContent("1,234 watches");
+  });
+
   it("has no Saved pill in the filter row: the Saved sub-tab is the one saved control", () => {
     // Mark, 2026-10-16: "the saved feature was doubled up in the watches tab".
     const { container } = render(<MagazineWatches {...props()} />);
