@@ -793,6 +793,7 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — The admin page's jump bar is the shared `JumpNav`.** Its own sticky row of hand-styled anchor chips is replaced by the same pill row the Lists page uses (`JumpNav`), scrolling to each section.
 - **2026-10-17 — A hand-entered watch is the same `CardShell` as every other card.** The Owned / Sold lists drew their manual watches as a bordered, rounded one-off card in the same grid as
   the listing cards (so a mixed list did not line up). `ManualItemCard` now renders through `CardShell`, which gains `onOpen` (a card that opens a sheet rather than a link) and a `danger` menu entry.
 - **2026-10-17 — Every page-content heading is the shared `SectionHead`.** The admin sections (seven, 18px sans), saved articles / saved auctions, the challenge stages, a challenge's shared-link

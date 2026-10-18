@@ -33,4 +33,16 @@ describe("AdminTab", () => {
     expect(email).toHaveValue("a@b.co");
     expect(screen.getByRole("button", { name: "Set cap" })).toBeInTheDocument();
   });
+
+  it("the jump bar is the shared JumpNav and scrolls to the section", async () => {
+    const scrolled = [];
+    window.HTMLElement.prototype.scrollIntoView = function () { scrolled.push(this.id); };
+    render(<AdminTab watchItems={[]} hiddenItems={[]} />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "User limits" })).toBeInTheDocument());
+    const nav = screen.getByRole("navigation", { name: "Jump to a section" });
+    expect(nav).toHaveClass("ui-jumpnav");
+    fireEvent.click(screen.getByRole("button", { name: "User limits" }));
+    expect(scrolled).toEqual(["sec-limits"]);
+  });
 });
+
