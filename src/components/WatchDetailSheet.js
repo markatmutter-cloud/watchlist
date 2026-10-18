@@ -417,12 +417,7 @@ export function WatchDetailSheet({
                 }}>
                   <span>{new Date(c.created_at).toLocaleString()}</span>
                   {user?.id === c.user_id && (
-                    <button onClick={() => onDeleteComment(c.id)}
-                      style={{
-                        border: "none", background: "transparent",
-                        color: "var(--text3)", cursor: "pointer",
-                        fontFamily: "inherit", fontSize: 11, padding: 0,
-                      }}>delete</button>
+                    <Button link muted onClick={() => onDeleteComment(c.id)}>delete</Button>
                   )}
                 </div>
                 <div style={{ fontSize: 13, color: "var(--text1)", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>

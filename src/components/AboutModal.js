@@ -236,13 +236,7 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
           /* ── "How it works" view — same shell, swapped content. ── */
           <div style={{ padding: "16px 24px 20px", position: "relative" }}>
             <ModalClose float onClose={close} />
-            <button onClick={() => setView("about")} style={{
-              border: "none", background: "none", padding: 0,
-              fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-              color: "var(--text2)", cursor: "pointer",
-            }}>
-              ← About
-            </button>
+            <Button link onClick={() => setView("about")}>← About</Button>
             <div style={{
               fontSize: 16, fontWeight: 600, color: "var(--text1)",
               marginTop: 10, marginBottom: 12,
@@ -279,19 +273,10 @@ export function AboutModal({ open, onClose, primaryCurrency }) {
           flexWrap: "wrap",
         }}>
           <div style={{ display: "flex", gap: 14, fontSize: 12, alignItems: "center" }}>
-            <a href="/privacy.html" target="_blank" rel="noopener noreferrer"
-              style={{ color: "var(--text2)", textDecoration: "none" }}>Privacy</a>
-            <a href="/terms.html" target="_blank" rel="noopener noreferrer"
-              style={{ color: "var(--text2)", textDecoration: "none" }}>Terms</a>
+            <Button link muted href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</Button>
+            <Button link muted href="/terms.html" target="_blank" rel="noopener noreferrer">Terms</Button>
             {view === "about" && (
-              <button onClick={() => setView("how")} style={{
-                border: "none", background: "none", padding: 0,
-                fontFamily: "inherit", fontSize: 12, fontWeight: 500,
-                color: "var(--text2)", cursor: "pointer",
-                textDecoration: "underline", textUnderlineOffset: 2,
-              }}>
-                How it works
-              </button>
+              <Button link muted onClick={() => setView("how")}>How it works</Button>
             )}
           </div>
           <Button primary inline onClick={close}>Get started →</Button>

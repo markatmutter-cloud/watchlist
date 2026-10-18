@@ -64,6 +64,7 @@ describe("src/ui", () => {
     "components/SharedReceiveFrame.js", "components/ChallengeFlow.js", "components/AdminTab.js",
     "components/SizeCompare.js", "components/Links.js", "components/SiteFooter.js",
     "components/ViewSettingsControls.js", "components/CardShell.js",
+    "components/LumeMemorySettings.js", "components/LumeLead.js", "components/ListRow.js", "components/DossierBlocks.js",
   ];
   const LEGACY = [
     /from "\.\/StandardFilterBar"/, /from "\.\/PageHeader"/, /from "\.\/Chip"/, /from "\.\/SavedPill"/,

@@ -1,6 +1,7 @@
 import React from "react";
 import CardShell from "./CardShell";
 import LumeReasonChip from "./LumeReasonChip";
+import { Button } from "../ui";
 import { imgSrc } from "../utils";
 import { reasonFor, timeOnMarket } from "../lumeReasons";
 
@@ -62,16 +63,10 @@ export default function LumeLead({ lead, onPrimary, onSecondary, onOpenItem, isM
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 2 }}>
         {primaryCta && (
-          <button onClick={onPrimary} style={{
-            border: "none", background: "var(--brand-olive)", color: "#fff", borderRadius: 10,
-            padding: "10px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-          }}>{primaryCta}</button>
+          <Button primary inline onClick={onPrimary}>{primaryCta}</Button>
         )}
         {secondaryCta && (
-          <button onClick={onSecondary} style={{
-            border: "0.5px solid var(--border)", background: "var(--surface)", color: "var(--text1)", borderRadius: 10,
-            padding: "10px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-          }}>{secondaryCta}</button>
+          <Button inline onClick={onSecondary}>{secondaryCta}</Button>
         )}
       </div>
     </section>
