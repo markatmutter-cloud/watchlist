@@ -99,8 +99,8 @@ olive toolbar over a light page is the bug it exists to prevent.
 which 75% of UI inherits via `fontFamily: "inherit"`). `FONT_SERIF` /
 `FONT_SERIF_DISPLAY` are the editorial face = **Hoefler Text** (Mark's
 call: Apple-native, ligatures, magazine contrast; Iowan Old Style / Georgia
-are fallbacks). One exception: `PORTAL_SANS` in `CardShell.js` must
-hard-set a face because the card ⋯ menu portals to `document.body` (else iOS
+are fallbacks). One exception: the portalled ⋯ menu (`.ui-menu` in
+`ui.css`) hard-sets `--ui-sans` because it mounts on `document.body` (else iOS
 falls back to Times serif).
 
 **The editorial type ramp (`styles.js` factories — spread + override).**
@@ -163,7 +163,7 @@ the sub-tab's active segment, a dismissable filter); a quiet "present but not ch
 
 | Component | Use |
 |---|---|
-| `CardShell.js` | **Shared card frame** — square/editorial image + placeholder, L1/L2/L3 text slots, action stack (heart / ⋯ / quickAction), the single portal menu. Every card renders through it. |
+| `CardShell.js` | **Shared card frame** — square/editorial image + placeholder, L1/L2/L3 text slots, action stack (heart / ⋯ / quickAction via the shared Overlay pieces). Every card renders through it. |
 | `CardStrip.js` | **Shared horizontal card row** — scroll container + per-tile wrapper (38%/170 mobile · 210 desktop). Caller passes a `renderCard` fn. Scroll affordance = right-edge fade (hides at the end) + the peeking next tile; **no custom scrollbar/thumb** (the JS thumb was removed 2026-05-28 — it drove setState every scroll frame + eased, so it trailed the scroll). Snap is `proximity`. Used by Home, Search-all, ReferencePage, Collections strips. |
 | `src/ui` `SubTabs` | **The sub-tab row** — the one segmented control (solid olive chip). The old `SubTabBar.js` is deleted. |
 | `Card.js` | Feed card (priced listings / auctions / sold). Renders **into** `CardShell`; keeps all the price/FX/auction/sold logic |
@@ -199,6 +199,10 @@ they lived in are deleted.)
   self-laid-out one) with `ModalNote` / `ModalError` / `ModalFoot`, `Input` / `Textarea` / `FieldLabel`, `PickRow` for a
   list picker, and `SubTabs choice block` for a setting. The main action is `Button primary` (solid olive), a destructive
   confirm is `Button danger`.
+- **On an image:** the heart and ⋯ on any card, article, guide tile, auction cover, list tile or the screener are
+  `OverlayHeart` / `OverlayMenu` (+ `MenuItem`), a one-off round `OverlayButton` for anything else (a remove ×). 34px,
+  26px with `small`; dark glass; saved is olive, never red. The caller positions the stack; the menu portals to body, so
+  nothing inside a card renders its own. `above` lifts a menu over a full-screen layer.
 - **`topTabs.js`** — the only home of top-tab labels (Watches · Articles ·
   Reference Guides / "Guides" mobile); the one header + the Home masthead
   consume the same built model.

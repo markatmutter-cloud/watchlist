@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { Button, Chip } from "../ui";
+import { Button, Chip, OverlayButton } from "../ui";
 import { fmtUSD, imgSrc } from "../utils";
 import { confirm } from "./ConfirmModal";
 
@@ -636,18 +636,10 @@ function SlotCell({ occupant, slotIdx, onRemove }) {
   }
   return (
     <div style={baseStyle}>
-      <button onClick={onRemove}
-        aria-label={`Remove pick ${slotIdx + 1}`}
-        title="Remove this pick"
-        style={{
-          position: "absolute", top: 4, right: 4, zIndex: 2,
-          width: 22, height: 22, borderRadius: "50%",
-          border: "none", background: "rgba(0,0,0,0.55)",
-          color: "#fff", cursor: "pointer", padding: 0,
-          fontFamily: "inherit", fontSize: 14, lineHeight: 1,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}
-      >×</button>
+      <div style={{ position: "absolute", top: 4, right: 4, zIndex: 2 }}>
+        <OverlayButton small onClick={onRemove}
+          aria-label={`Remove pick ${slotIdx + 1}`} title="Remove this pick">×</OverlayButton>
+      </div>
       <div style={{
         aspectRatio: "4 / 3", background: "var(--bg)", borderRadius: 4, marginBottom: 4,
         overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",

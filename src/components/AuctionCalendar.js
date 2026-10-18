@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { Chip, SavedPill, Pill } from "../ui";
+import { Chip, SavedPill, Pill, OverlayHeart } from "../ui";
 import { imgSrc, fmtSaleDateRange } from "../utils";
 import { houseTint, HouseLogo } from "./auctionThumb";
 
@@ -431,25 +431,12 @@ function AuctionRow({ a, archive, lotCount = 0, heroImg = "", saved = false, onT
         {/* Heart the SALE (Phase 3). Overlay top-right of the hero,
             mirroring listing-card hearts. Hidden when signed out. */}
         {onToggleSave && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleSave(a.url); }}
-            aria-label={saved ? "Remove this auction from saved" : "Save this auction"}
-            title={saved ? "Saved · tap to remove" : "Save this auction"}
-            style={{
-              position: "absolute", top: 8, right: 8,
-              width: 30, height: 30, borderRadius: "50%",
-              border: "none", padding: 0, cursor: "pointer",
-              background: saved ? "rgba(217,38,38,0.92)" : "rgba(0,0,0,0.50)",
-              color: "#fff",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              backdropFilter: "blur(6px)",
-            }}>
-            <svg width="15" height="15" viewBox="0 0 24 24"
-              fill={saved ? "#fff" : "none"} stroke="#fff"
-              strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-          </button>
+          <div style={{ position: "absolute", top: 8, right: 8 }}>
+            <OverlayHeart on={saved}
+              onClick={(e) => { e.stopPropagation(); onToggleSave(a.url); }}
+              aria-label={saved ? "Remove this auction from saved" : "Save this auction"}
+              title={saved ? "Saved · tap to remove" : "Save this auction"} />
+          </div>
         )}
       </div>
 

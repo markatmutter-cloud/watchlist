@@ -1,9 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import React, { useEffect, useMemo, useState } from "react";
 import { editorialTitle, cardGridStyle } from "../styles";
-import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame, HeaderSearch } from "../ui";
+import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame, HeaderSearch, OverlayHeart, OverlayMenu, MenuItem } from "../ui";
 import { shortHash, imgSrc, fetchJsonCached } from "../utils";
-import { HeartIcon } from "./icons";
 
 // Map an editorial article record into the listing-shaped item that
 // useWatchlist / watchlist_items expects. The `kind: 'article'`
@@ -770,51 +768,16 @@ export function ArticleCard({ article, isMobile, compact, cols, watchlist, handl
     if (asListing) handleWish(asListing);
   };
 
-  // "..." menu state (PR_R, 2026-05-20). Same portal-to-document.body
-  // pattern as Card.js so longer labels (Add to list…) don't get
-  // clipped by the card's overflow:hidden root. Click-outside +
-  // Escape close.
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState(null);
+  // The ⋯ menu is the shared OverlayMenu; share keeps it open a moment to say "Copied!".
   const [shareFeedback, setShareFeedback] = useState("");
-  const triggerRef = useRef(null);
-  const portalRef = useRef(null);
-  useEffect(() => {
-    if (!menuOpen) return undefined;
-    const onDown = (e) => {
-      const inTrigger = triggerRef.current && triggerRef.current.contains(e.target);
-      const inPortal  = portalRef.current && portalRef.current.contains(e.target);
-      if (!inTrigger && !inPortal) setMenuOpen(false);
-    };
-    const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
-    const t = setTimeout(() => {
-      document.addEventListener("mousedown", onDown);
-      document.addEventListener("keydown", onKey);
-    }, 0);
-    return () => {
-      clearTimeout(t);
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menuOpen]);
-  const onMenuClick = (e) => {
-    e.preventDefault(); e.stopPropagation();
-    if (!menuOpen && triggerRef.current) {
-      const r = triggerRef.current.getBoundingClientRect();
-      setMenuPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) });
-    }
-    setMenuOpen(o => !o);
-  };
-  const onAddToList = (e) => {
-    e.preventDefault(); e.stopPropagation();
-    setMenuOpen(false);
+  const onAddToList = (close) => {
+    close();
     if (!openCollectionPicker) return;
     const asListing = articleAsListing(article);
     if (asListing) openCollectionPicker(asListing);
   };
-  const onShareClick = async (e) => {
-    e.preventDefault(); e.stopPropagation();
-    if (!handleShare) { setMenuOpen(false); return; }
+  const onShareClick = async (close) => {
+    if (!handleShare) { close(); return; }
     let result;
     try {
       result = await handleShare({
@@ -828,9 +791,9 @@ export function ArticleCard({ article, isMobile, compact, cols, watchlist, handl
     } catch (err) { console.warn("share failed", err); result = null; }
     if (result?.copied) {
       setShareFeedback("Copied!");
-      setTimeout(() => { setShareFeedback(""); setMenuOpen(false); }, 1200);
+      setTimeout(() => { setShareFeedback(""); close(); }, 1200);
     } else {
-      setMenuOpen(false);
+      close();
     }
   };
   const showMenu = !!(openCollectionPicker || handleShare);
@@ -939,96 +902,37 @@ export function ArticleCard({ article, isMobile, compact, cols, watchlist, handl
         display: "flex", flexDirection: "column", gap: 6,
       }}>
         {handleWish && (
-          <button
-            onClick={onHeartClick}
+          <OverlayHeart on={wished} onClick={onHeartClick}
             aria-label={wished ? "Remove from saved articles" : "Save article"}
-            title={wished ? "Saved · tap to remove" : "Save to articles"}
-            style={{
-              width: 32, height: 32,
-              borderRadius: "50%", border: "none", cursor: "pointer",
-              background: wished ? "rgba(220,38,38,0.88)" : "rgba(0,0,0,0.32)",
-              color: "#fff",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              padding: 0,
-            }}>
-            <HeartIcon filled={wished} size={16} />
-          </button>
+            title={wished ? "Saved · tap to remove" : "Save to articles"} />
         )}
         {showMenu && (
-          <button
-            ref={triggerRef}
-            onClick={onMenuClick}
-            aria-label="More actions"
-            style={{
-              width: 32, height: 32,
-              borderRadius: "50%", border: "none", cursor: "pointer",
-              background: menuOpen ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.32)",
-              color: "#fff",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              padding: 0, fontFamily: "inherit",
-              fontSize: 18, lineHeight: 1,
-            }}>
-            ⋯
-          </button>
+          <OverlayMenu>
+            {({ close }) => (
+              <>
+                {handleShare && (
+                  <MenuItem onClick={() => onShareClick(close)}>{shareFeedback || "Share"}</MenuItem>
+                )}
+                {openCollectionPicker && (
+                  <MenuItem onClick={() => onAddToList(close)}>Add to list…</MenuItem>
+                )}
+                {/* Admin-only curation (Mark 2026-06-06): drops the article into
+                    admin_hidden_listings (global — every visitor stops seeing it),
+                    same store the listings × overlay writes. */}
+                {isAdmin && onAdminRemove && (
+                  <MenuItem danger onClick={() => { close(); onAdminRemove(article); }}>
+                    Remove article (admin)
+                  </MenuItem>
+                )}
+              </>
+            )}
+          </OverlayMenu>
         )}
       </div>
-    )}
-    {menuOpen && menuPos && showMenu && createPortal(
-      <div ref={portalRef} onClick={e => e.preventDefault()}
-        style={{
-          position: "fixed",
-          top: menuPos.top, right: menuPos.right,
-          zIndex: 1000,
-          maxWidth: `calc(100vw - ${menuPos.right + 16}px)`,
-          background: "var(--bg)", border: "0.5px solid var(--border)",
-          borderRadius: 8, padding: 4,
-          whiteSpace: "nowrap",
-          boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-        }}>
-        {handleShare && (
-          <button onClick={onShareClick} style={articleMenuItemStyle}>
-            {shareFeedback || "Share"}
-          </button>
-        )}
-        {openCollectionPicker && (
-          <button onClick={onAddToList} style={articleMenuItemStyle}>
-            Add to list…
-          </button>
-        )}
-        {/* Admin-only curation (Mark 2026-06-06): drops the article into
-            admin_hidden_listings (global — every visitor stops seeing it),
-            same store the listings × overlay writes. */}
-        {isAdmin && onAdminRemove && (
-          <button
-            onClick={(e) => {
-              e.preventDefault(); e.stopPropagation();
-              setMenuOpen(false);
-              onAdminRemove(article);
-            }}
-            style={{ ...articleMenuItemStyle, color: "var(--danger)" }}>
-            Remove article (admin)
-          </button>
-        )}
-      </div>,
-      document.body
     )}
     </div>
   );
 }
-
-// Menu-item style — slim, same shape as Card.js's menuItemStyle but
-// kept local to this file so EditorialView doesn't depend on a
-// non-exported style constant from Card.
-const articleMenuItemStyle = {
-  display: "block", width: "100%",
-  padding: "8px 12px",
-  background: "transparent", border: "none", cursor: "pointer",
-  textAlign: "left",
-  fontFamily: "inherit", fontSize: 13,
-  color: "var(--text1)",
-  borderRadius: 6,
-};
 
 function formatDate(iso) {
   if (!iso) return "";

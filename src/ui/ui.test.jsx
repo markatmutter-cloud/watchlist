@@ -4,6 +4,7 @@ import {
   Pill, SavedPill, SearchField, SubTabs, FilterBar, PageFrame, Count,
   AccountDisc, SuggestionRows, Chip, ChipPanel, DismissChip, JumpNav, SectionHead, Button,
   Modal, ModalNote, ModalError, ModalFoot, FieldLabel, Input, PickRow,
+  OverlayButton, OverlayHeart, OverlayMenu, MenuItem,
 } from "./index";
 
 // The shared page frame. Pages are built from these and nothing else, so a break
@@ -436,5 +437,62 @@ describe("Button link, muted, danger and href", () => {
   it("a submit button keeps its type", () => {
     render(<form><Button primary type="submit">Set cap</Button></form>);
     expect(screen.getByRole("button", { name: "Set cap" })).toHaveAttribute("type", "submit");
+  });
+});
+
+describe("Overlay controls (the heart and ⋯ on an image)", () => {
+  it("the heart is a pressed/unpressed toggle; saved is olive, never red", () => {
+    const onClick = jest.fn();
+    const { rerender } = render(<OverlayHeart aria-label="Save" onClick={onClick} />);
+    const btn = screen.getByRole("button", { name: "Save" });
+    expect(btn).toHaveClass("ui-ovl");
+    expect(btn).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(btn);
+    expect(onClick).toHaveBeenCalledTimes(1);
+    rerender(<OverlayHeart on aria-label="Save" onClick={onClick} />);
+    expect(screen.getByRole("button", { name: "Save" })).toHaveClass("is-on");
+    expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("small is the tight-grid size", () => {
+    render(<OverlayButton small aria-label="x">x</OverlayButton>);
+    expect(screen.getByRole("button", { name: "x" })).toHaveClass("ui-ovl--sm");
+  });
+
+  it("the menu opens under the button, portals to body and closes on an item, Escape and an outside press", async () => {
+    const onPick = jest.fn();
+    render(
+      <a href="https://example.com" onClick={onPick}>
+        <OverlayMenu>{({ close }) => <MenuItem onClick={() => { close(); onPick("item"); }}>Share</MenuItem>}</OverlayMenu>
+      </a>
+    );
+    const trigger = screen.getByRole("button", { name: "More actions" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    const item = screen.getByRole("menuitem", { name: "Share" });
+    expect(item.closest(".ui-menu").parentElement).toBe(document.body);
+    // A press inside the menu never reaches the card's link behind it.
+    fireEvent.click(screen.getByRole("menu"));
+    expect(onPick).not.toHaveBeenCalled();
+    fireEvent.click(item);
+    expect(onPick).toHaveBeenCalledWith("item");
+    expect(screen.queryByRole("menu")).toBeNull();
+    // Escape closes it.
+    fireEvent.click(trigger);
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    await new Promise((r) => setTimeout(r, 5));
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("menu")).toBeNull();
+    // So does a press anywhere else.
+    fireEvent.click(trigger);
+    await new Promise((r) => setTimeout(r, 5));
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("danger is the one destructive row", () => {
+    render(<MenuItem danger>Remove</MenuItem>);
+    expect(screen.getByRole("menuitem", { name: "Remove" })).toHaveClass("ui-menu-item", "ui-menu-item--danger");
   });
 });

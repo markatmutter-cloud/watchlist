@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Modal, ModalNote, ModalError, ModalFoot, FieldLabel, Button } from "../ui";
+import { Modal, ModalNote, ModalError, ModalFoot, FieldLabel, Button, OverlayButton } from "../ui";
 import { resizeImage } from "../resizeImage";
 
 // Manual-entry form for Owned + Sold lists. PR #87 (2026-05-06).
@@ -147,14 +147,9 @@ export function ManualEntryForm({
             <div style={{ position: "relative", marginBottom: 6 }}>
               <img src={photoPreview} alt="Preview"
                 style={{ width: "100%", maxHeight: 200, objectFit: "cover", borderRadius: 8 }} />
-              <button onClick={clearPhoto}
-                style={{
-                  position: "absolute", top: 6, right: 6,
-                  border: "none", background: "rgba(0,0,0,0.6)", color: "#fff",
-                  width: 24, height: 24, borderRadius: "50%",
-                  cursor: "pointer", fontSize: 14, fontFamily: "inherit",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>×</button>
+              <div style={{ position: "absolute", top: 6, right: 6 }}>
+                <OverlayButton small onClick={clearPhoto} aria-label="Remove photo">×</OverlayButton>
+              </div>
             </div>
           ) : (
             <button onClick={() => fileInputRef.current?.click()}

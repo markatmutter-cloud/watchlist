@@ -112,6 +112,31 @@ a.ui-pill:hover { text-decoration: none; }
 .ui-pill--quiet { background: none; color: var(--text3); border-style: dashed; }
 .ui-pill-n { font-weight: 400; opacity: .8; font-variant-numeric: tabular-nums; }
 
+/* ---------- overlay buttons + menu (the round controls on an image) ------ */
+/* The heart and the ⋯ on every card, tile and cover. Dark glass so they read on any
+   photo; saved is olive, never red. The caller positions the stack. */
+
+.ui-ovl { display: inline-flex; align-items: center; justify-content: center; flex: none;
+          box-sizing: border-box; width: 34px; height: 34px; padding: 0; border: none;
+          border-radius: 50%; background: rgba(0,0,0,.32); color: #fff; cursor: pointer;
+          font: 400 18px/1 var(--ui-sans); }
+.ui-ovl--sm { width: 26px; height: 26px; font-size: 15px; }
+.ui-ovl:hover, .ui-ovl.is-open { background: rgba(0,0,0,.55); }
+.ui-ovl.is-on { background: var(--brand-olive-text); }
+.ui-ovl:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.ui-ovl--more { padding-bottom: 3px; }
+
+.ui-menu { position: fixed; z-index: 1000; min-width: 140px; box-sizing: border-box; padding: 4px;
+           background: var(--bg); border: .5px solid var(--border); border-radius: 8px;
+           box-shadow: 0 6px 20px rgba(0,0,0,.18); white-space: nowrap;
+           font-family: var(--ui-sans); }
+.ui-menu--above { z-index: 2100; }
+.ui-menu-item { display: block; width: 100%; padding: 8px 12px; border: none; border-radius: 6px;
+                background: none; text-align: left; cursor: pointer; color: var(--text1);
+                font: 400 13px var(--ui-sans); }
+.ui-menu-item:hover { background: var(--surface); }
+.ui-menu-item--danger { color: var(--danger); }
+
 /* ---------- price range (inline, desktop) ------------------------------- */
 
 .ui-price { display: inline-flex; align-items: center; gap: 5px; box-sizing: border-box;

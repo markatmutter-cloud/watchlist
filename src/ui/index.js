@@ -11,7 +11,8 @@
 // the style sheet — not hand-roll one. ui-guard.test.js fails the build when a
 // migrated page does.
 
-import React, { forwardRef, useEffect, useLayoutEffect, useRef } from "react";
+import React, { forwardRef, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { HeartIcon } from "../components/icons";
 import "./ui.css";
 
@@ -61,6 +62,81 @@ export function SavedPill({ on, onClick, what = "saved" }) {
     <Pill on={on} toggle icon={<HeartIcon size={15} filled={!!on} />}
           aria-label={label} title={label} onClick={onClick} />
   );
+}
+
+// ---- OverlayButton / OverlayHeart / OverlayMenu: the round controls that sit ON an image ----
+//   Cards, article tiles, guide tiles, auction covers and list tiles all carry the same two:
+//   a heart (save) and a ⋯ (more). One size pair, one dark glass, one saved colour (olive,
+//   never red). The caller positions the stack; these only draw the buttons.
+//   on     the saved / open state          small   the tight grids (26px) instead of 34px
+export const OverlayButton = forwardRef(function OverlayButton({ on, small, className, children, ...rest }, ref) {
+  return (
+    <button type="button" ref={ref} className={cx("ui-ovl", on && "is-on", small && "ui-ovl--sm", className)} {...rest}>
+      {children}
+    </button>
+  );
+});
+export function OverlayHeart({ on, small, ...rest }) {
+  return (
+    <OverlayButton on={on} small={small} aria-pressed={!!on} {...rest}>
+      <HeartIcon filled={!!on} size={small ? 12 : 16} />
+    </OverlayButton>
+  );
+}
+// The ⋯ button plus its menu. The panel portals to <body> so a card's overflow:hidden can't clip
+// it, anchors under the button, closes on an outside press or Escape, and swallows its own clicks
+// so a tap never reaches the card's link behind it. `children` is the items, or a function of
+// { close } for items that keep the menu open for a moment ("Copied!"). `above`: for a menu that
+// opens over a full-screen layer (the list screener); other props go to the ⋯ button.
+export function OverlayMenu({ small, above, label = "More actions", children, ...rest }) {
+  const [pos, setPos] = useState(null);
+  const triggerRef = useRef(null);
+  const panelRef = useRef(null);
+  const open = !!pos;
+  const close = () => setPos(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (e) => {
+      if (panelRef.current && panelRef.current.contains(e.target)) return;
+      if (triggerRef.current && triggerRef.current.contains(e.target)) return;
+      setPos(null);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setPos(null); };
+    // One tick late, so the press that opened the menu doesn't close it again.
+    const id = setTimeout(() => {
+      document.addEventListener("mousedown", onDown);
+      document.addEventListener("keydown", onKey);
+    }, 0);
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  const toggle = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (open) { close(); return; }
+    const r = triggerRef.current.getBoundingClientRect();
+    setPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) });
+  };
+  return (
+    <>
+      <OverlayButton ref={triggerRef} small={small} aria-label={label} aria-haspopup="menu" aria-expanded={open}
+                     onClick={toggle} className={cx("ui-ovl--more", open && "is-open")} {...rest}>⋯</OverlayButton>
+      {open && createPortal(
+        <div ref={panelRef} className={cx("ui-menu", above && "ui-menu--above")} role="menu"
+             style={{ top: pos.top, right: pos.right, maxWidth: `calc(100vw - ${pos.right + 16}px)` }}
+             onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+          {typeof children === "function" ? children({ close }) : children}
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+// One row of a menu. `danger` for the destructive one.
+export function MenuItem({ danger, children, className, ...rest }) {
+  return <button type="button" role="menuitem" className={cx("ui-menu-item", danger && "ui-menu-item--danger", className)} {...rest}>{children}</button>;
 }
 
 // ---- Chip / ChipPanel: the options behind a pill (sources, brands, models) ----------
