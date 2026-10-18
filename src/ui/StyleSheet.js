@@ -15,6 +15,7 @@ import {
   AccountDisc, SuggestionRows, Chip, ChipPanel, PriceRange, Button, DismissChip, JumpNav, SectionHead,
   Modal, ModalNote, ModalFoot, ModalLabel, FieldLabel, Input, PickRow,
   OverlayButton, OverlayHeart, OverlayMenu, MenuItem, AccountMenu, AccountMenuHead, AccountMenuSection, AddTile,
+  FilterGroup, savedFilterItem,
 } from "./index";
 import { FilterDrawer } from "../components/FilterDrawer";
 import { MagazineShellBar, MagazineBrandRow, MagazineTabRow } from "../components/MagazineShellBar";
@@ -424,6 +425,20 @@ export default function StyleSheet({ tabs, authJSX, onHome, isMobile }) {
                 </SearchField>
               </div>
             </div>
+          </Specimen>
+          <Specimen label="Filter group: Source · Brand · ♡ in the sub-tabs' own track (selected or open = solid olive; several can be on)">
+            <div className="ss-row">
+              <FilterGroup ariaLabel="Filters" items={[
+                { key: "source", label: "Source", on: true, n: 2, onClick: noop },
+                { key: "brand", label: "Brand", on: false, onClick: noop },
+                savedFilterItem({ on: false, onClick: noop, what: "saved articles" }),
+              ]} />
+              <FilterGroup ariaLabel="Filters, with the heart on" items={[
+                { key: "brand", label: "Brand", on: false, onClick: noop },
+                savedFilterItem({ on: true, onClick: noop, what: "saved guides" }),
+              ]} />
+            </div>
+            <p className="ss-small">The filters that open an options panel (Source, Brand, Model) and the Saved heart sit in the same segmented track as the sub-tabs, so a page's whole control row reads as one family. Sort and price stay pills.</p>
           </Specimen>
           <Specimen label="Sub-tabs: segmented, solid olive when active (the Saved tab is the heart alone)">
             <SubTabs activeKey={tab} onSelect={setTab} tabs={WATCH_TABS} ariaLabel="Segmented" />

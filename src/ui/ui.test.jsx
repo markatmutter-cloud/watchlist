@@ -5,7 +5,7 @@ import {
   AccountDisc, SuggestionRows, Chip, ChipPanel, DismissChip, JumpNav, SectionHead, Button,
   Modal, ModalNote, ModalError, ModalFoot, FieldLabel, Input, PickRow,
   OverlayButton, OverlayHeart, OverlayMenu, MenuItem, AddTile, Select, Textarea,
-  AccountMenu, AccountMenuHead, AccountMenuSection,
+  AccountMenu, AccountMenuHead, AccountMenuSection, FilterGroup, savedFilterItem,
 } from "./index";
 
 // The shared page frame. Pages are built from these and nothing else, so a break
@@ -590,6 +590,38 @@ describe("Select and Textarea", () => {
   it("a textarea is the shared area field", () => {
     render(<Textarea aria-label="Note" rows={2} />);
     expect(screen.getByRole("textbox", { name: "Note" })).toHaveClass("ui-input", "ui-input--area");
+  });
+});
+
+describe("FilterGroup", () => {
+  it("Source, Brand and the heart share the sub-tabs' segmented track; several can be on at once", () => {
+    const onSource = jest.fn();
+    const onHeart = jest.fn();
+    render(
+      <FilterGroup ariaLabel="Filters" items={[
+        { key: "source", label: "Source", on: true, n: 2, onClick: onSource },
+        { key: "brand", label: "Brand", on: false, onClick: () => {} },
+        savedFilterItem({ on: true, onClick: onHeart, what: "saved guides" }),
+      ]} />
+    );
+    const group = screen.getByRole("group", { name: "Filters" });
+    expect(group).toHaveClass("ui-tabs", "ui-tabs--filters");
+    const source = screen.getByRole("button", { name: /Source/ });
+    expect(source).toHaveClass("is-on");
+    expect(source).toHaveAttribute("aria-pressed", "true");
+    expect(source).toHaveTextContent("Source· 2");
+    expect(screen.getByRole("button", { name: "Brand" })).not.toHaveClass("is-on");
+    const heart = screen.getByRole("button", { name: "Show all" });
+    expect(heart).toHaveTextContent("♡");
+    expect(heart).toHaveClass("is-on");
+    fireEvent.click(source);
+    fireEvent.click(heart);
+    expect(onSource).toHaveBeenCalledTimes(1);
+    expect(onHeart).toHaveBeenCalledTimes(1);
+  });
+
+  it("the saved item names what the tap will do", () => {
+    expect(savedFilterItem({ on: false, onClick: () => {}, what: "saved articles" })).toMatchObject({ ariaLabel: "Show only saved articles", label: "♡" });
   });
 });
 

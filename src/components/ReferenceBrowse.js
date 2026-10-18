@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { ReferencePage } from "./ReferencePage";
 import { Breadcrumb } from "./Breadcrumb";
-import { Pill, Chip, ChipPanel, SavedPill, SearchField, FilterBar, PageFrame, HeaderSearch, Button, OverlayHeart, OverlayMenu, MenuItem, Textarea } from "../ui";
+import { Pill, Chip, ChipPanel, FilterGroup, savedFilterItem, SearchField, FilterBar, PageFrame, HeaderSearch, Button, OverlayHeart, OverlayMenu, MenuItem, Textarea } from "../ui";
 import { editorialHeading, editorialProse, editorialTitle, cardGridStyle, FONT_SERIF } from "../styles";
 import { imgSrc } from "../utils";
 import {
@@ -175,9 +175,11 @@ export function ReferenceBrowse(props) {
       count={`${cards.length} ${cards.length === 1 ? "guide" : "guides"}`}
       pills={
         <>
-          <Pill on={activeBrands.length > 0 || activeFilterPop === "brand"} n={activeBrands.length || null}
-                onClick={() => setActiveFilterPop((p) => (p === "brand" ? null : "brand"))}>Brand</Pill>
-          <SavedPill on={heartedOnly} onClick={() => setHeartedOnly((v) => !v)} what="saved guides" />
+          <FilterGroup ariaLabel="Filters" items={[
+            { key: "brand", label: "Brand", on: activeBrands.length > 0 || activeFilterPop === "brand", n: activeBrands.length || null,
+              onClick: () => setActiveFilterPop((p) => (p === "brand" ? null : "brand")) },
+            savedFilterItem({ on: heartedOnly, onClick: () => setHeartedOnly((v) => !v), what: "saved guides" }),
+          ]} />
           {hasFilters && <Pill quiet onClick={clearAll}>× Clear all</Pill>}
         </>
       }
