@@ -10753,6 +10753,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "complications"
+    ],
     "title": "5950R Patek Philippe Split Seconds",
     "updated_at": "2026-10-14",
     "url": "https://hairspring.com/blogs/finds/5950r-patek-philippe-split-seconds",
@@ -36800,6 +36804,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "Sylvain Pinaud Origine",
     "updated_at": "2026-10-13",
     "url": "https://hairspring.com/blogs/finds/sylvain-pinaud-origine",

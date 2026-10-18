@@ -1769,6 +1769,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "community_ethics"
+    ],
     "title": "ANTOINE CAZE",
     "updated_at": "2026-10-08",
     "url": "https://www.watchfid.com/antoine-caze/",
@@ -3042,6 +3046,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "JOURNEE MONDIALE  DE L’HORLOGERIE 2026 : BUCHERER CELEBRE L’HERITAGE DU TEMPS by LE FIGARO MAGAZINE",
     "updated_at": "2026-10-11",
     "url": "https://www.watchfid.com/journee-mondiale-de-lhorologerie-2026-buchere-celebre-lheritage-du-temps-by-le-figaro-magazine/",
@@ -4302,6 +4310,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history",
+      "racing"
+    ],
     "title": "OMEGA : UNE COLLECTION QUI RETRACE PRES D’UN DEMI-SIECLE D’EXCELLENCE HORLOGERE by LA REVUE DES MONTRES",
     "updated_at": "2026-10-16",
     "url": "https://www.watchfid.com/omega-une-collection-qui-retrace-pres-dun-demi-siecle-dexcellence-horlogere-by-la-revue-des-montres/",
@@ -6134,6 +6146,11 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "celebrity",
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "WATCHFID CONSACRE UN NOUVEL OUVRAGE AUX ROLEX DAYTONA “PAUL NEWMAN” by MONTRES DE LUXE",
     "updated_at": "2026-10-11",
     "url": "https://www.watchfid.com/watchfid-consacre-un-nouvel-ouvrage-aux-rolex-daytona-paul-newman-by-montres-de-luxe/",

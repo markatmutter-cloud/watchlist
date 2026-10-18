@@ -12333,6 +12333,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "complications",
+      "brand_history"
+    ],
     "title": "Does Finishing Make A Watch Movement Work Well, Or Is It Just A Beautifying Trick?",
     "updated_at": "2026-10-12",
     "url": "https://www.fratellowatches.com/does-finishing-make-a-watch-movement-work-well/",
@@ -18415,6 +18419,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "review"
+    ],
     "title": "Fratello Talks: The Omega Speedmaster Reduced",
     "updated_at": "2026-10-15",
     "url": "https://www.fratellowatches.com/fratello-talks-the-omega-speedmaster-reduced/",
@@ -29359,6 +29367,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "design"
+    ],
     "title": "The Biver AB Debuts As The Brand’s First Stainless Steel Watch With A New Manually Wound Movement",
     "updated_at": "2026-10-16",
     "url": "https://www.fratellowatches.com/introducing-the-biver-ab/",
@@ -31803,6 +31815,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "review",
+      "design"
+    ],
     "title": "Is The Tudor Pelagos 39 Better Than A Rolex Submariner?",
     "updated_at": "2026-10-14",
     "url": "https://www.fratellowatches.com/is-the-tudor-pelagos-39-better-than-a-rolex-submariner/",
@@ -35957,6 +35973,9 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news"
+    ],
     "title": "Meet The IWC Pilot’s Watch Performance Chronograph 41 Year Of The Goat",
     "updated_at": "2026-10-15",
     "url": "https://www.fratellowatches.com/meet-the-iwc-pilots-watch-performance-chronograph-41-year-of-the-goat/",
@@ -62007,6 +62026,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "review",
+      "design"
+    ],
     "title": "Sunday Morning Showdown: Tudor Royal Vs. Rolex Oysterquartz Datejust",
     "updated_at": "2026-10-17",
     "url": "https://www.fratellowatches.com/sunday-morning-showdown-tudor-royal-vs-rolex-oysterquartz-datejust/",
@@ -74604,6 +74627,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "design"
+    ],
     "title": "The New Ressence Type 10 “Dark Night” Debuts The Brand’s Second Proprietary Movement",
     "updated_at": "2026-10-16",
     "url": "https://www.fratellowatches.com/the-new-ressence-type-10-dark-night-debuts-the-brands-second-proprietary-movement/",
