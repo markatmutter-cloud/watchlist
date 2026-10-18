@@ -69,9 +69,10 @@ export function SavedPill({ on, onClick, what = "saved" }) {
 //   a heart (save) and a ⋯ (more). One size pair, one dark glass, one saved colour (olive,
 //   never red). The caller positions the stack; these only draw the buttons.
 //   on     the saved / open state          small   the tight grids (26px) instead of 34px
-export const OverlayButton = forwardRef(function OverlayButton({ on, small, className, children, ...rest }, ref) {
+//   light  a paper paddle over a strip (the card rails' ‹ ›), 44px for touch
+export const OverlayButton = forwardRef(function OverlayButton({ on, small, light, className, children, ...rest }, ref) {
   return (
-    <button type="button" ref={ref} className={cx("ui-ovl", on && "is-on", small && "ui-ovl--sm", className)} {...rest}>
+    <button type="button" ref={ref} className={cx("ui-ovl", on && "is-on", small && "ui-ovl--sm", light && "ui-ovl--light", className)} {...rest}>
       {children}
     </button>
   );
@@ -150,9 +151,9 @@ export function MenuItem({ danger, badge, children, className, ...rest }) {
 }
 
 // ---- AddTile: the dashed "add one" tile that sits in a grid of cards ("Start a list") ----
-export function AddTile({ icon = "＋", title, hint, minHeight, className, ...rest }) {
+export function AddTile({ icon = "＋", title, hint, minHeight, className, style, ...rest }) {
   return (
-    <button type="button" className={cx("ui-addtile", className)} style={minHeight ? { minHeight } : undefined} {...rest}>
+    <button type="button" className={cx("ui-addtile", className)} style={minHeight ? { minHeight, ...style } : style} {...rest}>
       <span className="ui-addtile-icon" aria-hidden="true">{icon}</span>
       <span className="ui-addtile-title">{title}</span>
       {hint ? <span className="ui-addtile-hint">{hint}</span> : null}

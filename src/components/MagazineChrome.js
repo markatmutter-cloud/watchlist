@@ -300,12 +300,8 @@ export const MAG_CSS = `
 .mag-dealer-chip img { width: 20px; height: 20px; border-radius: 4px; object-fit: contain;
                        background: var(--bg); flex: 0 0 auto; }
 
-/* admin hide */
-.mag-hide { position: absolute; top: 10px; right: 10px; z-index: 4; width: 26px; height: 26px;
-            border-radius: 999px; border: none; cursor: pointer; background: rgba(8,10,6,.55);
-            color: #fff; font-size: 15px; line-height: 1; padding: 0; }
-.mag-hide:hover { background: rgba(8,10,6,.8); }
-.mag-hide--tile { width: 24px; height: 24px; font-size: 14px; }
+/* admin hide: only where the shared overlay × sits on the cover */
+.mag-hide { position: absolute; top: 10px; right: 10px; z-index: 4; }
 
 
 .mag-sec { margin-top: clamp(40px,5.4vw,76px); }

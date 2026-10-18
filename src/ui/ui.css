@@ -125,6 +125,9 @@ a.ui-pill:hover { text-decoration: none; }
 .ui-ovl.is-on { background: var(--brand-olive-text); }
 .ui-ovl:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 .ui-ovl--more { padding-bottom: 3px; }
+.ui-ovl--light { width: 44px; height: 44px; background: var(--card-bg); color: var(--text1);
+                 border: .5px solid var(--border); box-shadow: 0 1px 6px rgba(0,0,0,.14); }
+.ui-ovl--light:hover { background: var(--surface); }
 .ui-ovl--plain { width: 28px; height: 28px; background: var(--bg); color: var(--text1); border: .5px solid var(--border); font-size: 15px; }
 .ui-ovl--plain:hover, .ui-ovl--plain.is-open { background: var(--surface); }
 .ui-ovl--plain:focus-visible { outline-color: var(--brand-olive-ink); }

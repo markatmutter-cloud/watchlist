@@ -45,6 +45,8 @@ describe("CardStrip", () => {
       render(<CardStrip items={items} renderCard={renderCard} isMobile={false} label="Recently added" />);
       expect(screen.getByLabelText("Scroll Recently added right")).toBeInTheDocument();
       expect(screen.getByLabelText("Scroll Recently added left")).toBeInTheDocument();
+      // The shared overlay button in its paper form, not a strip-local style.
+      expect(screen.getByLabelText("Scroll Recently added right")).toHaveClass("ui-ovl", "ui-ovl--light");
     } finally {
       restore();
     }
