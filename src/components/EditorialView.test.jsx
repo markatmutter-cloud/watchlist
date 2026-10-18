@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { EditorialView } from "./EditorialView";
+import { EditorialView, ArticleCard } from "./EditorialView";
 
 // Direct render coverage for the Articles surface. It had none: the shell
 // tests render a MOCK tab body, so nothing here ever executed in jest and a
@@ -71,3 +71,29 @@ describe("EditorialView", () => {
     expect(screen.queryByText(/No articles match/)).not.toBeInTheDocument();
   });
 });
+
+// The article card's heart and ⋯ sit over a photo; with no photo they sit over the headline, so
+// the words keep clear of them.
+describe("ArticleCard actions", () => {
+  const article = { url: "https://f/1", title: "Omega: une collection qui retrace presque un demi-siècle", author: "WatchFid",
+                    published_at: "2026-10-16", _source: { label: "WatchFid" } };
+  const card = (over = {}) => render(
+    <ArticleCard article={{ ...article, ...over }} isMobile watchlist={{}} handleWish={() => {}} handleShare={() => {}} openCollectionPicker={() => {}} />
+  );
+
+  test("no photo: the shared heart and ⋯ are there and the headline block leaves room for them", () => {
+    const { container } = card();
+    expect(screen.getByRole("button", { name: "Save article" })).toHaveClass("ui-ovl");
+    expect(screen.getByRole("button", { name: "More actions" })).toHaveClass("ui-ovl");
+    const textBlock = screen.getByText(/Omega: une collection/).parentElement;
+    expect(textBlock.style.paddingRight).toBe("46px");
+    expect(container.querySelector("img")).toBeNull();
+  });
+
+  test("with a photo the text keeps its full width", () => {
+    card({ image: "https://img/a.jpg" });
+    const textBlock = screen.getByText(/Omega: une collection/).parentElement;
+    expect(textBlock.style.paddingRight).toBe("0px");
+  });
+});
+

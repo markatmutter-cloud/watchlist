@@ -793,6 +793,7 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-18 — A text-only article card keeps its headline clear of the heart and ⋯.** With no photo the two buttons sat over the title ("... QUI" ran under the heart on Mark's phone); the text block now reserves their width.
 - **2026-10-18 — Source, Brand, Model and the Saved heart are one segmented `FilterGroup`, matching the For sale / Auctions / Sold track.** Mark: "can the source and brand filters match the for sale
   auction and sold pills? And brand heart." On Articles, Guides and desktop Watches they were separate uppercase-mono pills (the heart its own circle); they now share the sub-tabs' track and chips (the ♡ is the
   same glyph the sub-tabs carry). Sort, price and the phone's Filter stay pills.

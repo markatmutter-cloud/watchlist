@@ -854,6 +854,9 @@ export function ArticleCard({ article, isMobile, compact, cols, watchlist, handl
       )}
       <div style={{
         display: "flex", flexDirection: "column", gap: 8, flex: 1,
+        // A text-only card has no photo to carry the heart and ⋯, so they sit over the
+        // headline: keep the words clear of them.
+        paddingRight: !article.image && (handleWish || showMenu) ? 46 : 0,
       }}>
         {/* Kicker — source name in uppercase letter-spaced. */}
         <div style={{
