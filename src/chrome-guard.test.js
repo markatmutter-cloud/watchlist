@@ -35,7 +35,9 @@ describe("standard-library chrome contract", () => {
     for (const gone of ["FilterRow.js", "DesktopShell.js", "MobileShell.js", "StandardFilterBar.js",
                         "SubTabBar.js", "Chip.js", "SavedHeartLink.js", "IdentityBand.js", "HeartedView.js",
                         // Home sections nothing mounted since the magazine front page (MagazineHome) replaced them.
-                        "HomeGuidesRow.js", "HomeAuctionModule.js", "MoonPhaseIndicator.js"]) {
+                        "HomeGuidesRow.js", "HomeAuctionModule.js", "MoonPhaseIndicator.js",
+                        // Replaced by the shared SectionHead.
+                        "SectionHeader.js", "Eyebrow.js"]) {
       expect(fs.existsSync(path.join(COMPONENTS, gone))).toBe(false);
     }
     const offenders = componentFiles.filter((f) =>
