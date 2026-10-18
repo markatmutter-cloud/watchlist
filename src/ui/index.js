@@ -214,6 +214,10 @@ export const Input = forwardRef(function Input({ className, ...rest }, ref) {
 export const Textarea = forwardRef(function Textarea({ className, ...rest }, ref) {
   return <textarea ref={ref} className={cx("ui-input ui-input--area", className)} {...rest} />;
 });
+// A dropdown that sits beside a field (a role next to an email), sized to its options.
+export const Select = forwardRef(function Select({ className, children, ...rest }, ref) {
+  return <select ref={ref} className={cx("ui-input ui-input--select", className)} {...rest}>{children}</select>;
+});
 
 // ---- Modal: a dialog over the page --------------------------------------------------------------
 //   title     the heading (a Bodoni name, like a section head), with the × beside it

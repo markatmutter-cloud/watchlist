@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button } from "../ui";
+import { Button, Pill, Input, FieldLabel } from "../ui";
 import { createPortal } from "react-dom";
 
 // Watch size comparison tool. Two case dimensions (width × length in
@@ -303,16 +303,6 @@ export function SizeCompare({ onBack }) {
     borderRadius: 12,
     padding: "16px 20px",
   };
-  const inp = {
-    background: "var(--surface)", color: "var(--text1)",
-    border: "0.5px solid var(--border)",
-    borderRadius: 6, padding: "6px 10px",
-    fontSize: 14, fontFamily: "inherit", outline: "none",
-  };
-  const labelStyle = {
-    fontSize: 13, color: "var(--text2)",
-    margin: "0 0 8px", fontWeight: 500,
-  };
   const dimRow = {
     display: "flex", gap: 8, alignItems: "center", marginBottom: 6,
   };
@@ -343,14 +333,8 @@ export function SizeCompare({ onBack }) {
           </div>
         </div>
       ) : (
-        <label style={{
-          display: "inline-block",
-          padding: "6px 12px", borderRadius: 20,
-          border: "0.5px solid var(--border)",
-          background: "var(--card-bg)", color: "var(--text1)",
-          fontSize: 12, fontFamily: "inherit", cursor: "pointer",
-        }}>
-          + Add photo
+        <label style={{ display: "inline-block", cursor: "pointer" }}>
+          <Pill as="span">+ Add photo</Pill>
           <input type="file" accept="image/*,.tif,.tiff"
             onChange={onUpload}
             style={{ display: "none" }} />
@@ -379,22 +363,22 @@ export function SizeCompare({ onBack }) {
           gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
         }}>
           <div>
-            <p style={labelStyle}>Reference (owned)</p>
-            <input type="text" value={refName}
+            <FieldLabel>Reference (owned)</FieldLabel>
+            <Input type="text" value={refName}
               onChange={e => setRefName(e.target.value)}
-              style={{ ...inp, width: "100%", marginBottom: 10 }} />
+              style={{ marginBottom: 10 }} />
             <div style={dimRow}>
               <label style={dimLabel}>Width</label>
-              <input type="number" step="0.1" value={refW}
+              <Input type="number" step="0.1" value={refW}
                 onChange={e => setRefW(e.target.value)}
-                style={{ ...inp, width: 80 }} />
+                style={{ width: 80, flex: "none" }} />
               <span style={{ fontSize: 13, color: "var(--text2)" }}>mm</span>
             </div>
             <div style={dimRow}>
               <label style={dimLabel}>Length</label>
-              <input type="number" step="0.1" value={refH}
+              <Input type="number" step="0.1" value={refH}
                 onChange={e => setRefH(e.target.value)}
-                style={{ ...inp, width: 80 }} />
+                style={{ width: 80, flex: "none" }} />
               <span style={{ fontSize: 13, color: "var(--text2)" }}>mm</span>
             </div>
             <PhotoSlot image={refImage} watchLabel={refName || "Owned"}
@@ -402,22 +386,22 @@ export function SizeCompare({ onBack }) {
               onClear={() => setRefImage(null)} />
           </div>
           <div>
-            <p style={labelStyle}>Comparison watch</p>
-            <input type="text" value={cmpName}
+            <FieldLabel>Comparison watch</FieldLabel>
+            <Input type="text" value={cmpName}
               onChange={e => setCmpName(e.target.value)}
-              style={{ ...inp, width: "100%", marginBottom: 10 }} />
+              style={{ marginBottom: 10 }} />
             <div style={dimRow}>
               <label style={dimLabel}>Width</label>
-              <input type="number" step="0.1" value={cmpW}
+              <Input type="number" step="0.1" value={cmpW}
                 onChange={e => setCmpW(e.target.value)}
-                style={{ ...inp, width: 80 }} />
+                style={{ width: 80, flex: "none" }} />
               <span style={{ fontSize: 13, color: "var(--text2)" }}>mm</span>
             </div>
             <div style={dimRow}>
               <label style={dimLabel}>Length</label>
-              <input type="number" step="0.1" value={cmpH}
+              <Input type="number" step="0.1" value={cmpH}
                 onChange={e => setCmpH(e.target.value)}
-                style={{ ...inp, width: 80 }} />
+                style={{ width: 80, flex: "none" }} />
               <span style={{ fontSize: 13, color: "var(--text2)" }}>mm</span>
             </div>
             <PhotoSlot image={cmpImage} watchLabel={cmpName || "Comparison"}

@@ -82,4 +82,33 @@ describe("src/ui", () => {
     expect(src).toMatch(/from "\.\.\/ui"/);
     for (const re of LEGACY) expect(src).not.toMatch(re);
   });
+
+  // One form field. A raw <input>/<select>/<textarea> in a page or dialog is a hand-rolled look
+  // (its own border, radius, padding): use Input / Textarea / Select. LumeInput's chat box is the
+  // one exception (it lives in the Lumé panel's own composer, styled by .ui-lume-*).
+  const FIELD_OK = [/type="(file|hidden|checkbox|search)"/];
+  const FIELD_EXEMPT = ["components/LumeInput.js"];
+  const componentFiles = fs.readdirSync(path.join(__dirname, "..", "components"))
+    .filter((f) => f.endsWith(".js") && !f.endsWith(".test.js"))
+    .map((f) => `components/${f}`).concat(["App.js"]);
+  test.each(componentFiles.filter((f) => !FIELD_EXEMPT.includes(f)))("%s has no raw form fields", (file) => {
+    const src = fs.readFileSync(path.join(__dirname, "..", file), "utf8")
+      .replace(/^\s*\/\/[^\n]*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+    const offenders = [];
+    const re = /<(input|select|textarea)\b/g;
+    let m;
+    while ((m = re.exec(src))) {
+      let i = re.lastIndex, depth = 0;
+      for (; i < src.length; i++) {
+        const c = src[i];
+        if (c === "{") depth++;
+        else if (c === "}") depth--;
+        else if (c === ">" && depth === 0) break;
+      }
+      const tag = src.slice(m.index, i + 1);
+      if (!tag.includes("ui-input") && !FIELD_OK.some((r) => r.test(tag))) offenders.push(tag.slice(0, 60).replace(/\s+/g, " "));
+    }
+    expect(offenders).toEqual([]);
+  });
 });
+

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useCollectionBlocks, useSearches } from "../supabase";
-import { Pill, Button, PickRow } from "../ui";
+import { Pill, Button, PickRow, Textarea } from "../ui";
 import {
   REFERENCE_NODES,
   REFERENCE_NODES_BY_ID,
@@ -129,17 +129,12 @@ function NoteBlock({ block, canEdit, onSave }) {
     );
   }
   return (
-    <textarea
+    <Textarea
       value={text}
       onChange={(e) => setText(e.target.value)}
       onBlur={() => { if (text !== (block.noteText || "")) onSave(text); }}
       placeholder="Your notes about this list…"
       rows={3}
-      style={{
-        width: "100%", boxSizing: "border-box", resize: "vertical",
-        fontFamily: "inherit", fontSize: 13, lineHeight: 1.5, color: "var(--text1)",
-        background: "transparent", border: "0.5px solid var(--border)", borderRadius: 8, padding: 8,
-      }}
     />
   );
 }
