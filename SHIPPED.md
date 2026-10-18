@@ -793,6 +793,9 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — The Lumé memory, lead, dossier, About and list-row buttons move onto the shared pieces.** Lumé's memory on/off is the segmented `SubTabs choice`
+  and "Forget everything" a `Button link danger`; the lead's two calls to action are `Button`s; dossier block controls / add pills / pickers are `Button link icon` /
+  `Pill` / `PickRow`; About's back and legal links and a journal entry's delete are `Button link`; list-row icon actions are `Button link icon` (new `icon` variant).
 - **2026-10-17 — The heart and ⋯ on every card, tile and cover are one shared overlay control.** New `OverlayButton` / `OverlayHeart` / `OverlayMenu` / `MenuItem` in
   `src/ui` replace the hand-rolled round buttons and portal menus on listing cards (`CardShell`), article cards, guide tiles, auction covers, list tiles, the list screener,
   challenge picks and the photo clear: one 34px (26px small) dark-glass button, saved is olive not red, one menu that portals to body and closes on outside press or Escape.
