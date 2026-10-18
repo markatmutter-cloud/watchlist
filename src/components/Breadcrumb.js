@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "../ui";
 
 // Shared breadcrumb trail. `items` = [{ label, onClick? }]. The last item is
 // the current crumb (non-clickable, emphasised); earlier crumbs with an
@@ -25,20 +26,7 @@ export function Breadcrumb({ items = [] }) {
         return (
           <React.Fragment key={i}>
             {it.onClick && !last ? (
-              <button
-                onClick={it.onClick}
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  cursor: "pointer",
-                  color: "var(--text2)",
-                  fontSize: 12,
-                  fontFamily: "inherit",
-                }}
-              >
-                {it.label}
-              </button>
+              <Button link muted onClick={it.onClick} style={{ padding: 0 }}>{it.label}</Button>
             ) : (
               <span
                 style={{

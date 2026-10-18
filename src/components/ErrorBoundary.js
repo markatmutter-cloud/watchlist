@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "../ui";
 
 // Tiny React error boundary so a render-time throw inside the wrapped
 // subtree doesn't unmount the whole app to a white screen. Used
@@ -50,14 +51,7 @@ export class ErrorBoundary extends React.Component {
           }}>
             Screenshot this and send it to Mark; he'll get it fixed. Tapping back will return to the list view.
           </div>
-          <button onClick={() => this.setState({ error: null })}
-            style={{
-              padding: "8px 16px", borderRadius: 8,
-              border: "0.5px solid var(--border)",
-              background: "var(--surface)", color: "var(--text1)",
-              cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-              marginBottom: 14,
-            }}>Try again</button>
+          <div style={{ marginBottom: 14 }}><Button small onClick={() => this.setState({ error: null })}>Try again</Button></div>
           <pre style={{
             fontSize: 11, color: "var(--text3)",
             background: "var(--surface)",

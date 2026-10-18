@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import CardStrip from "./CardStrip";
+import { Pill } from "../ui";
 
 // LumeResultGrid — the missing vertical-grid primitive for the Lumé canvas.
 // Shows a tidy PREVIEW grid of result cards (tap to open, easy to skip), then
@@ -31,13 +32,7 @@ export default function LumeResultGrid({ items, renderCard, isMobile, preview = 
       </div>
 
       {rest.length > 0 && !expanded && (
-        <button onClick={() => setExpanded(true)} style={{
-          marginTop: 12, border: "0.5px solid var(--border)", background: "var(--surface)",
-          color: "var(--text1)", borderRadius: 999, padding: "8px 16px", fontSize: 13,
-          fontWeight: 500, cursor: "pointer", fontFamily: "inherit",
-        }}>
-          Show {rest.length} more →
-        </button>
+        <div style={{ marginTop: 12 }}><Pill quiet onClick={() => setExpanded(true)}>Show {rest.length} more →</Pill></div>
       )}
 
       {expanded && rest.length > 0 && (

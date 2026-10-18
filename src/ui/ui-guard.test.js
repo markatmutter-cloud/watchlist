@@ -64,6 +64,8 @@ describe("src/ui", () => {
     "components/SharedReceiveFrame.js", "components/ChallengeFlow.js", "components/AdminTab.js",
     "components/SizeCompare.js", "components/Links.js", "components/SiteFooter.js",
     "components/ViewSettingsControls.js", "components/CardShell.js",
+    "components/Breadcrumb.js", "components/ErrorBoundary.js", "components/LotMigrationBanner.js",
+    "components/LumeModule.js", "components/LumeResultGrid.js", "components/LumeResultPanel.js",
     "components/CardStrip.js", "components/MagazineHome.js",
     "components/LumeMemorySettings.js", "components/LumeLead.js", "components/ListRow.js", "components/DossierBlocks.js",
   ];

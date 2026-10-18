@@ -793,6 +793,9 @@ within each section roughly last.
 
 ## UI & chrome (cross-cutting)
 
+- **2026-10-17 — The "Search all" page, the Lumé result pieces and a few stragglers use the shared pieces.** The search-all query is the shared `SearchField` (it had its own box) and each strip's head is
+  the shared `SectionHead` with a `View all →` action; the legacy `SectionHeader` and `Eyebrow` are deleted. Lumé's shelf CTA, "Show N more" and "← Back" are `Pill`s; breadcrumb links, the migration
+  banner's "Got it" and the crash screen's "Try again" are `Button`s.
 - **2026-10-17 — The Lists tiles and menus, the screener, the card rails and the auction calendar dialog move onto the shared pieces.** New `AddTile` ("Start a list"), `OverlayMenu plain`
   (a list's ⋯ on a page) and `OverlayButton light` (the rails' ‹ ›); saved-search and "add a first watch" rows are `ListRow`; the screener's Skip / Save / Undo / Exit are `Button`, its heart and
   ⋯ the overlay pieces, and its intro and break dialogs the shared `Modal`; the Home admin hide × is the overlay ×; the auction calendar is a `Modal` instead of an olive-headed one-off.
