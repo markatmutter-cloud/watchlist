@@ -168,5 +168,15 @@ describe("ListReviewMode controls", () => {
     render(<ListReviewMode {...baseProps({ mode: "list", items: two() })} />);
     for (const undo of screen.getAllByRole("button", { name: "Undo" })) expect(undo).toBeDisabled();
   });
+
+  test("the first-visit intro is the shared Modal and Start review dismisses it", () => {
+    localStorage.removeItem("screening_intro_seen_v1");
+    render(<ListReviewMode {...baseProps({ mode: "list", items: two() })} />);
+    const dialog = screen.getByRole("dialog", { name: "Quick review" });
+    expect(dialog).toHaveClass("ui-modal");
+    fireEvent.click(screen.getByRole("button", { name: "Start review" }));
+    expect(screen.queryByRole("dialog", { name: "Quick review" })).toBeNull();
+    expect(localStorage.getItem("screening_intro_seen_v1")).toBeTruthy();
+  });
 });
 

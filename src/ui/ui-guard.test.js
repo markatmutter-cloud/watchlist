@@ -64,13 +64,14 @@ describe("src/ui", () => {
     "components/SharedReceiveFrame.js", "components/ChallengeFlow.js", "components/AdminTab.js",
     "components/SizeCompare.js", "components/Links.js", "components/SiteFooter.js",
     "components/ViewSettingsControls.js", "components/CardShell.js",
+    "components/CardStrip.js", "components/MagazineHome.js",
     "components/LumeMemorySettings.js", "components/LumeLead.js", "components/ListRow.js", "components/DossierBlocks.js",
   ];
   const LEGACY = [
     /from "\.\/StandardFilterBar"/, /from "\.\/PageHeader"/, /from "\.\/Chip"/, /from "\.\/SavedPill"/,
     /\bpillBase\b/, /\bclearAllPill\b/, /from "\.\/SubTabBar"/,
     // The hand-rolled card overlay buttons and menu rows (now OverlayButton / OverlayMenu / MenuItem).
-    /\boverlayBtn\b/, /\boverlayIconBtn\b/, /\bmenuItemStyle\b/, /\barticleMenuItemStyle\b/, /\bOverflowMenu\b/, /\bwlMenuItem\b/, /\bwlIconBtn\b/,
+    /\boverlayBtn\b/, /\boverlayIconBtn\b/, /\bmenuItemStyle\b/, /\barticleMenuItemStyle\b/, /\bOverflowMenu\b/, /\bwlMenuItem\b/, /\bwlIconBtn\b/, /\bmodalScrim\b/, /\beditorialPanel\b/, /\bskipBtnStyle\b/, /\bsaveBtnStyle\b/,
   ];
   test.each(MIGRATED)("%s is built from src/ui, not the legacy pieces", (file) => {
     const src = fs.readFileSync(path.join(__dirname, "..", file), "utf8")

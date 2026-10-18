@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { imgSrc, fmtUSD } from "../utils";
 import { FONT_SANS, FONT_SERIF_DISPLAY } from "../styles";
-import { Pill, Button, OverlayHeart, OverlayMenu, MenuItem } from "../ui";
+import { Pill, Button, OverlayHeart, OverlayMenu, MenuItem, Modal, ModalNote, ModalFoot } from "../ui";
 
 // Swipe gesture thresholds + tap detection.
 const SWIPE_THRESHOLD_X = 90;
@@ -829,80 +829,37 @@ function EdgeWash({ side, color, label, opacity }) {
 
 function OnboardingCard({ ownerName, total, onDismiss }) {
   return (
-    <div style={modalScrim(2120)}>
-      <div style={editorialPanel(420)}>
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 11, color: "var(--text3)",
-          letterSpacing: "0.20em", textTransform: "uppercase",
-          fontWeight: 500, marginBottom: 16,
-        }}>
-          Screening
-        </div>
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 22, fontWeight: 600, color: "var(--text1)",
-          lineHeight: 1.2, marginBottom: 12,
-          letterSpacing: "-0.005em",
-        }}>
-          Quick review
-        </div>
-        {/* Why — the purpose of the feature, not just the mechanics
-            (Mark feedback 2026-05-13). */}
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 13, color: "var(--text2)",
-          lineHeight: 1.55, marginBottom: 18,
-        }}>
-          Go through the list one watch at a time and save the ones
-          worth coming back to. Saves land in your watchlist; skip
-          the rest.
-        </div>
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 12, color: "var(--text3)",
-          lineHeight: 1.5, marginBottom: 18,
-        }}>
-          {total} {total === 1 ? "watch" : "watches"}{ownerName ? ` from ${ownerName}` : ""}.
-        </div>
-        <ul style={{
-          listStyle: "none", margin: 0, padding: 0,
-          fontFamily: SANS_STACK,
-          fontSize: 13, color: "var(--text1)",
-          lineHeight: 1.55,
-          marginBottom: 24,
-        }}>
-          <IntroRow color="var(--heart)" glyph="♥">
-            <strong>Save</strong>: swipe right or tap Save. Adds the watch to your watchlist.
-          </IntroRow>
-          <IntroRow color="var(--text2)" glyph="←">
-            <strong>Skip</strong>: swipe left or tap Skip. Moves on, saves nothing.
-          </IntroRow>
-          <IntroRow color="var(--text2)" glyph="↗">
-            <strong>Details</strong>: tap the card to read the full listing.
-          </IntroRow>
-        </ul>
-        <Button primary inline onClick={onDismiss}>Start review</Button>
-      </div>
-    </div>
+    <Modal title="Quick review" onClose={onDismiss} width={420}>
+      {/* Why: the purpose of the feature, not just the mechanics (Mark feedback 2026-05-13). */}
+      <ModalNote>
+        Go through the list one watch at a time and save the ones worth coming back to. Saves land
+        in your watchlist; skip the rest. {total} {total === 1 ? "watch" : "watches"}{ownerName ? ` from ${ownerName}` : ""}.
+      </ModalNote>
+      <ul style={{ listStyle: "none", margin: "0 0 4px", padding: 0, fontSize: 13, color: "var(--text1)", lineHeight: 1.55 }}>
+        <IntroRow glyph="♥">
+          <strong>Save</strong>: swipe right or tap Save. Adds the watch to your watchlist.
+        </IntroRow>
+        <IntroRow glyph="←">
+          <strong>Skip</strong>: swipe left or tap Skip. Moves on, saves nothing.
+        </IntroRow>
+        <IntroRow glyph="↗">
+          <strong>Details</strong>: tap the card to read the full listing.
+        </IntroRow>
+      </ul>
+      <ModalFoot>
+        <Button small primary onClick={onDismiss}>Start review</Button>
+      </ModalFoot>
+    </Modal>
   );
 }
 
-function IntroRow({ color, glyph, children }) {
+function IntroRow({ glyph, children }) {
   return (
-    <li style={{
-      display: "flex", alignItems: "flex-start",
-      gap: 12, marginBottom: 12,
-    }}>
-      <span style={{
-        display: "inline-flex", alignItems: "center", justifyContent: "center",
-        flexShrink: 0,
-        width: 24, height: 24, borderRadius: "50%",
-        background: "var(--surface)",
-        border: `0.5px solid ${color}`,
-        color, fontSize: 12, fontWeight: 600,
-        marginTop: 1,
-        fontFamily: SANS_STACK,
+    <li style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+      <span aria-hidden="true" style={{
+        display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+        width: 24, height: 24, borderRadius: "50%", marginTop: 1,
+        background: "var(--surface)", border: "0.5px solid var(--border)", color: "var(--text2)", fontSize: 12,
       }}>
         {glyph}
       </span>
@@ -913,37 +870,13 @@ function IntroRow({ color, glyph, children }) {
 
 function BreakInterstitial({ idx, total, onContinue, onPause }) {
   return (
-    <div style={modalScrim(2050)}>
-      <div style={editorialPanel(380)}>
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 11, color: "var(--text3)",
-          letterSpacing: "0.20em", textTransform: "uppercase",
-          fontWeight: 500, marginBottom: 14,
-        }}>
-          Pause
-        </div>
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 22, fontWeight: 600, color: "var(--text1)",
-          lineHeight: 1.25, marginBottom: 10,
-          letterSpacing: "-0.005em",
-        }}>
-          Take a break?
-        </div>
-        <div style={{
-          fontFamily: SANS_STACK,
-          fontSize: 14, color: "var(--text2)",
-          lineHeight: 1.5, marginBottom: 24,
-        }}>
-          {idx} of {total} reviewed. Come back anytime; your place is saved.
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <Button inline onClick={onPause}>Pause &amp; bookmark</Button>
-          <Button primary inline onClick={onContinue}>Keep going</Button>
-        </div>
-      </div>
-    </div>
+    <Modal title="Take a break?" onClose={onContinue} width={380}>
+      <ModalNote>{idx} of {total} reviewed. Come back anytime; your place is saved.</ModalNote>
+      <ModalFoot>
+        <Button small onClick={onPause}>Pause &amp; bookmark</Button>
+        <Button small primary onClick={onContinue}>Keep going</Button>
+      </ModalFoot>
+    </Modal>
   );
 }
 
@@ -987,27 +920,3 @@ function CompletionView({ total, heartedThisSession, onClose }) {
     </div>
   );
 }
-
-// ── Shared styles ───────────────────────────────────────────────
-
-function modalScrim(z) {
-  return {
-    position: "fixed", inset: 0, zIndex: z,
-    background: "rgba(0,0,0,0.45)",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    padding: 24,
-  };
-}
-
-function editorialPanel(maxWidth) {
-  return {
-    background: "var(--bg)",
-    border: "0.5px solid var(--border)",
-    borderRadius: 12,
-    padding: "32px 24px",
-    maxWidth, width: "100%",
-    fontFamily: SANS_STACK,
-    boxShadow: "0 24px 60px rgba(0,0,0,0.20)",
-  };
-}
-

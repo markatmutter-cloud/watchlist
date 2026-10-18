@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 
 // App-level render-without-crash smoke test.
 //
@@ -215,6 +215,21 @@ describe("App render-without-crash", () => {
     expect(document.querySelector("[data-desktop-main]")).toBeNull();
     // The home affordance Mark asked to keep.
     expect(screen.getByRole("button", { name: "Home" })).toBeInTheDocument();
+    window.history.replaceState({}, "", "/");
+  });
+
+  test("the auction calendar opens as the shared Modal, and Close dismisses it", async () => {
+    window.history.replaceState({}, "", "/?tab=listings&sub=auctions");
+    const { default: App } = require("./App");
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Pulling the latest listings/i)).not.toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Auction calendar" }));
+    const dialog = await screen.findByRole("dialog", { name: "Auction calendar" });
+    expect(dialog).toHaveClass("ui-modal");
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Auction calendar" })).not.toBeInTheDocument());
     window.history.replaceState({}, "", "/");
   });
 

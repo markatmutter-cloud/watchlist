@@ -77,7 +77,7 @@ import { TOP_TABS, isTopTabActive } from "./topTabs";
 import { savedUrlGoesToWatches } from "./legacyRoutes";
 import { ChromeTint, chromeIsLight } from "./chromeTint";
 import StyleSheet from "./ui/StyleSheet";
-import { PageShell, PageFrame, Button, AccountMenu, AccountMenuHead, AccountMenuSection, MenuItem } from "./ui";
+import { PageShell, PageFrame, Button, Modal, AccountMenu, AccountMenuHead, AccountMenuSection, MenuItem } from "./ui";
 import ListsPage from "./components/ListsPage";
 import CatalogPage from "./components/CatalogPage";
 import { HeartIcon } from "./components/icons";
@@ -3793,45 +3793,9 @@ export default function Watchlist() {
   // theme vars are mirrored to :root + font on body so it inherits.
   const calendarModalJSX = (calendarModalOpen && typeof document !== "undefined")
     ? createPortal(
-        <div
-          onClick={() => setCalendarModalOpen(false)}
-          style={{
-            position: "fixed", inset: 0, zIndex: 2000,
-            background: "rgba(0,0,0,0.45)",
-            display: "flex", flexDirection: "column",
-            padding: isMobile ? 0 : "5vh 24px",
-            alignItems: "center",
-          }}>
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "var(--bg)", color: "var(--text1)",
-              width: "100%", maxWidth: isMobile ? "100%" : 880,
-              height: isMobile ? "100%" : "auto", maxHeight: isMobile ? "100%" : "90vh",
-              borderRadius: isMobile ? 0 : 14, overflow: "hidden",
-              display: "flex", flexDirection: "column",
-              boxShadow: "0 24px 60px rgba(0,0,0,0.30)",
-              fontFamily: "inherit",
-            }}>
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              gap: 12, padding: "14px 16px",
-              background: "var(--brand-olive)", color: "#fff", flexShrink: 0,
-              paddingTop: isMobile ? "calc(14px + env(safe-area-inset-top))" : 14,
-            }}>
-              <span style={{ fontSize: 16, fontWeight: 600 }}>Auction Calendar</span>
-              <button onClick={() => setCalendarModalOpen(false)}
-                aria-label="Close calendar"
-                style={{
-                  border: "none", background: "transparent", cursor: "pointer",
-                  color: "#fff", fontSize: 22, lineHeight: 1, padding: "0 4px",
-                }}>×</button>
-            </div>
-            <div style={{ overflowY: "auto", padding: "8px 16px 24px", WebkitOverflowScrolling: "touch" }}>
-              {auctionCalendarJSX}
-            </div>
-          </div>
-        </div>,
+        <Modal title="Auction calendar" onClose={() => setCalendarModalOpen(false)} width={880} sheet full={isMobile}>
+          {auctionCalendarJSX}
+        </Modal>,
         document.body
       )
     : null;
