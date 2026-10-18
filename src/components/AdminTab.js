@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { SubTabs, Chip, Button, Input, FieldLabel } from "../ui";
+import { SubTabs, Chip, Button, Input, FieldLabel, SectionHead } from "../ui";
 import { supabase } from "../supabase";
 import { Card } from "./Card";
 import { daysOnSale, FORCE_OTHER_BRANDS, SUPPRESS_AT_SOLD_BRANDS, EXCLUDED_BRANDS } from "../utils";
@@ -989,13 +989,8 @@ export function AdminTab({ watchItems, hiddenItems }) {
         ))}
       </div>
 
-      <div id="sec-source" style={{
-        display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
-        marginBottom: 14,
-      }}>
-        <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
-          Source quality
-        </h1>
+      <div id="sec-source" style={{ marginTop: 0 }}>
+        <SectionHead title="Source quality" trailing={<>
         <span style={{ fontSize: 12, color: "var(--text2)" }}>
           {totals.sources} sources · {totals.live.toLocaleString()} live listings
         </span>
@@ -1013,6 +1008,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
             </span>
           );
         })()}
+        </>} />
       </div>
 
       {alerts.length > 0 && (
@@ -1114,17 +1110,13 @@ export function AdminTab({ watchItems, hiddenItems }) {
           ascending by median-cycle so fastest-flipping brands top
           the list. Auction lots intentionally excluded — different
           lifecycle would dilute the dealer-cycle read. */}
-      <div id="sec-brand" style={{
-        display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
-        marginTop: 32, marginBottom: 14,
-      }}>
-        <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
-          Brand velocity
-        </h1>
+      <div id="sec-brand" style={{ marginTop: 32 }}>
+        <SectionHead title="Brand velocity" trailing={<>
         <span style={{ fontSize: 12, color: "var(--text2)" }}>
           {sortedBrandRows.filter(r => r.medianDaysOnSale != null).length} brands with 30d sales
           · {sortedBrandRows.reduce((a, r) => a + r.soldCount30d, 0).toLocaleString()} listings cycled
         </span>
+        </>} />
       </div>
 
       {sortedBrandRows.length === 0 ? (
@@ -1185,16 +1177,12 @@ export function AdminTab({ watchItems, hiddenItems }) {
           - Forced into Other: brand chip rolled up (frontend-only).
           - Suppressed when sold: hidden from All sold unless the
             user has hearted the listing. */}
-      <div id="sec-curation" style={{
-        display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
-        marginTop: 32, marginBottom: 14,
-      }}>
-        <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
-          Curation rules
-        </h1>
+      <div id="sec-curation" style={{ marginTop: 32 }}>
+        <SectionHead title="Curation rules" trailing={<>
         <span style={{ fontSize: 12, color: "var(--text2)" }}>
           Brand lists you've set in code · read-only mirror
         </span>
+        </>} />
       </div>
       {[
         {
@@ -1257,17 +1245,13 @@ export function AdminTab({ watchItems, hiddenItems }) {
           the actual signal — the SOLD chip already shows "SOLD · 4d"
           from PR #151. Window toggle lets the user widen / narrow
           the time slice; brand chips filter to a single make. */}
-      <div id="sec-fastest" style={{
-        display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
-        marginTop: 32, marginBottom: 14,
-      }}>
-        <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
-          Fastest sales
-        </h1>
+      <div id="sec-fastest" style={{ marginTop: 32 }}>
+        <SectionHead title="Fastest sales" trailing={<>
         <span style={{ fontSize: 12, color: "var(--text2)" }}>
           {fastestSales.length.toLocaleString()} cycle{fastestSales.length === 1 ? "" : "s"}
           {fastestBrand ? ` · ${fastestBrand}` : ""}
         </span>
+        </>} />
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 12 }}>
@@ -1329,13 +1313,8 @@ export function AdminTab({ watchItems, hiddenItems }) {
       </div>
 
       {/* ── Auction-house quality ──────────────────────────────────── */}
-      <div id="sec-house" style={{
-        display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
-        marginTop: 32, marginBottom: 14,
-      }}>
-        <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
-          Auction house quality
-        </h1>
+      <div id="sec-house" style={{ marginTop: 32 }}>
+        <SectionHead title="Auction house quality" trailing={<>
         <span style={{ fontSize: 12, color: "var(--text2)" }}>
           {houseRows.length} houses · {houseRows.reduce((a, r) => a + r.totalLots, 0).toLocaleString()} lots tracked
         </span>
@@ -1353,6 +1332,7 @@ export function AdminTab({ watchItems, hiddenItems }) {
             </span>
           );
         })()}
+        </>} />
       </div>
 
       {houseRows.length === 0 ? (
@@ -1413,17 +1393,13 @@ export function AdminTab({ watchItems, hiddenItems }) {
       </div>
 
       {/* ── User limits ───────────────────────────────────────────── */}
-      <div id="sec-limits" style={{
-        display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
-        marginTop: 32, marginBottom: 14,
-      }}>
-        <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
-          User limits
-        </h1>
+      <div id="sec-limits" style={{ marginTop: 32 }}>
+        <SectionHead title="User limits" trailing={<>
         <span style={{ fontSize: 12, color: "var(--text2)" }}>
           {userLimits.length} users with watchlist data ·
           {" "}{userLimits.filter((u) => !u.is_default_cap).length} with overrides
         </span>
+        </>} />
       </div>
 
       {userLimits.length === 0 ? (
@@ -1517,16 +1493,12 @@ export function AdminTab({ watchItems, hiddenItems }) {
 
       {/* Collection cleanup (2026-05-20). Operates on the current
           admin's own collections. Per-cell delete with confirm. */}
-      <div id="sec-cleanup" style={{
-        display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap",
-        marginTop: 32, marginBottom: 14,
-      }}>
-        <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
-          Collection cleanup
-        </h1>
+      <div id="sec-cleanup" style={{ marginTop: 32 }}>
+        <SectionHead title="Collection cleanup" trailing={<>
         <span style={{ fontSize: 12, color: "var(--text2)" }}>
           Your own collections · delete by source_of_entry
         </span>
+        </>} />
       </div>
 
       {cleanupRows === null ? (

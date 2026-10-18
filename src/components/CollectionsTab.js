@@ -2545,17 +2545,9 @@ function SavedArticlesView({ items, isWide, gridStyle, watchlist, handleWish, op
 
   return (
     <div style={{ padding: isWide ? "0 24px 80px" : "0 14px 80px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 0 6px" }}>
-        <Pill quiet onClick={onBack}>← Lists</Pill>
-        <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
-          Saved articles
-        </h1>
-        <span style={{ fontSize: 13, color: "var(--text3)" }}>· {asArticles.length}</span>
-      </div>
-
-      <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5, marginBottom: 16 }}>
-        Auto-populated from articles you've hearted on the Articles tab. Tap the heart
-        on any card to remove it from this list.
+      <div style={{ marginBottom: 16 }}>
+        <SectionHead onExit={onBack} exitLabel="Lists" title="Saved articles" count={String(asArticles.length)}
+          meta="Auto-populated from articles you've hearted on the Articles tab. Tap the heart on any card to remove it from this list." />
       </div>
 
       {asArticles.length === 0 ? (
@@ -2608,16 +2600,9 @@ function SavedArticlesView({ items, isWide, gridStyle, watchlist, handleWish, op
 function SavedAuctionsView({ items, isWide, gridStyle, onOpenSale, onToggleSave, onBack }) {
   return (
     <div style={{ padding: isWide ? "0 24px 80px" : "0 14px 80px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 0 6px" }}>
-        <Pill quiet onClick={onBack}>← Lists</Pill>
-        <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text1)", margin: 0 }}>
-          Saved auctions
-        </h1>
-        <span style={{ fontSize: 13, color: "var(--text3)" }}>· {items.length}</span>
-      </div>
-
-      <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5, marginBottom: 16 }}>
-        Sales you've hearted on the Auctions calendar. Tap one to open its lots; tap the heart to remove it.
+      <div style={{ marginBottom: 16 }}>
+        <SectionHead onExit={onBack} exitLabel="Lists" title="Saved auctions" count={String(items.length)}
+          meta="Sales you've hearted on the Auctions calendar. Tap one to open its lots; tap the heart to remove it." />
       </div>
 
       {items.length === 0 ? (
