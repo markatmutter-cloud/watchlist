@@ -270,8 +270,8 @@
     "rows": 196
   },
   "calendar:antiquorum": {
-    "fingerprint": "7ab207fc3307af13",
-    "lastChanged": "2026-10-17",
+    "fingerprint": "64624fe1ad4c0e76",
+    "lastChanged": "2026-10-19",
     "lastSeen": "2026-10-19",
     "rows": 3
   },
@@ -414,14 +414,14 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "519fdd31e566c546",
-    "lastChanged": "2026-10-18",
+    "fingerprint": "84b1b38d4a9dec14",
+    "lastChanged": "2026-10-19",
     "lastSeen": "2026-10-19",
-    "rows": 6194
+    "rows": 6672
   },
   "merged:auctions": {
-    "fingerprint": "f38cf1d875675bc0",
-    "lastChanged": "2026-10-18",
+    "fingerprint": "ee56f8d302724769",
+    "lastChanged": "2026-10-19",
     "lastSeen": "2026-10-19",
     "rows": 114
   },
