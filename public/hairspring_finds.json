@@ -5510,7 +5510,7 @@
     "model_line": "Royal Oak Perpetual Calendar early variants (additions)",
     "published_at": "2026-06-20",
     "reference_no": "25657",
-    "scraped_at": "2026-09-20T07:25:57Z",
+    "scraped_at": "2026-10-20T18:28:30Z",
     "slug": "25657or-audemars-piguet-perpetual-calendar",
     "sold_price_usd": 32500,
     "source": "hairspring_finds",
@@ -5523,7 +5523,7 @@
     "title": "25657OR Audemars Piguet Perpetual Calendar",
     "updated_at": "2026-04-15",
     "url": "https://hairspring.com/blogs/finds/25657or-audemars-piguet-perpetual-calendar",
-    "word_count": 454
+    "word_count": 458
   },
   "https://hairspring.com/blogs/finds/25657pt-audemars-piguet-quantieme-perpetual-with-bracelet": {
     "author": "Erik Gustafson",
@@ -23483,6 +23483,28 @@
     "url": "https://hairspring.com/blogs/finds/genesis-of-modern-zenith-the-a386",
     "word_count": 349
   },
+  "https://hairspring.com/blogs/finds/george-daniels-millennium": {
+    "author": "Erik Gustafson",
+    "brand": "",
+    "case_size": "37mm",
+    "currency": "USD",
+    "excerpt": "Daniels conceived the co-axial escapement in the mid-1970s and spent more than two decades being turned away by the Swiss. Once Omega agreed to industrialize it (the launch came at Basel in 1999), he designed a 37mm wristwatch of his own",
+    "image": "https://hairspring.com/cdn/shop/articles/George-Daniels-Millenium-Roger-Smith-12.jpg",
+    "model": null,
+    "model_line": null,
+    "published_at": "2026-10-19",
+    "reference_no": null,
+    "scraped_at": "2026-10-20T18:28:28Z",
+    "slug": "george-daniels-millennium",
+    "sold_price_usd": 725000,
+    "source": "hairspring_finds",
+    "source_type": "editorial_finds",
+    "sub_model": null,
+    "title": "George Daniels Millennium",
+    "updated_at": "2026-10-20",
+    "url": "https://hairspring.com/blogs/finds/george-daniels-millennium",
+    "word_count": 437
+  },
   "https://hairspring.com/blogs/finds/ghost-dial-1601-rolex-datejust": {
     "author": "Erik Gustafson",
     "brand": "Rolex",
@@ -34325,7 +34347,7 @@
     "model_line": null,
     "published_at": "2026-08-20",
     "reference_no": null,
-    "scraped_at": "2026-09-20T17:25:27Z",
+    "scraped_at": "2026-10-20T18:28:29Z",
     "slug": "salmon-dial-25661bc-audemars-piguet-perpetual-calendar",
     "sold_price_usd": 335000,
     "source": "hairspring_finds",
@@ -34338,7 +34360,7 @@
     "title": "Salmon Dial 25661BC Audemars Piguet Perpetual Calendar",
     "updated_at": "2026-08-21",
     "url": "https://hairspring.com/blogs/finds/salmon-dial-25661bc-audemars-piguet-perpetual-calendar",
-    "word_count": 543
+    "word_count": 544
   },
   "https://hairspring.com/blogs/finds/salmon-dial-25661bc-audemars-piguet-quantieme-perpetual": {
     "author": "Erik Gustafson",
