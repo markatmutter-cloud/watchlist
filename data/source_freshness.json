@@ -12,13 +12,13 @@
     "rows": 294
   },
   "Analog Shift": {
-    "fingerprint": "3b9d50ae11804b38",
+    "fingerprint": "5241e5b5b54d65ef",
     "lastChanged": "2026-10-20",
     "lastSeen": "2026-10-20",
-    "rows": 744
+    "rows": 749
   },
   "Belmont Watches": {
-    "fingerprint": "117ef20d620f5291",
+    "fingerprint": "2eac2c04487afe79",
     "lastChanged": "2026-10-20",
     "lastSeen": "2026-10-20",
     "rows": 34
@@ -36,10 +36,10 @@
     "rows": 173
   },
   "Central Watch": {
-    "fingerprint": "9f6dfd6e6ae2e55e",
-    "lastChanged": "2026-10-19",
+    "fingerprint": "186503ceedce9691",
+    "lastChanged": "2026-10-20",
     "lastSeen": "2026-10-20",
-    "rows": 185
+    "rows": 183
   },
   "Chronoholic": {
     "fingerprint": "1e046eb43f7384b8",
@@ -60,10 +60,10 @@
     "rows": 100
   },
   "Craft & Tailored": {
-    "fingerprint": "565796a545f5052d",
+    "fingerprint": "069436b05b47188d",
     "lastChanged": "2026-10-20",
     "lastSeen": "2026-10-20",
-    "rows": 104
+    "rows": 105
   },
   "DB1983": {
     "fingerprint": "848ac884bab9770f",
@@ -84,10 +84,10 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "2cba516db1f6759a",
+    "fingerprint": "af3acec82efe85fb",
     "lastChanged": "2026-10-20",
     "lastSeen": "2026-10-20",
-    "rows": 33
+    "rows": 32
   },
   "Hairspring": {
     "fingerprint": "9a95c7e95f725a00",
@@ -132,8 +132,8 @@
     "rows": 28
   },
   "Oliver & Clarke": {
-    "fingerprint": "33965571f2067317",
-    "lastChanged": "2026-10-19",
+    "fingerprint": "b8b275f26b368378",
+    "lastChanged": "2026-10-20",
     "lastSeen": "2026-10-20",
     "rows": 110
   },
@@ -192,10 +192,10 @@
     "rows": 36
   },
   "Tropical Watch": {
-    "fingerprint": "e389885cb5aebc2c",
+    "fingerprint": "4a7c888ed164081d",
     "lastChanged": "2026-10-20",
     "lastSeen": "2026-10-20",
-    "rows": 115
+    "rows": 114
   },
   "Vintage Watch Collective": {
     "fingerprint": "34e2028a7c39393c",
@@ -216,8 +216,8 @@
     "rows": 30
   },
   "Vision Vintage Watches": {
-    "fingerprint": "a4a3996570bf8afe",
-    "lastChanged": "2026-10-19",
+    "fingerprint": "732713c82341febd",
+    "lastChanged": "2026-10-20",
     "lastSeen": "2026-10-20",
     "rows": 99
   },
@@ -234,8 +234,8 @@
     "rows": 429
   },
   "Watch Club": {
-    "fingerprint": "24c8086fbeb24ea4",
-    "lastChanged": "2026-10-17",
+    "fingerprint": "0c3317b20c530bc9",
+    "lastChanged": "2026-10-20",
     "lastSeen": "2026-10-20",
     "rows": 53
   },
@@ -264,7 +264,7 @@
     "rows": 7
   },
   "Wind Vintage": {
-    "fingerprint": "8d367cfe61659624",
+    "fingerprint": "5f0938634231ba78",
     "lastChanged": "2026-10-20",
     "lastSeen": "2026-10-20",
     "rows": 201
@@ -426,9 +426,9 @@
     "rows": 116
   },
   "merged:listings": {
-    "fingerprint": "95856b33f44ffbbc",
+    "fingerprint": "9113a3cd2eb6aaa9",
     "lastChanged": "2026-10-20",
     "lastSeen": "2026-10-20",
-    "rows": 12204
+    "rows": 12212
   }
 }
