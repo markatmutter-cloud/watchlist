@@ -1,22 +1,14 @@
 {
-  "amsterdamvintagewatches": {
-    "misses": 2,
-    "reason": "no CSV produced this run"
-  },
   "falco": {
-    "misses": 29,
+    "misses": 30,
     "reason": "no CSV produced this run"
   },
   "maunderwatches": {
-    "misses": 77,
+    "misses": 78,
     "reason": "no CSV produced this run"
   },
   "watchcenter": {
-    "misses": 196,
-    "reason": "no CSV produced this run"
-  },
-  "wok": {
-    "misses": 1,
+    "misses": 197,
     "reason": "no CSV produced this run"
   }
 }
