@@ -1,14 +1,22 @@
 {
   "falco": {
-    "misses": 31,
+    "misses": 32,
     "reason": "no CSV produced this run"
   },
   "maunderwatches": {
-    "misses": 79,
+    "misses": 80,
     "reason": "no CSV produced this run"
   },
   "watchcenter": {
-    "misses": 198,
+    "misses": 199,
+    "reason": "no CSV produced this run"
+  },
+  "watchfid": {
+    "misses": 1,
+    "reason": "no CSV produced this run"
+  },
+  "wok": {
+    "misses": 1,
     "reason": "no CSV produced this run"
   }
 }
