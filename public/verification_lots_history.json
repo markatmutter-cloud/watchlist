@@ -1,14 +1,6 @@
 {
   "history": [
     {
-      "date": "2026-10-09",
-      "counts": {
-        "Christie's": 285,
-        "Monaco Legend": 226,
-        "Sotheby's": 691
-      }
-    },
-    {
       "date": "2026-10-10",
       "counts": {
         "Christie's": 285,
@@ -120,6 +112,16 @@
       "counts": {
         "Marteau & Co": 9,
         "Antiquorum": 484,
+        "Christie's": 910,
+        "Phillips": 520,
+        "Sotheby's": 617
+      }
+    },
+    {
+      "date": "2026-10-22",
+      "counts": {
+        "Marteau & Co": 12,
+        "Antiquorum": 485,
         "Christie's": 910,
         "Phillips": 520,
         "Sotheby's": 617

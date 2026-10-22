@@ -1,22 +1,14 @@
 {
-  "date": "2026-10-21",
-  "updated_at": "2026-10-21T11:04:48+00:00",
-  "alerts": [
-    {
-      "house": "Monaco Legend",
-      "level": "ERROR",
-      "today": 0,
-      "previous": 226,
-      "note": "house absent from today's lot scrape (was present yesterday)"
-    }
-  ],
+  "date": "2026-10-22",
+  "updated_at": "2026-10-22T11:07:22+00:00",
+  "alerts": [],
   "counts": {
-    "Marteau & Co": 9,
-    "Antiquorum": 484,
+    "Marteau & Co": 12,
+    "Antiquorum": 485,
     "Christie's": 910,
     "Phillips": 520,
     "Sotheby's": 617
   },
-  "total_live_lots": 2540,
+  "total_live_lots": 2544,
   "houses_tracked": 5
 }
