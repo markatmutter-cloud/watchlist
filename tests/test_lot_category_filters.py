@@ -103,3 +103,59 @@ def test_mixed_sale_is_carried_but_a_jewels_sale_is_not():
     assert a.is_excluded_catalog(
         "Fine Watches",
         "https://www.sothebys.com/en/buy/auction/2026/fine-jewelry-l26050") is True
+
+
+# --- watch-only filter on Christie's / Sotheby's non-watch sales (2026-10-23) ---
+
+def test_watch_only_filter_scope():
+    assert a.needs_watch_only_filter("Christie's", "Luxury Evening Sale") is True
+    assert a.needs_watch_only_filter("Sotheby's", "Fine Jewelry and Watches") is True
+    assert a.needs_watch_only_filter("Sotheby's", "Materiality") is True
+    # Watch-titled sales and specialist houses are untouched.
+    assert a.needs_watch_only_filter("Sotheby's", "Important Watches") is False
+    assert a.needs_watch_only_filter("Christie's", "Rare Watches including Watches for ELA") is False
+    assert a.needs_watch_only_filter("Marteau & Co", "The Blueprint") is False
+    assert a.needs_watch_only_filter("Phillips", "Decade One") is False
+    # Unknown sale title: don't guess.
+    assert a.needs_watch_only_filter("Christie's", "") is False
+
+
+def test_watch_only_filter_keeps_watches_drops_the_rest():
+    lots = _lots(
+        "PATEK PHILIPPE. A STAINLESS STEEL AUTOMATIC FLYBACK CHRONOGRAPH WRISTWATCH WITH DATE",
+        "BULGARI. AN 18K GOLD AND WHITE GOLD BANGLE WATCH",
+        "Patek Philippe Calatrava, Reference 3923 | A yellow gold wristwatch | Circa 1995",
+        "Montre à gousset et châtelaine en or et émail, Pickett & Rundell, Londres, 1775",
+        "GRAFF DIAMOND BRACELET",
+        "Black Velvet and Coral Evening Bag, M. Buccellati, and Pair of Coral Cufflinks",
+        "Lucio Fontana Ellipse with holes 'Spatial Concept' (LF/3)",
+        "Loose diamond",
+        "1985 Fiat Panda 4x4",
+    )
+    kept, dropped = a.drop_non_watch_lots(lots, "Christie's", "Luxury Evening Sale")
+    assert dropped == 5
+    assert len(kept) == 4
+
+
+def test_non_watch_sales_are_blocklisted():
+    assert a.is_excluded_catalog("Rétromobile New York Auctions") is True
+    assert a.is_excluded_catalog(
+        "", "https://www.christies.com/en/auction/r-tromobile-new-york-auctions-25352-nyg/") is True
+    assert a.is_excluded_catalog(
+        "Part II: Une demeure princière, La résidence de son Altesse Cheikh "
+        "Hamad Bin Abdullah Al Thani, Kunstkammer") is True
+    assert a.is_excluded_catalog("Important Watches") is False
+
+
+def test_purge_sweeps_persisted_history_but_spares_manual_urls():
+    out = {
+        "c1": {"house": "Christie's", "auction_url": "u-car", "title": "1957 AC Ace"},
+        "s1": {"house": "Sotheby's", "auction_title": "Materiality", "title": "Diamond Necklace", "sold_price": 1},
+        "s2": {"house": "Sotheby's", "auction_title": "Materiality", "title": "Rolex Daytona wristwatch"},
+        "w1": {"house": "Sotheby's", "auction_title": "Important Watches", "title": "Diamond Necklace"},
+        "m1": {"house": "Christie's", "auction_url": "u-car", "title": "1962 Mercedes-Benz 300 SL"},
+    }
+    auctions = [{"url": "u-car", "title": "Rétromobile New York Auctions"}]
+    removed = a.purge_non_watch_records(out, auctions, protected_urls=["m1"])
+    assert removed == 2
+    assert sorted(out) == ["m1", "s2", "w1"]
