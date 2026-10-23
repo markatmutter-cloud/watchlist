@@ -41,6 +41,7 @@ import { NotePickerModal } from "./components/NotePickerModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { ViewSettingsControls } from "./components/ViewSettingsControls";
 import { ShareReceiver } from "./components/ShareReceiver";
+import { initialReceiveIntent } from "./receiveIntent";
 import { ChallengeReceiver } from "./components/ChallengeReceiver";
 import { ListReceiver } from "./components/ListReceiver";
 import { CatalogReceiver } from "./components/CatalogReceiver";
@@ -851,19 +852,19 @@ export default function Watchlist() {
   // hooks — this is just a one-bit mirror so the shell can branch.
   // Hook lives at the TOP of App.js's hook list (before any early
   // returns) per CLAUDE.md "don't add hooks deep" guidance.
-  const [shareActive, setShareActive] = useState(false);
+  const [shareActive, setShareActive] = useState(() => initialReceiveIntent().share);
   // The shared item the floating Lumé launcher should open SEEDED with (set by
   // ShareReceiver while a share surface is up; null otherwise). 2026-06-01.
   const [lumeSeedItem, setLumeSeedItem] = useState(null);
   // Same one-bit mirror for Watch Challenges receive flow (v1.5).
   // Either of these flips the shell into "focused landing surface"
   // mode (regular browse chrome hidden).
-  const [challengeShareActive, setChallengeShareActive] = useState(false);
+  const [challengeShareActive, setChallengeShareActive] = useState(() => initialReceiveIntent().challenge);
   // List-share receive flow (List Sharing v1, 2026-05-07). Same
   // pattern — one-bit mirror; the ListReceiver component owns its
   // own intent state.
-  const [listShareActive, setListShareActive] = useState(false);
-  const [catalogShareActive, setCatalogShareActive] = useState(false);
+  const [listShareActive, setListShareActive] = useState(() => initialReceiveIntent().list);
+  const [catalogShareActive, setCatalogShareActive] = useState(() => initialReceiveIntent().catalog);
   // Auction calendar modal (Phase 4 slice 2). The calendar is no longer
   // a sub-tab — it opens as an overlay over the auctions grid and filters
   // it on sale pick.
@@ -2734,6 +2735,8 @@ export default function Watchlist() {
       }
       setShareOpenId(id);
       setShareOpenTick((n) => n + 1);
+      // Show the generic page so ShareReceiver is mounted to receive the tick.
+      setShareActive(true);
       return { ok: true };
     };
     const resolveItem = (p) => {

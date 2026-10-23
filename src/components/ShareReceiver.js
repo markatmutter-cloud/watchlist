@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { fmt, imgSrc, priceIn, FX_RATES_USD_PER } from "../utils";
 import { SharedReceiveFrame } from "./SharedReceiveFrame";
+import { sharedParam } from "../receiveIntent";
 
 // Share-receive adapter for a single shared LISTING. Owns the URL parse + data
 // lookup + save logic (all hooks live INSIDE this component so App.js's hook
@@ -32,7 +33,12 @@ export function ShareReceiver({
   // on shared listings, not a button on the card).
   onSeedItem,
 }) {
-  const [shareIntent, setShareIntent] = useState(null);
+  // Seeded synchronously from the URL (see receiveIntent.js); the mount
+  // effect below re-reads it and adds the sender / kind.
+  const [shareIntent, setShareIntent] = useState(() => {
+    const id = sharedParam("listing");
+    return id ? { id, from: "", k: "" } : null;
+  });
   const [busy, setBusy] = useState(false);
   // Hero image attempts (P-30, 2026-06-03): 0 = wsrv-resized via imgSrc,
   // 1 = the RAW origin URL (wsrv flakes transiently on some hosts — retry

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { sharedParam } from "../receiveIntent";
 import { imgSrc, fmtSaleDateRange } from "../utils";
 import { SharedReceiveFrame } from "./SharedReceiveFrame";
 
@@ -27,7 +28,7 @@ export function CatalogReceiver({
   setTab,
   resetTick,
 }) {
-  const [catalogUrl, setCatalogUrl] = useState(null);
+  const [catalogUrl, setCatalogUrl] = useState(() => sharedParam("catalog"));
   const [fromName, setFromName] = useState("");
 
   // Parse URL on mount.

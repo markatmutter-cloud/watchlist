@@ -45,14 +45,11 @@ export function ChallengeReceiver({
   onTakenChallenge,
 }) {
   // intent: { mode: "spec" | "complete", spec?, id? }
-  const [intent, setIntent] = useState(null);
-  const [completeData, setCompleteData] = useState(null);
-  const [completeError, setCompleteError] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  // Parse URL on mount.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  // Parsed synchronously from the URL so the first mirror effect reports
+  // "active" (see receiveIntent.js); a mount effect let it report false first,
+  // which unmounted this receiver before its intent landed.
+  const [intent, setIntent] = useState(() => {
+    if (typeof window === "undefined") return null;
     try {
       const params = new URLSearchParams(window.location.search);
       if (params.get("newchallenge") === "1") {
@@ -64,15 +61,20 @@ export function ChallengeReceiver({
         // draft's name will read as "James's 3 watches for $50k".
         const from = (params.get("from") || "").trim() || null;
         if (n > 0 && b > 0) {
-          setIntent({ mode: "spec", spec: { name: t, targetCount: n, budget: b, descriptionLong: d, senderName: from } });
+          return { mode: "spec", spec: { name: t, targetCount: n, budget: b, descriptionLong: d, senderName: from } };
         }
       } else if (params.get("challenge") && params.get("shared") === "1") {
-        setIntent({ mode: "complete", id: params.get("challenge") });
+        return { mode: "complete", id: params.get("challenge") };
       }
     } catch (e) {
       console.warn("challenge URL parse failed", e);
     }
-  }, []);
+    return null;
+  });
+  const [completeData, setCompleteData] = useState(null);
+  const [completeError, setCompleteError] = useState("");
+  const [busy, setBusy] = useState(false);
+
 
   // Mirror to parent for shell chrome gating.
   useEffect(() => {
