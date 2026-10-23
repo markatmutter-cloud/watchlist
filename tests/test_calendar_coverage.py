@@ -151,3 +151,10 @@ def test_exit_codes(tmp_path, monkeypatch):
     monkeypatch.setattr(cc, "AUCTIONS_JSON", _merged(tmp_path, []))
     assert cc.main(["calendar_coverage.py"]) == 1
     assert cc.main(["calendar_coverage.py", "--warn"]) == 0
+
+
+def test_blocklisted_non_watch_sale_is_not_reported(tmp_path):
+    # merge.py drops these on purpose (Mark 2026-10-23); the gate must agree.
+    _csv(tmp_path, "christies", [_row("Christie's", "Retromobile New York Auctions", FUTURE)])
+    merged = _merged(tmp_path, [])
+    assert cc.dropped_sales(tmp_path, merged, today="2026-08-17") == []
