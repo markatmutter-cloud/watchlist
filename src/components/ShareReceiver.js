@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { fmt, imgSrc, priceIn, FX_RATES_USD_PER } from "../utils";
-import { SharedReceiveFrame } from "./SharedReceiveFrame";
+import { SharedReceiveFrame, ShareEyebrow, ShareTitle, ShareSub, SharePrice, ShareEmpty } from "./SharedReceiveFrame";
 import { sharedParam } from "../receiveIntent";
 
 // Share-receive adapter for a single shared LISTING. Owns the URL parse + data
@@ -137,25 +137,15 @@ export function ShareReceiver({
       <SharedReceiveFrame
         sender={sender}
         typeLabel={typeLabel}
-        hero={
-          <div style={{
-            position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center", gap: 8, padding: 24,
-            textAlign: "center", color: "var(--text3)", fontSize: 13,
-          }}>
-            <span>This {noun} isn't available right now</span>
-          </div>
-        }
+        hero={<ShareEmpty><span>This {noun} isn't available right now</span></ShareEmpty>}
         identity={
           <>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text1)", margin: 0, lineHeight: 1.25 }}>
-              This {noun} isn't available
-            </h2>
-            <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5, marginTop: 6 }}>
+            <ShareTitle>This {noun} isn't available</ShareTitle>
+            <ShareSub>
               {typeLabel === "article"
                 ? "The article may have moved. The rest of Watchlist is here."
                 : "The dealer may have removed it. The rest of Watchlist is here."}
-            </div>
+            </ShareSub>
           </>
         }
         primaryCTA={{ label: "Browse Watchlist →", onClick: goBrowse }}
@@ -191,17 +181,13 @@ export function ShareReceiver({
           onError={() => setImgAttempt((n) => n + 1)} loading="eager"
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
       ) : (
-        <div style={{
-          position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center", gap: 6,
-          color: "var(--text3)", fontSize: 13, padding: 16, textAlign: "center",
-        }}>
+        <ShareEmpty>
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" />
           </svg>
           <span>Open on {sharedItem.source} to see it</span>
-        </div>
+        </ShareEmpty>
       )}
       {sharedItem.sold && (
         <span style={{
@@ -217,16 +203,12 @@ export function ShareReceiver({
     <>
       {/* Source kicker only — the brand was redundant with the title
           ("Rolex" twice), Mark 2026-06-01. */}
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text2)" }}>
-        {sharedItem.source || ""}
-      </div>
-      <h2 style={{ fontSize: 19, fontWeight: 700, color: "var(--text1)", margin: "6px 0 0", lineHeight: 1.2 }}>
-        {sharedItem.ref || sharedItem.title || "Watch"}
-      </h2>
+      <ShareEyebrow>{sharedItem.source || ""}</ShareEyebrow>
+      <ShareTitle>{sharedItem.ref || sharedItem.title || "Watch"}</ShareTitle>
       {(sharedItem.price || sharedItem.priceUSD) ? (
-        <div style={{ fontSize: 17, fontWeight: 600, color: "var(--text1)", marginTop: 4 }}>
+        <SharePrice>
           {fmtPriceLine(sharedItem) || (sharedItem.price ? fmt(sharedItem.price, sharedItem.currency || "USD") : "")}
-        </div>
+        </SharePrice>
       ) : null}
     </>
   );

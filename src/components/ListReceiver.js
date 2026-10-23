@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { sharedParam } from "../receiveIntent";
 import { supabase } from "../supabase";
 import { imgSrc } from "../utils";
-import { SharedReceiveFrame } from "./SharedReceiveFrame";
+import { SharedReceiveFrame, ShareTitle, ShareSub, ShareEmpty } from "./SharedReceiveFrame";
 
 // List-share receive flow — reskinned onto SharedReceiveFrame (Mark 2026-06-02)
 // so it shares the common chrome/language/layout with every other shared type.
@@ -279,8 +279,8 @@ export function ListReceiver({
         hero={unavailableHero("This list isn't available")}
         identity={
           <>
-            <h2 style={frameTitle}>This list isn't available</h2>
-            <div style={frameSub}>{error}</div>
+            <ShareTitle>This list isn't available</ShareTitle>
+            <ShareSub>{error}</ShareSub>
           </>
         }
         primaryCTA={{ label: "Browse Watchlist →", onClick: onJustBrowse }}
@@ -303,11 +303,11 @@ export function ListReceiver({
         hero={hero}
         identity={
           <>
-            <h2 style={frameTitle}>Saved to your lists</h2>
-            <div style={frameSub}>
+            <ShareTitle>Saved to your lists</ShareTitle>
+            <ShareSub>
               A copy of <strong style={{ color: "var(--text1)" }}>{data.name}</strong> is now in
               your lists. Open it to browse, edit, or share.
-            </div>
+            </ShareSub>
           </>
         }
         primaryCTA={{ label: "Open my lists →", onClick: () => openListInLists(savedCopyId) }}
@@ -326,11 +326,11 @@ export function ListReceiver({
         hero={hero}
         identity={
           <>
-            <h2 style={frameTitle}>You're in</h2>
-            <div style={frameSub}>
+            <ShareTitle>You're in</ShareTitle>
+            <ShareSub>
               <strong style={{ color: "var(--text1)" }}>{data.name}</strong> now lives under
               Lists ▸ Shared with you. Anything either of you adds stays in sync.
-            </div>
+            </ShareSub>
           </>
         }
         primaryCTA={{ label: "Open the shared list →", onClick: () => openListInLists(listId) }}
@@ -347,12 +347,12 @@ export function ListReceiver({
 
   const identity = (
     <>
-      <h2 style={frameTitle}>{data.name}</h2>
-      <div style={frameSub}>
+      <ShareTitle>{data.name}</ShareTitle>
+      <ShareSub>
         {itemCount === 0
           ? "Nothing in this list yet."
           : `${itemCount} watch${itemCount === 1 ? "" : "es"}`}
-      </div>
+      </ShareSub>
       {/* What a list IS + what you can do — the recipient's first impression
           used to explain nothing (P-23, Mark 2026-06-03). */}
       <div style={{ fontSize: 12.5, color: "var(--text2)", marginTop: 8, lineHeight: 1.55 }}>
@@ -510,19 +510,7 @@ function coverHero(covers) {
 
 function unavailableHero(label) {
   return (
-    <div style={{
-      position: "absolute", inset: 0, display: "flex", alignItems: "center",
-      justifyContent: "center", padding: 24, textAlign: "center",
-      color: "var(--text3)", fontSize: 13,
-    }}>
-      <span>{label}</span>
-    </div>
+    <ShareEmpty><span>{label}</span></ShareEmpty>
   );
 }
 
-const frameTitle = {
-  fontSize: 19, fontWeight: 700, color: "var(--text1)", margin: 0, lineHeight: 1.2,
-};
-const frameSub = {
-  fontSize: 13, color: "var(--text2)", lineHeight: 1.5, marginTop: 6,
-};
