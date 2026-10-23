@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { sharedParam } from "../receiveIntent";
 import { imgSrc, fmtSaleDateRange } from "../utils";
-import { SharedReceiveFrame } from "./SharedReceiveFrame";
+import { SharedReceiveFrame, ShareEyebrow, ShareTitle, ShareSub, ShareEmpty } from "./SharedReceiveFrame";
 
 // Auction-catalog share-receive surface (Mark 2026-06-02). Same isolation
 // pattern as ShareReceiver / ListReceiver — all hooks live inside; App.js only
@@ -90,17 +90,11 @@ export function CatalogReceiver({
       <SharedReceiveFrame
         sender={sender}
         typeLabel="auction catalog"
-        hero={
-          <div style={{
-            position: "absolute", inset: 0, display: "flex", alignItems: "center",
-            justifyContent: "center", padding: 24, textAlign: "center",
-            color: "var(--text3)", fontSize: 13,
-          }}><span>This auction catalog isn't available right now</span></div>
-        }
+        hero={<ShareEmpty><span>This auction catalog isn't available right now</span></ShareEmpty>}
         identity={
           <>
-            <h2 style={frameTitle}>This catalog isn't available</h2>
-            <div style={frameSub}>It may have closed and rolled off. The rest of Watchlist is here.</div>
+            <ShareTitle>This catalog isn't available</ShareTitle>
+            <ShareSub>It may have closed and rolled off. The rest of Watchlist is here.</ShareSub>
           </>
         }
         primaryCTA={{ label: "Browse Watchlist →", onClick: onJustBrowse }}
@@ -123,13 +117,9 @@ export function CatalogReceiver({
       hero={coverHero(covers)}
       identity={
         <>
-          {eyebrow && (
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text2)" }}>
-              {eyebrow}
-            </div>
-          )}
-          <h2 style={{ ...frameTitle, marginTop: eyebrow ? 6 : 0 }}>{sale.title || "Auction catalog"}</h2>
-          <div style={frameSub}>{lotCount ? `${lotCount} lot${lotCount === 1 ? "" : "s"}` : "Auction catalog"}</div>
+          <ShareEyebrow>{eyebrow}</ShareEyebrow>
+          <ShareTitle>{sale.title || "Auction catalog"}</ShareTitle>
+          <ShareSub>{lotCount ? `${lotCount} lot${lotCount === 1 ? "" : "s"}` : "Auction catalog"}</ShareSub>
         </>
       }
       primaryCTA={{ label: "View catalog →", onClick: onView }}
@@ -188,5 +178,3 @@ function coverHero(covers) {
   );
 }
 
-const frameTitle = { fontSize: 19, fontWeight: 700, color: "var(--text1)", margin: 0, lineHeight: 1.2 };
-const frameSub = { fontSize: 13, color: "var(--text2)", lineHeight: 1.5, marginTop: 6 };

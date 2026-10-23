@@ -592,3 +592,36 @@ a.ui-btn { text-decoration: none; display: inline-block; }
 @media (prefers-reduced-motion: reduce) {
   .ui-lume-dot svg, .ui-lume-think i { animation: none; }
 }
+
+/* ---------- shared with you (SharedReceiveFrame) -------------------------- */
+/* The page a share link opens: who sent it, the thing (picture + name + price), its verbs.
+   Every shared type (watch, catalog, list, challenge) wears this one frame. The page's side
+   inset comes from PageFrame, so the frame adds none of its own. */
+.ui-share { position: relative; width: 100%; max-width: 1100px; margin: 0 auto; padding: 6px 0 110px; }
+.ui-share-from { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-right: 44px; min-width: 0; }
+.ui-share-disc { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: .5px solid var(--border);
+                 display: flex; align-items: center; justify-content: center;
+                 font: 600 12px var(--ui-sans); color: var(--text1); background: var(--card-bg); }
+.ui-share-attrib { min-width: 0; font-family: var(--ui-mono); font-size: var(--ui-label-size);
+                   letter-spacing: var(--ui-label-track); text-transform: uppercase; color: var(--text2); }
+.ui-share-card { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch;
+                 border: .5px solid var(--border); background: var(--card-bg); overflow: hidden; }
+.ui-share-hero { position: relative; aspect-ratio: 4 / 3; min-height: 240px; background: var(--surface); }
+.ui-share-body { min-width: 0; display: flex; flex-direction: column; justify-content: center;
+                 gap: 16px; padding: 18px 18px 20px; }
+.ui-share-eyebrow { font-family: var(--ui-mono); font-size: var(--ui-label-size); letter-spacing: var(--ui-label-track);
+                    text-transform: uppercase; color: var(--brand-olive-text); margin-bottom: 6px; }
+.ui-share-title { margin: 0; font-family: var(--ui-display); font-weight: 500; font-size: 24px; line-height: 1.15;
+                  letter-spacing: .005em; color: var(--text1); overflow-wrap: anywhere; }
+.ui-share-price { margin-top: 8px; font-size: 15px; font-weight: 600; color: var(--text1); }
+.ui-share-sub { margin-top: 8px; font-size: 13px; line-height: 1.5; color: var(--text2); }
+.ui-share-acts { display: flex; flex-wrap: wrap; gap: var(--ui-gap); }
+.ui-share-cues { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 16px; }
+.ui-share-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+                  justify-content: center; gap: 8px; padding: 24px; text-align: center; font-size: 13px; color: var(--text3); }
+@container ui-frame (min-width: 900px) {
+  .ui-share-card { grid-template-columns: minmax(320px, 1.2fr) minmax(0, 1fr); }
+  .ui-share-hero { aspect-ratio: auto; height: 100%; min-height: clamp(420px, 64vh, 660px); }
+  .ui-share-body { padding: 32px 32px 34px; }
+  .ui-share-title { font-size: 30px; }
+}

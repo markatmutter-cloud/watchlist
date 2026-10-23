@@ -27,7 +27,15 @@ import { Pill, Button, ModalClose } from "../ui";
 //   busy         bool
 //
 // Self-contained presentational shell — no hooks, no data fetch. The type
-// adapters (which DO have hooks/URL/data) render this.
+// adapters (which DO have hooks/URL/data) render this. Identity blocks use the
+// ShareEyebrow / ShareTitle / ShareSub / SharePrice pieces below so every type
+// reads the same (styles: .ui-share-* in src/ui/ui.css).
+
+export function ShareEyebrow({ children }) { return children ? <div className="ui-share-eyebrow">{children}</div> : null; }
+export function ShareTitle({ children }) { return <h2 className="ui-share-title">{children}</h2>; }
+export function ShareSub({ children }) { return children ? <div className="ui-share-sub">{children}</div> : null; }
+export function SharePrice({ children }) { return children ? <div className="ui-share-price">{children}</div> : null; }
+export function ShareEmpty({ children }) { return <div className="ui-share-empty">{children}</div>; }
 
 export function SharedReceiveFrame({
   sender = "",
@@ -52,54 +60,25 @@ export function SharedReceiveFrame({
     : `Shared with you`;
 
   return (
-    <div style={{ position: "relative", padding: "16px 16px 110px", maxWidth: 1100, margin: "0 auto", width: "100%" }}>
+    <div className="ui-share">
       {/* [0] Close — a top-RIGHT × (Mark: clicking a link then mousing to a
           top-left Back is wrong; × where the eye expects close). Returns the
           user to where they were browsing; only when wired. */}
-      {onClose && (
-        <ModalClose float onClose={onClose} />
-      )}
+      {onClose && <ModalClose float onClose={onClose} />}
       {/* [A] Attribution — the single line of chrome copy; no explainer. */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingRight: onClose ? 40 : 0 }}>
-        <span aria-hidden style={{
-          flexShrink: 0, width: 28, height: 28, borderRadius: 999,
-          background: "var(--brand-olive-tint-12)", color: "var(--brand-olive-ink)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 13, fontWeight: 700,
-        }}>{sender ? sender.charAt(0).toUpperCase() : "♡"}</span>
-        <span style={{
-          fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
-          textTransform: "uppercase", color: "var(--text2)",
-        }}>{attribution}</span>
+      <div className="ui-share-from">
+        <span aria-hidden className="ui-share-disc">{sender ? sender.charAt(0).toUpperCase() : "♡"}</span>
+        <span className="ui-share-attrib">{attribution}</span>
       </div>
 
-      {/* [B/C] Hero + identity + actions — two columns on desktop (hero left,
-          details right), stacked on mobile. Hero depth scales with viewport. */}
-      <div className="srf-card" style={{
-        borderRadius: 12, overflow: "hidden", border: "0.5px solid var(--border)",
-        background: "var(--card-bg)", boxShadow: "var(--shadow-modal)",
-        display: "grid", gridTemplateColumns: "1fr", alignItems: "stretch",
-      }}>
-        <style>{`
-          /* min-height floor guarantees a visible image box even if a browser
-             computes aspect-ratio to 0 for an all-absolutely-positioned hero. */
-          .srf-hero { aspect-ratio: 16 / 10; position: relative; background: var(--surface); min-height: 240px; }
-          .srf-body { min-width: 0; }
-          /* Two columns only when there's genuine room. The image column gets a
-             real minimum (300px) so a long title can't squeeze it to nothing —
-             which made the picture vanish at half-width (Mark). Below this we
-             fall back to the stacked mobile layout (image on top), so there's
-             always a picture. */
-          @media (min-width: 900px) {
-            .srf-card { grid-template-columns: minmax(320px, 1.2fr) minmax(0, 1fr) !important; }
-            .srf-hero { aspect-ratio: auto !important; height: 100%; min-height: clamp(420px, 64vh, 660px); }
-          }
-        `}</style>
-        <div className="srf-hero">{hero}</div>
-        <div className="srf-body" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <div style={{ padding: "16px 18px 4px" }}>{identity}</div>
+      {/* [B/C] Hero + identity + actions — two columns when the frame is wide
+          (hero left, details right), stacked on a phone. Styles: ui.css. */}
+      <div className="ui-share-card">
+        <div className="ui-share-hero">{hero}</div>
+        <div className="ui-share-body">
+          <div>{identity}</div>
           {/* [C] Action bar — fixed verb order; one olive primary. */}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", padding: "12px 18px 18px" }}>
+          <div className="ui-share-acts">
             {primaryCTA && (primaryCTA.href
               ? <Pill primary href={primaryCTA.href} onClick={primaryCTA.onClick}>{primaryCTA.label}</Pill>
               : <Pill primary onClick={primaryCTA.onClick}>{primaryCTA.label}</Pill>)}
@@ -128,7 +107,7 @@ export function SharedReceiveFrame({
 
       {/* [E] Navigation cues — quiet, no dead end. */}
       {navCues.length > 0 && (
-        <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginTop: 16 }}>
+        <div className="ui-share-cues">
           {navCues.map((c) => (
             <Button link key={c.label} onClick={c.onClick}>{c.label}</Button>
           ))}
