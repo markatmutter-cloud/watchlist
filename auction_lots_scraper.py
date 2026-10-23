@@ -261,6 +261,93 @@ def drop_jewellery_lots(lots, sale_title):
     return kept, dropped
 
 
+# Watch-only filter for generalist houses (Mark 2026-10-23). Christie's and
+# Sotheby's cross-list non-watch sales into the watch calendar: a Rétromobile
+# car sale, a Paris Kunstkammer / Art Deco house sale, a Shanghai "Luxury
+# Evening Sale" that is half jewellery. The jewellery word-list above only
+# catches necklaces and rings; it lets bracelets, evening bags, cigarette
+# cases, loose stones, sculpture and cars straight through.
+#
+# So on these two houses, any sale whose title does NOT read as a pure watch
+# sale (no watch word, or a jewellery-and-watches mix) keeps only lots that
+# read as a watch. Their lot titles are formulaic ("… | A yellow gold
+# wristwatch", "ROLEX. A STAINLESS STEEL … WRISTWATCH"), so a watch word or a
+# reference number is reliable. Watch-titled sales are untouched, and the
+# specialist houses (Phillips, Antiquorum, Monaco Legend, Marteau) are exempt:
+# their sale names ("The Blueprint", "Materiality") never say "watch" and
+# their lot titles often don't either.
+WATCH_ONLY_FILTER_HOUSES = {"Christie's", "Sotheby's"}
+_WATCH_ONLY_KEEP_RE = re.compile(
+    r"\b(?:watch|watches|wristwatch|wristwatches|timepiece|timepieces"
+    r"|chronograph|chronometer|montre|montres|armbanduhr|horolog"
+    r"|pocket\s*watch|repeater|tourbillon|ref(?:erence)?\.?\s*\d)",
+    re.IGNORECASE,
+)
+
+
+def is_watch_lot_title(title):
+    """True iff the lot title reads as a watch (watch word or a reference)."""
+    return bool(_WATCH_ONLY_KEEP_RE.search(title or ""))
+
+
+def needs_watch_only_filter(house, sale_title):
+    """True iff this sale's lots should be cut down to watches only.
+
+    Applies to Christie's and Sotheby's sales whose title is not a pure
+    watch sale. An unknown (blank) title is left alone rather than guessed.
+    """
+    if house not in WATCH_ONLY_FILTER_HOUSES:
+        return False
+    t = (sale_title or "").strip()
+    if not t:
+        return False
+    if is_mixed_jewellery_watch_sale(t):
+        return True
+    return not _MIXED_SALE_WATCH_RE.search(t)
+
+
+def drop_non_watch_lots(lots, house, sale_title):
+    """Filter (url, data) pairs for one sale: on a sale that needs the
+    watch-only filter, keep only the watch lots; otherwise pass through."""
+    if not needs_watch_only_filter(house, sale_title):
+        return list(lots), 0
+    kept, dropped = [], 0
+    for url, data in lots:
+        if is_watch_lot_title((data or {}).get("title")):
+            kept.append((url, data))
+        else:
+            dropped += 1
+    return kept, dropped
+
+
+def purge_non_watch_records(out, auctions, protected_urls=()):
+    """Final sweep over the whole output, including sold lots persisted from
+    earlier runs: drop lots from blocklisted sales and the non-watch lots of
+    sales that need the watch-only filter. Manually curated URLs are kept.
+    Returns the number of records removed."""
+    titles = {}
+    for sale in auctions or []:
+        if isinstance(sale, dict) and sale.get("url"):
+            titles[sale["url"]] = sale.get("title") or ""
+    protected = set(protected_urls or ())
+    removed = 0
+    for url in list(out.keys()):
+        rec = out[url]
+        if url in protected or not isinstance(rec, dict):
+            continue
+        sale_url = rec.get("auction_url") or ""
+        sale_title = rec.get("auction_title") or titles.get(sale_url) or ""
+        if (sale_title or sale_url) and is_excluded_catalog(sale_title, sale_url):
+            del out[url]
+            removed += 1
+            continue
+        if (needs_watch_only_filter(rec.get("house"), sale_title)
+                and not is_watch_lot_title(rec.get("title"))):
+            del out[url]
+            removed += 1
+    return removed
+
+
 def is_excluded_title(title):
     """True iff the lot title indicates pocket watch / clock / loose dial."""
     if not title:
@@ -294,12 +381,15 @@ EXCLUDE_CATALOG_TITLES = [
                                      # recurring Sotheby's sale name, all non-watch
     "Artistic Luxury",               # Sotheby's N12xxx — Fabergé/gold boxes/silver/ceramics (Mark 2026-06-13)
     "Maurice Tempelsman",            # Sotheby's "A Marvelous Journey: The Collection of…" — jewels/objets (Mark 2026-06-13)
+    "Rétromobile",                   # Christie's Rétromobile New York — collector cars (Mark 2026-10-23)
+    "Retromobile",                   # same sale, unaccented calendar variant
+    "Une demeure princière",         # Sotheby's Paris, Al Thani residence Parts II/III — Kunstkammer, Art Deco (Mark 2026-10-23)
 ]
 # URL-slug blocklist — the calendar sometimes carries a MISLEADING title: the
 # Sotheby's L26050 jewels sale is cross-listed in the watches category with the
 # generic title "Fine Watches" but a `…/fine-jewelry-l26050` URL. Title alone
 # can't catch it, so also block by URL slug. (LOCKSTEP with merge.py.)
-EXCLUDE_CATALOG_URL_SLUGS = ["fine-jewelry", "jewels", "jewellery", "jewelry"]
+EXCLUDE_CATALOG_URL_SLUGS = ["fine-jewelry", "jewels", "jewellery", "jewelry", "tromobile"]
 
 # A sale whose title names BOTH jewellery and watches is a genuinely mixed
 # sale, not a jewels sale: Sotheby's "Fine Jewelry & Watches" (Milan, MIOL66)
@@ -2859,6 +2949,10 @@ def main():
         lots, n_jewellery = drop_jewellery_lots(lots, sale.get("title"))
         if n_jewellery:
             print(f"  {n_jewellery} jewellery lot(s) dropped (mixed sale)")
+        # Christie's / Sotheby's non-watch-titled sales keep watches only.
+        lots, n_nonwatch = drop_non_watch_lots(lots, house, sale.get("title"))
+        if n_nonwatch:
+            print(f"  {n_nonwatch} non-watch lot(s) dropped (watch-only filter)")
         n_kept = 0
         for url, data in lots:
             # If the same URL appears across multiple sales (rare; can
@@ -2937,6 +3031,12 @@ def main():
         persisted += 1
     if persisted:
         print(f"Persisted {persisted} historical sold lot(s) not in the current scrape")
+
+    # Same rules over everything, persisted sold lots included, so a sale
+    # blocklisted today also leaves the history it already wrote.
+    purged = purge_non_watch_records(out, auctions, protected_urls=manual_urls)
+    if purged:
+        print(f"Purged {purged} non-watch lot(s) (blocklisted sale or watch-only filter)")
 
     # Attach structured-field extractions (reference_no, model_name,
     # case_no, movement_no, year_circa, dial, calibre, case_material,

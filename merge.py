@@ -1031,13 +1031,16 @@ EXCLUDE_CATALOG_TITLES = [
                                      # recurring Sotheby's sale name, all non-watch
     "Artistic Luxury",               # Sotheby's N12xxx — Fabergé/gold boxes/silver/ceramics (Mark 2026-06-13)
     "Maurice Tempelsman",            # Sotheby's "A Marvelous Journey: The Collection of…" — jewels/objets (Mark 2026-06-13)
+    "Rétromobile",                   # Christie's Rétromobile New York — collector cars (Mark 2026-10-23)
+    "Retromobile",                   # same sale, unaccented calendar variant
+    "Une demeure princière",         # Sotheby's Paris, Al Thani residence Parts II/III — Kunstkammer, Art Deco (Mark 2026-10-23)
 ]
 # URL-slug blocklist — the calendar sometimes carries a MISLEADING title: the
 # Sotheby's L26050 jewels sale is cross-listed in the watches category with the
 # generic title "Fine Watches" but a `…/fine-jewelry-l26050` URL. Title alone
 # can't catch it, so also block by URL slug. Any path containing one of these is
 # a non-watch sale. (LOCKSTEP with auction_lots_scraper.py — keep in sync.)
-EXCLUDE_CATALOG_URL_SLUGS = ["fine-jewelry", "jewels", "jewellery", "jewelry"]
+EXCLUDE_CATALOG_URL_SLUGS = ["fine-jewelry", "jewels", "jewellery", "jewelry", "tromobile"]
 
 # A sale whose title names BOTH jewellery and watches is a genuinely mixed
 # sale, not a jewels sale: Sotheby's "Fine Jewelry & Watches" (Milan, MIOL66)
