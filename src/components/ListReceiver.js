@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { sharedParam } from "../receiveIntent";
 import { supabase } from "../supabase";
 import { imgSrc } from "../utils";
 import { SharedReceiveFrame } from "./SharedReceiveFrame";
@@ -39,7 +40,7 @@ export function ListReceiver({
   // via main nav — clear our intent state when it bumps.
   resetTick,
 }) {
-  const [listId, setListId] = useState(null);
+  const [listId, setListId] = useState(() => sharedParam("list"));
   // Token-based invite acceptance (List Sharing v2.1). When the owner shares a
   // COLLABORATE link, the URL carries `?invite=<id>` — the secret that unlocks
   // accept regardless of email match (handles a different Google account).
