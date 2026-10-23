@@ -1,14 +1,14 @@
 {
-  "date": "2026-10-22",
-  "updated_at": "2026-10-22T11:07:22+00:00",
+  "date": "2026-10-23",
+  "updated_at": "2026-10-23T11:00:18+00:00",
   "alerts": [],
   "counts": {
-    "Marteau & Co": 12,
+    "Marteau & Co": 28,
     "Antiquorum": 485,
-    "Christie's": 910,
+    "Christie's": 943,
     "Phillips": 520,
-    "Sotheby's": 617
+    "Sotheby's": 616
   },
-  "total_live_lots": 2544,
+  "total_live_lots": 2592,
   "houses_tracked": 5
 }

@@ -276,10 +276,10 @@
     "rows": 3
   },
   "calendar:christies": {
-    "fingerprint": "1f558fb49c03c592",
-    "lastChanged": "2026-10-22",
+    "fingerprint": "6602c4a64f11c026",
+    "lastChanged": "2026-10-23",
     "lastSeen": "2026-10-23",
-    "rows": 8
+    "rows": 7
   },
   "calendar:marteauandco": {
     "fingerprint": "f2e72a024612ccab",
@@ -414,14 +414,14 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "6b4e14da3a11c18d",
-    "lastChanged": "2026-10-22",
+    "fingerprint": "68c544a29fe4ea03",
+    "lastChanged": "2026-10-23",
     "lastSeen": "2026-10-23",
-    "rows": 6694
+    "rows": 6731
   },
   "merged:auctions": {
-    "fingerprint": "901c58b394c2ca22",
-    "lastChanged": "2026-10-22",
+    "fingerprint": "55fc9ebe3f5605a5",
+    "lastChanged": "2026-10-23",
     "lastSeen": "2026-10-23",
     "rows": 119
   },
