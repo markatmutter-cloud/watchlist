@@ -72,6 +72,12 @@ def _auction_id(house: str, date_start: str, title: str) -> str:
     return merge.auction_id(house, date_start, title)
 
 
+def _is_excluded(title: str, url: str) -> bool:
+    """merge.py's own non-watch blocklist, so the gate and the merge agree."""
+    import merge
+    return merge.is_excluded_catalog(title, url)
+
+
 def load_merged(path: Path = AUCTIONS_JSON) -> dict[str, dict]:
     """id -> sale, straight from the merged calendar."""
     try:
@@ -113,6 +119,10 @@ def dropped_sales(data_dir: Path = DATA,
         title = row.get("title") or ""
         start = (row.get("date_start") or "")[:10]
         if not (house and title):
+            continue
+        # A sale merge.py drops on purpose (non-watch: cars, house sales,
+        # jewels) is meant to be missing; it is not a lost sale.
+        if _is_excluded(title, row.get("url") or ""):
             continue
         # Past sales legitimately age out of the merged calendar.
         end = (row.get("date_end") or start or "")[:10]
