@@ -96,8 +96,8 @@
     "rows": 43
   },
   "Heuertime": {
-    "fingerprint": "2bdcd51840210cf9",
-    "lastChanged": "2026-10-22",
+    "fingerprint": "9051420de38b8246",
+    "lastChanged": "2026-10-24",
     "lastSeen": "2026-10-24",
     "rows": 30
   },
@@ -108,10 +108,10 @@
     "rows": 133
   },
   "Luna Royster": {
-    "fingerprint": "bd667460730f5683",
+    "fingerprint": "e4062e355ab9332c",
     "lastChanged": "2026-10-24",
     "lastSeen": "2026-10-24",
-    "rows": 31
+    "rows": 29
   },
   "Maunder Watches": {
     "fingerprint": "1b40d0d8891c8323",
@@ -132,10 +132,10 @@
     "rows": 26
   },
   "Oliver & Clarke": {
-    "fingerprint": "7f9fca45bd1967cb",
-    "lastChanged": "2026-10-23",
+    "fingerprint": "5d4365f0cca51162",
+    "lastChanged": "2026-10-24",
     "lastSeen": "2026-10-24",
-    "rows": 114
+    "rows": 113
   },
   "Pascal Karp": {
     "fingerprint": "424a84c66654b1fb",
@@ -222,10 +222,10 @@
     "rows": 99
   },
   "Watch Brothers London": {
-    "fingerprint": "e7ae1be3491cca69",
-    "lastChanged": "2026-10-16",
+    "fingerprint": "9f49faf15f3d0bda",
+    "lastChanged": "2026-10-24",
     "lastSeen": "2026-10-24",
-    "rows": 6
+    "rows": 5
   },
   "Watch Center": {
     "fingerprint": "3707b75fa5d6d83d",
@@ -426,9 +426,9 @@
     "rows": 114
   },
   "merged:listings": {
-    "fingerprint": "8948e0f4fa3717cf",
+    "fingerprint": "f0feea511f76a213",
     "lastChanged": "2026-10-24",
     "lastSeen": "2026-10-24",
-    "rows": 12351
+    "rows": 12352
   }
 }
