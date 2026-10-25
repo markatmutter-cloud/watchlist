@@ -12,7 +12,7 @@
     "rows": 282
   },
   "Analog Shift": {
-    "fingerprint": "25892f3249eb8a37",
+    "fingerprint": "de4b2a4d5f6d7720",
     "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
     "rows": 772
@@ -54,16 +54,16 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "1a35e1e0fe8a2b7d",
-    "lastChanged": "2026-10-24",
+    "fingerprint": "c266b39ca8b2ab55",
+    "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
-    "rows": 99
+    "rows": 98
   },
   "Craft & Tailored": {
-    "fingerprint": "2091661b4ded6fbe",
-    "lastChanged": "2026-10-24",
+    "fingerprint": "3128ec9cdd2314cc",
+    "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
-    "rows": 109
+    "rows": 108
   },
   "DB1983": {
     "fingerprint": "848ac884bab9770f",
@@ -132,10 +132,10 @@
     "rows": 26
   },
   "Oliver & Clarke": {
-    "fingerprint": "5d4365f0cca51162",
-    "lastChanged": "2026-10-24",
+    "fingerprint": "b2beb6743c2e2791",
+    "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
-    "rows": 113
+    "rows": 112
   },
   "Pascal Karp": {
     "fingerprint": "424a84c66654b1fb",
@@ -216,8 +216,8 @@
     "rows": 30
   },
   "Vision Vintage Watches": {
-    "fingerprint": "b0f9bf6ded39fc9a",
-    "lastChanged": "2026-10-23",
+    "fingerprint": "732713c82341febd",
+    "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
     "rows": 99
   },
@@ -240,8 +240,8 @@
     "rows": 52
   },
   "Watches of Knightsbridge": {
-    "fingerprint": "9f3b6c40e39896bb",
-    "lastChanged": "2026-10-23",
+    "fingerprint": "977516298a9882f5",
+    "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
     "rows": 82
   },
@@ -252,10 +252,10 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "bf7219ec969ba999",
+    "fingerprint": "b0fc8fd897cd2302",
     "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
-    "rows": 60
+    "rows": 59
   },
   "Watchurbia": {
     "fingerprint": "e4a04fc8811e6fd9",
@@ -426,7 +426,7 @@
     "rows": 114
   },
   "merged:listings": {
-    "fingerprint": "4eb2efd603884275",
+    "fingerprint": "7a730b4035d942c1",
     "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
     "rows": 12357
