@@ -12,10 +12,10 @@
     "rows": 282
   },
   "Analog Shift": {
-    "fingerprint": "91de200164f0e254",
-    "lastChanged": "2026-10-23",
+    "fingerprint": "25892f3249eb8a37",
+    "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
-    "rows": 773
+    "rows": 772
   },
   "Belmont Watches": {
     "fingerprint": "2abb8da99769d51d",
@@ -108,10 +108,10 @@
     "rows": 133
   },
   "Luna Royster": {
-    "fingerprint": "e4062e355ab9332c",
-    "lastChanged": "2026-10-24",
+    "fingerprint": "bd667460730f5683",
+    "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
-    "rows": 29
+    "rows": 31
   },
   "Maunder Watches": {
     "fingerprint": "1b40d0d8891c8323",
@@ -192,8 +192,8 @@
     "rows": 35
   },
   "Tropical Watch": {
-    "fingerprint": "7f869bd3ecb9e785",
-    "lastChanged": "2026-10-24",
+    "fingerprint": "7f754e56efcbce82",
+    "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
     "rows": 106
   },
@@ -204,10 +204,10 @@
     "rows": 38
   },
   "Vintage Watch Fam": {
-    "fingerprint": "1476b71b8fef5009",
-    "lastChanged": "2026-10-23",
+    "fingerprint": "130f781b2387b574",
+    "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
-    "rows": 612
+    "rows": 613
   },
   "Vintage Watch Shop": {
     "fingerprint": "830a17ebdbfcd9e3",
@@ -234,8 +234,8 @@
     "rows": 429
   },
   "Watch Club": {
-    "fingerprint": "19de2bd10d71704d",
-    "lastChanged": "2026-10-21",
+    "fingerprint": "149541fd0752d49e",
+    "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
     "rows": 52
   },
@@ -252,8 +252,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "fff362d8978fcac0",
-    "lastChanged": "2026-10-24",
+    "fingerprint": "bf7219ec969ba999",
+    "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
     "rows": 60
   },
@@ -312,8 +312,8 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "57c3f6f9d925bc9c",
-    "lastChanged": "2026-10-25",
+    "fingerprint": "7d2653e21d9b2584",
+    "lastChanged": "2026-10-24",
     "lastSeen": "2026-10-25",
     "rows": 39
   },
@@ -426,9 +426,9 @@
     "rows": 114
   },
   "merged:listings": {
-    "fingerprint": "440bd701035a6cf4",
+    "fingerprint": "dd81a8097dcffcdb",
     "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
-    "rows": 12352
+    "rows": 12354
   }
 }

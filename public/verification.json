@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-24",
-  "updated_at": "2026-10-24T22:52:04+00:00",
+  "date": "2026-10-25",
+  "updated_at": "2026-10-25T07:47:11+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 104,
@@ -12,7 +12,7 @@
     "Tokant": 34,
     "Romain R\u00e9a": 242,
     "Grey & Patina": 33,
-    "Oliver & Clarke": 100,
+    "Oliver & Clarke": 99,
     "Craft & Tailored": 81,
     "Watch Brothers London": 5,
     "Sierra Time Co": 39,
@@ -28,17 +28,17 @@
     "Huntington Company": 132,
     "The Vintage Watch": 28,
     "Chronoholic": 4,
-    "Vintage Watch Fam": 596,
+    "Vintage Watch Fam": 597,
     "Shuck the Oyster": 114,
     "Central Watch": 173,
     "Vintage Watch Collective": 30,
     "Vision Vintage Watches": 77,
     "Watchurbia": 7,
     "Maunder Watches": 73,
-    "Watch Club": 52,
+    "Watch Club": 54,
     "Vintage Watch Shop": 30,
     "Watches of Lancashire": 53,
-    "Heuertime": 30,
+    "Heuertime": 29,
     "ClassicHeuer": 39,
     "Luna Royster": 31,
     "S.Song Watches": 18,
@@ -48,6 +48,6 @@
     "Amsterdam Vintage Watches": 74,
     "eBay": 39
   },
-  "total_listings": 4519,
+  "total_listings": 4520,
   "sources_tracked": 44
 }
