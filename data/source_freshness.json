@@ -54,10 +54,10 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "c266b39ca8b2ab55",
+    "fingerprint": "71a86418b1cfd91e",
     "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
-    "rows": 98
+    "rows": 103
   },
   "Craft & Tailored": {
     "fingerprint": "3128ec9cdd2314cc",
@@ -108,10 +108,10 @@
     "rows": 133
   },
   "Luna Royster": {
-    "fingerprint": "bd667460730f5683",
+    "fingerprint": "026d086bd83d8f73",
     "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
-    "rows": 31
+    "rows": 30
   },
   "Maunder Watches": {
     "fingerprint": "1b40d0d8891c8323",
@@ -216,7 +216,7 @@
     "rows": 30
   },
   "Vision Vintage Watches": {
-    "fingerprint": "732713c82341febd",
+    "fingerprint": "a0e6afb6befd86a3",
     "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
     "rows": 99
@@ -252,7 +252,7 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "b0fc8fd897cd2302",
+    "fingerprint": "7129aef52d0dc1eb",
     "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
     "rows": 59
@@ -264,8 +264,8 @@
     "rows": 7
   },
   "Wind Vintage": {
-    "fingerprint": "0a90b23aa120d76b",
-    "lastChanged": "2026-10-23",
+    "fingerprint": "072e1a4dbeab1cb0",
+    "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
     "rows": 186
   },
@@ -426,9 +426,9 @@
     "rows": 114
   },
   "merged:listings": {
-    "fingerprint": "ff7695550020ae36",
+    "fingerprint": "b829c5e9bc447c7e",
     "lastChanged": "2026-10-25",
     "lastSeen": "2026-10-25",
-    "rows": 12357
+    "rows": 12362
   }
 }
