@@ -6516,6 +6516,11 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "brand_history",
+      "space"
+    ],
     "title": "Breitling Adds Two New Manual-Wind Navitimers To The Core Collection",
     "updated_at": "2026-10-22",
     "url": "https://www.fratellowatches.com/breitling-adds-two-new-manual-wind-navitimers-to-the-core-collection/",
@@ -17892,6 +17897,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "space"
+    ],
     "title": "Fratello On Air: What Will It Take To Turn The Vintage Speedmaster Market Around?",
     "updated_at": "2026-10-20",
     "url": "https://www.fratellowatches.com/fratello-on-air-what-will-it-take-to-turn-the-vintage-speedmaster-market-around/",
@@ -24264,6 +24273,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "review",
+      "news"
+    ],
     "title": "Hands-On: A. Lange & Söhne Reinvents The Datograph Perpetual With A New Platinum Bracelet",
     "updated_at": "2026-10-24",
     "url": "https://www.fratellowatches.com/hands-on-with-the-a-lange-sohne-datograph-perpetual-on-a-platinum-bracelet/",
@@ -49044,6 +49057,11 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "aviation",
+      "design"
+    ],
     "title": "Rolex GMT-Master Ref. 6542: The World’s Most Infamous Watch, 1959–1960",
     "updated_at": "2026-10-23",
     "url": "https://www.fratellowatches.com/rolex-gmt-master-6542-worlds-most-infamous-watch-1959-1960/",
@@ -72184,6 +72202,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy",
+      "life_lessons"
+    ],
     "title": "The Best Watch I’ve Ever Owned: The Omega Speedmaster Professional Apollo 11 50th Anniversary",
     "updated_at": "2026-10-19",
     "url": "https://www.fratellowatches.com/the-best-watch-ive-ever-owned-the-omega-speedmaster-professional-apollo-11-50th-anniversary/",

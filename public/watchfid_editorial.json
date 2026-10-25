@@ -2296,6 +2296,9 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collecting_philosophy"
+    ],
     "title": "CHARLOTTE EUVRARD",
     "updated_at": "2026-10-20",
     "url": "https://www.watchfid.com/charlotte-euvrard/",
@@ -3479,6 +3482,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "LIBRI DI OROLOGERIA, IL PASSATO DA LEGGERE by IL GIORNALE DEGLI OROLOGI",
     "updated_at": "2026-10-18",
     "url": "https://www.watchfid.com/libri-di-orologeria-il-passato-da-leggere-by-il-giornale-degli-orologi/",

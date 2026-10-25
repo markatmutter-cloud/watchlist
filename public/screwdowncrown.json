@@ -1107,6 +1107,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "collector_mindset",
+      "community_ethics"
+    ],
     "title": "Collector Confessions",
     "updated_at": "2026-10-25",
     "url": "https://www.screwdowncrown.com/p/collector-confessions-watch-hot-takes",
@@ -2514,6 +2518,10 @@
     "source": "screwdowncrown",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "brand_history"
+    ],
     "title": "What is Bennahmias doing at Hublot?",
     "updated_at": "2026-10-21",
     "url": "https://www.screwdowncrown.com/p/hublot-bennahmias-resale-value",

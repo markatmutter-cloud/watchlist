@@ -23500,6 +23500,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history",
+      "complications"
+    ],
     "title": "George Daniels Millennium",
     "updated_at": "2026-10-20",
     "url": "https://hairspring.com/blogs/finds/george-daniels-millennium",
