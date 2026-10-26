@@ -300,10 +300,10 @@
     "rows": 7
   },
   "calendar:sothebys": {
-    "fingerprint": "7d02a2648684d282",
-    "lastChanged": "2026-10-20",
+    "fingerprint": "ea75628abbe043e2",
+    "lastChanged": "2026-10-26",
     "lastSeen": "2026-10-26",
-    "rows": 10
+    "rows": 11
   },
   "calendar:watchesofknightsbridge": {
     "fingerprint": "eb28c4d9a128c4ea",
@@ -414,16 +414,16 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "4995bc1c01b4a7f8",
-    "lastChanged": "2026-10-25",
+    "fingerprint": "e6daba226c452716",
+    "lastChanged": "2026-10-26",
     "lastSeen": "2026-10-26",
     "rows": 6197
   },
   "merged:auctions": {
-    "fingerprint": "beef7d0a16f78d91",
-    "lastChanged": "2026-10-23",
+    "fingerprint": "4c2f53fdd7880a76",
+    "lastChanged": "2026-10-26",
     "lastSeen": "2026-10-26",
-    "rows": 114
+    "rows": 115
   },
   "merged:listings": {
     "fingerprint": "265f754bab1709c3",
