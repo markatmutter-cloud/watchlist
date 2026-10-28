@@ -1,5 +1,6 @@
 house,title,location,date_start,date_end,date_label,url,has_catalog,source,status_hint
 Bonhams,"Online Watches, London","Online, London, Knightsbridge",2026-10-16,2026-10-29,16 - 29 October,https://www.bonhams.com/auction/31994/online-watches-london/,True,Bonhams,live
+Bonhams,"Jewellery, Handbags and Wristwatches at Bruun Rasmussen","Copenhagen, Bruun Rasmussen",2026-11-16,2026-11-16,16 November,https://www.bonhams.com/auction/33255/jewellery-handbags-and-wristwatches-at-bruun-rasmussen/,True,Bonhams,live
 Bonhams,London Watches,"London, Knightsbridge",2026-11-18,2026-11-18,18 November,https://www.bonhams.com/auction/31984/london-watches/,False,Bonhams,upcoming
 Bonhams,Paris Fine Watches,"Paris, Avenue Hoche",2026-11-19,2026-11-19,19 November,https://www.bonhams.com/auction/31800/paris-fine-watches/,False,Bonhams,
 Bonhams,New York Fine Watches,New York,2026-12-08,2026-12-08,8 December,https://www.bonhams.com/auction/33152/new-york-fine-watches/,False,Bonhams,upcoming
