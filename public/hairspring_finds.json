@@ -15773,7 +15773,7 @@
     "model_line": "Chronograph",
     "published_at": "2026-06-28",
     "reference_no": "5004",
-    "scraped_at": "2026-09-28T08:04:49Z",
+    "scraped_at": "2026-10-28T19:25:50Z",
     "slug": "black-dial-5004r-patek-philippe-perpetual-calendar-split-seconds-chronograph",
     "sold_price_usd": 700000,
     "source": "hairspring_finds",
@@ -15786,7 +15786,7 @@
     "title": "Black Dial 5004R Patek Philippe Perpetual Calendar Split Seconds Chronograph",
     "updated_at": "2026-06-29",
     "url": "https://hairspring.com/blogs/finds/black-dial-5004r-patek-philippe-perpetual-calendar-split-seconds-chronograph",
-    "word_count": 398
+    "word_count": 399
   },
   "https://hairspring.com/blogs/finds/black-dial-6238-rolex-pre-daytona-chronograph": {
     "author": "Erik Gustafson",
@@ -25090,6 +25090,28 @@
     "url": "https://hairspring.com/blogs/finds/haldimann-h1-flying-central-tourbillon-2",
     "word_count": 526
   },
+  "https://hairspring.com/blogs/finds/haldimann-h11": {
+    "author": "Erik Gustafson",
+    "brand": "",
+    "case_size": "39mm",
+    "currency": "USD",
+    "excerpt": "Beat Haldimann works from Villa Nussbühl, a 1907 house in Thun, with no CNC machinery and a family watchmaking line he traces back to 1642. He made his name in 2002 with the H1, a flying tourbillon spinning at the centre of the dial. This",
+    "image": "https://hairspring.com/cdn/shop/articles/Haldimann-H11-2.jpg",
+    "model": null,
+    "model_line": null,
+    "published_at": "2026-10-25",
+    "reference_no": null,
+    "scraped_at": "2026-10-28T19:25:48Z",
+    "slug": "haldimann-h11",
+    "sold_price_usd": 150000,
+    "source": "hairspring_finds",
+    "source_type": "editorial_finds",
+    "sub_model": null,
+    "title": "Haldimann H11",
+    "updated_at": "2026-10-28",
+    "url": "https://hairspring.com/blogs/finds/haldimann-h11",
+    "word_count": 431
+  },
   "https://hairspring.com/blogs/finds/hamilton-1813-6b-raf-issued": {
     "author": "Erik Gustafson",
     "brand": "",
@@ -33325,7 +33347,7 @@
     "model_line": null,
     "published_at": "2026-07-28",
     "reference_no": null,
-    "scraped_at": "2026-09-28T08:04:47Z",
+    "scraped_at": "2026-10-28T19:25:49Z",
     "slug": "roger-dubuis-hommage-h37-monopusher",
     "sold_price_usd": 93000,
     "source": "hairspring_finds",
