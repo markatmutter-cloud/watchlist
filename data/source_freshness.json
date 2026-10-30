@@ -54,16 +54,16 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "d82671a2d2bcbba2",
+    "fingerprint": "ef7e126f84ba8f32",
     "lastChanged": "2026-10-30",
     "lastSeen": "2026-10-30",
     "rows": 107
   },
   "Craft & Tailored": {
-    "fingerprint": "65fd42b1094baa01",
-    "lastChanged": "2026-10-29",
+    "fingerprint": "4d8f20bf42e686c3",
+    "lastChanged": "2026-10-30",
     "lastSeen": "2026-10-30",
-    "rows": 109
+    "rows": 110
   },
   "DB1983": {
     "fingerprint": "7c0b7be24c519fd6",
@@ -162,7 +162,7 @@
     "rows": 110
   },
   "Sierra Time Co": {
-    "fingerprint": "ed102b15f2b1cfcf",
+    "fingerprint": "fccbc321782719c2",
     "lastChanged": "2026-10-30",
     "lastSeen": "2026-10-30",
     "rows": 46
@@ -174,10 +174,10 @@
     "rows": 172
   },
   "Swiss Hours": {
-    "fingerprint": "c4309df114073dc6",
-    "lastChanged": "2026-10-29",
+    "fingerprint": "72f659a9ac530e53",
+    "lastChanged": "2026-10-30",
     "lastSeen": "2026-10-30",
-    "rows": 68
+    "rows": 67
   },
   "The Vintage Watch": {
     "fingerprint": "9af541e69b1b086e",
@@ -192,10 +192,10 @@
     "rows": 33
   },
   "Tropical Watch": {
-    "fingerprint": "3009766c7b3ad3ef",
+    "fingerprint": "546d22139c14dc1d",
     "lastChanged": "2026-10-30",
     "lastSeen": "2026-10-30",
-    "rows": 113
+    "rows": 112
   },
   "Vintage Watch Collective": {
     "fingerprint": "08b849e54a0e84fd",
@@ -216,7 +216,7 @@
     "rows": 30
   },
   "Vision Vintage Watches": {
-    "fingerprint": "83e48e5aa1ebfd40",
+    "fingerprint": "8785fdfbefbf819a",
     "lastChanged": "2026-10-30",
     "lastSeen": "2026-10-30",
     "rows": 98
@@ -252,8 +252,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "a8bcca65e49a8bc9",
-    "lastChanged": "2026-10-29",
+    "fingerprint": "6521938549839508",
+    "lastChanged": "2026-10-30",
     "lastSeen": "2026-10-30",
     "rows": 59
   },
@@ -312,8 +312,8 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "557afa0561548874",
-    "lastChanged": "2026-10-29",
+    "fingerprint": "12d8985de3b63cc3",
+    "lastChanged": "2026-10-30",
     "lastSeen": "2026-10-30",
     "rows": 44
   },
@@ -414,8 +414,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "bc14af7fbfe2f349",
-    "lastChanged": "2026-10-29",
+    "fingerprint": "686e5e5b21ee0d05",
+    "lastChanged": "2026-10-30",
     "lastSeen": "2026-10-30",
     "rows": 6354
   },
@@ -426,9 +426,9 @@
     "rows": 117
   },
   "merged:listings": {
-    "fingerprint": "f6e65e22128ec237",
+    "fingerprint": "d95cb0b50dc604c6",
     "lastChanged": "2026-10-30",
     "lastSeen": "2026-10-30",
-    "rows": 12564
+    "rows": 12566
   }
 }
