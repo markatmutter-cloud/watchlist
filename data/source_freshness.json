@@ -396,10 +396,10 @@
     "rows": 16
   },
   "editorial:screwdowncrown": {
-    "fingerprint": "7d36478d7568fe0c",
-    "lastChanged": "2026-10-28",
+    "fingerprint": "d27f586207c04e90",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 293
+    "rows": 294
   },
   "editorial:strictlyvintagewatches": {
     "fingerprint": "90e7675ec16fde74",
@@ -408,8 +408,8 @@
     "rows": 55
   },
   "editorial:watchfid_editorial": {
-    "fingerprint": "a8349c9e850ec0ee",
-    "lastChanged": "2026-10-28",
+    "fingerprint": "4bb853626145e8d4",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
     "rows": 302
   },
