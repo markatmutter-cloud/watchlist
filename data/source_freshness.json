@@ -1,21 +1,21 @@
 {
   "Amsterdam Vintage Watches": {
-    "fingerprint": "1da89dc0fec88a66",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "c67a1777f81812a1",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 77
+    "rows": 75
   },
   "Amsterdam Watch Company": {
-    "fingerprint": "4a14a7c713761799",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "814668519c672444",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 268
+    "rows": 265
   },
   "Analog Shift": {
-    "fingerprint": "d2e1ac34cd3423f8",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "a0502fc6d5fc098c",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 800
+    "rows": 799
   },
   "Belmont Watches": {
     "fingerprint": "2b5c2b093fa2312a",
@@ -66,10 +66,10 @@
     "rows": 111
   },
   "DB1983": {
-    "fingerprint": "7c0b7be24c519fd6",
-    "lastChanged": "2026-10-27",
+    "fingerprint": "2aa788e48b110ae9",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 27
+    "rows": 26
   },
   "European Watch": {
     "fingerprint": "377ca4b8e658add8",
@@ -84,16 +84,16 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "96236823eb91fd3c",
+    "fingerprint": "216a1008aeeedb53",
     "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 32
+    "rows": 31
   },
   "Hairspring": {
-    "fingerprint": "cbe195f975ed548a",
+    "fingerprint": "dad48f0668135eb0",
     "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 44
+    "rows": 45
   },
   "Heuertime": {
     "fingerprint": "aaf9126682a9900a",
@@ -102,14 +102,14 @@
     "rows": 30
   },
   "Huntington Company": {
-    "fingerprint": "40b76a9605747814",
+    "fingerprint": "8254fbfcb91660e4",
     "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 129
+    "rows": 130
   },
   "Luna Royster": {
-    "fingerprint": "19d2e1164e69ac75",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "b16bfe7de78869ee",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
     "rows": 29
   },
@@ -132,22 +132,22 @@
     "rows": 25
   },
   "Oliver & Clarke": {
-    "fingerprint": "cab6cbe7b6286065",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "bf01d89e7c932a29",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 114
+    "rows": 112
   },
   "Pascal Karp": {
-    "fingerprint": "0f4593ee9c953996",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "f108f7ea9f69695a",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 100
+    "rows": 98
   },
   "Romain R\u00e9a": {
-    "fingerprint": "5810317a20b4825b",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "3f6fd56211b3d11e",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 242
+    "rows": 243
   },
   "S.Song Watches": {
     "fingerprint": "04775cd6a4af2c5f",
@@ -204,10 +204,10 @@
     "rows": 116
   },
   "Vintage Watch Collective": {
-    "fingerprint": "cee2b706ace9500c",
+    "fingerprint": "a6e691b8f2f2faae",
     "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 37
+    "rows": 38
   },
   "Vintage Watch Fam": {
     "fingerprint": "d148f92da1f998a3",
@@ -216,10 +216,10 @@
     "rows": 631
   },
   "Vintage Watch Shop": {
-    "fingerprint": "bc6edfdea558582c",
-    "lastChanged": "2026-10-26",
+    "fingerprint": "f4d144344ff0af3e",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 30
+    "rows": 29
   },
   "Vision Vintage Watches": {
     "fingerprint": "8d7106c82c7daa7a",
@@ -258,10 +258,10 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "bf92ea16bd4eb152",
+    "fingerprint": "b95a638d71a5cfb4",
     "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 58
+    "rows": 59
   },
   "Watchurbia": {
     "fingerprint": "ebcc2603292f39da",
@@ -432,9 +432,9 @@
     "rows": 117
   },
   "merged:listings": {
-    "fingerprint": "d3b148e70949899e",
+    "fingerprint": "e32e6001ef4fcfa2",
     "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 12647
+    "rows": 12654
   }
 }
