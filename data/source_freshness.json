@@ -60,10 +60,10 @@
     "rows": 107
   },
   "Craft & Tailored": {
-    "fingerprint": "bc2299d49bd36267",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "005b67978f6ff397",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 109
+    "rows": 111
   },
   "DB1983": {
     "fingerprint": "7c0b7be24c519fd6",
@@ -84,14 +84,14 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "6aa4fbf4ef51af09",
+    "fingerprint": "96236823eb91fd3c",
     "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
     "rows": 32
   },
   "Hairspring": {
-    "fingerprint": "ac70a28c260a3134",
-    "lastChanged": "2026-10-29",
+    "fingerprint": "cbe195f975ed548a",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
     "rows": 44
   },
@@ -155,6 +155,12 @@
     "lastSeen": "2026-10-31",
     "rows": 16
   },
+  "Salt Vintage Watches": {
+    "fingerprint": "c4e4696a2fb10211",
+    "lastChanged": "2026-10-31",
+    "lastSeen": "2026-10-31",
+    "rows": 35
+  },
   "Shuck the Oyster": {
     "fingerprint": "751f026272b257d3",
     "lastChanged": "2026-10-29",
@@ -192,8 +198,8 @@
     "rows": 33
   },
   "Tropical Watch": {
-    "fingerprint": "9e2eb44b0ddad818",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "6ef4e29192a38254",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
     "rows": 116
   },
@@ -252,8 +258,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "9c66fd678bdd4d4a",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "bf92ea16bd4eb152",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
     "rows": 58
   },
@@ -426,9 +432,9 @@
     "rows": 117
   },
   "merged:listings": {
-    "fingerprint": "c5c47713936eb2f4",
+    "fingerprint": "271d008ac560c3a6",
     "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 12607
+    "rows": 12646
   }
 }
