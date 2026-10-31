@@ -919,6 +919,8 @@ LISTING_SOURCES = [
     # Both Amsterdam dealers: Store API currency_code is EUR on every row.
     ('data/awco.csv',                 'Amsterdam Watch Company', 'EUR'),
     ('data/amsterdamvintagewatches.csv', 'Amsterdam Vintage Watches', 'EUR'),
+    # Salt: Shopify, storefront reports Shopify.currency active = GBP.
+    ('data/saltvintagewatches.csv',   'Salt Vintage Watches',  'GBP'),
     # eBay is multi-currency by design — the source-default 'USD'
     # is just a fallback for rows where the per-row `currency`
     # column is missing or unrecognized. Each Browse API result

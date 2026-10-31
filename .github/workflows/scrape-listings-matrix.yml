@@ -73,6 +73,7 @@ jobs:
           - { scraper: swisshours }
           - { scraper: awco }
           - { scraper: amsterdamvintagewatches }
+          - { scraper: saltvintagewatches }
 
     steps:
       - uses: actions/checkout@v5
