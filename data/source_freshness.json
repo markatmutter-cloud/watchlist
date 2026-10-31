@@ -288,14 +288,14 @@
     "rows": 7
   },
   "calendar:marteauandco": {
-    "fingerprint": "c2628adf62431c70",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "73b2af45038d3f7d",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
-    "rows": 3
+    "rows": 4
   },
   "calendar:monacolegend": {
-    "fingerprint": "1c926f3f5744655f",
-    "lastChanged": "2026-09-01",
+    "fingerprint": "33a1c1f50c8d8808",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
     "rows": 20
   },
@@ -420,14 +420,14 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "9b738539b3ca091e",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "8c1fbf5b0d212bfa",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
     "rows": 6358
   },
   "merged:auctions": {
-    "fingerprint": "3590a0581f5980d5",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "500b5812f5ade9f1",
+    "lastChanged": "2026-10-31",
     "lastSeen": "2026-10-31",
     "rows": 117
   },
