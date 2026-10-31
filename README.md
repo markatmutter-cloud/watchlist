@@ -153,6 +153,7 @@ All scrapers hit each dealer's existing public endpoint — no credential-protec
 | Swiss Hours | Shopify | `/collections/watches/products.json` | USD |
 | Amsterdam Watch Company | WooCommerce | Store API; walks the vintage-watches, newwatches and special-editions categories; their `stock_status` filter double-counts, so stock is checked in code + deduped by id | EUR |
 | Amsterdam Vintage Watches | WooCommerce | Store API; `stock_status=instock`; drops the not-for-sale Museum category and price-on-request rows | EUR |
+| Salt Vintage Watches | Shopify | `/products.json` (whole catalog); sold pieces stay listed, dropped on variant availability; descriptions are empty | GBP |
 
 Every source is scraped with vanilla `requests` — no third-party scraping service. Tropical Watch server-renders its listing index (live inventory first, then a sold archive); its scraper walks the index pages and stops at the live→sold boundary. (It was the last source routed through Browse AI; that dependency was retired 2026-05-26 — see SHIPPED.)
 

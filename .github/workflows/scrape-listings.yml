@@ -286,6 +286,12 @@ jobs:
         continue-on-error: true
         run: python amsterdamvintagewatches_scraper.py
 
+      - name: Run Salt Vintage Watches scraper (Shopify products.json, GBP)
+        # Whole catalog; sold pieces stay listed on the storefront and are
+        # dropped on variant availability.
+        continue-on-error: true
+        run: python saltvintagewatches_scraper.py
+
       # eBay runs in its own workflow (.github/workflows/scrape-ebay.yml)
       # so a slow Browse API response or token blip doesn't slow the
       # dealer-listings cron. eBay can iterate on its own cadence and
@@ -344,6 +350,7 @@ jobs:
           [ -f swisshours_listings.csv ]          && mv swisshours_listings.csv          data/swisshours.csv          || echo "swisshours missing"
           [ -f awco_listings.csv ]                && mv awco_listings.csv                data/awco.csv                || echo "awco missing"
           [ -f amsterdamvintagewatches_listings.csv ] && mv amsterdamvintagewatches_listings.csv data/amsterdamvintagewatches.csv || echo "amsterdamvintagewatches missing"
+          [ -f saltvintagewatches_listings.csv ]  && mv saltvintagewatches_listings.csv  data/saltvintagewatches.csv  || echo "saltvintagewatches missing"
           } | tee scrape_move.log
 
       - name: Merge into listings.json
