@@ -54,8 +54,8 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "460c6af34e0a1019",
-    "lastChanged": "2026-10-31",
+    "fingerprint": "f1e9e89bb362af1a",
+    "lastChanged": "2026-11-01",
     "lastSeen": "2026-11-01",
     "rows": 107
   },
@@ -126,10 +126,10 @@
     "rows": 51
   },
   "Moonphase": {
-    "fingerprint": "c5625d0525c86d19",
+    "fingerprint": "4097efa621c8ce28",
     "lastChanged": "2026-11-01",
     "lastSeen": "2026-11-01",
-    "rows": 25
+    "rows": 24
   },
   "Oliver & Clarke": {
     "fingerprint": "ad0d272a09c2b841",
@@ -138,10 +138,10 @@
     "rows": 110
   },
   "Pascal Karp": {
-    "fingerprint": "be351e4fc7cc347b",
-    "lastChanged": "2026-10-31",
+    "fingerprint": "ec040d0c803b2dd2",
+    "lastChanged": "2026-11-01",
     "lastSeen": "2026-11-01",
-    "rows": 97
+    "rows": 96
   },
   "Romain R\u00e9a": {
     "fingerprint": "3f6fd56211b3d11e",
@@ -168,10 +168,10 @@
     "rows": 109
   },
   "Sierra Time Co": {
-    "fingerprint": "fccbc321782719c2",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "02b4d0185b0c058f",
+    "lastChanged": "2026-11-01",
     "lastSeen": "2026-11-01",
-    "rows": 46
+    "rows": 43
   },
   "Somlo": {
     "fingerprint": "11aa1a0723edcfa5",
@@ -198,13 +198,13 @@
     "rows": 33
   },
   "Tropical Watch": {
-    "fingerprint": "e7f50eab6d9b1619",
+    "fingerprint": "8beb07c732057d5f",
     "lastChanged": "2026-11-01",
     "lastSeen": "2026-11-01",
-    "rows": 115
+    "rows": 116
   },
   "Vintage Watch Collective": {
-    "fingerprint": "05b23a9d27003ac8",
+    "fingerprint": "41d57da2c647ac83",
     "lastChanged": "2026-11-01",
     "lastSeen": "2026-11-01",
     "rows": 39
@@ -270,7 +270,7 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "323d887899731486",
+    "fingerprint": "172ab952404211a0",
     "lastChanged": "2026-11-01",
     "lastSeen": "2026-11-01",
     "rows": 172
@@ -432,9 +432,9 @@
     "rows": 117
   },
   "merged:listings": {
-    "fingerprint": "453a4eb4869e7389",
+    "fingerprint": "a799e1cb3aa27ee3",
     "lastChanged": "2026-11-01",
     "lastSeen": "2026-11-01",
-    "rows": 12667
+    "rows": 12669
   }
 }
