@@ -348,8 +348,8 @@
     "rows": 25
   },
   "editorial:fratello": {
-    "fingerprint": "ddabf6cd4894c45f",
-    "lastChanged": "2026-10-29",
+    "fingerprint": "020181d84b6edcec",
+    "lastChanged": "2026-11-01",
     "lastSeen": "2026-11-01",
     "rows": 3836
   },
@@ -384,7 +384,7 @@
     "rows": 206
   },
   "editorial:rolex_magazine": {
-    "fingerprint": "9a28b8b2cc569877",
+    "fingerprint": "8b20101da6f355d5",
     "lastChanged": "2026-11-01",
     "lastSeen": "2026-11-01",
     "rows": 3757
@@ -396,8 +396,8 @@
     "rows": 16
   },
   "editorial:screwdowncrown": {
-    "fingerprint": "d27f586207c04e90",
-    "lastChanged": "2026-10-31",
+    "fingerprint": "96831ecddfcd21c4",
+    "lastChanged": "2026-11-01",
     "lastSeen": "2026-11-01",
     "rows": 294
   },
@@ -408,8 +408,8 @@
     "rows": 55
   },
   "editorial:watchfid_editorial": {
-    "fingerprint": "4bb853626145e8d4",
-    "lastChanged": "2026-10-31",
+    "fingerprint": "e940eebf570df346",
+    "lastChanged": "2026-11-01",
     "lastSeen": "2026-11-01",
     "rows": 302
   },
@@ -420,10 +420,10 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "0e9aa7b4a161207a",
+    "fingerprint": "6a06b1f8205c66fd",
     "lastChanged": "2026-11-01",
     "lastSeen": "2026-11-01",
-    "rows": 5838
+    "rows": 6358
   },
   "merged:auctions": {
     "fingerprint": "500b5812f5ade9f1",
