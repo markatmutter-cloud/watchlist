@@ -1769,6 +1769,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "space",
+      "celebrity"
+    ],
     "title": "AN OMEGA SPEEDMASTER IN THUNDERBIRDS",
     "updated_at": "2026-10-26",
     "url": "https://www.watchfid.com/an-omega-speedmaster-in-thunderbirds/",
@@ -3271,6 +3275,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "celebrity",
+      "collecting_philosophy"
+    ],
     "title": "LAURENT PERRIOT",
     "updated_at": "2026-10-27",
     "url": "https://www.watchfid.com/laurent-perriot/",

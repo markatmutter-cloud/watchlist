@@ -12840,6 +12840,11 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "celebrity",
+      "reference_profile",
+      "vintage_care"
+    ],
     "title": "This Rolex Submariner 1680 Belonged To An Oscar-Winning Hollywood Sound Engineer",
     "updated_at": "2026-10-27",
     "url": "https://www.fratellowatches.com/elliot-tyson-rolex-submariner-1680/",
@@ -17257,6 +17262,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "community_ethics"
+    ],
     "title": "Fratello On Air: Sébastien Chaulmontet On Sellita, Albishorn, And Vintage Watches",
     "updated_at": "2026-10-27",
     "url": "https://www.fratellowatches.com/fratello-on-air-sebastien-chaulmontet-on-sellita-albishorn-and-vintage-watches/",
@@ -30857,6 +30866,11 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "diving",
+      "design"
+    ],
     "title": "Introducing: The Sicura Hexa 400 Sea Green, A Vintage-Inspired Dive Watch With A Dial Like The Ocean",
     "updated_at": "2026-10-29",
     "url": "https://www.fratellowatches.com/introducing-the-sicura-hexa-400-sea-green/",

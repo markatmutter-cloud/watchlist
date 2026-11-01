@@ -25107,6 +25107,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "design",
+      "complications"
+    ],
     "title": "Haldimann H11",
     "updated_at": "2026-10-28",
     "url": "https://hairspring.com/blogs/finds/haldimann-h11",
