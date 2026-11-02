@@ -8314,7 +8314,7 @@
     "model_line": null,
     "published_at": "2026-07-04",
     "reference_no": null,
-    "scraped_at": "2026-10-03T17:53:44Z",
+    "scraped_at": "2026-11-02T22:44:54Z",
     "slug": "3939hp-patek-philippe-minute-repeater-tourbillon",
     "sold_price_usd": 600000,
     "source": "hairspring_finds",
@@ -8327,7 +8327,7 @@
     "title": "3939HP Patek Philippe Minute Repeater Tourbillon",
     "updated_at": "2026-07-19",
     "url": "https://hairspring.com/blogs/finds/3939hp-patek-philippe-minute-repeater-tourbillon",
-    "word_count": 400
+    "word_count": 401
   },
   "https://hairspring.com/blogs/finds/3940g-patek-philippe-perpetual-calendar": {
     "author": "Erik Gustafson",
@@ -14942,6 +14942,28 @@
     "updated_at": "2021-05-05",
     "url": "https://hairspring.com/blogs/finds/audemars-piguet-star-wheel-25720ba",
     "word_count": 323
+  },
+  "https://hairspring.com/blogs/finds/auffret-paris-tourbillon-a-paris-subscription": {
+    "author": "Erik Gustafson",
+    "brand": "",
+    "case_size": "39mm",
+    "currency": "USD",
+    "excerpt": "The Tourbillon à Paris is Théo Auffret’s first watch: a hand-wound regulator tourbillon in a 38.5mm case, offered in platinum, gold, silver, titanium or steel. Hours sit off-centre, minutes central, and the open dial puts the barrel at 12",
+    "image": "https://hairspring.com/cdn/shop/articles/Theo-Auffret-Tourbillon-a-Paris-2.jpg",
+    "model": null,
+    "model_line": null,
+    "published_at": "2026-11-01",
+    "reference_no": null,
+    "scraped_at": "2026-11-02T22:44:53Z",
+    "slug": "auffret-paris-tourbillon-a-paris-subscription",
+    "sold_price_usd": 250000,
+    "source": "hairspring_finds",
+    "source_type": "editorial_finds",
+    "sub_model": null,
+    "title": "Auffret Paris Tourbillon à Paris Subscription",
+    "updated_at": "2026-11-02",
+    "url": "https://hairspring.com/blogs/finds/auffret-paris-tourbillon-a-paris-subscription",
+    "word_count": 377
   },
   "https://hairspring.com/blogs/finds/ba-145-022-69-omega-speedmaster": {
     "author": "Erik Gustafson",
