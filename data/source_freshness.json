@@ -294,8 +294,8 @@
     "rows": 4
   },
   "calendar:monacolegend": {
-    "fingerprint": "33a1c1f50c8d8808",
-    "lastChanged": "2026-10-31",
+    "fingerprint": "e4b93bbbbb7a98f9",
+    "lastChanged": "2026-11-02",
     "lastSeen": "2026-11-02",
     "rows": 20
   },
@@ -420,14 +420,14 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "6a06b1f8205c66fd",
-    "lastChanged": "2026-11-01",
+    "fingerprint": "04ec2dd858868ecb",
+    "lastChanged": "2026-11-02",
     "lastSeen": "2026-11-02",
     "rows": 6358
   },
   "merged:auctions": {
-    "fingerprint": "500b5812f5ade9f1",
-    "lastChanged": "2026-10-31",
+    "fingerprint": "2e0296283562811d",
+    "lastChanged": "2026-11-02",
     "lastSeen": "2026-11-02",
     "rows": 117
   },
