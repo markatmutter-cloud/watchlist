@@ -921,6 +921,9 @@ LISTING_SOURCES = [
     ('data/amsterdamvintagewatches.csv', 'Amsterdam Vintage Watches', 'EUR'),
     # Salt: Shopify, storefront reports Shopify.currency active = GBP.
     ('data/saltvintagewatches.csv',   'Salt Vintage Watches',  'GBP'),
+    # Replaces Falco Watches (retired 2026-11; its row above stays as a
+    # frozen record). Shopify.currency active = GBP.
+    ('data/tommyzhao.csv',            'Tommy Zhao',            'GBP'),
     # eBay is multi-currency by design — the source-default 'USD'
     # is just a fallback for rows where the per-row `currency`
     # column is missing or unrecognized. Each Browse API result

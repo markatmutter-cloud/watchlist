@@ -2,5 +2,9 @@
   "watchcenter": {
     "reason": "B-80 - dealer-side outage, still down. watchcenter.ch returns HTTP 503 to CI (source-probe, 16KB error page, no anti-bot markers) and does not load in a browser either, so it is their site that is down, not our access to it. Mark contacted the dealer 2026-08-30; no recovery by 2026-09-16 (90 consecutive missed runs). Re-snoozed to mid-October at Mark's call. Nothing in this repo can fix it, so it stays muted until this date, when it re-pages by itself.",
     "until": "2026-10-15"
+  },
+  "falco": {
+    "reason": "Retired dealer, not an outage. Falco Watches split and is replaced by Tommy Zhao (Mark, 2026-11-03). The scraper is no longer run; data/falco.csv stays in the feed as a frozen record, so its content never changes and the 21-day content-unchanged check would page for ever. Muted until this date, when it re-pages by itself: decide then whether to keep the frozen rows or drop them.",
+    "until": "2027-05-03"
   }
 }
