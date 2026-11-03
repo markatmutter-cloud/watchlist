@@ -197,6 +197,12 @@
     "lastSeen": "2026-11-03",
     "rows": 36
   },
+  "Tommy Zhao": {
+    "fingerprint": "4bddb8ec79d90a36",
+    "lastChanged": "2026-11-03",
+    "lastSeen": "2026-11-03",
+    "rows": 10
+  },
   "Tropical Watch": {
     "fingerprint": "343b4502bd3e2b01",
     "lastChanged": "2026-11-03",
@@ -420,7 +426,7 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "37feabb0b44c1df9",
+    "fingerprint": "9cfae395b19dec69",
     "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
     "rows": 6592
@@ -432,9 +438,9 @@
     "rows": 117
   },
   "merged:listings": {
-    "fingerprint": "1e1ec19f46a99483",
+    "fingerprint": "d9b157277b000976",
     "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
-    "rows": 12756
+    "rows": 12767
   }
 }
