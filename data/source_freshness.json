@@ -1,9 +1,9 @@
 {
   "Amsterdam Vintage Watches": {
-    "fingerprint": "c67a1777f81812a1",
-    "lastChanged": "2026-10-31",
+    "fingerprint": "3bce8232ed0b06b5",
+    "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
-    "rows": 75
+    "rows": 74
   },
   "Amsterdam Watch Company": {
     "fingerprint": "c21b9fc9c217d466",
@@ -12,10 +12,10 @@
     "rows": 285
   },
   "Analog Shift": {
-    "fingerprint": "f27c981e72f93bf1",
-    "lastChanged": "2026-11-02",
+    "fingerprint": "88acb2a7f5a964d7",
+    "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
-    "rows": 801
+    "rows": 800
   },
   "Belmont Watches": {
     "fingerprint": "2b5c2b093fa2312a",
@@ -198,13 +198,13 @@
     "rows": 35
   },
   "Tropical Watch": {
-    "fingerprint": "763ff6724df39958",
+    "fingerprint": "e8082b9cb1221b23",
     "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
-    "rows": 116
+    "rows": 118
   },
   "Vintage Watch Collective": {
-    "fingerprint": "19a1fbe3b5949d6b",
+    "fingerprint": "4c066b31bf5689d4",
     "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
     "rows": 38
@@ -270,7 +270,7 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "f9335891346fe720",
+    "fingerprint": "de4421d510ae5fd3",
     "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
     "rows": 181
@@ -432,9 +432,9 @@
     "rows": 117
   },
   "merged:listings": {
-    "fingerprint": "e9a7e837d7f72688",
+    "fingerprint": "3b7ea745d4aad69d",
     "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
-    "rows": 12731
+    "rows": 12733
   }
 }
