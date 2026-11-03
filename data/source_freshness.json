@@ -60,10 +60,10 @@
     "rows": 104
   },
   "Craft & Tailored": {
-    "fingerprint": "7a5adcde1f3390ee",
-    "lastChanged": "2026-11-01",
+    "fingerprint": "d2171db555580428",
+    "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
-    "rows": 109
+    "rows": 108
   },
   "DB1983": {
     "fingerprint": "09a1062e167f9388",
@@ -84,10 +84,10 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "9dad0c21528ec699",
-    "lastChanged": "2026-11-01",
+    "fingerprint": "48bcd587642c216f",
+    "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
-    "rows": 29
+    "rows": 33
   },
   "Hairspring": {
     "fingerprint": "cbe195f975ed548a",
@@ -168,10 +168,10 @@
     "rows": 107
   },
   "Sierra Time Co": {
-    "fingerprint": "bbcfc54546928c4a",
-    "lastChanged": "2026-11-02",
+    "fingerprint": "6b56cd71feadf0e3",
+    "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
-    "rows": 41
+    "rows": 40
   },
   "Somlo": {
     "fingerprint": "5c11e1a3ddd112e6",
@@ -198,22 +198,22 @@
     "rows": 35
   },
   "Tropical Watch": {
-    "fingerprint": "07ee18b5e50ce7aa",
-    "lastChanged": "2026-11-02",
+    "fingerprint": "763ff6724df39958",
+    "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
-    "rows": 113
+    "rows": 116
   },
   "Vintage Watch Collective": {
-    "fingerprint": "4c066b31bf5689d4",
-    "lastChanged": "2026-11-02",
+    "fingerprint": "19a1fbe3b5949d6b",
+    "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
     "rows": 38
   },
   "Vintage Watch Fam": {
-    "fingerprint": "f93252725881bd80",
-    "lastChanged": "2026-11-02",
+    "fingerprint": "37e9c75263e43d6d",
+    "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
-    "rows": 632
+    "rows": 631
   },
   "Vintage Watch Shop": {
     "fingerprint": "f4d144344ff0af3e",
@@ -258,8 +258,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "ce274fbcaa6d77ea",
-    "lastChanged": "2026-11-02",
+    "fingerprint": "194aa547371ab753",
+    "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
     "rows": 59
   },
@@ -270,10 +270,10 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "a068284a1b255cdf",
-    "lastChanged": "2026-11-02",
+    "fingerprint": "f9335891346fe720",
+    "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
-    "rows": 180
+    "rows": 181
   },
   "calendar:antiquorum": {
     "fingerprint": "cfc07a4728d60bf9",
@@ -432,9 +432,9 @@
     "rows": 117
   },
   "merged:listings": {
-    "fingerprint": "9bef850cea4aa72a",
+    "fingerprint": "e9a7e837d7f72688",
     "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-03",
-    "rows": 12720
+    "rows": 12731
   }
 }
