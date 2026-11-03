@@ -31,7 +31,6 @@ jobs:
           - { scraper: windvintage }
           - { scraper: menta }
           - { scraper: collectorscorner }
-          - { scraper: falco }
           - { scraper: pascalkarp }
           - { scraper: tokant }
           - { scraper: romainrea }
@@ -74,6 +73,7 @@ jobs:
           - { scraper: awco }
           - { scraper: amsterdamvintagewatches }
           - { scraper: saltvintagewatches }
+          - { scraper: tommyzhao }
 
     steps:
       - uses: actions/checkout@v5

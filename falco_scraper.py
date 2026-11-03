@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
 Falco Watches scraper - Shopify public products API
+
+RETIRED 2026-11: Falco split and is replaced by Tommy Zhao
+(tommyzhao_scraper.py). This script is no longer run by any workflow;
+data/falco.csv is left in place as a frozen record and stays in the feed.
+Kept for reference only.
+
 Run: python3 falco_scraper.py
 Requires: pip install requests
 Output: falco_listings.csv

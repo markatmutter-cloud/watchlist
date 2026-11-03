@@ -47,10 +47,6 @@ jobs:
         continue-on-error: true
         run: python collectorscorner_scraper.py
 
-      - name: Run Falco Watches scraper
-        continue-on-error: true
-        run: python falco_scraper.py
-
       - name: Run Pascal Karp scraper
         continue-on-error: true
         run: python pascalkarp_scraper.py
@@ -292,6 +288,12 @@ jobs:
         continue-on-error: true
         run: python saltvintagewatches_scraper.py
 
+      - name: Run Tommy Zhao scraper (Shopify products.json, GBP)
+        # Replaces Falco Watches. Whole catalog; sold pieces stay listed and
+        # are dropped on variant availability.
+        continue-on-error: true
+        run: python tommyzhao_scraper.py
+
       # eBay runs in its own workflow (.github/workflows/scrape-ebay.yml)
       # so a slow Browse API response or token blip doesn't slow the
       # dealer-listings cron. eBay can iterate on its own cadence and
@@ -309,7 +311,6 @@ jobs:
           [ -f windvintage_listings.csv ]         && mv windvintage_listings.csv         data/windvintage.csv         || echo "windvintage missing"
           [ -f menta_listings.csv ]               && mv menta_listings.csv               data/menta.csv               || echo "menta missing"
           [ -f collectorscorner_listings.csv ]    && mv collectorscorner_listings.csv    data/collectorscorner.csv    || echo "ccny missing"
-          [ -f falco_listings.csv ]               && mv falco_listings.csv               data/falco.csv               || echo "falco missing"
           [ -f pascalkarp_listings.csv ]          && mv pascalkarp_listings.csv          data/pascalkarp.csv          || echo "pascalkarp missing"
           [ -f tokant_listings.csv ]              && mv tokant_listings.csv              data/tokant.csv              || echo "tokant missing"
           [ -f romainrea_listings.csv ]           && mv romainrea_listings.csv           data/romainrea.csv           || echo "romainrea missing"
@@ -351,6 +352,7 @@ jobs:
           [ -f awco_listings.csv ]                && mv awco_listings.csv                data/awco.csv                || echo "awco missing"
           [ -f amsterdamvintagewatches_listings.csv ] && mv amsterdamvintagewatches_listings.csv data/amsterdamvintagewatches.csv || echo "amsterdamvintagewatches missing"
           [ -f saltvintagewatches_listings.csv ]  && mv saltvintagewatches_listings.csv  data/saltvintagewatches.csv  || echo "saltvintagewatches missing"
+          [ -f tommyzhao_listings.csv ]           && mv tommyzhao_listings.csv           data/tommyzhao.csv           || echo "tommyzhao missing"
           } | tee scrape_move.log
 
       - name: Merge into listings.json
