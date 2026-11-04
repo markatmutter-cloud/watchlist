@@ -12,10 +12,10 @@
     "rows": 283
   },
   "Analog Shift": {
-    "fingerprint": "a0a470a0bcccf92a",
-    "lastChanged": "2026-11-03",
+    "fingerprint": "427f8efe5fbb8599",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-04",
-    "rows": 805
+    "rows": 806
   },
   "Belmont Watches": {
     "fingerprint": "82b40910e420100d",
@@ -84,8 +84,8 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "48bcd587642c216f",
-    "lastChanged": "2026-11-03",
+    "fingerprint": "5acea21ab0f56ab3",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-04",
     "rows": 33
   },
@@ -168,16 +168,16 @@
     "rows": 107
   },
   "Sierra Time Co": {
-    "fingerprint": "4fa8e33438021593",
-    "lastChanged": "2026-11-03",
+    "fingerprint": "6d9ca9e0b04a917b",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-04",
-    "rows": 38
+    "rows": 43
   },
   "Somlo": {
-    "fingerprint": "384bd89c0a8e7ac3",
-    "lastChanged": "2026-11-03",
+    "fingerprint": "5da9626655bde404",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-04",
-    "rows": 170
+    "rows": 169
   },
   "Swiss Hours": {
     "fingerprint": "db352aadee4f3dbf",
@@ -192,8 +192,8 @@
     "rows": 29
   },
   "Tokant": {
-    "fingerprint": "d63dcb5b6e5b657e",
-    "lastChanged": "2026-11-03",
+    "fingerprint": "3b93146f50629038",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-04",
     "rows": 36
   },
@@ -204,22 +204,22 @@
     "rows": 10
   },
   "Tropical Watch": {
-    "fingerprint": "343b4502bd3e2b01",
-    "lastChanged": "2026-11-03",
+    "fingerprint": "59f09522fc70fdc1",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-04",
-    "rows": 110
+    "rows": 111
   },
   "Vintage Watch Collective": {
-    "fingerprint": "fd15ef19fdcba850",
-    "lastChanged": "2026-11-03",
+    "fingerprint": "157e010347424ad8",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-04",
-    "rows": 39
+    "rows": 37
   },
   "Vintage Watch Fam": {
-    "fingerprint": "e64a9975c79ce013",
-    "lastChanged": "2026-11-03",
+    "fingerprint": "1f956724d6a8d701",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-04",
-    "rows": 630
+    "rows": 631
   },
   "Vintage Watch Shop": {
     "fingerprint": "f4d144344ff0af3e",
@@ -228,10 +228,10 @@
     "rows": 29
   },
   "Vision Vintage Watches": {
-    "fingerprint": "8d7106c82c7daa7a",
-    "lastChanged": "2026-10-30",
+    "fingerprint": "01bdf9ebc4281479",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-04",
-    "rows": 102
+    "rows": 101
   },
   "Watch Brothers London": {
     "fingerprint": "680f79d424c93cb0",
@@ -252,10 +252,10 @@
     "rows": 53
   },
   "Watches of Knightsbridge": {
-    "fingerprint": "8e66308438c12617",
-    "lastChanged": "2026-11-03",
+    "fingerprint": "b47bff2ccd9dbd3a",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-04",
-    "rows": 88
+    "rows": 83
   },
   "Watches of Lancashire": {
     "fingerprint": "d014028683c527f9",
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "b98a75345cd6bfae",
-    "lastChanged": "2026-11-03",
+    "fingerprint": "97b424ced4d456de",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-04",
     "rows": 60
   },
@@ -276,10 +276,10 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "8b17fe37eee9d3a4",
-    "lastChanged": "2026-11-03",
+    "fingerprint": "96fc9ad08e9d5c16",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-04",
-    "rows": 183
+    "rows": 186
   },
   "calendar:antiquorum": {
     "fingerprint": "cfc07a4728d60bf9",
@@ -324,8 +324,8 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "8c5d84d75848f23c",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "e62e26d857149758",
+    "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-04",
     "rows": 45
   },
@@ -426,8 +426,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "c8195a70cc4078e7",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "9cfae395b19dec69",
+    "lastChanged": "2026-11-03",
     "lastSeen": "2026-11-04",
     "rows": 6592
   },
@@ -438,9 +438,9 @@
     "rows": 117
   },
   "merged:listings": {
-    "fingerprint": "0b19d741b962cd67",
+    "fingerprint": "5a97ac6a485d5dc2",
     "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-04",
-    "rows": 12767
+    "rows": 12779
   }
 }
