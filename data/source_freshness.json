@@ -324,8 +324,8 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "52b92bd338b37dad",
-    "lastChanged": "2026-11-05",
+    "fingerprint": "8f76206838bbdda3",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-05",
     "rows": 45
   },
@@ -426,8 +426,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "797e0c4e5fa142d7",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "182d36937d53d8cc",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-05",
     "rows": 6619
   },
@@ -438,8 +438,8 @@
     "rows": 117
   },
   "merged:listings": {
-    "fingerprint": "42e0b636841536a3",
-    "lastChanged": "2026-11-05",
+    "fingerprint": "c6ccd4736de6bc35",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-05",
     "rows": 12830
   }
