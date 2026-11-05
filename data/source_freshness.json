@@ -12,8 +12,8 @@
     "rows": 294
   },
   "Analog Shift": {
-    "fingerprint": "8bf1fdfa07d629eb",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "fcfdb6ace0da05bf",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-05",
     "rows": 809
   },
@@ -54,10 +54,10 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "4c630010c97e040c",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "3a51b1c3f971bf91",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-05",
-    "rows": 102
+    "rows": 103
   },
   "Craft & Tailored": {
     "fingerprint": "651dac32d39e369d",
@@ -102,10 +102,10 @@
     "rows": 30
   },
   "Huntington Company": {
-    "fingerprint": "a50a0ab9c8c929ee",
-    "lastChanged": "2026-11-03",
+    "fingerprint": "3a47346136ee3ab9",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-05",
-    "rows": 112
+    "rows": 121
   },
   "Luna Royster": {
     "fingerprint": "b16bfe7de78869ee",
@@ -168,10 +168,10 @@
     "rows": 107
   },
   "Sierra Time Co": {
-    "fingerprint": "63d0f395b3e4e0ac",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "90cad664042c2294",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-05",
-    "rows": 43
+    "rows": 46
   },
   "Somlo": {
     "fingerprint": "d979ffc4abcdabd3",
@@ -204,10 +204,10 @@
     "rows": 10
   },
   "Tropical Watch": {
-    "fingerprint": "d9338d9a5b4112f5",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "ead7635be6a83934",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-05",
-    "rows": 108
+    "rows": 111
   },
   "Vintage Watch Collective": {
     "fingerprint": "3b7917dbc4d8d849",
@@ -216,10 +216,10 @@
     "rows": 38
   },
   "Vintage Watch Fam": {
-    "fingerprint": "33abccf301a4c7bd",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "84c8ab2e2e1207e0",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-05",
-    "rows": 628
+    "rows": 626
   },
   "Vintage Watch Shop": {
     "fingerprint": "f4d144344ff0af3e",
@@ -228,10 +228,10 @@
     "rows": 29
   },
   "Vision Vintage Watches": {
-    "fingerprint": "01bdf9ebc4281479",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "efbc40e700ce4097",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-05",
-    "rows": 101
+    "rows": 102
   },
   "Watch Brothers London": {
     "fingerprint": "680f79d424c93cb0",
@@ -246,14 +246,14 @@
     "rows": 429
   },
   "Watch Club": {
-    "fingerprint": "7e8e837717b91be9",
-    "lastChanged": "2026-11-01",
+    "fingerprint": "425c1a14e7898220",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-05",
     "rows": 53
   },
   "Watches of Knightsbridge": {
-    "fingerprint": "b47bff2ccd9dbd3a",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "872654db76514cbc",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-05",
     "rows": 83
   },
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "97b424ced4d456de",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "2b9005904a4beaf8",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-05",
     "rows": 60
   },
@@ -276,8 +276,8 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "719e06bdcc1f4f89",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "d8b2e497e71bea10",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-05",
     "rows": 189
   },
@@ -426,8 +426,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "182d36937d53d8cc",
-    "lastChanged": "2026-11-05",
+    "fingerprint": "797e0c4e5fa142d7",
+    "lastChanged": "2026-11-04",
     "lastSeen": "2026-11-05",
     "rows": 6619
   },
@@ -438,9 +438,9 @@
     "rows": 117
   },
   "merged:listings": {
-    "fingerprint": "c6ccd4736de6bc35",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "fec95c70414b4f77",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-05",
-    "rows": 12830
+    "rows": 12852
   }
 }
