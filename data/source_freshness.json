@@ -84,16 +84,16 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "3a6278d92a0c0532",
-    "lastChanged": "2026-11-05",
+    "fingerprint": "d9049fc8a1ccc43c",
+    "lastChanged": "2026-11-06",
     "lastSeen": "2026-11-06",
-    "rows": 36
+    "rows": 37
   },
   "Hairspring": {
-    "fingerprint": "b6833376bc487a28",
-    "lastChanged": "2026-11-05",
+    "fingerprint": "e91566c8ad0e60b7",
+    "lastChanged": "2026-11-06",
     "lastSeen": "2026-11-06",
-    "rows": 43
+    "rows": 42
   },
   "Heuertime": {
     "fingerprint": "ad603ee48f1bf32f",
@@ -168,10 +168,10 @@
     "rows": 148
   },
   "Sierra Time Co": {
-    "fingerprint": "8bd29977cf1b1b45",
-    "lastChanged": "2026-11-05",
+    "fingerprint": "e5d9e62a9ee1de72",
+    "lastChanged": "2026-11-06",
     "lastSeen": "2026-11-06",
-    "rows": 46
+    "rows": 47
   },
   "Somlo": {
     "fingerprint": "29ddb3aacb3eb7b9",
@@ -198,14 +198,14 @@
     "rows": 37
   },
   "Tommy Zhao": {
-    "fingerprint": "4bddb8ec79d90a36",
-    "lastChanged": "2026-11-03",
+    "fingerprint": "c1b7dd6936f2dc87",
+    "lastChanged": "2026-11-06",
     "lastSeen": "2026-11-06",
-    "rows": 10
+    "rows": 8
   },
   "Tropical Watch": {
-    "fingerprint": "fad4f3812306e061",
-    "lastChanged": "2026-11-05",
+    "fingerprint": "6ab098376e8f6d10",
+    "lastChanged": "2026-11-06",
     "lastSeen": "2026-11-06",
     "rows": 113
   },
@@ -216,10 +216,10 @@
     "rows": 37
   },
   "Vintage Watch Fam": {
-    "fingerprint": "0d0fc183d57ac798",
-    "lastChanged": "2026-11-05",
+    "fingerprint": "d2dec73095d8c9df",
+    "lastChanged": "2026-11-06",
     "lastSeen": "2026-11-06",
-    "rows": 618
+    "rows": 616
   },
   "Vintage Watch Shop": {
     "fingerprint": "f4d144344ff0af3e",
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "f13c654d97e1d7a9",
-    "lastChanged": "2026-11-05",
+    "fingerprint": "ca9b808962c29d5b",
+    "lastChanged": "2026-11-06",
     "lastSeen": "2026-11-06",
     "rows": 59
   },
@@ -426,8 +426,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "33aee6f836b2b41c",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "a8d36b024bfe272a",
+    "lastChanged": "2026-11-05",
     "lastSeen": "2026-11-06",
     "rows": 6670
   },
@@ -438,9 +438,9 @@
     "rows": 118
   },
   "merged:listings": {
-    "fingerprint": "f67813d239ddd823",
-    "lastChanged": "2026-11-05",
+    "fingerprint": "98437b6455060d21",
+    "lastChanged": "2026-11-06",
     "lastSeen": "2026-11-06",
-    "rows": 12922
+    "rows": 12928
   }
 }
