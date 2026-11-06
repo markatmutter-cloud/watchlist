@@ -12490,7 +12490,7 @@
     "model_line": null,
     "published_at": "2026-09-04",
     "reference_no": null,
-    "scraped_at": "2026-10-07T15:18:01Z",
+    "scraped_at": "2026-11-06T15:46:38Z",
     "slug": "downsizing-with-two-new-a-lange-sohne-1815-up-down-models",
     "source": "fratello",
     "source_type": "editorial_blog",
@@ -41990,6 +41990,25 @@
     "url": "https://www.fratellowatches.com/omega-seamaster-titanium-tantalum/",
     "word_count": 1709
   },
+  "https://www.fratellowatches.com/omega-silently-introduces-two-new-seamaster-diver-300m-models-in-blue-and-brown-ceramic/": {
+    "author": "Fratello",
+    "brand": "Omega",
+    "excerpt": "Omega has quietly expanded its Seamaster Diver 300M collection with two new 43.5mm ceramic models. Available in blue and brown, the latest additions combine matching ceramic cases and wave-pattern dials with curved-end rubber straps. While",
+    "image": "https://www.fratellowatches.com/cdn-cgi/image/anim=false/wp-content/uploads/2026/11/Ceramic-SMP-300M-November-2926-cover.jpg",
+    "model": null,
+    "model_line": null,
+    "published_at": "2026-11-06",
+    "reference_no": null,
+    "scraped_at": "2026-11-06T15:46:31Z",
+    "slug": "omega-silently-introduces-two-new-seamaster-diver-300m-models-in-blue-and-brown-ceramic",
+    "source": "fratello",
+    "source_type": "editorial_blog",
+    "sub_model": null,
+    "title": "Omega Silently Introduces Two New Seamaster Diver 300M Models In Blue And Brown Ceramic",
+    "updated_at": "2026-11-06",
+    "url": "https://www.fratellowatches.com/omega-silently-introduces-two-new-seamaster-diver-300m-models-in-blue-and-brown-ceramic/",
+    "word_count": 677
+  },
   "https://www.fratellowatches.com/omega-spacemaster-z-33-hands-on-review/": {
     "author": "Fratello",
     "brand": "Omega",
@@ -62335,7 +62354,7 @@
     "model_line": null,
     "published_at": "2026-09-06",
     "reference_no": null,
-    "scraped_at": "2026-10-07T15:18:01Z",
+    "scraped_at": "2026-11-06T15:46:38Z",
     "slug": "sunday-morning-showdown-zenith-chronomaster-solo-sport-vs-breitling-chronomat-automatic-b31-40",
     "source": "fratello",
     "source_type": "editorial_blog",
@@ -62347,7 +62366,7 @@
     "title": "Sunday Morning Showdown: Zenith Chronomaster Solo Sport Vs. Breitling Chronomat Automatic B31 40",
     "updated_at": "2026-09-06",
     "url": "https://www.fratellowatches.com/sunday-morning-showdown-zenith-chronomaster-solo-sport-vs-breitling-chronomat-automatic-b31-40/",
-    "word_count": 2165
+    "word_count": 2160
   },
   "https://www.fratellowatches.com/sunday-morning-showdown-zenith-pilot-automatic-vs-iwc-pilots-watch-mark-xx/": {
     "author": "Fratello",
