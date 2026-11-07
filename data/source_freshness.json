@@ -1,27 +1,27 @@
 {
   "Amsterdam Vintage Watches": {
-    "fingerprint": "9442130c8fae2303",
-    "lastChanged": "2026-11-05",
-    "lastSeen": "2026-11-07",
-    "rows": 76
-  },
-  "Amsterdam Watch Company": {
-    "fingerprint": "f3c26f09f550d3f5",
+    "fingerprint": "61b04f098977e494",
     "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 297
+    "rows": 75
+  },
+  "Amsterdam Watch Company": {
+    "fingerprint": "4e95f1d6345baf01",
+    "lastChanged": "2026-11-07",
+    "lastSeen": "2026-11-07",
+    "rows": 296
   },
   "Analog Shift": {
-    "fingerprint": "5a6f80a9040c6fa5",
+    "fingerprint": "078c9ac0c5de07a1",
     "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
     "rows": 800
   },
   "Belmont Watches": {
-    "fingerprint": "dae3dab36438f2ab",
+    "fingerprint": "a9ca63b4340ec3fd",
     "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 34
+    "rows": 33
   },
   "Bob's Watches": {
     "fingerprint": "e8ec1f021774fec0",
@@ -90,10 +90,10 @@
     "rows": 36
   },
   "Hairspring": {
-    "fingerprint": "0229d18707d98fc3",
+    "fingerprint": "a06f23feb8f5721b",
     "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 44
+    "rows": 43
   },
   "Heuertime": {
     "fingerprint": "aaf9126682a9900a",
@@ -132,7 +132,7 @@
     "rows": 26
   },
   "Oliver & Clarke": {
-    "fingerprint": "f01ee2359589cb5a",
+    "fingerprint": "cbf169b1a84ce51d",
     "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
     "rows": 114
@@ -204,16 +204,16 @@
     "rows": 21
   },
   "Tropical Watch": {
-    "fingerprint": "59af467d98d7fce6",
+    "fingerprint": "569b7fa06f854533",
     "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 115
+    "rows": 114
   },
   "Vintage Watch Collective": {
-    "fingerprint": "43f70c5912f3b16f",
+    "fingerprint": "76e7b318e5873df6",
     "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 39
+    "rows": 37
   },
   "Vintage Watch Fam": {
     "fingerprint": "14789b2748a93682",
@@ -276,7 +276,7 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "c75459dd4aedecf2",
+    "fingerprint": "018bf079ab47c40b",
     "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
     "rows": 190
@@ -438,9 +438,9 @@
     "rows": 119
   },
   "merged:listings": {
-    "fingerprint": "ff6cd317c2a54013",
+    "fingerprint": "186afa62bffa5d42",
     "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 12972
+    "rows": 12973
   }
 }
