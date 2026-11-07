@@ -18,10 +18,10 @@
     "rows": 803
   },
   "Belmont Watches": {
-    "fingerprint": "a67ab4a9f273c5f7",
-    "lastChanged": "2026-11-04",
+    "fingerprint": "dae3dab36438f2ab",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 35
+    "rows": 34
   },
   "Bob's Watches": {
     "fingerprint": "e8ec1f021774fec0",
@@ -54,16 +54,16 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "58bc01f2211f3a12",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "75d4e7fd4ab02d63",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
     "rows": 106
   },
   "Craft & Tailored": {
-    "fingerprint": "8f5dd028dd5de379",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "7acbc37176673b5e",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 109
+    "rows": 107
   },
   "DB1983": {
     "fingerprint": "37f2f2f6c891611b",
@@ -204,16 +204,16 @@
     "rows": 21
   },
   "Tropical Watch": {
-    "fingerprint": "da8415a6035b0b48",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "59af467d98d7fce6",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
     "rows": 115
   },
   "Vintage Watch Collective": {
-    "fingerprint": "151804cf18892e8c",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "8e8a68a79d0f2185",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 37
+    "rows": 38
   },
   "Vintage Watch Fam": {
     "fingerprint": "14789b2748a93682",
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "ffe404c7145a9f1d",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "163fb2d08fe05e9d",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
     "rows": 58
   },
@@ -276,10 +276,10 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "5c05fe7f1a682c7c",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "d90761e63441a9be",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 191
+    "rows": 190
   },
   "calendar:antiquorum": {
     "fingerprint": "cfc07a4728d60bf9",
@@ -426,10 +426,10 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "e25aa2d6d3a6755c",
-    "lastChanged": "2026-11-07",
+    "fingerprint": "5c441ff11e05cc5d",
+    "lastChanged": "2026-11-06",
     "lastSeen": "2026-11-07",
-    "rows": 6933
+    "rows": 6456
   },
   "merged:auctions": {
     "fingerprint": "40a8f9388aa10f68",
@@ -438,9 +438,9 @@
     "rows": 119
   },
   "merged:listings": {
-    "fingerprint": "df2fec33ab4eef9a",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "9fec8cb7a706c6d3",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 12966
+    "rows": 12968
   }
 }
