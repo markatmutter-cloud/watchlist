@@ -288,8 +288,8 @@
     "rows": 3
   },
   "calendar:christies": {
-    "fingerprint": "4c0bd71b5b9b6adf",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "3c05410724e0db63",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
     "rows": 7
   },
@@ -306,8 +306,8 @@
     "rows": 20
   },
   "calendar:phillips": {
-    "fingerprint": "90c677a277bc6413",
-    "lastChanged": "2026-10-14",
+    "fingerprint": "5755b9ad6f0bfbae",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
     "rows": 7
   },
@@ -426,14 +426,14 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "e25aa2d6d3a6755c",
+    "fingerprint": "b6379a88d9114a5b",
     "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 6933
+    "rows": 6923
   },
   "merged:auctions": {
-    "fingerprint": "40a8f9388aa10f68",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "0701846e73502ace",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
     "rows": 119
   },
