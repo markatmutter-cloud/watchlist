@@ -12,10 +12,10 @@
     "rows": 301
   },
   "Analog Shift": {
-    "fingerprint": "0a0d68b0a84d67f1",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "c1c2e7bb6991e3ef",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 803
+    "rows": 801
   },
   "Belmont Watches": {
     "fingerprint": "dae3dab36438f2ab",
@@ -54,16 +54,16 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "75d4e7fd4ab02d63",
+    "fingerprint": "7b2d1fd7d795a6bb",
     "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
     "rows": 106
   },
   "Craft & Tailored": {
-    "fingerprint": "7acbc37176673b5e",
+    "fingerprint": "e8f4b08d3886f2d5",
     "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 107
+    "rows": 109
   },
   "DB1983": {
     "fingerprint": "37f2f2f6c891611b",
@@ -162,8 +162,8 @@
     "rows": 36
   },
   "Shuck the Oyster": {
-    "fingerprint": "b5c780bf70b2afc5",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "91bd3bb9c290624d",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
     "rows": 148
   },
@@ -324,8 +324,8 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "41bb261c84dc8288",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "45272749354f7aad",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
     "rows": 44
   },
@@ -426,10 +426,10 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "5c441ff11e05cc5d",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "e25aa2d6d3a6755c",
+    "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 6456
+    "rows": 6933
   },
   "merged:auctions": {
     "fingerprint": "40a8f9388aa10f68",
@@ -438,9 +438,9 @@
     "rows": 119
   },
   "merged:listings": {
-    "fingerprint": "9fec8cb7a706c6d3",
+    "fingerprint": "fa614ff87dad308e",
     "lastChanged": "2026-11-07",
     "lastSeen": "2026-11-07",
-    "rows": 12968
+    "rows": 12969
   }
 }
