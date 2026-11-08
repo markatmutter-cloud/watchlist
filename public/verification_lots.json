@@ -1,21 +1,13 @@
 {
-  "date": "2026-11-07",
-  "updated_at": "2026-11-07T12:28:21+00:00",
-  "alerts": [
-    {
-      "house": "Marteau & Co",
-      "level": "ERROR",
-      "today": 0,
-      "previous": 32,
-      "note": "house absent from today's lot scrape (was present yesterday)"
-    }
-  ],
+  "date": "2026-11-08",
+  "updated_at": "2026-11-08T12:46:13+00:00",
+  "alerts": [],
   "counts": {
-    "Antiquorum": 484,
+    "Antiquorum": 204,
     "Christie's": 1062,
-    "Phillips": 765,
-    "Sotheby's": 371
+    "Phillips": 662,
+    "Sotheby's": 277
   },
-  "total_live_lots": 2682,
+  "total_live_lots": 2205,
   "houses_tracked": 4
 }
