@@ -12,10 +12,10 @@
     "rows": 296
   },
   "Analog Shift": {
-    "fingerprint": "312962a9e3ddb327",
+    "fingerprint": "b2d6d99ffa14a0ff",
     "lastChanged": "2026-11-08",
     "lastSeen": "2026-11-08",
-    "rows": 799
+    "rows": 798
   },
   "Belmont Watches": {
     "fingerprint": "a9ca63b4340ec3fd",
@@ -54,10 +54,10 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "a235ceba3a2ff6e7",
+    "fingerprint": "a9e452680ecfcd53",
     "lastChanged": "2026-11-08",
     "lastSeen": "2026-11-08",
-    "rows": 109
+    "rows": 107
   },
   "Craft & Tailored": {
     "fingerprint": "e8f4b08d3886f2d5",
@@ -126,16 +126,16 @@
     "rows": 47
   },
   "Moonphase": {
-    "fingerprint": "66a908732b1aed3f",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "fa2b6cb56418d5ae",
+    "lastChanged": "2026-11-08",
     "lastSeen": "2026-11-08",
     "rows": 26
   },
   "Oliver & Clarke": {
-    "fingerprint": "cbf169b1a84ce51d",
-    "lastChanged": "2026-11-07",
+    "fingerprint": "092240e578971ba5",
+    "lastChanged": "2026-11-08",
     "lastSeen": "2026-11-08",
-    "rows": 114
+    "rows": 113
   },
   "Pascal Karp": {
     "fingerprint": "0e42a256c86e9d2e",
@@ -204,16 +204,16 @@
     "rows": 21
   },
   "Tropical Watch": {
-    "fingerprint": "ca74c5c1df43b4de",
+    "fingerprint": "52dfa8756ec88dbd",
     "lastChanged": "2026-11-08",
     "lastSeen": "2026-11-08",
-    "rows": 114
+    "rows": 112
   },
   "Vintage Watch Collective": {
-    "fingerprint": "76e7b318e5873df6",
-    "lastChanged": "2026-11-07",
+    "fingerprint": "e05488738ea7d631",
+    "lastChanged": "2026-11-08",
     "lastSeen": "2026-11-08",
-    "rows": 37
+    "rows": 18
   },
   "Vintage Watch Fam": {
     "fingerprint": "14789b2748a93682",
@@ -438,7 +438,7 @@
     "rows": 119
   },
   "merged:listings": {
-    "fingerprint": "04f32f70bace584e",
+    "fingerprint": "a89c26697a42dadc",
     "lastChanged": "2026-11-08",
     "lastSeen": "2026-11-08",
     "rows": 12976

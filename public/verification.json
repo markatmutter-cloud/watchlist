@@ -1,6 +1,6 @@
 {
   "date": "2026-11-08",
-  "updated_at": "2026-11-08T08:53:20+00:00",
+  "updated_at": "2026-11-08T19:22:35+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 95,
@@ -19,7 +19,7 @@
     "DB1983": 25,
     "Hairspring": 31,
     "Somlo": 172,
-    "Analog Shift": 781,
+    "Analog Shift": 780,
     "Watches of Knightsbridge": 63,
     "Belmont Watches": 33,
     "Watchfid": 58,
@@ -31,7 +31,7 @@
     "Vintage Watch Fam": 600,
     "Shuck the Oyster": 142,
     "Central Watch": 180,
-    "Vintage Watch Collective": 33,
+    "Vintage Watch Collective": 35,
     "Vision Vintage Watches": 80,
     "Watchurbia": 6,
     "Maunder Watches": 73,
@@ -50,6 +50,6 @@
     "Tommy Zhao": 20,
     "eBay": 43
   },
-  "total_listings": 4668,
+  "total_listings": 4669,
   "sources_tracked": 46
 }
