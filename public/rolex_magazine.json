@@ -100385,6 +100385,10 @@
     "source": "rolex_magazine",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "New Nick Gould Article: Rolex GMT-Master Reference 6542",
     "updated_at": "2026-11-02",
     "url": "https://www.rolexmagazine.com/2026/11/new-nick-gould-article-rolex-gmt-master.html",

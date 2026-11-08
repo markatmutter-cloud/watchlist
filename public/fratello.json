@@ -16941,6 +16941,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "market_commentary",
+      "community_ethics"
+    ],
     "title": "Fratello On Air: Navigating The Japanese Watch Market",
     "updated_at": "2026-11-03",
     "url": "https://www.fratellowatches.com/fratello-on-air-navigating-the-japanese-watch-market/",
@@ -23626,6 +23630,11 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "review",
+      "racing",
+      "celebrity"
+    ],
     "title": "Hands-On: The TAG Heuer Monaco Finds Its Ideal Match In Titanium",
     "updated_at": "2026-11-04",
     "url": "https://www.fratellowatches.com/hands-on-tag-heuer-monaco-in-titanium/",
@@ -39842,6 +39851,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "space",
+      "news"
+    ],
     "title": "Omega Discontinued The Speedmaster X-33: What’s Next For This Space-Age Watch?",
     "updated_at": "2026-11-03",
     "url": "https://www.fratellowatches.com/omega-discontinued-the-speedmaster-x-33-whats-next/",
@@ -42004,6 +42017,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "design"
+    ],
     "title": "Omega Silently Introduces Two New Seamaster Diver 300M Models In Blue And Brown Ceramic",
     "updated_at": "2026-11-06",
     "url": "https://www.fratellowatches.com/omega-silently-introduces-two-new-seamaster-diver-300m-models-in-blue-and-brown-ceramic/",

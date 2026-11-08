@@ -14960,6 +14960,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "Auffret Paris Tourbillon à Paris Subscription",
     "updated_at": "2026-11-02",
     "url": "https://hairspring.com/blogs/finds/auffret-paris-tourbillon-a-paris-subscription",
