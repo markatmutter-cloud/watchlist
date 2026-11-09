@@ -30,10 +30,10 @@
     "rows": 92
   },
   "Bulang & Sons": {
-    "fingerprint": "904ef7bcea57edeb",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "548d382bbbc86257",
+    "lastChanged": "2026-11-09",
     "lastSeen": "2026-11-09",
-    "rows": 165
+    "rows": 164
   },
   "Central Watch": {
     "fingerprint": "265e561cae551645",
@@ -84,16 +84,16 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "ad4c16c294c7b559",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "9057c053cdea1089",
+    "lastChanged": "2026-11-09",
     "lastSeen": "2026-11-09",
-    "rows": 36
+    "rows": 35
   },
   "Hairspring": {
-    "fingerprint": "a06f23feb8f5721b",
-    "lastChanged": "2026-11-07",
+    "fingerprint": "99a1680791fc8d91",
+    "lastChanged": "2026-11-09",
     "lastSeen": "2026-11-09",
-    "rows": 43
+    "rows": 42
   },
   "Heuertime": {
     "fingerprint": "aaf9126682a9900a",
@@ -162,16 +162,16 @@
     "rows": 36
   },
   "Shuck the Oyster": {
-    "fingerprint": "b536436bda608ce4",
-    "lastChanged": "2026-11-07",
+    "fingerprint": "f81c56d97cba96bc",
+    "lastChanged": "2026-11-09",
     "lastSeen": "2026-11-09",
-    "rows": 147
+    "rows": 145
   },
   "Sierra Time Co": {
-    "fingerprint": "1a50ca72e34c2c95",
-    "lastChanged": "2026-11-06",
+    "fingerprint": "39238443e60dda0e",
+    "lastChanged": "2026-11-09",
     "lastSeen": "2026-11-09",
-    "rows": 46
+    "rows": 45
   },
   "Somlo": {
     "fingerprint": "8a81d18362c4700a",
@@ -204,7 +204,7 @@
     "rows": 21
   },
   "Tropical Watch": {
-    "fingerprint": "a37d2f94425b2899",
+    "fingerprint": "185a1851c97e8a78",
     "lastChanged": "2026-11-09",
     "lastSeen": "2026-11-09",
     "rows": 108
@@ -228,10 +228,10 @@
     "rows": 29
   },
   "Vision Vintage Watches": {
-    "fingerprint": "93392398b6b55045",
+    "fingerprint": "d7fcac434ab7e546",
     "lastChanged": "2026-11-09",
     "lastSeen": "2026-11-09",
-    "rows": 102
+    "rows": 100
   },
   "Watch Brothers London": {
     "fingerprint": "680f79d424c93cb0",
@@ -246,8 +246,8 @@
     "rows": 429
   },
   "Watch Club": {
-    "fingerprint": "a3d8a11aa8595add",
-    "lastChanged": "2026-11-05",
+    "fingerprint": "2edec5ad78e57cc4",
+    "lastChanged": "2026-11-09",
     "lastSeen": "2026-11-09",
     "rows": 53
   },
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "f8a277023742a0bb",
-    "lastChanged": "2026-11-08",
+    "fingerprint": "b31918df9492b134",
+    "lastChanged": "2026-11-09",
     "lastSeen": "2026-11-09",
     "rows": 58
   },
@@ -429,7 +429,7 @@
     "fingerprint": "07cee73bde3bcca5",
     "lastChanged": "2026-11-08",
     "lastSeen": "2026-11-09",
-    "rows": 6922
+    "rows": 6928
   },
   "merged:auctions": {
     "fingerprint": "6a7249a360254264",
@@ -438,9 +438,9 @@
     "rows": 119
   },
   "merged:listings": {
-    "fingerprint": "72b7c3e3b2776eb3",
+    "fingerprint": "c7f1b1a65075edad",
     "lastChanged": "2026-11-09",
     "lastSeen": "2026-11-09",
-    "rows": 12976
+    "rows": 12978
   }
 }

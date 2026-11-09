@@ -1,10 +1,10 @@
 {
   "date": "2026-11-09",
-  "updated_at": "2026-11-09T00:02:01+00:00",
+  "updated_at": "2026-11-09T09:29:18+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 95,
-    "Tropical Watch": 111,
+    "Tropical Watch": 107,
     "Menta Watches": 47,
     "Collectors Corner NY": 98,
     "Falco Watches": 5,
@@ -18,7 +18,7 @@
     "Sierra Time Co": 46,
     "DB1983": 25,
     "Hairspring": 31,
-    "Somlo": 172,
+    "Somlo": 171,
     "Analog Shift": 779,
     "Watches of Knightsbridge": 63,
     "Belmont Watches": 33,
@@ -35,7 +35,7 @@
     "Vision Vintage Watches": 80,
     "Watchurbia": 6,
     "Maunder Watches": 73,
-    "Watch Club": 53,
+    "Watch Club": 55,
     "Vintage Watch Shop": 29,
     "Watches of Lancashire": 53,
     "Heuertime": 29,
@@ -50,6 +50,6 @@
     "Tommy Zhao": 20,
     "eBay": 43
   },
-  "total_listings": 4661,
+  "total_listings": 4658,
   "sources_tracked": 46
 }
