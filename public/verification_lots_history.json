@@ -1,16 +1,6 @@
 {
   "history": [
     {
-      "date": "2026-10-26",
-      "counts": {
-        "Marteau & Co": 28,
-        "Antiquorum": 485,
-        "Christie's": 769,
-        "Phillips": 520,
-        "Sotheby's": 271
-      }
-    },
-    {
       "date": "2026-10-27",
       "counts": {
         "Marteau & Co": 28,
@@ -136,6 +126,15 @@
         "Christie's": 1062,
         "Phillips": 662,
         "Sotheby's": 277
+      }
+    },
+    {
+      "date": "2026-11-09",
+      "counts": {
+        "Antiquorum": 468,
+        "Christie's": 1062,
+        "Phillips": 561,
+        "Sotheby's": 374
       }
     }
   ]
