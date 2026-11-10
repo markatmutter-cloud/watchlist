@@ -54,10 +54,10 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "a9e452680ecfcd53",
-    "lastChanged": "2026-11-08",
+    "fingerprint": "9259625b01dc4061",
+    "lastChanged": "2026-11-10",
     "lastSeen": "2026-11-10",
-    "rows": 107
+    "rows": 105
   },
   "Craft & Tailored": {
     "fingerprint": "e8f4b08d3886f2d5",
@@ -90,8 +90,8 @@
     "rows": 35
   },
   "Hairspring": {
-    "fingerprint": "8ee4b1571ee5f621",
-    "lastChanged": "2026-11-09",
+    "fingerprint": "6eba48bae5d0d192",
+    "lastChanged": "2026-11-10",
     "lastSeen": "2026-11-10",
     "rows": 43
   },
@@ -168,10 +168,10 @@
     "rows": 145
   },
   "Sierra Time Co": {
-    "fingerprint": "5c554369b90e25a4",
-    "lastChanged": "2026-11-09",
+    "fingerprint": "a29bb974e7ee9bf5",
+    "lastChanged": "2026-11-10",
     "lastSeen": "2026-11-10",
-    "rows": 46
+    "rows": 45
   },
   "Somlo": {
     "fingerprint": "53aae7680511b9e4",
@@ -204,10 +204,10 @@
     "rows": 21
   },
   "Tropical Watch": {
-    "fingerprint": "632107d266808832",
-    "lastChanged": "2026-11-09",
+    "fingerprint": "e0ffe5a0ec170beb",
+    "lastChanged": "2026-11-10",
     "lastSeen": "2026-11-10",
-    "rows": 106
+    "rows": 112
   },
   "Vintage Watch Collective": {
     "fingerprint": "241f82c0f02a7634",
@@ -228,10 +228,10 @@
     "rows": 32
   },
   "Vision Vintage Watches": {
-    "fingerprint": "d7fcac434ab7e546",
-    "lastChanged": "2026-11-09",
+    "fingerprint": "79e91093fcf300a1",
+    "lastChanged": "2026-11-10",
     "lastSeen": "2026-11-10",
-    "rows": 100
+    "rows": 102
   },
   "Watch Brothers London": {
     "fingerprint": "680f79d424c93cb0",
@@ -264,10 +264,10 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "3006bd6944f414d3",
-    "lastChanged": "2026-11-09",
+    "fingerprint": "e0c79e68b51b5abe",
+    "lastChanged": "2026-11-10",
     "lastSeen": "2026-11-10",
-    "rows": 58
+    "rows": 57
   },
   "Watchurbia": {
     "fingerprint": "73a0929dc82d0745",
@@ -438,9 +438,9 @@
     "rows": 119
   },
   "merged:listings": {
-    "fingerprint": "9406ca695115abc3",
+    "fingerprint": "a2ce00c96a522ec0",
     "lastChanged": "2026-11-10",
     "lastSeen": "2026-11-10",
-    "rows": 13012
+    "rows": 13019
   }
 }
