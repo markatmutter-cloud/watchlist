@@ -288,10 +288,10 @@
     "rows": 3
   },
   "calendar:christies": {
-    "fingerprint": "3c05410724e0db63",
-    "lastChanged": "2026-11-07",
+    "fingerprint": "94aed2fbe541da65",
+    "lastChanged": "2026-11-10",
     "lastSeen": "2026-11-10",
-    "rows": 7
+    "rows": 6
   },
   "calendar:marteauandco": {
     "fingerprint": "73b2af45038d3f7d",
@@ -312,10 +312,10 @@
     "rows": 6
   },
   "calendar:sothebys": {
-    "fingerprint": "7b7a1171d65eb5c1",
-    "lastChanged": "2026-11-09",
+    "fingerprint": "474edae45c783352",
+    "lastChanged": "2026-11-10",
     "lastSeen": "2026-11-10",
-    "rows": 6
+    "rows": 5
   },
   "calendar:watchesofknightsbridge": {
     "fingerprint": "eb28c4d9a128c4ea",
@@ -426,14 +426,14 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "26d595fa69408814",
+    "fingerprint": "70b13201efe62be3",
     "lastChanged": "2026-11-10",
     "lastSeen": "2026-11-10",
-    "rows": 7324
+    "rows": 7312
   },
   "merged:auctions": {
-    "fingerprint": "1e7ec9395ec02f19",
-    "lastChanged": "2026-11-09",
+    "fingerprint": "e9b83663a788636f",
+    "lastChanged": "2026-11-10",
     "lastSeen": "2026-11-10",
     "rows": 119
   },
