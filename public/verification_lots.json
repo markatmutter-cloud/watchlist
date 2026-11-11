@@ -1,13 +1,13 @@
 {
-  "date": "2026-11-10",
-  "updated_at": "2026-11-10T14:19:45+00:00",
+  "date": "2026-11-11",
+  "updated_at": "2026-11-11T13:31:08+00:00",
   "alerts": [],
   "counts": {
     "Antiquorum": 468,
     "Christie's": 846,
-    "Phillips": 559,
-    "Sotheby's": 254
+    "Phillips": 561,
+    "Sotheby's": 217
   },
-  "total_live_lots": 2127,
+  "total_live_lots": 2092,
   "houses_tracked": 4
 }
