@@ -1,6 +1,6 @@
 title,brand,price,url,img,description,source,sold
+2023 Rolex Air King 126900,Rolex,9750,https://centralwatch.com/shop/pre-owned/rolex-air-king-2965,https://centralwatch.com/images/products/prod_2069_8609_medium.png,,Central Watch,False
 1969 Rolex Day-Date 1803,Rolex,13500,https://centralwatch.com/shop/pre-owned/rolex-day-date-2952,https://centralwatch.com/images/products/prod_2034_8416_medium.png,,Central Watch,False
-2010's Rolex Oyster Perpetual Datejust II 116300,Rolex,10750,https://centralwatch.com/shop/pre-owned/rolex-oyster-perpetual-datejust-ii-2968,https://centralwatch.com/images/products/prod_2064_8563_medium.png,,Central Watch,False
 1969 Rolex Oyster Perpetual Datejust 1601,Rolex,19500,https://centralwatch.com/shop/pre-owned/rolex-oyster-perpetual-datejust-2947,https://centralwatch.com/images/products/prod_2068_8599_medium.png,,Central Watch,False
 1988 Cartier 21 Must de Cartier 9010,Cartier,2250,https://centralwatch.com/shop/pre-owned/cartier-21-must-de-cartier-8617,https://centralwatch.com/images/products/prod_2067_8590_medium.png,,Central Watch,False
 2015 Breguet Big Date Marine 5817BR/Z2/5V8,Breguet,15995,https://centralwatch.com/shop/pre-owned/breguet-big-date-marine-2957,https://centralwatch.com/images/products/prod_2045_8488_medium.png,,Central Watch,False
@@ -24,6 +24,7 @@ title,brand,price,url,img,description,source,sold
 1994 Rolex Oyster Perpetual Date 15233,Rolex,7995,https://centralwatch.com/shop/pre-owned/rolex-oyster-perpetual-dateTwoToned,https://centralwatch.com/images/products/prod_1760_6281_medium.png,,Central Watch,False
 1997 Rolex Oyster Perpetual Date 1503/8,Rolex,6995,https://centralwatch.com/shop/pre-owned/rolex-oyster-perpetual-date-2871,https://centralwatch.com/images/products/prod_1892_7341_medium.png,,Central Watch,False
 1966 Rolex Oyster Perpetual Date 1503,Rolex,7500,https://centralwatch.com/shop/pre-owned/rolex-oyster-perpetual-date-2863,https://centralwatch.com/images/products/prod_1877_7228_medium.png,,Central Watch,False
+2010's Rolex Oyster Perpetual Datejust II 116300,Rolex,10750,https://centralwatch.com/shop/pre-owned/rolex-oyster-perpetual-datejust-ii-2968,https://centralwatch.com/images/products/prod_2064_8563_medium.png,,Central Watch,False
 1998 Rolex Oyster Perpetual Datejust 16200,Rolex,6750,https://centralwatch.com/shop/pre-owned/rolex-oyster-perpetual-datejust-2958,https://centralwatch.com/images/products/prod_2032_8398_medium.png,,Central Watch,False
 2019 Rolex Oyster Perpetual Datejust 126234,Rolex,10500,https://centralwatch.com/shop/pre-owned/rolex-oyster-perpetual-datejust-2945,https://centralwatch.com/images/products/prod_2044_8480_medium.png,,Central Watch,False
 2005 Rolex Oyster Perpetual Datejust 116233,Rolex,13500,https://centralwatch.com/shop/pre-owned/rolex-oyster-perpetual-datejust-2,https://centralwatch.com/images/products/prod_1778_6390_medium.png,,Central Watch,False
@@ -50,8 +51,7 @@ title,brand,price,url,img,description,source,sold
 2008 Patek Philippe Gondolo 4868G-001,Patek Philippe,11995,https://centralwatch.com/shop/pre-owned/patek-philippe-gondolo,https://centralwatch.com/images/products/prod_1477_4374_medium.png,,Central Watch,False
 1954 Patek Philippe Rare Rectangular 18K Gold 2443,Patek Philippe,12500,https://centralwatch.com/shop/pre-owned/patek-philippe-rare-rectangular-18k-gold,https://centralwatch.com/images/products/prod_1506_4443_medium.png,,Central Watch,False
 2002 Patek Philippe Calatrava 4820,Patek Philippe,11750,https://centralwatch.com/shop/pre-owned/patek-philippe-calatrava-2905,https://centralwatch.com/images/products/prod_1984_7982_medium.png,,Central Watch,False
-1960's Patek Philippe Ladies Square 3285/21,Patek Philippe,9995,https://centralwatch.com/shop/pre-owned/patek-philippe-ladies-square-2880,https://centralwatch.com/images/products/prod_1985_7993_medium.png,,Central Watch,False
-1950's Vacheron & Constantin Manual Wind Dress Watch 302751,Vacheron,11500,https://centralwatch.com/shop/pre-owned/vacheron-constantin-manual-wind-dress-watch-2953,https://centralwatch.com/images/products/prod_2022_8308_medium.png,,Central Watch,False
+1960's Patek Philippe Ladies Square 3285/21,Patek Philippe,11500,https://centralwatch.com/shop/pre-owned/patek-philippe-ladies-square-2880,https://centralwatch.com/images/products/prod_1985_7993_medium.png,,Central Watch,False
 1970's Jaeger LeCoultre Pulsations 2648.42,Jaeger LeCoultre,10550,https://centralwatch.com/shop/pre-owned/jaeger-lecoultre-pulsations,https://centralwatch.com/images/products/prod_1227_3478_medium.png,,Central Watch,False
 2000's Jaeger LeCoultre Master Series Memovox 174.8.96,Jaeger LeCoultre,8995,https://centralwatch.com/shop/pre-owned/jaeger-lecoultre-master-series-memovox,https://centralwatch.com/images/products/prod_1624_5179_medium.png,,Central Watch,False
 2000's Jaeger LeCoultre Perpetual Calendar 140.8.80.S,Jaeger LeCoultre,15995,https://centralwatch.com/shop/pre-owned/jaeger-lecoultre-perpetual-calendar-,https://centralwatch.com/images/products/prod_1816_6698_medium.png,,Central Watch,False
@@ -85,7 +85,7 @@ title,brand,price,url,img,description,source,sold
 2013 Panerai Luminor 1950 3 Days Power Reserve OP6893,Panerai,9495,https://centralwatch.com/shop/pre-owned/panerai-luminor-1950-3-days-power-reserve,https://centralwatch.com/images/products/prod_1375_4027_medium.png,,Central Watch,False
 2008 Panerai Radiomir Black Seal OP6714,Panerai,4650,https://centralwatch.com/shop/pre-owned/panerai-radiomir-black-seal-2867,https://centralwatch.com/images/products/prod_2026_8342_medium.png,,Central Watch,False
 2012 Panerai Luminor Quaranta Left Handed PAM002191,Panerai,5250,https://centralwatch.com/shop/pre-owned/panerai-luminor-quaranta-left-handed,https://centralwatch.com/images/products/prod_1614_5095_medium.png,,Central Watch,False
-2000's Panerai Luminor Marina PAM00003/ OP6502,Panerai,6750,https://centralwatch.com/shop/pre-owned/panerai-luminor-marina-steel,https://centralwatch.com/images/products/prod_1630_5228_medium.png,,Central Watch,False
+2010's Panerai Carbotech Luminor Marina 0P7060,Panerai,6750,https://centralwatch.com/shop/pre-owned/panerai-carbotech-luminor-marina,https://centralwatch.com/images/products/prod_1575_4811_medium.png,,Central Watch,False
 2000's Breitling Chronomat AB0420,Breitling,4995,https://centralwatch.com/shop/pre-owned/breitling-chronomat-3877,https://centralwatch.com/images/products/prod_1856_7026_medium.png,,Central Watch,False
 2000's Breitling Navitimer Montbrillant A41330,Breitling,3995,https://centralwatch.com/shop/pre-owned/breitling-navitimer-montbrillant,https://centralwatch.com/images/products/prod_1237_5171_medium.png,,Central Watch,False
 2000's Breitling Super Avenger A13370,Breitling,3495,https://centralwatch.com/shop/pre-owned/breitling-super-avenger-2885,https://centralwatch.com/images/products/prod_1927_7573_medium.png,,Central Watch,False
@@ -98,6 +98,7 @@ title,brand,price,url,img,description,source,sold
 1991 Blancpain Villeret 5495,Blancpain,27500,https://centralwatch.com/shop/pre-owned/blancpain-villeret,https://centralwatch.com/images/products/prod_1815_6691_medium.png,,Central Watch,False
 1950's Tudor Oyster Prince 7909,Tudor,3750,https://centralwatch.com/shop/pre-owned/tudor-oyster-prince,https://centralwatch.com/images/products/prod_1207_3371_medium.png,,Central Watch,False
 1970's Heuer Autavia GMT 2446C,Heuer,12500,https://centralwatch.com/shop/pre-owned/heuer-autavia-gmt,https://centralwatch.com/images/products/prod_1376_4030_medium.png,,Central Watch,False
+1970 Heuer Monaco 73633,Heuer,8995,https://centralwatch.com/shop/pre-owned/heuer-monaco-2934,https://centralwatch.com/images/products/prod_2070_8617_medium.png,,Central Watch,False
 1960's Heuer Camaro 7220,Heuer,7595,https://centralwatch.com/shop/pre-owned/heuer-camaro-218773,https://centralwatch.com/images/products/prod_1958_7800_medium.png,,Central Watch,False
 2000's Tag Heuer Carrera CV2014-1,Tag Heuer,2750,https://centralwatch.com/shop/pre-owned/tag-heuer-carrera,https://centralwatch.com/images/products/prod_1923_7544_medium.png,,Central Watch,False
 2010 Tag Heuer Formula 1 Ceramic Ladies WAH1215,Tag Heuer,2450,https://centralwatch.com/shop/pre-owned/tag-heuer-formula-1-ceramic-ladies,https://centralwatch.com/images/products/prod_1147_3056_medium.jpg,,Central Watch,False
