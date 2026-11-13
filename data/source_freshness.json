@@ -354,10 +354,10 @@
     "rows": 25
   },
   "editorial:fratello": {
-    "fingerprint": "7ea84c1f41d6f186",
-    "lastChanged": "2026-11-12",
+    "fingerprint": "76e2c64faa153bd1",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
-    "rows": 3842
+    "rows": 3844
   },
   "editorial:hodinkee_picks": {
     "fingerprint": "099ffae56c9959be",
@@ -414,8 +414,8 @@
     "rows": 55
   },
   "editorial:watchfid_editorial": {
-    "fingerprint": "92bd27bbb1eb38cf",
-    "lastChanged": "2026-11-12",
+    "fingerprint": "ed8e714f68fedbf1",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
     "rows": 302
   },
