@@ -66,8 +66,8 @@
     "rows": 114
   },
   "DB1983": {
-    "fingerprint": "f24605fa41feaf26",
-    "lastChanged": "2026-11-12",
+    "fingerprint": "c25d5327224c3fe5",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
     "rows": 25
   },
@@ -108,10 +108,10 @@
     "rows": 127
   },
   "Luna Royster": {
-    "fingerprint": "9ad9b2d6a8addd05",
-    "lastChanged": "2026-11-11",
+    "fingerprint": "32f6251efb3d0300",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
-    "rows": 24
+    "rows": 23
   },
   "Maunder Watches": {
     "fingerprint": "1b40d0d8891c8323",
@@ -192,10 +192,10 @@
     "rows": 29
   },
   "Tokant": {
-    "fingerprint": "ba1e36b6fcb7c4b2",
-    "lastChanged": "2026-11-12",
+    "fingerprint": "f29537ebbda1a218",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
-    "rows": 39
+    "rows": 38
   },
   "Tommy Zhao": {
     "fingerprint": "5161f852aebabd78",
@@ -204,20 +204,20 @@
     "rows": 36
   },
   "Tropical Watch": {
-    "fingerprint": "32f8e18839b52cd6",
-    "lastChanged": "2026-11-12",
+    "fingerprint": "4d519c7867039867",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
-    "rows": 118
+    "rows": 119
   },
   "Vintage Watch Collective": {
-    "fingerprint": "4c97433a2c412a72",
-    "lastChanged": "2026-11-12",
+    "fingerprint": "45bd0228d2d89561",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
-    "rows": 9
+    "rows": 41
   },
   "Vintage Watch Fam": {
-    "fingerprint": "001c294653127ecc",
-    "lastChanged": "2026-11-12",
+    "fingerprint": "ea62ccf1de060774",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
     "rows": 639
   },
@@ -246,10 +246,10 @@
     "rows": 429
   },
   "Watch Club": {
-    "fingerprint": "2edec5ad78e57cc4",
-    "lastChanged": "2026-11-09",
+    "fingerprint": "83ab8c6e365168c2",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
-    "rows": 53
+    "rows": 48
   },
   "Watches of Knightsbridge": {
     "fingerprint": "37ec6124405f8917",
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "b67e8b993086878f",
-    "lastChanged": "2026-11-12",
+    "fingerprint": "9df679f88ccea7fa",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
     "rows": 58
   },
@@ -276,10 +276,10 @@
     "rows": 5
   },
   "Wind Vintage": {
-    "fingerprint": "22e0195fb707928d",
-    "lastChanged": "2026-11-12",
+    "fingerprint": "ef2873bd1ea6e3ec",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
-    "rows": 201
+    "rows": 200
   },
   "calendar:antiquorum": {
     "fingerprint": "a834f4030143be95",
@@ -426,8 +426,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "02d7937733583d4e",
-    "lastChanged": "2026-11-13",
+    "fingerprint": "7dbb5648df4525a1",
+    "lastChanged": "2026-11-12",
     "lastSeen": "2026-11-13",
     "rows": 7309
   },
@@ -438,9 +438,9 @@
     "rows": 122
   },
   "merged:listings": {
-    "fingerprint": "921259421cfe794b",
-    "lastChanged": "2026-11-12",
+    "fingerprint": "fe7f8e433d2c8552",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
-    "rows": 13179
+    "rows": 13186
   }
 }
