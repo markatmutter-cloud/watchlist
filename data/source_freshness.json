@@ -162,10 +162,10 @@
     "rows": 41
   },
   "Shuck the Oyster": {
-    "fingerprint": "72790ed04c243dd6",
-    "lastChanged": "2026-11-12",
+    "fingerprint": "1807060605589ae8",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
-    "rows": 137
+    "rows": 133
   },
   "Sierra Time Co": {
     "fingerprint": "417bfb55272c9bd9",
@@ -198,16 +198,16 @@
     "rows": 38
   },
   "Tommy Zhao": {
-    "fingerprint": "5161f852aebabd78",
-    "lastChanged": "2026-11-11",
-    "lastSeen": "2026-11-13",
-    "rows": 36
-  },
-  "Tropical Watch": {
-    "fingerprint": "4d519c7867039867",
+    "fingerprint": "d14f1346d1bb8b2c",
     "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
-    "rows": 119
+    "rows": 50
+  },
+  "Tropical Watch": {
+    "fingerprint": "2864287f01876170",
+    "lastChanged": "2026-11-13",
+    "lastSeen": "2026-11-13",
+    "rows": 122
   },
   "Vintage Watch Collective": {
     "fingerprint": "45bd0228d2d89561",
@@ -216,10 +216,10 @@
     "rows": 41
   },
   "Vintage Watch Fam": {
-    "fingerprint": "ea62ccf1de060774",
+    "fingerprint": "bf9ec23f5597b7eb",
     "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
-    "rows": 639
+    "rows": 643
   },
   "Vintage Watch Shop": {
     "fingerprint": "cb8f81d62ce2302d",
@@ -324,8 +324,8 @@
     "rows": 2
   },
   "eBay": {
-    "fingerprint": "889dc8e030fd7749",
-    "lastChanged": "2026-11-12",
+    "fingerprint": "13d5f169455edb15",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
     "rows": 36
   },
@@ -426,8 +426,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "7dbb5648df4525a1",
-    "lastChanged": "2026-11-12",
+    "fingerprint": "02d7937733583d4e",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
     "rows": 7309
   },
@@ -438,9 +438,9 @@
     "rows": 122
   },
   "merged:listings": {
-    "fingerprint": "fe7f8e433d2c8552",
+    "fingerprint": "a4a15193e7cbe137",
     "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-13",
-    "rows": 13186
+    "rows": 13209
   }
 }
