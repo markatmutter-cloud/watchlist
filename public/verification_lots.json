@@ -1,13 +1,14 @@
 {
-  "date": "2026-11-13",
-  "updated_at": "2026-11-13T13:59:46+00:00",
+  "date": "2026-11-14",
+  "updated_at": "2026-11-14T13:03:07+00:00",
   "alerts": [],
   "counts": {
+    "Watches of Knightsbridge": 59,
     "Antiquorum": 468,
     "Christie's": 826,
     "Phillips": 561,
-    "Sotheby's": 217
+    "Sotheby's": 366
   },
-  "total_live_lots": 2072,
-  "houses_tracked": 4
+  "total_live_lots": 2280,
+  "houses_tracked": 5
 }
