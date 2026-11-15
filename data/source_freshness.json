@@ -204,22 +204,22 @@
     "rows": 49
   },
   "Tropical Watch": {
-    "fingerprint": "ce5f70494401d2e5",
-    "lastChanged": "2026-11-14",
+    "fingerprint": "8da090f6534668f0",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
-    "rows": 118
+    "rows": 116
   },
   "Vintage Watch Collective": {
-    "fingerprint": "45bd0228d2d89561",
-    "lastChanged": "2026-11-13",
+    "fingerprint": "783c768ef501182a",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
     "rows": 41
   },
   "Vintage Watch Fam": {
-    "fingerprint": "c538615f3cb081ab",
-    "lastChanged": "2026-11-14",
+    "fingerprint": "ecf78b51384296ac",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
-    "rows": 639
+    "rows": 637
   },
   "Vintage Watch Shop": {
     "fingerprint": "cb8f81d62ce2302d",
@@ -234,10 +234,10 @@
     "rows": 100
   },
   "Watch Brothers London": {
-    "fingerprint": "ebf0ee6cb34e556e",
-    "lastChanged": "2026-11-13",
+    "fingerprint": "ef3f1d0b765a5320",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
-    "rows": 8
+    "rows": 7
   },
   "Watch Center": {
     "fingerprint": "3707b75fa5d6d83d",
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "324faea159ff99b0",
-    "lastChanged": "2026-11-14",
+    "fingerprint": "6b14dd35ada4b63a",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
     "rows": 57
   },
@@ -276,10 +276,10 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "c57156a4686b58b6",
-    "lastChanged": "2026-11-14",
+    "fingerprint": "4cfa895091b77ae3",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
-    "rows": 206
+    "rows": 205
   },
   "calendar:antiquorum": {
     "fingerprint": "a834f4030143be95",
@@ -324,8 +324,8 @@
     "rows": 3
   },
   "eBay": {
-    "fingerprint": "8346dd4c634788bf",
-    "lastChanged": "2026-11-14",
+    "fingerprint": "65162ca706bfa4db",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
     "rows": 37
   },
@@ -438,9 +438,9 @@
     "rows": 123
   },
   "merged:listings": {
-    "fingerprint": "8297bf41cdad4569",
-    "lastChanged": "2026-11-14",
+    "fingerprint": "f2e3c5b09c46a1cc",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
-    "rows": 13256
+    "rows": 13257
   }
 }
