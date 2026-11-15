@@ -1,7 +1,7 @@
 {
   "Amsterdam Vintage Watches": {
-    "fingerprint": "81420100a43a4a5c",
-    "lastChanged": "2026-11-14",
+    "fingerprint": "2df0b7fbf69558d9",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
     "rows": 76
   },
@@ -54,8 +54,8 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "daa0c98d4e51522a",
-    "lastChanged": "2026-11-14",
+    "fingerprint": "fb59560e9d71e60c",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
     "rows": 107
   },
@@ -84,22 +84,22 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "029e5dc9975435aa",
-    "lastChanged": "2026-11-13",
+    "fingerprint": "de85c6b40eeb500f",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
-    "rows": 34
+    "rows": 33
   },
   "Hairspring": {
-    "fingerprint": "f974c9b3cd4f20bc",
-    "lastChanged": "2026-11-14",
+    "fingerprint": "be59b53081032e57",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
-    "rows": 44
+    "rows": 45
   },
   "Heuertime": {
-    "fingerprint": "e9057eb810c1317a",
-    "lastChanged": "2026-11-13",
+    "fingerprint": "75f19ff51b1ef421",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
-    "rows": 30
+    "rows": 19
   },
   "Huntington Company": {
     "fingerprint": "6bf9b45d4d579019",
@@ -108,8 +108,8 @@
     "rows": 126
   },
   "Luna Royster": {
-    "fingerprint": "72cb90386b1b26d7",
-    "lastChanged": "2026-11-14",
+    "fingerprint": "ee026b510156e11e",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
     "rows": 25
   },
@@ -126,10 +126,10 @@
     "rows": 41
   },
   "Moonphase": {
-    "fingerprint": "c559049c36aa708b",
-    "lastChanged": "2026-11-13",
+    "fingerprint": "d8b2fbdbcf149add",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
-    "rows": 24
+    "rows": 26
   },
   "Oliver & Clarke": {
     "fingerprint": "11ca74d476466679",
@@ -210,16 +210,16 @@
     "rows": 116
   },
   "Vintage Watch Collective": {
-    "fingerprint": "783c768ef501182a",
+    "fingerprint": "7139a378d10b4a3b",
     "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
     "rows": 41
   },
   "Vintage Watch Fam": {
-    "fingerprint": "ecf78b51384296ac",
+    "fingerprint": "a3427e2605b42b15",
     "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
-    "rows": 637
+    "rows": 633
   },
   "Vintage Watch Shop": {
     "fingerprint": "cb8f81d62ce2302d",
@@ -276,7 +276,7 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "4cfa895091b77ae3",
+    "fingerprint": "71e92582857c42d3",
     "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
     "rows": 205
@@ -438,9 +438,9 @@
     "rows": 123
   },
   "merged:listings": {
-    "fingerprint": "084f4b7009e48351",
+    "fingerprint": "cdf46311c6769c8d",
     "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
-    "rows": 13258
+    "rows": 13261
   }
 }
