@@ -204,10 +204,10 @@
     "rows": 49
   },
   "Tropical Watch": {
-    "fingerprint": "c5b6acd34811330a",
-    "lastChanged": "2026-11-15",
+    "fingerprint": "ce5f70494401d2e5",
+    "lastChanged": "2026-11-14",
     "lastSeen": "2026-11-15",
-    "rows": 116
+    "rows": 118
   },
   "Vintage Watch Collective": {
     "fingerprint": "45bd0228d2d89561",
@@ -216,10 +216,10 @@
     "rows": 41
   },
   "Vintage Watch Fam": {
-    "fingerprint": "ecf78b51384296ac",
-    "lastChanged": "2026-11-15",
+    "fingerprint": "c538615f3cb081ab",
+    "lastChanged": "2026-11-14",
     "lastSeen": "2026-11-15",
-    "rows": 637
+    "rows": 639
   },
   "Vintage Watch Shop": {
     "fingerprint": "cb8f81d62ce2302d",
@@ -234,10 +234,10 @@
     "rows": 100
   },
   "Watch Brothers London": {
-    "fingerprint": "ef3f1d0b765a5320",
-    "lastChanged": "2026-11-15",
+    "fingerprint": "ebf0ee6cb34e556e",
+    "lastChanged": "2026-11-13",
     "lastSeen": "2026-11-15",
-    "rows": 7
+    "rows": 8
   },
   "Watch Center": {
     "fingerprint": "3707b75fa5d6d83d",
@@ -276,10 +276,10 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "4cfa895091b77ae3",
-    "lastChanged": "2026-11-15",
+    "fingerprint": "c57156a4686b58b6",
+    "lastChanged": "2026-11-14",
     "lastSeen": "2026-11-15",
-    "rows": 205
+    "rows": 206
   },
   "calendar:antiquorum": {
     "fingerprint": "a834f4030143be95",
@@ -324,8 +324,8 @@
     "rows": 3
   },
   "eBay": {
-    "fingerprint": "65162ca706bfa4db",
-    "lastChanged": "2026-11-15",
+    "fingerprint": "8346dd4c634788bf",
+    "lastChanged": "2026-11-14",
     "lastSeen": "2026-11-15",
     "rows": 37
   },
@@ -426,8 +426,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "fb5696cf032ae571",
-    "lastChanged": "2026-11-14",
+    "fingerprint": "7fddfbfaf1f5a5ee",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-15",
     "rows": 7517
   },
@@ -438,9 +438,9 @@
     "rows": 123
   },
   "merged:listings": {
-    "fingerprint": "4027d041252a028a",
-    "lastChanged": "2026-11-15",
+    "fingerprint": "8297bf41cdad4569",
+    "lastChanged": "2026-11-14",
     "lastSeen": "2026-11-15",
-    "rows": 13257
+    "rows": 13256
   }
 }
