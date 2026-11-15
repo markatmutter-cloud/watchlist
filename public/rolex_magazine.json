@@ -100439,6 +100439,9 @@
     "source": "rolex_magazine",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "celebrity"
+    ],
     "title": "Weekend Watching: Bernie Taupin",
     "updated_at": "2026-11-14",
     "url": "https://www.rolexmagazine.com/2026/11/weekend-watching-bernie-taupin.html",
