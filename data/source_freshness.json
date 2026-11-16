@@ -54,10 +54,10 @@
     "rows": 120
   },
   "Collectors Corner NY": {
-    "fingerprint": "fb59560e9d71e60c",
-    "lastChanged": "2026-11-15",
+    "fingerprint": "fd82c9b6200e738b",
+    "lastChanged": "2026-11-16",
     "lastSeen": "2026-11-16",
-    "rows": 107
+    "rows": 108
   },
   "Craft & Tailored": {
     "fingerprint": "83a0c64f8e7ab8ab",
@@ -96,10 +96,10 @@
     "rows": 45
   },
   "Heuertime": {
-    "fingerprint": "75f19ff51b1ef421",
-    "lastChanged": "2026-11-15",
+    "fingerprint": "e9057eb810c1317a",
+    "lastChanged": "2026-11-16",
     "lastSeen": "2026-11-16",
-    "rows": 19
+    "rows": 30
   },
   "Huntington Company": {
     "fingerprint": "6bf9b45d4d579019",
@@ -204,10 +204,10 @@
     "rows": 49
   },
   "Tropical Watch": {
-    "fingerprint": "8da090f6534668f0",
-    "lastChanged": "2026-11-15",
+    "fingerprint": "f3006748820ac8b5",
+    "lastChanged": "2026-11-16",
     "lastSeen": "2026-11-16",
-    "rows": 116
+    "rows": 115
   },
   "Vintage Watch Collective": {
     "fingerprint": "7139a378d10b4a3b",
@@ -228,8 +228,8 @@
     "rows": 32
   },
   "Vision Vintage Watches": {
-    "fingerprint": "ed094b11cd3b4fb0",
-    "lastChanged": "2026-11-14",
+    "fingerprint": "68ceb64d259b5c09",
+    "lastChanged": "2026-11-16",
     "lastSeen": "2026-11-16",
     "rows": 100
   },
@@ -426,8 +426,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "36f4d880063d3a22",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "db5f06e02c37f347",
+    "lastChanged": "2026-11-15",
     "lastSeen": "2026-11-16",
     "rows": 7517
   },
@@ -438,9 +438,9 @@
     "rows": 123
   },
   "merged:listings": {
-    "fingerprint": "cdf46311c6769c8d",
-    "lastChanged": "2026-11-15",
+    "fingerprint": "856369e0d5e14f6d",
+    "lastChanged": "2026-11-16",
     "lastSeen": "2026-11-16",
-    "rows": 13261
+    "rows": 13262
   }
 }
