@@ -18329,6 +18329,28 @@
     "url": "https://hairspring.com/blogs/finds/charles-frodsham-double-impulse-chronometer",
     "word_count": 532
   },
+  "https://hairspring.com/blogs/finds/charles-frodsham-double-impulse-chronometer-1": {
+    "author": "Erik Gustafson",
+    "brand": "Charles Frodsham",
+    "case_size": "43mm",
+    "currency": "USD",
+    "excerpt": "English watchmaking spent most of the last century as a museum subject. Charles Frodsham & Co., founded in 1834 and by its own description ‘the longest continuously trading firm of chronometer manufacturers in the world,’ spent it making",
+    "image": "https://hairspring.com/cdn/shop/articles/Charles-Frodsham-Double-Impulse-Chronometer-6.jpg",
+    "model": null,
+    "model_line": null,
+    "published_at": "2026-11-15",
+    "reference_no": null,
+    "scraped_at": "2026-11-16T23:21:15Z",
+    "slug": "charles-frodsham-double-impulse-chronometer-1",
+    "sold_price_usd": 300000,
+    "source": "hairspring_finds",
+    "source_type": "editorial_finds",
+    "sub_model": null,
+    "title": "Charles Frodsham Double Impulse Chronometer",
+    "updated_at": "2026-11-16",
+    "url": "https://hairspring.com/blogs/finds/charles-frodsham-double-impulse-chronometer-1",
+    "word_count": 484
+  },
   "https://hairspring.com/blogs/finds/charles-frodsham-double-impulse-chronometer-2": {
     "author": "Erik Gustafson",
     "brand": "Charles Frodsham",
@@ -32561,7 +32583,7 @@
     "model_line": "World Time",
     "published_at": "2026-05-18",
     "reference_no": "2523",
-    "scraped_at": "2026-10-17T22:05:54Z",
+    "scraped_at": "2026-11-16T23:21:17Z",
     "slug": "prototype-2523-patek-philippe-world-time",
     "sold_price_usd": null,
     "source": "hairspring_finds",
@@ -36587,7 +36609,7 @@
     "model_line": null,
     "published_at": "2026-06-17",
     "reference_no": null,
-    "scraped_at": "2026-10-17T22:05:53Z",
+    "scraped_at": "2026-11-16T23:21:16Z",
     "slug": "stealth-111-025-a-lange-sohne-little-lange-1",
     "sold_price_usd": 75000,
     "source": "hairspring_finds",
@@ -36600,7 +36622,7 @@
     "title": "'Stealth' 111.025 A. Lange & Söhne Little Lange 1",
     "updated_at": "2026-07-17",
     "url": "https://hairspring.com/blogs/finds/stealth-111-025-a-lange-sohne-little-lange-1",
-    "word_count": 388
+    "word_count": 384
   },
   "https://hairspring.com/blogs/finds/steel-565-patek-philippe-calatrava": {
     "author": "Erik Gustafson",
