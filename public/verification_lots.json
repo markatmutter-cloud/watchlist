@@ -1,21 +1,13 @@
 {
-  "date": "2026-11-16",
-  "updated_at": "2026-11-16T14:33:20+00:00",
-  "alerts": [
-    {
-      "house": "Watches of Knightsbridge",
-      "level": "ERROR",
-      "today": 0,
-      "previous": 59,
-      "note": "house absent from today's lot scrape (was present yesterday)"
-    }
-  ],
+  "date": "2026-11-17",
+  "updated_at": "2026-11-17T15:35:12+00:00",
+  "alerts": [],
   "counts": {
     "Antiquorum": 468,
     "Christie's": 826,
     "Phillips": 561,
-    "Sotheby's": 366
+    "Sotheby's": 376
   },
-  "total_live_lots": 2221,
+  "total_live_lots": 2231,
   "houses_tracked": 4
 }
