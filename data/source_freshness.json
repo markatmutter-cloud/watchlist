@@ -1,9 +1,9 @@
 {
   "Amsterdam Vintage Watches": {
-    "fingerprint": "0fe44807f00721bf",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "b67773e111347b75",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 76
+    "rows": 75
   },
   "Amsterdam Watch Company": {
     "fingerprint": "b45516e38fdddd99",
@@ -30,10 +30,10 @@
     "rows": 92
   },
   "Bulang & Sons": {
-    "fingerprint": "8f284875f5931a73",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "5f1208be1bd90598",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 157
+    "rows": 153
   },
   "Central Watch": {
     "fingerprint": "077182ef8b9ddbc4",
@@ -66,10 +66,10 @@
     "rows": 114
   },
   "DB1983": {
-    "fingerprint": "fe7e9ea138c951fe",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "69d79827fd1590bc",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 25
+    "rows": 29
   },
   "European Watch": {
     "fingerprint": "377ca4b8e658add8",
@@ -96,16 +96,16 @@
     "rows": 45
   },
   "Heuertime": {
-    "fingerprint": "75f19ff51b1ef421",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "e9057eb810c1317a",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 19
+    "rows": 30
   },
   "Huntington Company": {
-    "fingerprint": "8d2ce57f3c2aadbd",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "f10af680b000c881",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 125
+    "rows": 127
   },
   "Luna Royster": {
     "fingerprint": "d6cdccbd325f0492",
@@ -138,10 +138,10 @@
     "rows": 108
   },
   "Pascal Karp": {
-    "fingerprint": "1cabd0c14e0ea697",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "ca78dd915f4ff842",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 97
+    "rows": 96
   },
   "Romain R\u00e9a": {
     "fingerprint": "4823df32b81ed965",
@@ -162,13 +162,13 @@
     "rows": 41
   },
   "Shuck the Oyster": {
-    "fingerprint": "af0c5010472a4624",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "1da95dc0e2173e3d",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
     "rows": 127
   },
   "Sierra Time Co": {
-    "fingerprint": "0a260b98d1cfc918",
+    "fingerprint": "39dd4835705795b2",
     "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
     "rows": 42
@@ -198,10 +198,10 @@
     "rows": 39
   },
   "Tommy Zhao": {
-    "fingerprint": "c4de90f4432842a7",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "b676cea9160050f3",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 46
+    "rows": 61
   },
   "Tropical Watch": {
     "fingerprint": "ac20d6f130fbc1a4",
@@ -438,9 +438,9 @@
     "rows": 123
   },
   "merged:listings": {
-    "fingerprint": "ec885aae38514bb6",
+    "fingerprint": "30b22e8c472b797f",
     "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 13299
+    "rows": 13327
   }
 }
