@@ -60,10 +60,10 @@
     "rows": 106
   },
   "Craft & Tailored": {
-    "fingerprint": "809477ca9665b9c3",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "92dd5461da356eaf",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 113
+    "rows": 114
   },
   "DB1983": {
     "fingerprint": "fe7e9ea138c951fe",
@@ -84,10 +84,10 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "de85c6b40eeb500f",
-    "lastChanged": "2026-11-15",
+    "fingerprint": "9ed469b9c017cdb1",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 33
+    "rows": 34
   },
   "Hairspring": {
     "fingerprint": "077d93e65e5f1281",
@@ -108,10 +108,10 @@
     "rows": 125
   },
   "Luna Royster": {
-    "fingerprint": "5cbc7f4f1635818c",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "d6cdccbd325f0492",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 26
+    "rows": 27
   },
   "Maunder Watches": {
     "fingerprint": "1b40d0d8891c8323",
@@ -168,8 +168,8 @@
     "rows": 127
   },
   "Sierra Time Co": {
-    "fingerprint": "27cce2cda6da568b",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "0a260b98d1cfc918",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
     "rows": 42
   },
@@ -204,10 +204,10 @@
     "rows": 46
   },
   "Tropical Watch": {
-    "fingerprint": "f59f5999ebedcd14",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "ac20d6f130fbc1a4",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 117
+    "rows": 121
   },
   "Vintage Watch Collective": {
     "fingerprint": "7395a300f587a86f",
@@ -246,10 +246,10 @@
     "rows": 429
   },
   "Watch Club": {
-    "fingerprint": "83ab8c6e365168c2",
-    "lastChanged": "2026-11-13",
+    "fingerprint": "6714271c483269c3",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 48
+    "rows": 47
   },
   "Watches of Knightsbridge": {
     "fingerprint": "745e3d62592a4202",
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "2fd4420be1d690a8",
-    "lastChanged": "2026-11-16",
+    "fingerprint": "c9373bab242d9f00",
+    "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
     "rows": 57
   },
@@ -438,9 +438,9 @@
     "rows": 123
   },
   "merged:listings": {
-    "fingerprint": "a92e5d1cecdee073",
+    "fingerprint": "ec885aae38514bb6",
     "lastChanged": "2026-11-17",
     "lastSeen": "2026-11-17",
-    "rows": 13291
+    "rows": 13299
   }
 }
