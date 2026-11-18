@@ -324,10 +324,10 @@
     "rows": 3
   },
   "eBay": {
-    "fingerprint": "ac67ae9e7d222106",
+    "fingerprint": "1863bc8309c854cc",
     "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
-    "rows": 39
+    "rows": 40
   },
   "editorial:acollectedman_journal": {
     "fingerprint": "5b2287a5ce9dddd2",
@@ -438,7 +438,7 @@
     "rows": 124
   },
   "merged:listings": {
-    "fingerprint": "b6fd6abb537c378d",
+    "fingerprint": "622ab9f26796327a",
     "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
     "rows": 13363
