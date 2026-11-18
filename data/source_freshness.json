@@ -6,16 +6,16 @@
     "rows": 76
   },
   "Amsterdam Watch Company": {
-    "fingerprint": "b45516e38fdddd99",
-    "lastChanged": "2026-11-12",
-    "lastSeen": "2026-11-18",
-    "rows": 292
-  },
-  "Analog Shift": {
-    "fingerprint": "61c146436f63d0c0",
+    "fingerprint": "e31720d49591c346",
     "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
-    "rows": 778
+    "rows": 291
+  },
+  "Analog Shift": {
+    "fingerprint": "b98e4efc1b407092",
+    "lastChanged": "2026-11-18",
+    "lastSeen": "2026-11-18",
+    "rows": 779
   },
   "Belmont Watches": {
     "fingerprint": "88bde41f03007800",
@@ -30,10 +30,10 @@
     "rows": 92
   },
   "Bulang & Sons": {
-    "fingerprint": "ea28319d93b73bcb",
-    "lastChanged": "2026-11-17",
+    "fingerprint": "ec85f8d8069c0467",
+    "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
-    "rows": 152
+    "rows": 154
   },
   "Central Watch": {
     "fingerprint": "b265b719c29e8e2e",
@@ -90,16 +90,16 @@
     "rows": 34
   },
   "Hairspring": {
-    "fingerprint": "1ea7a2f9ac2d8ad5",
-    "lastChanged": "2026-11-17",
+    "fingerprint": "cfc574d5ce596382",
+    "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
     "rows": 46
   },
   "Heuertime": {
-    "fingerprint": "75f19ff51b1ef421",
+    "fingerprint": "e9057eb810c1317a",
     "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
-    "rows": 19
+    "rows": 30
   },
   "Huntington Company": {
     "fingerprint": "f10af680b000c881",
@@ -162,10 +162,10 @@
     "rows": 38
   },
   "Shuck the Oyster": {
-    "fingerprint": "423af2d1b185f7a0",
-    "lastChanged": "2026-11-17",
+    "fingerprint": "d96ed4f5a9b7c9e0",
+    "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
-    "rows": 126
+    "rows": 123
   },
   "Sierra Time Co": {
     "fingerprint": "45cee4ecc443575d",
@@ -438,9 +438,9 @@
     "rows": 124
   },
   "merged:listings": {
-    "fingerprint": "3bfd71637c3c2c3a",
+    "fingerprint": "b6fd6abb537c378d",
     "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
-    "rows": 13360
+    "rows": 13363
   }
 }
