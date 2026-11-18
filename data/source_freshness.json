@@ -318,10 +318,10 @@
     "rows": 5
   },
   "calendar:watchesofknightsbridge": {
-    "fingerprint": "a703382e6e1165d5",
-    "lastChanged": "2026-11-14",
-    "lastSeen": "2026-11-16",
-    "rows": 3
+    "fingerprint": "44fcfb1e407ce0ce",
+    "lastChanged": "2026-11-18",
+    "lastSeen": "2026-11-18",
+    "rows": 1
   },
   "eBay": {
     "fingerprint": "1863bc8309c854cc",
@@ -426,14 +426,14 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "be9639e6011b14af",
+    "fingerprint": "fbb1186a3e93b8ea",
     "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
     "rows": 7462
   },
   "merged:auctions": {
-    "fingerprint": "695791eb1d27fc4b",
-    "lastChanged": "2026-11-17",
+    "fingerprint": "a8157fc663a6bd6f",
+    "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
     "rows": 124
   },
