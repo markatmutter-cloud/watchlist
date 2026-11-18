@@ -12,10 +12,10 @@
     "rows": 292
   },
   "Analog Shift": {
-    "fingerprint": "f0b72b7559630e1d",
-    "lastChanged": "2026-11-17",
+    "fingerprint": "61c146436f63d0c0",
+    "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
-    "rows": 775
+    "rows": 778
   },
   "Belmont Watches": {
     "fingerprint": "88bde41f03007800",
@@ -60,10 +60,10 @@
     "rows": 106
   },
   "Craft & Tailored": {
-    "fingerprint": "92dd5461da356eaf",
-    "lastChanged": "2026-11-17",
+    "fingerprint": "1358b4abcb95f78d",
+    "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
-    "rows": 114
+    "rows": 115
   },
   "DB1983": {
     "fingerprint": "45d630c8ae655a0a",
@@ -96,10 +96,10 @@
     "rows": 46
   },
   "Heuertime": {
-    "fingerprint": "e9057eb810c1317a",
-    "lastChanged": "2026-11-17",
+    "fingerprint": "75f19ff51b1ef421",
+    "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
-    "rows": 30
+    "rows": 19
   },
   "Huntington Company": {
     "fingerprint": "f10af680b000c881",
@@ -204,10 +204,10 @@
     "rows": 61
   },
   "Tropical Watch": {
-    "fingerprint": "a7c0e41ced711cdb",
-    "lastChanged": "2026-11-17",
+    "fingerprint": "3af3fd40abe90bb6",
+    "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
-    "rows": 119
+    "rows": 122
   },
   "Vintage Watch Collective": {
     "fingerprint": "7395a300f587a86f",
@@ -216,10 +216,10 @@
     "rows": 40
   },
   "Vintage Watch Fam": {
-    "fingerprint": "6be8827ece2e96bb",
-    "lastChanged": "2026-11-17",
+    "fingerprint": "3623362411cd7fe9",
+    "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
-    "rows": 621
+    "rows": 619
   },
   "Vintage Watch Shop": {
     "fingerprint": "760d5d51da9c56db",
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "86fd84c6a7842505",
-    "lastChanged": "2026-11-17",
+    "fingerprint": "84e573e6d6b89e8a",
+    "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
     "rows": 58
   },
@@ -438,9 +438,9 @@
     "rows": 124
   },
   "merged:listings": {
-    "fingerprint": "d24c03113ca79386",
+    "fingerprint": "3bfd71637c3c2c3a",
     "lastChanged": "2026-11-18",
     "lastSeen": "2026-11-18",
-    "rows": 13351
+    "rows": 13360
   }
 }
