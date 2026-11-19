@@ -12,10 +12,10 @@
     "rows": 287
   },
   "Analog Shift": {
-    "fingerprint": "d39174c8e2e64291",
+    "fingerprint": "2df51bbe76044942",
     "lastChanged": "2026-11-19",
     "lastSeen": "2026-11-19",
-    "rows": 766
+    "rows": 763
   },
   "Belmont Watches": {
     "fingerprint": "eae52e3d46704047",
@@ -30,10 +30,10 @@
     "rows": 92
   },
   "Bulang & Sons": {
-    "fingerprint": "79197a2a5c997c82",
-    "lastChanged": "2026-11-18",
+    "fingerprint": "70b5df175ab73a15",
+    "lastChanged": "2026-11-19",
     "lastSeen": "2026-11-19",
-    "rows": 154
+    "rows": 153
   },
   "Central Watch": {
     "fingerprint": "b265b719c29e8e2e",
@@ -60,16 +60,16 @@
     "rows": 105
   },
   "Craft & Tailored": {
-    "fingerprint": "1080a8531d742b60",
+    "fingerprint": "6a22d8aefd285c48",
     "lastChanged": "2026-11-19",
     "lastSeen": "2026-11-19",
-    "rows": 117
+    "rows": 114
   },
   "DB1983": {
-    "fingerprint": "176fe36ae7362c74",
+    "fingerprint": "45d630c8ae655a0a",
     "lastChanged": "2026-11-19",
     "lastSeen": "2026-11-19",
-    "rows": 22
+    "rows": 29
   },
   "European Watch": {
     "fingerprint": "377ca4b8e658add8",
@@ -138,10 +138,10 @@
     "rows": 108
   },
   "Pascal Karp": {
-    "fingerprint": "51a47f4486d561bc",
-    "lastChanged": "2026-11-17",
+    "fingerprint": "cd999aa854e250d4",
+    "lastChanged": "2026-11-19",
     "lastSeen": "2026-11-19",
-    "rows": 99
+    "rows": 96
   },
   "Romain R\u00e9a": {
     "fingerprint": "e882d9d0e809f47e",
@@ -174,10 +174,10 @@
     "rows": 42
   },
   "Somlo": {
-    "fingerprint": "49a7799da9f9c6c6",
-    "lastChanged": "2026-11-18",
+    "fingerprint": "20a13b4d487e30eb",
+    "lastChanged": "2026-11-19",
     "lastSeen": "2026-11-19",
-    "rows": 169
+    "rows": 168
   },
   "Swiss Hours": {
     "fingerprint": "8092321645e90774",
@@ -204,10 +204,10 @@
     "rows": 60
   },
   "Tropical Watch": {
-    "fingerprint": "d41a357abac860c6",
+    "fingerprint": "ef6bff8de4db5e50",
     "lastChanged": "2026-11-19",
     "lastSeen": "2026-11-19",
-    "rows": 121
+    "rows": 120
   },
   "Vintage Watch Collective": {
     "fingerprint": "13684bab8c27e096",
@@ -216,7 +216,7 @@
     "rows": 41
   },
   "Vintage Watch Fam": {
-    "fingerprint": "f03cec1ffe9b29bf",
+    "fingerprint": "74b44dadd6e6c5be",
     "lastChanged": "2026-11-19",
     "lastSeen": "2026-11-19",
     "rows": 604
@@ -324,8 +324,8 @@
     "rows": 1
   },
   "eBay": {
-    "fingerprint": "a7e721e54b3b690d",
-    "lastChanged": "2026-11-18",
+    "fingerprint": "cf00d29b6a53bc71",
+    "lastChanged": "2026-11-19",
     "lastSeen": "2026-11-19",
     "rows": 40
   },
@@ -426,10 +426,10 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "1b0c0b45c1518122",
-    "lastChanged": "2026-11-18",
+    "fingerprint": "77ce473a81a8243d",
+    "lastChanged": "2026-11-19",
     "lastSeen": "2026-11-19",
-    "rows": 7462
+    "rows": 7464
   },
   "merged:auctions": {
     "fingerprint": "a8157fc663a6bd6f",
@@ -438,9 +438,9 @@
     "rows": 124
   },
   "merged:listings": {
-    "fingerprint": "041c9b2a205de4ab",
+    "fingerprint": "9ed2a96f0cd241bf",
     "lastChanged": "2026-11-19",
     "lastSeen": "2026-11-19",
-    "rows": 13401
+    "rows": 13402
   }
 }

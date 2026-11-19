@@ -1,10 +1,10 @@
 {
   "date": "2026-11-19",
-  "updated_at": "2026-11-19T02:19:21+00:00",
+  "updated_at": "2026-11-19T10:18:13+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 97,
-    "Tropical Watch": 123,
+    "Tropical Watch": 120,
     "Menta Watches": 54,
     "Collectors Corner NY": 96,
     "Falco Watches": 5,
@@ -19,7 +19,7 @@
     "DB1983": 28,
     "Hairspring": 34,
     "Somlo": 169,
-    "Analog Shift": 735,
+    "Analog Shift": 733,
     "Watches of Knightsbridge": 61,
     "Belmont Watches": 38,
     "Watchfid": 58,
@@ -28,7 +28,7 @@
     "Huntington Company": 122,
     "The Vintage Watch": 32,
     "Chronoholic": 4,
-    "Vintage Watch Fam": 592,
+    "Vintage Watch Fam": 589,
     "Shuck the Oyster": 118,
     "Central Watch": 181,
     "Vintage Watch Collective": 37,
@@ -50,6 +50,6 @@
     "Tommy Zhao": 58,
     "eBay": 40
   },
-  "total_listings": 4624,
+  "total_listings": 4616,
   "sources_tracked": 46
 }
