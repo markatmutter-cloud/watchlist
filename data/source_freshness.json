@@ -6,10 +6,10 @@
     "rows": 78
   },
   "Amsterdam Watch Company": {
-    "fingerprint": "180814e182401c1f",
-    "lastChanged": "2026-11-19",
+    "fingerprint": "1b0f8a7fbdf16c07",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
-    "rows": 304
+    "rows": 305
   },
   "Analog Shift": {
     "fingerprint": "89ea2e187acc57f4",
@@ -30,10 +30,10 @@
     "rows": 92
   },
   "Bulang & Sons": {
-    "fingerprint": "70b5df175ab73a15",
-    "lastChanged": "2026-11-19",
+    "fingerprint": "c32299e65947afce",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
-    "rows": 153
+    "rows": 156
   },
   "Central Watch": {
     "fingerprint": "6659f8cd413c56ff",
@@ -66,10 +66,10 @@
     "rows": 114
   },
   "DB1983": {
-    "fingerprint": "c106b4aa684b46a1",
+    "fingerprint": "6f79d7377bbdfe41",
     "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
-    "rows": 29
+    "rows": 26
   },
   "European Watch": {
     "fingerprint": "377ca4b8e658add8",
@@ -198,10 +198,10 @@
     "rows": 39
   },
   "Tommy Zhao": {
-    "fingerprint": "31ac3607b92784ea",
-    "lastChanged": "2026-11-18",
+    "fingerprint": "0dcf715c00c82ad2",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
-    "rows": 60
+    "rows": 68
   },
   "Tropical Watch": {
     "fingerprint": "0af67388d005412b",
@@ -324,8 +324,8 @@
     "rows": 1
   },
   "eBay": {
-    "fingerprint": "669ccf601d79b80f",
-    "lastChanged": "2026-11-19",
+    "fingerprint": "51d7e13932724b1f",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
     "rows": 41
   },
@@ -426,7 +426,7 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "96eae751ffd31e59",
+    "fingerprint": "4254eef6e5d253cb",
     "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
     "rows": 7465
@@ -438,9 +438,9 @@
     "rows": 124
   },
   "merged:listings": {
-    "fingerprint": "1efb60f953476663",
+    "fingerprint": "c9bb09886f23be65",
     "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
-    "rows": 13454
+    "rows": 13465
   }
 }
