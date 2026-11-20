@@ -12,10 +12,10 @@
     "rows": 304
   },
   "Analog Shift": {
-    "fingerprint": "0ec4f73a447de07b",
-    "lastChanged": "2026-11-19",
+    "fingerprint": "89ea2e187acc57f4",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
-    "rows": 758
+    "rows": 756
   },
   "Belmont Watches": {
     "fingerprint": "eae52e3d46704047",
@@ -54,20 +54,20 @@
     "rows": 121
   },
   "Collectors Corner NY": {
-    "fingerprint": "cea20a3f3e4fb7ee",
-    "lastChanged": "2026-11-18",
+    "fingerprint": "bf7c55a1a83dddbc",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
-    "rows": 105
+    "rows": 104
   },
   "Craft & Tailored": {
-    "fingerprint": "fb8fa0a27ff4bce6",
-    "lastChanged": "2026-11-19",
+    "fingerprint": "ad249945441aec3a",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
-    "rows": 113
+    "rows": 114
   },
   "DB1983": {
-    "fingerprint": "a4ce1e368e4bba09",
-    "lastChanged": "2026-11-19",
+    "fingerprint": "c106b4aa684b46a1",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
     "rows": 29
   },
@@ -120,10 +120,10 @@
     "rows": 73
   },
   "Menta Watches": {
-    "fingerprint": "885410ac016c1211",
-    "lastChanged": "2026-11-19",
+    "fingerprint": "bb56107b8f4cbeb0",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
-    "rows": 59
+    "rows": 58
   },
   "Moonphase": {
     "fingerprint": "c51ac53310849a33",
@@ -204,10 +204,10 @@
     "rows": 60
   },
   "Tropical Watch": {
-    "fingerprint": "7e15fd7e98ae3ce1",
-    "lastChanged": "2026-11-19",
+    "fingerprint": "0af67388d005412b",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
-    "rows": 119
+    "rows": 124
   },
   "Vintage Watch Collective": {
     "fingerprint": "0dce1fb8bed3e7cf",
@@ -216,8 +216,8 @@
     "rows": 41
   },
   "Vintage Watch Fam": {
-    "fingerprint": "c79431d52c1e8667",
-    "lastChanged": "2026-11-19",
+    "fingerprint": "93385257864b5bfc",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
     "rows": 603
   },
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "fd4f293229681a05",
-    "lastChanged": "2026-11-19",
+    "fingerprint": "5ab010888fab124e",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
     "rows": 58
   },
@@ -426,7 +426,7 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "4254eef6e5d253cb",
+    "fingerprint": "96eae751ffd31e59",
     "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
     "rows": 7465
@@ -438,9 +438,9 @@
     "rows": 124
   },
   "merged:listings": {
-    "fingerprint": "a87975f18f6369da",
-    "lastChanged": "2026-11-19",
+    "fingerprint": "1efb60f953476663",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-20",
-    "rows": 13447
+    "rows": 13454
   }
 }
