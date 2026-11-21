@@ -12,10 +12,10 @@
     "rows": 302
   },
   "Analog Shift": {
-    "fingerprint": "bc64aaa984c57efb",
-    "lastChanged": "2026-11-20",
+    "fingerprint": "0492c2fa91ca0442",
+    "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
-    "rows": 756
+    "rows": 755
   },
   "Belmont Watches": {
     "fingerprint": "1dffa04f45530a84",
@@ -60,10 +60,10 @@
     "rows": 104
   },
   "Craft & Tailored": {
-    "fingerprint": "b884ff2e696ebba9",
+    "fingerprint": "c8734e48ea72a214",
     "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
-    "rows": 112
+    "rows": 114
   },
   "DB1983": {
     "fingerprint": "c106b4aa684b46a1",
@@ -96,10 +96,10 @@
     "rows": 47
   },
   "Heuertime": {
-    "fingerprint": "e9057eb810c1317a",
+    "fingerprint": "75f19ff51b1ef421",
     "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
-    "rows": 30
+    "rows": 19
   },
   "Huntington Company": {
     "fingerprint": "90b2fd3f57b696a2",
@@ -120,10 +120,10 @@
     "rows": 73
   },
   "Menta Watches": {
-    "fingerprint": "b2f1396d79b56c44",
-    "lastChanged": "2026-11-20",
+    "fingerprint": "b79738b5c962f4ed",
+    "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
-    "rows": 56
+    "rows": 55
   },
   "Moonphase": {
     "fingerprint": "c51ac53310849a33",
@@ -168,7 +168,7 @@
     "rows": 121
   },
   "Sierra Time Co": {
-    "fingerprint": "e84382c87eb12cd7",
+    "fingerprint": "2b29039124737f84",
     "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
     "rows": 45
@@ -204,13 +204,13 @@
     "rows": 67
   },
   "Tropical Watch": {
-    "fingerprint": "914693343967fd03",
+    "fingerprint": "8caecc9761bfe341",
     "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
     "rows": 122
   },
   "Vintage Watch Collective": {
-    "fingerprint": "fa8565914ae8080b",
+    "fingerprint": "49502808c20716cd",
     "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
     "rows": 42
@@ -438,9 +438,9 @@
     "rows": 124
   },
   "merged:listings": {
-    "fingerprint": "c584cf7170c329c0",
+    "fingerprint": "eb2c3f4a42d23f20",
     "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
-    "rows": 13483
+    "rows": 13485
   }
 }
