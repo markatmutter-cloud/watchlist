@@ -60,8 +60,8 @@
     "rows": 104
   },
   "Craft & Tailored": {
-    "fingerprint": "0e36471c56e5e1c5",
-    "lastChanged": "2026-11-20",
+    "fingerprint": "b884ff2e696ebba9",
+    "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
     "rows": 112
   },
@@ -84,8 +84,8 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "81f7df9f67ebd661",
-    "lastChanged": "2026-11-19",
+    "fingerprint": "16fd2048a357666f",
+    "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
     "rows": 39
   },
@@ -96,10 +96,10 @@
     "rows": 47
   },
   "Heuertime": {
-    "fingerprint": "75f19ff51b1ef421",
-    "lastChanged": "2026-11-18",
+    "fingerprint": "e9057eb810c1317a",
+    "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
-    "rows": 19
+    "rows": 30
   },
   "Huntington Company": {
     "fingerprint": "90b2fd3f57b696a2",
@@ -168,10 +168,10 @@
     "rows": 121
   },
   "Sierra Time Co": {
-    "fingerprint": "5907e09b8bbffb93",
-    "lastChanged": "2026-11-19",
+    "fingerprint": "e84382c87eb12cd7",
+    "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
-    "rows": 42
+    "rows": 45
   },
   "Somlo": {
     "fingerprint": "a46222c0f6c78ea2",
@@ -204,14 +204,14 @@
     "rows": 67
   },
   "Tropical Watch": {
-    "fingerprint": "60cc7e14d0750dec",
-    "lastChanged": "2026-11-20",
+    "fingerprint": "914693343967fd03",
+    "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
-    "rows": 123
+    "rows": 122
   },
   "Vintage Watch Collective": {
-    "fingerprint": "f1e773d03d34a4c3",
-    "lastChanged": "2026-11-20",
+    "fingerprint": "fa8565914ae8080b",
+    "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
     "rows": 42
   },
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "5ab010888fab124e",
-    "lastChanged": "2026-11-20",
+    "fingerprint": "3a18340a37460cbc",
+    "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
     "rows": 58
   },
@@ -276,8 +276,8 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "2da780857cc662c6",
-    "lastChanged": "2026-11-20",
+    "fingerprint": "bf00c57cf2dc2621",
+    "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
     "rows": 169
   },
@@ -426,8 +426,8 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "c5ec8c1c877377f6",
-    "lastChanged": "2026-11-21",
+    "fingerprint": "66f10eb5edf3e832",
+    "lastChanged": "2026-11-20",
     "lastSeen": "2026-11-21",
     "rows": 7633
   },
@@ -438,9 +438,9 @@
     "rows": 124
   },
   "merged:listings": {
-    "fingerprint": "c4270677f27a4863",
-    "lastChanged": "2026-11-20",
+    "fingerprint": "ffccb3e2bc8f34b1",
+    "lastChanged": "2026-11-21",
     "lastSeen": "2026-11-21",
-    "rows": 13476
+    "rows": 13482
   }
 }
