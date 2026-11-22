@@ -6124,6 +6124,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "review",
+      "community_ethics"
+    ],
     "title": "Book Review — Vintage Watches: The Modern Guide",
     "updated_at": "2026-11-17",
     "url": "https://www.fratellowatches.com/book-review-vintage-watches-the-modern-guide/",
@@ -37887,6 +37891,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "review"
+    ],
     "title": "The Casio CMK-100: A Lightweight Titanium Automatic Daily Watch In Three Variations",
     "updated_at": "2026-11-17",
     "url": "https://www.fratellowatches.com/new-casio-cmk-100/",
@@ -45684,6 +45692,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics",
+      "collecting_philosophy"
+    ],
     "title": "Photo Report: The Fourth Edition Of The Dutch Speedmaster GTG",
     "updated_at": "2026-11-17",
     "url": "https://www.fratellowatches.com/photo-report-the-fourth-edition-of-the-dutch-speedmaster-gtg/",
@@ -45725,6 +45737,10 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "news",
+      "community_ethics"
+    ],
     "title": "Photo Report: Watch Spotting At The Fratello × Gallet Event",
     "updated_at": "2026-11-20",
     "url": "https://www.fratellowatches.com/photo-report-watch-spotting-at-the-fratello-x-gallet-event/",
@@ -60086,6 +60102,9 @@
     "source": "fratello",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "review"
+    ],
     "title": "Sunday Morning Showdown: Breitling Navitimer B09 Chronograph 41 Vs. Omega Speedmaster Moonwatch",
     "updated_at": "2026-11-21",
     "url": "https://www.fratellowatches.com/sunday-morning-showdown-breitling-navitimer-b09-chronograph-41-vs-omega-speedmaster-moonwatch/",

@@ -2682,6 +2682,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "ENTREE EN COLLECTION by LA REVUE DES MONTRES",
     "updated_at": "2026-11-19",
     "url": "https://www.watchfid.com/entree-en-collection-by-la-revue-des-montres/",
@@ -3636,6 +3640,9 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "brand_history"
+    ],
     "title": "MARCO MANTOVANI",
     "updated_at": "2026-11-20",
     "url": "https://www.watchfid.com/marco-mantovani/",
@@ -4485,6 +4492,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history"
+    ],
     "title": "PATEK PHILIPPE 3940 : L’ETERNITE AU POIGNET by LA REVUE DES MONTRES",
     "updated_at": "2026-11-19",
     "url": "https://www.watchfid.com/patek-philippe-3940-leternite-au-poignet-by-la-revue-des-montres/",
@@ -4504,6 +4515,9 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "community_ethics"
+    ],
     "title": "PHOTO REPORT: THE FOURTH EDITION OF THE DUTCH SPEEDMASTER GTG : L’ETERNITE AU POIGNET by FRATELLO",
     "updated_at": "2026-11-19",
     "url": "https://www.watchfid.com/photo-report-the-fourth-edition-of-the-dutch-speedmaster-gtg-leternite-au-poignet-by-fratello/",
@@ -5811,6 +5825,10 @@
     "source": "watchfid_editorial",
     "source_type": "editorial_blog",
     "sub_model": null,
+    "themes": [
+      "design",
+      "brand_history"
+    ],
     "title": "THE STORY OF THE OMEGA DYNAMIC",
     "updated_at": "2026-11-21",
     "url": "https://www.watchfid.com/the-story-of-the-omega-dynamic/",

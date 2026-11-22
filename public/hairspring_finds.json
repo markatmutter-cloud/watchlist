@@ -8504,6 +8504,10 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "auction_results"
+    ],
     "title": "3970ER-028 Patek Philippe 'Saatchi' Perpetual Calendar Chronograph",
     "updated_at": "2026-11-21",
     "url": "https://hairspring.com/blogs/finds/3970er-028-patek-philippe-saatchi-perpetual-calendar-chronograph",
@@ -18368,6 +18372,11 @@
     "source": "hairspring_finds",
     "source_type": "editorial_finds",
     "sub_model": null,
+    "themes": [
+      "reference_profile",
+      "brand_history",
+      "complications"
+    ],
     "title": "Charles Frodsham Double Impulse Chronometer",
     "updated_at": "2026-11-16",
     "url": "https://hairspring.com/blogs/finds/charles-frodsham-double-impulse-chronometer-1",
