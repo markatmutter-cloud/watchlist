@@ -1,6 +1,6 @@
 {
   "date": "2026-11-22",
-  "updated_at": "2026-11-22T09:36:42+00:00",
+  "updated_at": "2026-11-22T21:06:42+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 93,
@@ -16,10 +16,10 @@
     "Craft & Tailored": 85,
     "Watch Brothers London": 7,
     "Sierra Time Co": 45,
-    "DB1983": 28,
-    "Hairspring": 34,
+    "DB1983": 48,
+    "Hairspring": 35,
     "Somlo": 165,
-    "Analog Shift": 719,
+    "Analog Shift": 718,
     "Watches of Knightsbridge": 58,
     "Belmont Watches": 37,
     "Watchfid": 58,
@@ -29,7 +29,7 @@
     "The Vintage Watch": 31,
     "Chronoholic": 4,
     "Vintage Watch Fam": 584,
-    "Shuck the Oyster": 116,
+    "Shuck the Oyster": 114,
     "Central Watch": 184,
     "Vintage Watch Collective": 40,
     "Vision Vintage Watches": 81,
@@ -47,9 +47,9 @@
     "Amsterdam Watch Company": 310,
     "Amsterdam Vintage Watches": 76,
     "Salt Vintage Watches": 39,
-    "Tommy Zhao": 64,
+    "Tommy Zhao": 63,
     "eBay": 42
   },
-  "total_listings": 4628,
+  "total_listings": 4645,
   "sources_tracked": 46
 }
