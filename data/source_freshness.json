@@ -12,10 +12,10 @@
     "rows": 321
   },
   "Analog Shift": {
-    "fingerprint": "8f483d605250b81b",
-    "lastChanged": "2026-11-22",
+    "fingerprint": "23b8143d90145231",
+    "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
-    "rows": 749
+    "rows": 747
   },
   "Belmont Watches": {
     "fingerprint": "1dffa04f45530a84",
@@ -84,10 +84,10 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "c7cd9568259d0dcc",
-    "lastChanged": "2026-11-22",
+    "fingerprint": "c992bcb5b736b797",
+    "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
-    "rows": 38
+    "rows": 36
   },
   "Hairspring": {
     "fingerprint": "9153afb78876074c",
@@ -204,10 +204,10 @@
     "rows": 63
   },
   "Tropical Watch": {
-    "fingerprint": "713f3f140bb8c9e4",
-    "lastChanged": "2026-11-22",
+    "fingerprint": "4f2e0b84227f47c3",
+    "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
-    "rows": 119
+    "rows": 118
   },
   "Vintage Watch Collective": {
     "fingerprint": "78adf2e1369b8766",
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "95223b1ff4f44e03",
-    "lastChanged": "2026-11-22",
+    "fingerprint": "5a96875cc436002a",
+    "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
     "rows": 58
   },
@@ -438,9 +438,9 @@
     "rows": 125
   },
   "merged:listings": {
-    "fingerprint": "e294ffc4560f0d5c",
-    "lastChanged": "2026-11-22",
+    "fingerprint": "d1c27b0a697bf87e",
+    "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
-    "rows": 13527
+    "rows": 13528
   }
 }
