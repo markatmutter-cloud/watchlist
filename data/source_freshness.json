@@ -30,8 +30,8 @@
     "rows": 92
   },
   "Bulang & Sons": {
-    "fingerprint": "ccf9fb750125b10d",
-    "lastChanged": "2026-11-20",
+    "fingerprint": "54497c46cdf99084",
+    "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
     "rows": 156
   },
@@ -48,8 +48,8 @@
     "rows": 119
   },
   "ClassicHeuer": {
-    "fingerprint": "705008a83a09f59a",
-    "lastChanged": "2026-11-18",
+    "fingerprint": "0b4d85ee448d8a80",
+    "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
     "rows": 121
   },
@@ -66,8 +66,8 @@
     "rows": 113
   },
   "DB1983": {
-    "fingerprint": "8d9629a66d318111",
-    "lastChanged": "2026-11-22",
+    "fingerprint": "e4794f55a8ac63a2",
+    "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
     "rows": 49
   },
@@ -96,16 +96,16 @@
     "rows": 48
   },
   "Heuertime": {
-    "fingerprint": "9309de016b5866b7",
-    "lastChanged": "2026-11-22",
+    "fingerprint": "967cd70d70ce5a34",
+    "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
-    "rows": 19
+    "rows": 20
   },
   "Huntington Company": {
-    "fingerprint": "30da0a21286aee28",
-    "lastChanged": "2026-11-22",
+    "fingerprint": "07d1e82c67ed8029",
+    "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
-    "rows": 125
+    "rows": 124
   },
   "Luna Royster": {
     "fingerprint": "8c6f8085123ea41e",
@@ -138,8 +138,8 @@
     "rows": 111
   },
   "Pascal Karp": {
-    "fingerprint": "8970a74c182698e1",
-    "lastChanged": "2026-11-21",
+    "fingerprint": "1e05efdc7eb049ab",
+    "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
     "rows": 98
   },
@@ -210,10 +210,10 @@
     "rows": 118
   },
   "Vintage Watch Collective": {
-    "fingerprint": "78adf2e1369b8766",
-    "lastChanged": "2026-11-21",
+    "fingerprint": "127576fb1b943da0",
+    "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
-    "rows": 43
+    "rows": 44
   },
   "Vintage Watch Fam": {
     "fingerprint": "f6fd758a2abf4b75",
@@ -324,10 +324,10 @@
     "rows": 1
   },
   "eBay": {
-    "fingerprint": "e5b7146c96230065",
-    "lastChanged": "2026-11-22",
+    "fingerprint": "78abdd0208777f49",
+    "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
-    "rows": 43
+    "rows": 42
   },
   "editorial:acollectedman_journal": {
     "fingerprint": "5b2287a5ce9dddd2",
@@ -438,9 +438,9 @@
     "rows": 125
   },
   "merged:listings": {
-    "fingerprint": "d1c27b0a697bf87e",
+    "fingerprint": "77072272754fcc58",
     "lastChanged": "2026-11-23",
     "lastSeen": "2026-11-23",
-    "rows": 13528
+    "rows": 13529
   }
 }
