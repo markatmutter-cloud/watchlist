@@ -306,8 +306,8 @@
     "rows": 20
   },
   "calendar:phillips": {
-    "fingerprint": "f0f8e25049a9de3a",
-    "lastChanged": "2026-11-22",
+    "fingerprint": "e1f58c6767e6651d",
+    "lastChanged": "2026-11-24",
     "lastSeen": "2026-11-24",
     "rows": 5
   },
@@ -426,14 +426,14 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "8879c0cabdffa5a3",
+    "fingerprint": "a05012e92f287fcb",
     "lastChanged": "2026-11-24",
     "lastSeen": "2026-11-24",
     "rows": 7623
   },
   "merged:auctions": {
-    "fingerprint": "3754f21d2550e036",
-    "lastChanged": "2026-11-23",
+    "fingerprint": "37982563059b6c69",
+    "lastChanged": "2026-11-24",
     "lastSeen": "2026-11-24",
     "rows": 125
   },
