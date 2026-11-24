@@ -12,10 +12,10 @@
     "rows": 321
   },
   "Analog Shift": {
-    "fingerprint": "4b5ec3941be3fcad",
+    "fingerprint": "4a97b784957ff255",
     "lastChanged": "2026-11-24",
     "lastSeen": "2026-11-24",
-    "rows": 738
+    "rows": 742
   },
   "Belmont Watches": {
     "fingerprint": "1dffa04f45530a84",
@@ -60,8 +60,8 @@
     "rows": 101
   },
   "Craft & Tailored": {
-    "fingerprint": "c36979eb5e544fc5",
-    "lastChanged": "2026-11-22",
+    "fingerprint": "09a7375ee1118c10",
+    "lastChanged": "2026-11-24",
     "lastSeen": "2026-11-24",
     "rows": 113
   },
@@ -96,10 +96,10 @@
     "rows": 48
   },
   "Heuertime": {
-    "fingerprint": "517aa48fac0f430a",
+    "fingerprint": "02803728e0e1453e",
     "lastChanged": "2026-11-24",
     "lastSeen": "2026-11-24",
-    "rows": 19
+    "rows": 21
   },
   "Huntington Company": {
     "fingerprint": "1c5f20acb080d117",
@@ -204,10 +204,10 @@
     "rows": 63
   },
   "Tropical Watch": {
-    "fingerprint": "a79aed0c844373c9",
+    "fingerprint": "fe4967440806c88e",
     "lastChanged": "2026-11-24",
     "lastSeen": "2026-11-24",
-    "rows": 132
+    "rows": 134
   },
   "Vintage Watch Collective": {
     "fingerprint": "127576fb1b943da0",
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "5a96875cc436002a",
-    "lastChanged": "2026-11-23",
+    "fingerprint": "ce552d76d0b34691",
+    "lastChanged": "2026-11-24",
     "lastSeen": "2026-11-24",
     "rows": 58
   },
@@ -438,9 +438,9 @@
     "rows": 125
   },
   "merged:listings": {
-    "fingerprint": "df7532efd9ae2c8d",
+    "fingerprint": "67940b104c52ba02",
     "lastChanged": "2026-11-24",
     "lastSeen": "2026-11-24",
-    "rows": 13566
+    "rows": 13574
   }
 }
