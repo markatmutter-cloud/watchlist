@@ -327,7 +327,7 @@
     "fingerprint": "6319e6e5295e3016",
     "lastChanged": "2026-11-24",
     "lastSeen": "2026-11-25",
-    "rows": 49
+    "rows": 48
   },
   "editorial:acollectedman_journal": {
     "fingerprint": "5b2287a5ce9dddd2",
@@ -426,10 +426,10 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "35f906bee737dc68",
-    "lastChanged": "2026-11-24",
+    "fingerprint": "c5731bd1e2ab887d",
+    "lastChanged": "2026-11-25",
     "lastSeen": "2026-11-25",
-    "rows": 7986
+    "rows": 7989
   },
   "merged:auctions": {
     "fingerprint": "37982563059b6c69",
