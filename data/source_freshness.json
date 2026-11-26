@@ -96,10 +96,10 @@
     "rows": 49
   },
   "Heuertime": {
-    "fingerprint": "b50badfb198edc80",
-    "lastChanged": "2026-11-25",
+    "fingerprint": "838d37c14b52c51d",
+    "lastChanged": "2026-11-26",
     "lastSeen": "2026-11-26",
-    "rows": 30
+    "rows": 23
   },
   "Huntington Company": {
     "fingerprint": "bb217bc2b657ae17",
@@ -204,10 +204,10 @@
     "rows": 69
   },
   "Tropical Watch": {
-    "fingerprint": "6a9d8c4edf247eb4",
-    "lastChanged": "2026-11-25",
+    "fingerprint": "084553a7d9f5a7c9",
+    "lastChanged": "2026-11-26",
     "lastSeen": "2026-11-26",
-    "rows": 130
+    "rows": 129
   },
   "Vintage Watch Collective": {
     "fingerprint": "f5ed9ccd1b6f80b2",
@@ -216,10 +216,10 @@
     "rows": 46
   },
   "Vintage Watch Fam": {
-    "fingerprint": "8e61633b5c9d6471",
-    "lastChanged": "2026-11-25",
+    "fingerprint": "9df1bfeebd11919b",
+    "lastChanged": "2026-11-26",
     "lastSeen": "2026-11-26",
-    "rows": 628
+    "rows": 627
   },
   "Vintage Watch Shop": {
     "fingerprint": "9dabc61254cdc630",
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "7baa168a33b44bc9",
-    "lastChanged": "2026-11-25",
+    "fingerprint": "dbca70eb99449185",
+    "lastChanged": "2026-11-26",
     "lastSeen": "2026-11-26",
     "rows": 54
   },
@@ -276,10 +276,10 @@
     "rows": 6
   },
   "Wind Vintage": {
-    "fingerprint": "b5a1f9d88a675da4",
-    "lastChanged": "2026-11-25",
+    "fingerprint": "693fb03c7ef9c6df",
+    "lastChanged": "2026-11-26",
     "lastSeen": "2026-11-26",
-    "rows": 185
+    "rows": 171
   },
   "calendar:antiquorum": {
     "fingerprint": "a834f4030143be95",
@@ -438,7 +438,7 @@
     "rows": 125
   },
   "merged:listings": {
-    "fingerprint": "3962ceebf4df4566",
+    "fingerprint": "6213585843fb660e",
     "lastChanged": "2026-11-26",
     "lastSeen": "2026-11-26",
     "rows": 13712
