@@ -12,10 +12,10 @@
     "rows": 318
   },
   "Analog Shift": {
-    "fingerprint": "34853f3a2fe4e1c5",
-    "lastChanged": "2026-11-25",
+    "fingerprint": "de97a1803cbc045c",
+    "lastChanged": "2026-11-26",
     "lastSeen": "2026-11-26",
-    "rows": 738
+    "rows": 737
   },
   "Belmont Watches": {
     "fingerprint": "e4c24c728f1ad532",
@@ -30,10 +30,10 @@
     "rows": 92
   },
   "Bulang & Sons": {
-    "fingerprint": "310821973d7139b1",
-    "lastChanged": "2026-11-25",
+    "fingerprint": "106e1e08ee7713c2",
+    "lastChanged": "2026-11-26",
     "lastSeen": "2026-11-26",
-    "rows": 151
+    "rows": 147
   },
   "Central Watch": {
     "fingerprint": "92fb08fdcd976128",
@@ -60,10 +60,10 @@
     "rows": 106
   },
   "Craft & Tailored": {
-    "fingerprint": "859a0dff415306bc",
-    "lastChanged": "2026-11-25",
+    "fingerprint": "08feceb42ed59697",
+    "lastChanged": "2026-11-26",
     "lastSeen": "2026-11-26",
-    "rows": 113
+    "rows": 112
   },
   "DB1983": {
     "fingerprint": "e4794f55a8ac63a2",
@@ -96,10 +96,10 @@
     "rows": 49
   },
   "Heuertime": {
-    "fingerprint": "838d37c14b52c51d",
+    "fingerprint": "1051236a4bbc5a22",
     "lastChanged": "2026-11-26",
     "lastSeen": "2026-11-26",
-    "rows": 23
+    "rows": 20
   },
   "Huntington Company": {
     "fingerprint": "bb217bc2b657ae17",
@@ -138,10 +138,10 @@
     "rows": 111
   },
   "Pascal Karp": {
-    "fingerprint": "38f4f5a91b3ef5f4",
-    "lastChanged": "2026-11-25",
+    "fingerprint": "57a281a5b8600244",
+    "lastChanged": "2026-11-26",
     "lastSeen": "2026-11-26",
-    "rows": 99
+    "rows": 100
   },
   "Romain R\u00e9a": {
     "fingerprint": "2591f30eb30ef7af",
@@ -192,10 +192,10 @@
     "rows": 33
   },
   "Tokant": {
-    "fingerprint": "95aab5ad52439d8e",
-    "lastChanged": "2026-11-25",
+    "fingerprint": "d0419cb21fe38481",
+    "lastChanged": "2026-11-26",
     "lastSeen": "2026-11-26",
-    "rows": 38
+    "rows": 39
   },
   "Tommy Zhao": {
     "fingerprint": "83466cbe36c02a56",
@@ -438,9 +438,9 @@
     "rows": 125
   },
   "merged:listings": {
-    "fingerprint": "6213585843fb660e",
+    "fingerprint": "13cd097c51c84bd5",
     "lastChanged": "2026-11-26",
     "lastSeen": "2026-11-26",
-    "rows": 13712
+    "rows": 13714
   }
 }
