@@ -1,15 +1,6 @@
 {
   "history": [
     {
-      "date": "2026-11-13",
-      "counts": {
-        "Antiquorum": 468,
-        "Christie's": 826,
-        "Phillips": 561,
-        "Sotheby's": 217
-      }
-    },
-    {
       "date": "2026-11-14",
       "counts": {
         "Watches of Knightsbridge": 59,
@@ -121,6 +112,15 @@
     },
     {
       "date": "2026-11-26",
+      "counts": {
+        "Antiquorum": 461,
+        "Christie's": 642,
+        "Phillips": 246,
+        "Sotheby's": 819
+      }
+    },
+    {
+      "date": "2026-11-27",
       "counts": {
         "Antiquorum": 461,
         "Christie's": 642,
