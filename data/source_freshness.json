@@ -1,15 +1,15 @@
 {
   "Amsterdam Vintage Watches": {
-    "fingerprint": "7d3ac31e502d8f58",
-    "lastChanged": "2026-11-26",
+    "fingerprint": "bd20084c536042ca",
+    "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
-    "rows": 78
+    "rows": 76
   },
   "Amsterdam Watch Company": {
-    "fingerprint": "05a10b40478278b4",
-    "lastChanged": "2026-11-26",
+    "fingerprint": "35940f6f2568ae0c",
+    "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
-    "rows": 317
+    "rows": 320
   },
   "Analog Shift": {
     "fingerprint": "8db178ee7ab2ef6a",
@@ -30,10 +30,10 @@
     "rows": 92
   },
   "Bulang & Sons": {
-    "fingerprint": "ad2bd670ee3435b1",
-    "lastChanged": "2026-11-26",
+    "fingerprint": "ce6384cd1b739417",
+    "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
-    "rows": 147
+    "rows": 151
   },
   "Central Watch": {
     "fingerprint": "92fb08fdcd976128",
@@ -96,10 +96,10 @@
     "rows": 49
   },
   "Heuertime": {
-    "fingerprint": "b50badfb198edc80",
+    "fingerprint": "0af8428d44767c5a",
     "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
-    "rows": 30
+    "rows": 21
   },
   "Huntington Company": {
     "fingerprint": "bb217bc2b657ae17",
@@ -126,10 +126,10 @@
     "rows": 54
   },
   "Moonphase": {
-    "fingerprint": "d4a281ae06dc6e2e",
-    "lastChanged": "2026-11-25",
+    "fingerprint": "42a148dcfc4f64fa",
+    "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
-    "rows": 26
+    "rows": 25
   },
   "Oliver & Clarke": {
     "fingerprint": "5839c2fa86638db2",
@@ -174,8 +174,8 @@
     "rows": 45
   },
   "Somlo": {
-    "fingerprint": "b6c8cfacd58dac5f",
-    "lastChanged": "2026-11-26",
+    "fingerprint": "bb189e612cfd18aa",
+    "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
     "rows": 165
   },
@@ -192,22 +192,22 @@
     "rows": 33
   },
   "Tokant": {
-    "fingerprint": "7a149a99a7a506a2",
-    "lastChanged": "2026-11-26",
-    "lastSeen": "2026-11-27",
-    "rows": 38
-  },
-  "Tommy Zhao": {
-    "fingerprint": "83466cbe36c02a56",
-    "lastChanged": "2026-11-25",
-    "lastSeen": "2026-11-27",
-    "rows": 69
-  },
-  "Tropical Watch": {
-    "fingerprint": "9ad27d8f7a391f9c",
+    "fingerprint": "d2e9abdf54590214",
     "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
-    "rows": 127
+    "rows": 37
+  },
+  "Tommy Zhao": {
+    "fingerprint": "1c09d0733f1b5d4a",
+    "lastChanged": "2026-11-27",
+    "lastSeen": "2026-11-27",
+    "rows": 80
+  },
+  "Tropical Watch": {
+    "fingerprint": "ecec971f55a8cf9e",
+    "lastChanged": "2026-11-27",
+    "lastSeen": "2026-11-27",
+    "rows": 126
   },
   "Vintage Watch Collective": {
     "fingerprint": "f216de57816b3cf0",
@@ -252,10 +252,10 @@
     "rows": 50
   },
   "Watches of Knightsbridge": {
-    "fingerprint": "bbbbaf913bf6b480",
-    "lastChanged": "2026-11-21",
+    "fingerprint": "121a1e3b29f69cfa",
+    "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
-    "rows": 76
+    "rows": 73
   },
   "Watches of Lancashire": {
     "fingerprint": "d014028683c527f9",
@@ -438,9 +438,9 @@
     "rows": 125
   },
   "merged:listings": {
-    "fingerprint": "efcf57e1b42d1aca",
+    "fingerprint": "ce25253f75f0c66a",
     "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
-    "rows": 13728
+    "rows": 13746
   }
 }

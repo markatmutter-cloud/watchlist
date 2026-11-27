@@ -1,6 +1,6 @@
 {
   "date": "2026-11-27",
-  "updated_at": "2026-11-27T03:07:50+00:00",
+  "updated_at": "2026-11-27T10:50:33+00:00",
   "alerts": [],
   "counts": {
     "Wind Vintage": 98,
@@ -11,7 +11,7 @@
     "Pascal Karp": 101,
     "Tokant": 37,
     "Romain R\u00e9a": 246,
-    "Grey & Patina": 37,
+    "Grey & Patina": 36,
     "Oliver & Clarke": 97,
     "Craft & Tailored": 83,
     "Watch Brothers London": 6,
@@ -23,7 +23,7 @@
     "Watches of Knightsbridge": 58,
     "Belmont Watches": 38,
     "Watchfid": 54,
-    "Bulang & Sons": 147,
+    "Bulang & Sons": 151,
     "Moonphase": 26,
     "Huntington Company": 98,
     "The Vintage Watch": 32,
@@ -36,6 +36,7 @@
     "Watchurbia": 5,
     "Maunder Watches": 73,
     "Watch Club": 50,
+    "Vintage Watch Shop": 34,
     "Watches of Lancashire": 53,
     "Heuertime": 29,
     "ClassicHeuer": 41,
@@ -43,13 +44,12 @@
     "S.Song Watches": 15,
     "Swiss Hours": 68,
     "Watch Center": 261,
-    "Amsterdam Watch Company": 306,
+    "Amsterdam Watch Company": 309,
     "Amsterdam Vintage Watches": 76,
     "Salt Vintage Watches": 43,
-    "Tommy Zhao": 68,
-    "eBay": 49,
-    "Vintage Watch Shop": 34
+    "Tommy Zhao": 79,
+    "eBay": 48
   },
-  "total_listings": 4678,
+  "total_listings": 4694,
   "sources_tracked": 46
 }
