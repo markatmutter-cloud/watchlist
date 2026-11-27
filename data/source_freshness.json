@@ -54,10 +54,10 @@
     "rows": 121
   },
   "Collectors Corner NY": {
-    "fingerprint": "63ac23113e16c812",
-    "lastChanged": "2026-11-26",
+    "fingerprint": "bb44398da742cd76",
+    "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
-    "rows": 108
+    "rows": 109
   },
   "Craft & Tailored": {
     "fingerprint": "1beae4470b0a966d",
@@ -84,10 +84,10 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "85ca53c0164cfc41",
-    "lastChanged": "2026-11-26",
+    "fingerprint": "34b36d2c3c1c574c",
+    "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
-    "rows": 37
+    "rows": 36
   },
   "Hairspring": {
     "fingerprint": "58d1c8354d0279ec",
@@ -96,10 +96,10 @@
     "rows": 49
   },
   "Heuertime": {
-    "fingerprint": "974dec085d7ac720",
-    "lastChanged": "2026-11-26",
+    "fingerprint": "b50badfb198edc80",
+    "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
-    "rows": 20
+    "rows": 30
   },
   "Huntington Company": {
     "fingerprint": "bb217bc2b657ae17",
@@ -204,16 +204,16 @@
     "rows": 69
   },
   "Tropical Watch": {
-    "fingerprint": "ee076c3bb0d5d261",
-    "lastChanged": "2026-11-26",
+    "fingerprint": "9ad27d8f7a391f9c",
+    "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
     "rows": 127
   },
   "Vintage Watch Collective": {
-    "fingerprint": "a5abdea4fc05c224",
-    "lastChanged": "2026-11-26",
+    "fingerprint": "f216de57816b3cf0",
+    "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
-    "rows": 47
+    "rows": 48
   },
   "Vintage Watch Fam": {
     "fingerprint": "94916c449727f5cb",
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "cc084873c965f7eb",
-    "lastChanged": "2026-11-26",
+    "fingerprint": "c92e7605a226b34b",
+    "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
     "rows": 54
   },
@@ -438,9 +438,9 @@
     "rows": 125
   },
   "merged:listings": {
-    "fingerprint": "d108a83258bcb063",
+    "fingerprint": "efcf57e1b42d1aca",
     "lastChanged": "2026-11-27",
     "lastSeen": "2026-11-27",
-    "rows": 13726
+    "rows": 13728
   }
 }
