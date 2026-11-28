@@ -12,10 +12,10 @@
     "rows": 324
   },
   "Analog Shift": {
-    "fingerprint": "d675959a87a00d44",
-    "lastChanged": "2026-11-27",
+    "fingerprint": "8d3e441e852ab5a6",
+    "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
-    "rows": 735
+    "rows": 734
   },
   "Belmont Watches": {
     "fingerprint": "e4c24c728f1ad532",
@@ -54,10 +54,10 @@
     "rows": 121
   },
   "Collectors Corner NY": {
-    "fingerprint": "d69b55e109345e49",
-    "lastChanged": "2026-11-27",
+    "fingerprint": "0ae8ae78a61e36dd",
+    "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
-    "rows": 110
+    "rows": 111
   },
   "Craft & Tailored": {
     "fingerprint": "d67a06f9499007e7",
@@ -84,10 +84,10 @@
     "rows": 5
   },
   "Grey & Patina": {
-    "fingerprint": "794497d036f9e7d4",
-    "lastChanged": "2026-11-27",
+    "fingerprint": "9a8a35c12e740802",
+    "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
-    "rows": 36
+    "rows": 35
   },
   "Hairspring": {
     "fingerprint": "58d1c8354d0279ec",
@@ -96,10 +96,10 @@
     "rows": 49
   },
   "Heuertime": {
-    "fingerprint": "0858ba26a770beb1",
-    "lastChanged": "2026-11-27",
+    "fingerprint": "a0acc6c39f441461",
+    "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
-    "rows": 20
+    "rows": 19
   },
   "Huntington Company": {
     "fingerprint": "bb217bc2b657ae17",
@@ -204,8 +204,8 @@
     "rows": 79
   },
   "Tropical Watch": {
-    "fingerprint": "8c9e81a01c295bef",
-    "lastChanged": "2026-11-27",
+    "fingerprint": "49d3e33f5a0909f7",
+    "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
     "rows": 125
   },
@@ -228,8 +228,8 @@
     "rows": 34
   },
   "Vision Vintage Watches": {
-    "fingerprint": "031714bc01211d60",
-    "lastChanged": "2026-11-27",
+    "fingerprint": "858a1e2f5e46233b",
+    "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
     "rows": 109
   },
@@ -264,8 +264,8 @@
     "rows": 54
   },
   "Watchfid": {
-    "fingerprint": "c92e7605a226b34b",
-    "lastChanged": "2026-11-27",
+    "fingerprint": "8f918f3e132004c1",
+    "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
     "rows": 54
   },
@@ -426,7 +426,7 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "93270f6d2b0fcc74",
+    "fingerprint": "d0159d576beacb30",
     "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
     "rows": 8019
@@ -438,9 +438,9 @@
     "rows": 126
   },
   "merged:listings": {
-    "fingerprint": "c0e127eb3e19db03",
+    "fingerprint": "cf6e26d3a2ab0967",
     "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
-    "rows": 13760
+    "rows": 13761
   }
 }
