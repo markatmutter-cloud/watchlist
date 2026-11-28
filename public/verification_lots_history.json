@@ -1,16 +1,6 @@
 {
   "history": [
     {
-      "date": "2026-11-14",
-      "counts": {
-        "Watches of Knightsbridge": 59,
-        "Antiquorum": 468,
-        "Christie's": 826,
-        "Phillips": 561,
-        "Sotheby's": 366
-      }
-    },
-    {
       "date": "2026-11-15",
       "counts": {
         "Watches of Knightsbridge": 59,
@@ -123,6 +113,16 @@
       "date": "2026-11-27",
       "counts": {
         "Antiquorum": 461,
+        "Christie's": 642,
+        "Phillips": 246,
+        "Sotheby's": 819
+      }
+    },
+    {
+      "date": "2026-11-28",
+      "counts": {
+        "Marteau & Co": 23,
+        "Antiquorum": 228,
         "Christie's": 642,
         "Phillips": 246,
         "Sotheby's": 819
