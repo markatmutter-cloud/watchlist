@@ -1,15 +1,7 @@
 {
   "date": "2026-11-28",
-  "updated_at": "2026-11-28T03:03:58+00:00",
-  "alerts": [
-    {
-      "source": "Vintage Watch Shop",
-      "level": "ERROR",
-      "today": 0,
-      "previous": 34,
-      "note": "source absent from today's listings (was present yesterday)"
-    }
-  ],
+  "updated_at": "2026-11-28T10:20:22+00:00",
+  "alerts": [],
   "counts": {
     "Wind Vintage": 98,
     "Tropical Watch": 124,
@@ -19,7 +11,7 @@
     "Pascal Karp": 101,
     "Tokant": 35,
     "Romain R\u00e9a": 246,
-    "Grey & Patina": 36,
+    "Grey & Patina": 35,
     "Oliver & Clarke": 97,
     "Craft & Tailored": 83,
     "Watch Brothers London": 6,
@@ -27,7 +19,7 @@
     "DB1983": 47,
     "Hairspring": 36,
     "Somlo": 165,
-    "Analog Shift": 707,
+    "Analog Shift": 706,
     "Watches of Knightsbridge": 55,
     "Belmont Watches": 38,
     "Watchfid": 54,
@@ -44,19 +36,20 @@
     "Watchurbia": 5,
     "Maunder Watches": 73,
     "Watch Club": 52,
+    "Vintage Watch Shop": 34,
     "Watches of Lancashire": 53,
-    "Heuertime": 19,
+    "Heuertime": 21,
     "ClassicHeuer": 41,
     "Luna Royster": 32,
     "S.Song Watches": 15,
     "Swiss Hours": 68,
     "Watch Center": 261,
     "Amsterdam Watch Company": 313,
-    "Amsterdam Vintage Watches": 74,
+    "Amsterdam Vintage Watches": 75,
     "Salt Vintage Watches": 43,
     "Tommy Zhao": 77,
     "eBay": 49
   },
-  "total_listings": 4645,
-  "sources_tracked": 45
+  "total_listings": 4680,
+  "sources_tracked": 46
 }

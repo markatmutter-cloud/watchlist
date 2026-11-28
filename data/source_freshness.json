@@ -1,13 +1,13 @@
 {
   "Amsterdam Vintage Watches": {
-    "fingerprint": "bd20084c536042ca",
-    "lastChanged": "2026-11-27",
+    "fingerprint": "ad441c153967dfaa",
+    "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
     "rows": 76
   },
   "Amsterdam Watch Company": {
-    "fingerprint": "02b3cab273fc1196",
-    "lastChanged": "2026-11-27",
+    "fingerprint": "1284aaf598f8ac05",
+    "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
     "rows": 324
   },
@@ -90,16 +90,16 @@
     "rows": 35
   },
   "Hairspring": {
-    "fingerprint": "58d1c8354d0279ec",
-    "lastChanged": "2026-11-25",
-    "lastSeen": "2026-11-28",
-    "rows": 49
-  },
-  "Heuertime": {
-    "fingerprint": "a0acc6c39f441461",
+    "fingerprint": "9153afb78876074c",
     "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
-    "rows": 19
+    "rows": 48
+  },
+  "Heuertime": {
+    "fingerprint": "ee0460f3413c5ddf",
+    "lastChanged": "2026-11-28",
+    "lastSeen": "2026-11-28",
+    "rows": 22
   },
   "Huntington Company": {
     "fingerprint": "bb217bc2b657ae17",
@@ -224,7 +224,7 @@
   "Vintage Watch Shop": {
     "fingerprint": "657ccbde74eec8c9",
     "lastChanged": "2026-11-26",
-    "lastSeen": "2026-11-27",
+    "lastSeen": "2026-11-28",
     "rows": 34
   },
   "Vision Vintage Watches": {
@@ -426,7 +426,7 @@
     "rows": 299
   },
   "merged:auction_lots": {
-    "fingerprint": "d0159d576beacb30",
+    "fingerprint": "93270f6d2b0fcc74",
     "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
     "rows": 8019
@@ -438,7 +438,7 @@
     "rows": 126
   },
   "merged:listings": {
-    "fingerprint": "cf6e26d3a2ab0967",
+    "fingerprint": "922f4e228d5fbd29",
     "lastChanged": "2026-11-28",
     "lastSeen": "2026-11-28",
     "rows": 13761

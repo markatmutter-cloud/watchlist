@@ -1,18 +1,10 @@
 {
-  "Vintage Watch Shop": {
-    "misses": 1,
-    "reason": "verify_sources ERROR: source absent from today's listings (was present yesterday)"
-  },
-  "amsterdamvintagewatches": {
-    "misses": 2,
-    "reason": "no CSV produced this run"
-  },
   "maunderwatches": {
-    "misses": 188,
+    "misses": 189,
     "reason": "no CSV produced this run"
   },
   "watchcenter": {
-    "misses": 307,
+    "misses": 308,
     "reason": "no CSV produced this run"
   }
 }
